@@ -1,6 +1,7 @@
 "use client"
 
 import { AppLayout } from "@/components/layouts/app-layout"
+import { useMemo } from "react"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -8,11 +9,12 @@ import { Button } from "@/components/ui/button"
 import { BarChart3, Users, Calendar, DollarSign, UserCheck, MessageSquare, FileText, Building, ChevronRight } from "lucide-react"
 
 export default function DashboardPage() {
-  usePageTitle({ 
+  const breadcrumbs = useMemo(() => [
+    { name: "Dashboard" }
+  ], []);
+  usePageTitle({
     title: "Dashboard",
-    breadcrumbs: [
-      { name: "Dashboard" }
-    ]
+    breadcrumbs
   })
 
   const stats = [
@@ -26,7 +28,7 @@ export default function DashboardPage() {
     {
       title: "Active Volunteers",
       value: "347",
-      change: "+3% from last month", 
+      change: "+3% from last month",
       icon: UserCheck,
       color: "bg-green-500"
     },
@@ -101,11 +103,10 @@ export default function DashboardPage() {
               <div className="space-y-4">
                 {recentActivities.map((activity, index) => (
                   <div key={index} className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-full ${
-                      activity.type === 'member' ? 'bg-blue-100' :
-                      activity.type === 'event' ? 'bg-purple-100' :
-                      activity.type === 'subsidy' ? 'bg-orange-100' : 'bg-green-100'
-                    }`}>
+                    <div className={`p-2 rounded-full ${activity.type === 'member' ? 'bg-blue-100' :
+                        activity.type === 'event' ? 'bg-purple-100' :
+                          activity.type === 'subsidy' ? 'bg-orange-100' : 'bg-green-100'
+                      }`}>
                       {activity.type === 'member' && <Users className="h-4 w-4 text-blue-600" />}
                       {activity.type === 'event' && <Calendar className="h-4 w-4 text-purple-600" />}
                       {activity.type === 'subsidy' && <DollarSign className="h-4 w-4 text-orange-600" />}
@@ -133,9 +134,9 @@ export default function DashboardPage() {
                 {quickActions.map((action, index) => {
                   const Icon = action.icon
                   return (
-                    <Button 
+                    <Button
                       key={index}
-                      variant="ghost" 
+                      variant="ghost"
                       className="w-full justify-start h-12"
                       asChild
                     >
