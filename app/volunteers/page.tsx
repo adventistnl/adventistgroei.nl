@@ -562,412 +562,413 @@ export default function VolunteersPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      
+    <AppLayout>
+      <div className="flex min-h-screen bg-background">
 
-      {/* Main Content */}
-      <div className="flex-1 p-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-foreground mb-2">Volunteer Management</h2>
-          <p className="text-muted-foreground">Manage volunteers, opportunities, and ministry teams</p>
-        </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-4 gap-6 mb-8">
-          <Card className="bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Active Volunteers</CardTitle>
-              <UserCheck className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {volunteers.filter((v) => v.status === "Active").length}
-              </div>
-              <p className="text-xs text-green-600">+5 this month</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Hours</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {volunteers.reduce((sum, v) => sum + v.totalHours, 0)}
-              </div>
-              <p className="text-xs text-muted-foreground">This year</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Open Positions</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {opportunities.reduce((sum, opp) => sum + (opp.needed - opp.volunteers), 0)}
-              </div>
-              <p className="text-xs text-red-600">
-                {opportunities.filter((opp) => opp.status === "Urgent").length} urgent
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Ministry Teams</CardTitle>
-              <Heart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{ministryTeams.length}</div>
-              <p className="text-xs text-muted-foreground">Active departments</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Action Bar */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input placeholder="Search volunteers..." className="pl-10 w-80 bg-card border-border" />
-            </div>
-            <Button variant="outline" className="border-border text-foreground hover:bg-muted bg-transparent">
-              <Filter className="w-4 h-4 mr-2" />
-              Filter
-            </Button>
+        {/* Main Content */}
+        <div className="flex-1 p-8">
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold text-foreground mb-2">Volunteer Management</h2>
+            <p className="text-muted-foreground">Manage volunteers, opportunities, and ministry teams</p>
           </div>
-          <div className="flex gap-2">
-            <Button className="bg-gray-900 hover:bg-gray-800 text-white">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Volunteer
-            </Button>
-            <Dialog open={isMissionModalOpen} onOpenChange={setIsMissionModalOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  <Globe className="w-4 h-4 mr-2" />
-                  Create Mission Project
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px] bg-card border-border max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="text-foreground text-xl">Create Mission Project</DialogTitle>
-                  <DialogDescription className="text-muted-foreground">
-                    Step {currentStep} of 4: Create a new missionary volunteer opportunity
-                  </DialogDescription>
-                </DialogHeader>
 
-                {/* Step Indicator */}
-                <div className="flex items-center justify-center space-x-2 py-4">
-                  {[1, 2, 3, 4].map((step) => (
-                    <div key={step} className="flex items-center">
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                          step === currentStep
-                            ? "bg-blue-600 text-white"
-                            : step < currentStep
-                              ? "bg-green-600 text-white"
-                              : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {step < currentStep ? <Check className="w-4 h-4" /> : step}
-                      </div>
-                      {step < 4 && (
-                        <div className={`w-12 h-0.5 mx-2 ${step < currentStep ? "bg-green-600" : "bg-muted"}`} />
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Step Content */}
-                <div className="py-6">{renderStepContent()}</div>
-
-                {/* Navigation Buttons */}
-                <div className="flex justify-between pt-6 border-t border-border">
-                  <Button
-                    variant="outline"
-                    onClick={handlePrevStep}
-                    disabled={currentStep === 1}
-                    className="border-border bg-transparent"
-                  >
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    Previous
-                  </Button>
-
-                  {currentStep < 4 ? (
-                    <Button
-                      onClick={handleNextStep}
-                      disabled={
-                        (currentStep === 1 && (!missionProject.title || !missionProject.description)) ||
-                        (currentStep === 2 && (!missionProject.budget || !missionProject.budgetPerPerson)) ||
-                        (currentStep === 3 && (!missionProject.country || !missionProject.language))
-                      }
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      Next
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  ) : (
-                    <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700 text-white">
-                      <Check className="w-4 h-4 mr-2" />
-                      Create Project
-                    </Button>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <Tabs defaultValue="volunteers" className="space-y-6">
-          <TabsList className="bg-card border border-border">
-            <TabsTrigger value="volunteers" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">
-              Volunteers
-            </TabsTrigger>
-            <TabsTrigger
-              value="opportunities"
-              className="data-[state=active]:bg-gray-900 data-[state=active]:text-white"
-            >
-              Opportunities
-            </TabsTrigger>
-            <TabsTrigger value="teams" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">
-              Ministry Teams
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Volunteers Tab */}
-          <TabsContent value="volunteers">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-4 gap-6 mb-8">
             <Card className="bg-card border-border">
-              <CardHeader>
-                <CardTitle className="text-foreground">Volunteer Directory</CardTitle>
-                <CardDescription className="text-muted-foreground">
-                  Manage volunteer information, skills, and assignments
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Active Volunteers</CardTitle>
+                <UserCheck className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-muted-foreground">Volunteer</TableHead>
-                      <TableHead className="text-muted-foreground">Contact</TableHead>
-                      <TableHead className="text-muted-foreground">Skills & Availability</TableHead>
-                      <TableHead className="text-muted-foreground">Current Roles</TableHead>
-                      <TableHead className="text-muted-foreground">Hours</TableHead>
-                      <TableHead className="text-muted-foreground">Status</TableHead>
-                      <TableHead className="text-muted-foreground">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {volunteers.map((volunteer) => (
-                      <TableRow key={volunteer.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium text-foreground">{volunteer.name}</div>
-                            <div className="text-sm text-muted-foreground flex items-center mt-1">
-                              <Calendar className="w-3 h-3 mr-1" />
-                              Joined {new Date(volunteer.joinDate).toLocaleDateString()}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="text-sm text-foreground flex items-center">
-                              <Mail className="w-3 h-3 mr-2 text-muted-foreground" />
-                              {volunteer.email}
-                            </div>
-                            <div className="text-sm text-foreground flex items-center">
-                              <Phone className="w-3 h-3 mr-2 text-muted-foreground" />
-                              {volunteer.phone}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-2">
-                            <div className="flex flex-wrap gap-1">
-                              {volunteer.skills.slice(0, 2).map((skill, index) => (
-                                <Badge key={index} className="bg-blue-600 text-white text-xs">
-                                  {skill}
-                                </Badge>
-                              ))}
-                              {volunteer.skills.length > 2 && (
-                                <Badge className="bg-muted text-muted-foreground text-xs">
-                                  +{volunteer.skills.length - 2}
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="text-xs text-muted-foreground flex items-center">
-                              <Clock className="w-3 h-3 mr-1" />
-                              {volunteer.availability}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            {volunteer.currentRoles.map((role, index) => (
-                              <div key={index} className="text-sm text-foreground">
-                                {role}
-                              </div>
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm font-medium text-foreground">{volunteer.totalHours}h</div>
-                          <div className="text-xs text-muted-foreground">
-                            Last: {new Date(volunteer.lastActivity).toLocaleDateString()}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusBadgeColor(volunteer.status)}>{volunteer.status}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-card border-border">
-                              <DropdownMenuItem className="text-foreground hover:bg-muted">
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit Profile
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-foreground hover:bg-muted">
-                                <Award className="mr-2 h-4 w-4" />
-                                View Hours
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-foreground hover:bg-muted">
-                                <UserPlus className="mr-2 h-4 w-4" />
-                                Assign Role
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-red-600 hover:bg-muted">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Remove
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <div className="text-2xl font-bold text-foreground">
+                  {volunteers.filter((v) => v.status === "Active").length}
+                </div>
+                <p className="text-xs text-green-600">+5 this month</p>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          {/* Opportunities Tab */}
-          <TabsContent value="opportunities">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {opportunities.map((opportunity) => (
-                <Card key={opportunity.id} className="bg-card border-border">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <CardTitle className="text-lg text-foreground">{opportunity.title}</CardTitle>
-                      <div className="flex gap-2">
-                        <Badge className={getStatusBadgeColor(opportunity.status)}>{opportunity.status}</Badge>
-                        <Badge className={getUrgencyBadgeColor(opportunity.urgency)}>{opportunity.urgency}</Badge>
+            <Card className="bg-card border-border">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Hours</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-foreground">
+                  {volunteers.reduce((sum, v) => sum + v.totalHours, 0)}
+                </div>
+                <p className="text-xs text-muted-foreground">This year</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card border-border">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Open Positions</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-foreground">
+                  {opportunities.reduce((sum, opp) => sum + (opp.needed - opp.volunteers), 0)}
+                </div>
+                <p className="text-xs text-red-600">
+                  {opportunities.filter((opp) => opp.status === "Urgent").length} urgent
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card border-border">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Ministry Teams</CardTitle>
+                <Heart className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-foreground">{ministryTeams.length}</div>
+                <p className="text-xs text-muted-foreground">Active departments</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Action Bar */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input placeholder="Search volunteers..." className="pl-10 w-80 bg-card border-border" />
+              </div>
+              <Button variant="outline" className="border-border text-foreground hover:bg-muted bg-transparent">
+                <Filter className="w-4 h-4 mr-2" />
+                Filter
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button className="bg-gray-900 hover:bg-gray-800 text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Volunteer
+              </Button>
+              <Dialog open={isMissionModalOpen} onOpenChange={setIsMissionModalOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <Globe className="w-4 h-4 mr-2" />
+                    Create Mission Project
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px] bg-card border-border max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="text-foreground text-xl">Create Mission Project</DialogTitle>
+                    <DialogDescription className="text-muted-foreground">
+                      Step {currentStep} of 4: Create a new missionary volunteer opportunity
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  {/* Step Indicator */}
+                  <div className="flex items-center justify-center space-x-2 py-4">
+                    {[1, 2, 3, 4].map((step) => (
+                      <div key={step} className="flex items-center">
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step === currentStep
+                              ? "bg-blue-600 text-white"
+                              : step < currentStep
+                                ? "bg-green-600 text-white"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                        >
+                          {step < currentStep ? <Check className="w-4 h-4" /> : step}
+                        </div>
+                        {step < 4 && (
+                          <div className={`w-12 h-0.5 mx-2 ${step < currentStep ? "bg-green-600" : "bg-muted"}`} />
+                        )}
                       </div>
-                    </div>
-                    <CardDescription className="text-muted-foreground">{opportunity.department}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center text-sm text-foreground">
-                        <Clock className="w-4 h-4 mr-2 text-muted-foreground" />
-                        {opportunity.timeCommitment}
-                      </div>
-                      <div className="flex items-center text-sm text-foreground">
-                        <Users className="w-4 h-4 mr-2 text-muted-foreground" />
-                        {opportunity.volunteers}/{opportunity.needed} volunteers
-                      </div>
-                      <div className="flex items-center text-sm text-foreground">
-                        <UserCheck className="w-4 h-4 mr-2 text-muted-foreground" />
-                        Coordinator: {opportunity.coordinator}
-                      </div>
-                    </div>
+                    ))}
+                  </div>
 
-                    <p className="text-sm text-muted-foreground">{opportunity.description}</p>
+                  {/* Step Content */}
+                  <div className="py-6">{renderStepContent()}</div>
 
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium text-foreground">Requirements:</h4>
-                      <ul className="text-sm text-muted-foreground space-y-1">
-                        {opportunity.requirements.map((req, index) => (
-                          <li key={index} className="flex items-center">
-                            <CheckCircle className="w-3 h-3 mr-2 text-green-600" />
-                            {req}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                  {/* Navigation Buttons */}
+                  <div className="flex justify-between pt-6 border-t border-border">
+                    <Button
+                      variant="outline"
+                      onClick={handlePrevStep}
+                      disabled={currentStep === 1}
+                      className="border-border bg-transparent"
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Previous
+                    </Button>
 
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div
-                        className="bg-green-600 h-2 rounded-full"
-                        style={{ width: `${(opportunity.volunteers / opportunity.needed) * 100}%` }}
-                      ></div>
-                    </div>
-
-                    <div className="flex gap-2 pt-2">
+                    {currentStep < 4 ? (
                       <Button
-                        size="sm"
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                        disabled={opportunity.volunteers >= opportunity.needed}
+                        onClick={handleNextStep}
+                        disabled={
+                          (currentStep === 1 && (!missionProject.title || !missionProject.description)) ||
+                          (currentStep === 2 && (!missionProject.budget || !missionProject.budgetPerPerson)) ||
+                          (currentStep === 3 && (!missionProject.country || !missionProject.language))
+                        }
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
                       >
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        {opportunity.volunteers >= opportunity.needed ? "Full" : "Apply"}
+                        Next
+                        <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
-                      <Button size="sm" variant="outline" className="border-border bg-transparent">
-                        <Edit className="w-4 h-4" />
+                    ) : (
+                      <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700 text-white">
+                        <Check className="w-4 h-4 mr-2" />
+                        Create Project
                       </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
-          </TabsContent>
+          </div>
 
-          {/* Ministry Teams Tab */}
-          <TabsContent value="teams">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {ministryTeams.map((team, index) => (
-                <Card key={index} className="bg-card border-border">
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <div className={`w-4 h-4 rounded-full ${team.color}`}></div>
-                      <CardTitle className="text-lg text-foreground">{team.name}</CardTitle>
-                    </div>
-                    <CardDescription className="text-muted-foreground">{team.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center text-sm text-foreground">
-                        <Users className="w-4 h-4 mr-2 text-muted-foreground" />
-                        {team.volunteers} volunteers
-                      </div>
-                      <div className="flex items-center text-sm text-foreground">
-                        <UserCheck className="w-4 h-4 mr-2 text-muted-foreground" />
-                        Coordinator: {team.coordinator}
-                      </div>
-                    </div>
+          {/* Tabs */}
+          <Tabs defaultValue="volunteers" className="space-y-6">
+            <TabsList className="bg-card border border-border">
+              <TabsTrigger value="volunteers" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">
+                Volunteers
+              </TabsTrigger>
+              <TabsTrigger
+                value="opportunities"
+                className="data-[state=active]:bg-gray-900 data-[state=active]:text-white"
+              >
+                Opportunities
+              </TabsTrigger>
+              <TabsTrigger value="teams" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">
+                Ministry Teams
+              </TabsTrigger>
+            </TabsList>
 
-                    <div className="flex gap-2 pt-2">
-                      <Button size="sm" variant="outline" className="flex-1 border-border bg-transparent">
-                        <Users className="w-4 h-4 mr-2" />
-                        View Team
-                      </Button>
-                      <Button size="sm" variant="outline" className="border-border bg-transparent">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
+            {/* Volunteers Tab */}
+            <TabsContent value="volunteers">
+              <Card className="bg-card border-border">
+                <CardHeader>
+                  <CardTitle className="text-foreground">Volunteer Directory</CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Manage volunteer information, skills, and assignments
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-muted-foreground">Volunteer</TableHead>
+                        <TableHead className="text-muted-foreground">Contact</TableHead>
+                        <TableHead className="text-muted-foreground">Skills & Availability</TableHead>
+                        <TableHead className="text-muted-foreground">Current Roles</TableHead>
+                        <TableHead className="text-muted-foreground">Hours</TableHead>
+                        <TableHead className="text-muted-foreground">Status</TableHead>
+                        <TableHead className="text-muted-foreground">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {volunteers.map((volunteer) => (
+                        <TableRow key={volunteer.id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium text-foreground">{volunteer.name}</div>
+                              <div className="text-sm text-muted-foreground flex items-center mt-1">
+                                <Calendar className="w-3 h-3 mr-1" />
+                                Joined {new Date(volunteer.joinDate).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="text-sm text-foreground flex items-center">
+                                <Mail className="w-3 h-3 mr-2 text-muted-foreground" />
+                                {volunteer.email}
+                              </div>
+                              <div className="text-sm text-foreground flex items-center">
+                                <Phone className="w-3 h-3 mr-2 text-muted-foreground" />
+                                {volunteer.phone}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-2">
+                              <div className="flex flex-wrap gap-1">
+                                {volunteer.skills.slice(0, 2).map((skill, index) => (
+                                  <Badge key={index} className="bg-blue-600 text-white text-xs">
+                                    {skill}
+                                  </Badge>
+                                ))}
+                                {volunteer.skills.length > 2 && (
+                                  <Badge className="bg-muted text-muted-foreground text-xs">
+                                    +{volunteer.skills.length - 2}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-xs text-muted-foreground flex items-center">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {volunteer.availability}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              {volunteer.currentRoles.map((role, index) => (
+                                <div key={index} className="text-sm text-foreground">
+                                  {role}
+                                </div>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm font-medium text-foreground">{volunteer.totalHours}h</div>
+                            <div className="text-xs text-muted-foreground">
+                              Last: {new Date(volunteer.lastActivity).toLocaleDateString()}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStatusBadgeColor(volunteer.status)}>{volunteer.status}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="bg-card border-border">
+                                <DropdownMenuItem className="text-foreground hover:bg-muted">
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit Profile
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-foreground hover:bg-muted">
+                                  <Award className="mr-2 h-4 w-4" />
+                                  View Hours
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-foreground hover:bg-muted">
+                                  <UserPlus className="mr-2 h-4 w-4" />
+                                  Assign Role
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-red-600 hover:bg-muted">
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Remove
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Opportunities Tab */}
+            <TabsContent value="opportunities">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {opportunities.map((opportunity) => (
+                  <Card key={opportunity.id} className="bg-card border-border">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <CardTitle className="text-lg text-foreground">{opportunity.title}</CardTitle>
+                        <div className="flex gap-2">
+                          <Badge className={getStatusBadgeColor(opportunity.status)}>{opportunity.status}</Badge>
+                          <Badge className={getUrgencyBadgeColor(opportunity.urgency)}>{opportunity.urgency}</Badge>
+                        </div>
+                      </div>
+                      <CardDescription className="text-muted-foreground">{opportunity.department}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center text-sm text-foreground">
+                          <Clock className="w-4 h-4 mr-2 text-muted-foreground" />
+                          {opportunity.timeCommitment}
+                        </div>
+                        <div className="flex items-center text-sm text-foreground">
+                          <Users className="w-4 h-4 mr-2 text-muted-foreground" />
+                          {opportunity.volunteers}/{opportunity.needed} volunteers
+                        </div>
+                        <div className="flex items-center text-sm text-foreground">
+                          <UserCheck className="w-4 h-4 mr-2 text-muted-foreground" />
+                          Coordinator: {opportunity.coordinator}
+                        </div>
+                      </div>
+
+                      <p className="text-sm text-muted-foreground">{opportunity.description}</p>
+
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium text-foreground">Requirements:</h4>
+                        <ul className="text-sm text-muted-foreground space-y-1">
+                          {opportunity.requirements.map((req, index) => (
+                            <li key={index} className="flex items-center">
+                              <CheckCircle className="w-3 h-3 mr-2 text-green-600" />
+                              {req}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div
+                          className="bg-green-600 h-2 rounded-full"
+                          style={{ width: `${(opportunity.volunteers / opportunity.needed) * 100}%` }}
+                        ></div>
+                      </div>
+
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          size="sm"
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                          disabled={opportunity.volunteers >= opportunity.needed}
+                        >
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          {opportunity.volunteers >= opportunity.needed ? "Full" : "Apply"}
+                        </Button>
+                        <Button size="sm" variant="outline" className="border-border bg-transparent">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            {/* Ministry Teams Tab */}
+            <TabsContent value="teams">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {ministryTeams.map((team, index) => (
+                  <Card key={index} className="bg-card border-border">
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-4 h-4 rounded-full ${team.color}`}></div>
+                        <CardTitle className="text-lg text-foreground">{team.name}</CardTitle>
+                      </div>
+                      <CardDescription className="text-muted-foreground">{team.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center text-sm text-foreground">
+                          <Users className="w-4 h-4 mr-2 text-muted-foreground" />
+                          {team.volunteers} volunteers
+                        </div>
+                        <div className="flex items-center text-sm text-foreground">
+                          <UserCheck className="w-4 h-4 mr-2 text-muted-foreground" />
+                          Coordinator: {team.coordinator}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 pt-2">
+                        <Button size="sm" variant="outline" className="flex-1 border-border bg-transparent">
+                          <Users className="w-4 h-4 mr-2" />
+                          View Team
+                        </Button>
+                        <Button size="sm" variant="outline" className="border-border bg-transparent">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
-    </div>
+    </AppLayout>
   )
 }
