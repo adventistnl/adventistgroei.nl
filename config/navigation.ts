@@ -100,11 +100,16 @@ const navMainBase: NavItem[] = [
     url: "/events",
     icon: Calendar,
   },
-  {
-    title: "Communications",
-    url: "/communications",
-    icon: MessageSquare,
-  },
+    {
+      title: "Communications",
+      url: "/communications",
+      icon: MessageSquare,
+    },
+    // {
+    //   title: "Settings",
+    //   url: "/settings",
+    //   icon: Settings,
+    // }
 ]
 
 // Função estável para obter navegação com estado ativo
@@ -131,16 +136,6 @@ export const navMain = navMainBase
 
 // Projetos/Links rápidos
 export const projects: ProjectItem[] = [
-  {
-    name: "My Profile",
-    url: "/profile",
-    icon: User,
-  },
-  {
-    name: "Settings",
-    url: "/settings",
-    icon: Settings,
-  },
 ]
 
 // Dados do usuário e organização
@@ -150,13 +145,6 @@ export const appData = {
     email: "user@example.com",
     avatar: "/placeholder-user.jpg",
   },
-  teams: [
-    {
-      name: "SDA Church",
-      logo: Building2,
-      plan: "Management System",
-    },
-  ],
 }
 
 // Legacy exports (manter para compatibilidade)
@@ -203,6 +191,7 @@ export const navigation: NavigationItem[] = [
   },
   { name: "Events", href: "/events", icon: Calendar },
   { name: "Communications", href: "/communications", icon: MessageSquare },
+  // { name: "Settings", href: "/settings", icon: Settings }
 ]
 
 // Profile & Settings (separado para bottom da navegação)

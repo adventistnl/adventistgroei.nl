@@ -4,7 +4,7 @@ import * as React from "react"
 import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
+import { InstitutionSwitcher } from "@/components/institution-switcher"
 import {
   Sidebar,
   SidebarContent,
@@ -31,7 +31,6 @@ function useSidebarData() {
   // Memoize entire data structure
   return React.useMemo(() => ({
     user: userData,
-    teams: appData.teams,
     navMain: navigation,
     projects: projects,
   }), [userData, navigation])
@@ -43,7 +42,7 @@ export const AppSidebar = React.memo(function AppSidebar({ ...props }: React.Com
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <InstitutionSwitcher />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation" // Fixed router import
 import { useState } from "react"
+import { InviteMemberModal } from "@/components/modals/invite-member-modal"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -401,63 +402,15 @@ export default function MembersPage() {
               Filter
             </Button>
           </div>
-          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-gray-900 hover:bg-gray-800 text-white">
-                <UserPlus className="w-4 h-4 mr-2" />
-                Add Member
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[700px] bg-card border-border max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-foreground text-xl">Registrar Novo Membro</DialogTitle>
-                <DialogDescription className="text-muted-foreground">
-                  Sistema Church Growth International - Processo de registro em 3 etapas
-                </DialogDescription>
-              </DialogHeader>
-
-              {/* Step Indicator */}
-              <div className="flex items-center justify-center space-x-4 py-4">
-                {[1, 2, 3].map((step) => (
-                  <div key={step} className="flex items-center">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                        step === 1 ? "bg-gray-900 text-white" : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {step}
-                    </div>
-                    {step < 3 && <div className={`w-12 h-0.5 mx-2 bg-muted`} />}
-                  </div>
-                ))}
-              </div>
-
-              {/* Step Labels */}
-              <div className="flex justify-between text-xs text-muted-foreground mb-6">
-                <span className="text-foreground font-medium">Informações Pessoais</span>
-                <span className="text-foreground font-medium">Instituição & Igreja</span>
-                <span className="text-foreground font-medium">Preferências & Revisão</span>
-              </div>
-
-              {/* Form Content */}
-              <div className="space-y-6">
-                {/* Placeholder for form content */}
-                <p className="text-muted-foreground">Form content goes here</p>
-              </div>
-
-              {/* Form Navigation */}
-              <div className="flex justify-end pt-6 border-t border-border">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsModalOpen(false)}
-                  className="border-border text-foreground hover:bg-muted"
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <InviteMemberModal onInviteSent={(inviteData) => {
+            console.log('Convite enviado:', inviteData)
+            // Aqui você pode atualizar a lista de membros ou mostrar notificação
+          }}>
+            <Button className="bg-gray-900 hover:bg-gray-800 text-white">
+              <UserPlus className="w-4 h-4 mr-2" />
+              Convidar Membro
+            </Button>
+          </InviteMemberModal>
         </div>
 
         {/* Members Table */}

@@ -7,6 +7,7 @@ import {
   ChevronsUpDown,
   CreditCard,
   LogOut,
+  Settings,
   Sparkles,
 } from "lucide-react"
 
@@ -31,6 +32,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/contexts/auth-context"
+import { useRouter } from "next/navigation"
 
 interface NavUserProps {
   user: {
@@ -43,6 +45,7 @@ interface NavUserProps {
 export const NavUser = React.memo(function NavUser({ user }: NavUserProps) {
   const { isMobile } = useSidebar()
   const { logout } = useAuth()
+  const router = useRouter()
 
   // Memoizar props do DropdownMenuContent para evitar re-renders
   const dropdownProps = React.useMemo(() => ({
@@ -52,10 +55,22 @@ export const NavUser = React.memo(function NavUser({ user }: NavUserProps) {
     sideOffset: 4,
   }), [isMobile])
 
-  // Memoizar o handler de logout para estabilidade
+  // Memoizar handlers para estabilidade
   const handleLogout = React.useCallback(() => {
     logout()
   }, [logout])
+
+  const handleProfileClick = React.useCallback(() => {
+    router.push("/profile")
+  }, [router])
+
+  const handleNotificationsClick = React.useCallback(() => {
+    router.push("/settings?tab=notifications")
+  }, [router])
+
+  const handleSettingsClick = React.useCallback(() => {
+    router.push("/settings")
+  }, [router])
 
   return (
     <SidebarMenu>
@@ -91,23 +106,17 @@ export const NavUser = React.memo(function NavUser({ user }: NavUserProps) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles className="sidebar-icon" />
-                Upgrade to Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleProfileClick}>
                 <BadgeCheck className="sidebar-icon" />
-                Account
+                Profile
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard className="sidebar-icon" />
-                Billing
+              <DropdownMenuItem onClick={handleSettingsClick}>
+                <Settings className="sidebar-icon" />
+                Settings
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleNotificationsClick}>
                 <Bell className="sidebar-icon" />
                 Notifications
               </DropdownMenuItem>
