@@ -1,0 +1,8 @@
+schema: schema.graphql
+extensions:
+  endpoints:
+    Default Introspection Endpoint:
+      url: https://api-adventistgroei-nl.onrender.com/graphql
+      introspect: true
+      headers:
+        Versioning: Apollo Client Frontend Production SP72

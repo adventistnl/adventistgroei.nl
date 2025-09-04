@@ -1,4 +1,5 @@
 import type React from "react"
+import { GraphQLProvider } from "@/components/graphql-provider"
 import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
@@ -22,36 +23,38 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="antialiased">
-        <AuthProvider>
-          <InstitutionProvider>
-            <PageProvider>
-              {children}
-              <Toaster 
-                position="top-right"
-                toastOptions={{
-                  duration: 4000,
-                  style: {
-                    background: 'hsl(var(--card))',
-                    color: 'hsl(var(--card-foreground))',
-                    border: '1px solid hsl(var(--border))',
-                  },
-                  success: {
-                    iconTheme: {
-                      primary: 'hsl(var(--primary))',
-                      secondary: 'hsl(var(--primary-foreground))',
+        <GraphQLProvider>
+          <AuthProvider>
+            <InstitutionProvider>
+              <PageProvider>
+                {children}
+                <Toaster 
+                  position="top-right"
+                  toastOptions={{
+                    duration: 4000,
+                    style: {
+                      background: 'hsl(var(--card))',
+                      color: 'hsl(var(--card-foreground))',
+                      border: '1px solid hsl(var(--border))',
                     },
-                  },
-                  error: {
-                    iconTheme: {
-                      primary: 'hsl(var(--destructive))',
-                      secondary: 'hsl(var(--destructive-foreground))',
+                    success: {
+                      iconTheme: {
+                        primary: 'hsl(var(--primary))',
+                        secondary: 'hsl(var(--primary-foreground))',
+                      },
                     },
-                  },
-                }}
-              />
-            </PageProvider>
-          </InstitutionProvider>
-        </AuthProvider>
+                    error: {
+                      iconTheme: {
+                        primary: 'hsl(var(--destructive))',
+                        secondary: 'hsl(var(--destructive-foreground))',
+                      },
+                    },
+                  }}
+                />
+              </PageProvider>
+            </InstitutionProvider>
+          </AuthProvider>
+        </GraphQLProvider>
       </body>
     </html>
   )
