@@ -1,0 +1,304 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Minimalist color palette - off-white, dark-grey, off-grey */
+  --background: #fafafa; /* off-white background */
+  --foreground: #2a2a2a; /* dark-grey text */
+  --card: #ffffff; /* pure white cards */
+  --card-foreground: #2a2a2a; /* dark-grey text on cards */
+  --popover: #ffffff;
+  --popover-foreground: #2a2a2a;
+  --primary: #2a2a2a; /* dark-grey primary */
+  --primary-foreground: #fafafa; /* off-white text on primary */
+  --secondary: #6b7280; /* off-grey secondary */
+  --secondary-foreground: #ffffff;
+  --muted: #f5f5f5; /* light off-grey */
+  --muted-foreground: #6b7280; /* off-grey text */
+  --accent: #e5e7eb; /* light off-grey accent */
+  --accent-foreground: #2a2a2a;
+  --destructive: #4b5563; /* dark off-grey for destructive */
+  --destructive-foreground: #ffffff;
+  --border: #e5e7eb; /* light off-grey borders */
+  --input: #ffffff;
+  --ring: #6b7280;
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+  --sidebar: #ffffff; /* white sidebar */
+  --sidebar-foreground: #2a2a2a;
+  --sidebar-primary: #2a2a2a; /* dark-grey for active items */
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f5f5f5; /* light off-grey accent */
+  --sidebar-accent-foreground: #2a2a2a;
+  --sidebar-border: #e5e7eb;
+  --sidebar-ring: #6b7280;
+}
+
+.dark {
+  /* Dark mode using inverted minimalist palette */
+  --background: #1a1a1a; /* very dark grey background */
+  --foreground: #fafafa; /* off-white text */
+  --card: #2a2a2a; /* dark-grey cards */
+  --card-foreground: #fafafa;
+  --popover: #2a2a2a;
+  --popover-foreground: #fafafa;
+  --primary: #fafafa; /* off-white primary in dark mode */
+  --primary-foreground: #2a2a2a;
+  --secondary: #4b5563; /* darker off-grey secondary */
+  --secondary-foreground: #fafafa;
+  --muted: #374151;
+  --muted-foreground: #9ca3af;
+  --accent: #374151;
+  --accent-foreground: #fafafa;
+  --destructive: #6b7280;
+  --destructive-foreground: #fafafa;
+  --border: #374151;
+  --input: #2a2a2a;
+  --ring: #6b7280;
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: #1a1a1a;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #fafafa;
+  --sidebar-primary-foreground: #2a2a2a;
+  --sidebar-accent: #2a2a2a;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #374151;
+  --sidebar-ring: #6b7280;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ✅ Custom sidebar optimizations */
+@layer components {
+  /* Ícones padrão - mesmo tamanho dos botões do app (h-4 w-4) */
+  .sidebar-icon {
+    @apply min-w-4 min-h-4 w-4 h-4 shrink-0 flex-shrink-0;
+  }
+  
+  /* Ícones médios para elementos especiais */
+  .sidebar-icon-md {
+    @apply min-w-5 min-h-5 w-5 h-5 shrink-0 flex-shrink-0;
+  }
+  
+  /* Ícones grandes para headers e avatars */
+  .sidebar-icon-lg {
+    @apply min-w-6 min-h-6 w-6 h-6 shrink-0 flex-shrink-0;
+  }
+  
+  /* ✅ MELHORIAS PARA MODO COLLAPSED ELEGANTE */
+  
+  /* Container principal dos botões no collapsed - padronizado com botões do app */
+  [data-collapsible="icon"] .sidebar-menu-button {
+    @apply min-w-12 min-h-12 w-12 h-12 p-0 justify-center items-center;
+    @apply rounded-xl transition-all duration-300 ease-in-out;
+    @apply hover:bg-sidebar-accent hover:scale-105 hover:shadow-md;
+    @apply relative overflow-visible;
+    @apply border border-sidebar-border/20 hover:border-sidebar-border/40;
+  }
+  
+  /* Ícones padronizados no collapsed - mesmo tamanho dos botões do app (h-4 w-4) */
+  [data-collapsible="icon"] .sidebar-menu-button .sidebar-icon,
+  [data-collapsible="icon"] .sidebar-menu-button .sidebar-icon-md,
+  [data-collapsible="icon"] .sidebar-menu-button .sidebar-icon-lg,
+  [data-collapsible="icon"] .sidebar-menu-button > svg {
+    @apply w-5 h-5 min-w-5 min-h-5 mx-auto;
+  }
+  
+  /* Estado ativo mais visível e elegante no collapsed */
+  [data-collapsible="icon"] [data-active="true"].sidebar-menu-button {
+    @apply bg-sidebar-primary text-sidebar-primary-foreground;
+    @apply shadow-lg ring-2 ring-sidebar-primary/30;
+    @apply scale-105 relative;
+    @apply border-sidebar-primary/50;
+  }
+  
+  /* Ícone ativo destacado com cor especial */
+  [data-collapsible="icon"] [data-active="true"] .sidebar-icon,
+  [data-collapsible="icon"] [data-active="true"] .sidebar-icon-md,
+  [data-collapsible="icon"] [data-active="true"] .sidebar-icon-lg,
+  [data-collapsible="icon"] [data-active="true"] > svg {
+    @apply text-sidebar-primary-foreground drop-shadow-sm;
+  }
+  
+  /* Garantir que texto não apareça no collapsed */
+  [data-collapsible="icon"] .sidebar-menu-button > span:not(.sr-only) {
+    @apply hidden;
+  }
+  
+  /* ✅ DIVISÕES MAIS INTUITIVAS NO COLLAPSED */
+  
+  /* Separadores visuais entre grupos */
+  [data-collapsible="icon"] .sidebar-group:not(:first-child) {
+    @apply border-t border-sidebar-border/40 pt-4 mt-4;
+  }
+  
+  /* Espaçamento melhorado entre itens no collapsed */
+  [data-collapsible="icon"] .sidebar-menu-item {
+    @apply mb-3 flex justify-center items-center;
+  }
+  
+  /* Header com divisão visual no collapsed */
+  [data-collapsible="icon"] [data-sidebar="header"] {
+    @apply border-b border-sidebar-border/30 pb-4 mb-4 px-3;
+  }
+  
+  /* Footer com divisão visual no collapsed */
+  [data-collapsible="icon"] [data-sidebar="footer"] {
+    @apply border-t border-sidebar-border/30 pt-4 mt-4 px-3;
+  }
+  
+  /* Grupos com padding padronizado no collapsed */
+  [data-collapsible="icon"] [data-sidebar="group"] {
+    @apply px-3 py-2;
+  }
+  
+  /* ✅ HOVER EXPANSION EFFECT */
+  
+  /* Sidebar expansion on hover - suave e elegante */
+  .sidebar-hover-expand {
+    transition: width 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  
+  /* Hover effect para expandir sidebar */
+  [data-collapsible="icon"]:hover .sidebar-hover-expand {
+    width: 16rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Mostrar texto no hover quando collapsed - com delay elegante */
+  [data-collapsible="icon"]:hover .sidebar-menu-button span:not(.sr-only) {
+    @apply opacity-100 translate-x-0 block;
+    transition-delay: 150ms;
+  }
+  
+  [data-collapsible="icon"] .sidebar-menu-button span:not(.sr-only) {
+    @apply opacity-0 -translate-x-4 transition-all duration-300 ease-in-out hidden;
+    transition-delay: 0ms;
+  }
+  
+  /* Mostrar group labels no hover */
+  [data-collapsible="icon"]:hover [data-sidebar="group-label"] {
+    @apply opacity-100 translate-y-0;
+    transition-delay: 200ms;
+  }
+  
+  [data-collapsible="icon"] [data-sidebar="group-label"] {
+    @apply opacity-0 translate-y-2 transition-all duration-300 ease-in-out;
+  }
+  
+  /* Expandir sub-menus no hover */
+  [data-collapsible="icon"]:hover [data-sidebar="menu-sub"] {
+    @apply opacity-100 translate-x-0;
+    transition-delay: 250ms;
+  }
+  
+  [data-collapsible="icon"] [data-sidebar="menu-sub"] {
+    @apply opacity-0 translate-x-4 transition-all duration-300 ease-in-out;
+  }
+  
+  /* ✅ INSTITUTION SWITCHER NO COLLAPSED */
+  
+  /* Institution switcher compacto no collapsed */
+  [data-collapsible="icon"] .institution-switcher {
+    @apply flex justify-center items-center p-2;
+  }
+  
+  /* Logo da instituição com tamanho médio e centralizada */
+  [data-collapsible="icon"] .institution-switcher .institution-logo {
+    @apply w-8 h-8 min-w-8 min-h-8 mx-auto;
+    @apply border border-sidebar-border/20 rounded-lg;
+    @apply hover:border-sidebar-border/40 transition-all duration-300;
+  }
+  
+  /* Esconder select no collapsed */
+  [data-collapsible="icon"] .institution-switcher .institution-select {
+    @apply hidden;
+  }
+  
+  /* ✅ MELHORIAS VISUAIS GERAIS */
+  
+  /* Melhoria na transição dos botões */
+  .sidebar-menu-button {
+    @apply transition-all duration-200 ease-in-out;
+  }
+  
+  /* Active state para modo expandido */
+  [data-active="true"].sidebar-menu-button {
+    @apply bg-sidebar-primary text-sidebar-primary-foreground;
+    @apply shadow-md ring-1 ring-sidebar-primary/20;
+  }
+  
+  /* Cor do ícone ativo em modo expandido */
+  [data-active="true"] .sidebar-icon,
+  [data-active="true"] .sidebar-icon-md,
+  [data-active="true"] .sidebar-icon-lg {
+    @apply text-sidebar-primary-foreground;
+  }
+  
+  /* Hover effect mais suave */
+  .sidebar-menu-button:hover {
+    @apply transform-gpu;
+  }
+  
+  /* Avatar e logo com padding adequado no collapsed */
+  [data-collapsible="icon"] .sidebar-avatar,
+  [data-collapsible="icon"] .sidebar-logo {
+    @apply mx-auto;
+  }
+}
