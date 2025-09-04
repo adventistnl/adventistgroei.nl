@@ -23,7 +23,19 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
-  serverExternalPackages: [],
+  webpack: (config, { isServer }) => {
+    // Fix chunk loading errors
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      }
+    }
+    
+    return config
+  },
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },

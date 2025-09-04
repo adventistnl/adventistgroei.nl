@@ -25,7 +25,7 @@ function LoginPageContent() {
   // Redirecionar se já estiver autenticado
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.push('/')
+      router.push('/dashboard')
     }
   }, [isAuthenticated, isLoading, router])
 
@@ -70,7 +70,8 @@ function LoginPageContent() {
       const success = await login(email, password)
       
       if (success) {
-        router.push('/')
+        // Redirecionar para dashboard após login bem-sucedido
+        router.push('/dashboard')
       } else {
         setError('Email ou senha inválidos. Tente novamente.')
       }
@@ -149,6 +150,7 @@ function LoginPageContent() {
                         onChange={(e) => setEmail(e.target.value)}
                         className="pl-12 h-12 text-base bg-background border-border focus:border-primary transition-all duration-200"
                         disabled={isSubmitting}
+                        autoComplete="email"
                       />
                     </div>
                   </div>
@@ -168,6 +170,7 @@ function LoginPageContent() {
                         onChange={(e) => setPassword(e.target.value)}
                         className="pl-12 pr-12 h-12 text-base bg-background border-border focus:border-primary transition-all duration-200"
                         disabled={isSubmitting}
+                        autoComplete="current-password"
                       />
                       <Button
                         type="button"
