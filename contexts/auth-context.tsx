@@ -12,6 +12,7 @@ interface AuthContextType {
   logout: () => void
   isLoading: boolean
   isAuthenticated: boolean
+  error: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -28,6 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<Login_login_user | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(false)
 
   // Verificar token no localStorage quando o componente monta
   useEffect(() => {
@@ -59,15 +61,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('auth-user', JSON.stringify(data.login.user));
         setToken(accessToken);
         setUser(data.login.user);
-        setIsLoading(false);
         return true;
       }
-      setIsLoading(false);
       return false;
     } catch (error) {
       console.error('Login error:', error);
-      setIsLoading(false);
+      setError(true);
       return false;
+    } finally {
+      setIsLoading(false);
     }
   }  
 
@@ -85,6 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout,
     isLoading,
     isAuthenticated: !!token && !!user,
+    error,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
