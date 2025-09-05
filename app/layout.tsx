@@ -1,7 +1,7 @@
 import type React from "react"
-import { GraphQLProvider } from "@/components/graphql-provider"
 import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
+import { GraphQLProvider } from "@/lib/apollo/graphql-provider"
 import { GeistMono } from "geist/font/mono"
 import { AuthProvider } from "@/contexts/auth-context"
 import { PageProvider } from "@/contexts/page-context"

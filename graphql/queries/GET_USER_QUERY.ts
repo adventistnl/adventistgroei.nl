@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
-export const USER_QUERY = gql`
-  query User {
-    user(id: null) {
+export const GET_USER_QUERY = gql`
+  query User($id: String!) {
+    user(id: $id) {
       id
       institution_id
       church_id
@@ -17,15 +17,6 @@ export const USER_QUERY = gql`
       is_deleted
       deleted_at
       deleted_by
-    }
-  }
-`;
-
-export const LOGIN_MUTATION = gql`
-  mutation Login {
-    login(input: null) {
-      accessToken
-      expiresIn
     }
   }
 `;

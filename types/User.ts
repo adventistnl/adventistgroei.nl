@@ -3,8 +3,6 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { LanguagePreference } from "./graphql-global-types";
-
 // ====================================================
 // GraphQL query operation: User
 // ====================================================
@@ -15,7 +13,7 @@ export interface User_user {
   church_id: string | null;
   name: string;
   email: string;
-  language_preference: LanguagePreference;
+  language_preference: string;
   contact_id: string | null;
   created_at: any;
   updated_at: any;
@@ -28,4 +26,8 @@ export interface User_user {
 
 export interface User {
   user: User_user | null;
+}
+
+export interface UserVariables {
+  id: string;
 }

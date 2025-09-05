@@ -7,14 +7,6 @@
 // START Enums and Input Objects
 //==============================================================
 
-/**
- * Idioma preferencial do usuário
- */
-export enum LanguagePreference {
-  en = "en",
-  nl = "nl",
-}
-
 //==============================================================
 // END Enums and Input Objects
 //==============================================================

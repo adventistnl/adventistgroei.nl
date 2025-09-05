@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "generate": "pnpm generate:schema && pnpm generate:types",
-    "generate:schema": "apollo schema:download --endpoint=https://api-adventistgroei-nl.onrender.com/graphql/ graphql-schema.json",
+    "generate:schema": "apollo schema:download --endpoint=http://localhost:3008/graphql/ graphql-schema.json",
     "generate:types": "apollo codegen:generate --localSchemaFile=graphql-schema.json --target=typescript --tagName=gql --no-addTypename --globalTypesFile=types/graphql-global-types.ts --outputFlat types"
   },
   "dependencies": {
