@@ -1,0 +1,8 @@
+schema: schema.graphql
+extensions:
+  endpoints:
+    Default Introspection Endpoint:
+      url: http://localhost:3008/graphql
+      introspect: true
+      headers:
+        Versioning: Apollo Client Frontend Production SP72
