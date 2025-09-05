@@ -70,8 +70,7 @@ const navMainBase: NavItem[] = [
     items: [
       { title: "Members", url: "/members" },
       { title: "Volunteers", url: "/volunteers" },
-      { title: "Roles", url: "/roles" },
-      { title: "Permissions", url: "/permissions" },
+      { title: "Access Management", url: "/access" },
     ],
   },
   {
@@ -166,8 +165,7 @@ export const navigation: NavigationItem[] = [
     items: [
       { name: "Members", href: "/members", icon: User },
       { name: "Volunteers", href: "/volunteers", icon: UserCheck },
-      { name: "Roles", href: "/roles", icon: Shield },
-      { name: "Permissions", href: "/permissions", icon: Lock },
+      { name: "Access Management", href: "/access", icon: Shield },
     ],
   },
   {

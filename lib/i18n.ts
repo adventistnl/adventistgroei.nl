@@ -141,6 +141,143 @@ const resources = {
           delete_error: "Error deleting institution",
           language_switched: "Language switched successfully"
         }
+      },
+      access: {
+        title: "Access Management",
+        subtitle: "Manage users, roles, and permissions",
+        overview: "Access Overview",
+        kpis: {
+          total_users: "Total Users",
+          total_roles: "Total Roles",
+          total_permissions: "Total Permissions",
+          active_users: "Active Users",
+          admin_users: "Admin Users",
+          user_growth_rate: "User Growth Rate"
+        },
+        charts: {
+          role_distribution: "Role Distribution",
+          permissions_by_group: "Permissions by Group",
+          user_activity: "User Activity Over Time"
+        },
+        tabs: {
+          users: "Users",
+          roles: "Roles",
+          permissions: "Permissions"
+        },
+        users: {
+          title: "User Management",
+          subtitle: "Manage system users and their access",
+          table: {
+            name: "Name",
+            email: "Email",
+            institution: "Institution",
+            church: "Church",
+            roles: "Roles",
+            created_at: "Created",
+            actions: "Actions",
+            search_placeholder: "Search users...",
+            no_results: "No users found"
+          },
+          actions: {
+            create_user: "Create User",
+            view_details: "View Details",
+            edit_user: "Edit User",
+            assign_role: "Assign Role",
+            remove_role: "Remove Role",
+            delete_user: "Delete User"
+          }
+        },
+        roles: {
+          title: "Role Management",
+          subtitle: "Manage roles and their permissions",
+          table: {
+            name: "Role Name",
+            key_code: "Key Code",
+            description: "Description",
+            permissions_count: "Permissions",
+            users_count: "Users",
+            actions: "Actions"
+          },
+          actions: {
+            create_role: "Create Role",
+            edit_permissions: "Edit Permissions",
+            duplicate_role: "Duplicate Role",
+            delete_role: "Delete Role"
+          },
+          permissions: {
+            title: "Role Permissions Configuration",
+            subtitle: "Configure detailed permissions for this role",
+            role_info: "Role Information",
+            permissions_matrix: "Permissions Matrix",
+            select_all: "Select All Permissions",
+            select_none: "Clear All Permissions",
+            select_group: "Select All in Group",
+            clear_group: "Clear Group",
+            selected_count: "{{count}} permissions selected",
+            total_permissions: "{{total}} total permissions",
+            unsaved_changes: "You have unsaved changes",
+            groups: {
+              USER: "User Management",
+              ROLE: "Role Management", 
+              PERMISSION: "Permission Management",
+              INSTITUTION: "Institution Management",
+              REGION: "Region Management",
+              CHURCH: "Church Management"
+            },
+            group_descriptions: {
+              USER: "Control user creation, editing, and access management",
+              ROLE: "Manage system roles and role assignments",
+              PERMISSION: "Configure system-wide permission settings",
+              INSTITUTION: "Administer institutions and organizational structure",
+              REGION: "Manage regional divisions and territories",
+              CHURCH: "Oversee church operations and management"
+            }
+          }
+        },
+        permissions: {
+          title: "System Permissions",
+          subtitle: "View all available system permissions",
+          table: {
+            name: "Permission Name",
+            key_code: "Key Code",
+            description: "Description",
+            group: "Group"
+          }
+        },
+        modals: {
+          create_user: {
+            title: "Create New User",
+            name: "Full Name",
+            email: "Email Address",
+            institution: "Institution",
+            church: "Church",
+            language: "Language Preference",
+            roles: "Assign Roles",
+            create: "Create User",
+            cancel: "Cancel"
+          },
+          edit_role: {
+            title: "Edit Role",
+            name: "Role Name",
+            key_code: "Key Code",
+            description: "Description",
+            permissions: "Permissions",
+            save: "Save Changes",
+            cancel: "Cancel"
+          }
+        },
+        toasts: {
+          user_created: "User created successfully",
+          user_updated: "User updated successfully",
+          user_deleted: "User deleted successfully",
+          role_created: "Role created successfully",
+          role_updated: "Role updated successfully",
+          role_deleted: "Role deleted successfully",
+          role_assigned: "Role assigned successfully",
+          role_removed: "Role removed successfully",
+          permissions_updated: "Permissions updated successfully",
+          access_denied: "Access denied - insufficient permissions"
+        }
       }
     }
   },
@@ -281,6 +418,143 @@ const resources = {
           delete_success: "Instelling succesvol verwijderd",
           delete_error: "Fout bij verwijderen instelling",
           language_switched: "Taal succesvol gewijzigd"
+        }
+      },
+      access: {
+        title: "Toegangsbeheer",
+        subtitle: "Beheer gebruikers, rollen en machtigingen",
+        overview: "Toegangsoverzicht",
+        kpis: {
+          total_users: "Totaal Gebruikers",
+          total_roles: "Totaal Rollen",
+          total_permissions: "Totaal Machtigingen",
+          active_users: "Actieve Gebruikers",
+          admin_users: "Admin Gebruikers",
+          user_growth_rate: "Gebruikersgroei"
+        },
+        charts: {
+          role_distribution: "Rolverdeling",
+          permissions_by_group: "Machtigingen per Groep",
+          user_activity: "Gebruikersactiviteit in de Tijd"
+        },
+        tabs: {
+          users: "Gebruikers",
+          roles: "Rollen",
+          permissions: "Machtigingen"
+        },
+        users: {
+          title: "Gebruikersbeheer",
+          subtitle: "Beheer systeemgebruikers en hun toegang",
+          table: {
+            name: "Naam",
+            email: "E-mail",
+            institution: "Instelling",
+            church: "Kerk",
+            roles: "Rollen",
+            created_at: "Aangemaakt",
+            actions: "Acties",
+            search_placeholder: "Zoek gebruikers...",
+            no_results: "Geen gebruikers gevonden"
+          },
+          actions: {
+            create_user: "Gebruiker Aanmaken",
+            view_details: "Details Bekijken",
+            edit_user: "Gebruiker Bewerken",
+            assign_role: "Rol Toewijzen",
+            remove_role: "Rol Verwijderen",
+            delete_user: "Gebruiker Verwijderen"
+          }
+        },
+        roles: {
+          title: "Rollenbeheer",
+          subtitle: "Beheer rollen en hun machtigingen",
+          table: {
+            name: "Rolnaam",
+            key_code: "Sleutelcode",
+            description: "Beschrijving",
+            permissions_count: "Machtigingen",
+            users_count: "Gebruikers",
+            actions: "Acties"
+          },
+          actions: {
+            create_role: "Rol Aanmaken",
+            edit_permissions: "Machtigingen Bewerken",
+            duplicate_role: "Rol Dupliceren",
+            delete_role: "Rol Verwijderen"
+          },
+          permissions: {
+            title: "Rolmachtigingen Configuratie",
+            subtitle: "Configureer gedetailleerde machtigingen voor deze rol",
+            role_info: "Rolinformatie",
+            permissions_matrix: "Machtigingenmatrix",
+            select_all: "Alle Machtigingen Selecteren",
+            select_none: "Alle Machtigingen Wissen",
+            select_group: "Alles in Groep Selecteren",
+            clear_group: "Groep Wissen",
+            selected_count: "{{count}} machtigingen geselecteerd",
+            total_permissions: "{{total}} totale machtigingen",
+            unsaved_changes: "U heeft niet-opgeslagen wijzigingen",
+            groups: {
+              USER: "Gebruikersbeheer",
+              ROLE: "Rollenbeheer",
+              PERMISSION: "Machtigingenbeheer",
+              INSTITUTION: "Instellingsbeheer",
+              REGION: "Regiobeheer",
+              CHURCH: "Kerkbeheer"
+            },
+            group_descriptions: {
+              USER: "Beheer gebruikersaanmaak, bewerking en toegangsbeheer",
+              ROLE: "Beheer systeemrollen en roltoewijzingen",
+              PERMISSION: "Configureer systeembrede machtiginginstellingen",
+              INSTITUTION: "Beheer instellingen en organisatiestructuur",
+              REGION: "Beheer regionale afdelingen en gebieden",
+              CHURCH: "Toezicht op kerkactiviteiten en -beheer"
+            }
+          }
+        },
+        permissions: {
+          title: "Systeemmachtigingen",
+          subtitle: "Bekijk alle beschikbare systeemmachtigingen",
+          table: {
+            name: "Machtigingsnaam",
+            key_code: "Sleutelcode",
+            description: "Beschrijving",
+            group: "Groep"
+          }
+        },
+        modals: {
+          create_user: {
+            title: "Nieuwe Gebruiker Aanmaken",
+            name: "Volledige Naam",
+            email: "E-mailadres",
+            institution: "Instelling",
+            church: "Kerk",
+            language: "Taalvoorkeur",
+            roles: "Rollen Toewijzen",
+            create: "Gebruiker Aanmaken",
+            cancel: "Annuleren"
+          },
+          edit_role: {
+            title: "Rol Bewerken",
+            name: "Rolnaam",
+            key_code: "Sleutelcode",
+            description: "Beschrijving",
+            permissions: "Machtigingen",
+            save: "Wijzigingen Opslaan",
+            cancel: "Annuleren"
+          }
+        },
+        toasts: {
+          user_created: "Gebruiker succesvol aangemaakt",
+          user_updated: "Gebruiker succesvol bijgewerkt",
+          user_deleted: "Gebruiker succesvol verwijderd",
+          role_created: "Rol succesvol aangemaakt",
+          role_updated: "Rol succesvol bijgewerkt",
+          role_deleted: "Rol succesvol verwijderd",
+          role_assigned: "Rol succesvol toegewezen",
+          role_removed: "Rol succesvol verwijderd",
+          permissions_updated: "Machtigingen succesvol bijgewerkt",
+          access_denied: "Toegang geweigerd - onvoldoende machtigingen"
         }
       }
     }
