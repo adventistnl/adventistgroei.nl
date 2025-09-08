@@ -571,80 +571,7 @@ export default function AccessManagementPage() {
                         {t('access.users.subtitle')}
                       </CardDescription>
                     </div>
-                    {canCreateUser && (
-                      <Dialog open={isCreateUserOpen} onOpenChange={setIsCreateUserOpen}>
-                        <DialogTrigger asChild>
-                          <Button className="bg-gray-900 hover:bg-gray-800 text-white">
-                            <Plus className="w-4 h-4 mr-2" />
-                            {t('access.users.actions.create_user')}
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>{t('access.modals.create_user.title')}</DialogTitle>
-                            <DialogDescription>
-                              Create a new user account with appropriate access levels.
-                            </DialogDescription>
-                          </DialogHeader>
-                          {/* Create user form would go here */}
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label>{t('access.modals.create_user.name')}</Label>
-                                <Input placeholder="Enter full name" />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>{t('access.modals.create_user.email')}</Label>
-                                <Input type="email" placeholder="Enter email address" />
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label>{t('access.modals.create_user.institution')}</Label>
-                                <Select>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select institution" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {institutions.map((inst) => (
-                                      <SelectItem key={inst.id} value={inst.id}>
-                                        {inst.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-2">
-                                <Label>{t('access.modals.create_user.church')}</Label>
-                                <Select>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select church" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {churches.map((church) => (
-                                      <SelectItem key={church.id} value={church.id}>
-                                        {church.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                            <div className="flex justify-end gap-3">
-                              <Button variant="default" onClick={() => setIsCreateUserOpen(false)}>
-                                {t('access.modals.create_user.cancel')}
-                              </Button>
-                              <Button onClick={() => {
-                                toast.success(t('access.toasts.user_created'))
-                                setIsCreateUserOpen(false)
-                              }}>
-                                {t('access.modals.create_user.create')}
-                              </Button>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    )}
+                    
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -653,13 +580,6 @@ export default function AccessManagementPage() {
                     data={users.filter(u => !u.is_deleted)}
                     searchKey="name"
                     searchPlaceholder={t('access.users.table.search_placeholder')}
-                    filterableColumns={[
-                      {
-                        id: "institution_name",
-                        title: "Institution",
-                        options: institutions.map(inst => ({ label: inst.name, value: inst.name }))
-                      }
-                    ]}
                   />
                 </CardContent>
               </Card>

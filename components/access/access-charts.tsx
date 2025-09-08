@@ -289,63 +289,6 @@ export function AccessCharts({
           </CardContent>
         </Card>
       </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Users className="h-8 w-8 text-blue-600" />
-              <div>
-                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                  Most Active Role
-                </p>
-                <p className="text-lg font-bold text-blue-900 dark:text-blue-100">
-                  {roleDistributionData.reduce((max, role) => 
-                    role.value > max.value ? role : max, roleDistributionData[0]
-                  )?.name || 'N/A'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Shield className="h-8 w-8 text-green-600" />
-              <div>
-                <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                  Largest Permission Group
-                </p>
-                <p className="text-lg font-bold text-green-900 dark:text-green-100">
-                  {permissionsByGroupData.reduce((max, group) => 
-                    group.permissions > max.permissions ? group : max, permissionsByGroupData[0]
-                  )?.group || 'N/A'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-950">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Activity className="h-8 w-8 text-purple-600" />
-              <div>
-                <p className="text-sm font-medium text-purple-800 dark:text-purple-200">
-                  Peak Activity Month
-                </p>
-                <p className="text-lg font-bold text-purple-900 dark:text-purple-100">
-                  {userActivityData.reduce((max, month) => 
-                    month.totalActivity > max.totalActivity ? month : max, userActivityData[0]
-                  )?.month || 'N/A'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   )
 }

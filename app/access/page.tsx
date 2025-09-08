@@ -12,13 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Label } from "@/components/ui/label"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,7 +30,6 @@ import {
   Eye,
   Shield,
   Lock,
-  UserPlus,
   Settings,
   ChevronDown,
   ChevronRight,
@@ -54,6 +48,9 @@ import "@/lib/i18n"
 import { AccessKPI } from "@/components/access/access-kpi"
 import { AccessCharts } from "@/components/access/access-charts"
 import { DataTable } from "@/components/ui/data-table"
+
+// Role Modals
+import { CreateRoleModal, EditRoleModal, DeleteRoleModal } from "@/components/modals/role"
 
 // Data
 import {
@@ -84,6 +81,11 @@ export default function AccessManagementPage() {
   const [isUserSheetOpen, setIsUserSheetOpen] = useState(false)
   const [isRoleSheetOpen, setIsRoleSheetOpen] = useState(false)
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false)
+  const [isCreateRoleOpen, setIsCreateRoleOpen] = useState(false)
+  const [isEditRoleOpen, setIsEditRoleOpen] = useState(false)
+  const [isDeleteRoleOpen, setIsDeleteRoleOpen] = useState(false)
+  const [selectedRoleForEdit, setSelectedRoleForEdit] = useState<Role | null>(null)
+  const [selectedRoleForDelete, setSelectedRoleForDelete] = useState<Role | null>(null)
   const [expandedGroups, setExpandedGroups] = useState<string[]>(['USER', 'ROLE'])
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([])
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
@@ -117,7 +119,7 @@ export default function AccessManagementPage() {
         await new Promise(resolve => setTimeout(resolve, 1500))
         
         toast.dismiss(loadingToast)
-        toast.success("📊 Access data loaded successfully!", {
+        toast.success("Access data loaded successfully!", {
           duration: 3000
         })
         
@@ -125,7 +127,7 @@ export default function AccessManagementPage() {
         
       } catch (error) {
         toast.dismiss(loadingToast)
-        toast.error("❌ Failed to load access data")
+        toast.error("Failed to load access data")
         setIsLoading(false)
       }
     }
@@ -151,19 +153,19 @@ export default function AccessManagementPage() {
   const handleRefresh = async () => {
     setRefreshing(true)
     
-    const refreshToast = toast.loading("🔄 Refreshing data...")
+    const refreshToast = toast.loading("Refreshing data...")
     
     try {
       await new Promise(resolve => setTimeout(resolve, 1000))
       
       toast.dismiss(refreshToast)
-      toast.success("✅ Data refreshed successfully!", {
+      toast.success("Data refreshed successfully!", {
         duration: 2000
       })
       
     } catch (error) {
       toast.dismiss(refreshToast)
-      toast.error("❌ Failed to refresh data")
+      toast.error("Failed to refresh data")
     } finally {
       setRefreshing(false)
     }
@@ -360,23 +362,31 @@ export default function AccessManagementPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {canUpdateRole && (
                 <DropdownMenuItem
                   onClick={() => {
-                    toast.success(`Opening detailed permissions for ${role.name}`)
-                    window.location.href = `/access/permissions/${role.id}`
-                  }}
+                  setSelectedRoleForEdit(role)
+                  setIsEditRoleOpen(true)
+                }}
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                {t('access.roles.actions.edit_role')}
+              </DropdownMenuItem>
+              {canUpdateRole && (
+                <DropdownMenuItem
+                  onClick={() => handleEditPermissions(role)}
                 >
                   <Settings className="mr-2 h-4 w-4" />
                   {t('access.roles.actions.edit_permissions')}
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem>
-                <Edit className="mr-2 h-4 w-4" />
-                Edit Role
-              </DropdownMenuItem>
               {hasPermission(userPermissions, 'DELETE_ROLE') && (
-                <DropdownMenuItem className="text-red-600">
+              <DropdownMenuItem
+                  className="text-red-600"
+                  onClick={() => {
+                    setSelectedRoleForDelete(role)
+                    setIsDeleteRoleOpen(true)
+                  }}
+                >
                   <Trash2 className="mr-2 h-4 w-4" />
                   {t('access.roles.actions.delete_role')}
                 </DropdownMenuItem>
@@ -442,6 +452,30 @@ export default function AccessManagementPage() {
     )
   }
 
+  // Modal handlers
+  const handleCreateRoleSuccess = () => {
+    // Refresh data or update state as needed
+    // In a real app, you might refetch the roles data
+    console.log('Role created successfully')
+  }
+
+  const handleEditRoleSuccess = () => {
+    // Refresh data or update state as needed
+    setSelectedRoleForEdit(null)
+    console.log('Role updated successfully')
+  }
+
+  const handleDeleteRoleSuccess = () => {
+    // Refresh data or update state as needed
+    setSelectedRoleForDelete(null)
+    console.log('Role deleted successfully')
+  }
+
+  const handleEditPermissions = (role: Role) => {
+    toast.success(`Opening detailed permissions for ${role.name}`)
+    window.location.href = `/access/permissions/${role.id}`
+  }
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -505,19 +539,6 @@ export default function AccessManagementPage() {
               {t('access.subtitle')}
             </p>
           </div>
-          
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
-            
-            <LanguageSelector />
-          </div>
         </div>
 
         {/* KPI Section */}
@@ -571,80 +592,7 @@ export default function AccessManagementPage() {
                         {t('access.users.subtitle')}
                       </CardDescription>
                     </div>
-                    {canCreateUser && (
-                      <Dialog open={isCreateUserOpen} onOpenChange={setIsCreateUserOpen}>
-                        <DialogTrigger asChild>
-                          <Button className="bg-gray-900 hover:bg-gray-800 text-white">
-                            <Plus className="w-4 h-4 mr-2" />
-                            {t('access.users.actions.create_user')}
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>{t('access.modals.create_user.title')}</DialogTitle>
-                            <DialogDescription>
-                              Create a new user account with appropriate access levels.
-                            </DialogDescription>
-                          </DialogHeader>
-                          {/* Create user form would go here */}
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label>{t('access.modals.create_user.name')}</Label>
-                                <Input placeholder="Enter full name" />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>{t('access.modals.create_user.email')}</Label>
-                                <Input type="email" placeholder="Enter email address" />
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label>{t('access.modals.create_user.institution')}</Label>
-                                <Select>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select institution" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {institutions.map((inst) => (
-                                      <SelectItem key={inst.id} value={inst.id}>
-                                        {inst.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-2">
-                                <Label>{t('access.modals.create_user.church')}</Label>
-                                <Select>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select church" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {churches.map((church) => (
-                                      <SelectItem key={church.id} value={church.id}>
-                                        {church.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                            <div className="flex justify-end gap-3">
-                              <Button variant="default" onClick={() => setIsCreateUserOpen(false)}>
-                                {t('access.modals.create_user.cancel')}
-                              </Button>
-                              <Button onClick={() => {
-                                toast.success(t('access.toasts.user_created'))
-                                setIsCreateUserOpen(false)
-                              }}>
-                                {t('access.modals.create_user.create')}
-                              </Button>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    )}
+                    
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -682,7 +630,10 @@ export default function AccessManagementPage() {
                       </CardDescription>
                     </div>
                     {canCreateRole && (
-                      <Button className="bg-gray-900 hover:bg-gray-800 text-white">
+                      <Button 
+                        onClick={() => setIsCreateRoleOpen(true)}
+                        className="bg-gray-900 hover:bg-gray-800 text-white"
+                      >
                         <Plus className="w-4 h-4 mr-2" />
                         {t('access.roles.actions.create_role')}
                       </Button>
@@ -723,10 +674,12 @@ export default function AccessManagementPage() {
                     {
                       id: "group",
                       title: "Group",
-                      options: Array.from(new Set(permissions.map(p => p.group))).map(group => ({
-                        label: group,
-                        value: group
-                      }))
+                      options: permissions.reduce((acc, p) => {
+                        if (!acc.find(item => item.value === p.group)) {
+                          acc.push({ label: p.group, value: p.group })
+                        }
+                        return acc
+                      }, [] as { label: string, value: string }[])
                     }
                   ]}
                 />
@@ -1086,7 +1039,8 @@ export default function AccessManagementPage() {
                                                   className="h-7 px-3 text-xs hover:bg-green-100 hover:text-green-700 border border-green-200"
                                                   onClick={(e) => {
                                                     e.stopPropagation()
-                                                    const newSelected = [...new Set([...selectedPermissions, ...groupPermissionIds])]
+                                                    const combined = [...selectedPermissions, ...groupPermissionIds]
+                                                    const newSelected = combined.filter((id, index) => combined.indexOf(id) === index)
                                                     setSelectedPermissions(newSelected)
                                                     setHasUnsavedChanges(true)
                                                     toast.success(`✅ All ${group.label} permissions selected!`)
@@ -1208,7 +1162,8 @@ export default function AccessManagementPage() {
                                         size="sm"
                                         variant="outline"
                                         onClick={() => {
-                                          const newSelected = [...new Set([...selectedPermissions, ...groupPermissionIds])]
+                                          const combined = [...selectedPermissions, ...groupPermissionIds]
+                                          const newSelected = combined.filter((id, index) => combined.indexOf(id) === index)
                                           setSelectedPermissions(newSelected)
                                           setHasUnsavedChanges(true)
                                           toast.success(`All ${group.label} permissions selected`, { icon: '✅' })
@@ -1446,6 +1401,31 @@ export default function AccessManagementPage() {
             )}
           </SheetContent>
         </Sheet>
+
+        {/* Role Modals */}
+        <CreateRoleModal
+          isOpen={isCreateRoleOpen}
+          onOpenChange={setIsCreateRoleOpen}
+          onSuccess={handleCreateRoleSuccess}
+        />
+
+        <EditRoleModal
+          isOpen={isEditRoleOpen}
+          onOpenChange={setIsEditRoleOpen}
+          role={selectedRoleForEdit}
+          users={users}
+          onSuccess={handleEditRoleSuccess}
+          onEditPermissions={handleEditPermissions}
+        />
+
+        <DeleteRoleModal
+          isOpen={isDeleteRoleOpen}
+          onOpenChange={setIsDeleteRoleOpen}
+          role={selectedRoleForDelete}
+          users={users}
+          availableRoles={roles}
+          onSuccess={handleDeleteRoleSuccess}
+        />
       </div>
     </AppLayout>
   )

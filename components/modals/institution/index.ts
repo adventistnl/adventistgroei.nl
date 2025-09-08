@@ -1,0 +1,5 @@
+export { EditInstitutionModal } from './edit-institution-modal'
+export { DeleteInstitutionModal } from './delete-institution-modal'
+export type { Institution } from './edit-institution-modal'
+export type { EditInstitutionModalProps } from './edit-institution-modal'
+export type { DeleteInstitutionModalProps } from './delete-institution-modal'

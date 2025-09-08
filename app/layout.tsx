@@ -1,12 +1,12 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
-import { GraphQLProvider } from "@/lib/apollo/graphql-provider"
 import { GeistMono } from "geist/font/mono"
+import { GraphQLProvider } from "@/lib/apollo/graphql-provider"
 import { AuthProvider } from "@/contexts/auth-context"
 import { PageProvider } from "@/contexts/page-context"
 import { InstitutionProvider } from "@/contexts/institution-context"
-import { Toaster } from "react-hot-toast"
+import { ToastProvider } from "@/components/ui/toast-provider"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -22,35 +22,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <body className="antialiased">
+      <body className="antialiased font-sans">
         <GraphQLProvider>
           <AuthProvider>
             <InstitutionProvider>
               <PageProvider>
                 {children}
-                <Toaster 
-                  position="top-right"
-                  toastOptions={{
-                    duration: 4000,
-                    style: {
-                      background: 'hsl(var(--card))',
-                      color: 'hsl(var(--card-foreground))',
-                      border: '1px solid hsl(var(--border))',
-                    },
-                    success: {
-                      iconTheme: {
-                        primary: 'hsl(var(--primary))',
-                        secondary: 'hsl(var(--primary-foreground))',
-                      },
-                    },
-                    error: {
-                      iconTheme: {
-                        primary: 'hsl(var(--destructive))',
-                        secondary: 'hsl(var(--destructive-foreground))',
-                      },
-                    },
-                  }}
-                />
+                <ToastProvider />
               </PageProvider>
             </InstitutionProvider>
           </AuthProvider>
