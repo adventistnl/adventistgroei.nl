@@ -1,5 +1,7 @@
 # Instruções do Projeto adventistgroei.nl
 
+Este arquivo serve como guia rápido para onboarding, manutenção e evolução do projeto. Para dúvidas ou instruções específicas, consulte a documentação das bibliotecas utilizadas ou peça orientação ao time técnico.
+
 ## Contexto do Produto
 Este projeto é uma plataforma web para gestão, colaboração e comunicação de entidades ligadas à comunidade adventista. Ele oferece funcionalidades administrativas, controle de membros, voluntários, igrejas, departamentos, instituições, regiões, eventos, relatórios, subsídios e projetos missionários. O objetivo é facilitar processos internos, promover transparência e eficiência organizacional.
 
@@ -32,6 +34,17 @@ Este projeto é uma plataforma web para gestão, colaboração e comunicação d
 - Siga o padrão de rotas do Next.js App Router.
 - Mantenha o código limpo, modular e fácil de escalar.
 
----
+### Como funciona a autenticação
 
-Este arquivo serve como guia rápido para onboarding, manutenção e evolução do projeto. Para dúvidas ou instruções específicas, consulte a documentação das bibliotecas utilizadas ou peça orientação ao time técnico.
+- O login é realizado via mutation GraphQL (`login`), enviando email e senha.
+- Se o login for bem-sucedido, a API retorna um `accessToken` (JWT) e os dados do usuário.
+- O token e os dados do usuário são salvos no `localStorage` (`auth-token` e `auth-user`).
+- O contexto de autenticação (`AuthProvider` em `contexts/auth-context.tsx`) gerencia o estado do usuário, token, login e logout.
+
+### Conexão com a API GraphQL
+
+- O Apollo Client é configurado em `lib/apollo/apollo-client.ts`.
+- Antes de cada requisição, um link de contexto adiciona o header `Authorization: Bearer <token>` usando o token salvo no `localStorage`.
+- Todas as requisições GraphQL autenticadas enviam o token JWT para a API, permitindo acesso autorizado aos dados.
+
+**Resumo:** O login gera um token JWT salvo no navegador, e o Apollo Client injeta esse token nos headers das requisições GraphQL automaticamente. O contexto React gerencia o estado de autenticação na aplicação.
