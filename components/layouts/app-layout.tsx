@@ -31,10 +31,8 @@ export function AppLayout({ children }: AppLayoutProps) {
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          {/* Modern Header - Inside SidebarInset with integrated breadcrumb */}
           <ModernHeader />
           
-          {/* Main Content */}
           <div className="flex flex-1 flex-col gap-4 p-6 pt-4">
             {children}
           </div>

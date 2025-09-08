@@ -11,18 +11,11 @@ const nextConfig = {
     domains: [],
   },
   trailingSlash: false,
-  async redirects() {
-    return [
-      {
-        source: '/',
-        destination: '/login',
-        permanent: false,
-      },
-    ]
-  },
+  
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
+  
   webpack: (config, { isServer }) => {
     // Fix chunk loading errors
     if (!isServer) {
@@ -36,6 +29,7 @@ const nextConfig = {
     
     return config
   },
+  
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },

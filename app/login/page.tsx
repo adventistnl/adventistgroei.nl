@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, use } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from "react-hot-toast"
 import { useAuth } from '@/contexts/auth-context'
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
+import { set } from 'react-hook-form'
 
 function LoginPageContent() {
   const [email, setEmail] = useState('')
@@ -18,7 +19,7 @@ function LoginPageContent() {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   
-  const { login, isAuthenticated, isLoading } = useAuth()
+  const { login, isAuthenticated, isLoading, error: authError } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -82,6 +83,9 @@ function LoginPageContent() {
     }
   }
 
+  useEffect(() => {
+    setError(authError ? "Email ou senha inválidos. Tente novamente." : "")
+  }, [authError])
   // Mostrar loading enquanto verifica autenticação
   if (isLoading) {
     return (

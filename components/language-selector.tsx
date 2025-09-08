@@ -19,8 +19,14 @@ const languages = [
 
 export function LanguageSelector() {
   const { i18n, t } = useTranslation()
+  const [isReady, setIsReady] = React.useState(false)
 
   const changeLanguage = (languageCode: string) => {
+    if (!i18n.isInitialized || !i18n.changeLanguage) {
+      console.warn('i18n is not properly initialized')
+      return
+    }
+
     const previousLang = i18n.language
     
     i18n.changeLanguage(languageCode)
@@ -39,15 +45,35 @@ export function LanguageSelector() {
     localStorage.setItem('preferred-language', languageCode)
   }
 
-  // Carregar idioma salvo ao inicializar
+  // Wait for i18n to be ready and load saved language
   React.useEffect(() => {
-    const savedLanguage = localStorage.getItem('preferred-language')
-    if (savedLanguage && savedLanguage !== i18n.language) {
-      i18n.changeLanguage(savedLanguage)
+    const checkI18nReady = () => {
+      if (i18n.isInitialized) {
+        setIsReady(true)
+        const savedLanguage = localStorage.getItem('preferred-language')
+        if (savedLanguage && savedLanguage !== i18n.language && i18n.changeLanguage) {
+          i18n.changeLanguage(savedLanguage)
+        }
+      } else {
+        // Retry after a short delay
+        setTimeout(checkI18nReady, 100)
+      }
     }
+    
+    checkI18nReady()
   }, [i18n])
 
   const currentLanguage = languages.find(lang => lang.code === i18n.language)
+
+  // Show loading state if i18n is not ready
+  if (!isReady) {
+    return (
+      <Button variant="outline" size="sm" className="gap-2 h-9 px-3" disabled>
+        <Globe className="h-4 w-4 animate-spin" />
+        <span className="hidden sm:inline text-sm">Loading...</span>
+      </Button>
+    )
+  }
 
   return (
     <DropdownMenu>
