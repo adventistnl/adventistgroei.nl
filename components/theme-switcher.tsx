@@ -39,14 +39,14 @@ export function ThemeSwitcher() {
     if (newTheme) {
       document.documentElement.classList.add('dark')
       localStorage.setItem('theme', 'dark')
-      toast.success('🌙 Dark mode activated', {
+      toast.success('Dark mode activated', {
         duration: 2000,
         style: { background: '#1f2937', color: '#f9fafb' }
       })
     } else {
       document.documentElement.classList.remove('dark')
       localStorage.setItem('theme', 'light')
-      toast.success('☀️ Light mode activated', {
+      toast.success('Light mode activated', {
         duration: 2000,
         style: { background: '#ffffff', color: '#1f2937' }
       })
@@ -67,7 +67,7 @@ export function ThemeSwitcher() {
           setIsDark(false)
           document.documentElement.classList.remove('dark')
           localStorage.setItem('theme', 'light')
-          toast.success('☀️ Light theme applied')
+          toast.success('Light theme applied')
         }}>
           <Sun className="mr-2 h-4 w-4" />
           <span>Light</span>
@@ -76,7 +76,7 @@ export function ThemeSwitcher() {
           setIsDark(true)
           document.documentElement.classList.add('dark')
           localStorage.setItem('theme', 'dark')
-          toast.success('🌙 Dark theme applied')
+          toast.success('Dark theme applied')
         }}>
           <Moon className="mr-2 h-4 w-4" />
           <span>Dark</span>
@@ -90,7 +90,7 @@ export function ThemeSwitcher() {
             document.documentElement.classList.remove('dark')
           }
           localStorage.removeItem('theme')
-          toast.success('🖥️ System theme applied')
+          toast.success('System theme applied')
         }}>
           <div className="mr-2 h-4 w-4 flex items-center justify-center">
             <div className="h-2 w-2 rounded-full bg-current" />

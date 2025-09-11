@@ -65,25 +65,24 @@ const navMainBase: NavItem[] = [
       { title: "Access Management", url: "/access" },
     ],
   },
-  {
-    title: "Subsidies",
-    url: "#",
-    icon: DollarSign,
-    items: [
-      { title: "Subsidies Management", url: "/subsidies" },
-      { title: "My Subsidy Requests", url: "/my-subsidies" },
-      { title: "Activities", url: "/subsidies/activities" },
-      { title: "Receipts", url: "/subsidies/receipts" },
-    ],
-  },
+  // {
+  //   title: "Subsidies",
+  //   url: "#",
+  //   icon: DollarSign,
+  //   items: [
+  //     { title: "Subsidies Management", url: "/subsidies" },
+  //     { title: "My Subsidy Requests", url: "/my-subsidies" },
+  //     { title: "Activities", url: "/subsidies/activities" },
+  //     { title: "Receipts", url: "/subsidies/receipts" },
+  //   ],
+  // },
   {
     title: "Reports & Projects",
     url: "#",
     icon: File,
     items: [
+      { title: "Projects", url: "/projects" },
       { title: "Reports", url: "/reports" },
-      { title: "Annual Reports", url: "/annual-reports" },
-      { title: "Mission Projects", url: "/mission-projects" },
     ],
   },
   {
