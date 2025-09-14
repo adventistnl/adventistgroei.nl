@@ -1,0 +1,7 @@
+schema: ./graphql-schema.json
+generates:
+  ./types/graphql-global-types.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+      - typescript-react-apollo

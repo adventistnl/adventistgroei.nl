@@ -106,6 +106,9 @@ import { CreateUserModal, EditUserModal, DeleteUserModal } from "@/components/mo
 // Data Table
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionGroup } from "@/types/graphql-global-types"
+import UnauthorizedPage from "../unauthorized/page"
 
 export default function UsersPage() {
   const { t } = useTranslation()
@@ -408,462 +411,464 @@ export default function UsersPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h2 className="text-3xl font-bold text-foreground mb-2">
-              {t('users.title')}
-            </h2>
-            <p className="text-muted-foreground">
-              {t('users.subtitle')}
-            </p>
+        <WithPermission requiredGroups={[PermissionGroup.User]} fallback={<UnauthorizedPage />}>
+        <div className="space-y-8">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 className="text-3xl font-bold text-foreground mb-2">
+                {t('users.title')}
+              </h2>
+              <p className="text-muted-foreground">
+                {t('users.subtitle')}
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={handleRefresh}
+                disabled={refreshing}
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
           </div>
-          
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
+
+          {/* KPI Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{t('users.kpis.total_users')}</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{kpiData.totalUsers}</div>
+                <p className="text-xs text-muted-foreground">
+                  {t('users.kpis.total_users_description')}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{t('users.kpis.active_users')}</CardTitle>
+                <UserCheck className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{kpiData.activeUsers}</div>
+                <p className="text-xs text-muted-foreground">
+                  {Math.round((kpiData.activeUsers / kpiData.totalUsers) * 100)}% {t('users.kpis.of_total')}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{t('users.kpis.new_users_month')}</CardTitle>
+                <TrendingUp className="h-4 w-4 text-blue-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">{kpiData.newUsersThisMonth}</div>
+                <p className="text-xs text-muted-foreground">
+                  {t('users.kpis.new_users_month_description')}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{t('users.kpis.inactive_users')}</CardTitle>
+                <UserX className="h-4 w-4 text-red-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">{kpiData.inactiveUsers}</div>
+                <p className="text-xs text-muted-foreground">
+                  {t('users.kpis.deleted_users_description')}
+                </p>
+              </CardContent>
+            </Card>
           </div>
-        </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('users.kpis.total_users')}</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpiData.totalUsers}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('users.kpis.total_users_description')}
-              </p>
-            </CardContent>
-          </Card>
+          <Separator />
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('users.kpis.active_users')}</CardTitle>
-              <UserCheck className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{kpiData.activeUsers}</div>
-              <p className="text-xs text-muted-foreground">
-                {Math.round((kpiData.activeUsers / kpiData.totalUsers) * 100)}% {t('users.kpis.of_total')}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('users.kpis.new_users_month')}</CardTitle>
-              <TrendingUp className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{kpiData.newUsersThisMonth}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('users.kpis.new_users_month_description')}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('users.kpis.inactive_users')}</CardTitle>
-              <UserX className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{kpiData.inactiveUsers}</div>
-              <p className="text-xs text-muted-foreground">
-                {t('users.kpis.deleted_users_description')}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Separator />
-
-        {/* Analytics Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Users by Role */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                {t('users.charts.users_by_role')}
-              </CardTitle>
-              <CardDescription>
-                {t('users.charts.users_by_role_description')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={roleChartConfig} className="h-[300px] w-full">
-                <BarChart data={roleDistributionData}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis 
-                    dataKey="role" 
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={11}
-                  />
-                  <YAxis 
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={11}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent />}
-                  />
-                  <Bar dataKey="users" fill="#3b82f6" radius={4} />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          {/* Users by Institution */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building className="w-5 h-5" />
-                {t('users.charts.users_by_institution')}
-              </CardTitle>
-              <CardDescription>
-                {t('users.charts.users_by_institution_description')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={institutionChartConfig} className="h-[300px] w-full">
-                <PieChart>
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
-                  />
-                  <Pie
-                    data={institutionDistributionData}
-                    dataKey="users"
-                    nameKey="institution"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={120}
-                    paddingAngle={2}
-                  >
-                    {institutionDistributionData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={[
-                          "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"
-                        ][index % 5]}
-                      />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          {/* User Growth */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
-                {t('users.charts.user_growth')}
-              </CardTitle>
-              <CardDescription>
-                {t('users.charts.user_growth_description')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={growthChartConfig} className="h-[300px] w-full">
-                <AreaChart data={growthData}>
-                  <defs>
-                    <linearGradient id="fillActive" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
-                    </linearGradient>
-                    <linearGradient id="fillTotal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    fontSize={11}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    fontSize={11}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent />}
-                  />
-                  <Area
-                    dataKey="active"
-                    type="natural"
-                    fill="url(#fillActive)"
-                    stroke="#10b981"
-                    stackId="a"
-                  />
-                  <Area
-                    dataKey="total"
-                    type="natural"
-                    fill="url(#fillTotal)"
-                    stroke="#3b82f6"
-                    stackId="a"
-                  />
-                </AreaChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Separator />
-
-        {/* Users Table */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
+          {/* Analytics Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Users by Role */}
+            <Card>
+              <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  {t('users.table.title')}
+                  <Shield className="w-5 h-5" />
+                  {t('users.charts.users_by_role')}
                 </CardTitle>
                 <CardDescription>
-                  {t('users.table.description')}
+                  {t('users.charts.users_by_role_description')}
                 </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <DataTable
-              columns={userColumns}
-              data={users.filter(u => !u.is_deleted)}
-              searchKey="name"
-              searchPlaceholder={t('users.table.search_placeholder')}
-              filterableColumns={[
-                {
-                  id: "institution_name",
-                  title: "Institution",
-                  options: institutions.map(inst => ({ 
-                    label: inst.name.length > 30 ? inst.name.substring(0, 30) + '...' : inst.name, 
-                    value: inst.name 
-                  }))
-                },
-                {
-                  id: "church_name",
-                  title: "Church",
-                  options: churches.map(church => ({ 
-                    label: church.name, 
-                    value: church.name 
-                  }))
-                },
-                {
-                  id: "language_preference",
-                  title: "Language",
-                  options: [
-                    { label: "English", value: "en" },
-                    { label: "Portuguese", value: "pt" },
-                    { label: "Spanish", value: "es" },
-                    { label: "Dutch", value: "nl" }
-                  ]
-                }
-              ]}
-            />
-          </CardContent>
-        </Card>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={roleChartConfig} className="h-[300px] w-full">
+                  <BarChart data={roleDistributionData}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis 
+                      dataKey="role" 
+                      tickLine={false}
+                      axisLine={false}
+                      fontSize={11}
+                    />
+                    <YAxis 
+                      tickLine={false}
+                      axisLine={false}
+                      fontSize={11}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent />}
+                    />
+                    <Bar dataKey="users" fill="#3b82f6" radius={4} />
+                  </BarChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
 
-        {/* User Details Sheet */}
-        <Sheet open={isUserDetailsOpen} onOpenChange={setIsUserDetailsOpen}>
-          <SheetContent className="w-[600px] sm:max-w-[600px] overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle>{t('users.modals.user_details.title')}</SheetTitle>
-              <SheetDescription>
-                {t('users.modals.user_details.description')}
-              </SheetDescription>
-            </SheetHeader>
-            
-            {selectedUser && (
-              <div className="space-y-6 mt-6">
-                {/* Basic Information */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Users className="w-5 h-5" />
-                      {t('users.modals.user_details.basic_info')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <Avatar className="w-16 h-16">
-                        <AvatarImage src="/placeholder-user.jpg" />
-                        <AvatarFallback className="text-lg">
-                          {selectedUser.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h3 className="text-xl font-semibold">{selectedUser.name}</h3>
-                        <p className="text-muted-foreground">{selectedUser.email}</p>
-                        <Badge 
-                          variant={selectedUser.is_deleted ? 'destructive' : 'default'}
-                          className="mt-1"
-                        >
-                          {selectedUser.is_deleted ? 'Inactive' : 'Active'}
-                        </Badge>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium">Language:</span>
-                        <p className="text-muted-foreground">{selectedUser.language_preference}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium">User ID:</span>
-                        <p className="text-muted-foreground font-mono">{selectedUser.id}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Organizational Information */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Building className="w-5 h-5" />
-                      {t('users.modals.user_details.contact_info')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Institution:</span>
-                        <span className="text-sm">{selectedUser.institution_name}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Church:</span>
-                        <span className="text-sm">{selectedUser.church_name}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Created:</span>
-                        <span className="text-sm">{new Date(selectedUser.created_at).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Updated:</span>
-                        <span className="text-sm">{new Date(selectedUser.updated_at).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Roles & Permissions */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Shield className="w-5 h-5" />
-                      {t('users.modals.user_details.roles_permissions')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {selectedUser.user_roles.map((role) => (
-                        <div key={role.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                              <Shield className="w-5 h-5 text-primary" />
-                            </div>
-                            <div>
-                              <div className="font-medium flex items-center gap-2">
-                                {role.name}
-                                {role.key_code === 'ADMIN' && <Crown className="w-4 h-4 text-yellow-500" />}
-                              </div>
-                              <div className="text-xs text-muted-foreground">{role.description}</div>
-                            </div>
-                          </div>
-                          <Badge variant="outline" className="font-mono">
-                            {role.key_code}
-                          </Badge>
-                        </div>
+            {/* Users by Institution */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building className="w-5 h-5" />
+                  {t('users.charts.users_by_institution')}
+                </CardTitle>
+                <CardDescription>
+                  {t('users.charts.users_by_institution_description')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={institutionChartConfig} className="h-[300px] w-full">
+                  <PieChart>
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent hideLabel />}
+                    />
+                    <Pie
+                      data={institutionDistributionData}
+                      dataKey="users"
+                      nameKey="institution"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={120}
+                      paddingAngle={2}
+                    >
+                      {institutionDistributionData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={[
+                            "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"
+                          ][index % 5]}
+                        />
                       ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                    </Pie>
+                  </PieChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-4 border-t">
-                  <Button onClick={() => handleEditUser(selectedUser)} className="flex-1">
-                    <Edit className="w-4 h-4 mr-2" />
-                    {t('users.actions.edit_user')}
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => handleDeleteUser(selectedUser)}
-                    className="flex-1"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    {t('users.actions.delete_user')}
-                  </Button>
+            {/* User Growth */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  {t('users.charts.user_growth')}
+                </CardTitle>
+                <CardDescription>
+                  {t('users.charts.user_growth_description')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={growthChartConfig} className="h-[300px] w-full">
+                  <AreaChart data={growthData}>
+                    <defs>
+                      <linearGradient id="fillActive" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
+                      </linearGradient>
+                      <linearGradient id="fillTotal" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="month"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      fontSize={11}
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      fontSize={11}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent />}
+                    />
+                    <Area
+                      dataKey="active"
+                      type="natural"
+                      fill="url(#fillActive)"
+                      stroke="#10b981"
+                      stackId="a"
+                    />
+                    <Area
+                      dataKey="total"
+                      type="natural"
+                      fill="url(#fillTotal)"
+                      stroke="#3b82f6"
+                      stackId="a"
+                    />
+                  </AreaChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Separator />
+
+          {/* Users Table */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    {t('users.table.title')}
+                  </CardTitle>
+                  <CardDescription>
+                    {t('users.table.description')}
+                  </CardDescription>
                 </div>
               </div>
-            )}
-          </SheetContent>
-        </Sheet>
+            </CardHeader>
+            <CardContent>
+              <DataTable
+                columns={userColumns}
+                data={users.filter(u => !u.is_deleted)}
+                searchKey="name"
+                searchPlaceholder={t('users.table.search_placeholder')}
+                filterableColumns={[
+                  {
+                    id: "institution_name",
+                    title: "Institution",
+                    options: institutions.map(inst => ({ 
+                      label: inst.name.length > 30 ? inst.name.substring(0, 30) + '...' : inst.name, 
+                      value: inst.name 
+                    }))
+                  },
+                  {
+                    id: "church_name",
+                    title: "Church",
+                    options: churches.map(church => ({ 
+                      label: church.name, 
+                      value: church.name 
+                    }))
+                  },
+                  {
+                    id: "language_preference",
+                    title: "Language",
+                    options: [
+                      { label: "English", value: "en" },
+                      { label: "Portuguese", value: "pt" },
+                      { label: "Spanish", value: "es" },
+                      { label: "Dutch", value: "nl" }
+                    ]
+                  }
+                ]}
+              />
+            </CardContent>
+          </Card>
 
-        {/* User Modals */}
-        <CreateUserModal
-          isOpen={isCreateUserOpen}
-          onOpenChange={setIsCreateUserOpen}
-          institutions={institutions}
-          churches={churches}
-          regions={regions}
-          departments={departments}
-          roles={roles}
-          onSuccess={(userData) => {
-            console.log('User created:', userData)
-            // Here you would typically refresh the users list
-          }}
-        />
+          {/* User Details Sheet */}
+          <Sheet open={isUserDetailsOpen} onOpenChange={setIsUserDetailsOpen}>
+            <SheetContent className="w-[600px] sm:max-w-[600px] overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>{t('users.modals.user_details.title')}</SheetTitle>
+                <SheetDescription>
+                  {t('users.modals.user_details.description')}
+                </SheetDescription>
+              </SheetHeader>
+              
+              {selectedUser && (
+                <div className="space-y-6 mt-6">
+                  {/* Basic Information */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Users className="w-5 h-5" />
+                        {t('users.modals.user_details.basic_info')}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="w-16 h-16">
+                          <AvatarImage src="/placeholder-user.jpg" />
+                          <AvatarFallback className="text-lg">
+                            {selectedUser.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="text-xl font-semibold">{selectedUser.name}</h3>
+                          <p className="text-muted-foreground">{selectedUser.email}</p>
+                          <Badge 
+                            variant={selectedUser.is_deleted ? 'destructive' : 'default'}
+                            className="mt-1"
+                          >
+                            {selectedUser.is_deleted ? 'Inactive' : 'Active'}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium">Language:</span>
+                          <p className="text-muted-foreground">{selectedUser.language_preference}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium">User ID:</span>
+                          <p className="text-muted-foreground font-mono">{selectedUser.id}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-        <EditUserModal
-          isOpen={isEditUserOpen}
-          onOpenChange={setIsEditUserOpen}
-          user={selectedUser}
-          institutions={institutions}
-          churches={churches}
-          regions={regions}
-          departments={departments}
-          roles={roles}
-          onSuccess={(userData) => {
-            console.log('User updated:', userData)
-            setSelectedUser(null)
-            // Here you would typically refresh the users list
-          }}
-        />
+                  {/* Organizational Information */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Building className="w-5 h-5" />
+                        {t('users.modals.user_details.contact_info')}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Institution:</span>
+                          <span className="text-sm">{selectedUser.institution_name}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Church:</span>
+                          <span className="text-sm">{selectedUser.church_name}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Created:</span>
+                          <span className="text-sm">{new Date(selectedUser.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Updated:</span>
+                          <span className="text-sm">{new Date(selectedUser.updated_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-        <DeleteUserModal
-          isOpen={isDeleteUserOpen}
-          onOpenChange={setIsDeleteUserOpen}
-          user={selectedUser}
-          onSuccess={(deletedUser) => {
-            console.log('User deleted:', deletedUser.name)
-            setSelectedUser(null)
-            // Here you would typically refresh the users list
-          }}
-        />
-      </div>
+                  {/* Roles & Permissions */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Shield className="w-5 h-5" />
+                        {t('users.modals.user_details.roles_permissions')}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {selectedUser.user_roles.map((role) => (
+                          <div key={role.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                                <Shield className="w-5 h-5 text-primary" />
+                              </div>
+                              <div>
+                                <div className="font-medium flex items-center gap-2">
+                                  {role.name}
+                                  {role.key_code === 'ADMIN' && <Crown className="w-4 h-4 text-yellow-500" />}
+                                </div>
+                                <div className="text-xs text-muted-foreground">{role.description}</div>
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="font-mono">
+                              {role.key_code}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 pt-4 border-t">
+                    <Button onClick={() => handleEditUser(selectedUser)} className="flex-1">
+                      <Edit className="w-4 h-4 mr-2" />
+                      {t('users.actions.edit_user')}
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      onClick={() => handleDeleteUser(selectedUser)}
+                      className="flex-1"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      {t('users.actions.delete_user')}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </SheetContent>
+          </Sheet>
+
+          {/* User Modals */}
+          <CreateUserModal
+            isOpen={isCreateUserOpen}
+            onOpenChange={setIsCreateUserOpen}
+            institutions={institutions}
+            churches={churches}
+            regions={regions}
+            departments={departments}
+            roles={roles}
+            onSuccess={(userData) => {
+              console.log('User created:', userData)
+              // Here you would typically refresh the users list
+            }}
+          />
+
+          <EditUserModal
+            isOpen={isEditUserOpen}
+            onOpenChange={setIsEditUserOpen}
+            user={selectedUser}
+            institutions={institutions}
+            churches={churches}
+            regions={regions}
+            departments={departments}
+            roles={roles}
+            onSuccess={(userData) => {
+              console.log('User updated:', userData)
+              setSelectedUser(null)
+              // Here you would typically refresh the users list
+            }}
+          />
+
+          <DeleteUserModal
+            isOpen={isDeleteUserOpen}
+            onOpenChange={setIsDeleteUserOpen}
+            user={selectedUser}
+            onSuccess={(deletedUser) => {
+              console.log('User deleted:', deletedUser.name)
+              setSelectedUser(null)
+              // Here you would typically refresh the users list
+            }}
+          />
+        </div>
+      </WithPermission>
     </AppLayout>
   )
 }
