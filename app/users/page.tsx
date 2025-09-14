@@ -107,7 +107,7 @@ import { CreateUserModal, EditUserModal, DeleteUserModal } from "@/components/mo
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { WithPermission } from "@/hocs/with-permission"
-import { PermissionGroup } from "@/types/graphql-global-types"
+import { PermissionGroup, PermissionResolverName } from "@/types/graphql-global-types"
 import UnauthorizedPage from "../unauthorized/page"
 
 export default function UsersPage() {
@@ -411,7 +411,7 @@ export default function UsersPage() {
 
   return (
     <AppLayout>
-        <WithPermission requiredGroups={[PermissionGroup.User]} fallback={<UnauthorizedPage />}>
+        <WithPermission requiredPermissions={[PermissionResolverName.Users]} fallback={<UnauthorizedPage />}>
         <div className="space-y-8">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

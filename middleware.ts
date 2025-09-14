@@ -1,45 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PermissionGroup, PermissionResolverName } from './types/graphql-global-types'
+import { PermissionResolverName } from './types/graphql-global-types'
 
 
 
 // Lista de rotas que não precisam de autenticação
-const whitelist = ['/users', '/login', '/register', '/forgot-password', '/forgot-password/reset', '/forgot-password/verify'];
+const whitelist = ['/login', '/register', '/forgot-password', '/forgot-password/reset', '/forgot-password/verify', '/unauthorized'];
 
 /**
- * Mapeamento dinâmico de rotas para permissões usando listas de resolvers e grupos.
+ * Mapeamento dinâmico de rotas para permissões usando listas de resolvers.
  */
-const routePermissions: Record<string, { resolvers: PermissionResolverName[]; groups: PermissionGroup[] }> = {
-  '/access': { resolvers: [], groups: [] },
-  '/unauthorized': { resolvers: [], groups: [] },
-  '/access/permissions/[roleId]': { resolvers: [], groups: [] },
-  '/annual-reports': { resolvers: [], groups: [] },
-  '/communications': { resolvers: [PermissionResolverName.Communications], groups: [PermissionGroup.Communication] },
-  '/dashboard': { resolvers: [], groups: [] },
-  '/events': { resolvers: [], groups: [] },
-  '/events/[id]': { resolvers: [], groups: [] },
-  '/forgot-password': { resolvers: [], groups: [] },
-  '/forgot-password/reset': { resolvers: [], groups: [] },
-  '/forgot-password/verify': { resolvers: [], groups: [] },
-  '/login': { resolvers: [], groups: [] },
-  '/mission-projects': { resolvers: [PermissionResolverName.Projects], groups: [PermissionGroup.Project] },
-  '/my-subsidies': { resolvers: [], groups: [] },
-  '/profile': { resolvers: [], groups: [] },
-  '/projects': { resolvers: [PermissionResolverName.Projects], groups: [PermissionGroup.Project] },
-  '/projects/[id]': { resolvers: [PermissionResolverName.Project], groups: [PermissionGroup.Project] },
-  '/regions': { resolvers: [PermissionResolverName.Regions], groups: [PermissionGroup.Region] },
-  '/register': { resolvers: [], groups: [] },
-  '/reports': { resolvers: [], groups: [] },
-  '/settings': { resolvers: [PermissionResolverName.Settings], groups: [PermissionGroup.Setting] },
-  '/structure': { resolvers: [], groups: [] },
-  '/structure/[id]': { resolvers: [], groups: [] },
-  '/subsidies': { resolvers: [], groups: [] },
-  '/subsidies/activities': { resolvers: [], groups: [] },
-  '/subsidies/new': { resolvers: [], groups: [] },
-  '/subsidies/receipts': { resolvers: [], groups: [] },
-  '/users': { resolvers: [PermissionResolverName.Users], groups: [PermissionGroup.User] },
-  '/users/[id]': { resolvers: [PermissionResolverName.User], groups: [PermissionGroup.User] },
-  '/volunteers': { resolvers: [], groups: [] },
+const routePermissions: Record<string, { resolvers: PermissionResolverName[] }> = {
+  '/access': { resolvers: [] },
+  '/access/permissions/[roleId]': { resolvers: [] },
+  '/annual-reports': { resolvers: [] },
+  '/communications': { resolvers: [PermissionResolverName.Communications] },
+  '/dashboard': { resolvers: [] },
+  '/events': { resolvers: [] },
+  '/events/[id]': { resolvers: [] },
+  '/mission-projects': { resolvers: [PermissionResolverName.Projects] },
+  '/my-subsidies': { resolvers: [] },
+  '/profile': { resolvers: [] },
+  '/projects': { resolvers: [PermissionResolverName.Projects] },
+  '/projects/[id]': { resolvers: [PermissionResolverName.Project] },
+  '/regions': { resolvers: [PermissionResolverName.Regions] },
+  '/reports': { resolvers: [] },
+  '/settings': { resolvers: [PermissionResolverName.Settings] },
+  '/structure': { resolvers: [] },
+  '/structure/[id]': { resolvers: [] },
+  '/subsidies': { resolvers: [] },
+  '/subsidies/activities': { resolvers: [] },
+  '/subsidies/new': { resolvers: [] },
+  '/subsidies/receipts': { resolvers: [] },
+  '/users': { resolvers: [PermissionResolverName.Users] },
+  '/users/[id]': { resolvers: [PermissionResolverName.User] },
+  '/volunteers': { resolvers: [] },
 }
 
 /**
@@ -47,14 +41,13 @@ const routePermissions: Record<string, { resolvers: PermissionResolverName[]; gr
  * @param pathname - Caminho da rota.
  * @returns Lista de permissões necessárias para acessar a rota.
  */
-function getRequiredPermissions(pathname: string): { resolvers: string[]; groups: string[] } {
+function getRequiredPermissions(pathname: string): { resolvers: string[] } {
   const route = routePermissions[pathname]
-  if (!route) return { resolvers: [], groups: [] }
+  if (!route) return { resolvers: [] }
 
   const resolverPermissions = route.resolvers.map(resolver => resolver)
-  const groupPermissions = route.groups.map(group => group)
 
-  return { resolvers: resolverPermissions, groups: groupPermissions }
+  return { resolvers: resolverPermissions }
 }
 
 
@@ -68,53 +61,36 @@ export function middleware(req: NextRequest) {
 
   // Permitir acesso às rotas na whitelist sem verificar cookies
   if (whitelist.includes(pathname)) {
-    console.log(`Middleware Debug: Allowing access to whitelisted route: ${pathname}`);
     return NextResponse.next();
   }
 
   const token = req.cookies.get('auth-token');
-  const userGroups = req.cookies.get('auth-groups');
   const userPermissions = req.cookies.get('auth-permissions');
 
-  console.log('Middleware Debug: Token:', token);
-  console.log('Middleware Debug: User Groups:', userGroups);
-  console.log('Middleware Debug: User Permissions:', userPermissions);
-
-  if (!token || !userGroups || !userPermissions) {
-    console.log('Middleware Debug: Redirecting to /login');
+  if (!token || !userPermissions) {
     return NextResponse.redirect(new URL('/login', req.url));
   }
 
-  let groups: string[] = [];
   let permissions: string[] = [];
   try {
-    groups = JSON.parse(userGroups.value || '[]');
     permissions = JSON.parse(userPermissions.value || '[]');
   } catch (error) {
-    console.error('Middleware Debug: Error parsing cookies:', error);
     return NextResponse.redirect(new URL('/login', req.url));
   }
 
-  const { resolvers, groups: requiredGroups } = getRequiredPermissions(pathname);
+  const { resolvers } = getRequiredPermissions(pathname);
 
-  console.log('Middleware Debug: Required Resolvers:', resolvers);
-  console.log('Middleware Debug: Required Groups:', requiredGroups);
 
-  // Permitir acesso se nenhuma permissão ou grupo for necessário
-  if (resolvers.length === 0 && requiredGroups.length === 0) {
-    console.log('Middleware Debug: No permissions or groups required, allowing access');
+  // Permitir acesso se nenhuma permissão for necessária
+  if (resolvers.length === 0) {
     return NextResponse.next();
   }
 
-  // Verificar se o usuário possui pelo menos uma das permissões ou grupos necessários
+  // Verificar se o usuário possui pelo menos uma das permissões necessárias
   const hasResolverPermission = resolvers.some(resolver => permissions.includes(resolver));
-  const hasGroupPermission = requiredGroups.some(group => groups.includes(group));
 
-  console.log('Middleware Debug: Has Resolver Permission:', hasResolverPermission);
-  console.log('Middleware Debug: Has Group Permission:', hasGroupPermission);
 
-  if (!hasResolverPermission && !hasGroupPermission) {
-    console.log('Middleware Debug: Redirecting to /unauthorized');
+  if (!hasResolverPermission) {
     return NextResponse.redirect(new URL('/unauthorized', req.url));
   }
 
@@ -132,18 +108,15 @@ export function middleware(req: NextRequest) {
     pathname.endsWith('.map') ||
     pathname.endsWith('.json')
   ) {
-    console.log('Middleware Debug: Static or internal resource, allowing access');
     return NextResponse.next();
   }
 
   // Redirecionar root para login apenas se necessário
   if (pathname === '/') {
-    console.log('Middleware Debug: Redirecting root to /login');
     return NextResponse.redirect(new URL('/login', req.url));
   }
 
   // Permitir todas as outras rotas
-  console.log('Middleware Debug: Allowing access to other routes');
   return NextResponse.next();
 }
 
