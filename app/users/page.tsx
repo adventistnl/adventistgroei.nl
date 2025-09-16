@@ -411,7 +411,7 @@ export default function UsersPage() {
 
   return (
     <AppLayout>
-        <WithPermission requiredPermissions={[PermissionResolverName.Users]} fallback={<UnauthorizedPage />}>
+      <WithPermission requiredPermissions={[PermissionResolverName.Users]} fallback={<UnauthorizedPage />}>
         <div className="space-y-8">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

@@ -17,7 +17,7 @@ export const LOGIN_MUTATION = gql`
             permissions {
                 group
                 data {
-                    key_code
+                    name
                 }
             }
         }

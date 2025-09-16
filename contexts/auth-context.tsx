@@ -69,34 +69,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('auth-token', accessToken);
         localStorage.setItem('auth-user', JSON.stringify(data.login.user));
 
-        // Extrair permissões
-        const userRoles: RoleModel[] = data.login.user.user_roles.map((role: RoleModel) => ({
-          id: role.id,
-          name: role.name,
-          description: role.description,
-          key_code: role.key_code,
-          permissions: role.permissions.map((group) => ({
-            group: group.group,
-            data: group.data.map((perm) => ({
-              id: perm.id,
-              key_code: perm.key_code,
-              name: perm.name,
-              description: perm.description,
-              group: perm.group,
-            })),
-          })),
-        }));
-
-        const permissions = Array.from(
-          new Set(
-            userRoles.flatMap((role) =>
-              Array.isArray(role.permissions)
-                ? role.permissions.map((perm: any) =>
-                    typeof perm === 'string' ? perm : perm.key_code
-                  )
-                : []
-            )
-          )
+        const permissions = data.login.user.user_roles.flatMap((role: RoleModel) =>
+          role.permissions.flatMap((group: { data: { name: string }[] }) => group.data.map((perm) => perm.name))
         );
 
         // Armazenar token e permissões como cookies
