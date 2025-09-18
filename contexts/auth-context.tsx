@@ -3,6 +3,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useLogin } from '@/hooks/use-login';
 import { AuthModel, RoleModel } from '@/types/graphql-global-types';
+import { useCookies } from '@/hooks/use-cookies';
+import { validateToken } from '@/utils/validateToken';
 
 interface AuthContextType {
   user: AuthModel['user'] | null;
@@ -26,6 +28,7 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { getCookies, setCookie, clearAllCookies } = useCookies();
   const [user, setUser] = useState<AuthModel['user'] | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]); // Novo estado para permissões
@@ -34,25 +37,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Verificar token no localStorage quando o componente monta
   useEffect(() => {
-    const storedToken = localStorage.getItem('auth-token');
-    const storedUser = localStorage.getItem('auth-user');
+    
+    try {
+      const cookies = getCookies(); // Utiliza o hook useCookies para obter os cookies
+      const rawStoredToken = cookies['auth-token'];
+      const tokenIsValid = validateToken(rawStoredToken)
+      if (!tokenIsValid) throw new Error('invalid token');
+      
+      const storedUser = localStorage.getItem('auth-user');
+      const rawPermissions = cookies['auth-permissions'];
+      const decodedPermissions = rawPermissions ? JSON.parse(rawPermissions) : [];
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      try {
+      if (
+        rawStoredToken &&
+        storedUser &&
+        Array.isArray(decodedPermissions) &&
+        decodedPermissions.length > 0) {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
-
-        // Restaurar permissões do usuário
-        const storedPermissions = parsedUser.user_roles.flatMap((role: RoleModel) =>
-          role.permissions.flatMap((group: { data: { key_code: string }[] }) => group.data.map((perm) => perm.key_code))
-        );
-        setPermissions(storedPermissions);
-      } catch (error) {
-        localStorage.removeItem('auth-token');
-        localStorage.removeItem('auth-user');
+        setToken(rawStoredToken);
+        setPermissions(decodedPermissions);
+      } else {
+        throw new Error('fail on getting auth data');
       }
+    } catch (error) {
+      localStorage.removeItem('auth-token');
+      localStorage.removeItem('auth-user');
+      clearAllCookies(); // Limpa todos os cookies em caso de erro
     }
+
     setIsLoading(false);
   }, []);
 
@@ -64,21 +77,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data } = await loginMutation({ variables: { email, password } });
       if (data && data.login && data.login.accessToken && data.login.user) {
         const accessToken = data.login.accessToken;
-
-        // Armazenar token no localStorage
-        localStorage.setItem('auth-token', accessToken);
-        localStorage.setItem('auth-user', JSON.stringify(data.login.user));
-
         const permissions = data.login.user.user_roles.flatMap((role: RoleModel) =>
           role.permissions.flatMap((group: { data: { name: string }[] }) => group.data.map((perm) => perm.name))
         );
 
+        // Armazenar user no localStorage
+        localStorage.setItem('auth-user', JSON.stringify(data.login.user));
         // Armazenar token e permissões como cookies
-        document.cookie = `auth-token=${accessToken}; path=/; SameSite=Strict; Secure; max-age=3600;`;
-        document.cookie = `auth-permissions=${encodeURIComponent(
-          JSON.stringify(permissions)
-        )}; path=/; SameSite=Strict; Secure; max-age=3600;`;
-
+        setCookie('auth-token', accessToken, { path: '/', sameSite: 'Strict', secure: true, maxAge: 3600 });
+        setCookie('auth-permissions', JSON.stringify(permissions), { path: '/', sameSite: 'Strict', secure: true, maxAge: 3600 });
         setToken(accessToken);
         setUser(data.login.user);
         setPermissions(permissions);
@@ -102,10 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout: () => {
       localStorage.removeItem('auth-token');
       localStorage.removeItem('auth-user');
-
-      // Remover cookies relacionados à autenticação
-      document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
-      document.cookie = 'auth-permissions=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
+      clearAllCookies();
 
       setToken(null);
       setUser(null);

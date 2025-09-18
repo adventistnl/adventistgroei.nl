@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PermissionResolverName } from './types/graphql-global-types'
+import { jwtDecode, JwtPayload } from 'jwt-decode';
+import { validateToken } from './utils/validateToken';
 
 
 
@@ -69,6 +71,13 @@ export function middleware(req: NextRequest) {
 
   if (!token || !userPermissions) {
     return NextResponse.redirect(new URL('/login', req.url));
+  }
+
+  if (token) {
+    const isTokenValid = validateToken(token.value);
+    if (!isTokenValid) {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
   }
 
   let permissions: string[] = [];
