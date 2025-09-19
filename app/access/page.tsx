@@ -39,7 +39,8 @@ import {
   Circle,
   Minus,
   Save,
-  X
+  X,
+  TrendingUp
 } from "lucide-react"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
@@ -48,6 +49,8 @@ import "@/lib/i18n"
 import { AccessKPI } from "@/components/access/access-kpi"
 import { AccessCharts } from "@/components/access/access-charts"
 import { DataTable } from "@/components/ui/data-table"
+import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
+import { AccessAnalyticsCarousel, AnalyticsChartData } from "@/components/shared/analytics-carousel"
 
 // Role Modals
 import { CreateRoleModal, EditRoleModal, DeleteRoleModal } from "@/components/modals/role"
@@ -98,11 +101,111 @@ export default function AccessManagementPage() {
   const canCreateRole = hasPermission(userPermissions, 'CREATE_ROLE')
   const canUpdateRole = hasPermission(userPermissions, 'UPDATE_ROLE')
 
+  // Data loading - moved before useMemo
+  const accessKpiData = getAccessKPIs()
+  const roleDistributionData = getRoleDistribution()
+  const permissionsByGroupData = getPermissionsByGroup()
+  const userActivityData = getUserActivityOverTime()
+
   const breadcrumbs = useMemo(() => [
     { name: "Dashboard", href: "/dashboard" },
     { name: "Users & Access" },
     { name: t('access.title') }
   ], [t])
+
+  // Dados para KPI Cards Carrossel
+  const kpiCardsData: KPICardData[] = useMemo(() => [
+    {
+      id: "total_users",
+      title: "Total Users",
+      value: accessKpiData.totalUsers || 0,
+      icon: Users,
+      subtitle: "Registered users",
+      trend: {
+        value: 12,
+        isPositive: true,
+        label: "vs. last month"
+      }
+    },
+    {
+      id: "total_roles",
+      title: "Total Roles",
+      value: accessKpiData.totalRoles || 0,
+      icon: Shield,
+      subtitle: "Active roles",
+      trend: {
+        value: 8,
+        isPositive: true,
+        label: "vs. last month"
+      }
+    },
+    {
+      id: "total_permissions",
+      title: "Total Permissions",
+      value: accessKpiData.totalPermissions || 0,
+      icon: Lock,
+      subtitle: "Available permissions",
+      trend: {
+        value: 5,
+        isPositive: true,
+        label: "vs. last month"
+      }
+    },
+    {
+      id: "active_users",
+      title: "Active Users",
+      value: accessKpiData.activeUsers || 0,
+      icon: CheckCircle,
+      subtitle: "Currently active",
+      trend: {
+        value: 15,
+        isPositive: true,
+        label: "vs. last month"
+      }
+    },
+    {
+      id: "admin_users",
+      title: "Admin Users",
+      value: accessKpiData.adminUsers || 0,
+      icon: Crown,
+      subtitle: "Administrator access",
+      trend: {
+        value: 2,
+        isPositive: true,
+        label: "vs. last month"
+      }
+    },
+    {
+      id: "user_growth_rate",
+      title: "Growth Rate",
+      value: `${accessKpiData.userGrowthRate || 0}%`,
+      icon: TrendingUp,
+      subtitle: "User growth rate",
+      trend: {
+        value: accessKpiData.userGrowthRate || 0,
+        isPositive: (accessKpiData.userGrowthRate || 0) > 0,
+        label: "active ratio"
+      }
+    }
+  ], [accessKpiData])
+
+  // Dados para Analytics Carousel
+  const analyticsChartsData: AnalyticsChartData[] = useMemo(() => [
+    {
+      id: "access_overview",
+      title: "Access Analytics Overview",
+      description: "Complete overview of roles, permissions and user activity",
+      icon: Shield,
+      content: (
+        <AccessCharts
+          roleDistributionData={roleDistributionData}
+          permissionsByGroupData={permissionsByGroupData}
+          userActivityData={userActivityData}
+          loading={isLoading}
+        />
+      )
+    }
+  ], [roleDistributionData, permissionsByGroupData, userActivityData, isLoading])
 
   usePageTitle({
     title: t('access.title'),
@@ -521,50 +624,43 @@ export default function AccessManagementPage() {
     )
   }
 
-  const kpiData = getAccessKPIs()
-  const roleDistributionData = getRoleDistribution()
-  const permissionsByGroupData = getPermissionsByGroup()
-  const userActivityData = getUserActivityOverTime()
 
   return (
     <AppLayout>
-      <div className="space-y-8">
+      <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h2 className="text-3xl font-bold text-foreground mb-2">
+            <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold text-foreground mb-2">
               {t('access.title')}
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-0.875rem sm:text-1rem">
               {t('access.subtitle')}
             </p>
           </div>
         </div>
 
-        {/* KPI Section */}
-        <AccessKPI data={kpiData} loading={isLoading} />
+        {/* KPI Cards Carrossel */}
+        <KPICards 
+          data={kpiCardsData}
+          isLoading={isLoading}
+          minCardsForCarousel={4}
+          showCarousel={true}
+        />
 
         <Separator />
 
-        {/* Charts Section */}
-        <AccessCharts
-          roleDistributionData={roleDistributionData}
-          permissionsByGroupData={permissionsByGroupData}
-          userActivityData={userActivityData}
-          loading={isLoading}
+        {/* Analytics Charts Carrossel */}
+        <AccessAnalyticsCarousel
+          data={analyticsChartsData}
+          isLoading={isLoading}
         />
 
         <Separator />
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="users" className="space-y-6">
+        <Tabs defaultValue="roles" className="space-y-6">
           <TabsList className="bg-muted">
-            {canListUsers && (
-              <TabsTrigger value="users" className="data-[state=active]:bg-background">
-                <Users className="w-4 h-4 mr-2" />
-                {t('access.tabs.users')}
-              </TabsTrigger>
-            )}
             {canListRoles && (
               <TabsTrigger value="roles" className="data-[state=active]:bg-background">
                 <Shield className="w-4 h-4 mr-2" />
@@ -577,42 +673,6 @@ export default function AccessManagementPage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Users Tab */}
-          {canListUsers && (
-            <TabsContent value="users" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <Users className="w-5 h-5" />
-                        {t('access.users.title')}
-                      </CardTitle>
-                      <CardDescription>
-                        {t('access.users.subtitle')}
-                      </CardDescription>
-                    </div>
-                    
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <DataTable
-                    columns={userColumns}
-                    data={users.filter(u => !u.is_deleted)}
-                    searchKey="name"
-                    searchPlaceholder={t('access.users.table.search_placeholder')}
-                    filterableColumns={[
-                      {
-                        id: "institution_name",
-                        title: "Institution",
-                        options: institutions.map(inst => ({ label: inst.name, value: inst.name }))
-                      }
-                    ]}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-          )}
 
           {/* Roles Tab */}
           {canListRoles && (

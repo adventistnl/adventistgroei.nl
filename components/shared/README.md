@@ -1,205 +1,224 @@
-# User Profile Header Component
+# Componentes Compartilhados (Shared Components)
 
-A reusable header component for user profile pages with responsive design and monochromatic styling.
+## 📊 KPICards
 
-## Features
+### 📋 Visão Geral
 
-- ✅ **Responsive Design**: Mobile-first with collapsible details
-- ✅ **Monochromatic Tags**: Clean, professional appearance with icons only
-- ✅ **Standardized Layout**: Consistent action button and status positioning
-- ✅ **Role Display**: Role badges positioned above user name
-- ✅ **Status Indicators**: Distinct colors for active/inactive users
-- ✅ **Action Menu**: Dropdown with customizable actions
-- ✅ **Internationalization**: Complete EN/NL translation support
-- ✅ **Flexible Props**: Configurable callbacks for different contexts
+Componente reutilizável para exibir cards de KPI (Key Performance Indicators) com funcionalidade de carrossel responsivo. Segue o padrão do dashboard com estilo monocromático e duotone, incluindo skeleton de carregamento.
 
-## Usage
+### 🎨 Características
 
-```tsx
-import { UserProfileHeader } from "@/components/shared"
+- **Padrão Dashboard**: Segue o estilo padrão do sistema com cards monocromáticos
+- **Totalmente Responsivo**: Mobile-first design com breakpoints otimizados
+- **Carrossel Inteligente**: Ativa apenas quando necessário (mínimo de cards)
+- **Skeleton Loading**: Estados de carregamento com skeleton animado
+- **i18n Completo**: Suporte para EN/NL/PT com traduções automáticas
+- **Estilo Duotone**: Ícones e cores monocromáticas com acentos sutis
+- **Tendências Visuais**: Indicadores de crescimento com ícones TrendingUp/Down
 
-function UserDetailPage() {
-  return (
-    <UserProfileHeader
-      user={user}
-      userInstitution={userInstitution}
-      userChurch={userChurch}
-      userRegion={userRegion}
-      userDepartment={userDepartment}
-      onSendMessage={() => setIsChatOpen(true)}
-      onViewContact={() => setIsContactOpen(true)}
-      onEditUser={() => setIsEditOpen(true)}
-      onDeleteUser={() => setIsDeleteOpen(true)}
-      showBackButton={true}
-      onBack={() => router.back()}
-    />
-  )
+### 📦 Interface
+
+```typescript
+interface KPICardData {
+  id: string
+  title: string
+  value: string | number
+  icon: LucideIcon
+  subtitle?: string
+  trend?: {
+    value: number
+    isPositive: boolean
+    label?: string
+  }
+}
+
+interface KPICardsProps {
+  data: KPICardData[]
+  className?: string
+  minCardsForCarousel?: number
+  showCarousel?: boolean
+  isLoading?: boolean
+  skeletonCount?: number
 }
 ```
 
-## Props
+### 🚀 Como Usar
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `user` | `User` | ✅ | User object with all user data |
-| `userInstitution` | `Institution` | ❌ | User's institution details |
-| `userChurch` | `Church` | ❌ | User's church details |
-| `userRegion` | `Region` | ❌ | User's region details |
-| `userDepartment` | `Department` | ❌ | User's department details |
-| `showBackButton` | `boolean` | ❌ | Show/hide back navigation button |
-| `onBack` | `() => void` | ❌ | Callback for back button |
-| `onSendMessage` | `() => void` | ❌ | Callback for send message action |
-| `onViewContact` | `() => void` | ❌ | Callback for view contact action |
-| `onEditUser` | `() => void` | ❌ | Callback for edit user action |
-| `onDeleteUser` | `() => void` | ❌ | Callback for delete user action |
-| `className` | `string` | ❌ | Additional CSS classes |
-
-## Responsive Behavior
-
-### Desktop Layout
-```
-[Avatar] [Name + Email + Org Tags]     [Status] [Action Menu]
-         [Roles above name]            [Language]
-```
-
-### Mobile Layout
-```
-[Avatar] [Name + Email]
-         [Roles above name]
-         [Collapsible Org Details]
-         [Status + Language + Action Menu]
-```
-
-## Organization Tags
-
-Monochromatic tags with icons only:
+#### 1. Importar o Componente
 
 ```typescript
-const organizationTags = [
+import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
+```
+
+#### 2. Preparar os Dados
+
+```typescript
+const kpiCardsData: KPICardData[] = [
   {
-    icon: Building,
-    label: "Institution",
-    value: userInstitution?.name,
-    color: "text-blue-600"
-  },
-  {
-    icon: Home,
-    label: "Church", 
-    value: userChurch?.name,
-    color: "text-blue-600"
-  },
-  {
+    id: "total-items",
+    title: "Total Items",
+    value: 150,
     icon: MapPin,
-    label: "Region",
-    value: userRegion?.name || 'None',
-    color: "text-green-600"
+    subtitle: "Active items"
   },
   {
-    icon: Shield,
-    label: "Department",
-    value: userDepartment?.name || 'None',
-    color: "text-emerald-600"
+    id: "budget",
+    title: "Budget",
+    value: "$2.5M",
+    icon: DollarSign,
+    subtitle: "Annual budget",
+    trend: {
+      value: 5.2,
+      isPositive: true,
+      label: "vs last month"
+    }
   }
 ]
 ```
 
-## Status Colors
-
-Distinct color coding for user status:
+#### 3. Renderizar
 
 ```typescript
-// Active User
-className="bg-green-100 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800"
-
-// Inactive User  
-className="bg-red-100 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800"
-```
-
-## Mobile Collapsible
-
-Organization details collapse on mobile for better space utilization:
-
-```tsx
-<div className="sm:hidden">
-  <Collapsible open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-    <CollapsibleTrigger asChild>
-      <Button variant="outline" size="sm" className="w-full justify-between">
-        <span className="flex items-center gap-2">
-          <Building className="w-4 h-4" />
-          Organization Details
-        </span>
-        {isDetailsOpen ? <ChevronDown /> : <ChevronRight />}
-      </Button>
-    </CollapsibleTrigger>
-    <CollapsibleContent>
-      {/* Organization tags */}
-    </CollapsibleContent>
-  </Collapsible>
-</div>
-```
-
-## Action Menu
-
-Customizable dropdown menu with conditional actions:
-
-```tsx
-<DropdownMenuContent align="end" className="w-48">
-  {onSendMessage && (
-    <DropdownMenuItem onClick={onSendMessage}>
-      <Send className="w-4 h-4 mr-2" />
-      Send Message
-    </DropdownMenuItem>
-  )}
-  {/* More conditional actions */}
-</DropdownMenuContent>
-```
-
-## Styling
-
-- **Monochromatic**: Neutral colors with minimal accent colors
-- **Professional**: Clean, business-appropriate design
-- **Consistent**: Uses shadcn/ui components throughout
-- **Accessible**: Proper contrast and keyboard navigation
-
-## Example Implementations
-
-### User Detail Page
-```tsx
-<UserProfileHeader
-  user={user}
-  userInstitution={institution}
-  userChurch={church}
-  userRegion={region}
-  userDepartment={department}
-  showBackButton={true}
-  onBack={() => router.back()}
-  onEditUser={() => setEditModalOpen(true)}
-  onDeleteUser={() => setDeleteModalOpen(true)}
+<KPICards 
+  data={kpiCardsData}
+  isLoading={false}
+  minCardsForCarousel={4}
+  showCarousel={true}
 />
 ```
 
-### User Card in List
-```tsx
-<UserProfileHeader
-  user={user}
-  userInstitution={institution}
-  userChurch={church}
-  showBackButton={false}
-  onSendMessage={() => openChat(user)}
-  onViewContact={() => showContact(user)}
-  className="mb-4"
+### 🎯 Componentes Wrapper
+
+Para facilitar o uso, existem componentes wrapper específicos:
+
+#### RegionsKPICards
+```typescript
+<RegionsKPICards data={kpiCardsData} isLoading={false} />
+```
+
+#### ChurchesKPICards
+```typescript
+<ChurchesKPICards data={kpiCardsData} isLoading={false} />
+```
+
+#### DepartmentsKPICards
+```typescript
+<DepartmentsKPICards data={kpiCardsData} isLoading={false} />
+```
+
+### 📱 Responsividade
+
+#### Mobile (< 640px)
+- **Grid**: 1 coluna
+- **Cards**: Largura mínima 280px
+- **Fontes**: text-sm (0.875rem)
+- **Ícones**: h-4 w-4 (16px)
+- **Gap**: 1.5rem (24px)
+
+#### Tablet (640px - 1024px)
+- **Grid**: 2 colunas (md:grid-cols-2)
+- **Cards**: Flexível com tamanho mínimo
+- **Fontes**: text-sm (0.875rem)
+- **Ícones**: h-4 w-4 (16px)
+- **Gap**: 1.5rem (24px)
+
+#### Desktop (> 1024px)
+- **Grid**: 4 colunas (lg:grid-cols-4) ou carrossel se > 4 cards
+- **Cards**: Tamanho otimizado
+- **Fontes**: text-sm (0.875rem)
+- **Ícones**: h-4 w-4 (16px)
+- **Gap**: 1.5rem (24px)
+
+### 🎠 Lógica do Carrossel
+
+#### Quando Ativa o Carrossel
+- `showCarousel = true`
+- `data.length >= minCardsForCarousel` (padrão: 4)
+
+#### Quando Usa Grid
+- `showCarousel = false` OU
+- `data.length < minCardsForCarousel`
+
+#### Configuração do Carrossel
+```typescript
+opts={{
+  align: "start",
+  loop: false,
+  skipSnaps: false,
+  dragFree: true,
+}}
+```
+
+### 🎨 Estilos e Cores
+
+#### Padrão Monocromático
+- **Ícones**: `text-muted-foreground` (cor padrão do sistema)
+- **Títulos**: `text-sm font-medium` (padrão do dashboard)
+- **Valores**: `text-2xl font-bold` (destaque principal)
+- **Subtítulos**: `text-xs text-muted-foreground` (informação secundária)
+
+#### Tendências Duotone
+- **Positiva**: `TrendingUp` com `text-green-500`
+- **Negativa**: `TrendingDown` com `text-red-500`
+- **Labels**: Texto opcional para contexto (ex: "vs last month")
+
+### 🌍 Internacionalização
+
+#### Traduções Automáticas
+- **Detecção**: Automática via `i18n.language`
+- **Fallback**: Inglês se idioma não suportado
+- **Formatação**: Números localizados por idioma
+
+#### Arquivo de Traduções
+```typescript
+// /lib/translations/kpi.ts
+export const kpiTranslations = {
+  en: { /* traduções em inglês */ },
+  nl: { /* traduções em holandês */ },
+  pt: { /* traduções em português */ }
+}
+```
+
+### 🔧 Customização
+
+#### Props Opcionais
+- `className`: Classes CSS customizadas
+- `minCardsForCarousel`: Mínimo de cards para carrossel (padrão: 4)
+- `showCarousel`: Forçar carrossel (padrão: true)
+- `translationKey`: Chave para traduções específicas
+
+#### Exemplo de Customização
+```typescript
+<KPICardsCarousel
+  data={kpiCardsData}
+  className="my-custom-class"
+  minCardsForCarousel={3}
+  showCarousel={false}
+  translationKey="custom.kpi"
 />
 ```
 
-### Admin Dashboard
-```tsx
-<UserProfileHeader
-  user={selectedUser}
-  userInstitution={institution}
-  userChurch={church}
-  userRegion={region}
-  userDepartment={department}
-  onEditUser={() => openEditModal(selectedUser)}
-  onDeleteUser={() => openDeleteModal(selectedUser)}
-/>
-```
+### ✅ Funcionalidades
+
+- ✅ **Padrão Dashboard**: Estilo consistente com o sistema
+- ✅ **Responsivo**: Mobile-first design
+- ✅ **Carrossel Inteligente**: Ativa quando necessário
+- ✅ **Skeleton Loading**: Estados de carregamento animados
+- ✅ **i18n**: Traduções automáticas
+- ✅ **Tendências**: Indicadores visuais com ícones TrendingUp/Down
+- ✅ **Ícones**: Suporte a qualquer ícone Lucide
+- ✅ **Monocromático**: Estilo duotone consistente
+- ✅ **Acessibilidade**: ARIA labels e navegação por teclado
+- ✅ **Performance**: useMemo para otimização
+- ✅ **TypeScript**: Tipagem completa
+
+### 🎯 Casos de Uso
+
+1. **Dashboard Principal**: Métricas gerais do sistema
+2. **Páginas de Gestão**: KPIs específicos por entidade
+3. **Relatórios**: Indicadores de performance
+4. **Análises**: Métricas de tendência e crescimento
+
+### 🔄 Reutilização
+
+Este componente foi projetado para ser usado em **qualquer página** do sistema que precise exibir métricas. A estrutura de dados é flexível e pode ser facilmente adaptada para diferentes contextos.

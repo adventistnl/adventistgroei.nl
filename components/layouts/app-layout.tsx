@@ -3,6 +3,7 @@
 import React from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { ModernHeader } from "@/components/modern-header"
+import { MobileHeader } from "@/components/mobile-header"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -37,22 +38,32 @@ export function AppLayout({ children }: AppLayoutProps) {
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <ModernHeader />
+          {/* Mobile Header - Visível apenas em dispositivos móveis */}
+          <div className="md:hidden">
+            <MobileHeader />
+          </div>
           
-          {/* Breadcrumbs */}
+          {/* Desktop Header - Visível apenas em desktop */}
+          <div className="hidden md:block">
+            <ModernHeader />
+          </div>
+          
+          {/* Breadcrumbs - Apenas no desktop */}
           {breadcrumbs && breadcrumbs.length > 1 && (
-            <div className="px-6 pt-4">
+            <div className="hidden md:block px-6 pt-4">
               <Breadcrumb>
                 <BreadcrumbList>
                   {breadcrumbs.map((breadcrumb, index) => (
                     <React.Fragment key={index}>
                       <BreadcrumbItem>
-                        {'isActive' in breadcrumb && breadcrumb.isActive ? (
-                          <BreadcrumbPage>{'label' in breadcrumb ? breadcrumb.label : breadcrumb.name}</BreadcrumbPage>
-                        ) : (
-                          <BreadcrumbLink href={'href' in breadcrumb ? breadcrumb.href : breadcrumb.href}>
-                            {'label' in breadcrumb ? breadcrumb.label : breadcrumb.name}
+                        {breadcrumb.href ? (
+                          <BreadcrumbLink href={breadcrumb.href}>
+                            {'label' in breadcrumb ? breadcrumb.label : (breadcrumb as any).name}
                           </BreadcrumbLink>
+                        ) : (
+                          <BreadcrumbPage>
+                            {'label' in breadcrumb ? breadcrumb.label : (breadcrumb as any).name}
+                          </BreadcrumbPage>
                         )}
                       </BreadcrumbItem>
                       {index < breadcrumbs.length - 1 && <BreadcrumbSeparator />}

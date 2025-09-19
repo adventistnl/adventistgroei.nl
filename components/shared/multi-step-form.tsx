@@ -2,10 +2,10 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { StepHead } from "./step-head"
-import { StepFields } from "./step-fields"
+import { StepTitle } from "./step-title"
+import { StepFieldsContainer } from "./step-fields-container"
 import { StepProgress } from "./step-progress"
-import { StepNavigation } from "./step-navigation"
+import { StepButtons } from "./step-buttons"
 
 interface Step {
   id: string
@@ -29,12 +29,12 @@ interface MultiStepFormProps {
   submittingLabel?: string
   // Styling options
   showStepperAtTop?: boolean
-  stepperVariant?: "circles" | "progress" | "both"
-  // Gap customization
-  headGap?: string
-  fieldsGap?: string
-  navigationGap?: string
-  stepperGap?: string
+  stepperVariant?: "circles" | "progress" | "both" | "modern" | "minimal"
+  titleVariant?: "default" | "centered" | "left"
+  buttonsVariant?: "default" | "minimal" | "modern"
+  // Layout customization
+  fieldsLayout?: "flex" | "grid" | "stack"
+  containerGap?: string
 }
 
 export function MultiStepForm({
@@ -49,11 +49,11 @@ export function MultiStepForm({
   submitLabel = "Submit",
   submittingLabel = "Submitting...",
   showStepperAtTop = false,
-  stepperVariant = "circles",
-  headGap = "2rem",
-  fieldsGap = "2rem",
-  navigationGap = "1.5rem",
-  stepperGap = "1.5rem"
+  stepperVariant = "modern",
+  titleVariant = "centered",
+  buttonsVariant = "modern",
+  fieldsLayout = "stack",
+  containerGap = "2.5rem"
 }: MultiStepFormProps) {
   const totalSteps = steps.length
   const currentStepData = steps[currentStep - 1]
@@ -104,9 +104,9 @@ export function MultiStepForm({
 
   return (
     <div 
-      className={cn("w-full flex flex-col", className)} 
+      className={cn("w-full flex mt-4 flex-col", className)} 
       onKeyDown={handleKeyPress}
-      style={{ gap: "2rem" }}
+      style={{ gap: containerGap }}
     >
       
       {/* Stepper at Top (optional) */}
@@ -119,23 +119,25 @@ export function MultiStepForm({
         />
       )}
       
-      {/* Head: Step Title and Description */}
-      <StepHead
+      {/* Title: Step Title and Description */}
+      {/* <StepTitle
         title={currentStepData.title}
         description={currentStepData.description}
-        className="mb-1rem"
-      />
+        variant={titleVariant}
+        className="mb-1.5rem"
+      /> */}
 
       {/* Fields: Current Step Content */}
-      <StepFields 
-        className="mb-1rem"
-        gap="1.5rem"
+      <StepFieldsContainer 
+        layout={fieldsLayout}
+        gap="2.5rem"
+        className="mb-2rem"
       >
         {currentStepData.fields}
-      </StepFields>
+      </StepFieldsContainer>
 
-      {/* Navigation Buttons */}
-      <StepNavigation
+      {/* Buttons: Navigation */}
+      <StepButtons
         currentStep={currentStep}
         totalSteps={totalSteps}
         onPrevious={handlePrevious}
@@ -145,7 +147,8 @@ export function MultiStepForm({
         nextLabel={nextLabel}
         submitLabel={submitLabel}
         submittingLabel={submittingLabel}
-        className="mb-1rem"
+        variant={buttonsVariant}
+        className="mb-1.5rem"
       />
 
       {/* Stepper at Bottom (default) */}

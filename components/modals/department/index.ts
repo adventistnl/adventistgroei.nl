@@ -1,6 +1,6 @@
 export { AddDepartmentModal } from './add-department-modal'
 export { EditDepartmentModal } from './edit-department-modal'
 export { DeleteDepartmentModal } from './delete-department-modal'
-export type { DepartmentData, ContactData, ChurchData, AddDepartmentModalProps, EditDepartmentModalProps, DeleteDepartmentModalProps } from './add-department-modal'
+export type { DepartmentData, ContactData, ChurchData, AddDepartmentModalProps } from './add-department-modal'
 export type { EditDepartmentModalProps } from './edit-department-modal'
 export type { DeleteDepartmentModalProps } from './delete-department-modal'

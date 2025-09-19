@@ -52,9 +52,16 @@ const navMainBase: NavItem[] = [
     url: "/dashboard",
     icon: BarChart3,
   },
-  { title: "Structure & Organization", 
-    url: "/structure",
-    icon: Building2, 
+  {
+    title: "Structure & Organization",
+    url: "#",
+    icon: Building2,
+    items: [
+      { title: "Institutions", url: "/institutions" },
+      { title: "Regions", url: "/regions" },
+      { title: "Churches", url: "/churches" },
+      { title: "Departments", url: "/departments" },
+    ],
   },
   {
     title: "Users & Access",
@@ -144,7 +151,7 @@ export const navigation: NavigationItem[] = [
     name: "Structure & Organization",
     icon: Building,
     items: [
-      { name: "Structure", href: "/structure", icon: Building },
+      { name: "Institutions", href: "/institutions", icon: Building },
       { name: "Regions", href: "/regions", icon: Map },
       { name: "Churches", href: "/churches", icon: Church },
       { name: "Departments", href: "/departments", icon: Briefcase },
