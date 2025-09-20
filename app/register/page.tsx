@@ -117,7 +117,6 @@ function RegisterPageContent() {
     translations: i18n?.language || "en",
     defaultInstitutionId: DEFAULT_INSTITUTION_ID,
   })
-
   // Obter traduções para o idioma atual
   const currentLanguage = i18n?.language || 'en'
   const t = registerTranslations[currentLanguage as keyof typeof registerTranslations] || registerTranslations.en
@@ -135,7 +134,7 @@ function RegisterPageContent() {
       validation: validateStep1,
       fields: (
         <PersonalInfoStep
-          control={form.control}
+          form={form}
           translations={{
             name: t.name,
             namePlaceholder: t.namePlaceholder,

@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { User, Mail } from "lucide-react"
-import { Control } from "react-hook-form"
+import { Control, UseFormReturn } from "react-hook-form"
 import {
   FormControl,
   FormDescription,
@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input"
 
 interface PersonalInfoStepProps {
-  control: Control<any>
+  form: UseFormReturn<any>
   translations: {
     name: string
     namePlaceholder: string
@@ -30,12 +30,17 @@ interface PersonalInfoStepProps {
  * Coleta nome completo e email do usuário
  * Email pode ser pré-preenchido pelo convite
  */
-export function PersonalInfoStep({ control, translations, inviteEmail }: PersonalInfoStepProps) {
+export function PersonalInfoStep({ form, translations, inviteEmail }: PersonalInfoStepProps) {
+  React.useEffect(() => {
+    if (inviteEmail) {
+      form.setValue("email", inviteEmail);
+    }
+  }, [inviteEmail, form]);
   return (
     <div className="grid gap-4">
       {/* Campo Nome */}
       <FormField
-        control={control}
+        control={form.control}
         name="name"
         render={({ field }) => (
           <FormItem>
@@ -57,7 +62,7 @@ export function PersonalInfoStep({ control, translations, inviteEmail }: Persona
 
       {/* Campo Email */}
       <FormField
-        control={control}
+        control={form.control}
         name="email"
         render={({ field }) => (
           <FormItem>
@@ -71,6 +76,7 @@ export function PersonalInfoStep({ control, translations, inviteEmail }: Persona
                 type="email" 
                 className="h-3rem text-1rem bg-background border-2 border-border focus:border-primary focus:ring-2 focus:ring-primary/20"
                 disabled={!!inviteEmail}
+
                 {...field} 
               />
             </FormControl>

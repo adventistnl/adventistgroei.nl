@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { useCookies } from "./use-cookies";
 import { useGetUserQuery } from "./graphql/use-get-user-query";
+import { useCreateUserMutation } from "./graphql/use-create-user-mutation";
+import { CreateUserVariables } from "@/types/CreateUser";
 
 function decodeJWT(token: string): any {
   try {
@@ -24,14 +26,17 @@ export function useUser({token, id}:{token?: string, id?: string}) {
     return decoded?.sub || null;
   }, [jwt]);
 
-  const { data, error, loading, ...rest } = useGetUserQuery({ id: id ? id : loggedUserId },);
+  const { data, error, loading } = useGetUserQuery({ id: id ? id : loggedUserId },);
+
+
+  const [createUser] = useCreateUserMutation();
 
   return {
     user: data?.user || null,
     loggedUserId,
     loading,
     error,
-    ...rest
+    createUser,
   };
 }
   

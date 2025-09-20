@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useState } from "react"
-import { UserPlus, Mail, Link as LinkIcon, Shield, Copy } from "lucide-react"
+import { UserPlus, Mail, Link as LinkIcon, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -39,6 +39,7 @@ import { useUser } from "@/hooks/use-user"
 import { useRoles } from "@/hooks/use-roles"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
+import { InviteUserVariables } from "@/types/InviteUser"
 
 const inviteSchema = z.object({
   type: z.enum(["email", "link"]),
@@ -66,10 +67,8 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generatedLink, setGeneratedLink] = useState("");
-  // Get translations for current language with fallback
   const currentLanguage = i18n?.language || "en";
   const t = inviteTranslations[currentLanguage as keyof typeof inviteTranslations] || inviteTranslations.en;
-  
 
   const form = useForm<InviteForm>({
     resolver: zodResolver(inviteSchema),
@@ -86,31 +85,30 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
   // Auto-generate link when role is selected for link type
   React.useEffect(() => {
     if (inviteType === "link" && selectedRole) {
-      generateLinkForRole();
+      generateLinkForRole({
+            inviter_id: loggedUserId, // Replace with actual inviter ID
+            email: '',
+            institution_id: activeInstitution.id,
+            language_preference: currentLanguage,
+            role_ids: [selectedRole],
+          });
     }
   }, [inviteType, selectedRole]);
 
-  const generateLinkForRole = async (): Promise<{ inviteToken: string, generatedLink: string } | undefined> => {
+  const generateLinkForRole = async (variables: InviteUserVariables): Promise<{ inviteToken: string, generatedLink: string } | undefined> => {
     if (!selectedRole) return;
     
     try {
       // const languagePreference: LanguagePreference = currentLanguage === "en" ? LanguagePreference.En : LanguagePreference.Nl;
-      console.log("Generating link with id", user);
       const { data } = await inviteUser({
-        variables: {
-          role_ids: [selectedRole],
-          email: "", // Optional, depending on the invite type
-          institution_id: user?.institution_id || "",
-          inviter_id: loggedUserId || '', // Replace with actual inviter ID
-          language_preference: currentLanguage,
-        },
+        variables,
       });
 
       const inviteToken = data?.inviteUser?.token;
       if (inviteToken) {
         const inviteLink = `${window.location.origin}/register?invite=${inviteToken}`;
         setGeneratedLink(inviteLink);
-        return { inviteToken, generatedLink };
+        return { inviteToken, generatedLink: inviteLink };
       }
       return;
     } catch (error) {
@@ -135,32 +133,38 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
         return;
       }
 
-      const generated = await generateLinkForRole();
-
-      if (!generated || !generated.inviteToken || !generatedLink) {
-        toast.error(t.invitationFailed);
-        setIsSubmitting(false);
-        return;
-      }
-
       if (data.type === "email") {
+        const variables: InviteUserVariables = {
+          email: data.email!,
+          inviter_id: loggedUserId!, // Replace with actual inviter ID
+          institution_id: activeInstitution.id,
+          language_preference: currentLanguage,
+          role_ids: [data.role],
+        }
+        const generated = await generateLinkForRole(variables);
+
+        if (!generated || !generated.inviteToken || !generated.generatedLink) {
+          toast.error(t.invitationFailed);
+          setIsSubmitting(false);
+          return;
+        }
+
         await sendInviteEmail({
           variables: {
             inviter_id: loggedUserId, // Replace with actual inviter ID
             to: data.email!,
             message: data.message || null,
-            url: generatedLink,
+            url: generated.generatedLink,
           },
         });
 
         toast.dismiss(loadingToast);
         toast.success(t.invitationSent);
-        setOpen(false);
+        // setOpen(false);
         form.reset();
       }
     } catch (error) {
       toast.error(t.invitationFailed);
-      console.error("Error sending invite email:", error);
     } finally {
       setIsSubmitting(false);
     }

@@ -39,7 +39,7 @@ export const useInstitution = () => {
 // Dados mockados das instituições
 const MOCK_INSTITUTIONS: Institution[] = [
   {
-    id: "usp",
+    id: "5290578a-b88e-43c3-98dd-a7694910fc6b",
     name: "União Sul-Paulista",
     denomination: "SDA",
     language_preference: "en",

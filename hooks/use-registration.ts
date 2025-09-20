@@ -8,6 +8,10 @@ import * as z from "zod"
 import toast from "react-hot-toast"
 import { validateToken } from "@/utils/validateToken"
 import { jwtDecode } from "jwt-decode"
+import { useCreateUserMutation } from "./graphql/use-create-user-mutation"
+import { InviteUserVariables } from "@/types/InviteUser"
+import { useAuth } from "@/contexts/auth-context"
+import { DecodeError } from "next/dist/shared/lib/utils"
 
 // Schema de validação para o formulário de registro
 const registrationSchema = z.object({
@@ -45,9 +49,10 @@ interface UseRegistrationProps {
 export function useRegistration({ translations, defaultInstitutionId }: UseRegistrationProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  
+  const [ createUser ] = useCreateUserMutation();
+  const {login} = useAuth();
   // Estados do componente
-  const [inviteData, setInviteData] = useState<InviteData | null>(null)
+  const [inviteData, setInviteData] = useState<InviteUserVariables | null>(null)
   const [isValidInvite, setIsValidInvite] = useState<boolean | null>(null)
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -105,7 +110,6 @@ export function useRegistration({ translations, defaultInstitutionId }: UseRegis
       ...loadSavedData(), // Carrega dados salvos
     },
   })
-
   const selectedDepartment = form.watch("department_id")
 
   /**
@@ -183,10 +187,10 @@ export function useRegistration({ translations, defaultInstitutionId }: UseRegis
 
     if (isValid) {
       try {
-        const decodedToken = jwtDecode<InviteData>(token)
+        const decodedToken = jwtDecode<InviteUserVariables>(token)
         setInviteData(decodedToken)
+        form.register("email", { value: decodedToken.email || "" });
       } catch (error) {
-        console.error("Erro ao decodificar o token:", error)
         setIsValidInvite(false)
       }
     }
@@ -263,7 +267,6 @@ export function useRegistration({ translations, defaultInstitutionId }: UseRegis
       toast.error("Dados do convite não encontrados. Tente novamente.")
       return
     }
-
     setIsSubmitting(true)
     
     try {
@@ -284,44 +287,37 @@ export function useRegistration({ translations, defaultInstitutionId }: UseRegis
         name: data.name,
         email: data.email,
         password: data.password,
-        language_preference: "pt", // Será obtido do contexto
-        institution_id: defaultInstitutionId,
+        language_preference: inviteData.language_preference,
+        institution_id: inviteData.institution_id,
         department_id: data.department_id,
         church_id: data.church_id,
-        contact: {
-          name: null,
-          phone: null,
-          mobile: null,
-          email: null,
-          country: null,
-          city: null,
-          address: null,
-          full_address: null,
-          website: null,
-          postal_code: null,
-          notes: null
-        }
       }
       
-      console.log("Registration data:", registrationData)
-      
       toast.dismiss(loadingToast)
+
+      const { data: userCreated, error } = await createUser({ variables: registrationData });
+      if (error || !userCreated) {
+        toast.error(translations.registrationError, { duration: 5000 })
+        throw new Error(translations.registrationError);
+      }
+      
       toast.success(translations.registrationSuccess, {
         duration: 6000,
         style: { minWidth: '350px' }
       })
       
       // Limpar dados salvos após registro bem-sucedido
-      clearSavedData()
       
-      // Redirecionar para login após sucesso
-      setTimeout(() => {
-        router.push(`/login?registered=true&email=${encodeURIComponent(data.email)}&role=${inviteData.role}`)
-      }, 2000)
+      // // Redirecionar para login após sucesso
+      await login(data.email, data.password);
+      router.push(`/dashboard`);
+      clearSavedData()
+      return userCreated.createUser || null;  
       
     } catch (error) {
       console.error("Registration error:", error)
       toast.error(translations.registrationError, { duration: 5000 })
+    } finally {
       setIsSubmitting(false)
     }
   }

@@ -21,7 +21,6 @@ export function WithPermission({
   fallback = null,
 }: WithPermissionProps) {
   const hasPermission = useHasPermission(requiredPermissions);
-  console.log('User has permission:', hasPermission, 'for permissions:', requiredPermissions);
 
   if (!hasPermission) {
     return <>{fallback}</>;
