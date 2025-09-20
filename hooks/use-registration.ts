@@ -6,6 +6,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import toast from "react-hot-toast"
+import { validateToken } from "@/utils/validateToken"
+import { jwtDecode } from "jwt-decode"
 
 // Schema de validação para o formulário de registro
 const registrationSchema = z.object({
@@ -168,39 +170,29 @@ export function useRegistration({ translations, defaultInstitutionId }: UseRegis
    * Decodifica JWT e verifica expiração
    */
   useEffect(() => {
-    const inviteToken = searchParams.get("invite")
-    
-    if (!inviteToken) {
+    const token = searchParams.get("invite")
+
+    if (!token) {
       setIsValidInvite(false)
+      setIsLoading(false)
       return
     }
 
-    try {
-      // Decodificar JWT simulado
-      const decodedInvite = JSON.parse(atob(inviteToken)) as InviteData
-      
-      // Verificar se o convite não expirou
-      if (decodedInvite.expiresAt < Date.now()) {
+    const isValid = validateToken(token)
+    setIsValidInvite(isValid)
+
+    if (isValid) {
+      try {
+        const decodedToken = jwtDecode<InviteData>(token)
+        setInviteData(decodedToken)
+      } catch (error) {
+        console.error("Erro ao decodificar o token:", error)
         setIsValidInvite(false)
-        toast.error(translations.expiredInvite)
-        return
       }
-
-      setInviteData(decodedInvite)
-      setIsValidInvite(true)
-
-      // Se o convite tem email específico, preencher o campo
-      if (decodedInvite.email) {
-        form.setValue("email", decodedInvite.email)
-      }
-
-      toast.success(translations.validInvite)
-      
-    } catch (error) {
-      setIsValidInvite(false)
-      toast.error(translations.invalidInviteError)
     }
-  }, [searchParams, form, translations])
+
+    setIsLoading(false)
+  }, [searchParams])
 
   /**
    * Limpar igreja quando departamento muda

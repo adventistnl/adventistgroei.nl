@@ -41,6 +41,8 @@ import { useTranslation } from "react-i18next"
 import { useInstitution } from "@/contexts/institution-context"
 import { inviteTranslations } from "@/lib/translations/invite"
 import { RoleSelector } from "@/components/shared/role-selector"
+import { useInviteUser } from "@/hooks/use-invite-user"
+import { LanguagePreference } from "@/types/graphql-global-types"
 
 const inviteSchema = z.object({
   type: z.enum(["email", "link"]),
@@ -66,16 +68,16 @@ interface InviteModalProps {
 }
 
 export function InviteModal({ children, onInviteSent }: InviteModalProps) {
-  const { i18n } = useTranslation()
-  const { activeInstitution } = useInstitution()
-  const [open, setOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [generatedLink, setGeneratedLink] = useState("")
+  const [inviteUser] = useInviteUser();
+  const { i18n } = useTranslation();
+  const { activeInstitution } = useInstitution();
+  const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [generatedLink, setGeneratedLink] = useState("");
 
   // Get translations for current language with fallback
-  const currentLanguage = i18n?.language || 'en'
-  const t = inviteTranslations[currentLanguage as keyof typeof inviteTranslations] || inviteTranslations.en
-
+  const currentLanguage = i18n?.language || "en";
+  const t = inviteTranslations[currentLanguage as keyof typeof inviteTranslations] || inviteTranslations.en;
 
   const form = useForm<InviteForm>({
     resolver: zodResolver(inviteSchema),
@@ -84,37 +86,44 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
       role: "",
       message: "",
     },
-  })
+  });
 
-  const inviteType = form.watch("type")
-  const selectedRole = form.watch("role")
+  const inviteType = form.watch("type");
+  const selectedRole = form.watch("role");
 
   // Auto-generate link when role is selected for link type
   React.useEffect(() => {
-    if (inviteType === "link" && selectedRole && !generatedLink) {
-      generateLinkForRole()
+    if (inviteType === "link" && selectedRole) {
+      generateLinkForRole();
     }
-  }, [inviteType, selectedRole, generatedLink])
+  }, [inviteType, selectedRole]);
 
   const generateLinkForRole = async () => {
-    if (!selectedRole) return
-    
-    try {
-      const mockJWT = btoa(JSON.stringify({
-        type: "link",
-        role: selectedRole,
-        institution: activeInstitution?.id || "default-institution",
-        expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000), // 7 days default
-        invitedBy: "current-user-id",
-        timestamp: Date.now()
-      }))
+    if (!selectedRole) return;
 
-      const inviteLink = `${window.location.origin}/register?invite=${mockJWT}`
-      setGeneratedLink(inviteLink)
+    try {
+      const languagePreference: LanguagePreference = currentLanguage === "en" ? LanguagePreference.En : LanguagePreference.Nl;
+
+      const { data } = await inviteUser({
+        variables: {
+          role_ids: [selectedRole],
+          email: "", // Optional, depending on the invite type
+          institution_id: activeInstitution?.id || "default-institution",
+          inviter_id: "current-user-id", // Replace with actual inviter ID
+          language_preference: languagePreference,
+        },
+      });
+
+      const inviteToken = data?.inviteUser?.token;
+      if (inviteToken) {
+        const inviteLink = `${window.location.origin}/register?invite=${inviteToken}`;
+        setGeneratedLink(inviteLink);
+      }
     } catch (error) {
-      console.error('Error generating link:', error)
+      toast.error(t.generateLinkError);
+      console.error("Error generating invite link:", error);
     }
-  }
+  };
 
   const onSubmit = async (data: InviteForm) => {
     setIsSubmitting(true)

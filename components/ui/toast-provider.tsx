@@ -16,47 +16,46 @@ export function ToastProvider() {
       toastOptions={{
         duration: 4000,
         style: {
-          background: 'hsl(var(--card))',
-          color: 'hsl(var(--card-foreground))',
-          border: '1px solid hsl(var(--border))',
-          borderRadius: 'calc(var(--radius) - 2px)',
+          background: '#ffffff', // Branco vibrante
+          color: '#1a202c', // Texto preto vibrante
+          border: '1px solid #cbd5e0', // Borda cinza médio
+          borderRadius: 'calc(var(--radius, 4px) - 2px)',
           fontSize: '14px',
           padding: '0',
-          boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-          backdropFilter: 'blur(8px)',
+          boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1)',
           maxWidth: '420px',
         },
         success: {
           style: {
-            background: 'hsl(var(--card))',
-            color: 'hsl(var(--card-foreground))',
-            border: '1px solid hsl(var(--primary) / 0.2)',
+            background: '#caffe3', // Verde vibrante para sucesso
+            color: '#065f46',
+            border: '1px solid #10b981',
           },
           iconTheme: {
-            primary: 'hsl(var(--primary))',
-            secondary: 'hsl(var(--primary-foreground))',
+            primary: '#059669',
+            secondary: '#d1fae5',
           },
         },
         error: {
           style: {
-            background: 'hsl(var(--card))',
-            color: 'hsl(var(--card-foreground))',
-            border: '1px solid hsl(var(--destructive) / 0.2)',
+            background: '#fee2e2', // Vermelho vibrante para erro
+            color: '#991b1b',
+            border: '1px solid #ef4444',
           },
           iconTheme: {
-            primary: 'hsl(var(--destructive))',
-            secondary: 'hsl(var(--destructive-foreground))',
+            primary: '#dc2626',
+            secondary: '#fee2e2',
           },
         },
         loading: {
           style: {
-            background: 'hsl(var(--card))',
-            color: 'hsl(var(--card-foreground))',
-            border: '1px solid hsl(var(--border))',
+            background: '#ffffff', // Mesmo estilo padrão
+            color: '#1a202c',
+            border: '1px solid #cbd5e0',
           },
           iconTheme: {
-            primary: 'hsl(var(--muted-foreground))',
-            secondary: 'hsl(var(--card))',
+            primary: '#4a5568',
+            secondary: '#ffffff',
           },
         },
       }}

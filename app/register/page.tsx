@@ -20,6 +20,7 @@ import { InstitutionDataStep } from "@/components/registration/steps/institution
 
 // Hook customizado para lógica de registro
 import { useRegistration } from "@/hooks/use-registration"
+import { validateToken } from "@/utils/validateToken"
 
 /**
  * CONFIGURAÇÕES E DADOS MOCK
@@ -91,14 +92,9 @@ const ROLE_LABELS = {
  */
 function RegisterPageContent() {
   const { i18n } = useTranslation()
-  
-  // Obter traduções para o idioma atual
-  const currentLanguage = i18n?.language || 'en'
-  const t = registerTranslations[currentLanguage as keyof typeof registerTranslations] || registerTranslations.en
 
   // Hook customizado que gerencia toda a lógica de registro
   const {
-    // Estados principais
     inviteData,
     isValidInvite,
     currentStep,
@@ -108,29 +104,23 @@ function RegisterPageContent() {
     isLoading,
     showContent,
     selectedDepartment,
-    
-    // Setters para controle de estado
     setCurrentStep,
     setShowPassword,
     setShowConfirmPassword,
-    
-    // Formulário
     form,
-    
-    // Validações por step
     validateStep1,
     validateStep2,
     validateStep3,
-    
-    // Submissão
     onSubmit,
-    
-    // Navegação
-    goToLogin
-  } = useRegistration({ 
-    translations: t, 
-    defaultInstitutionId: DEFAULT_INSTITUTION_ID 
+    goToLogin,
+  } = useRegistration({
+    translations: i18n?.language || "en",
+    defaultInstitutionId: DEFAULT_INSTITUTION_ID,
   })
+
+  // Obter traduções para o idioma atual
+  const currentLanguage = i18n?.language || 'en'
+  const t = registerTranslations[currentLanguage as keyof typeof registerTranslations] || registerTranslations.en
 
   /**
    * CONFIGURAÇÃO DOS STEPS DO FORMULÁRIO

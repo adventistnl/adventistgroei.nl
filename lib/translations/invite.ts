@@ -26,7 +26,8 @@ export const inviteTranslations = {
     linkNotAvailable: "Link not available yet",
     selectRoleToGenerate: "Select a role to generate the shareable link",
     shareableLinkTitle: "Shareable Link",
-    shareableLinkDesc: "Copy and share this link with new members"
+    shareableLinkDesc: "Copy and share this link with new members",
+    generateLinkError: "Error generating invite link"
   },
   nl: {
     title: "Nieuwe Lid Uitnodigen",
@@ -55,7 +56,8 @@ export const inviteTranslations = {
     linkNotAvailable: "Link nog niet beschikbaar",
     selectRoleToGenerate: "Selecteer een rol om de deelbare link te genereren",
     shareableLinkTitle: "Deelbare Link",
-    shareableLinkDesc: "Kopieer en deel deze link met nieuwe leden"
+    shareableLinkDesc: "Kopieer en deel deze link met nieuwe leden",
+    generateLinkError: "Fout bij het genereren van de uitnodigingslink"
   },
   pt: {
     title: "Convidar Novo Membro",
@@ -84,6 +86,7 @@ export const inviteTranslations = {
     linkNotAvailable: "Link não disponível ainda",
     selectRoleToGenerate: "Selecione uma função para gerar o link compartilhável",
     shareableLinkTitle: "Link Compartilhável",
-    shareableLinkDesc: "Copie e compartilhe este link com novos membros"
+    shareableLinkDesc: "Copie e compartilhe este link com novos membros",
+    generateLinkError: "Erro ao gerar link de convite"
   }
 }

@@ -101,11 +101,12 @@ export type ChurchModel = {
 
 export type ChurchUpdateDto = {
   contact?: InputMaybe<ContactCreateDto>;
-  contact_id?: InputMaybe<Scalars['String']['input']>;
-  id: Scalars['String']['input'];
-  institution_id?: InputMaybe<Scalars['String']['input']>;
-  name?: InputMaybe<Scalars['String']['input']>;
-  region_id?: InputMaybe<Scalars['String']['input']>;
+  departmens?: InputMaybe<Array<Scalars['String']['input']>>;
+  institution_id: Scalars['String']['input'];
+  name: Scalars['String']['input'];
+  region_id: Scalars['String']['input'];
+  subsidy_requests?: InputMaybe<Array<Scalars['String']['input']>>;
+  users?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 export type Communication = {
@@ -311,6 +312,7 @@ export type DepartmentCount = {
 export type DepartmentCreateDto = {
   annual_budget: Scalars['Float']['input'];
   church: Scalars['String']['input'];
+  contact?: InputMaybe<ContactCreateDto>;
   description: Scalars['String']['input'];
   institution: Scalars['String']['input'];
   name: Scalars['String']['input'];
@@ -319,8 +321,8 @@ export type DepartmentCreateDto = {
 export type DepartmentUpdateDto = {
   annual_budget?: InputMaybe<Scalars['Float']['input']>;
   church_id?: InputMaybe<Scalars['String']['input']>;
+  contact?: InputMaybe<ContactCreateDto>;
   description?: InputMaybe<Scalars['String']['input']>;
-  id: Scalars['String']['input'];
   institution_id?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
 };
@@ -533,9 +535,29 @@ export type InstitutionCreateDto = {
 export type InstitutionUpdateDto = {
   contact?: InputMaybe<ContactCreateDto>;
   denomination?: InputMaybe<Scalars['String']['input']>;
-  id: Scalars['String']['input'];
   language_preference?: InputMaybe<LanguagePreference>;
   name?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type InviteEmailDto = {
+  inviter_id: Scalars['String']['input'];
+  message?: InputMaybe<Scalars['String']['input']>;
+  to: Scalars['String']['input'];
+  url: Scalars['String']['input'];
+};
+
+export type InviteModel = {
+  __typename?: 'InviteModel';
+  token: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+};
+
+export type InviteUserDto = {
+  email: Scalars['String']['input'];
+  institution_id: Scalars['String']['input'];
+  inviter_id: Scalars['String']['input'];
+  language_preference?: InputMaybe<LanguagePreference>;
+  role_ids: Array<Scalars['String']['input']>;
 };
 
 /** Idioma preferencial do usuário */
@@ -594,9 +616,12 @@ export type Mutation = {
   deleteSubsidyRequest: SubsidyRequest;
   deleteSubsidyStatus: SubsidyStatus;
   deleteUser: UserModel;
+  inviteUser: InviteModel;
   linkContact: LinkContactResult;
   login: AuthModel;
   removeProjectVoluntary: VoluntariesOnProjects;
+  /** Send an invitation email */
+  sendInviteEmail: Scalars['Boolean']['output'];
   updateChurch: ChurchModel;
   updateCommunication: Communication;
   updateContact: Contact;
@@ -612,6 +637,7 @@ export type Mutation = {
   updateSubsidyRequest: SubsidyRequest;
   updateSubsidyStatus: SubsidyStatus;
   updateUser: UserModel;
+  validateInviteToken: ValidateOutputModel;
 };
 
 
@@ -772,6 +798,11 @@ export type MutationDeleteUserArgs = {
 };
 
 
+export type MutationInviteUserArgs = {
+  data: InviteUserDto;
+};
+
+
 export type MutationLinkContactArgs = {
   data: LinkContactDto;
 };
@@ -787,8 +818,14 @@ export type MutationRemoveProjectVoluntaryArgs = {
 };
 
 
+export type MutationSendInviteEmailArgs = {
+  data: InviteEmailDto;
+};
+
+
 export type MutationUpdateChurchArgs = {
   data: ChurchUpdateDto;
+  id: Scalars['String']['input'];
 };
 
 
@@ -805,7 +842,7 @@ export type MutationUpdateContactArgs = {
 
 export type MutationUpdateDepartmentArgs = {
   data: DepartmentUpdateDto;
-  department_id: Scalars['String']['input'];
+  id: Scalars['String']['input'];
 };
 
 
@@ -817,6 +854,7 @@ export type MutationUpdateDirectMessageArgs = {
 
 export type MutationUpdateInstitutionArgs = {
   data: InstitutionUpdateDto;
+  id: Scalars['String']['input'];
 };
 
 
@@ -839,6 +877,7 @@ export type MutationUpdateProjectActivityArgs = {
 
 export type MutationUpdateRegionArgs = {
   data: RegionUpdateDto;
+  id: Scalars['String']['input'];
 };
 
 
@@ -866,6 +905,12 @@ export type MutationUpdateSubsidyStatusArgs = {
 
 export type MutationUpdateUserArgs = {
   data: UserUpdateDto;
+  id: Scalars['String']['input'];
+};
+
+
+export type MutationValidateInviteTokenArgs = {
+  token: Scalars['String']['input'];
 };
 
 export type Notification = {
@@ -1301,8 +1346,6 @@ export type RegionModel = {
 
 export type RegionUpdateDto = {
   contact?: InputMaybe<ContactCreateDto>;
-  contact_id?: InputMaybe<Scalars['String']['input']>;
-  id: Scalars['String']['input'];
   institution_id?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   parent_region_id?: InputMaybe<Scalars['String']['input']>;
@@ -1592,7 +1635,7 @@ export type UserModel = {
   is_deleted: Scalars['Boolean']['output'];
   language_preference: Scalars['String']['output'];
   name: Scalars['String']['output'];
-  password: Scalars['String']['output'];
+  password?: Maybe<Scalars['String']['output']>;
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
 };
@@ -1619,11 +1662,9 @@ export type UserUpdateDto = {
   contact_id?: InputMaybe<Scalars['String']['input']>;
   department_id?: InputMaybe<Scalars['String']['input']>;
   email?: InputMaybe<Scalars['String']['input']>;
-  id: Scalars['String']['input'];
   institution_id?: InputMaybe<Scalars['String']['input']>;
   language_preference?: InputMaybe<LanguagePreference>;
   name?: InputMaybe<Scalars['String']['input']>;
-  password?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UserWithRoles = {
@@ -1640,10 +1681,19 @@ export type UserWithRoles = {
   is_deleted: Scalars['Boolean']['output'];
   language_preference: Scalars['String']['output'];
   name: Scalars['String']['output'];
-  password: Scalars['String']['output'];
+  password?: Maybe<Scalars['String']['output']>;
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
   user_roles: Array<RoleModel>;
+};
+
+export type ValidateOutputModel = {
+  __typename?: 'ValidateOutputModel';
+  email: Scalars['String']['output'];
+  institution_id: Scalars['String']['output'];
+  inviter_id: Scalars['String']['output'];
+  language_preference?: Maybe<LanguagePreference>;
+  role_ids: Array<Scalars['String']['output']>;
 };
 
 export type VoluntariesOnProjects = {
