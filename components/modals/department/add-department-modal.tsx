@@ -32,6 +32,7 @@ import {
   DollarSign
 } from "lucide-react"
 import toast from "react-hot-toast"
+import { departmentTranslations } from "@/lib/translations/departments"
 
 export interface DepartmentData {
   id: string
@@ -94,7 +95,7 @@ export function AddDepartmentModal({
   churches = [],
   onSave
 }: AddDepartmentModalProps) {
-  const { t } = useTranslation()
+  const { t: tCommon } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState<Partial<DepartmentData & { contact: Partial<ContactData> }>>({
@@ -181,29 +182,29 @@ export function AddDepartmentModal({
 
     if (step === 1) {
       if (!formData.name?.trim()) {
-        newErrors.name = t('departments.validation.name_required')
+        newErrors.name = "Department name is required"
       } else if (formData.name.trim().length < 2) {
-        newErrors.name = t('departments.validation.name_min_length')
+        newErrors.name = "Department name must be at least 2 characters"
       }
 
       if (!formData.church_id) {
-        newErrors.church_id = t('departments.validation.church_required')
+        newErrors.church_id = "Church is required"
       }
 
       if (!formData.description?.trim()) {
-        newErrors.description = t('departments.validation.description_required')
+        newErrors.description = "Description is required"
       } else if (formData.description.trim().length < 10) {
-        newErrors.description = t('departments.validation.description_min_length')
+        newErrors.description = "Description must be at least 10 characters"
       }
 
       if (!formData.annual_budget || formData.annual_budget <= 0) {
-        newErrors.annual_budget = t('departments.validation.budget_required')
+        newErrors.annual_budget = "Annual budget is required and must be greater than 0"
       }
     }
 
     if (step === 2) {
       if (formData.contact?.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact.email)) {
-        newErrors['contact.email'] = t('departments.validation.email_invalid')
+        newErrors['contact.email'] = "Please enter a valid email address"
       }
     }
 
@@ -223,12 +224,12 @@ export function AddDepartmentModal({
 
   const handleSave = async () => {
     if (!validateStep(1) || !validateStep(2)) {
-      toast.error(t('departments.validation.please_fix_errors'))
+      toast.error("Please fix the errors before continuing")
       return
     }
 
     setIsLoading(true)
-    const loadingToast = toast.loading(t('departments.toasts.creating'))
+    const loadingToast = toast.loading("Creating department...")
 
     try {
       // Simulate API call
@@ -250,7 +251,7 @@ export function AddDepartmentModal({
       }
 
       toast.dismiss(loadingToast)
-      toast.success(t('departments.toasts.created'), {
+      toast.success("Department created successfully", {
         duration: 3000,
         icon: '🏢'
       })
@@ -263,7 +264,7 @@ export function AddDepartmentModal({
 
     } catch (error) {
       toast.dismiss(loadingToast)
-      toast.error(t('departments.toasts.create_failed'))
+      toast.error("Failed to create department")
     } finally {
       setIsLoading(false)
     }
@@ -302,56 +303,25 @@ export function AddDepartmentModal({
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-6">
-            {/* Department Preview */}
-            <Card className="border-muted">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <Avatar className="w-16 h-16">
-                    <AvatarImage src="/placeholder-logo.svg" />
-                    <AvatarFallback className="text-lg bg-emerald-100 text-emerald-600">
-                      <Layers className="w-6 h-6" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-lg truncate">
-                      {formData.name || t('departments.placeholders.name')}
-                    </h4>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {selectedChurch?.name || t('departments.placeholders.church')}
-                    </p>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      <Badge variant="outline" className="text-xs">
-                        <Layers className="w-3 h-3 mr-1" />
-                        {t('departments.labels.department')}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        <DollarSign className="w-3 h-3 mr-1" />
-                        ${formData.annual_budget ? formData.annual_budget.toLocaleString() : '0'}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Basic Information */}
-            <div className="space-y-4">
-              <h5 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-                {t('departments.sections.basic_info')}
-              </h5>
-              
+          <div className="space-y-6 animate-in fade-in-0 duration-300">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-medium text-foreground">Basic Information</h3>
+              <p className="text-sm text-muted-foreground">Enter department details and select the church</p>
+            </div>
+            
+            <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
-                <Label htmlFor="name">
-                  {t('departments.fields.name')} *
+                <Label htmlFor="name" className="flex items-center gap-2 text-sm">
+                  <Layers className="w-4 h-4 text-muted-foreground" />
+                  Department Name *
                 </Label>
                 <Input
                   id="name"
                   value={formData.name || ''}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder={t('departments.placeholders.name')}
+                  placeholder="Enter department name"
                   disabled={isLoading}
-                  className={`w-full ${errors.name ? 'border-red-500' : ''}`}
+                  className={`h-10 ${errors.name ? 'border-red-500' : ''}`}
                 />
                 {errors.name && (
                   <p className="text-sm text-red-600">{errors.name}</p>
@@ -359,16 +329,17 @@ export function AddDepartmentModal({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="church_id">
-                  {t('departments.fields.church')} *
+                <Label htmlFor="church_id" className="flex items-center gap-2 text-sm">
+                  <Home className="w-4 h-4 text-muted-foreground" />
+                  Church *
                 </Label>
                 <Select
                   value={formData.church_id || ''}
                   onValueChange={(value) => handleInputChange('church_id', value)}
                   disabled={isLoading}
                 >
-                  <SelectTrigger className={`w-full ${errors.church_id ? 'border-red-500' : ''}`}>
-                    <SelectValue placeholder={t('departments.placeholders.church')} />
+                  <SelectTrigger className={`h-10 ${errors.church_id ? 'border-red-500' : ''}`}>
+                    <SelectValue placeholder="Select church" />
                   </SelectTrigger>
                   <SelectContent>
                     {churches.map((church) => (
@@ -384,16 +355,17 @@ export function AddDepartmentModal({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">
-                  {t('departments.fields.description')} *
+                <Label htmlFor="description" className="flex items-center gap-2 text-sm">
+                  <Building className="w-4 h-4 text-muted-foreground" />
+                  Description *
                 </Label>
                 <Textarea
                   id="description"
                   value={formData.description || ''}
                   onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder={t('departments.placeholders.description')}
+                  placeholder="Enter department description"
                   disabled={isLoading}
-                  className={`w-full min-h-[100px] ${errors.description ? 'border-red-500' : ''}`}
+                  className={`min-h-[80px] resize-none ${errors.description ? 'border-red-500' : ''}`}
                 />
                 {errors.description && (
                   <p className="text-sm text-red-600">{errors.description}</p>
@@ -401,8 +373,9 @@ export function AddDepartmentModal({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="annual_budget">
-                  {t('departments.fields.annual_budget')} *
+                <Label htmlFor="annual_budget" className="flex items-center gap-2 text-sm">
+                  <DollarSign className="w-4 h-4 text-muted-foreground" />
+                  Annual Budget *
                 </Label>
                 <Input
                   id="annual_budget"
@@ -411,9 +384,9 @@ export function AddDepartmentModal({
                   step="0.01"
                   value={formData.annual_budget || ''}
                   onChange={(e) => handleInputChange('annual_budget', parseFloat(e.target.value) || 0)}
-                  placeholder={t('departments.placeholders.annual_budget')}
+                  placeholder="Enter annual budget"
                   disabled={isLoading}
-                  className={`w-full ${errors.annual_budget ? 'border-red-500' : ''}`}
+                  className={`h-10 ${errors.annual_budget ? 'border-red-500' : ''}`}
                 />
                 {errors.annual_budget && (
                   <p className="text-sm text-red-600">{errors.annual_budget}</p>
@@ -425,185 +398,75 @@ export function AddDepartmentModal({
 
       case 2:
         return (
-          <div className="space-y-6">
-            {/* Contact Preview */}
-            <Card className="border-muted">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <Avatar className="w-16 h-16">
-                    <AvatarImage src="/placeholder-user.jpg" />
-                    <AvatarFallback className="text-lg bg-teal-100 text-teal-600">
-                      <User className="w-6 h-6" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-lg truncate">
-                      {formData.contact?.name || t('departments.placeholders.contact_name')}
-                    </h4>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {formData.contact?.email || t('departments.placeholders.contact_email')}
-                    </p>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      <Badge variant="outline" className="text-xs">
-                        <User className="w-3 h-3 mr-1" />
-                        {t('departments.labels.contact')}
-                      </Badge>
-                      {formData.contact?.country && (
-                        <Badge variant="outline" className="text-xs">
-                          <Globe className="w-3 h-3 mr-1" />
-                          {formData.contact.country}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Contact Information */}
-            <div className="space-y-4">
-              <h5 className="font-medium text-sm text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-                <User className="w-4 h-4" />
-                {t('departments.sections.contact_info')}
-              </h5>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="contact_name">
-                    {t('departments.fields.contact_name')}
-                  </Label>
-                  <Input
-                    id="contact_name"
-                    value={formData.contact?.name || ''}
-                    onChange={(e) => handleInputChange('contact.name', e.target.value)}
-                    placeholder={t('departments.placeholders.contact_name')}
-                    disabled={isLoading}
-                    className="w-full"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="contact_email">
-                    {t('departments.fields.contact_email')}
-                  </Label>
-                  <Input
-                    id="contact_email"
-                    type="email"
-                    value={formData.contact?.email || ''}
-                    onChange={(e) => handleInputChange('contact.email', e.target.value)}
-                    placeholder={t('departments.placeholders.contact_email')}
-                    disabled={isLoading}
-                    className={`w-full ${errors['contact.email'] ? 'border-red-500' : ''}`}
-                  />
-                  {errors['contact.email'] && (
-                    <p className="text-sm text-red-600">{errors['contact.email']}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="contact_phone">
-                    {t('departments.fields.contact_phone')}
-                  </Label>
-                  <Input
-                    id="contact_phone"
-                    value={formData.contact?.phone || ''}
-                    onChange={(e) => handleInputChange('contact.phone', e.target.value)}
-                    placeholder={t('departments.placeholders.contact_phone')}
-                    disabled={isLoading}
-                    className="w-full"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="contact_mobile">
-                    {t('departments.fields.contact_mobile')}
-                  </Label>
-                  <Input
-                    id="contact_mobile"
-                    value={formData.contact?.mobile || ''}
-                    onChange={(e) => handleInputChange('contact.mobile', e.target.value)}
-                    placeholder={t('departments.placeholders.contact_mobile')}
-                    disabled={isLoading}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="contact_country">
-                    {t('departments.fields.contact_country')}
-                  </Label>
-                  <Input
-                    id="contact_country"
-                    value={formData.contact?.country || ''}
-                    onChange={(e) => handleInputChange('contact.country', e.target.value)}
-                    placeholder={t('departments.placeholders.contact_country')}
-                    disabled={isLoading}
-                    className="w-full"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="contact_city">
-                    {t('departments.fields.contact_city')}
-                  </Label>
-                  <Input
-                    id="contact_city"
-                    value={formData.contact?.city || ''}
-                    onChange={(e) => handleInputChange('contact.city', e.target.value)}
-                    placeholder={t('departments.placeholders.contact_city')}
-                    disabled={isLoading}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
+          <div className="space-y-6 animate-in fade-in-0 duration-300">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-medium text-foreground">Contact Details</h3>
+              <p className="text-sm text-muted-foreground">Add contact information for the department</p>
+            </div>
+            
+            <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
-                <Label htmlFor="contact_address">
-                  {t('departments.fields.contact_address')}
+                <Label htmlFor="contact_name" className="flex items-center gap-2 text-sm">
+                  <User className="w-4 h-4 text-muted-foreground" />
+                  Contact Name
                 </Label>
                 <Input
-                  id="contact_address"
-                  value={formData.contact?.address || ''}
-                  onChange={(e) => handleInputChange('contact.address', e.target.value)}
-                  placeholder={t('departments.placeholders.contact_address')}
+                  id="contact_name"
+                  value={formData.contact?.name || ''}
+                  onChange={(e) => handleInputChange('contact.name', e.target.value)}
+                  placeholder="Enter contact name"
                   disabled={isLoading}
-                  className="w-full"
+                  className="h-10"
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="contact_postal_code">
-                    {t('departments.fields.contact_postal_code')}
-                  </Label>
-                  <Input
-                    id="contact_postal_code"
-                    value={formData.contact?.postal_code || ''}
-                    onChange={(e) => handleInputChange('contact.postal_code', e.target.value)}
-                    placeholder={t('departments.placeholders.contact_postal_code')}
-                    disabled={isLoading}
-                    className="w-full"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="contact_email" className="flex items-center gap-2 text-sm">
+                  <Mail className="w-4 h-4 text-muted-foreground" />
+                  Contact Email
+                </Label>
+                <Input
+                  id="contact_email"
+                  type="email"
+                  value={formData.contact?.email || ''}
+                  onChange={(e) => handleInputChange('contact.email', e.target.value)}
+                  placeholder="Enter email address"
+                  disabled={isLoading}
+                  className={`h-10 ${errors['contact.email'] ? 'border-red-500' : ''}`}
+                />
+                {errors['contact.email'] && (
+                  <p className="text-sm text-red-600">{errors['contact.email']}</p>
+                )}
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="contact_website">
-                    {t('departments.fields.contact_website')}
-                  </Label>
-                  <Input
-                    id="contact_website"
-                    type="url"
-                    value={formData.contact?.website || ''}
-                    onChange={(e) => handleInputChange('contact.website', e.target.value)}
-                    placeholder={t('departments.placeholders.contact_website')}
-                    disabled={isLoading}
-                    className="w-full"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="contact_phone" className="flex items-center gap-2 text-sm">
+                  <Phone className="w-4 h-4 text-muted-foreground" />
+                  Phone
+                </Label>
+                <Input
+                  id="contact_phone"
+                  value={formData.contact?.phone || ''}
+                  onChange={(e) => handleInputChange('contact.phone', e.target.value)}
+                  placeholder="Enter phone number"
+                  disabled={isLoading}
+                  className="h-10"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contact_city" className="flex items-center gap-2 text-sm">
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  City
+                </Label>
+                <Input
+                  id="contact_city"
+                  value={formData.contact?.city || ''}
+                  onChange={(e) => handleInputChange('contact.city', e.target.value)}
+                  placeholder="Enter city"
+                  disabled={isLoading}
+                  className="h-10"
+                />
               </div>
             </div>
           </div>
@@ -616,73 +479,90 @@ export function AddDepartmentModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={!isLoading ? onOpenChange : undefined}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="space-y-3">
-          <DialogTitle className="flex items-center gap-2">
-            <Layers className="w-5 h-5 text-emerald-600" />
-            {t('departments.modals.create.title')}
+      <DialogContent className="w-[95vw] max-w-2xl max-h-[95vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0 pb-4">
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <Layers className="w-5 h-5 text-muted-foreground" />
+            Create Department
           </DialogTitle>
-          <DialogDescription>
-            {t('departments.modals.create.description')}
+          <DialogDescription className="text-sm text-muted-foreground">
+            Add a new department to your organization
           </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-6">
+          
           {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>{t('departments.steps.step')} {currentStep} {t('departments.steps.of')} {totalSteps}</span>
+          <div className="mt-4 space-y-2">
+            <div className="flex justify-between items-center text-xs text-muted-foreground">
+              <span>Step {currentStep} of {totalSteps}</span>
               <span>{Math.round((currentStep / totalSteps) * 100)}%</span>
             </div>
-            <Progress value={(currentStep / totalSteps) * 100} className="h-2" />
+            <Progress value={(currentStep / totalSteps) * 100} className="h-1" />
           </div>
+        </DialogHeader>
 
-          {/* Step Content */}
-          {renderStepContent()}
+        {/* Conteúdo dos Steps - Scrollable */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="space-y-6 p-1">
+            {/* Step Content */}
+            {renderStepContent()}
+          </div>
+        </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row justify-between gap-3 pt-4 border-t">
-            <div className="flex gap-3">
+        {/* Botões de Navegação - Fixos no rodapé */}
+        <div className="flex-shrink-0 border-t pt-4 mt-6">
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2">
               {currentStep > 1 && (
                 <Button 
                   variant="outline" 
                   onClick={handlePrevious} 
                   disabled={isLoading}
-                  className="w-full sm:w-auto"
+                  size="sm"
+                  className="flex items-center gap-1 text-xs"
                 >
-                  <ChevronLeft className="w-4 h-4 mr-2" />
-                  {t('departments.buttons.previous')}
+                  <ChevronLeft className="w-3 h-3" />
+                  Previous
                 </Button>
               )}
               <Button 
                 variant="outline" 
                 onClick={handleCancel} 
                 disabled={isLoading}
-                className="w-full sm:w-auto"
+                size="sm"
+                className="text-xs"
               >
-                <X className="w-4 h-4 mr-2" />
-                {t('common.cancel')}
+                Cancel
               </Button>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               {currentStep < totalSteps ? (
                 <Button 
                   onClick={handleNext} 
                   disabled={isLoading}
-                  className="w-full sm:w-auto"
+                  size="sm"
+                  className="flex items-center gap-1 text-xs"
                 >
-                  {t('departments.buttons.next')}
-                  <ChevronRight className="w-4 h-4 ml-2" />
+                  Next
+                  <ChevronRight className="w-3 h-3" />
                 </Button>
               ) : (
                 <Button 
                   onClick={handleSave} 
                   disabled={isLoading}
-                  className="w-full sm:w-auto"
+                  size="sm"
+                  className="min-w-[100px] text-xs"
                 >
-                  <Save className="w-4 h-4 mr-2" />
-                  {isLoading ? t('departments.creating') : t('common.save')}
+                  {isLoading ? (
+                    <>
+                      <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3 h-3 mr-1" />
+                      Save
+                    </>
+                  )}
                 </Button>
               )}
             </div>

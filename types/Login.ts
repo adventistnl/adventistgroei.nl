@@ -7,14 +7,28 @@
 // GraphQL mutation operation: Login
 // ====================================================
 
+export interface Login_login_user_user_roles_permissions_data {
+  __typename: "PermissionModel";
+  name: string;
+}
+
+export interface Login_login_user_user_roles_permissions {
+  __typename: "PermissionGroupPermissionsModel";
+  group: string;
+  data: Login_login_user_user_roles_permissions_data[];
+}
+
 export interface Login_login_user_user_roles {
+  __typename: "RoleModel";
   id: string;
   name: string;
   description: string;
   key_code: string;
+  permissions: Login_login_user_user_roles_permissions[];
 }
 
 export interface Login_login_user {
+  __typename: "UserWithRoles";
   id: string;
   name: string;
   email: string;
@@ -22,6 +36,7 @@ export interface Login_login_user {
 }
 
 export interface Login_login {
+  __typename: "AuthModel";
   accessToken: string;
   expiresIn: number;
   user: Login_login_user;

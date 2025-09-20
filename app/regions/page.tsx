@@ -1,118 +1,76 @@
 "use client"
 
-import * as React from "react"
-import { useState, useMemo } from "react"
+import React, { useState, useEffect, useMemo } from "react"
+import { useTranslation } from "react-i18next"
+import { ColumnDef } from "@tanstack/react-table"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { Textarea } from "@/components/ui/textarea"
-import { Progress } from "@/components/ui/progress"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import {
   MapPin,
-  Building,
   Plus,
-  Search,
-  Filter,
+  RefreshCw, 
   MoreHorizontal,
   Edit,
   Trash2,
-  Eye,
-  TrendingUp,
   Users,
-  Church,
-  ArrowLeft,
-  CheckCircle,
-  AlertTriangle,
-  Calendar,
-  Phone,
-  Mail,
-  Globe,
-  HelpCircle,
-  ChevronDown,
+  Home,
+  DollarSign,
+  Building,
+  ContactRound,
+  TrendingUp,
+  Calendar
 } from "lucide-react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import toast from "react-hot-toast"
+import { structureTranslations } from "@/lib/translations/structure"
+import { DataTable } from "@/components/ui/data-table"
+import { AddRegionModal, EditRegionModal, DeleteRegionModal } from "@/components/modals/region"
+import { ViewContactModal, ContactData } from "@/components/modals/contact"
+import { AnnualBudgetModal, AnnualBudgetData } from "@/components/modals/budget"
+import { UseKPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 
-// Schema de validação para registro de região
-const regionSchema = z.object({
-  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-  institution_id: z.string().min(1, "Instituição é obrigatória"),
-  parent_region_id: z.string().optional().transform(val => val === "none" ? undefined : val),
-  contact_name: z.string().min(2, "Nome do contato é obrigatório"),
-  contact_phone: z.string().min(10, "Telefone deve ter pelo menos 10 dígitos"),
-  contact_email: z.string().email("Email inválido"),
-  contact_address: z.string().optional(),
-  contact_city: z.string().min(2, "Cidade é obrigatória"),
-  contact_postal_code: z.string().optional(),
-  notes: z.string().optional(),
-})
+// Charts - usando a lib atual do sistema
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  Legend
+} from "recharts"
 
-type RegionForm = z.infer<typeof regionSchema>
-
-// Mock data baseado na estrutura ERD
-const MOCK_INSTITUTIONS = [
-  { id: "usp", name: "União Sul-Paulista", denomination: "SDA" },
-  { id: "ucb", name: "União Central Brasileira", denomination: "SDA" },
-  { id: "uan", name: "União Amazônica", denomination: "SDA" },
-  { id: "une", name: "União Nordeste Brasileira", denomination: "SDA" },
-  { id: "uso", name: "União Sul-Oeste", denomination: "SDA" },
-  { id: "unb", name: "União Norte Brasileira", denomination: "SDA" },
-  { id: "ues", name: "União Este Brasileira", denomination: "SDA" },
-  { id: "ueb", name: "União Extremo Oeste Brasileira", denomination: "SDA" },
-]
-
+// Mock data baseado na estrutura ERD do AdventistGroei
 const MOCK_REGIONS = [
   {
-    id: "sp-capital",
+    id: "r1",
     name: "São Paulo Capital",
-    institution: "União Sul-Paulista",
-    parent_region: null,
+    institution_id: "inst1",
+    institution_name: "União Sul-Paulista",
+    parent_region_id: null,
     churches_count: 45,
     members_count: 12500,
+    subsidy_requests: 23,
+    total_budget: 850000,
+    used_budget: 620000,
     contact: {
       name: "Pastor João Silva",
       phone: "(11) 99999-9999",
@@ -123,12 +81,16 @@ const MOCK_REGIONS = [
     status: "active"
   },
   {
-    id: "sp-interior",
+    id: "r2",
     name: "São Paulo Interior",
-    institution: "União Sul-Paulista",
-    parent_region: null,
+    institution_id: "inst1",
+    institution_name: "União Sul-Paulista",
+    parent_region_id: null,
     churches_count: 78,
     members_count: 18900,
+    subsidy_requests: 34,
+    total_budget: 1200000,
+    used_budget: 890000,
     contact: {
       name: "Pastor Maria Santos",
       phone: "(19) 88888-8888",
@@ -139,12 +101,16 @@ const MOCK_REGIONS = [
     status: "active"
   },
   {
-    id: "rj-capital",
-    name: "Rio de Janeiro Capital",
-    institution: "União Sul-Paulista",
-    parent_region: null,
+    id: "r3",
+    name: "Rio de Janeiro",
+    institution_id: "inst1",
+    institution_name: "União Sul-Paulista",
+    parent_region_id: null,
     churches_count: 32,
     members_count: 9800,
+    subsidy_requests: 18,
+    total_budget: 680000,
+    used_budget: 520000,
     contact: {
       name: "Pastor Carlos Lima",
       phone: "(21) 77777-7777",
@@ -155,12 +121,16 @@ const MOCK_REGIONS = [
     status: "active"
   },
   {
-    id: "df-central",
+    id: "r4",
     name: "Distrito Federal",
-    institution: "União Central Brasileira",
-    parent_region: null,
+    institution_id: "inst2",
+    institution_name: "União Central Brasileira",
+    parent_region_id: null,
     churches_count: 28,
     members_count: 8500,
+    subsidy_requests: 15,
+    total_budget: 590000,
+    used_budget: 410000,
     contact: {
       name: "Pastor Ana Costa",
       phone: "(61) 66666-6666",
@@ -171,12 +141,16 @@ const MOCK_REGIONS = [
     status: "active"
   },
   {
-    id: "ba-salvador",
+    id: "r5",
     name: "Bahia - Salvador",
-    institution: "União Nordeste Brasileira",
-    parent_region: null,
+    institution_id: "inst3",
+    institution_name: "União Nordeste Brasileira",
+    parent_region_id: null,
     churches_count: 41,
     members_count: 11200,
+    subsidy_requests: 27,
+    total_budget: 720000,
+    used_budget: 480000,
     contact: {
       name: "Pastor Roberto Oliveira",
       phone: "(71) 55555-5555",
@@ -188,841 +162,724 @@ const MOCK_REGIONS = [
   },
 ]
 
-// Sugestões rápidas para campos com Popover
-const REGION_NAME_SUGGESTIONS = [
-  "Capital", "Interior", "Metropolitana", "Norte", "Sul", "Leste", "Oeste", 
-  "Central", "Litoral", "Serra", "Vale", "Grande", "Zona Norte", "Zona Sul"
+// Mock data para timeline de subsídios
+const MOCK_SUBSIDY_TIMELINE = [
+  { month: 'Jan', 'São Paulo Capital': 15, 'São Paulo Interior': 22, 'Rio de Janeiro': 12, 'Distrito Federal': 8, 'Bahia - Salvador': 18 },
+  { month: 'Feb', 'São Paulo Capital': 18, 'São Paulo Interior': 25, 'Rio de Janeiro': 14, 'Distrito Federal': 10, 'Bahia - Salvador': 20 },
+  { month: 'Mar', 'São Paulo Capital': 22, 'São Paulo Interior': 28, 'Rio de Janeiro': 16, 'Distrito Federal': 12, 'Bahia - Salvador': 23 },
+  { month: 'Apr', 'São Paulo Capital': 19, 'São Paulo Interior': 26, 'Rio de Janeiro': 15, 'Distrito Federal': 11, 'Bahia - Salvador': 21 },
+  { month: 'May', 'São Paulo Capital': 25, 'São Paulo Interior': 30, 'Rio de Janeiro': 18, 'Distrito Federal': 14, 'Bahia - Salvador': 25 },
+  { month: 'Jun', 'São Paulo Capital': 23, 'São Paulo Interior': 34, 'Rio de Janeiro': 18, 'Distrito Federal': 15, 'Bahia - Salvador': 27 },
 ]
 
-const CITY_SUGGESTIONS = [
-  "São Paulo", "Rio de Janeiro", "Belo Horizonte", "Salvador", "Brasília",
-  "Fortaleza", "Recife", "Curitiba", "Porto Alegre", "Manaus", "Belém",
-  "Goiânia", "Campinas", "Santos", "Sorocaba", "Ribeirão Preto"
-]
-
+/**
+ * PÁGINA DE GESTÃO DE REGIÕES
+ * Interface dedicada para gerenciar regiões baseada no ERD do AdventistGroei
+ */
 export default function RegionsPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [currentStep, setCurrentStep] = useState(1)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedInstitution, setSelectedInstitution] = useState<string>("all")
+  const { i18n } = useTranslation()
+  const [isLoading, setIsLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  
+  // Modal states
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isViewContactModalOpen, setIsViewContactModalOpen] = useState(false)
+  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false)
+  const [selectedRegion, setSelectedRegion] = useState<any>(null)
+  const [selectedContact, setSelectedContact] = useState<ContactData | null>(null)
+  const [selectedBudget, setSelectedBudget] = useState<AnnualBudgetData | null>(null)
+  
+  // Obter traduções para o idioma atual
+  const currentLanguage = i18n?.language || 'en'
+  const t = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
 
   const breadcrumbs = useMemo(() => [
-    { name: "Dashboard", href: "/dashboard" },
-    { name: "Institutions & Structures" },
+    { name: "Structure & Organization" },
     { name: "Regions" }
-  ], [])
+  ], [t])
 
   usePageTitle({
-    title: "Regions Management",
+    title: t.regionsTitle,
     breadcrumbs
   })
 
-  const form = useForm<RegionForm>({
-    resolver: zodResolver(regionSchema),
-    defaultValues: {
-      name: "",
-      institution_id: "",
-      parent_region_id: "none",
-      contact_name: "",
-      contact_phone: "",
-      contact_email: "",
-      contact_address: "",
-      contact_city: "",
-      contact_postal_code: "",
-      notes: "",
-    },
-  })
-
-  // Filtrar regiões baseado na busca e instituição selecionada
-  const filteredRegions = useMemo(() => {
-    return MOCK_REGIONS.filter(region => {
-      const matchesSearch = region.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           region.institution.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesInstitution = selectedInstitution === "all" || 
-                                 region.institution.includes(selectedInstitution)
-      return matchesSearch && matchesInstitution
-    })
-  }, [searchTerm, selectedInstitution])
-
-  // Estatísticas para os cards
-  const stats = useMemo(() => {
-    const totalRegions = filteredRegions.length
-    const totalChurches = filteredRegions.reduce((sum, region) => sum + region.churches_count, 0)
-    const totalMembers = filteredRegions.reduce((sum, region) => sum + region.members_count, 0)
-    const avgMembersPerRegion = totalRegions > 0 ? Math.round(totalMembers / totalRegions) : 0
+  // Estatísticas calculadas dos dados
+  const kpiData = useMemo(() => {
+    const totalRegions = MOCK_REGIONS.length
+    const totalChurches = MOCK_REGIONS.reduce((sum, r) => sum + r.churches_count, 0)
+    const totalMembers = MOCK_REGIONS.reduce((sum, r) => sum + r.members_count, 0)
+    const totalSubsidyRequests = MOCK_REGIONS.reduce((sum, r) => sum + r.subsidy_requests, 0)
+    const totalBudget = MOCK_REGIONS.reduce((sum, r) => sum + r.total_budget, 0)
+    const totalUsedBudget = MOCK_REGIONS.reduce((sum, r) => sum + r.used_budget, 0)
+    const budgetUtilization = Math.round((totalUsedBudget / totalBudget) * 100)
 
     return {
       totalRegions,
       totalChurches,
       totalMembers,
-      avgMembersPerRegion
+      totalSubsidyRequests,
+      totalBudget,
+      totalUsedBudget,
+      budgetUtilization
     }
-  }, [filteredRegions])
+  }, [])
 
-  const onSubmit = async (data: RegionForm) => {
-    setIsSubmitting(true)
+  // Dados dos KPIs em formato de array para o componente reutilizável
+  const kpiCardsData: KPICardData[] = useMemo(() => [
+    {
+      id: "total-regions",
+      title: t.totalRegions,
+      value: kpiData.totalRegions,
+      icon: MapPin,
+      subtitle: "Active regions"
+    },
+    {
+      id: "total-budget", 
+      title: t.totalBudget,
+      value: `$${(kpiData.totalBudget / 1000000).toFixed(1)}M`,
+      icon: DollarSign,
+      subtitle: "Annual budget"
+    },
+    {
+      id: "total-requests",
+      title: t.requests,
+      value: kpiData.totalSubsidyRequests,
+      icon: Calendar,
+      subtitle: "Subsidy requests"
+    },
+    {
+      id: "budget-utilization",
+      title: t.budgetUtilization,
+      value: `${kpiData.budgetUtilization}%`,
+      icon: TrendingUp,
+      subtitle: "Budget efficiency",
+      trend: {
+        value: 5.2,
+        isPositive: true,
+        label: "vs last month"
+      }
+    }
+  ], [kpiData, t])
+
+  // Dados para gráficos
+  const chartData = useMemo(() => ({
+    budgetByRegion: MOCK_REGIONS.map(r => ({
+      region: r.name,
+      budget: r.total_budget,
+      used: r.used_budget,
+      remaining: r.total_budget - r.used_budget
+    })),
+    subsidyRequestsByRegion: MOCK_REGIONS.map(r => ({
+      region: r.name,
+      requests: r.subsidy_requests
+    })),
+    churchesByRegion: MOCK_REGIONS.map(r => ({
+      region: r.name,
+      churches: r.churches_count
+    })),
+    subsidyTimeline: MOCK_SUBSIDY_TIMELINE
+  }), [])
+
+  /**
+   * Carregamento inicial dos dados
+   */
+  useEffect(() => {
+    const loadData = async () => {
+      const loadingToast = toast.loading(t.loading)
+      
+      try {
+        await new Promise(resolve => setTimeout(resolve, 1500))
+        
+        toast.dismiss(loadingToast)
+        toast.success(t.dataRefreshed, { duration: 3000 })
+        setIsLoading(false)
+        
+      } catch (error) {
+      toast.dismiss(loadingToast)
+        toast.error(t.error)
+        setIsLoading(false)
+      }
+    }
+
+    loadData()
+  }, [t])
+
+  /**
+   * Handlers para ações
+   */
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    const refreshToast = toast.loading(t.refreshing)
     
     try {
-      // Validação adicional
-      if (!data.institution_id) {
-        toast.error("⚠️ Selecione uma instituição")
-        setIsSubmitting(false)
-        return
-      }
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      toast.dismiss(refreshToast)
+      toast.success(t.dataRefreshed, { duration: 2000 })
+    } catch (error) {
+      toast.dismiss(refreshToast)
+      toast.error(t.errorRefreshing)
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
-      // Toast de loading
-      const loadingToast = toast.loading("Criando nova região...")
-      
-      // Simular API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      const regionData = {
-        ...data,
-        id: `region_${Date.now()}`,
-        created_at: new Date().toISOString(),
-        created_by: "current-user-id",
+  const handleCreate = () => {
+    setIsCreateModalOpen(true)
+  }
+  
+  const handleEdit = (id: string) => {
+    const region = MOCK_REGIONS.find(r => r.id === id)
+    if (region) {
+      setSelectedRegion(region)
+      setIsEditModalOpen(true)
+    }
+  }
+  
+  const handleDelete = (id: string, name: string) => {
+    const region = MOCK_REGIONS.find(r => r.id === id)
+    if (region) {
+      setSelectedRegion(region)
+      setIsDeleteModalOpen(true)
+    }
+  }
+  
+  const handleViewContact = (id: string) => {
+    const region = MOCK_REGIONS.find(r => r.id === id)
+    if (region && region.contact) {
+      // Converter os dados de contato da região para o formato ContactData
+      const contactData: ContactData = {
+        id: `contact_${region.id}`,
+        name: region.contact.name || null,
+        phone: region.contact.phone || null,
+        mobile: null,
+        email: region.contact.email || null,
+        country: null,
+        city: region.contact.city || null,
+        address: null,
+        full_address: null,
+        postal_code: null,
+        website: null,
+        notes: null,
+        is_primary: true,
+        created_at: region.created_at,
+        updated_at: region.created_at,
+        created_by: 'system',
+        updated_by: 'system',
         is_deleted: false
       }
       
-      console.log("Region data:", regionData)
+      setSelectedContact(contactData)
+      setIsViewContactModalOpen(true)
+    }
+  }
+  
+  const handleViewBudget = (id: string) => {
+    const region = MOCK_REGIONS.find(r => r.id === id)
+    if (region) {
+      // Criar dados de orçamento mock baseados nos dados da região
+      const budgetData: AnnualBudgetData = {
+        id: `budget_${region.id}`,
+        year: new Date().getFullYear(),
+        planned_budget: region.total_budget,
+        total_expenses: region.used_budget,
+        balance: region.total_budget - region.used_budget,
+        notes: `Budget for ${region.name} region`,
+        approved_by: 'admin',
+        status: 'in_progress',
+        created_at: region.created_at,
+        updated_at: new Date().toISOString(),
+        created_by: 'system',
+        updated_by: 'system',
+        is_deleted: false
+      }
       
-      toast.dismiss(loadingToast)
-      toast.success(
-        `🎉 Região "${data.name}" criada com sucesso!\n📍 Instituição: ${MOCK_INSTITUTIONS.find(i => i.id === data.institution_id)?.name}`,
-        {
-          duration: 5000,
-          style: { minWidth: '350px' }
-        }
-      )
-      
-      setIsModalOpen(false)
-      setCurrentStep(1)
-      form.reset()
-      
-    } catch (error) {
-      toast.error("❌ Erro ao criar região. Tente novamente.", {
-        duration: 4000
-      })
-      setIsSubmitting(false)
+      setSelectedRegion(region)
+      setSelectedBudget(budgetData)
+      setIsBudgetModalOpen(true)
     }
   }
 
-  const nextStep = async () => {
-    if (currentStep >= 3) return
-
-    let fieldsToValidate: (keyof RegionForm)[] = []
-    
-    if (currentStep === 1) {
-      fieldsToValidate = ['name', 'institution_id']
-    } else if (currentStep === 2) {
-      fieldsToValidate = ['contact_name', 'contact_phone', 'contact_email', 'contact_city']
-    }
-
-    const isValid = await form.trigger(fieldsToValidate)
-    
-    if (!isValid) {
-      toast.error("⚠️ Preencha todos os campos obrigatórios antes de continuar.", {
-        duration: 4000
-      })
-      return
-    }
-
-    toast.success("✅ Etapa concluída!", { duration: 2000 })
-    setCurrentStep(currentStep + 1)
+  // Modal handlers
+  const handleRegionCreated = (newRegion: any) => {
+    toast.success(t.itemCreated)
+    handleRefresh()
   }
 
-  const prevStep = () => {
-    if (currentStep > 1) setCurrentStep(currentStep - 1)
+  const handleRegionUpdated = (updatedRegion: any) => {
+    toast.success(t.itemUpdated)
+    handleRefresh()
   }
 
-  const progress = (currentStep / 3) * 100
+  const handleRegionDeleted = (deletedRegion: any) => {
+    toast.success(t.itemDeleted)
+    handleRefresh()
+  }
+  
+  const handleBudgetSaved = (budget: AnnualBudgetData) => {
+    toast.success("Budget updated successfully")
+    handleRefresh()
+  }
 
-  // Componente para sugestões rápidas
-  const QuickSuggestions = ({ suggestions, onSelect }: { suggestions: string[], onSelect: (value: string) => void }) => (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8">
-          <HelpCircle className="w-3 h-3 mr-1" />
-          Sugestões
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80">
-        <div className="space-y-2">
-          <h4 className="font-medium text-sm">Sugestões rápidas:</h4>
-          <div className="flex flex-wrap gap-1">
-            {suggestions.map((suggestion, index) => (
-              <Button
-                key={index}
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => onSelect(suggestion)}
-              >
-                {suggestion}
-              </Button>
-            ))}
-          </div>
-        </div>
-      </PopoverContent>
-    </Popover>
-  )
+  // Colunas da tabela
+  const columns: ColumnDef<any>[] = [
+    {
+      id: "name",
+      accessorKey: "name",
+      header: t.name,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+            <MapPin className="w-4 h-4 text-green-600" />
+                </div>
+          <div>
+            <div className="font-medium">{row.original.name}</div>
+            <div className="text-xs text-muted-foreground">{row.original.institution_name}</div>
+                            </div>
+                                    </div>
+      ),
+    },
+    {
+      id: "churches",
+      accessorKey: "churches_count",
+      header: t.churches,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Home className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">{row.original.churches_count}</span>
+                                    </div>
+      ),
+    },
+    {
+      id: "members",
+      accessorKey: "members_count",
+      header: t.members,
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.members_count.toLocaleString()}</span>
+      ),
+    },
+    {
+      id: "subsidy_requests",
+      accessorKey: "subsidy_requests",
+      header: t.requests,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">{row.original.subsidy_requests}</span>
+                    </div>
+      ),
+    },
+    {
+      id: "budget",
+      accessorKey: "total_budget",
+      header: t.budget,
+      cell: ({ row }) => (
+        <span className="font-medium">${row.original.total_budget.toLocaleString()}</span>
+      ),
+    },
+    {
+      id: "utilization",
+      header: t.utilization,
+      cell: ({ row }) => {
+        const utilization = Math.round((row.original.used_budget / row.original.total_budget) * 100)
+        return (
+          <Badge variant="outline" className={
+            utilization > 80 ? 'bg-red-100 text-red-700' : 
+            utilization > 60 ? 'bg-yellow-100 text-yellow-700' : 
+            'bg-green-100 text-green-700'
+          }>
+            {utilization}%
+          </Badge>
+        )
+      },
+    },
+    {
+      id: "institution",
+      accessorKey: "institution_name",
+      header: "Institution",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Building className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium text-xs">{row.original.institution_name}</span>
+                      </div>
+      ),
+    },
+    {
+      id: "status",
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge variant={row.original.status === 'active' ? 'default' : 'secondary'}>
+          {row.original.status === 'active' ? t.active : t.inactive}
+        </Badge>
+      ),
+    },
+    {
+      id: "actions",
+      header: t.actions,
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => handleViewBudget(row.original.id)}>
+              <DollarSign className="w-4 h-4 mr-2" />
+              View Budget
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleViewContact(row.original.id)}>
+              <ContactRound className="w-4 h-4 mr-2" />
+              {t.viewContact}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
+              <Edit className="w-4 h-4 mr-2" />
+              {t.editRegion}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
+              <Trash2 className="w-4 h-4 mr-2" />
+              {t.deleteRegion}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ]
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="space-y-8">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-muted rounded w-1/3"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="p-6">
+                    <div className="h-4 bg-muted rounded w-2/3 mb-2"></div>
+                    <div className="h-8 bg-muted rounded w-1/2 mb-2"></div>
+                    <div className="h-3 bg-muted rounded w-3/4"></div>
+                  </CardContent>
+                </Card>
+              ))}
+                              </div>
+                      </div>
+                    </div>
+      </AppLayout>
+    )
+  }
 
   return (
     <AppLayout>
-      <div className="space-y-8">
+      <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h2 className="text-3xl font-bold text-foreground mb-2">Regions Management</h2>
-            <p className="text-muted-foreground">
-              Gerencie regiões geográficas e territórios do Church Growth International MVP
-            </p>
-          </div>
-          
-          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Nova Região
-              </Button>
-            </DialogTrigger>
-            
-            <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-primary" />
-                  Registrar Nova Região
-                </DialogTitle>
-                <DialogDescription>
-                  Processo de registro em 3 etapas - Church Growth International MVP
-                </DialogDescription>
-                
-                {/* Progress */}
-                <div className="space-y-2 pt-4">
-                  <Progress value={progress} className="w-full" />
-                  <p className="text-sm text-muted-foreground text-center">
-                    Etapa {currentStep} de 3
-                  </p>
-                </div>
-              </DialogHeader>
-
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  
-                  {/* Etapa 1: Informações Básicas */}
-                  {currentStep === 1 && (
-                    <div className="space-y-6">
-                      <Alert>
-                        <Building className="h-4 w-4" />
-                        <AlertTitle>Informações Básicas da Região</AlertTitle>
-                        <AlertDescription>
-                          Configure o nome e hierarquia da nova região
-                        </AlertDescription>
-                      </Alert>
-
-                      <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem className="space-y-3">
-                            <FormLabel className="flex items-center gap-2 text-base font-medium">
-                              <MapPin className="w-5 h-5" />
-                              Nome da Região
-                            </FormLabel>
-                            <div className="flex gap-2">
-                              <FormControl>
-                                <Input 
-                                  placeholder="Ex: São Paulo Capital, Rio Interior..." 
-                                  className="h-12 text-base"
-                                  {...field} 
-                                />
-                              </FormControl>
-                              <QuickSuggestions 
-                                suggestions={REGION_NAME_SUGGESTIONS}
-                                onSelect={(value) => form.setValue("name", value)}
-                              />
-                            </div>
-                            <FormDescription>
-                              Nome único que identifica esta região geográfica
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="institution_id"
-                        render={({ field }) => (
-                          <FormItem className="space-y-3">
-                            <FormLabel className="flex items-center gap-2 text-base font-medium">
-                              <Building className="w-5 h-5" />
-                              Instituição
-                            </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-12 text-base">
-                                  <SelectValue placeholder="Selecione a instituição" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {MOCK_INSTITUTIONS.map((institution) => (
-                                  <SelectItem key={institution.id} value={institution.id}>
-                                    <div className="py-2">
-                                      <span className="font-medium">{institution.name}</span>
-                                      <p className="text-xs text-muted-foreground">{institution.denomination}</p>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormDescription>
-                              Instituição à qual esta região pertence
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="parent_region_id"
-                        render={({ field }) => (
-                          <FormItem className="space-y-3">
-                            <FormLabel className="text-base font-medium">
-                              Região Pai (Opcional)
-                            </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-12 text-base">
-                                  <SelectValue placeholder="Selecione uma região pai (opcional)" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="none">Nenhuma (Região Principal)</SelectItem>
-                                {MOCK_REGIONS.map((region) => (
-                                  <SelectItem key={region.id} value={region.id}>
-                                    <div className="py-1">
-                                      <span className="font-medium">{region.name}</span>
-                                      <p className="text-xs text-muted-foreground">{region.institution}</p>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormDescription>
-                              Para criar sub-regiões dentro de uma região maior
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  )}
-
-                  {/* Etapa 2: Dados de Contato */}
-                  {currentStep === 2 && (
-                    <div className="space-y-6">
-                      <Alert>
-                        <Phone className="h-4 w-4" />
-                        <AlertTitle>Informações de Contato</AlertTitle>
-                        <AlertDescription>
-                          Dados do responsável pela região
-                        </AlertDescription>
-                      </Alert>
-
-                      <FormField
-                        control={form.control}
-                        name="contact_name"
-                        render={({ field }) => (
-                          <FormItem className="space-y-3">
-                            <FormLabel className="flex items-center gap-2 text-base font-medium">
-                              <Users className="w-5 h-5" />
-                              Nome do Responsável
-                            </FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Nome completo do responsável pela região" 
-                                className="h-12 text-base"
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <FormField
-                          control={form.control}
-                          name="contact_phone"
-                          render={({ field }) => (
-                            <FormItem className="space-y-3">
-                              <FormLabel className="flex items-center gap-2 text-base font-medium">
-                                <Phone className="w-5 h-5" />
-                                Telefone
-                              </FormLabel>
-                              <FormControl>
-                                <Input 
-                                  placeholder="(11) 99999-9999" 
-                                  className="h-12 text-base"
-                                  {...field} 
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="contact_email"
-                          render={({ field }) => (
-                            <FormItem className="space-y-3">
-                              <FormLabel className="flex items-center gap-2 text-base font-medium">
-                                <Mail className="w-5 h-5" />
-                                Email
-                              </FormLabel>
-                              <FormControl>
-                                <Input 
-                                  placeholder="email@instituicao.org.br" 
-                                  type="email"
-                                  className="h-12 text-base"
-                                  {...field} 
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <FormField
-                          control={form.control}
-                          name="contact_city"
-                          render={({ field }) => (
-                            <FormItem className="space-y-3">
-                              <FormLabel className="flex items-center gap-2 text-base font-medium">
-                                <MapPin className="w-5 h-5" />
-                                Cidade
-                              </FormLabel>
-                              <div className="flex gap-2">
-                                <FormControl>
-                                  <Input 
-                                    placeholder="Cidade principal da região" 
-                                    className="h-12 text-base"
-                                    {...field} 
-                                  />
-                                </FormControl>
-                                <QuickSuggestions 
-                                  suggestions={CITY_SUGGESTIONS}
-                                  onSelect={(value) => form.setValue("contact_city", value)}
-                                />
-                              </div>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="contact_postal_code"
-                          render={({ field }) => (
-                            <FormItem className="space-y-3">
-                              <FormLabel className="text-base font-medium">
-                                CEP (Opcional)
-                              </FormLabel>
-                              <FormControl>
-                                <Input 
-                                  placeholder="00000-000" 
-                                  className="h-12 text-base"
-                                  {...field} 
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <FormField
-                        control={form.control}
-                        name="contact_address"
-                        render={({ field }) => (
-                          <FormItem className="space-y-3">
-                            <FormLabel className="text-base font-medium">
-                              Endereço Completo (Opcional)
-                            </FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                placeholder="Endereço completo do escritório regional..."
-                                rows={3}
-                                className="text-base resize-none"
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  )}
-
-                  {/* Etapa 3: Revisão e Confirmação */}
-                  {currentStep === 3 && (
-                    <div className="space-y-6">
-                      <Alert>
-                        <CheckCircle className="h-4 w-4" />
-                        <AlertTitle>Revisão Final</AlertTitle>
-                        <AlertDescription>
-                          Verifique se todas as informações estão corretas antes de criar a região.
-                        </AlertDescription>
-                      </Alert>
-
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Informações da Região */}
-                        <Card>
-                          <CardHeader className="pb-3">
-                            <CardTitle className="text-sm flex items-center gap-2">
-                              <MapPin className="w-4 h-4" />
-                              Dados da Região
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-3 text-sm">
                             <div>
-                              <span className="text-muted-foreground">Nome:</span>
-                              <p className="font-medium">{form.getValues("name")}</p>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Instituição:</span>
-                              <p className="font-medium">
-                                {MOCK_INSTITUTIONS.find(i => i.id === form.getValues("institution_id"))?.name}
+            <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
+              {t.regionsTitle}
+            </h2>
+            <p className="text-muted-foreground text-0.875rem sm:text-1rem">
+              {t.regionsSubtitle}
                               </p>
                             </div>
-                            {form.getValues("parent_region_id") && form.getValues("parent_region_id") !== "none" && (
-                              <div>
-                                <span className="text-muted-foreground">Região Pai:</span>
-                                <p className="font-medium">
-                                  {MOCK_REGIONS.find(r => r.id === form.getValues("parent_region_id"))?.name}
-                                </p>
-                              </div>
-                            )}
-                            {(!form.getValues("parent_region_id") || form.getValues("parent_region_id") === "none") && (
-                              <div>
-                                <span className="text-muted-foreground">Tipo:</span>
-                                <p className="font-medium">Região Principal</p>
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-
-                        {/* Dados de Contato */}
-                        <Card>
-                          <CardHeader className="pb-3">
-                            <CardTitle className="text-sm flex items-center gap-2">
-                              <Users className="w-4 h-4" />
-                              Contato Responsável
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-3 text-sm">
-                            <div>
-                              <span className="text-muted-foreground">Nome:</span>
-                              <p className="font-medium">{form.getValues("contact_name")}</p>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Telefone:</span>
-                              <p className="font-medium">{form.getValues("contact_phone")}</p>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Email:</span>
-                              <p className="font-medium">{form.getValues("contact_email")}</p>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Cidade:</span>
-                              <p className="font-medium">{form.getValues("contact_city")}</p>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-
-                      {form.getValues("notes") && (
-                        <Card>
-                          <CardHeader className="pb-3">
-                            <CardTitle className="text-sm">Observações</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-sm">{form.getValues("notes")}</p>
-                          </CardContent>
-                        </Card>
-                      )}
-                    </div>
-                  )}
-
-                  <Separator />
-
-                  {/* Navigation Buttons */}
-                  <div className="flex flex-col sm:flex-row justify-between gap-4">
+          
+          <div className="flex items-center gap-3">
+            <Button onClick={handleCreate}>
+              <Plus className="w-4 h-4 mr-2" />
+              {t.createRegion}
+            </Button>
+            
                     <Button
-                      type="button"
                       variant="outline"
-                      onClick={prevStep}
-                      disabled={currentStep === 1}
-                      className="flex items-center justify-center gap-2 h-12 text-base"
-                    >
-                      <ArrowLeft className="w-5 h-5" />
-                      Anterior
+              size="icon"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                     </Button>
-
-                    {currentStep < 3 ? (
-                      <Button
-                        type="button"
-                        onClick={nextStep}
-                        className="flex items-center justify-center gap-2 h-12 text-base"
-                      >
-                        Próximo
-                        <ArrowLeft className="w-5 h-5 rotate-180" />
-                      </Button>
-                    ) : (
-                      <Button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="flex items-center justify-center gap-2 h-12 text-base min-w-48"
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Criando...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="w-5 h-5" />
-                            Criar Região
-                          </>
-                        )}
-                      </Button>
-                    )}
                   </div>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* KPI Cards */}
+        <UseKPICards data={kpiCardsData} />
+
+        <Separator />
+
+        {/* Charts Section */}
+        <div className="space-y-6">
+          {/* Main Chart - Regional Budget Distribution */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Regiões</CardTitle>
-              <MapPin className="h-4 w-4 text-muted-foreground" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="w-5 h-5" />
+                {t.regionalBudgetDistribution}
+              </CardTitle>
+              <CardDescription>Orçamento vs. Valores utilizados por região</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalRegions}</div>
-              <p className="text-xs text-muted-foreground">
-                +12% em relação ao mês anterior
-              </p>
+              <ChartContainer 
+                config={{
+                  budget: { label: "Orçamento", color: "#10b981" },
+                  used: { label: "Utilizado", color: "#f59e0b" },
+                  remaining: { label: "Restante", color: "#3b82f6" }
+                }} 
+                className="h-[300px] sm:h-[360px] w-full"
+              >
+                <BarChart data={chartData.budgetByRegion}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis dataKey="region" fontSize={11} />
+                  <YAxis fontSize={11} tickFormatter={(value) => `$${(value / 1000)}K`} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Legend />
+                  <Bar dataKey="budget" fill="#10b981" radius={4} />
+                  <Bar dataKey="used" fill="#f59e0b" radius={4} />
+                  <Bar dataKey="remaining" fill="#3b82f6" radius={4} />
+                </BarChart>
+              </ChartContainer>
             </CardContent>
           </Card>
 
+          {/* Secondary Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Subsidy Requests by Region */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Igrejas</CardTitle>
-              <Church className="h-4 w-4 text-muted-foreground" />
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  {t.subsidyRequestsByRegion}
+                </CardTitle>
+                <CardDescription>Qual região tem solicitado mais subsídios</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalChurches}</div>
-              <p className="text-xs text-muted-foreground">
-                Distribuídas nas regiões
-              </p>
+                <ChartContainer 
+                  config={{
+                    requests: { label: "Solicitações", color: "#3b82f6" }
+                  }} 
+                  className="h-[250px] sm:h-[300px] w-full"
+                >
+                  <BarChart data={chartData.subsidyRequestsByRegion}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis dataKey="region" fontSize={11} />
+                    <YAxis fontSize={11} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Legend />
+                    <Bar dataKey="requests" fill="#3b82f6" radius={4} />
+                  </BarChart>
+                </ChartContainer>
             </CardContent>
           </Card>
 
+            {/* Churches Distribution by Region */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Membros</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Home className="w-5 h-5" />
+                  {t.churchesByRegion}
+                </CardTitle>
+                <CardDescription>Distribuição de igrejas por região</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalMembers.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">
-                Membros ativos nas regiões
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Média por Região</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.avgMembersPerRegion}</div>
-              <p className="text-xs text-muted-foreground">
-                Membros por região
-              </p>
+                <ChartContainer 
+                  config={{
+                    churches: { label: "Igrejas", color: "#10b981" }
+                  }} 
+                  className="h-[250px] sm:h-[300px] w-full"
+                >
+                  <RechartsPieChart>
+                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                    <Pie
+                      data={chartData.churchesByRegion}
+                      dataKey="churches"
+                      nameKey="region"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      paddingAngle={2}
+                    >
+                      {chartData.churchesByRegion.map((entry: any, index: number) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"][index % 5]}
+                        />
+                      ))}
+                    </Pie>
+                    <Legend />
+                  </RechartsPieChart>
+                </ChartContainer>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters */}
+          {/* Subsidy Requests Timeline */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Filter className="w-5 h-5" />
-              Filtros e Busca
+                <TrendingUp className="w-5 h-5" />
+                {t.subsidyRequestsTimeline}
             </CardTitle>
+              <CardDescription>Evolução mensal das solicitações de subsídio por região</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                  <Input
-                    placeholder="Buscar por nome da região ou instituição..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 h-12 text-base"
-                  />
-                </div>
-              </div>
-              <Select value={selectedInstitution} onValueChange={setSelectedInstitution}>
-                <SelectTrigger className="w-full sm:w-64 h-12 text-base">
-                  <SelectValue placeholder="Filtrar por instituição" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as Instituições</SelectItem>
-                  {MOCK_INSTITUTIONS.map((institution) => (
-                    <SelectItem key={institution.id} value={institution.name}>
-                      {institution.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <ChartContainer 
+                config={{
+                  'São Paulo Capital': { label: "SP Capital", color: "#3b82f6" },
+                  'São Paulo Interior': { label: "SP Interior", color: "#10b981" },
+                  'Rio de Janeiro': { label: "Rio de Janeiro", color: "#f59e0b" },
+                  'Distrito Federal': { label: "Distrito Federal", color: "#ef4444" },
+                  'Bahia - Salvador': { label: "Bahia - Salvador", color: "#8b5cf6" }
+                }} 
+                className="h-[300px] sm:h-[400px] w-full"
+              >
+                <LineChart data={chartData.subsidyTimeline}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis dataKey="month" fontSize={11} />
+                  <YAxis fontSize={11} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Legend />
+                  <Line dataKey="São Paulo Capital" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
+                  <Line dataKey="São Paulo Interior" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
+                  <Line dataKey="Rio de Janeiro" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
+                  <Line dataKey="Distrito Federal" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
+                  <Line dataKey="Bahia - Salvador" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} />
+                </LineChart>
+              </ChartContainer>
           </CardContent>
         </Card>
+        </div>
 
         {/* Regions Table */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MapPin className="w-5 h-5" />
-              Regiões Cadastradas
+              Regions
             </CardTitle>
-            <CardDescription>
-              Lista completa das regiões e suas informações
-            </CardDescription>
+            <CardDescription>Lista completa de regiões com ações de gerenciamento</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Região</TableHead>
-                    <TableHead>Instituição</TableHead>
-                    <TableHead>Responsável</TableHead>
-                    <TableHead>Contato</TableHead>
-                    <TableHead>Igrejas</TableHead>
-                    <TableHead>Membros</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-12">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRegions.map((region) => (
-                    <TableRow key={region.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{region.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Criada em {new Date(region.created_at).toLocaleDateString('pt-BR')}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{region.institution}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{region.contact.name}</div>
-                          <div className="text-sm text-muted-foreground">{region.contact.city}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="text-sm">{region.contact.phone}</div>
-                          <div className="text-sm text-muted-foreground">{region.contact.email}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Church className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-medium">{region.churches_count}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-medium">{region.members_count.toLocaleString()}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={region.status === "active" ? "default" : "secondary"}>
-                          {region.status === "active" ? "Ativa" : "Inativa"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-48">
-                            <div className="space-y-1">
-                              <Button variant="ghost" size="sm" className="w-full justify-start">
-                                <Eye className="w-4 h-4 mr-2" />
-                                Visualizar
-                              </Button>
-                              <Button variant="ghost" size="sm" className="w-full justify-start">
-                                <Edit className="w-4 h-4 mr-2" />
-                                Editar
-                              </Button>
-                              <Button variant="ghost" size="sm" className="w-full justify-start text-destructive">
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Excluir
-                              </Button>
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            {filteredRegions.length === 0 && (
-              <div className="text-center py-12">
-                <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">Nenhuma região encontrada</h3>
-                <p className="text-muted-foreground mb-4">
-                  {searchTerm || selectedInstitution !== "all" 
-                    ? "Tente ajustar os filtros de busca" 
-                    : "Comece criando sua primeira região"
-                  }
-                </p>
-                {(!searchTerm && selectedInstitution === "all") && (
-                  <Button onClick={() => setIsModalOpen(true)}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Criar Primeira Região
-                  </Button>
-                )}
-              </div>
-            )}
+          <CardContent className="overflow-hidden">
+            <DataTable
+              columns={columns}
+              data={MOCK_REGIONS}
+              searchKey="name"
+              searchPlaceholder={t.searchRegions}
+              filterableColumns={[
+                {
+                  id: "institution",
+                  title: "Instituição",
+                  options: [
+                    { label: "União Sul-Paulista", value: "União Sul-Paulista" },
+                    { label: "União Central Brasileira", value: "União Central Brasileira" },
+                    { label: "União Nordeste Brasileira", value: "União Nordeste Brasileira" },
+                  ]
+                },
+                {
+                  id: "status",
+                  title: "Status",
+                  options: [
+                    { label: t.active, value: "active" },
+                    { label: t.inactive, value: "inactive" },
+                  ]
+                }
+              ]}
+            />
           </CardContent>
         </Card>
+
+        {/* Modals */}
+        <AddRegionModal
+          isOpen={isCreateModalOpen}
+          onOpenChange={setIsCreateModalOpen}
+          institutionId="inst1"
+          parentRegions={MOCK_REGIONS.map(r => ({
+            id: r.id,
+            name: r.name,
+            institution_id: r.institution_id,
+            parent_region_id: null,
+            contact_id: null,
+            created_at: r.created_at,
+            updated_at: r.created_at,
+            created_by: 'system',
+            updated_by: 'system',
+            is_deleted: false
+          }))}
+          onSave={handleRegionCreated}
+        />
+
+        {selectedRegion && (
+          <EditRegionModal
+            isOpen={isEditModalOpen}
+            onOpenChange={setIsEditModalOpen}
+            region={{
+              id: selectedRegion.id,
+              institution_id: selectedRegion.institution_id,
+              name: selectedRegion.name,
+              parent_region_id: null,
+              contact_id: null,
+              created_at: selectedRegion.created_at,
+              updated_at: selectedRegion.created_at,
+              created_by: 'system',
+              updated_by: 'system',
+              is_deleted: false
+            }}
+            parentRegions={MOCK_REGIONS.map(r => ({
+              id: r.id,
+              name: r.name,
+              institution_id: r.institution_id,
+              parent_region_id: null,
+              contact_id: null,
+              created_at: r.created_at,
+              updated_at: r.created_at,
+              created_by: 'system',
+              updated_by: 'system',
+              is_deleted: false
+            }))}
+            onSave={handleRegionUpdated}
+          />
+        )}
+
+        {selectedRegion && (
+          <DeleteRegionModal
+            isOpen={isDeleteModalOpen}
+            onOpenChange={setIsDeleteModalOpen}
+            region={{
+              id: selectedRegion.id,
+              institution_id: selectedRegion.institution_id,
+              name: selectedRegion.name,
+              parent_region_id: null,
+              contact_id: null,
+              created_at: selectedRegion.created_at,
+              updated_at: selectedRegion.created_at,
+              created_by: 'system',
+              updated_by: 'system',
+              is_deleted: false
+            }}
+            onSuccess={handleRegionDeleted}
+          />
+        )}
+
+        {/* View Contact Modal */}
+        <ViewContactModal
+          isOpen={isViewContactModalOpen}
+          onOpenChange={setIsViewContactModalOpen}
+          contact={selectedContact}
+          entityName={selectedRegion?.name}
+          entityType="Region"
+        />
+        
+        {/* Annual Budget Modal */}
+        {selectedRegion && (
+          <AnnualBudgetModal
+            isOpen={isBudgetModalOpen}
+            onOpenChange={setIsBudgetModalOpen}
+            budget={selectedBudget}
+            entityType="region"
+            entityName={selectedRegion.name}
+            entityId={selectedRegion.id}
+            onSave={handleBudgetSaved}
+          />
+        )}
       </div>
     </AppLayout>
   )

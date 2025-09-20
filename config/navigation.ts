@@ -52,9 +52,16 @@ const navMainBase: NavItem[] = [
     url: "/dashboard",
     icon: BarChart3,
   },
-  { title: "Structure & Organization", 
-    url: "/structure",
-    icon: Building2, 
+  {
+    title: "Structure & Organization",
+    url: "#",
+    icon: Building2,
+    items: [
+      { title: "Institutions", url: "/institutions" },
+      { title: "Regions", url: "/regions" },
+      { title: "Churches", url: "/churches" },
+      { title: "Departments", url: "/departments" },
+    ],
   },
   {
     title: "Users & Access",
@@ -65,25 +72,24 @@ const navMainBase: NavItem[] = [
       { title: "Access Management", url: "/access" },
     ],
   },
-  {
-    title: "Subsidies",
-    url: "#",
-    icon: DollarSign,
-    items: [
-      { title: "Subsidies Management", url: "/subsidies" },
-      { title: "My Subsidy Requests", url: "/my-subsidies" },
-      { title: "Activities", url: "/subsidies/activities" },
-      { title: "Receipts", url: "/subsidies/receipts" },
-    ],
-  },
+  // {
+  //   title: "Subsidies",
+  //   url: "#",
+  //   icon: DollarSign,
+  //   items: [
+  //     { title: "Subsidies Management", url: "/subsidies" },
+  //     { title: "My Subsidy Requests", url: "/my-subsidies" },
+  //     { title: "Activities", url: "/subsidies/activities" },
+  //     { title: "Receipts", url: "/subsidies/receipts" },
+  //   ],
+  // },
   {
     title: "Reports & Projects",
     url: "#",
     icon: File,
     items: [
+      { title: "Projects", url: "/projects" },
       { title: "Reports", url: "/reports" },
-      { title: "Annual Reports", url: "/annual-reports" },
-      { title: "Mission Projects", url: "/mission-projects" },
     ],
   },
   {
@@ -145,7 +151,7 @@ export const navigation: NavigationItem[] = [
     name: "Structure & Organization",
     icon: Building,
     items: [
-      { name: "Structure", href: "/structure", icon: Building },
+      { name: "Institutions", href: "/institutions", icon: Building },
       { name: "Regions", href: "/regions", icon: Map },
       { name: "Churches", href: "/churches", icon: Church },
       { name: "Departments", href: "/departments", icon: Briefcase },

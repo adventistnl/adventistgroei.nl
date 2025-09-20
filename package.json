@@ -6,9 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "generate": "pnpm generate:schema && pnpm generate:types",
+    "generate": "pnpm generate:schema && pnpm generate:types && pnpm generate:codegen",
     "generate:schema": "apollo schema:download --endpoint=http://localhost:3008/graphql/ graphql-schema.json",
-    "generate:types": "apollo codegen:generate --localSchemaFile=graphql-schema.json --target=typescript --tagName=gql --no-addTypename --globalTypesFile=types/graphql-global-types.ts --outputFlat types"
+    "generate:types": "apollo codegen:generate --localSchemaFile=graphql-schema.json --target=typescript --tagName=gql --outputFlat types",
+    "generate:codegen": "graphql-codegen --config codegen.yml"
   },
   "dependencies": {
     "@apollo/client": "^4.0.4",
@@ -55,6 +56,7 @@
     "graphql": "^16.11.0",
     "i18next": "^25.4.2",
     "input-otp": "1.4.1",
+    "jwt-decode": "^4.0.0",
     "lucide-react": "^0.454.0",
     "next": "15.2.4",
     "next-themes": "^0.4.6",
@@ -78,6 +80,7 @@
     "@graphql-codegen/typescript-operations": "^4.6.1",
     "@graphql-codegen/typescript-react-apollo": "^4.3.3",
     "@tailwindcss/postcss": "^4.1.9",
+    "@types/jwt-decode": "^3.1.0",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",

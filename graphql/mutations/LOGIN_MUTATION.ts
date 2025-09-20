@@ -9,11 +9,17 @@ export const LOGIN_MUTATION = gql`
         id
         name
         email
-        user_roles{
-          id
-          name
-          description
-          key_code
+        user_roles {
+            id
+            name
+            description
+            key_code
+            permissions {
+                group
+                data {
+                    name
+                }
+            }
         }
       }
     }

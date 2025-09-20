@@ -6,9 +6,11 @@ import {
   InMemoryCache,
   
 } from "@apollo/client-integration-nextjs";
+import { useCookies } from "@/hooks/use-cookies";
 
 // have a function to create a client for you
 export function makeClient() {
+  const { getCookies } = useCookies();
   const httpLink = new HttpLink({
     uri: config.graphqlApiUrl,
     fetchOptions: {},
@@ -17,7 +19,8 @@ export function makeClient() {
   const authLink = new SetContextLink((operation, prevContext) => {
     let token = "";
     if (typeof window !== "undefined") {
-      token = localStorage.getItem("auth-token") || "";
+      const cookies = getCookies();
+      token = cookies["auth-token"] || "";
     }
     return {
       ...prevContext,

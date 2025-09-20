@@ -5,7 +5,7 @@ import { GlobalSearch, useGlobalSearch } from "@/components/global-search"
 import { LanguageSelector } from "@/components/language-selector"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { NotificationsSidebar } from "@/components/notifications-sidebar"
-import { InviteModalHeader } from "@/components/modals/invite-modal-header"
+import { InviteModal } from "@/components/modals/invite-modal"
 import { Button } from "@/components/ui/button"
 import {
   Breadcrumb,
@@ -99,7 +99,7 @@ export function ModernHeader() {
             <LanguageSelector />
 
             {/* Invite Button - Far Right */}
-            <InviteModalHeader onInviteSent={handleInviteSent}>
+            <InviteModal onInviteSent={handleInviteSent}>
               <Button 
                 variant="default" 
                 size="sm"
@@ -108,7 +108,7 @@ export function ModernHeader() {
                 <UserPlus className="w-4 h-4" />
                 <span className="hidden sm:inline">Invite</span>
               </Button>
-            </InviteModalHeader>
+            </InviteModal>
           </div>
         </div>
       </div>

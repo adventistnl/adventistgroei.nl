@@ -288,15 +288,15 @@ export function CreateUserModal({
               <div className="space-y-2">
                 <Label htmlFor="user-department">{t('users.modals.create_user.department')}</Label>
                 <Select 
-                  value={userForm.department_id || ''} 
-                  onValueChange={(value) => setUserForm(prev => ({ ...prev, department_id: value || undefined }))}
+                  value={userForm.department_id || 'none'} 
+                  onValueChange={(value) => setUserForm(prev => ({ ...prev, department_id: value === 'none' ? undefined : value }))}
                   disabled={isLoading || !userForm.institution_id}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select department (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Department</SelectItem>
+                    <SelectItem value="none">No Department</SelectItem>
                     {filteredDepartments.map((department) => (
                       <SelectItem key={department.id} value={department.id}>
                         {department.name}

@@ -106,7 +106,6 @@ export const NavUser = React.memo(function NavUser({ user }: NavUserProps) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={handleProfileClick}>
                 <BadgeCheck className="sidebar-icon" />

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
+import { structureTranslations } from "@/lib/translations/structure"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -79,7 +80,9 @@ export function AddRegionModal({
   parentRegions = [],
   onSave
 }: AddRegionModalProps) {
-  const { t } = useTranslation()
+  const { i18n } = useTranslation()
+  const currentLanguage = i18n?.language || 'en'
+  const t = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState<Partial<RegionData & { contact: Partial<ContactData> }>>({
     institution_id: institutionId,
@@ -157,13 +160,13 @@ export function AddRegionModal({
     const newErrors: Record<string, string> = {}
 
     if (!formData.name?.trim()) {
-      newErrors.name = t('regions.validation.name_required')
+      newErrors.name = t.regions.validation.name_required
     } else if (formData.name.trim().length < 2) {
-      newErrors.name = t('regions.validation.name_min_length')
+      newErrors.name = t.regions.validation.name_min_length
     }
 
     if (formData.contact?.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact.email)) {
-      newErrors['contact.email'] = t('regions.validation.email_invalid')
+      newErrors['contact.email'] = t.regions.validation.email_invalid
     }
 
     setErrors(newErrors)
@@ -174,7 +177,7 @@ export function AddRegionModal({
     if (!validateForm()) return
 
     setIsLoading(true)
-    const loadingToast = toast.loading(t('regions.toasts.creating'))
+    const loadingToast = toast.loading(t.regions.toasts.creating)
 
     try {
       // Simulate API call
@@ -194,7 +197,7 @@ export function AddRegionModal({
       }
 
       toast.dismiss(loadingToast)
-      toast.success(t('regions.toasts.created'), {
+      toast.success(t.regions.toasts.created, {
         duration: 3000,
         icon: '🗺️'
       })
@@ -207,7 +210,7 @@ export function AddRegionModal({
 
     } catch (error) {
       toast.dismiss(loadingToast)
-      toast.error(t('regions.toasts.create_failed'))
+      toast.error(t.regions.toasts.create_failed)
     } finally {
       setIsLoading(false)
     }
@@ -243,10 +246,10 @@ export function AddRegionModal({
         <DialogHeader className="space-y-3">
           <DialogTitle className="flex items-center gap-2">
             <MapPin className="w-5 h-5 text-green-600" />
-            {t('regions.modals.create.title')}
+            {t.regions.modals.create.title}
           </DialogTitle>
           <DialogDescription>
-            {t('regions.modals.create.description')}
+            {t.regions.modals.create.description}
           </DialogDescription>
         </DialogHeader>
 
@@ -263,18 +266,18 @@ export function AddRegionModal({
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <h4 className="font-semibold text-lg truncate">
-                    {formData.name || t('regions.placeholders.name')}
+                    {formData.name || t.regions.placeholders.name}
                   </h4>
                   <p className="text-sm text-muted-foreground truncate">
                     {formData.parent_region_id 
-                      ? parentRegions.find(r => r.id === formData.parent_region_id)?.name || t('regions.placeholders.parent_region')
-                      : t('regions.placeholders.parent_region')
+                      ? parentRegions.find(r => r.id === formData.parent_region_id)?.name || t.regions.placeholders.parent_region
+                      : t.regions.placeholders.parent_region
                     }
                   </p>
                   <div className="flex flex-wrap gap-1 mt-2">
                     <Badge variant="outline" className="text-xs">
                       <Globe className="w-3 h-3 mr-1" />
-                      {formData.contact?.country || t('regions.placeholders.country')}
+                      {formData.contact?.country || t.regions.placeholders.contact_country}
                     </Badge>
                     <Badge variant="outline" className="text-xs">
                       <Calendar className="w-3 h-3 mr-1" />
@@ -291,18 +294,18 @@ export function AddRegionModal({
             {/* Basic Information */}
             <div className="space-y-4">
               <h5 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-                {t('regions.sections.basic_info')}
+                {t.regions.sections.basic_info}
               </h5>
               
               <div className="space-y-2">
                 <Label htmlFor="name">
-                  {t('regions.fields.name')} *
+                  {t.regions.fields.name} *
                 </Label>
                 <Input
                   id="name"
                   value={formData.name || ''}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder={t('regions.placeholders.name')}
+                  placeholder={t.regions.placeholders.name}
                   disabled={isLoading}
                   className={`w-full ${errors.name ? 'border-red-500' : ''}`}
                 />
@@ -313,18 +316,18 @@ export function AddRegionModal({
 
               <div className="space-y-2">
                 <Label htmlFor="parent_region_id">
-                  {t('regions.fields.parent_region')}
+                  {t.regions.fields.parent_region}
                 </Label>
                 <Select
                   value={formData.parent_region_id || ''}
-                  onValueChange={(value) => handleInputChange('parent_region_id', value === 'none' ? null : value)}
+                    onValueChange={(value) => handleInputChange('parent_region_id', value === 'none' ? '' : value)}
                   disabled={isLoading}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t('regions.placeholders.parent_region')} />
+                    <SelectValue placeholder={t.regions.placeholders.parent_region} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">{t('regions.placeholders.no_parent')}</SelectItem>
+                    <SelectItem value="none">{t.regions.placeholders.no_parent}</SelectItem>
                     {parentRegions.map((region) => (
                       <SelectItem key={region.id} value={region.id}>
                         {region.name}
@@ -341,19 +344,19 @@ export function AddRegionModal({
             <div className="space-y-4">
               <h5 className="font-medium text-sm text-muted-foreground uppercase tracking-wide flex items-center gap-2">
                 <User className="w-4 h-4" />
-                {t('regions.sections.contact_info')}
+                {t.regions.sections.contact_info}
               </h5>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="contact_name">
-                    {t('regions.fields.contact_name')}
+                    {t.regions.fields.contact_name}
                   </Label>
                   <Input
                     id="contact_name"
                     value={formData.contact?.name || ''}
                     onChange={(e) => handleInputChange('contact.name', e.target.value)}
-                    placeholder={t('regions.placeholders.contact_name')}
+                    placeholder={t.regions.placeholders.contact_name}
                     disabled={isLoading}
                     className="w-full"
                   />
@@ -361,14 +364,14 @@ export function AddRegionModal({
 
                 <div className="space-y-2">
                   <Label htmlFor="contact_email">
-                    {t('regions.fields.contact_email')}
+                    {t.regions.fields.contact_email}
                   </Label>
                   <Input
                     id="contact_email"
                     type="email"
                     value={formData.contact?.email || ''}
                     onChange={(e) => handleInputChange('contact.email', e.target.value)}
-                    placeholder={t('regions.placeholders.contact_email')}
+                    placeholder={t.regions.placeholders.contact_email}
                     disabled={isLoading}
                     className={`w-full ${errors['contact.email'] ? 'border-red-500' : ''}`}
                   />
@@ -381,13 +384,13 @@ export function AddRegionModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="contact_phone">
-                    {t('regions.fields.contact_phone')}
+                    {t.regions.fields.contact_phone}
                   </Label>
                   <Input
                     id="contact_phone"
                     value={formData.contact?.phone || ''}
                     onChange={(e) => handleInputChange('contact.phone', e.target.value)}
-                    placeholder={t('regions.placeholders.contact_phone')}
+                    placeholder={t.regions.placeholders.contact_phone}
                     disabled={isLoading}
                     className="w-full"
                   />
@@ -395,13 +398,13 @@ export function AddRegionModal({
 
                 <div className="space-y-2">
                   <Label htmlFor="contact_mobile">
-                    {t('regions.fields.contact_mobile')}
+                    {t.regions.fields.contact_mobile}
                   </Label>
                   <Input
                     id="contact_mobile"
                     value={formData.contact?.mobile || ''}
                     onChange={(e) => handleInputChange('contact.mobile', e.target.value)}
-                    placeholder={t('regions.placeholders.contact_mobile')}
+                    placeholder={t.regions.placeholders.contact_mobile}
                     disabled={isLoading}
                     className="w-full"
                   />
@@ -411,13 +414,13 @@ export function AddRegionModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="contact_country">
-                    {t('regions.fields.contact_country')}
+                    {t.regions.fields.contact_country}
                   </Label>
                   <Input
                     id="contact_country"
                     value={formData.contact?.country || ''}
                     onChange={(e) => handleInputChange('contact.country', e.target.value)}
-                    placeholder={t('regions.placeholders.contact_country')}
+                    placeholder={t.regions.placeholders.contact_country}
                     disabled={isLoading}
                     className="w-full"
                   />
@@ -425,13 +428,13 @@ export function AddRegionModal({
 
                 <div className="space-y-2">
                   <Label htmlFor="contact_city">
-                    {t('regions.fields.contact_city')}
+                    {t.regions.fields.contact_city}
                   </Label>
                   <Input
                     id="contact_city"
                     value={formData.contact?.city || ''}
                     onChange={(e) => handleInputChange('contact.city', e.target.value)}
-                    placeholder={t('regions.placeholders.contact_city')}
+                    placeholder={t.regions.placeholders.contact_city}
                     disabled={isLoading}
                     className="w-full"
                   />
@@ -440,13 +443,13 @@ export function AddRegionModal({
 
               <div className="space-y-2">
                 <Label htmlFor="contact_address">
-                  {t('regions.fields.contact_address')}
+                  {t.regions.fields.contact_address}
                 </Label>
                 <Input
                   id="contact_address"
                   value={formData.contact?.address || ''}
                   onChange={(e) => handleInputChange('contact.address', e.target.value)}
-                  placeholder={t('regions.placeholders.contact_address')}
+                  placeholder={t.regions.placeholders.contact_address}
                   disabled={isLoading}
                   className="w-full"
                 />
@@ -455,13 +458,13 @@ export function AddRegionModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="contact_postal_code">
-                    {t('regions.fields.contact_postal_code')}
+                    {t.regions.fields.contact_postal_code}
                   </Label>
                   <Input
                     id="contact_postal_code"
                     value={formData.contact?.postal_code || ''}
                     onChange={(e) => handleInputChange('contact.postal_code', e.target.value)}
-                    placeholder={t('regions.placeholders.contact_postal_code')}
+                    placeholder={t.regions.placeholders.contact_postal_code}
                     disabled={isLoading}
                     className="w-full"
                   />
@@ -469,14 +472,14 @@ export function AddRegionModal({
 
                 <div className="space-y-2">
                   <Label htmlFor="contact_website">
-                    {t('regions.fields.contact_website')}
+                    {t.regions.fields.contact_website}
                   </Label>
                   <Input
                     id="contact_website"
                     type="url"
                     value={formData.contact?.website || ''}
                     onChange={(e) => handleInputChange('contact.website', e.target.value)}
-                    placeholder={t('regions.placeholders.contact_website')}
+                    placeholder={t.regions.placeholders.contact_website}
                     disabled={isLoading}
                     className="w-full"
                   />
@@ -494,7 +497,7 @@ export function AddRegionModal({
               className="w-full sm:w-auto"
             >
               <X className="w-4 h-4 mr-2" />
-              {t('common.cancel')}
+              {t.common.cancel}
             </Button>
             <Button 
               onClick={handleSave} 
@@ -502,7 +505,7 @@ export function AddRegionModal({
               className="w-full sm:w-auto"
             >
               <Save className="w-4 h-4 mr-2" />
-              {isLoading ? t('regions.creating') : t('common.save')}
+              {isLoading ? t.regions.creating : t.common.save}
             </Button>
           </div>
         </div>

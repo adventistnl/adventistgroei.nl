@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import { useTranslation } from "react-i18next"
+import { structureTranslations } from "@/lib/translations/structure"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -53,7 +54,9 @@ export function DeleteRegionModal({
   region,
   onSuccess
 }: DeleteRegionModalProps) {
-  const { t } = useTranslation()
+  const { i18n } = useTranslation()
+  const currentLanguage = i18n?.language || 'en'
+  const t = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
   const [isLoading, setIsLoading] = useState(false)
   const [showConsequences, setShowConsequences] = useState(false)
   const [understandConsequences, setUnderstandConsequences] = useState(false)
@@ -73,12 +76,12 @@ export function DeleteRegionModal({
 
   const handleDelete = async () => {
     if (!understandConsequences || !isConfirmationValid) {
-      toast.error(t('regions.modals.delete.confirmation_help'))
+      toast.error(t.regions.modals.delete.confirmation_help)
       return
     }
 
     setIsLoading(true)
-    const loadingToast = toast.loading(t('regions.toasts.deactivating'))
+    const loadingToast = toast.loading(t.regions.toasts.deactivating)
 
     try {
       // Simulate API call
@@ -94,7 +97,7 @@ export function DeleteRegionModal({
       }
 
       toast.dismiss(loadingToast)
-      toast.success(t('regions.toasts.deactivated'), {
+      toast.success(t.regions.toasts.deactivated, {
         duration: 3000,
         icon: '✅'
       })
@@ -104,7 +107,7 @@ export function DeleteRegionModal({
 
     } catch (error) {
       toast.dismiss(loadingToast)
-      toast.error(t('regions.toasts.deactivate_failed'))
+      toast.error(t.regions.toasts.deactivate_failed)
     } finally {
       setIsLoading(false)
     }
@@ -126,10 +129,10 @@ export function DeleteRegionModal({
         <DialogHeader className="space-y-3">
           <DialogTitle className="flex items-center gap-2 text-red-600">
             <AlertTriangle className="w-5 h-5" />
-            {t('regions.modals.delete.deactivate_title')}
+            {t.regions.modals.delete.deactivate_title}
           </DialogTitle>
           <DialogDescription>
-            {t('regions.modals.delete.deactivate_description')}
+            {t.regions.modals.delete.deactivate_description}
           </DialogDescription>
         </DialogHeader>
 
@@ -137,10 +140,10 @@ export function DeleteRegionModal({
           {/* Region Information */}
           <Card className="border-red-200 dark:border-red-800">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-red-600" />
-                {t('regions.labels.region')} Information
-              </CardTitle>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-red-600" />
+                  {t.regions.labels.region} Information
+                </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center gap-3">
@@ -163,7 +166,7 @@ export function DeleteRegionModal({
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2 text-orange-600">
                   <AlertTriangle className="w-4 h-4" />
-                  {t('regions.modals.delete.affected_components')}
+                  {t.regions.modals.delete.affected_components}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -212,7 +215,7 @@ export function DeleteRegionModal({
                   className="w-full border-orange-300 text-orange-700 hover:bg-orange-50"
                 >
                   <Eye className="w-4 h-4 mr-2" />
-                  {t('regions.modals.delete.view_consequences')}
+                  {t.regions.modals.delete.view_consequences}
                 </Button>
               </CardContent>
             </Card>
@@ -221,44 +224,44 @@ export function DeleteRegionModal({
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2 text-red-600">
                   <AlertTriangle className="w-4 h-4" />
-                  {t('regions.modals.delete.consequences.church_access')}
+                  {t.regions.modals.delete.consequences.church_access}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-4">
                   <div className="p-4 bg-red-50 dark:bg-red-950 rounded-lg">
                     <h4 className="font-medium text-red-800 dark:text-red-200 mb-2">
-                      {t('regions.modals.delete.consequences.church_access')}
+                      {t.regions.modals.delete.consequences.church_access}
                     </h4>
                     <p className="text-sm text-red-700 dark:text-red-300">
-                      {t('regions.modals.delete.consequences.church_access_desc')}
+                      {t.regions.modals.delete.consequences.church_access_desc}
                     </p>
                   </div>
 
                   <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
                     <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">
-                      {t('regions.modals.delete.consequences.data_preservation')}
+                      {t.regions.modals.delete.consequences.data_preservation}
                     </h4>
                     <p className="text-sm text-blue-700 dark:text-blue-300">
-                      {t('regions.modals.delete.consequences.data_preservation_desc')}
+                      {t.regions.modals.delete.consequences.data_preservation_desc}
                     </p>
                   </div>
 
                   <div className="p-4 bg-yellow-50 dark:bg-yellow-950 rounded-lg">
                     <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-                      {t('regions.modals.delete.consequences.member_impact')}
+                      {t.regions.modals.delete.consequences.member_impact}
                     </h4>
                     <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                      {t('regions.modals.delete.consequences.member_impact_desc')}
+                      {t.regions.modals.delete.consequences.member_impact_desc}
                     </p>
                   </div>
 
                   <div className="p-4 bg-purple-50 dark:bg-purple-950 rounded-lg">
                     <h4 className="font-medium text-purple-800 dark:text-purple-200 mb-2">
-                      {t('regions.modals.delete.consequences.event_impact')}
+                      {t.regions.modals.delete.consequences.event_impact}
                     </h4>
                     <p className="text-sm text-purple-700 dark:text-purple-300">
-                      {t('regions.modals.delete.consequences.event_impact_desc')}
+                      {t.regions.modals.delete.consequences.event_impact_desc}
                     </p>
                   </div>
                 </div>
@@ -268,10 +271,10 @@ export function DeleteRegionModal({
                 <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg">
                   <h4 className="font-medium text-green-800 dark:text-green-200 mb-2 flex items-center gap-2">
                     <Shield className="w-4 h-4" />
-                    {t('regions.modals.delete.soft_delete.title')}
+                    {t.regions.modals.delete.soft_delete.title}
                   </h4>
                   <p className="text-sm text-green-700 dark:text-green-300">
-                    {t('regions.modals.delete.soft_delete.description')}
+                    {t.regions.modals.delete.soft_delete.description}
                   </p>
                 </div>
 
@@ -279,11 +282,11 @@ export function DeleteRegionModal({
                   <Checkbox
                     id="understand"
                     checked={understandConsequences}
-                    onCheckedChange={setUnderstandConsequences}
+                    onCheckedChange={(checked) => setUnderstandConsequences(checked === true)}
                     disabled={isLoading}
                   />
                   <Label htmlFor="understand" className="text-sm">
-                    {t('regions.modals.delete.understand_consequences')}
+                    {t.regions.modals.delete.understand_consequences}
                   </Label>
                 </div>
 
@@ -294,7 +297,7 @@ export function DeleteRegionModal({
                     className="w-full"
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
-                    {t('regions.modals.delete.acknowledge_text')}
+                    {t.regions.modals.delete.acknowledge_text}
                   </Button>
                 )}
               </CardContent>
@@ -313,7 +316,7 @@ export function DeleteRegionModal({
               <CardContent className="space-y-4">
                 <div className="p-4 bg-red-50 dark:bg-red-950 rounded-lg">
                   <p className="text-sm text-red-700 dark:text-red-300 mb-3">
-                    {t('regions.modals.delete.type_confirmation')}
+                    {t.regions.modals.delete.type_confirmation}
                   </p>
                   <div className="space-y-2">
                     <Label htmlFor="confirmation" className="text-sm font-medium">
@@ -323,12 +326,12 @@ export function DeleteRegionModal({
                       id="confirmation"
                       value={confirmationText}
                       onChange={(e) => setConfirmationText(e.target.value)}
-                      placeholder={t('regions.modals.delete.confirmation_placeholder')}
+                      placeholder={t.regions.modals.delete.confirmation_placeholder}
                       disabled={isLoading}
                       className={isConfirmationValid ? 'border-green-500' : 'border-red-500'}
                     />
                     <p className="text-xs text-muted-foreground">
-                      {t('regions.modals.delete.confirmation_help')}
+                      {t.regions.modals.delete.confirmation_help}
                     </p>
                   </div>
                 </div>
@@ -340,7 +343,7 @@ export function DeleteRegionModal({
           <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
             <Button variant="outline" onClick={handleClose} disabled={isLoading} className="w-full sm:w-auto">
               <X className="w-4 h-4 mr-2" />
-              {t('common.cancel')}
+              {t.common.cancel}
             </Button>
 
             {showConfirmation && isConfirmationValid && (
@@ -350,7 +353,7 @@ export function DeleteRegionModal({
                 className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
-                {isLoading ? t('regions.modals.delete.deactivating') : t('regions.modals.delete.deactivate_region')}
+                {isLoading ? t.regions.modals.delete.deactivating : t.regions.modals.delete.deactivate_region}
               </Button>
             )}
           </div>

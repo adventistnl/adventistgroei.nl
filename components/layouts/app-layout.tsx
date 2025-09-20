@@ -1,7 +1,9 @@
 "use client"
 
+import React from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { ModernHeader } from "@/components/modern-header"
+import { MobileHeader } from "@/components/mobile-header"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -18,20 +20,59 @@ import {
 } from "@/components/ui/sidebar"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 import { usePageContext } from "@/contexts/page-context"
+import { useBreadcrumbs } from "@/hooks/use-breadcrumbs"
 
 interface AppLayoutProps {
   children: React.ReactNode
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { pageTitle, breadcrumbs } = usePageContext()
+  const { pageTitle, breadcrumbs: contextBreadcrumbs } = usePageContext()
+  const { breadcrumbs: autoBreadcrumbs } = useBreadcrumbs()
+  
+  // Use context breadcrumbs if available, otherwise use auto-generated ones
+  const breadcrumbs = contextBreadcrumbs && contextBreadcrumbs.length > 0 ? contextBreadcrumbs : autoBreadcrumbs
 
   return (
     <ProtectedRoute>
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <ModernHeader />
+          {/* Mobile Header - Visível apenas em dispositivos móveis */}
+          <div className="md:hidden">
+            <MobileHeader />
+          </div>
+          
+          {/* Desktop Header - Visível apenas em desktop */}
+          <div className="hidden md:block">
+            <ModernHeader />
+          </div>
+          
+          {/* Breadcrumbs - Apenas no desktop */}
+          {breadcrumbs && breadcrumbs.length > 1 && (
+            <div className="hidden md:block px-6 pt-4">
+              <Breadcrumb>
+                <BreadcrumbList>
+                  {breadcrumbs.map((breadcrumb, index) => (
+                    <React.Fragment key={index}>
+                      <BreadcrumbItem>
+                        {breadcrumb.href ? (
+                          <BreadcrumbLink href={breadcrumb.href}>
+                            {'label' in breadcrumb ? breadcrumb.label : (breadcrumb as any).name}
+                          </BreadcrumbLink>
+                        ) : (
+                          <BreadcrumbPage>
+                            {'label' in breadcrumb ? breadcrumb.label : (breadcrumb as any).name}
+                          </BreadcrumbPage>
+                        )}
+                      </BreadcrumbItem>
+                      {index < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
+                    </React.Fragment>
+                  ))}
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
+          )}
           
           <div className="flex flex-1 flex-col gap-4 p-6 pt-4">
             {children}

@@ -13,6 +13,7 @@ import {
 import toast from "react-hot-toast"
 
 const languages = [
+  { code: 'pt', name: 'Português', flag: '🇧🇷' },
   { code: 'en', name: 'English', flag: '🇺🇸' },
   { code: 'nl', name: 'Nederlands', flag: '🇳🇱' }
 ]
