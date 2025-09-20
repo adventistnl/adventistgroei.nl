@@ -21,6 +21,10 @@ import { InstitutionDataStep } from "@/components/registration/steps/institution
 // Hook customizado para lógica de registro
 import { useRegistration } from "@/hooks/use-registration"
 import { validateToken } from "@/utils/validateToken"
+import { useChurches } from "@/hooks/use-churches"
+import { useInstitutions } from "@/hooks/use-institutions"
+import { departments } from "@/data/usersData"
+import { useDepartments } from "@/hooks/use-departments"
 
 /**
  * CONFIGURAÇÕES E DADOS MOCK
@@ -120,7 +124,8 @@ function RegisterPageContent() {
   // Obter traduções para o idioma atual
   const currentLanguage = i18n?.language || 'en'
   const t = registerTranslations[currentLanguage as keyof typeof registerTranslations] || registerTranslations.en
-
+  const { churches } = useChurches()
+  const { departments } = useDepartments()
   /**
    * CONFIGURAÇÃO DOS STEPS DO FORMULÁRIO
    * Cada step é um objeto com título, descrição, validação e campos
@@ -179,8 +184,8 @@ function RegisterPageContent() {
             department: t.department,
             church: t.church
           }}
-          departments={DEPARTMENTS}
-          churches={CHURCHES}
+          departments={departments}
+          churches={churches}
           selectedDepartment={selectedDepartment}
         />
       )

@@ -1622,7 +1622,7 @@ export type UserCreateDto = {
   department_id: Scalars['String']['input'];
   email: Scalars['String']['input'];
   institution_id: Scalars['String']['input'];
-  language_preference: LanguagePreference;
+  language_preference: Scalars['String']['input'];
   name: Scalars['String']['input'];
   password: Scalars['String']['input'];
 };

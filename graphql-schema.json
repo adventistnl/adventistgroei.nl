@@ -14211,8 +14211,8 @@
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
-                "kind": "ENUM",
-                "name": "LanguagePreference",
+                "kind": "SCALAR",
+                "name": "String",
                 "ofType": null
               }
             },

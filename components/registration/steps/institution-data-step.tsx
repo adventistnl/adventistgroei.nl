@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { Shield, Church } from "lucide-react"
 import { Control } from "react-hook-form"
 import {
   FormControl,
@@ -12,18 +11,10 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { DepartmentSelect, ChurchSelect } from "../carousel-select"
+import { Church, Department } from "@/types/graphql-global-types"
+import { Churches_churches } from "@/types/Churches"
+import { Departments_departments } from "@/types/Departments"
 
-interface Department {
-  id: string
-  name: string
-  description: string
-}
-
-interface Church {
-  id: string
-  name: string
-  location: string
-}
 
 interface InstitutionDataStepProps {
   control: Control<any>
@@ -31,8 +22,8 @@ interface InstitutionDataStepProps {
     department: string
     church: string
   }
-  departments: Department[]
-  churches: Record<string, Church[]>
+  departments: Departments_departments[]
+  churches: Churches_churches[]
   selectedDepartment: string
 }
 
@@ -76,9 +67,9 @@ export function InstitutionDataStep({
         render={({ field }) => (
           <FormItem className="w-full max-w-2xl">
             <FormControl>
-              {selectedDepartment && churches[selectedDepartment] ? (
+              {selectedDepartment ? (
                 <ChurchSelect
-                  churches={churches[selectedDepartment]}
+                  churches={churches}
                   selectedChurch={field.value}
                   onSelect={field.onChange}
                   className="w-full max-w-2xl"
