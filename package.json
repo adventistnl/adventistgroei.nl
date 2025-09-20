@@ -6,9 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "generate": "pnpm generate:schema && pnpm generate:codegen",
+    "generate": "pnpm generate:schema && pnpm generate:types && pnpm generate:codegen",
     "generate:schema": "apollo schema:download --endpoint=http://localhost:3008/graphql/ graphql-schema.json",
-    "generate:types": "apollo codegen:generate --localSchemaFile=graphql-schema.json --target=typescript --tagName=gql --no-addTypename --outputFlat types",
+    "generate:types": "apollo codegen:generate --localSchemaFile=graphql-schema.json --target=typescript --tagName=gql --outputFlat types",
     "generate:codegen": "graphql-codegen --config codegen.yml"
   },
   "dependencies": {

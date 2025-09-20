@@ -1,10 +1,10 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useLogin } from '@/hooks/use-login';
 import { AuthModel, RoleModel } from '@/types/graphql-global-types';
 import { useCookies } from '@/hooks/use-cookies';
 import { validateToken } from '@/utils/validateToken';
+import { useLoginMutation } from '@/hooks/graphql/use-login-mutation';
 
 interface AuthContextType {
   user: AuthModel['user'] | null;
@@ -69,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   }, []);
 
-  const [loginMutation] = useLogin();
+  const [loginMutation] = useLoginMutation();
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);

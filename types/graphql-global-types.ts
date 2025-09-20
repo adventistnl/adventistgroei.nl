@@ -556,7 +556,8 @@ export type InviteUserDto = {
   email: Scalars['String']['input'];
   institution_id: Scalars['String']['input'];
   inviter_id: Scalars['String']['input'];
-  language_preference?: InputMaybe<LanguagePreference>;
+  language_preference?: InputMaybe<Scalars['String']['input']>;
+  message?: InputMaybe<Scalars['String']['input']>;
   role_ids: Array<Scalars['String']['input']>;
 };
 

@@ -16690,8 +16690,20 @@
             "name": "language_preference",
             "description": null,
             "type": {
-              "kind": "ENUM",
-              "name": "LanguagePreference",
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "message",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
               "ofType": null
             },
             "defaultValue": null,

@@ -3,13 +3,12 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { LanguagePreference } from "./graphql-global-types";
-
 // ====================================================
 // GraphQL mutation operation: InviteUser
 // ====================================================
 
 export interface InviteUser_inviteUser {
+  __typename: "InviteModel";
   token: string;
 }
 
@@ -22,5 +21,5 @@ export interface InviteUserVariables {
   email: string;
   institution_id: string;
   inviter_id: string;
-  language_preference: LanguagePreference;
+  language_preference: string;
 }

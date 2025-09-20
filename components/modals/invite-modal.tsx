@@ -21,18 +21,10 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Separator } from "@/components/ui/separator"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -41,8 +33,10 @@ import { useTranslation } from "react-i18next"
 import { useInstitution } from "@/contexts/institution-context"
 import { inviteTranslations } from "@/lib/translations/invite"
 import { RoleSelector } from "@/components/shared/role-selector"
-import { useInviteUser } from "@/hooks/use-invite-user"
+import { useInviteUserMutation } from "@/hooks/graphql/use-invite-user-mutation"
 import { LanguagePreference } from "@/types/graphql-global-types"
+import { useSendInviteEmailMutation } from "@/hooks/graphql/use-send-invite-email-mutation"
+import { useUser } from "@/hooks/use-user"
 
 const inviteSchema = z.object({
   type: z.enum(["email", "link"]),
@@ -68,7 +62,9 @@ interface InviteModalProps {
 }
 
 export function InviteModal({ children, onInviteSent }: InviteModalProps) {
-  const [inviteUser] = useInviteUser();
+  const { user, userId } = useUser();
+  const [inviteUser] = useInviteUserMutation();
+  const [sendInviteEmail] = useSendInviteEmailMutation();
   const { i18n } = useTranslation();
   const { activeInstitution } = useInstitution();
   const [open, setOpen] = useState(false);
@@ -98,19 +94,19 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
     }
   }, [inviteType, selectedRole]);
 
-  const generateLinkForRole = async () => {
+  const generateLinkForRole = async (): Promise<{ inviteToken: string, generatedLink: string } | undefined> => {
     if (!selectedRole) return;
-
+    
     try {
-      const languagePreference: LanguagePreference = currentLanguage === "en" ? LanguagePreference.En : LanguagePreference.Nl;
-
+      // const languagePreference: LanguagePreference = currentLanguage === "en" ? LanguagePreference.En : LanguagePreference.Nl;
+      console.log("Generating link with id", user);
       const { data } = await inviteUser({
         variables: {
           role_ids: [selectedRole],
           email: "", // Optional, depending on the invite type
-          institution_id: activeInstitution?.id || "default-institution",
-          inviter_id: "current-user-id", // Replace with actual inviter ID
-          language_preference: languagePreference,
+          institution_id: user?.user?.institution_id || "",
+          inviter_id: userId || '', // Replace with actual inviter ID
+          language_preference: currentLanguage,
         },
       });
 
@@ -118,56 +114,59 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
       if (inviteToken) {
         const inviteLink = `${window.location.origin}/register?invite=${inviteToken}`;
         setGeneratedLink(inviteLink);
+        return { inviteToken, generatedLink };
       }
+      return;
     } catch (error) {
       toast.error(t.generateLinkError);
-      console.error("Error generating invite link:", error);
     }
   };
 
   const onSubmit = async (data: InviteForm) => {
-    setIsSubmitting(true)
-    
+    setIsSubmitting(true);
+
     try {
-      // Validate required fields
+      const loadingToast = toast.loading(t.creating);
+      if (data.type === "link") {
+        toast.dismiss(loadingToast);
+        toast.success(t.invitationSent);
+        return;
+      }
+
       if (!data.role || (data.type === "email" && !data.email)) {
-        toast.error(t.fillRequiredFields)
-        setIsSubmitting(false)
-        return
+        toast.error(t.fillRequiredFields);
+        setIsSubmitting(false);
+        return;
       }
 
-      const loadingToast = toast.loading(t.creating)
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      // Generate JWT token
-      const mockJWT = btoa(JSON.stringify({
-        ...data,
-        institution: activeInstitution?.id || "default-institution",
-        expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000), // 7 days default
-        invitedBy: "current-user-id",
-        timestamp: Date.now()
-      }))
+      const generated = await generateLinkForRole();
 
-      const inviteLink = `${window.location.origin}/register?invite=${mockJWT}`
-      setGeneratedLink(inviteLink)
-      
-      toast.dismiss(loadingToast)
-      toast.success(t.invitationSent)
-      
-      onInviteSent?.({ ...data, inviteLink })
-      
-      // For email invitations, close modal
+      if (!generated || !generated.inviteToken || !generatedLink) {
+        toast.error(t.invitationFailed);
+        setIsSubmitting(false);
+        return;
+      }
+
       if (data.type === "email") {
-        setOpen(false)
-        form.reset()
+        await sendInviteEmail({
+          variables: {
+            inviter_id: userId, // Replace with actual inviter ID
+            to: data.email!,
+            message: data.message || null,
+            url: generatedLink,
+          },
+        });
+
+        toast.dismiss(loadingToast);
+        toast.success(t.invitationSent);
+        setOpen(false);
+        form.reset();
       }
-      
     } catch (error) {
-      toast.error(t.invitationFailed)
+      toast.error(t.invitationFailed);
+      console.error("Error sending invite email:", error);
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   }
 

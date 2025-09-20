@@ -4,6 +4,6 @@ import { useMutation } from "@apollo/client/react";
 
 type LoginMutationResult = Pick<Mutation, 'login'>;
 
-export function useLogin(options?: useMutation.Options<LoginMutationResult, MutationLoginArgs['input']>): useMutation.ResultTuple<LoginMutationResult, MutationLoginArgs['input']> {
+export function useLoginMutation(options?: useMutation.Options<LoginMutationResult, MutationLoginArgs['input']>): useMutation.ResultTuple<LoginMutationResult, MutationLoginArgs['input']> {
   return useMutation<LoginMutationResult, MutationLoginArgs['input']>(LOGIN_MUTATION, options);
 }

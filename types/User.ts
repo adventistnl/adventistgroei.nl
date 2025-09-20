@@ -8,6 +8,7 @@
 // ====================================================
 
 export interface User_user {
+  __typename: "UserModel";
   id: string;
   institution_id: string;
   church_id: string | null;
