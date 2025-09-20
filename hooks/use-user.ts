@@ -1,7 +1,4 @@
-import { useEffect, useMemo } from "react";
-import { useQuery } from "@apollo/client/react";
-import { User } from "@/types/User";
-import { GET_USER_QUERY } from "@/graphql/queries/GET_USER_QUERY";
+import { useMemo } from "react";
 import { useCookies } from "./use-cookies";
 import { useGetUserQuery } from "./graphql/use-get-user-query";
 
@@ -15,36 +12,26 @@ function decodeJWT(token: string): any {
   }
 }
 
-export function useUser(token?: string) {
-  // Pega o token do localStorage se não for passado
+export function useUser({token, id}:{token?: string, id?: string}) {
   const { getCookies } = useCookies()
 
-  const cookies = getCookies(); // Utiliza o hook useCookies para obter os cookies
-
+  const cookies = getCookies();
 
   const jwt = token || cookies['auth-token'];
-  const userId = useMemo(() => {
+  const loggedUserId = useMemo(() => {
     if (!jwt) return null;
     const decoded = decodeJWT(jwt);
     return decoded?.sub || null;
   }, [jwt]);
-  console.log("User ID from token:", userId);
 
-
-  const { data: user } = useGetUserQuery({ id: userId });
-  console.log("User data from query:", user);
-  // const user = useMemo(() => { 
-
-  //   return data || null;
-  // }, [userId]);
-
-
+  const { data, error, loading, ...rest } = useGetUserQuery({ id: id ? id : loggedUserId },);
 
   return {
-    user,
-    userId,
-    // refetch,
-    // loading,
-    // error,
+    user: data?.user || null,
+    loggedUserId,
+    loading,
+    error,
+    ...rest
   };
 }
+  

@@ -980,7 +980,9 @@ export enum PermissionGroup {
   Contact = 'CONTACT',
   Department = 'DEPARTMENT',
   DirectMessage = 'DIRECT_MESSAGE',
+  EmailSend = 'EMAIL_SEND',
   Institution = 'INSTITUTION',
+  Invite = 'INVITE',
   Notification = 'NOTIFICATION',
   Permission = 'PERMISSION',
   Project = 'PROJECT',
@@ -1048,6 +1050,7 @@ export enum PermissionResolverName {
   DirectMessages = 'directMessages',
   Institution = 'institution',
   Institutions = 'institutions',
+  InviteUser = 'inviteUser',
   Notification = 'notification',
   Notifications = 'notifications',
   Permissions = 'permissions',
@@ -1060,6 +1063,7 @@ export enum PermissionResolverName {
   RemoveProjectVoluntary = 'removeProjectVoluntary',
   Role = 'role',
   Roles = 'roles',
+  SendInviteEmail = 'sendInviteEmail',
   Setting = 'setting',
   Settings = 'settings',
   SubsidyRequest = 'subsidyRequest',
@@ -1081,7 +1085,8 @@ export enum PermissionResolverName {
   UpdateSubsidyStatus = 'updateSubsidyStatus',
   UpdateUser = 'updateUser',
   User = 'user',
-  Users = 'users'
+  Users = 'users',
+  ValidateInviteToken = 'validateInviteToken'
 }
 
 export type Project = {

@@ -12,5 +12,5 @@ export function useHasPermission(
   const { permissions } = useAuth();
 
   // Verificar se o usuário possui pelo menos uma das permissões necessárias
-  return requiredPermissions.some((permission) => permissions.includes(permission));
+  return requiredPermissions.every((permission) => permissions.includes(permission));
 }

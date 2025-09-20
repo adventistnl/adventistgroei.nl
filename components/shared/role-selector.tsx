@@ -5,18 +5,13 @@ import { X, Check } from "lucide-react"
 import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Control } from "react-hook-form"
 import { cn } from "@/lib/utils"
-
-interface Role {
-  value: string
-  label: string
-  description: string
-}
+import { Roles, Roles_roles } from "@/types/Roles"
 
 interface RoleSelectorProps {
   control: Control<any>
   name: string
   label: string
-  roles: Role[]
+  roles: Roles_roles[]
   allowDeselect?: boolean
   className?: string
   tagClassName?: string
@@ -65,11 +60,11 @@ export function RoleSelector({
           <FormLabel className="text-sm font-medium">{label}</FormLabel>
           <div className={containerClassName}>
             {roles.map((role) => {
-              const isSelected = field.value === role.value
+              const isSelected = field.value === role.id
               
               return (
                 <div
-                  key={role.value}
+                  key={role.id}
                   className={cn(
                     "relative cursor-pointer transition-all duration-300 p-4 rounded-xl border-2 group",
                     getTagStyle(minTagWidth, tagHeight === "auto" ? "auto" : "fixed"),
@@ -78,7 +73,7 @@ export function RoleSelector({
                       : "border-muted-foreground/20 bg-muted/5 hover:border-foreground/50 hover:bg-muted/20 hover:shadow-md",
                     tagClassName
                   )}
-                  onClick={() => handleRoleClick(role.value, field.value, field.onChange)}
+                  onClick={() => handleRoleClick(role.id, field.value, field.onChange)}
                 >
                   {/* Selection Indicator */}
                   {isSelected && (
@@ -97,7 +92,7 @@ export function RoleSelector({
                       "font-semibold text-sm leading-tight mb-2",
                       isSelected ? "text-background" : "text-foreground"
                     )}>
-                      {role.label}
+                      {role.name}
                     </div>
                     <div className={cn(
                       "text-xs leading-relaxed",
