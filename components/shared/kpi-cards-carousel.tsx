@@ -159,7 +159,7 @@ export function KPICards({
             <CarouselItem 
               key={item.id} 
               className={cn(
-                "pl-1 md:pl-2 lg:pl-4",
+                "pl-2 md:pl-4 lg:pl-4",
                 // Responsive basis - sempre mostra pelo menos 1, máximo 4
                 "basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4",
                 // Garantir que não ultrapasse os limites
