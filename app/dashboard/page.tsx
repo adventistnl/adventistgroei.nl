@@ -79,6 +79,10 @@ import {
   institutionSpecificData
 } from "@/data/mockData"
 import { useInstitution } from "@/contexts/institution-context"
+import { KPICards } from "@/components/shared/kpi-cards-carousel"
+import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
+import { UseTable } from "@/components/ui/use-table"
+import { ColumnDef } from "@tanstack/react-table"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
 
@@ -127,6 +131,58 @@ const interactiveGrowthData = [
   { date: "2024-06-25", churches: 214, members: 55500, regions: 39 },
   { date: "2024-06-30", churches: 215, members: 55800, regions: 40 },
 ]
+
+// Mock data para usuários
+const mockUsers = [
+  { id: 1, name: "João Silva", email: "joao@example.com", role: "Admin", status: "Active", lastLogin: "2024-01-15" },
+  { id: 2, name: "Maria Santos", email: "maria@example.com", role: "Manager", status: "Active", lastLogin: "2024-01-14" },
+  { id: 3, name: "Pedro Costa", email: "pedro@example.com", role: "User", status: "Inactive", lastLogin: "2024-01-10" },
+  { id: 4, name: "Ana Oliveira", email: "ana@example.com", role: "Manager", status: "Active", lastLogin: "2024-01-15" },
+  { id: 5, name: "Carlos Lima", email: "carlos@example.com", role: "User", status: "Active", lastLogin: "2024-01-13" },
+  { id: 6, name: "Lucia Ferreira", email: "lucia@example.com", role: "Admin", status: "Active", lastLogin: "2024-01-15" },
+  { id: 7, name: "Roberto Alves", email: "roberto@example.com", role: "User", status: "Pending", lastLogin: "2024-01-12" },
+  { id: 8, name: "Fernanda Rocha", email: "fernanda@example.com", role: "Manager", status: "Active", lastLogin: "2024-01-14" },
+]
+
+// Colunas para a tabela de usuários
+const userColumns: ColumnDef<any>[] = [
+  {
+    accessorKey: "name",
+    header: "Name",
+  },
+  {
+    accessorKey: "email",
+    header: "Email",
+  },
+  {
+    accessorKey: "role",
+    header: "Role",
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      const status = row.getValue("status") as string
+      const color = status === "Active" ? "bg-green-100 text-green-700" : 
+                   status === "Inactive" ? "bg-red-100 text-red-700" : 
+                   "bg-yellow-100 text-yellow-700"
+      return (
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}>
+          {status}
+        </span>
+      )
+    },
+  },
+  {
+    accessorKey: "lastLogin",
+    header: "Last Login",
+    cell: ({ row }) => {
+      const date = new Date(row.getValue("lastLogin"))
+      return date.toLocaleDateString()
+    },
+  },
+]
+
 
 // Configurações dos gráficos com cores distintas
 const interactiveGrowthChartConfig = {
@@ -233,6 +289,181 @@ const departmentPerformanceChartConfig = {
   },
 } satisfies ChartConfig
 
+// Componentes individuais dos gráficos
+const GrowthChart = () => (
+  <Card className="h-full">
+    <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+      <div className="grid flex-1 gap-1">
+        <CardTitle className="flex items-center gap-2">
+          <TrendingUp className="w-5 h-5" />
+          Growth Analysis
+        </CardTitle>
+        <CardDescription>
+          Detailed growth analysis with time filtering
+        </CardDescription>
+      </div>
+    </CardHeader>
+    <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+      <ChartContainer
+        config={interactiveGrowthChartConfig}
+        className="aspect-auto h-[300px] w-full"
+      >
+        <AreaChart data={interactiveGrowthData.slice(-30)}>
+          <defs>
+            <linearGradient id="fillChurches" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
+            </linearGradient>
+            <linearGradient id="fillMembers" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey="date"
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            minTickGap={32}
+            tickFormatter={(value) => {
+              const date = new Date(value)
+              return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+            }}
+          />
+          <ChartTooltip
+            cursor={false}
+            content={
+              <ChartTooltipContent
+                labelFormatter={(value) => {
+                  return new Date(value).toLocaleDateString("en-US", {
+                    month: "short", day: "numeric", year: "numeric"
+                  })
+                }}
+                indicator="dot"
+              />
+            }
+          />
+          <Area dataKey="members" type="natural" fill="url(#fillMembers)" stroke="#10b981" stackId="a" />
+          <Area dataKey="churches" type="natural" fill="url(#fillChurches)" stroke="#3b82f6" stackId="a" />
+          <Legend />
+        </AreaChart>
+      </ChartContainer>
+    </CardContent>
+  </Card>
+)
+
+const UsersChart = () => (
+  <Card className="h-full">
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+      <div>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="w-5 h-5" />
+          User Distribution
+        </CardTitle>
+        <CardDescription className="mt-1">
+          Active users by institution
+        </CardDescription>
+      </div>
+    </CardHeader>
+    <CardContent>
+      <ChartContainer config={usersChartConfig} className="h-[300px] w-full">
+        <BarChart accessibilityLayer data={usersByInstitutionData}>
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey="institution"
+            tickLine={false}
+            tickMargin={10}
+            axisLine={false}
+            angle={-45}
+            textAnchor="end"
+            height={80}
+            fontSize={10}
+          />
+          <YAxis tickLine={false} axisLine={false} tickMargin={8} fontSize={11} />
+          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+          <Bar dataKey="users" fill="#f59e0b" radius={6} />
+        </BarChart>
+      </ChartContainer>
+    </CardContent>
+  </Card>
+)
+
+const SubsidyStatusChart = () => (
+  <Card className="h-full">
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+      <div>
+        <CardTitle className="flex items-center gap-2">
+          <DollarSign className="w-5 h-5" />
+          Subsidy Status
+        </CardTitle>
+        <CardDescription className="mt-1">
+          Request status breakdown
+        </CardDescription>
+      </div>
+    </CardHeader>
+    <CardContent>
+      <ChartContainer config={subsidyStatusChartConfig} className="h-[300px] w-full">
+        <PieChart>
+          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+          <Pie
+            data={subsidyStatusData}
+            dataKey="value"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            innerRadius={50}
+            outerRadius={90}
+            strokeWidth={2}
+            paddingAngle={2}
+          >
+            {subsidyStatusData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.color} />
+            ))}
+            <Legend />
+          </Pie>
+        </PieChart>
+      </ChartContainer>
+    </CardContent>
+  </Card>
+)
+
+const BudgetChart = () => (
+  <Card className="h-full">
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+      <div>
+        <CardTitle className="flex items-center gap-2">
+          <BarChart3 className="w-5 h-5" />
+          Budget Analysis
+        </CardTitle>
+        <CardDescription className="mt-1">
+          Budget allocation vs subsidy requests
+        </CardDescription>
+      </div>
+    </CardHeader>
+    <CardContent>
+      <ChartContainer config={budgetChartConfig} className="h-[300px] w-full">
+        <BarChart accessibilityLayer data={budgetVsSubsidyData}>
+          <CartesianGrid vertical={false} />
+          <XAxis dataKey="department" tickLine={false} tickMargin={10} axisLine={false} fontSize={11} />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            tickFormatter={(value) => `R$ ${Number(value).toLocaleString()}`}
+            fontSize={11}
+          />
+          <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+          <Legend />
+          <Bar dataKey="budget" fill="#10b981" radius={4} />
+          <Bar dataKey="subsidies_requested" fill="#f59e0b" radius={4} />
+          <Bar dataKey="subsidies_approved" fill="#3b82f6" radius={4} />
+        </BarChart>
+      </ChartContainer>
+    </CardContent>
+  </Card>
+)
+
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
   const { activeInstitution } = useInstitution()
@@ -252,6 +483,42 @@ export default function DashboardPage() {
   const currentInstitutionData = React.useMemo(() => {
     return institutionSpecificData[activeInstitution.id as keyof typeof institutionSpecificData] || institutionSpecificData.usp
   }, [activeInstitution.id])
+
+  // Dados para KPI Cards
+  const kpiCardsData = [
+    {
+      id: "total-users",
+      title: "Total Users",
+      value: "2,847",
+      change: "+12%",
+      trend: { value: 12, isPositive: true },
+      icon: Users,
+    },
+    {
+      id: "active-churches",
+      title: "Active Churches",
+      value: "156",
+      change: "28 regions",
+      trend: { value: 0, isPositive: true },
+      icon: MapPin,
+    },
+    {
+      id: "pending-subsidies",
+      title: "Pending Subsidies",
+      value: "23",
+      change: "85% utilized",
+      trend: { value: -5, isPositive: false },
+      icon: DollarSign,
+    },
+    {
+      id: "active-members",
+      title: "Active Members",
+      value: "54,200",
+      change: "Last 30 days",
+      trend: { value: 8, isPositive: true },
+      icon: UserCheck,
+    },
+  ]
 
   const breadcrumbs = useMemo(() => [
     { name: t('dashboard.title') }
@@ -364,7 +631,7 @@ export default function DashboardPage() {
   return (
     <AppLayout>
       <div className="space-y-8">
-        {/* Header com Language Selector */}
+        {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-3xl font-bold text-foreground mb-2">
@@ -396,770 +663,57 @@ export default function DashboardPage() {
             >
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             </Button>
-            
-            <LanguageSelector />
           </div>
         </div>
 
-        {/* Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('metrics.total_users')}</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{currentInstitutionData.dashboardMetrics.totalUsers.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <TrendingUp className="w-3 h-3 text-green-500" />
-                +{currentInstitutionData.dashboardMetrics.monthlyGrowth}% {t('metrics.monthly_growth')}
-              </p>
-            </CardContent>
-          </Card>
+        {/* KPI Cards */}
+        <KPICards 
+          data={kpiCardsData}
+          isLoading={isLoading}
+          minCardsForCarousel={4}
+          showCarousel={true}
+        />
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Institution</CardTitle>
-              <Building className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-lg font-bold">{activeInstitution.name}</div>
-              <p className="text-xs text-muted-foreground">
-                {currentInstitutionData.dashboardMetrics.totalRegions} {t('metrics.active_regions')}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('metrics.total_churches')}</CardTitle>
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{currentInstitutionData.dashboardMetrics.totalChurches}</div>
-              <p className="text-xs text-muted-foreground">
-                {currentInstitutionData.dashboardMetrics.activeMembers.toLocaleString()} active members
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('metrics.pending_subsidies')}</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{currentInstitutionData.dashboardMetrics.pendingSubsidies}</div>
-              <p className="text-xs text-muted-foreground">
-                {currentInstitutionData.dashboardMetrics.budgetUtilization}% {t('metrics.budget_utilization')}
-              </p>
-            </CardContent>
-          </Card>
+        {/* Charts Section */}
+        <div className="space-y-6">
+          <h3 className="text-xl font-semibold">Analytics Overview</h3>
+          <ResponsiveGridCarousel autoplayDelay={4000} className="p-4">
+            <GrowthChart />
+            <UsersChart />
+            <SubsidyStatusChart />
+            <BudgetChart />
+          </ResponsiveGridCarousel>
         </div>
 
-        {/* Main Charts Section - Flex Layout */}
-        <div className="flex flex-col xl:flex-row gap-6">
-          
-          {/* Interactive Growth Chart - Flex 2 */}
-          <Card className="flex-[2] min-w-0">
-            <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
-              <div className="grid flex-1 gap-1">
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5" />
-                  {t('dashboard.growth_chart_title')} - Interactive
-                </CardTitle>
-                <CardDescription>
-                  Detailed growth analysis with time filtering
-                </CardDescription>
-              </div>
-              <Select value={growthPeriod} onValueChange={setGrowthPeriod}>
-                <SelectTrigger
-                  className="w-[160px] rounded-lg"
-                  aria-label="Select time range"
-                >
-                  <SelectValue placeholder="Last 6 months" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  <SelectItem value="180d" className="rounded-lg">
-                    Last 6 months
-                  </SelectItem>
-                  <SelectItem value="90d" className="rounded-lg">
-                    Last 3 months
-                  </SelectItem>
-                  <SelectItem value="30d" className="rounded-lg">
-                    Last 30 days
-                  </SelectItem>
-                  <SelectItem value="7d" className="rounded-lg">
-                    Last 7 days
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </CardHeader>
-            <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-              <ChartContainer
-                config={interactiveGrowthChartConfig}
-                className="aspect-auto h-[400px] w-full"
-              >
-                <AreaChart data={interactiveGrowthData.filter((item) => {
-                  const date = new Date(item.date)
-                  const referenceDate = new Date("2024-06-30")
-                  let daysToSubtract = 180
-                  if (growthPeriod === "90d") daysToSubtract = 90
-                  else if (growthPeriod === "30d") daysToSubtract = 30
-                  else if (growthPeriod === "7d") daysToSubtract = 7
-                  const startDate = new Date(referenceDate)
-                  startDate.setDate(startDate.getDate() - daysToSubtract)
-                  return date >= startDate
-                })}>
-                  <defs>
-                    <linearGradient id="fillChurches" x1="0" y1="0" x2="0" y2="1">
-                      <stop
-                        offset="5%"
-                        stopColor="#3b82f6"
-                        stopOpacity={0.8}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="#3b82f6"
-                        stopOpacity={0.1}
-                      />
-                    </linearGradient>
-                    <linearGradient id="fillMembers" x1="0" y1="0" x2="0" y2="1">
-                      <stop
-                        offset="5%"
-                        stopColor="#10b981"
-                        stopOpacity={0.8}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="#10b981"
-                        stopOpacity={0.1}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="date"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    minTickGap={32}
-                    tickFormatter={(value) => {
-                      const date = new Date(value)
-                      return date.toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })
-                    }}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={
-                      <ChartTooltipContent
-                        labelFormatter={(value) => {
-                          return new Date(value).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })
-                        }}
-                        indicator="dot"
-                      />
-                    }
-                  />
-                  <Area
-                    dataKey="members"
-                    type="natural"
-                    fill="url(#fillMembers)"
-                    stroke="#10b981"
-                    stackId="a"
-                  />
-                  <Area
-                    dataKey="churches"
-                    type="natural"
-                    fill="url(#fillChurches)"
-                    stroke="#3b82f6"
-                    stackId="a"
-                  />
-                  <Legend />
-                </AreaChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          {/* Users by Institution - Flex 1 */}
-          <Card className="flex-1 min-w-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  User Distribution
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  Active users by institution
-                </CardDescription>
-              </div>
-              <PeriodSelector
-                value={usersPeriod}
-                onChange={setUsersPeriod}
-                options={[
-                  { value: "active", label: "Active" },
-                  { value: "all", label: "All" },
-                  { value: "new", label: "New" }
-                ]}
-              />
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={usersChartConfig} className="h-[400px] w-full">
-                <BarChart accessibilityLayer data={usersByInstitutionData}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="institution"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                    fontSize={10}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    fontSize={11}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
-                  />
-                  <Bar dataKey="users" fill="#f59e0b" radius={6} />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
+        {/* Users Table */}
+        <div className="space-y-4">
+          <h3 className="text-xl font-semibold">User Management</h3>
+          <UseTable
+            columns={userColumns}
+            data={mockUsers}
+            searchKey="name"
+            filters={[
+              {
+                id: "role",
+                title: "Role",
+                options: [
+                  { label: "Admin", value: "Admin" },
+                  { label: "Manager", value: "Manager" },
+                  { label: "User", value: "User" }
+                ]
+              },
+              {
+                id: "status",
+                title: "Status",
+                options: [
+                  { label: "Active", value: "Active" },
+                  { label: "Inactive", value: "Inactive" },
+                  { label: "Pending", value: "Pending" }
+                ]
+              }
+            ]}
+          />
         </div>
-
-        {/* Secondary Charts Section - Flex Layout */}
-        <div className="flex flex-col lg:flex-row gap-6">
-
-          {/* Subsidy Status - Flex 1 */}
-          <Card className="flex-1 min-w-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5" />
-                  Subsidy Status
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  Request status breakdown
-                </CardDescription>
-              </div>
-              <PeriodSelector
-                value={subsidyPeriod}
-                onChange={setSubsidyPeriod}
-                options={[
-                  { value: "current", label: "Current" },
-                  { value: "all", label: "All" },
-                  { value: "pending", label: "Pending" }
-                ]}
-              />
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={subsidyStatusChartConfig} className="h-[320px] w-full">
-                <PieChart>
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
-                  />
-                  <Pie
-                    data={subsidyStatusData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={90}
-                    strokeWidth={2}
-                    paddingAngle={2}
-                  >
-                    {subsidyStatusData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={entry.color}
-                      />
-                    ))}
-                    <Legend />
-                  </Pie>
-                </PieChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          {/* Budget vs Subsidies - Flex 2 */}
-          <Card className="flex-[2] min-w-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5" />
-                  Department Budget Analysis
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  Budget allocation vs subsidy requests
-                </CardDescription>
-              </div>
-              <PeriodSelector
-                value={budgetPeriod}
-                onChange={setBudgetPeriod}
-                options={[
-                  { value: "current", label: "Current" },
-                  { value: "2024", label: "2024" },
-                  { value: "2023", label: "2023" }
-                ]}
-              />
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={budgetChartConfig} className="h-[320px] w-full">
-                <BarChart accessibilityLayer data={budgetVsSubsidyData}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="department"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                    fontSize={11}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(value) => `R$ ${Number(value).toLocaleString()}`}
-                    fontSize={11}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent />}
-                  />
-                  <Legend />
-                  <Bar dataKey="budget" fill="#10b981" radius={4} />
-                  <Bar dataKey="subsidies_requested" fill="#f59e0b" radius={4} />
-                  <Bar dataKey="subsidies_approved" fill="#3b82f6" radius={4} />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tertiary Charts Section - Flex Layout */}
-        <div className="flex flex-col lg:flex-row gap-6">
-
-          {/* Event Participation - Flex 1 */}
-          <Card className="flex-1 min-w-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  Event Participation
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  Participation trends by type
-                </CardDescription>
-              </div>
-              <PeriodSelector
-                value={eventsPeriod}
-                onChange={setEventsPeriod}
-                options={[
-                  { value: "3m", label: "3M" },
-                  { value: "6m", label: "6M" },
-                  { value: "1y", label: "1Y" }
-                ]}
-              />
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={eventsChartConfig} className="h-[320px] w-full">
-                <LineChart accessibilityLayer data={eventParticipationData}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    fontSize={12}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    fontSize={12}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent />}
-                  />
-                  <Legend />
-                  <Line
-                    dataKey="evangelism"
-                    type="monotone"
-                    stroke="#ef4444"
-                    strokeWidth={3}
-                    dot={{ fill: "#ef4444", strokeWidth: 2, r: 4 }}
-                  />
-                  <Line
-                    dataKey="show"
-                    type="monotone"
-                    stroke="#3b82f6"
-                    strokeWidth={3}
-                    dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
-                  />
-                  <Line
-                    dataKey="conference"
-                    type="monotone"
-                    stroke="#10b981"
-                    strokeWidth={3}
-                    dot={{ fill: "#10b981", strokeWidth: 2, r: 4 }}
-                  />
-                  <Line
-                    dataKey="workshop"
-                    type="monotone"
-                    stroke="#8b5cf6"
-                    strokeWidth={3}
-                    dot={{ fill: "#8b5cf6", strokeWidth: 2, r: 4 }}
-                  />
-                </LineChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          {/* Communication Flow - Flex 1 */}
-          <Card className="flex-1 min-w-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5" />
-                  Communication Flow
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  Message flow analysis
-                </CardDescription>
-              </div>
-              <PeriodSelector
-                value={commPeriod}
-                onChange={setCommPeriod}
-                options={[
-                  { value: "1m", label: "1M" },
-                  { value: "3m", label: "3M" },
-                  { value: "6m", label: "6M" }
-                ]}
-              />
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={communicationChartConfig} className="h-[320px] w-full">
-                <AreaChart accessibilityLayer data={communicationFlowData}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="date"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(value) => new Date(value).toLocaleDateString()}
-                    fontSize={11}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    fontSize={12}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent />}
-                    labelFormatter={(value) => new Date(value).toLocaleDateString()}
-                  />
-                  <Legend />
-                  <Area
-                    dataKey="communications"
-                    type="natural"
-                    fill="#3b82f6"
-                    fillOpacity={0.6}
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    stackId="a"
-                  />
-                  <Area
-                    dataKey="direct_messages"
-                    type="natural"
-                    fill="#10b981"
-                    fillOpacity={0.6}
-                    stroke="#10b981"
-                    strokeWidth={2}
-                    stackId="a"
-                  />
-                  <Area
-                    dataKey="announcements"
-                    type="natural"
-                    fill="#f59e0b"
-                    fillOpacity={0.6}
-                    stroke="#f59e0b"
-                    strokeWidth={2}
-                    stackId="a"
-                  />
-                </AreaChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Additional Analytics Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
-          {/* Department Performance Radar */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="w-5 h-5" />
-                  Department Performance
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  Multi-dimensional analysis
-                </CardDescription>
-              </div>
-              <PeriodSelector
-                value="current"
-                onChange={() => {}}
-                options={[
-                  { value: "current", label: "Current" },
-                  { value: "previous", label: "Previous" }
-                ]}
-              />
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={departmentPerformanceChartConfig} className="h-[320px] w-full">
-                <RadarChart accessibilityLayer data={departmentPerformanceData}>
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent />}
-                  />
-                  <PolarAngleAxis dataKey="name" fontSize={11} />
-                  <PolarGrid />
-                  <PolarRadiusAxis
-                    domain={[0, 100]}
-                    tick={false}
-                    tickCount={5}
-                  />
-                  <Radar
-                    dataKey="efficiency"
-                    fill="#8b5cf6"
-                    fillOpacity={0.3}
-                    stroke="#8b5cf6"
-                    strokeWidth={2}
-                    dot={{ r: 4, strokeWidth: 2 }}
-                  />
-                </RadarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          {/* Geographic Distribution Donut */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="w-5 h-5" />
-                  Regional Distribution
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  Brazilian regions breakdown
-                </CardDescription>
-              </div>
-              <PeriodSelector
-                value="all"
-                onChange={() => {}}
-                options={[
-                  { value: "all", label: "All" },
-                  { value: "active", label: "Active" }
-                ]}
-              />
-            </CardHeader>
-            <CardContent>
-              <ChartContainer 
-                config={{
-                  members: {
-                    label: "Members",
-                    color: "#3b82f6",
-                  },
-                }} 
-                className="h-[320px] w-full"
-              >
-                <PieChart>
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
-                  />
-                  <Pie
-                    data={geographicDistribution}
-                    dataKey="members"
-                    nameKey="region"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={70}
-                    outerRadius={110}
-                    strokeWidth={2}
-                    paddingAngle={2}
-                  >
-                    {geographicDistribution.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={[
-                          "#3b82f6", // Blue
-                          "#10b981", // Green
-                          "#f59e0b", // Amber
-                          "#ef4444", // Red
-                          "#8b5cf6"  // Purple
-                        ][index % 5]}
-                      />
-                    ))}
-                    <Legend />
-                  </Pie>
-                </PieChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="w-5 h-5" />
-              {t('dashboard.quick_actions')}
-            </CardTitle>
-            <CardDescription>
-              Quick access to main system functionalities
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {quickActions.map((action, index) => (
-                <Button 
-                  key={index}
-                  variant="outline" 
-                  className="h-24 flex flex-col gap-2 hover:scale-105 transition-transform"
-                  onClick={() => {
-                    toast.success(`🚀 Navigating to ${action.label}`, { duration: 2000 })
-                  }}
-                >
-                  <action.icon className={`w-6 h-6 ${action.color}`} />
-                  <span className="text-xs text-center leading-tight">{action.label}</span>
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recent Activities & System Status */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="w-5 h-5" />
-                {t('dashboard.recent_activities')}
-              </CardTitle>
-              <CardDescription>
-                Latest system activities and updates
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                {currentInstitutionData.recentActivities.map((activity) => (
-                  <div key={activity.id} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
-                    <div className="w-2 h-2 bg-primary rounded-full"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{activity.description}</p>
-                      <p className="text-xs text-muted-foreground">by {activity.user}</p>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(activity.timestamp).toLocaleDateString()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              
-              <Button variant="ghost" className="w-full mt-4">
-                View All Activities
-                <ArrowUpRight className="w-4 h-4 ml-2" />
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="w-5 h-5" />
-                System Status
-              </CardTitle>
-              <CardDescription>
-                System health and performance indicators
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    <div>
-                      <p className="text-sm font-medium">System Performance</p>
-                      <p className="text-xs text-muted-foreground">All services operational</p>
-                    </div>
-                  </div>
-                  <Badge variant="secondary" className="bg-green-100 text-green-700">
-                    Excellent
-                  </Badge>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    <div>
-                      <p className="text-sm font-medium">Database Status</p>
-                      <p className="text-xs text-muted-foreground">Last backup: 2 hours ago</p>
-                    </div>
-                  </div>
-                  <Badge variant="secondary" className="bg-green-100 text-green-700">
-                    Healthy
-                  </Badge>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div className="flex items-center gap-3">
-                    <AlertCircle className="w-5 h-5 text-yellow-500" />
-                    <div>
-                      <p className="text-sm font-medium">Pending Reviews</p>
-                      <p className="text-xs text-muted-foreground">{currentInstitutionData.dashboardMetrics.pendingSubsidies} subsidy requests</p>
-                    </div>
-                  </div>
-                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">
-                    Attention
-                  </Badge>
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    <div>
-                      <p className="text-sm font-medium">User Activity</p>
-                      <p className="text-xs text-muted-foreground">98.5% uptime this month</p>
-                    </div>
-                  </div>
-                  <Badge variant="secondary" className="bg-green-100 text-green-700">
-                    Active
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
 
       </div>
     </AppLayout>

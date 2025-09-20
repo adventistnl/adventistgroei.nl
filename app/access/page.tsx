@@ -47,10 +47,11 @@ import "@/lib/i18n"
 
 // Components
 import { AccessKPI } from "@/components/access/access-kpi"
-import { AccessCharts } from "@/components/access/access-charts"
+import { AccessCharts, RoleDistributionChart, PermissionsByGroupChart, UserActivityChart } from "@/components/access/access-charts"
 import { DataTable } from "@/components/ui/data-table"
+import { UseTable } from "@/components/ui/use-table"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
-import { AccessAnalyticsCarousel, AnalyticsChartData } from "@/components/shared/analytics-carousel"
+import { AnalyticsGridCarousel } from "@/components/shared/responsive-grid-carousel"
 
 // Role Modals
 import { CreateRoleModal, EditRoleModal, DeleteRoleModal } from "@/components/modals/role"
@@ -189,22 +190,23 @@ export default function AccessManagementPage() {
     }
   ], [accessKpiData])
 
-  // Dados para Analytics Carousel
-  const analyticsChartsData: AnalyticsChartData[] = useMemo(() => [
-    {
-      id: "access_overview",
-      title: "Access Analytics Overview",
-      description: "Complete overview of roles, permissions and user activity",
-      icon: Shield,
-      content: (
-        <AccessCharts
-          roleDistributionData={roleDistributionData}
-          permissionsByGroupData={permissionsByGroupData}
-          userActivityData={userActivityData}
-          loading={isLoading}
-        />
-      )
-    }
+  // Componentes individuais de gráficos para o ResponsiveGridCarousel
+  const analyticsComponents = useMemo(() => [
+    <RoleDistributionChart
+      key="role_distribution"
+      data={roleDistributionData}
+      loading={isLoading}
+    />,
+    <PermissionsByGroupChart
+      key="permissions_by_group"
+      data={permissionsByGroupData}
+      loading={isLoading}
+    />,
+    <UserActivityChart
+      key="user_activity"
+      data={userActivityData}
+      loading={isLoading}
+    />
   ], [roleDistributionData, permissionsByGroupData, userActivityData, isLoading])
 
   usePageTitle({
@@ -413,6 +415,22 @@ export default function AccessManagementPage() {
               </div>
             </div>
           </div>
+        )
+      },
+    },
+    {
+      id: "key_code",
+      accessorKey: "key_code",
+      header: "Type",
+      cell: ({ row }) => {
+        const role = row.original
+        return (
+          <Badge 
+            variant={role.key_code === 'ADMIN' ? 'default' : 'secondary'}
+            className="font-mono"
+          >
+            {role.key_code}
+          </Badge>
         )
       },
     },
@@ -650,11 +668,28 @@ export default function AccessManagementPage() {
 
         <Separator />
 
-        {/* Analytics Charts Carrossel */}
-        <AccessAnalyticsCarousel
-          data={analyticsChartsData}
-          isLoading={isLoading}
-        />
+        {/* Analytics Charts - Responsive Grid/Carousel */}
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">
+                {t('access.charts.title', { defaultValue: 'Access Analytics' })}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Visual insights into system access patterns
+              </p>
+            </div>
+          </div>
+
+          {/* Responsive Grid/Carousel com componentes individuais */}
+          <AnalyticsGridCarousel
+            enableAutoplay={false}
+            autoplayDelay={5000}
+          >
+            {analyticsComponents}
+          </AnalyticsGridCarousel>
+        </div>
 
         <Separator />
 
@@ -692,7 +727,7 @@ export default function AccessManagementPage() {
                     {canCreateRole && (
                       <Button 
                         onClick={() => setIsCreateRoleOpen(true)}
-                        className="bg-gray-900 hover:bg-gray-800 text-white"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground"
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         {t('access.roles.actions.create_role')}
@@ -701,11 +736,22 @@ export default function AccessManagementPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <DataTable
+                  <UseTable
                     columns={roleColumns}
                     data={roles}
                     searchKey="name"
-                    searchPlaceholder="Search roles..."
+                    filters={[
+                      {
+                        id: "key_code",
+                        title: "Role Type",
+                        options: roles.reduce((acc, role) => {
+                          if (!acc.find(item => item.value === role.key_code)) {
+                            acc.push({ label: role.key_code, value: role.key_code })
+                          }
+                          return acc
+                        }, [] as { label: string, value: string }[])
+                      }
+                    ]}
                   />
                 </CardContent>
               </Card>
@@ -725,12 +771,11 @@ export default function AccessManagementPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <DataTable
+                <UseTable
                   columns={permissionColumns}
                   data={permissions}
                   searchKey="name"
-                  searchPlaceholder="Search permissions..."
-                  filterableColumns={[
+                  filters={[
                     {
                       id: "group",
                       title: "Group",

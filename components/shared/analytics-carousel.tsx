@@ -134,7 +134,7 @@ export function AnalyticsCarousel({
             <CarouselItem 
               key={item.id} 
               className={cn(
-                "pl-1 md:pl-2 lg:pl-4",
+                "pl-2 md:pl-4 lg:pl-4",
                 // Responsive basis - adapta conforme o tamanho da tela
                 "basis-full",
                 // Em telas médias, mostra 1 por vez
