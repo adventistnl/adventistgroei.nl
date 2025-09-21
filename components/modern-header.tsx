@@ -5,6 +5,7 @@ import { GlobalSearch, useGlobalSearch } from "@/components/global-search"
 import { LanguageSelector } from "@/components/language-selector"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { NotificationsSidebar } from "@/components/notifications-sidebar"
+import { ChatUsersSelector } from "@/components/chat/chat-users-selector"
 import { InviteModal } from "@/components/modals/invite-modal"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,7 +19,8 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { usePageContext } from "@/contexts/page-context"
-import { UserPlus } from "lucide-react"
+import { UserPlus, MessageCircle } from "lucide-react"
+import { mockUsers } from "@/data/mockData"
 import toast from "react-hot-toast"
 
 export function ModernHeader() {
@@ -27,6 +29,17 @@ export function ModernHeader() {
   
   // Acessar dados de breadcrumb do contexto
   const { pageTitle, breadcrumbs } = usePageContext()
+  
+  // Estado para o chat
+  const [isChatSelectorOpen, setIsChatSelectorOpen] = React.useState(false)
+  
+  // Mock current user
+  const currentUser = {
+    ...mockUsers[0],
+    role: "admin",
+    is_deleted: false,
+    institution_id: "inst-1"
+  }
 
   const handleInviteSent = (inviteData: any) => {
     console.log('Invitation sent from header:', inviteData)
@@ -89,6 +102,16 @@ export function ModernHeader() {
           {/* Right Section - Action Buttons */}
           <div className="flex items-center gap-3 flex-1 justify-end">
             
+            {/* Chat */}
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="h-9 w-9"
+              onClick={() => setIsChatSelectorOpen(true)}
+            >
+              <MessageCircle className="h-4 w-4" />
+            </Button>
+            
             {/* Notifications */}
             <NotificationsSidebar />
 
@@ -112,6 +135,13 @@ export function ModernHeader() {
           </div>
         </div>
       </div>
+      
+      {/* Chat Users Selector */}
+      <ChatUsersSelector
+        isOpen={isChatSelectorOpen}
+        onOpenChange={setIsChatSelectorOpen}
+        currentUser={currentUser}
+      />
     </header>
   )
 }

@@ -2,7 +2,9 @@
 
 import * as React from "react"
 import { useState } from "react"
-import { GlobalSearch, useGlobalSearch } from "@/components/global-search"
+import { GlobalSearch, useGlobalSearch, MobileSearchTrigger } from "@/components/global-search"
+import { ResponsiveBreadcrumbs } from "@/components/responsive-breadcrumbs"
+import { ChatUsersSelector } from "@/components/chat/chat-users-selector"
 import { LanguageSelector } from "@/components/language-selector"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { NotificationsSidebar } from "@/components/notifications-sidebar"
@@ -21,6 +23,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { usePageContext } from "@/contexts/page-context"
+import { mockUsers } from "@/data/mockData"
 import { 
   UserPlus, 
   Menu, 
@@ -29,7 +32,8 @@ import {
   Settings, 
   Globe,
   X,
-  ChevronRight
+  ChevronRight,
+  MessageCircle
 } from "lucide-react"
 import toast from "react-hot-toast"
 
@@ -40,8 +44,17 @@ export function MobileHeader() {
   // Acessar dados de breadcrumb do contexto
   const { pageTitle, breadcrumbs } = usePageContext()
   
-  // Estado para controlar o menu mobile
+  // Estados para controlar os modais
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isChatSelectorOpen, setIsChatSelectorOpen] = useState(false)
+  
+  // Mock current user
+  const currentUser = {
+    ...mockUsers[0],
+    role: "admin",
+    is_deleted: false,
+    institution_id: "inst-1"
+  }
 
   const handleInviteSent = (inviteData: any) => {
     console.log('Invitation sent from mobile header:', inviteData)
@@ -58,32 +71,41 @@ export function MobileHeader() {
         <div className="w-full px-4 py-3">
           <div className="flex h-12 items-center justify-between gap-3">
             
-            {/* Left Section - Sidebar Toggle & Title */}
+            {/* Left Section - Sidebar Toggle & Breadcrumbs */}
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <SidebarTrigger className="h-9 w-9 flex-shrink-0" />
               <div className="min-w-0 flex-1">
-                <h1 className="text-base font-semibold text-foreground truncate">
-                  {pageTitle || "Dashboard"}
-                </h1>
-                {breadcrumbs && breadcrumbs.length > 1 && (
-                  <p className="text-xs text-muted-foreground truncate">
-                    {breadcrumbs[breadcrumbs.length - 2]?.name}
-                  </p>
-                )}
+                <ResponsiveBreadcrumbs 
+                  breadcrumbs={breadcrumbs || []}
+                  pageTitle={pageTitle}
+                  maxVisibleItems={1}
+                />
               </div>
             </div>
 
-            {/* Right Section - Invite Button & Menu */}
+            {/* Right Section - Action Icons */}
             <div className="flex items-center gap-2 flex-shrink-0">
+              
+              {/* Search Icon - Mobile */}
+              <MobileSearchTrigger />
+              
+              {/* Chat Icon - Mobile */}
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-9 w-9"
+                onClick={() => setIsChatSelectorOpen(true)}
+              >
+                <MessageCircle className="h-4 w-4" />
+              </Button>
               
               {/* Invite Button - Destaque Principal */}
               <InviteModal onInviteSent={handleInviteSent}>
                 <Button 
                   size="sm"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg h-9 px-4 font-medium"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg h-9 px-3"
                 >
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Invite
+                  <UserPlus className="w-4 h-4" />
                 </Button>
               </InviteModal>
 
@@ -133,18 +155,6 @@ export function MobileHeader() {
 
                     <Separator />
 
-                    {/* Search Section */}
-                    <div className="space-y-3">
-                      <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                        Search
-                      </h3>
-                      <div className="w-full">
-                        <GlobalSearch />
-                      </div>
-                    </div>
-
-                    <Separator />
-
                     {/* Primary Actions */}
                     <div className="space-y-3">
                       <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
@@ -167,19 +177,7 @@ export function MobileHeader() {
                         </InviteModal>
 
                         {/* Notifications */}
-                        <NotificationsSidebar>
-                          <Button 
-                            variant="outline" 
-                            className="w-full h-11 justify-start"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                          >
-                            <Bell className="w-5 h-5 mr-3" />
-                            <div className="text-left">
-                              <div className="text-sm font-medium">Notifications</div>
-                              <div className="text-xs text-muted-foreground">View recent updates</div>
-                            </div>
-                          </Button>
-                        </NotificationsSidebar>
+                        <NotificationsSidebar />
                       </div>
                     </div>
 
@@ -237,34 +235,11 @@ export function MobileHeader() {
                 orientation="vertical"
                 className="h-6"
               />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  {breadcrumbs && breadcrumbs.length > 0 ? (
-                    breadcrumbs.map((crumb: { name: string; href?: string }, index: number) => (
-                      <div key={index} className="flex items-center">
-                        {index > 0 && <BreadcrumbSeparator />}
-                        <BreadcrumbItem>
-                          {crumb.href ? (
-                            <BreadcrumbLink href={crumb.href} className="text-sm">
-                              {crumb.name}
-                            </BreadcrumbLink>
-                          ) : (
-                            <BreadcrumbPage className="text-sm font-medium">
-                              {crumb.name}
-                            </BreadcrumbPage>
-                          )}
-                        </BreadcrumbItem>
-                      </div>
-                    ))
-                  ) : (
-                    <BreadcrumbItem>
-                      <BreadcrumbPage className="text-sm font-medium">
-                        {pageTitle || "Dashboard"}
-                      </BreadcrumbPage>
-                    </BreadcrumbItem>
-                  )}
-                </BreadcrumbList>
-              </Breadcrumb>
+              <ResponsiveBreadcrumbs 
+                breadcrumbs={breadcrumbs || []}
+                pageTitle={pageTitle}
+                maxVisibleItems={3}
+              />
             </div>
 
             {/* Center Section - Search Bar */}
@@ -274,6 +249,16 @@ export function MobileHeader() {
 
             {/* Right Section - Action Buttons */}
             <div className="flex items-center gap-3 flex-1 justify-end">
+              
+              {/* Chat */}
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-9 w-9"
+                onClick={() => setIsChatSelectorOpen(true)}
+              >
+                <MessageCircle className="h-4 w-4" />
+              </Button>
               
               {/* Notifications */}
               <NotificationsSidebar />
@@ -299,6 +284,13 @@ export function MobileHeader() {
           </div>
         </div>
       </header>
+      
+      {/* Chat Users Selector */}
+      <ChatUsersSelector
+        isOpen={isChatSelectorOpen}
+        onOpenChange={setIsChatSelectorOpen}
+        currentUser={currentUser}
+      />
     </>
   )
 }

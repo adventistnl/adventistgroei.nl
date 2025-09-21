@@ -15,10 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { AddProjectModal, ProjectFormData } from "@/components/modals/project/add-project-modal"
-import { EditProjectModal, EditProjectFormData } from "@/components/modals/project/edit-project-modal"
-import { CreateEventModal, EventFormData } from "@/components/modals/project/create-event-modal"
-import { CreateCommunicationModal, CommunicationFormData } from "@/components/modals/project/create-communication-modal"
 import { ProjectsTable, ProjectTableData } from "@/components/projects/projects-table"
 import { useRouter } from "next/navigation"
 import { projectTranslations } from "@/lib/translations/projects"
@@ -72,6 +68,10 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import { useInstitution } from "@/contexts/institution-context"
+import { KPICards } from "@/components/shared/kpi-cards-carousel"
+import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
+import { UseTable } from "@/components/ui/use-table"
+import { ColumnDef } from "@tanstack/react-table"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
 
@@ -125,6 +125,161 @@ const statusChartConfig = {
   },
 } satisfies ChartConfig
 
+// Componentes individuais dos gráficos
+const ProjectsByDepartmentChart = () => (
+  <Card className="h-full">
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+      <div>
+        <CardTitle className="flex items-center gap-2">
+          <BarChart3 className="w-5 h-5" />
+          Projects by Department
+        </CardTitle>
+        <CardDescription className="mt-1">
+          Distribuição de projetos e orçamentos
+        </CardDescription>
+      </div>
+    </CardHeader>
+    <CardContent>
+      <ChartContainer config={projectsChartConfig} className="h-[300px] w-full">
+        <BarChart data={projectsByDepartmentData}>
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey="department"
+            tickLine={false}
+            tickMargin={10}
+            axisLine={false}
+            fontSize={11}
+          />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            fontSize={11}
+          />
+          <ChartTooltip
+            cursor={false}
+            content={<ChartTooltipContent />}
+          />
+          <Legend />
+          <Bar dataKey="projects" fill="#3b82f6" radius={4} name="Projetos" />
+          <Bar dataKey="budget_used" fill="#10b981" radius={4} name="Orçamento Usado" />
+          <Bar dataKey="remaining_budget" fill="#e5e7eb" radius={4} name="Orçamento Restante" />
+        </BarChart>
+      </ChartContainer>
+    </CardContent>
+  </Card>
+)
+
+const SubsidyStatusChart = () => (
+  <Card className="h-full">
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+      <div>
+        <CardTitle className="flex items-center gap-2">
+          <PieChart className="w-5 h-5" />
+          Subsidy Distribution
+        </CardTitle>
+        <CardDescription className="mt-1">
+          Status dos pedidos de subsídio
+        </CardDescription>
+      </div>
+    </CardHeader>
+    <CardContent>
+      <ChartContainer config={statusChartConfig} className="h-[300px] w-full">
+        <RechartsPieChart>
+          <ChartTooltip
+            cursor={false}
+            content={<ChartTooltipContent hideLabel />}
+          />
+          <Pie
+            data={subsidyStatusDistribution}
+            dataKey="count"
+            nameKey="status"
+            cx="50%"
+            cy="50%"
+            innerRadius={60}
+            outerRadius={120}
+            strokeWidth={2}
+            paddingAngle={2}
+          >
+            {subsidyStatusDistribution.map((entry, index) => (
+              <Cell
+                key={`cell-${index}`}
+                fill={entry.color}
+              />
+            ))}
+          </Pie>
+          <Legend />
+        </RechartsPieChart>
+      </ChartContainer>
+    </CardContent>
+  </Card>
+)
+
+const ProjectsTimelineChart = () => (
+  <Card className="h-full">
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+      <div>
+        <CardTitle className="flex items-center gap-2">
+          <LineChart className="w-5 h-5" />
+          Projects Timeline
+        </CardTitle>
+        <CardDescription className="mt-1">
+          Evolução mensal dos projetos
+        </CardDescription>
+      </div>
+    </CardHeader>
+    <CardContent>
+      <ChartContainer config={timelineChartConfig} className="h-[300px] w-full">
+        <AreaChart data={projectsTimelineData}>
+          <defs>
+            <linearGradient id="fillCreated" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
+            </linearGradient>
+            <linearGradient id="fillCompleted" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey="month"
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            fontSize={12}
+          />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            fontSize={12}
+          />
+          <ChartTooltip
+            cursor={false}
+            content={<ChartTooltipContent indicator="dot" />}
+          />
+          <Area
+            dataKey="created"
+            type="natural"
+            fill="url(#fillCreated)"
+            stroke="#3b82f6"
+            stackId="a"
+          />
+          <Area
+            dataKey="completed"
+            type="natural"
+            fill="url(#fillCompleted)"
+            stroke="#10b981"
+            stackId="a"
+          />
+          <Legend />
+        </AreaChart>
+      </ChartContainer>
+    </CardContent>
+  </Card>
+)
+
 export default function ProjectsPage() {
   const { t, i18n } = useTranslation()
   const { activeInstitution } = useInstitution()
@@ -133,12 +288,6 @@ export default function ProjectsPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [projects, setProjects] = useState<ProjectTableData[]>([])
   
-  // Modal states
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [isEventModalOpen, setIsEventModalOpen] = useState(false)
-  const [isCommunicationModalOpen, setIsCommunicationModalOpen] = useState(false)
-  const [selectedProject, setSelectedProject] = useState<ProjectTableData | undefined>(undefined)
   
   // Filter states
   const [selectedDepartment, setSelectedDepartment] = useState("all")
@@ -202,6 +351,91 @@ export default function ProjectsPage() {
     }
   }, [filteredData])
 
+  // Dados para KPI Cards
+  const kpiCardsData = [
+    {
+      id: "total-projects",
+      title: "Total Projects",
+      value: kpis.totalProjects.toString(),
+      change: `${kpis.activeProjects} active`,
+      trend: { value: 12, isPositive: true },
+      icon: Globe,
+    },
+    {
+      id: "total-budget",
+      title: "Total Budget",
+      value: `R$ ${(kpis.totalBudget / 1000).toFixed(0)}K`,
+      change: `Avg: R$ ${Math.round(kpis.totalBudget / (kpis.totalProjects || 1)).toLocaleString()}`,
+      trend: { value: 8, isPositive: true },
+      icon: DollarSign,
+    },
+    {
+      id: "subsidy-requests",
+      title: "Subsidy Requests",
+      value: kpis.totalSubsidyRequests.toString(),
+      change: `R$ ${(kpis.totalSubsidyAmount / 1000).toFixed(0)}K requested`,
+      trend: { value: 15, isPositive: true },
+      icon: Activity,
+    },
+    {
+      id: "volunteers-projects",
+      title: "With Volunteers",
+      value: kpis.projectsWithVolunteers.toString(),
+      change: `${Math.round((kpis.projectsWithVolunteers / (kpis.totalProjects || 1)) * 100)}% of projects`,
+      trend: { value: 5, isPositive: true },
+      icon: Users,
+    },
+  ]
+
+  // Colunas para a tabela de projetos
+  const projectColumns: ColumnDef<ProjectTableData>[] = [
+    {
+      accessorKey: "title",
+      header: "Project Title",
+      cell: ({ row }) => (
+        <div className="font-medium">{row.original.title}</div>
+      ),
+    },
+    {
+      accessorKey: "department_id",
+      header: "Department",
+      cell: ({ row }) => {
+        const dept = mockDepartments.find(d => d.id === row.original.department_id)
+        return <span className="text-sm">{dept?.name || "Unknown"}</span>
+      },
+    },
+    {
+      accessorKey: "budget",
+      header: "Budget",
+      cell: ({ row }) => (
+        <span className="font-mono">R$ {row.original.budget.toLocaleString()}</span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const status = row.original.status
+        const color = status === "active" ? "bg-green-100 text-green-700" : 
+                     status === "completed" ? "bg-blue-100 text-blue-700" : 
+                     "bg-yellow-100 text-yellow-700"
+        return (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}>
+            {status}
+          </span>
+        )
+      },
+    },
+    {
+      accessorKey: "start_at",
+      header: "Start Date",
+      cell: ({ row }) => {
+        const date = new Date(row.original.start_at)
+        return date.toLocaleDateString()
+      },
+    },
+  ]
+
   // Simulate data loading
   useEffect(() => {
     const loadProjectsData = async () => {
@@ -258,37 +492,13 @@ export default function ProjectsPage() {
     toast.success(t_project.toasts.filterApplied, { duration: 1500 })
   }
 
-  const handleAddProject = (data: ProjectFormData) => {
-    const newProject: ProjectTableData = {
-      id: `new-${Date.now()}`,
-      department_id: data.department_id,
-      title: data.title,
-      description: data.description,
-      budget: data.budget,
-      is_private: data.is_private,
-      required_volunteers: data.required_volunteers,
-      start_at: data.start_at.toISOString(),
-      end_at: data.end_at.toISOString(),
-      language_preference: data.language_preference,
-      institutionId: activeInstitution.id,
-      status: "upcoming",
-      subsidyRequests: 0,
-      subsidyAmount: 0,
-      activities: 0
-    }
-
-    setProjects(prev => [newProject, ...prev])
-    setIsAddModalOpen(false)
-    toast.success(t_project.toasts.projectCreated, { duration: 3000 })
-  }
 
   const handleViewProject = (project: ProjectTableData) => {
     router.push(`/projects/${project.id}`)
   }
 
   const handleEditProject = (project: ProjectTableData) => {
-    setSelectedProject(project)
-    setIsEditModalOpen(true)
+    router.push(`/projects/new-project?edit=${project.id}`)
   }
 
   const handleDeleteProject = (project: ProjectTableData) => {
@@ -297,13 +507,13 @@ export default function ProjectsPage() {
   }
 
   const handleCreateEvent = (project: ProjectTableData) => {
-    setSelectedProject(project)
-    setIsEventModalOpen(true)
+    toast.success(`Creating event for: ${project.title}`)
+    // Navigate to event creation page or handle inline
   }
 
   const handleCreateCommunication = (project: ProjectTableData) => {
-    setSelectedProject(project)
-    setIsCommunicationModalOpen(true)
+    toast.success(`Creating communication for: ${project.title}`)
+    // Navigate to communication creation page or handle inline
   }
 
   const handleDuplicateProject = (project: ProjectTableData) => {
@@ -319,40 +529,6 @@ export default function ProjectsPage() {
     
     setProjects(prev => [duplicatedProject, ...prev])
     toast.success(`📋 Projeto duplicado: ${project.title}`, { duration: 3000 })
-  }
-
-  const handleEditSubmit = (data: EditProjectFormData) => {
-    if (selectedProject) {
-      setProjects(prev => prev.map(p => 
-        p.id === selectedProject.id 
-          ? {
-              ...p,
-              ...data,
-              start_at: data.start_at.toISOString(),
-              end_at: data.end_at.toISOString(),
-            }
-          : p
-      ))
-      setIsEditModalOpen(false)
-      setSelectedProject(undefined)
-      toast.success(t_project.toasts.projectUpdated, { duration: 3000 })
-    }
-  }
-
-  const handleEventSubmit = (data: EventFormData) => {
-    // Here you would typically send the event data to your API
-    console.log('Creating event:', data)
-    setIsEventModalOpen(false)
-    setSelectedProject(undefined)
-    toast.success(t_project.toasts.eventCreated, { duration: 3000 })
-  }
-
-  const handleCommunicationSubmit = (data: CommunicationFormData) => {
-    // Here you would typically send the communication data to your API
-    console.log('Creating communication:', data)
-    setIsCommunicationModalOpen(false)
-    setSelectedProject(undefined)
-    toast.success(t_project.toasts.communicationCreated, { duration: 3000 })
   }
 
   // Period selector component
@@ -401,21 +577,21 @@ export default function ProjectsPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-8">
+      <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold text-foreground mb-2">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
               {t_project.projectsDashboard}
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Visão completa dos projetos e pedidos de subsídio da organização
             </p>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <Select value={selectedDepartment} onValueChange={handleDepartmentChange}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Filtrar por departamento" />
               </SelectTrigger>
               <SelectContent>
@@ -428,313 +604,73 @@ export default function ProjectsPage() {
               </SelectContent>
             </Select>
             
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
-            
-            <Button onClick={() => setIsAddModalOpen(true)} className="gap-2">
-              <Plus className="w-4 h-4" />
-              {t_project.newProject}
-            </Button>
-            
-            <LanguageSelector />
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="shrink-0"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
+              
+              <Button onClick={() => router.push('/projects/new-project')} className="gap-2 flex-1 sm:flex-none">
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">{t_project.newProject}</span>
+                <span className="sm:hidden">New</span>
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t_project.kpis.totalProjects}</CardTitle>
-              <Globe className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpis.totalProjects}</div>
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <TrendingUp className="w-3 h-3 text-green-500" />
-                {kpis.activeProjects} ativos
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t_project.kpis.totalBudget}</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">R$ {kpis.totalBudget.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">
-                Média: R$ {Math.round(kpis.totalBudget / (kpis.totalProjects || 1)).toLocaleString()}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t_project.kpis.totalSubsidyRequests}</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpis.totalSubsidyRequests}</div>
-              <p className="text-xs text-muted-foreground">
-                R$ {kpis.totalSubsidyAmount.toLocaleString()} solicitado
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t_project.kpis.projectsWithVolunteers}</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpis.projectsWithVolunteers}</div>
-              <p className="text-xs text-muted-foreground">
-                {Math.round((kpis.projectsWithVolunteers / (kpis.totalProjects || 1)) * 100)}% dos projetos
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        <KPICards 
+          data={kpiCardsData}
+          isLoading={isLoading}
+          minCardsForCarousel={4}
+          showCarousel={true}
+        />
 
         {/* Charts Section */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          
-          {/* Projects by Department */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5" />
-                  {t_project.charts.projectsByDepartment}
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  Distribuição de projetos e orçamentos
-                </CardDescription>
-              </div>
-              <PeriodSelector
-                value={chartPeriod}
-                onChange={setChartPeriod}
-                options={[
-                  { value: "3m", label: "3M" },
-                  { value: "6m", label: "6M" },
-                  { value: "1y", label: "1A" }
-                ]}
-              />
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={projectsChartConfig} className="h-[350px] w-full">
-                <BarChart data={projectsByDepartmentData}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="department"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                    fontSize={11}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    fontSize={11}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent />}
-                  />
-                  <Legend />
-                  <Bar dataKey="projects" fill="#3b82f6" radius={4} name="Projetos" />
-                  <Bar dataKey="budget_used" fill="#10b981" radius={4} name="Orçamento Usado" />
-                  <Bar dataKey="remaining_budget" fill="#e5e7eb" radius={4} name="Orçamento Restante" />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          {/* Subsidy Status Distribution */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <PieChart className="w-5 h-5" />
-                  {t_project.charts.subsidyDistribution}
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  Status dos pedidos de subsídio
-                </CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={statusChartConfig} className="h-[350px] w-full">
-                <RechartsPieChart>
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
-                  />
-                  <Pie
-                    data={subsidyStatusDistribution}
-                    dataKey="count"
-                    nameKey="status"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={120}
-                    strokeWidth={2}
-                    paddingAngle={2}
-                  >
-                    {subsidyStatusDistribution.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={entry.color}
-                      />
-                    ))}
-                  </Pie>
-                  <Legend />
-                </RechartsPieChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
+        <div className="space-y-6">
+          <h3 className="text-lg sm:text-xl font-semibold">Project Analytics</h3>
+          <ResponsiveGridCarousel autoplayDelay={5000} className="p-2 sm:p-4">
+            <ProjectsByDepartmentChart />
+            <SubsidyStatusChart />
+            <ProjectsTimelineChart />
+          </ResponsiveGridCarousel>
         </div>
 
-        {/* Timeline Chart */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <LineChart className="w-5 h-5" />
-                {t_project.charts.projectsTimeline}
-              </CardTitle>
-              <CardDescription className="mt-1">
-                Evolução mensal dos projetos
-              </CardDescription>
-            </div>
-            <PeriodSelector
-              value={selectedPeriod}
-              onChange={setSelectedPeriod}
-              options={[
-                { value: "6m", label: t_project.filters.last6Months },
-                { value: "1y", label: t_project.filters.lastYear },
-                { value: "current", label: t_project.filters.currentYear }
-              ]}
-            />
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={timelineChartConfig} className="h-[400px] w-full">
-              <AreaChart data={projectsTimelineData}>
-                <defs>
-                  <linearGradient id="fillCreated" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
-                  </linearGradient>
-                  <linearGradient id="fillCompleted" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  fontSize={12}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  fontSize={12}
-                />
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent indicator="dot" />}
-                />
-                <Area
-                  dataKey="created"
-                  type="natural"
-                  fill="url(#fillCreated)"
-                  stroke="#3b82f6"
-                  stackId="a"
-                />
-                <Area
-                  dataKey="completed"
-                  type="natural"
-                  fill="url(#fillCompleted)"
-                  stroke="#10b981"
-                  stackId="a"
-                />
-                <Legend />
-              </AreaChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-
         {/* Projects Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Eye className="w-5 h-5" />
-              Lista de Projetos
-            </CardTitle>
-            <CardDescription>
-              Tabela detalhada com todos os projetos e suas informações
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ProjectsTable
-              data={filteredData}
-              onView={handleViewProject}
-              onEdit={handleEditProject}
-              onDelete={handleDeleteProject}
-              onCreateEvent={handleCreateEvent}
-              onCreateCommunication={handleCreateCommunication}
-              onDuplicate={handleDuplicateProject}
-            />
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <h3 className="text-lg sm:text-xl font-semibold">Project Management</h3>
+          <UseTable
+            columns={projectColumns}
+            data={filteredData}
+            searchKey="title"
+            filters={[
+              {
+                id: "status",
+                title: "Status",
+                options: [
+                  { label: "Active", value: "active" },
+                  { label: "Completed", value: "completed" },
+                  { label: "Upcoming", value: "upcoming" }
+                ]
+              },
+              {
+                id: "department_id",
+                title: "Department",
+                options: mockDepartments.map(dept => ({
+                  label: dept.name,
+                  value: dept.id
+                }))
+              }
+            ]}
+          />
+        </div>
 
-        {/* Modals */}
-        <AddProjectModal
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          onSubmit={handleAddProject}
-        />
-        
-        <EditProjectModal
-          isOpen={isEditModalOpen}
-          onClose={() => {
-            setIsEditModalOpen(false)
-            setSelectedProject(undefined)
-          }}
-          onSubmit={handleEditSubmit}
-          project={selectedProject}
-        />
-        
-        <CreateEventModal
-          isOpen={isEventModalOpen}
-          onClose={() => {
-            setIsEventModalOpen(false)
-            setSelectedProject(undefined)
-          }}
-          onSubmit={handleEventSubmit}
-          project={selectedProject}
-        />
-        
-        <CreateCommunicationModal
-          isOpen={isCommunicationModalOpen}
-          onClose={() => {
-            setIsCommunicationModalOpen(false)
-            setSelectedProject(undefined)
-          }}
-          onSubmit={handleCommunicationSubmit}
-          project={selectedProject}
-        />
       </div>
     </AppLayout>
   )
