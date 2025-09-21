@@ -1,8 +1,9 @@
 "use client"
 
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react'
+import React, { createContext, useContext, useState, useCallback, useMemo, use, useEffect } from 'react'
 import { Building2 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useGetInstitutionsQuery } from '@/hooks/graphql/use-get-institutions-query'
 
 interface Institution {
   id: string
@@ -39,7 +40,7 @@ export const useInstitution = () => {
 // Dados mockados das instituições
 const MOCK_INSTITUTIONS: Institution[] = [
   {
-    id: "5290578a-b88e-43c3-98dd-a7694910fc6b",
+    id: "4053124b-5b65-4a38-a559-924f72519a52",
     name: "União Sul-Paulista",
     denomination: "SDA",
     language_preference: "en",
@@ -51,51 +52,32 @@ const MOCK_INSTITUTIONS: Institution[] = [
     active_users: 1250,
     created_at: "2020-01-15"
   },
-  {
-    id: "ucb",
-    name: "União Central Brasileira",
-    denomination: "SDA", 
-    language_preference: "en",
-    logo: Building2,
-    description: "Church Growth International - Central Division",
-    regions_count: 8,
-    churches_count: 52,
-    members_count: 16800,
-    active_users: 890,
-    created_at: "2019-03-20"
-  },
-  {
-    id: "uan",
-    name: "União Amazônica",
-    denomination: "SDA",
-    language_preference: "en", 
-    logo: Building2,
-    description: "Church Growth International - Amazon Division",
-    regions_count: 6,
-    churches_count: 34,
-    members_count: 7200,
-    active_users: 420,
-    created_at: "2021-06-10"
-  },
-  {
-    id: "une",
-    name: "União Nordeste Brasileira",
-    denomination: "SDA",
-    language_preference: "en",
-    logo: Building2,
-    description: "Church Growth International - Northeast Division", 
-    regions_count: 10,
-    churches_count: 67,
-    members_count: 19400,
-    active_users: 1080,
-    created_at: "2018-11-05"
-  }
 ]
 
 export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [institutions, setInstitutions] = useState<Institution[]>(MOCK_INSTITUTIONS)
+  const [institutions, setInstitutions] = useState<Institution[]>([])
   const [activeInstitution, setActiveInstitution] = useState<Institution>(MOCK_INSTITUTIONS[0])
+  const { data } = useGetInstitutionsQuery();
 
+  useEffect(() => {
+    if (data && data.institutions) {
+      const fetchedInstitutions: Institution[] = data.institutions.map(inst => ({
+        id: inst?.id,
+        name: inst?.name,
+        denomination: inst?.denomination,
+        language_preference: inst?.language_preference,
+        logo: Building2,
+        description: inst?.name,
+        regions_count: 0,
+        churches_count: 0,
+        members_count: 0,
+        active_users: 0,
+        created_at: inst?.created_at
+
+      }))
+      setInstitutions(fetchedInstitutions)
+    }
+  }, [data])
   const switchInstitution = useCallback((institutionId: string) => {
     const institution = institutions.find(inst => inst.id === institutionId)
     if (institution && institution.id !== activeInstitution.id) {
