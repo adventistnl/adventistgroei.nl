@@ -1,0 +1,140 @@
+export const searchTranslations = {
+  en: {
+    placeholder: "Type a command or search...",
+    noResults: "No results found.",
+    suggestions: "Suggestions",
+    structure: "Structure & Organization",
+    usersAccess: "Users & Access", 
+    reportsProjects: "Reports & Projects",
+    administration: "Administration",
+    shortcuts: {
+      search: "⌘K",
+      dashboard: "⌘D",
+      users: "⌘U",
+      projects: "⌘P",
+      events: "⌘E"
+    },
+    pages: {
+      dashboard: "Dashboard",
+      institutions: "Institutions",
+      regions: "Regions", 
+      churches: "Churches",
+      departments: "Departments",
+      users: "Users",
+      access: "Access Management",
+      projects: "Projects",
+      reports: "Reports",
+      events: "Events",
+      communications: "Communications",
+      settings: "Settings",
+      profile: "Profile"
+    },
+    descriptions: {
+      dashboard: "Overview and analytics",
+      institutions: "Manage church institutions",
+      regions: "Geographic regions management",
+      churches: "Local churches management",
+      departments: "Church departments management",
+      users: "User management",
+      access: "Roles and permissions",
+      projects: "Project management",
+      reports: "System reports",
+      events: "Church events and activities",
+      communications: "Send messages and announcements",
+      settings: "System settings",
+      profile: "User profile settings"
+    }
+  },
+  pt: {
+    placeholder: "Digite um comando ou pesquise...",
+    noResults: "Nenhum resultado encontrado.",
+    suggestions: "Sugestões",
+    structure: "Estrutura & Organização",
+    usersAccess: "Usuários & Acesso",
+    reportsProjects: "Relatórios & Projetos", 
+    administration: "Administração",
+    shortcuts: {
+      search: "⌘K",
+      dashboard: "⌘D",
+      users: "⌘U",
+      projects: "⌘P",
+      events: "⌘E"
+    },
+    pages: {
+      dashboard: "Dashboard",
+      institutions: "Instituições",
+      regions: "Regiões",
+      churches: "Igrejas", 
+      departments: "Departamentos",
+      users: "Usuários",
+      access: "Gestão de Acesso",
+      projects: "Projetos",
+      reports: "Relatórios",
+      events: "Eventos",
+      communications: "Comunicações",
+      settings: "Configurações",
+      profile: "Perfil"
+    },
+    descriptions: {
+      dashboard: "Visão geral e análises",
+      institutions: "Gerenciar instituições da igreja",
+      regions: "Gestão de regiões geográficas",
+      churches: "Gestão de igrejas locais",
+      departments: "Gestão de departamentos da igreja",
+      users: "Gestão de usuários",
+      access: "Papéis e permissões",
+      projects: "Gestão de projetos",
+      reports: "Relatórios do sistema",
+      events: "Eventos e atividades da igreja",
+      communications: "Enviar mensagens e comunicados",
+      settings: "Configurações do sistema",
+      profile: "Configurações do perfil"
+    }
+  },
+  nl: {
+    placeholder: "Typ een commando of zoek...",
+    noResults: "Geen resultaten gevonden.",
+    suggestions: "Suggesties",
+    structure: "Structuur & Organisatie",
+    usersAccess: "Gebruikers & Toegang",
+    reportsProjects: "Rapporten & Projecten",
+    administration: "Administratie",
+    shortcuts: {
+      search: "⌘K",
+      dashboard: "⌘D", 
+      users: "⌘U",
+      projects: "⌘P",
+      events: "⌘E"
+    },
+    pages: {
+      dashboard: "Dashboard",
+      institutions: "Instellingen",
+      regions: "Regio's",
+      churches: "Kerken",
+      departments: "Afdelingen",
+      users: "Gebruikers",
+      access: "Toegangsbeheer",
+      projects: "Projecten",
+      reports: "Rapporten",
+      events: "Evenementen",
+      communications: "Communicaties",
+      settings: "Instellingen",
+      profile: "Profiel"
+    },
+    descriptions: {
+      dashboard: "Overzicht en analyses",
+      institutions: "Kerkelijke instellingen beheren",
+      regions: "Geografische regio's beheren",
+      churches: "Lokale kerken beheren",
+      departments: "Kerkelijke afdelingen beheren",
+      users: "Gebruikersbeheer",
+      access: "Rollen en machtigingen",
+      projects: "Projectbeheer",
+      reports: "Systeemrapporten",
+      events: "Kerkevenementen en activiteiten",
+      communications: "Berichten en aankondigingen versturen",
+      settings: "Systeeminstellingen",
+      profile: "Gebruikersprofielinstellingen"
+    }
+  }
+}
