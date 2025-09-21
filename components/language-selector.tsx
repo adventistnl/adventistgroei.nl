@@ -13,9 +13,9 @@ import {
 import toast from "react-hot-toast"
 
 const languages = [
-  { code: 'pt', name: 'Português', flag: '🇧🇷' },
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'nl', name: 'Nederlands', flag: '🇳🇱' }
+  { code: 'pt', name: 'Português', initials: 'PT' },
+  { code: 'en', name: 'English', initials: 'EN' },
+  { code: 'nl', name: 'Nederlands', initials: 'NL' }
 ]
 
 export function LanguageSelector() {
@@ -81,11 +81,8 @@ export function LanguageSelector() {
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2 h-9 px-3">
           <Globe className="h-4 w-4" />
-          <span className="hidden sm:inline text-sm">
-            {currentLanguage?.flag} {currentLanguage?.name}
-          </span>
-          <span className="sm:hidden">
-            {currentLanguage?.flag}
+          <span className="text-sm font-medium">
+            {currentLanguage?.initials}
           </span>
         </Button>
       </DropdownMenuTrigger>
@@ -97,8 +94,8 @@ export function LanguageSelector() {
             className="flex items-center justify-between"
           >
             <div className="flex items-center gap-2">
-              <span>{language.flag}</span>
-              <span>{language.name}</span>
+              <span className="text-sm font-medium">{language.initials}</span>
+              <span className="text-sm text-muted-foreground">{language.name}</span>
             </div>
             {i18n.language === language.code && (
               <Check className="h-4 w-4 text-primary" />

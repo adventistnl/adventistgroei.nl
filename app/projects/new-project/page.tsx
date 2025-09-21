@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo, Suspense } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AppLayout } from "@/components/layouts/app-layout"
@@ -171,7 +171,8 @@ const FUNDING_POLICIES = {
   default_institution_percent: 65
 }
 
-export default function ProjectRegisterPage() {
+// Component that uses useSearchParams - needs to be wrapped in Suspense
+function ProjectRegisterContent() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -1481,5 +1482,48 @@ export default function ProjectRegisterPage() {
         </div>
       </div>
     </AppLayout>
+  )
+}
+
+// Loading component for Suspense fallback
+function ProjectRegisterLoading() {
+  return (
+    <AppLayout>
+      <div className="w-full max-w-full overflow-hidden">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+          <div>
+            <div className="h-8 bg-muted rounded w-48 mb-2 animate-pulse" />
+            <div className="h-4 bg-muted rounded w-64 animate-pulse" />
+          </div>
+          <div className="h-9 bg-muted rounded w-32 animate-pulse" />
+        </div>
+        
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-center justify-between mb-4">
+            {[1, 2, 3, 4].map((step) => (
+              <div key={step} className="flex items-center">
+                <div className="w-8 h-8 bg-muted rounded-full animate-pulse" />
+                {step < 4 && <div className="w-12 sm:w-16 h-0.5 mx-2 bg-muted animate-pulse" />}
+              </div>
+            ))}
+          </div>
+          <div className="text-center space-y-2">
+            <div className="h-6 bg-muted rounded w-32 mx-auto animate-pulse" />
+            <div className="h-4 bg-muted rounded w-48 mx-auto animate-pulse" />
+          </div>
+        </div>
+        
+        <div className="min-h-[60vh] bg-muted rounded animate-pulse" />
+      </div>
+    </AppLayout>
+  )
+}
+
+// Main component with Suspense wrapper
+export default function ProjectRegisterPage() {
+  return (
+    <Suspense fallback={<ProjectRegisterLoading />}>
+      <ProjectRegisterContent />
+    </Suspense>
   )
 }
