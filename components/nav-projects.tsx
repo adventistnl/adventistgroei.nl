@@ -29,24 +29,15 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import { AddProjectModal } from "@/components/modals/project/add-project-modal"
-import { Project, ProjectFormData } from "@/types/Project"
+import { useRouter } from "next/navigation"
 
 interface NavProjectsProps {
-  projects: Project[]
-  onAddProject?: (data: ProjectFormData) => void
+  projects: any[]
 }
 
-export const NavProjects = React.memo(function NavProjects({ projects, onAddProject }: NavProjectsProps) {
+export const NavProjects = React.memo(function NavProjects({ projects }: NavProjectsProps) {
   const { isMobile } = useSidebar()
-  const [isAddModalOpen, setIsAddModalOpen] = React.useState(false)
-
-  const handleAddProject = (data: ProjectFormData) => {
-    if (onAddProject) {
-      onAddProject(data)
-    }
-    setIsAddModalOpen(false)
-  }
+  const router = useRouter()
 
   return (
     <>
@@ -56,7 +47,7 @@ export const NavProjects = React.memo(function NavProjects({ projects, onAddProj
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={() => router.push('/projects/new-project')}
             className="h-6 w-6 p-0 hover:bg-sidebar-accent"
           >
             <Plus className="h-3 w-3" />
@@ -118,12 +109,6 @@ export const NavProjects = React.memo(function NavProjects({ projects, onAddProj
           )}
         </SidebarMenu>
       </SidebarGroup>
-
-      <AddProjectModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSubmit={handleAddProject}
-      />
     </>
   )
 })

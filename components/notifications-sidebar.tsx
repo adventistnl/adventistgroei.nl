@@ -98,11 +98,7 @@ export function NotificationsSidebar() {
 
   const unreadCount = notifications.filter(n => n.status === "unread").length
 
-  const handleNavigation = (href: string, name: string) => {
-    setIsOpen(false)
-    toast.success(`🚀 Navigating to ${name}`, { duration: 2000 })
-    router.push(href)
-  }
+  const [expandedNotification, setExpandedNotification] = useState<string | null>(null)
 
   const markAsRead = (id: string) => {
     setNotifications(prev => 
@@ -116,6 +112,14 @@ export function NotificationsSidebar() {
     toast.success("✅ Notification marked as read", {
       duration: 2000
     })
+  }
+
+  const toggleExpanded = (id: string) => {
+    setExpandedNotification(expandedNotification === id ? null : id)
+    // Mark as read when expanded
+    if (expandedNotification !== id) {
+      markAsRead(id)
+    }
   }
 
   const markAllAsRead = () => {
@@ -194,73 +198,58 @@ export function NotificationsSidebar() {
         <Separator className="my-4" />
 
         <ScrollArea className="h-[calc(100vh-120px)]">
-          <div className="space-y-4">
+          <div className="space-y-2">
             {notifications.map((notification) => (
-              <Card 
+              <div 
                 key={notification.id} 
-                className={`transition-all hover:shadow-md ${
+                className={`p-4 border rounded-lg transition-all hover:bg-muted/50 cursor-pointer ${
                   notification.status === "unread" 
-                    ? "border-l-4 border-l-primary bg-accent/50" 
+                    ? "border-l-4 border-l-primary bg-primary/5" 
                     : "border-l-4 border-l-transparent"
                 }`}
+                onClick={() => toggleExpanded(notification.id)}
               >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      {getNotificationIcon(notification.type)}
-                      <CardTitle className="text-sm font-medium">
-                        {notification.title}
-                      </CardTitle>
-                      {notification.status === "unread" && (
-                        <div className="w-2 h-2 bg-primary rounded-full" />
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge 
-                        variant="secondary" 
-                        className={`text-xs ${getNotificationBadgeColor(notification.type)}`}
-                      >
-                        {notification.type}
-                      </Badge>
-                      {notification.status === "unread" && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => markAsRead(notification.id)}
-                        >
-                          <Check className="w-3 h-3" />
-                        </Button>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    {getNotificationIcon(notification.type)}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="text-sm font-medium truncate">{notification.title}</h4>
+                        {notification.status === "unread" && (
+                          <div className="w-2 h-2 bg-primary rounded-full shrink-0" />
+                        )}
+                      </div>
+                      
+                      {expandedNotification === notification.id ? (
+                        <div className="space-y-3">
+                          <p className="text-sm text-muted-foreground">{notification.message}</p>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock className="w-3 h-3" />
+                              {new Date(notification.timestamp).toLocaleString()}
+                            </div>
+                            <Badge 
+                              variant="outline" 
+                              className="text-xs"
+                            >
+                              {notification.type}
+                            </Badge>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-muted-foreground line-clamp-1 flex-1">
+                            {notification.message}
+                          </p>
+                          <button className="text-xs text-primary hover:underline ml-2 shrink-0">
+                            More...
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
-                </CardHeader>
-                
-                <CardContent className="pt-0">
-                  <CardDescription className="text-sm mb-3">
-                    {notification.message}
-                  </CardDescription>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="w-3 h-3" />
-                      {new Date(notification.timestamp).toLocaleString()}
-                    </div>
-                    
-                    {notification.actionLabel && notification.actionHref && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleNavigation(notification.actionHref!, notification.actionLabel!)}
-                        className="h-7 text-xs"
-                      >
-                        {notification.actionLabel}
-                        <ArrowRight className="w-3 h-3 ml-1" />
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
 
             {notifications.length === 0 && (

@@ -679,7 +679,7 @@ export default function DashboardPage() {
           <h3 className="text-xl font-semibold">Analytics Overview</h3>
           <ResponsiveGridCarousel autoplayDelay={4000} className="p-4">
             <GrowthChart />
-            <UsersChart />
+            {/* <UsersChart /> */}
             <SubsidyStatusChart />
             <BudgetChart />
           </ResponsiveGridCarousel>
