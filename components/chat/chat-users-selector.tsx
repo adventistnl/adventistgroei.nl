@@ -81,14 +81,6 @@ export function ChatUsersSelector({
                   Select a user to start chatting
                 </p>
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => onOpenChange(false)}
-                className="h-8 w-8 p-0"
-              >
-                <X className="w-4 h-4" />
-              </Button>
             </div>
           </SheetHeader>
 
