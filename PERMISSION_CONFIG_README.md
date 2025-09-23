@@ -44,7 +44,7 @@ Uma página dedicada para configuração detalhada de permissões de roles com d
 ## 🗂️ Estrutura de Arquivos
 
 ```
-/app/access/permissions/[roleId]/
+/app/access/roles/[roleId]/
 ├── page.tsx              # Página de configuração de permissões
 ├── loading.tsx           # Estados de loading
 ```
@@ -78,7 +78,7 @@ Uma página dedicada para configuração detalhada de permissões de roles com d
 ### Roteamento
 ```
 /access → Página principal de access management
-/access/permissions/[roleId] → Configuração detalhada de permissões
+/access/roles/[roleId] → Configuração detalhada de permissões
 ```
 
 ### Integração

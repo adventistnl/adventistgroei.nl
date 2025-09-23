@@ -59,7 +59,6 @@ import { CreateRoleModal, EditRoleModal, DeleteRoleModal } from "@/components/mo
 // Data
 import {
   users,
-  roles,
   permissions,
   institutions,
   churches,
@@ -72,12 +71,14 @@ import {
   getUserPermissions,
   currentUser,
   type User,
-  type Role,
   type Permission
 } from "@/data/accessData"
+import { useRoles } from "@/hooks/use-roles"
+import { Role_role as Role } from "@/types/Role"
 
 export default function AccessManagementPage() {
   const { t, i18n } = useTranslation()
+  const { roles } = useRoles({});
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
@@ -594,7 +595,7 @@ export default function AccessManagementPage() {
 
   const handleEditPermissions = (role: Role) => {
     toast.success(`Opening detailed permissions for ${role.name}`)
-    window.location.href = `/access/permissions/${role.id}`
+    window.location.href = `/access/roles/${role.id}`
   }
 
   if (isLoading) {

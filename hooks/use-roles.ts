@@ -1,27 +1,36 @@
-import { use, useMemo } from "react";
-import { useGetRolesQuery } from "@/hooks/graphql/use-get-roles-query";
+import { useMemo } from "react";
+import { useGetAllRolesQuery, useGetRoleByIdQuery } from "@/hooks/graphql/use-get-roles-query";
 import { Roles_roles } from "@/types/Roles";
 import { ErrorLike } from "@apollo/client";
+import { Role_role } from "@/types/Role";
 
 interface iUserRoles {
   roles: Roles_roles[];
-  loading: boolean;
-  error: ErrorLike | undefined;
+  currentRole?: Role_role | null;
+  rolesLoading: boolean;
+  rolesError: ErrorLike | undefined;
+  currentRoleLoading: boolean;
+  currentRoleError: ErrorLike | undefined;
 }
 
-export function useRoles():iUserRoles  {
-  const { data, loading, error } = useGetRolesQuery();
+export function useRoles({ id }: { id?: string }): iUserRoles {
+  const { data: dataRoles, loading: rolesLoading, error: rolesError } = useGetAllRolesQuery();
+  const { data: dataRole, loading: currentRoleLoading, error: currentRoleError } = useGetRoleByIdQuery({ id: id || "" });
+
   const roles = useMemo(() => {
-    if (!data || !data.roles) {
+    if (!dataRoles || !dataRoles.roles) {
       return [];
     }
     // Filter out undefined and cast to Roles_roles[]
-    return (data.roles as (Roles_roles | undefined)[]).filter((role): role is Roles_roles => !!role);
-  }, [data]);
-
+    return (dataRoles.roles as (Roles_roles | undefined)[]).filter((role): role is Roles_roles => !!role);
+  }, [dataRoles]);
+  
   return {
     roles,
-    loading,
-    error,
+    rolesLoading,
+    rolesError,
+    currentRole: dataRole ? dataRole.role : undefined,
+    currentRoleError,
+    currentRoleLoading,
   };
 }

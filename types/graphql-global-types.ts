@@ -1109,6 +1109,8 @@ export type Project = {
   is_deleted: Scalars['Boolean']['output'];
   language_preference: LanguagePreference;
   media_link: Scalars['String']['output'];
+  owner: User;
+  owner_id: Scalars['String']['output'];
   subsidies?: Maybe<Array<SubsidyRequest>>;
   title: Scalars['String']['output'];
   type: ProjectType;
@@ -1157,6 +1159,7 @@ export type ProjectCreateDto = {
   institution_id: Scalars['String']['input'];
   language_preference: LanguagePreference;
   media_link: Scalars['String']['input'];
+  owner_id: Scalars['String']['input'];
   title: Scalars['String']['input'];
   type: ProjectType;
 };
@@ -1175,6 +1178,7 @@ export type ProjectUpdateDto = {
   institution_id?: InputMaybe<Scalars['String']['input']>;
   language_preference?: InputMaybe<LanguagePreference>;
   media_link?: InputMaybe<Scalars['String']['input']>;
+  owner_id?: InputMaybe<Scalars['String']['input']>;
   title?: InputMaybe<Scalars['String']['input']>;
   type?: InputMaybe<ProjectType>;
 };
@@ -1569,6 +1573,7 @@ export type UpdateSubsidyStatusDto = {
 
 export type User = {
   __typename?: 'User';
+  Project?: Maybe<Array<Project>>;
   SubsidyRequest?: Maybe<Array<SubsidyRequest>>;
   SubsidyStatus?: Maybe<Array<SubsidyStatus>>;
   _count: UserCount;
@@ -1604,6 +1609,7 @@ export type User = {
 
 export type UserCount = {
   __typename?: 'UserCount';
+  Project: Scalars['Int']['output'];
   SubsidyRequest: Scalars['Int']['output'];
   SubsidyStatus: Scalars['Int']['output'];
   communications: Scalars['Int']['output'];

@@ -13,7 +13,7 @@ const whitelist = ['/login', '/register', '/forgot-password', '/forgot-password/
  */
 const routePermissions: Record<string, { resolvers: PermissionResolverName[] }> = {
   '/access': { resolvers: [] },
-  '/access/permissions/[roleId]': { resolvers: [] },
+  '/access/roles/[roleId]': { resolvers: [] },
   '/annual-reports': { resolvers: [] },
   '/communications': { resolvers: [PermissionResolverName.Communications] },
   '/dashboard': { resolvers: [] },

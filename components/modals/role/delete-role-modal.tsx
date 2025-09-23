@@ -10,15 +10,16 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Shield, AlertTriangle, Trash2 } from "lucide-react"
 import toast from "react-hot-toast"
-import { Role, User } from "@/data/accessData"
+import { User } from "@/data/accessData"
+import { Role_role } from "@/types/Role"
 
 export interface DeleteRoleModalProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  role: Role | null
+  role: Role_role | null
   users?: User[]
-  availableRoles?: Role[]
-  onSuccess?: (deletedRole: Role, reassignmentRoleId?: string) => void
+  availableRoles?: Role_role[]
+  onSuccess?: (deletedRole: Role_role, reassignmentRoleId?: string) => void
 }
 
 type DeleteStep = 'confirm' | 'reassign'

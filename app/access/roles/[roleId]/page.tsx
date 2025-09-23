@@ -32,30 +32,41 @@ import toast from "react-hot-toast"
 import "@/lib/i18n"
 
 // Data
-import {
-  roles,
-  permissions,
-  permissionGroups,
-  users,
-  type Role,
-  type Permission
-} from "@/data/accessData"
+// import { users } from "@/data/accessData"
+import { useRoles } from "@/hooks/use-roles"
+import { usePermissions } from "@/hooks/use-permissions"
 
 export default function RolePermissionsPage() {
   const { t } = useTranslation()
   const router = useRouter()
   const params = useParams()
   const roleId = params.roleId as string
+
+  const { currentRole: selectedRole, currentRoleLoading, currentRoleError, roles, rolesError, rolesLoading } = useRoles({ id: roleId });
+  const { permissions: rawPermissions, permissionsError, permissionsLoading } = usePermissions();
   
   const [isLoading, setIsLoading] = useState(true)
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([])
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<string[]>(['USER', 'ROLE'])
-  
-  // Find the role
-  const selectedRole = useMemo(() => {
-    return roles.find(role => role.id === roleId)
-  }, [roleId])
+
+  // Normaliza os dados de permissões em grupos
+  const permissionGroups = useMemo(() => {
+    if (!rawPermissions) return [];
+    return rawPermissions.map((group) => ({
+      name: group.group,
+      label: group.group,
+      description: '',
+      permissions: group.data
+    }));
+  }, [rawPermissions]);
+
+  // Lista de todas as permissões disponíveis (flat)
+  const permissions = useMemo(() => {
+    if (!permissionGroups) return [];
+    return permissionGroups.flatMap((g) => g.permissions);
+  }, [permissionGroups]);
+  // // Find the role
 
   const breadcrumbs = useMemo(() => [
     { name: "Dashboard", href: "/dashboard" },
@@ -72,19 +83,18 @@ export default function RolePermissionsPage() {
   // Initialize permissions when role is loaded
   useEffect(() => {
     if (selectedRole) {
-      const currentPermissionIds: string[] = []
-      selectedRole.permissions.forEach(group => {
-        group.data.forEach(permission => {
-          currentPermissionIds.push(permission.id)
-        })
-      })
-      setSelectedPermissions(currentPermissionIds)
-      setIsLoading(false)
+      const currentPermissionIds: string[] = [];
+      selectedRole.permissions.forEach((group) => {
+        group.data.forEach((permission) => {
+          currentPermissionIds.push(permission.id);
+        });
+      });
+      setSelectedPermissions(currentPermissionIds);
+      setIsLoading(false);
     } else if (roleId) {
-      // Role not found
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [selectedRole, roleId])
+  }, [selectedRole, roleId]);
 
   const toggleGroup = (groupName: string) => {
     setExpandedGroups(prev => 
@@ -158,7 +168,7 @@ export default function RolePermissionsPage() {
     }
   }
 
-  if (isLoading) {
+  if (currentRoleLoading || isLoading || permissionsLoading || rolesLoading) {
     return (
       <AppLayout>
         <div className="space-y-6 animate-pulse">
@@ -174,7 +184,7 @@ export default function RolePermissionsPage() {
     )
   }
 
-  if (!selectedRole) {
+  if (!selectedRole || currentRoleError || permissionsError || rolesError) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -195,7 +205,7 @@ export default function RolePermissionsPage() {
     )
   }
 
-  const userCount = users.filter(u => u.user_roles.some(r => r.id === selectedRole.id)).length
+  // const userCount = users.filter(u => u.user_roles.some(r => r.id === selectedRole.id)).length
 
   return (
     <AppLayout>
@@ -248,9 +258,9 @@ export default function RolePermissionsPage() {
                       <Badge variant="secondary" className="text-sm font-mono px-3 py-1">
                         {selectedRole.key_code}
                       </Badge>
-                      <Badge variant="outline" className="text-sm">
+                      {/* <Badge variant="outline" className="text-sm">
                         {userCount} {userCount === 1 ? 'user' : 'users'}
-                      </Badge>
+                      </Badge> */}
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground max-w-md leading-relaxed">

@@ -364,7 +364,7 @@ export default function AccessManagementPage() {
                 <DropdownMenuItem
                   onClick={() => {
                     toast.success(`Opening detailed permissions for ${role.name}`)
-                    window.location.href = `/access/permissions/${role.id}`
+                    window.location.href = `/access/roles/${role.id}`
                   }}
                 >
                   <Settings className="mr-2 h-4 w-4" />

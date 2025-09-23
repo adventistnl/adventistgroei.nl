@@ -10,15 +10,16 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { Shield, Edit, Save, Settings } from "lucide-react"
 import toast from "react-hot-toast"
-import { Role, User } from "@/data/accessData"
+import {  User } from "@/data/accessData"
+import { Role_role } from "@/types/Role"
 
 export interface EditRoleModalProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  role: Role | null
+  role: Role_role | null
   users?: User[]
   onSuccess?: (roleData: EditRoleFormData) => void
-  onEditPermissions?: (role: Role) => void
+  onEditPermissions?: (role: Role_role) => void
 }
 
 export interface EditRoleFormData {

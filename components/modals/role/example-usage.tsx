@@ -50,7 +50,7 @@ export function ExampleRoleModalUsage() {
 
   const handleEditPermissions = (role: Role) => {
     // Navigate to permissions page
-    window.location.href = `/access/permissions/${role.id}`
+    window.location.href = `/access/roles/${role.id}`
   }
 
   const openEditModal = (role: Role) => {

@@ -59,7 +59,7 @@ interface InviteModalProps {
 
 export function InviteModal({ children, onInviteSent }: InviteModalProps) {
   const { user, loggedUserId } = useUser({});
-  const { roles } = useRoles();
+  const { roles } = useRoles({});
   const [inviteUser] = useInviteUserMutation();
   const [sendInviteEmail] = useSendInviteEmailMutation();
   const { i18n } = useTranslation();
