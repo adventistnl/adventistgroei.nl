@@ -9,8 +9,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { Shield, Edit, Save, Settings } from "lucide-react"
+
 import toast from "react-hot-toast"
-import {  User } from "@/data/accessData"
+import { useRoles } from "@/hooks/use-roles"
+import { User } from "@/data/accessData"
 import { Role_role } from "@/types/Role"
 
 export interface EditRoleModalProps {
@@ -38,13 +40,15 @@ export function EditRoleModal({
   onEditPermissions
 }: EditRoleModalProps) {
   const { t } = useTranslation()
-  const [isLoading, setIsLoading] = useState(false)
   const [roleForm, setRoleForm] = useState<EditRoleFormData>({
     id: '',
     name: '',
     key_code: '',
     description: ''
   })
+  // Hook para mutation real
+  const { updateRole, updateRoleLoading, refetchAllRoles } = useRoles({ id: role?.id })
+  const isLoading = updateRoleLoading
 
   // Update form when role changes
   useEffect(() => {
@@ -72,33 +76,27 @@ export function EditRoleModal({
       toast.error("Please fill in all required fields")
       return
     }
-
-    setIsLoading(true)
     const loadingToast = toast.loading(t('access.toasts.updating_role'))
-    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      await updateRole({
+        id: roleForm.id,
+        name: roleForm.name,
+        key_code: roleForm.key_code,
+        description: roleForm.description,
+      })
+      await refetchAllRoles()
       toast.dismiss(loadingToast)
       toast.success(t('access.toasts.role_updated'), {
         duration: 3000,
         icon: '✅'
       })
-      
-      // Call success callback if provided
       if (onSuccess) {
         onSuccess(roleForm)
       }
-      
-      // Close modal
       onOpenChange(false)
-      
     } catch (error) {
       toast.dismiss(loadingToast)
       toast.error(t('access.toasts.role_update_failed'))
-    } finally {
-      setIsLoading(false)
     }
   }
 

@@ -37,5 +37,8 @@ export interface UpdateRole {
 
 export interface UpdateRoleVariables {
   id: string;
-  permissionIds: string[];
+  name?: string | null;
+  description?: string | null;
+  key_code?: string | null;
+  permissionIds?: string[] | null;
 }
