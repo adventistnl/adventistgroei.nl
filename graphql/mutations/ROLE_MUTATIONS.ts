@@ -36,12 +36,18 @@ export const UPDATE_ROLE_MUTATION = gql`
 `;
 
 export const CREATE_ROLE_MUTATION = gql`
-  mutation CreateRole($name: String!, $description: String!, $key_code: String!) {
+  mutation CreateRole(
+      $name: String!
+      $description: String!
+      $key_code: String!
+      $permissionIds: [String!]
+  ) {
       createRole(
           input: {
               name: $name
               description: $description
               key_code: $key_code
+              permissionIds: $permissionIds
           }
       ) {
           id
