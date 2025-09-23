@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Shield, Plus } from "lucide-react"
+
+import { useRoles } from "@/hooks/use-roles"
 import toast from "react-hot-toast"
 
 export interface CreateRoleModalProps {
@@ -24,7 +26,7 @@ export interface RoleFormData {
 
 export function CreateRoleModal({ isOpen, onOpenChange, onSuccess }: CreateRoleModalProps) {
   const { t } = useTranslation()
-  const [isLoading, setIsLoading] = useState(false)
+  const { createRole, createRoleLoading } = useRoles({})
   const [roleForm, setRoleForm] = useState<RoleFormData>({
     name: '',
     key_code: '',
@@ -44,39 +46,31 @@ export function CreateRoleModal({ isOpen, onOpenChange, onSuccess }: CreateRoleM
       toast.error("Please fill in all required fields")
       return
     }
-
-    setIsLoading(true)
     const loadingToast = toast.loading(t('access.toasts.creating_role'))
-    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      await createRole({
+        name: roleForm.name,
+        key_code: roleForm.key_code,
+        description: roleForm.description,
+      })
       toast.dismiss(loadingToast)
       toast.success(t('access.toasts.role_created'), {
         duration: 3000,
         icon: '🎉'
       })
-      
-      // Call success callback if provided
       if (onSuccess) {
         onSuccess(roleForm)
       }
-      
-      // Close modal and reset form
       onOpenChange(false)
       resetForm()
-      
     } catch (error) {
       toast.dismiss(loadingToast)
       toast.error(t('access.toasts.role_create_failed'))
-    } finally {
-      setIsLoading(false)
     }
   }
 
   const handleClose = () => {
-    if (!isLoading) {
+    if (!createRoleLoading) {
       onOpenChange(false)
       resetForm()
     }
@@ -104,7 +98,7 @@ export function CreateRoleModal({ isOpen, onOpenChange, onSuccess }: CreateRoleM
                 placeholder={t('access.modals.create_role.name_placeholder')}
                 value={roleForm.name}
                 onChange={(e) => setRoleForm(prev => ({ ...prev, name: e.target.value }))}
-                disabled={isLoading}
+                disabled={createRoleLoading}
               />
             </div>
             <div className="space-y-2">
@@ -114,7 +108,7 @@ export function CreateRoleModal({ isOpen, onOpenChange, onSuccess }: CreateRoleM
                 placeholder={t('access.modals.create_role.key_code_placeholder')}
                 value={roleForm.key_code}
                 onChange={(e) => setRoleForm(prev => ({ ...prev, key_code: e.target.value.toUpperCase() }))}
-                disabled={isLoading}
+                disabled={createRoleLoading}
               />
             </div>
           </div>
@@ -127,7 +121,7 @@ export function CreateRoleModal({ isOpen, onOpenChange, onSuccess }: CreateRoleM
               value={roleForm.description}
               onChange={(e) => setRoleForm(prev => ({ ...prev, description: e.target.value }))}
               rows={3}
-              disabled={isLoading}
+                disabled={createRoleLoading}
             />
           </div>
 
@@ -136,12 +130,12 @@ export function CreateRoleModal({ isOpen, onOpenChange, onSuccess }: CreateRoleM
               {t('access.modals.create_role.permissions_note')}
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" onClick={handleClose} disabled={isLoading}>
+              <Button variant="outline" onClick={handleClose} disabled={createRoleLoading}>
                 {t('common.cancel')}
               </Button>
               <Button 
                 onClick={handleSubmit}
-                disabled={!roleForm.name || !roleForm.key_code || isLoading}
+                disabled={!roleForm.name || !roleForm.key_code || createRoleLoading}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 {t('access.modals.create_role.create')}

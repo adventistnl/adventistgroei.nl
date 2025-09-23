@@ -5,8 +5,11 @@ import { Roles_roles } from "@/types/Roles";
 import { ErrorLike } from "@apollo/client";
 import { Role_role } from "@/types/Role";
 import { useMutation } from "@apollo/client/react";
-import { UPDATE_ROLE_MUTATION } from "@/graphql/mutations/ROLE_MUTATIONS";
+import { CREATE_ROLE_MUTATION, DELETE_ROLE_MUTATION, UPDATE_ROLE_MUTATION } from "@/graphql/mutations/ROLE_MUTATIONS";
 import { UpdateRole, UpdateRoleVariables } from "@/types/UpdateRole";
+import { CreateRole } from "@/types/CreateRole";
+import { CreateRoleInput } from "@/types/graphql-global-types";
+import { DeleteRole, DeleteRoleVariables } from "@/types/DeleteRole";
 
 interface iUserRoles {
   roles: Roles_roles[];
@@ -20,6 +23,14 @@ interface iUserRoles {
   updateRoleError?: ErrorLike;
   updateRoleLoading: boolean;
   refetchAllRoles: () => void;
+  createRole: (variables: CreateRoleInput) => Promise<void>;
+  createRoleData?: CreateRole | null;
+  createRoleError?: ErrorLike;
+  createRoleLoading: boolean;
+  deleteRole: (variables: DeleteRoleVariables) => Promise<void>;
+  deleteRoleData?: DeleteRole | null;
+  deleteRoleError?: ErrorLike;
+  deleteRoleLoading: boolean;
 }
 
 export function useRoles({ id }: { id?: string }): iUserRoles {
@@ -27,6 +38,8 @@ export function useRoles({ id }: { id?: string }): iUserRoles {
   const { data: dataRole, loading: currentRoleLoading, error: currentRoleError } = useGetRoleByIdQuery({ id: id || "" });
 
   const [useUpdateRoleMutate, { data: updateRoleData, error: updateRoleError, loading: updateRoleLoading }] = useMutation<UpdateRole, UpdateRoleVariables>(UPDATE_ROLE_MUTATION);
+  const [useCreateRoleMutate, { data: createRoleData, error: createRoleError, loading: createRoleLoading }] = useMutation<CreateRole, CreateRoleInput>(CREATE_ROLE_MUTATION);
+  const [useDeleteRoleMutate, { data: deleteRoleData, error: deleteRoleError, loading: deleteRoleLoading }] = useMutation<DeleteRole, DeleteRoleVariables>(DELETE_ROLE_MUTATION);
 
   const roles = useMemo(() => {
     if (!dataRoles || !dataRoles.roles) {
@@ -45,10 +58,25 @@ export function useRoles({ id }: { id?: string }): iUserRoles {
     currentRoleLoading,
     updateRole: async (variables: UpdateRoleVariables) => {
       await useUpdateRoleMutate({ variables });
+      await refetchAllRoles();
     },
     updateRoleData,
     updateRoleError,
     updateRoleLoading,
     refetchAllRoles,
+    createRole: async (variables: CreateRoleInput) => {
+      await useCreateRoleMutate({ variables });
+      await refetchAllRoles();
+    },
+    createRoleData,
+    createRoleError,
+    createRoleLoading,
+    deleteRole: async (variables: DeleteRoleVariables) => {
+      await useDeleteRoleMutate({ variables });
+      await refetchAllRoles();
+    },
+    deleteRoleData,
+    deleteRoleError,
+    deleteRoleLoading
   };
 }

@@ -47,7 +47,7 @@ export function EditRoleModal({
     description: ''
   })
   // Hook para mutation real
-  const { updateRole, updateRoleLoading, refetchAllRoles } = useRoles({ id: role?.id })
+  const { updateRole, updateRoleLoading } = useRoles({ id: role?.id })
   const isLoading = updateRoleLoading
 
   // Update form when role changes
@@ -84,7 +84,6 @@ export function EditRoleModal({
         key_code: roleForm.key_code,
         description: roleForm.description,
       })
-      await refetchAllRoles()
       toast.dismiss(loadingToast)
       toast.success(t('access.toasts.role_updated'), {
         duration: 3000,

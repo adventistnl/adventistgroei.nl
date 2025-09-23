@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Shield, AlertTriangle, Trash2 } from "lucide-react"
+import { useRoles } from "@/hooks/use-roles"
 import toast from "react-hot-toast"
 import { User } from "@/data/accessData"
 import { Role_role } from "@/types/Role"
@@ -33,7 +34,7 @@ export function DeleteRoleModal({
   onSuccess
 }: DeleteRoleModalProps) {
   const { t } = useTranslation()
-  const [isLoading, setIsLoading] = useState(false)
+  const { deleteRole, deleteRoleLoading } = useRoles({})
   const [deleteStep, setDeleteStep] = useState<DeleteStep>('confirm')
   const [reassignmentRole, setReassignmentRole] = useState<string>('')
 
@@ -51,46 +52,32 @@ export function DeleteRoleModal({
 
   const handleSubmit = async () => {
     if (!role) return
-
-    // Validate reassignment if needed
     if (deleteStep === 'reassign' && !reassignmentRole) {
       toast.error("Please select a role to reassign users to")
       return
     }
-
-    setIsLoading(true)
     const loadingToast = toast.loading(t('access.toasts.deleting_role'))
-    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      await deleteRole({ id: role.id })
       toast.dismiss(loadingToast)
       toast.success(t('access.toasts.role_deleted'), {
         duration: 3000,
         icon: '🗑️'
       })
-      
-      // Call success callback if provided
       if (onSuccess) {
         onSuccess(role, reassignmentRole || undefined)
       }
-      
-      // Close modal and reset
       onOpenChange(false)
       setDeleteStep('confirm')
       setReassignmentRole('')
-      
     } catch (error) {
       toast.dismiss(loadingToast)
       toast.error(t('access.toasts.role_delete_failed'))
-    } finally {
-      setIsLoading(false)
     }
   }
 
   const handleClose = () => {
-    if (!isLoading) {
+    if (!deleteRoleLoading) {
       onOpenChange(false)
       setDeleteStep('confirm')
       setReassignmentRole('')
@@ -143,7 +130,7 @@ export function DeleteRoleModal({
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>{t('access.modals.delete_role.reassign_to')}</Label>
-                <Select value={reassignmentRole} onValueChange={setReassignmentRole} disabled={isLoading}>
+                <Select value={reassignmentRole} onValueChange={setReassignmentRole} disabled={deleteRoleLoading}>
                   <SelectTrigger>
                     <SelectValue placeholder={t('access.modals.delete_role.select_role')} />
                   </SelectTrigger>
@@ -215,7 +202,7 @@ export function DeleteRoleModal({
           )}
 
           <div className="flex justify-between pt-4 border-t">
-            <Button variant="outline" onClick={handleClose} disabled={isLoading}>
+            <Button variant="outline" onClick={handleClose} disabled={deleteRoleLoading}>
               {t('common.cancel')}
             </Button>
             
@@ -224,7 +211,7 @@ export function DeleteRoleModal({
                 <Button
                   variant="outline"
                   onClick={() => setDeleteStep('confirm')}
-                  disabled={isLoading}
+                  disabled={deleteRoleLoading}
                 >
                   {t('access.modals.delete_role.skip_reassign')}
                 </Button>
@@ -232,7 +219,7 @@ export function DeleteRoleModal({
               <Button
                 variant="destructive"
                 onClick={handleSubmit}
-                disabled={isLoading || (deleteStep === 'reassign' && !reassignmentRole)}
+                disabled={deleteRoleLoading || (deleteStep === 'reassign' && !reassignmentRole)}
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 {deleteStep === 'reassign' 
