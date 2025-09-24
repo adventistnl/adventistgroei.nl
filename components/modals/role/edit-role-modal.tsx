@@ -13,15 +13,15 @@ import { Shield, Edit, Save, Settings } from "lucide-react"
 import toast from "react-hot-toast"
 import { useRoles } from "@/hooks/use-roles"
 import { User } from "@/data/accessData"
-import { Role_role } from "@/types/Role"
+import { Roles_roles } from "@/types/Roles"
 
 export interface EditRoleModalProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  role: Role_role | null
+  role: Roles_roles | null
   users?: User[]
   onSuccess?: (roleData: EditRoleFormData) => void
-  onEditPermissions?: (role: Role_role) => void
+  onEditPermissions?: (role: Roles_roles) => void
 }
 
 export interface EditRoleFormData {

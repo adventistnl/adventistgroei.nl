@@ -7,6 +7,12 @@
 // GraphQL query operation: Role
 // ====================================================
 
+export interface Role_role_users {
+  __typename: "RoleAssignmentModel";
+  user_id: string;
+  is_deleted: boolean;
+}
+
 export interface Role_role_permissions_data {
   __typename: "PermissionModel";
   id: string;
@@ -28,6 +34,8 @@ export interface Role_role {
   name: string;
   description: string;
   key_code: string;
+  color: string | null;
+  users: (Role_role_users | null)[] | null;
   permissions: Role_role_permissions[];
 }
 

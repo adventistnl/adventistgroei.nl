@@ -213,7 +213,7 @@ export function UseTable<TData, TValue>({
   )
 
   return (
-    <div className={`w-full max-w-screen space-y-4 px-2 sm:px-4 ${className}`}>
+    <div className={`w-full h-full max-w-screen space-y-4 px-2 sm:px-4 ${className}`}>
       {/* Top Bar - Always Visible */}
       <div className="flex flex-col gap-4">
         {/* Search Bar - Always on top */}
@@ -318,7 +318,7 @@ export function UseTable<TData, TValue>({
 
       {/* Table */}
       <Card>
-        <ScrollArea className="h-[600px] w-full">
+        <ScrollArea className="h-[400px] w-full">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (

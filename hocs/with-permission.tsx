@@ -4,7 +4,7 @@ import { PermissionResolverName } from '@/types/graphql-global-types';
 
 interface WithPermissionProps {
   requiredPermissions?: PermissionResolverName[];
-  fallback?: React.ReactNode;
+  fallback?: React.JSX.Element | null;
   children: React.ReactNode;
 }
 

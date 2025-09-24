@@ -7,6 +7,11 @@ export const GET_ALL_ROLES_QUERY = gql`
       name
       description
       key_code
+      users {
+        user_id
+        is_deleted
+      }
+      color
       permissions {
         group
         data {
@@ -28,6 +33,11 @@ export const GET_ROLE_BY_ID_QUERY = gql`
           name
           description
           key_code
+          color
+          users {
+              user_id
+              is_deleted
+          }
           permissions {
               group
               data {

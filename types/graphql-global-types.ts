@@ -587,6 +587,7 @@ export type LoginInput = {
 export type Mutation = {
   __typename?: 'Mutation';
   addProjectVoluntary: VoluntariesOnProjects;
+  addRoleToUser: UserModel;
   createChurch: ChurchModel;
   createCommunication: Communication;
   createContact: Contact;
@@ -621,6 +622,7 @@ export type Mutation = {
   linkContact: LinkContactResult;
   login: AuthModel;
   removeProjectVoluntary: VoluntariesOnProjects;
+  removeRoleFromUser: UserModel;
   /** Send an invitation email */
   sendInviteEmail: Scalars['Boolean']['output'];
   updateChurch: ChurchModel;
@@ -644,6 +646,12 @@ export type Mutation = {
 
 export type MutationAddProjectVoluntaryArgs = {
   data: AddProjectVoluntaryDto;
+};
+
+
+export type MutationAddRoleToUserArgs = {
+  roleId: Scalars['String']['input'];
+  userId: Scalars['String']['input'];
 };
 
 
@@ -816,6 +824,12 @@ export type MutationLoginArgs = {
 
 export type MutationRemoveProjectVoluntaryArgs = {
   data: RemoveProjectVoluntaryDto;
+};
+
+
+export type MutationRemoveRoleFromUserArgs = {
+  roleId: Scalars['String']['input'];
+  userId: Scalars['String']['input'];
 };
 
 
@@ -1011,6 +1025,7 @@ export type PermissionModel = {
 
 export enum PermissionResolverName {
   AddProjectVoluntary = 'addProjectVoluntary',
+  AddRoleToUser = 'addRoleToUser',
   Auth = 'auth',
   Church = 'church',
   Churches = 'churches',
@@ -1061,6 +1076,7 @@ export enum PermissionResolverName {
   Region = 'region',
   Regions = 'regions',
   RemoveProjectVoluntary = 'removeProjectVoluntary',
+  RemoveRoleFromUser = 'removeRoleFromUser',
   Role = 'role',
   Roles = 'roles',
   SendInviteEmail = 'sendInviteEmail',
@@ -1369,6 +1385,7 @@ export type RemoveProjectVoluntaryDto = {
 export type Role = {
   __typename?: 'Role';
   _count: RoleCount;
+  color?: Maybe<Scalars['String']['output']>;
   created_at: Scalars['DateTime']['output'];
   created_by: Scalars['String']['output'];
   deleted_at?: Maybe<Scalars['DateTime']['output']>;
@@ -1385,6 +1402,12 @@ export type Role = {
   user_roles?: Maybe<Array<UserRole>>;
 };
 
+export type RoleAssignmentModel = {
+  __typename?: 'RoleAssignmentModel';
+  is_deleted: Scalars['Boolean']['output'];
+  user_id: Scalars['String']['output'];
+};
+
 export type RoleCount = {
   __typename?: 'RoleCount';
   direct_message_recipients: Scalars['Int']['output'];
@@ -1394,11 +1417,13 @@ export type RoleCount = {
 
 export type RoleModel = {
   __typename?: 'RoleModel';
+  color?: Maybe<Scalars['String']['output']>;
   description: Scalars['String']['output'];
   id: Scalars['String']['output'];
   key_code: Scalars['String']['output'];
   name: Scalars['String']['output'];
   permissions: Array<PermissionGroupPermissionsModel>;
+  users?: Maybe<Array<Maybe<RoleAssignmentModel>>>;
 };
 
 export type RolePermission = {

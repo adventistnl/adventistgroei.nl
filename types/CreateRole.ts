@@ -20,4 +20,5 @@ export interface CreateRoleVariables {
   name: string;
   description: string;
   key_code: string;
+  permissionIds?: string[] | null;
 }
