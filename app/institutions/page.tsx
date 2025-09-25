@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { AppLayout } from "@/components/layouts/app-layout"
@@ -21,12 +21,7 @@ import {
   Users,
   Church,
   Globe,
-  Mail,
-  Phone,
-  Layers,
-  Home,
   DollarSign,
-  TrendingUp,
   Shield,
   Calendar
 } from "lucide-react"
@@ -40,7 +35,6 @@ import toast from "react-hot-toast"
 import "@/lib/i18n"
 
 // Components
-import { InstitutionsKPI } from "@/components/institutions/institutions-kpi"
 import { InstitutionsCharts } from "@/components/institutions/institutions-charts"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { DataTable } from "@/components/ui/data-table"
@@ -49,49 +43,8 @@ import { InstitutionProfileHeader } from "@/components/shared"
 import { ViewContactModal, ContactData } from "@/components/modals/contact"
 import { EditInstitutionModal, DeleteInstitutionModal } from "@/components/modals/institution"
 
-// Data
-import {
-  getInstitutionData,
-  getInstitutionKPIs,
-  getChurchesByRegionData,
-  getUsersByRoleData,
-  getSubsidyRequestsOverTime,
-  getMonthlySubsidyData,
-} from "@/data/institutionsData"
-
-// Types
-interface InstitutionWithDetails {
-  id: string
-  name: string
-  denomination: string
-  language_preference: string
-  contact_id: string
-  created_at: string
-  updated_at: string
-  created_by?: string
-  updated_by?: string
-  is_deleted?: boolean
-  contact?: {
-    name?: string
-    country: string
-    city: string
-    email: string
-    phone: string
-    mobile?: string
-    address?: string
-    full_address?: string
-    postal_code?: string
-    website?: string
-    notes?: string
-  }
-  regions_count: number
-  churches_count: number
-  users_count: number
-  members_count: number
-  total_subsidy_budget: number
-  annual_department_budget: number
-  pending_subsidies: number
-}
+import { Institutions_institutions } from "@/types/Institutions"
+import { useInstitution } from "@/contexts/institution-context"
 
 /**
  * PÁGINA DE GESTÃO DE INSTITUIÇÕES
@@ -99,19 +52,18 @@ interface InstitutionWithDetails {
  */
 export default function InstitutionsPage() {
   const { t, i18n } = useTranslation()
-  const [isLoading, setIsLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
+  const { institutions: institutionsData, activeInstitution, loading: isLoading } = useInstitution();
+
   const [selectedInstitution, setSelectedInstitution] = useState<string>("all")
   
   // Modal states
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
   const [isEditInstitutionModalOpen, setIsEditInstitutionModalOpen] = useState(false)
   const [isDeleteInstitutionModalOpen, setIsDeleteInstitutionModalOpen] = useState(false)
   const [selectedContact, setSelectedContact] = useState<ContactData | null>(null)
   
   // Data states
-  const [institutionsData, setInstitutionsData] = useState<InstitutionWithDetails[]>([])
+  // const [institutionsData, setInstitutionsData] = useState<InstitutionWithDetails[]>([])
   const [kpiData, setKpiData] = useState<any>(null)
   const [chartData, setChartData] = useState<any>({
     churchesByRegion: [],
@@ -119,14 +71,6 @@ export default function InstitutionsPage() {
     subsidyOverTime: [],
     monthlySubsidies: []
   })
-  
-  // Get current active institution
-  const activeInstitution = useMemo(() => {
-    if (selectedInstitution === "all" || institutionsData.length === 0) {
-      return institutionsData[0] || null
-    }
-    return institutionsData.find(inst => inst.id === selectedInstitution) || institutionsData[0] || null
-  }, [selectedInstitution, institutionsData])
 
   const breadcrumbs = useMemo(() => [
     { name: "Structure & Organization" },
@@ -242,83 +186,9 @@ export default function InstitutionsPage() {
     breadcrumbs
   })
 
-  /**
-   * Carregamento inicial dos dados
-   */
-  useEffect(() => {
-    const loadData = async () => {
-      const loadingToast = toast.loading(t('institutions.toasts.loaded'))
-      
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        
-        const institutionsList = getInstitutionData()
-        setInstitutionsData(institutionsList)
-        updateDataForInstitution("all")
-        
-        toast.dismiss(loadingToast)
-        toast.success(t('institutions.toasts.loaded'), { duration: 3000 })
-        setIsLoading(false)
-        
-      } catch (error) {
-        toast.dismiss(loadingToast)
-        toast.error(t('institutions.toasts.error_loading'))
-        setIsLoading(false)
-      }
-    }
-
-    loadData()
-  }, [t])
-
-  /**
-   * Atualizar dados quando filtro de instituição muda
-   */
-  const updateDataForInstitution = (institutionId: string) => {
-    const targetId = institutionId === "all" ? undefined : institutionId
-    
-    const kpis = getInstitutionKPIs(targetId)
-    setKpiData(kpis)
-    
-    const churchesByRegion = getChurchesByRegionData(targetId)
-    const usersByRole = getUsersByRoleData(targetId)
-    const subsidyOverTime = getSubsidyRequestsOverTime(targetId)
-    const monthlySubsidies = getMonthlySubsidyData(targetId)
-    
-    setChartData({
-      churchesByRegion,
-      usersByRole,
-      subsidyOverTime,
-      monthlySubsidies
-    })
-  }
-
-  /**
-   * Handlers para ações
-   */
-  const handleRefresh = async () => {
-    setRefreshing(true)
-    const refreshToast = toast.loading("🔄 Refreshing data...")
-    
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      const institutionsList = getInstitutionData()
-      setInstitutionsData(institutionsList)
-      updateDataForInstitution(selectedInstitution)
-      
-      toast.dismiss(refreshToast)
-      toast.success("✅ Data refreshed successfully!", { duration: 2000 })
-      
-    } catch (error) {
-      toast.dismiss(refreshToast)
-      toast.error("❌ Failed to refresh data")
-    } finally {
-      setRefreshing(false)
-    }
-  }
-
+  // Removido handleRefresh e updateDataForInstitution pois dados vêm do Apollo
   const handleInstitutionCreated = (data: any) => {
-    handleRefresh()
+    toast.success(t('institutions.toasts.created'))
   }
 
   const handleEditInstitution = () => {
@@ -364,21 +234,18 @@ export default function InstitutionsPage() {
 
   const handleContactSaved = (contactData: any) => {
     toast.success(t('contacts.toasts.updated'))
-    handleRefresh()
   }
 
   const handleInstitutionSaved = (institutionData: any) => {
     toast.success(t('institutions.toasts.updated'))
-    handleRefresh()
   }
 
   const handleInstitutionDeleted = (institutionData: any) => {
     toast.success(t('institutions.toasts.deactivated'))
-    handleRefresh()
   }
 
   // Colunas da tabela
-  const columns: ColumnDef<InstitutionWithDetails>[] = [
+  const columns: ColumnDef<Institutions_institutions>[] = [
     {
       id: "name",
       accessorKey: "name",
@@ -406,13 +273,13 @@ export default function InstitutionsPage() {
       header: t('institutions.table.country'),
       cell: ({ row }) => {
         const country = row.original.contact?.country
-        const city = row.original.contact?.city
+        // const city = row.original.contact?.city //TODO: usar cidade se disponível
         return (
           <div className="flex items-center gap-2">
             <Globe className="w-4 h-4 text-muted-foreground" />
             <div>
               <div className="font-medium">{country}</div>
-              <div className="text-xs text-muted-foreground">{city}</div>
+              {/* <div className="text-xs text-muted-foreground">{city}</div> */}
             </div>
           </div>
         )
@@ -465,21 +332,21 @@ export default function InstitutionsPage() {
         </div>
       ),
     },
-    {
-      id: "members",
-      accessorKey: "members_count",
-      header: t('institutions.table.members'),
-      cell: ({ row }) => (
-        <span className="font-medium">
-          {row.original.members_count.toLocaleString()}
-        </span>
-      ),
-    },
+    // {
+    //   id: "members",
+    //   accessorKey: "members_count",
+    //   header: t('institutions.table.members'),
+    //   cell: ({ row }) => (
+    //     <span className="font-medium">
+    //       {row.original.members_count.toLocaleString()} //TODO: add members_count
+    //     </span>
+    //   ),
+    // },
     {
       id: "actions",
       header: t('institutions.table.actions'),
       cell: ({ row }) => {
-        const institution = row.original
+        const institution = row.original;
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -500,13 +367,18 @@ export default function InstitutionsPage() {
                 <Edit className="mr-2 h-4 w-4" />
                 {t('common.edit')}
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600">
+              <DropdownMenuItem
+                className="text-red-600"
+                onClick={() => {
+                  setIsDeleteInstitutionModalOpen(true);
+                }}
+              >
                 <Trash2 className="mr-2 h-4 w-4" />
                 {t('common.delete')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        )
+        );
       },
     },
   ]
@@ -584,21 +456,14 @@ export default function InstitutionsPage() {
               </Button>
             </InstitutionModal>
             
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
+
           </div>
         </div>
 
         {/* Institution Profile Header */}
         {activeInstitution && (
           <InstitutionProfileHeader
-            institution={activeInstitution}
+            institutionId={activeInstitution.id}
             onEdit={handleEditInstitution}
             onDelete={handleDeleteInstitution}
             onViewContact={handleViewInstitutionContact}
@@ -683,32 +548,12 @@ export default function InstitutionsPage() {
         )}
 
         {/* Delete Institution Modal */}
-        {activeInstitution && (
-          <DeleteInstitutionModal
-            isOpen={isDeleteInstitutionModalOpen}
-            onOpenChange={setIsDeleteInstitutionModalOpen}
-            institution={{
-              id: activeInstitution.id,
-              name: activeInstitution.name,
-              denomination: activeInstitution.denomination,
-              language_preference: activeInstitution.language_preference as "en" | "nl",
-              contact_id: activeInstitution.contact_id,
-              created_at: activeInstitution.created_at,
-              updated_at: activeInstitution.updated_at,
-              created_by: activeInstitution.created_by || '',
-              updated_by: activeInstitution.updated_by || '',
-              is_deleted: activeInstitution.is_deleted || false,
-              deleted_at: null,
-              deleted_by: null,
-              regions_count: activeInstitution.regions_count,
-              churches_count: activeInstitution.churches_count,
-              users_count: activeInstitution.users_count,
-              members_count: activeInstitution.members_count,
-              departments_count: 0
-            }}
-            onSuccess={handleInstitutionDeleted}
-          />
-        )}
+        <DeleteInstitutionModal
+          isOpen={isDeleteInstitutionModalOpen}
+          onOpenChangeAction={setIsDeleteInstitutionModalOpen}
+          institution={institutionsData.find(i => i.id === (activeInstitution?.id)) || null}
+          onSuccess={handleInstitutionDeleted}
+        />
       </div>
     </AppLayout>
   )

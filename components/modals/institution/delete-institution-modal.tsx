@@ -25,38 +25,21 @@ import {
   Calendar,
   Globe
 } from "lucide-react"
-import toast from "react-hot-toast"
 
-export interface Institution {
-  id: string
-  name: string
-  denomination: string
-  language_preference: "en" | "nl"
-  contact_id?: string | null
-  created_at: string
-  updated_at: string
-  created_by: string
-  updated_by: string
-  is_deleted: boolean
-  deleted_at?: string | null
-  deleted_by?: string | null
-  regions_count?: number
-  churches_count?: number
-  users_count?: number
-  members_count?: number
-  departments_count?: number
-}
+import toast from "react-hot-toast"
+import { Institutions_institutions } from "@/types/Institutions"
+import { useInstitutions } from '@/hooks/use-institutions'
 
 export interface DeleteInstitutionModalProps {
   isOpen: boolean
-  onOpenChange: (open: boolean) => void
-  institution: Institution | null
-  onSuccess?: (deletedInstitution: Institution) => void
+  onOpenChangeAction: (open: boolean) => void
+  institution: Institutions_institutions | null
+  onSuccess?: (deletedInstitution: Institutions_institutions) => void
 }
 
 export function DeleteInstitutionModal({
   isOpen,
-  onOpenChange,
+  onOpenChangeAction,
   institution,
   onSuccess
 }: DeleteInstitutionModalProps) {
@@ -66,35 +49,29 @@ export function DeleteInstitutionModal({
   const [understoodConsequences, setUnderstoodConsequences] = useState(false)
   const [finalConfirmation, setFinalConfirmation] = useState('')
 
-  const handleSubmit = async () => {
-    if (!institution) return
+  const { deleteInstitution, deleteLoading, deleteError, refetchInstitutions } = useInstitutions();
 
-    setIsLoading(true)
-    const loadingToast = toast.loading(t('institutions.toasts.deactivating'))
-    
+  const handleSubmit = async () => {
+    if (!institution) return;
+    setIsLoading(true);
+    const loadingToast = toast.loading(t('institutions.toasts.deactivating'));
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      toast.dismiss(loadingToast)
+      await deleteInstitution({ variables: { id: institution.id } });
+      await refetchInstitutions();
+      toast.dismiss(loadingToast);
       toast.success(t('institutions.toasts.deactivated'), {
         duration: 3000,
         icon: '🏢'
-      })
-      
-      // Call success callback if provided
+      });
       if (onSuccess) {
-        onSuccess(institution)
+        onSuccess(institution);
       }
-      
-      // Close modal
-      onOpenChange(false)
-      
+  onOpenChangeAction(false);
     } catch (error) {
-      toast.dismiss(loadingToast)
-      toast.error(t('institutions.toasts.deactivate_failed'))
+      toast.dismiss(loadingToast);
+      toast.error(t('institutions.toasts.deactivate_failed'));
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -103,16 +80,16 @@ export function DeleteInstitutionModal({
       setConsequencesOpen(false)
       setUnderstoodConsequences(false)
       setFinalConfirmation('')
-      onOpenChange(false)
+  onOpenChangeAction(false)
     }
   }
 
-  const isDeleteEnabled = understoodConsequences && finalConfirmation.toLowerCase() === 'delete institution'
+  const isDeleteEnabled = understoodConsequences && finalConfirmation.toLowerCase() === 'delete institution' && !deleteLoading
 
   if (!institution) return null
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+  <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader className="space-y-3">
           <DialogTitle className="flex items-center gap-2 text-red-600">

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { use, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -33,35 +33,10 @@ import {
   X
 } from "lucide-react"
 import { Separator } from "@radix-ui/react-separator"
-
-export interface InstitutionData {
-  id: string
-  name: string
-  denomination: string
-  language_preference: string
-  image_url?: string
-  contact?: {
-    email?: string
-    phone?: string
-    mobile?: string
-    country?: string
-    city?: string
-    address?: string
-    website?: string
-  }
-  regions_count?: number
-  churches_count?: number
-  users_count?: number
-  members_count?: number
-  departments_count?: number
-  total_subsidy_budget?: number
-  created_at: string
-  updated_at: string
-  is_deleted?: boolean
-}
+import { useInstitutions } from "@/hooks/use-institutions"
 
 export interface InstitutionProfileHeaderProps {
-  institution: InstitutionData
+  institutionId: string 
   showBackButton?: boolean
   onBack?: () => void
   onEdit?: () => void
@@ -76,7 +51,7 @@ export interface InstitutionProfileHeaderProps {
 }
 
 export function InstitutionProfileHeader({
-  institution,
+  institutionId,
   showBackButton = false,
   onBack,
   onEdit,
@@ -90,8 +65,11 @@ export function InstitutionProfileHeader({
   className = ""
 }: InstitutionProfileHeaderProps) {
   const { t } = useTranslation()
+  const { currentInstitutionData: institution } = useInstitutions(institutionId)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+
+  if (!institution) return <div>Institution not found</div>
 
   const organizationStats = [
     {
@@ -164,20 +142,20 @@ export function InstitutionProfileHeader({
                 <div className="relative h-44 sm:h-50">
                   <Avatar className="h-full w-full aspect-square border-4 border-background shadow-lg rounded-lg">
                     <AvatarImage 
-                      src={institution.image_url || "/placeholder-logo.svg"} 
+                      src={"/placeholder-logo.svg"} 
                       className="object-cover" 
                     />
                     <AvatarFallback className="text-xl sm:text-2xl font-bold bg-primary/10 text-primary rounded-lg">
-                      {institution.image_url ? (
+                      {/* {institution.image_url ? ( */}
                         <Building className="w-8 h-8 sm:w-12 sm:h-12" />
-                      ) : (
-                        institution.name.split(' ').map(n => n[0]).join('').toUpperCase()
-                      )}
+                      {/* ) : ( */}
+                        {/* institution.name.split(' ').map(n => n[0]).join('').toUpperCase() */}
+                      {/* )} */}
                     </AvatarFallback>
                   </Avatar>
                   
                   {/* Image Upload Button - Bottom Right Corner */}
-                  <div className="absolute -bottom-2 -right-2">
+                  {/* <div className="absolute -bottom-2 -right-2">
                     <div className="relative">
                       <input
                         type="file"
@@ -200,10 +178,10 @@ export function InstitutionProfileHeader({
                         )}
                       </Button>
                     </div>
-                  </div>
+                  </div> */}
                   
                   {/* Remove Image Button - Top Right Corner (only show if image exists) */}
-                  {institution.image_url && onImageRemove && (
+                  {/* {institution.image_url && onImageRemove && (
                     <div className="absolute -top-2 -right-2">
                       <Button
                         size="sm"
@@ -214,7 +192,7 @@ export function InstitutionProfileHeader({
                         <X className="w-3 h-3" />
                       </Button>
                     </div>
-                  )}
+                  )} */}
                 </div>
 
                 <Separator />
@@ -362,7 +340,8 @@ export function InstitutionProfileHeader({
                   {onDelete && (
                     <DropdownMenuItem 
                       onClick={onDelete}
-                      className="text-destructive focus:text-destructive"
+                      // className="text-destructive focus:text-destructive"
+                      variant="destructive"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
                       Delete Institution

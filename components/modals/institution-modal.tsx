@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import { useInstitutions } from "@/hooks/use-institutions"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -78,48 +79,59 @@ export function InstitutionModal({
     },
   })
 
+  const { createInstitution } = useInstitutions();
+
   const onSubmit = async (data: InstitutionFormData) => {
-    setIsLoading(true)
+    setIsLoading(true);
     const loadingToast = toast.loading(
-      mode === "create" 
-        ? "🏢 Creating new institution..." 
+      mode === "create"
+        ? "🏢 Creating new institution..."
         : "✏️ Updating institution..."
-    )
+    );
 
     try {
-      // Simular API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Chamada real da mutation
+      const variables = {
+        name: data.name,
+        denomination: data.denomination,
+        description: data.description || null,
+        contactEmail: data.email,
+        contactPhone: data.phone || null,
+        contactFullAddress: data.address || null,
+        contactCountry: data.country || null,
+        languagePreference: data.language_preference,
+      };
+      const result = await createInstitution({ variables });
 
-      toast.dismiss(loadingToast)
+      toast.dismiss(loadingToast);
       toast.success(
         mode === "create"
-          ? `🎉 Institution "${data.name}" created successfully!`
-          : `✅ Institution "${data.name}" updated successfully!`,
+          ? `🎉 Institution \"${data.name}\" created successfully!`
+          : `✅ Institution \"${data.name}\" updated successfully!`,
         { duration: 4000 }
-      )
+      );
 
       // Reset form
       if (mode === "create") {
-        form.reset()
+        form.reset();
       }
 
       // Call success callback
-      onSuccess?.(data)
+      onSuccess?.(data);
 
       // Close modal
-      setIsOpen(false)
-
+      setIsOpen(false);
     } catch (error) {
-      toast.dismiss(loadingToast)
+      toast.dismiss(loadingToast);
       toast.error(
         mode === "create"
           ? "❌ Failed to create institution"
           : "❌ Failed to update institution"
-      )
+      );
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

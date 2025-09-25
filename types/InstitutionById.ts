@@ -199,6 +199,10 @@ export interface InstitutionById_institution {
   is_deleted: boolean;
   deleted_at: any | null;
   deleted_by: string | null;
+  regions_count: number;
+  churches_count: number;
+  departments_count: number;
+  users_count: number;
   contact: InstitutionById_institution_contact | null;
   subsidy_requests: InstitutionById_institution_subsidy_requests[];
   direct_messages: InstitutionById_institution_direct_messages[];

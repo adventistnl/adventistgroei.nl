@@ -35,7 +35,7 @@ interface iUserRoles {
 
 export function useRoles({ id }: { id?: string }): iUserRoles {
   const { data: dataRoles, loading: rolesLoading, error: rolesError, refetch: refetchAllRoles } = useGetAllRolesQuery();
-  const { data: dataRole, loading: currentRoleLoading, error: currentRoleError } = useGetRoleByIdQuery({ id: id || "" });
+  const { data: dataRole, loading: currentRoleLoading, error: currentRoleError } = useGetRoleByIdQuery({ id });
 
   const [useUpdateRoleMutate, { data: updateRoleData, error: updateRoleError, loading: updateRoleLoading }] = useMutation<UpdateRole, UpdateRoleVariables>(UPDATE_ROLE_MUTATION);
   const [useCreateRoleMutate, { data: createRoleData, error: createRoleError, loading: createRoleLoading }] = useMutation<CreateRole, CreateRoleInput>(CREATE_ROLE_MUTATION);

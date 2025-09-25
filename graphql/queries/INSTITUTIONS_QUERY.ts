@@ -15,6 +15,18 @@ query Institutions {
         is_deleted
         deleted_at
         deleted_by
+        regions_count
+        churches_count
+        departments_count
+        users_count
+        contact {
+            id
+            phone
+            email
+            country
+            full_address
+            is_primary
+        }
     }
   }
 `;
@@ -35,6 +47,10 @@ export const GET_INSTITUTION_BY_ID_FULL_DATA_QUERY = gql`
         is_deleted
         deleted_at
         deleted_by
+        regions_count
+        churches_count
+        departments_count
+        users_count
         contact {
             id
             name

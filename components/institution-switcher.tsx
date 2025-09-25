@@ -20,10 +20,10 @@ import {
 import { Button } from "@/components/ui/button"
 import { InstitutionModal } from "@/components/modals/institution-modal"
 import toast from "react-hot-toast"
+import { useInstitutions } from "@/hooks/use-institutions"
 
 export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
-  const router = useRouter()
-  const { institutions, activeInstitution, switchInstitution, addInstitution } = useInstitution()
+  const { institutions, activeInstitution, switchInstitution, addInstitution, refetchInstitutions, refetchInstitutionById } = useInstitution()
   const [isReloading, setIsReloading] = React.useState(false)
 
   // Handler para mudança de instituição com reload e redirect
@@ -36,22 +36,24 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
     try {
       // Switch institution
       switchInstitution(institutionId)
-      
+
+      // Refetch dados necessários
+      await Promise.all([
+        refetchInstitutions?.(),
+        refetchInstitutionById?.()
+      ])
+
       // Simular loading time
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
+      await new Promise(resolve => setTimeout(resolve, 800))
+
       toast.dismiss(loadingToast)
-      
-      // Redirect to dashboard to reload data
-      router.push('/dashboard')
-      
     } catch (error) {
       toast.dismiss(loadingToast)
       toast.error("❌ Failed to switch institution")
     } finally {
       setIsReloading(false)
     }
-  }, [activeInstitution.id, switchInstitution, router])
+  }, [activeInstitution, switchInstitution, refetchInstitutions, refetchInstitutionById])
 
   // Handler para criação de nova instituição
   const handleInstitutionCreated = React.useCallback((data: any) => {

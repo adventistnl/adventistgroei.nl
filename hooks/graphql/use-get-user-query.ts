@@ -5,6 +5,7 @@ import { User, UserVariables } from "@/types/User";
 export function useGetUserQuery(variables: UserVariables, options?: useQuery.Options<User, UserVariables>): useQuery.Result<User, UserVariables> {
   return useQuery<User, UserVariables>(GET_USER_QUERY, {
     variables,
+    skip: !variables.id,
     ...options,
   });
 }

@@ -487,6 +487,7 @@ export type Institution = {
   __typename?: 'Institution';
   _count: InstitutionCount;
   churches?: Maybe<Array<Church>>;
+  churches_count: Scalars['Int']['output'];
   communications?: Maybe<Array<Communication>>;
   contact?: Maybe<Contact>;
   contact_id?: Maybe<Scalars['String']['output']>;
@@ -496,6 +497,8 @@ export type Institution = {
   deleted_by?: Maybe<Scalars['String']['output']>;
   denomination: Scalars['String']['output'];
   departments?: Maybe<Array<Department>>;
+  departments_count: Scalars['Int']['output'];
+  description?: Maybe<Scalars['String']['output']>;
   direct_messages: Array<DirectMessage>;
   id: Scalars['ID']['output'];
   is_deleted: Scalars['Boolean']['output'];
@@ -504,11 +507,13 @@ export type Institution = {
   notifications?: Maybe<Array<Notification>>;
   projects?: Maybe<Array<Project>>;
   regions?: Maybe<Array<Region>>;
+  regions_count: Scalars['Int']['output'];
   settings?: Maybe<Array<Setting>>;
   subsidy_requests: Array<SubsidyRequest>;
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
   users?: Maybe<Array<User>>;
+  users_count: Scalars['Int']['output'];
 };
 
 export type InstitutionCount = {
@@ -528,14 +533,16 @@ export type InstitutionCount = {
 export type InstitutionCreateDto = {
   contact?: InputMaybe<ContactCreateDto>;
   denomination: Scalars['String']['input'];
-  language_preference?: InputMaybe<LanguagePreference>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  language_preference: Scalars['String']['input'];
   name: Scalars['String']['input'];
 };
 
 export type InstitutionUpdateDto = {
   contact?: InputMaybe<ContactCreateDto>;
   denomination?: InputMaybe<Scalars['String']['input']>;
-  language_preference?: InputMaybe<LanguagePreference>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  language_preference?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
 };
 

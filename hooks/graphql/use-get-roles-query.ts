@@ -7,12 +7,16 @@ export function useGetAllRolesQuery(options?: useQuery.Options<Roles>): useQuery
   return useQuery<Roles>(GET_ALL_ROLES_QUERY, options);
 }
 
+export interface Variables {
+  id?: string;
+}
 export function useGetRoleByIdQuery(
-  variables: { id: string },
-  options?: useQuery.Options<Role, { id: string }>
+  variables: Variables,
+  options?: useQuery.Options<Role, Variables>
 ) {
-  return useQuery<Role, { id: string }>(GET_ROLE_BY_ID_QUERY, {
+  return useQuery<Role, Variables>(GET_ROLE_BY_ID_QUERY, {
     variables,
+    skip: !variables.id,
     ...options,
   });
 }

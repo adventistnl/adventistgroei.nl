@@ -481,8 +481,9 @@ export default function DashboardPage() {
 
   // Dados específicos da instituição ativa
   const currentInstitutionData = React.useMemo(() => {
-    return institutionSpecificData[activeInstitution.id as keyof typeof institutionSpecificData] || institutionSpecificData.usp
-  }, [activeInstitution.id])
+    if (!activeInstitution) return institutionSpecificData.usp;
+    return institutionSpecificData[activeInstitution.id as keyof typeof institutionSpecificData] || institutionSpecificData.usp;
+  }, [activeInstitution?.id])
 
   // Dados para KPI Cards
   const kpiCardsData = [

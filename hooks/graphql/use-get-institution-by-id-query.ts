@@ -3,7 +3,7 @@ import { GET_INSTITUTION_BY_ID_FULL_DATA_QUERY } from "@/graphql/queries/INSTITU
 import { InstitutionById } from "@/types/InstitutionById";
 
 interface Variables {
-  id: string;
+  id?: string;
 }
 
 export function useGetInstitutionByIdQuery(
@@ -12,6 +12,7 @@ export function useGetInstitutionByIdQuery(
 ): useQuery.Result<InstitutionById, Variables> {
   return useQuery<InstitutionById, Variables>(GET_INSTITUTION_BY_ID_FULL_DATA_QUERY, {
     variables,
+    skip: !variables.id,
     ...options,
   });
 }
