@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import { useInstitutions } from "@/hooks/use-institutions"
+import { useInstitution } from "@/contexts/institution-context"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -79,7 +80,8 @@ export function InstitutionModal({
     },
   })
 
-  const { createInstitution } = useInstitutions();
+  const { createInstitution, refetchInstitutions } = useInstitutions();
+  const { setActiveInstitution } = useInstitution();
 
   const onSubmit = async (data: InstitutionFormData) => {
     setIsLoading(true);
@@ -102,6 +104,9 @@ export function InstitutionModal({
         languagePreference: data.language_preference,
       };
       const result = await createInstitution({ variables });
+
+      // Refetch institutions para atualizar lista global
+      refetchInstitutions();
 
       toast.dismiss(loadingToast);
       toast.success(

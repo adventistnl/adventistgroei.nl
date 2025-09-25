@@ -45,6 +45,7 @@ import { EditInstitutionModal, DeleteInstitutionModal } from "@/components/modal
 
 import { Institutions_institutions } from "@/types/Institutions"
 import { useInstitution } from "@/contexts/institution-context"
+import InstitutionsLoading from "./loading"
 
 /**
  * PÁGINA DE GESTÃO DE INSTITUIÇÕES
@@ -54,12 +55,13 @@ export default function InstitutionsPage() {
   const { t, i18n } = useTranslation()
   const { institutions: institutionsData, activeInstitution, loading: isLoading } = useInstitution();
 
-  const [selectedInstitution, setSelectedInstitution] = useState<string>("all")
+  // const [selectedInstitution, setSelectedInstitution] = useState<string>("all")
   
   // Modal states
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
   const [isEditInstitutionModalOpen, setIsEditInstitutionModalOpen] = useState(false)
   const [isDeleteInstitutionModalOpen, setIsDeleteInstitutionModalOpen] = useState(false)
+  const [deleteInstitutionId, setDeleteInstitutionId] = useState<string | null>(null)
   const [selectedContact, setSelectedContact] = useState<ContactData | null>(null)
   
   // Data states
@@ -370,6 +372,7 @@ export default function InstitutionsPage() {
               <DropdownMenuItem
                 className="text-red-600"
                 onClick={() => {
+                  setDeleteInstitutionId(institution.id);
                   setIsDeleteInstitutionModalOpen(true);
                 }}
               >
@@ -419,9 +422,9 @@ export default function InstitutionsPage() {
     )
   }
 
-  const selectedInstitutionName = selectedInstitution === "all" 
-    ? undefined 
-    : institutionsData.find(i => i.id === selectedInstitution)?.name
+  if (!activeInstitution) {
+    return <InstitutionsLoading />
+  }
 
   return (
     <AppLayout>
@@ -435,7 +438,7 @@ export default function InstitutionsPage() {
             <p className="text-muted-foreground text-0.875rem sm:text-1rem">
               Manage religious institutions and their organizational structure
             </p>
-            {activeInstitution && selectedInstitution !== "all" && (
+            {activeInstitution && (
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                   <Building className="w-3 h-3 mr-1" />
@@ -490,7 +493,7 @@ export default function InstitutionsPage() {
           subsidyOverTimeData={chartData.subsidyOverTime}
           monthlySubsidiesData={chartData.monthlySubsidies}
           loading={isLoading}
-          institutionName={selectedInstitutionName}
+          institutionName={activeInstitution?.name}
         />
 
         {/* Institutions Table */}
@@ -519,7 +522,7 @@ export default function InstitutionsPage() {
             isOpen={isContactModalOpen}
             onOpenChange={setIsContactModalOpen}
             contact={selectedContact}
-            entityName={activeInstitution?.name}
+            entityName={activeInstitution.name}
             entityType="Institution"
           />
         )}
@@ -550,8 +553,13 @@ export default function InstitutionsPage() {
         {/* Delete Institution Modal */}
         <DeleteInstitutionModal
           isOpen={isDeleteInstitutionModalOpen}
-          onOpenChangeAction={setIsDeleteInstitutionModalOpen}
-          institution={institutionsData.find(i => i.id === (activeInstitution?.id)) || null}
+          onOpenChangeAction={(open) => {
+            setIsDeleteInstitutionModalOpen(open);
+            if (!open) setDeleteInstitutionId(null);
+          }}
+          institution={
+            institutionsData.find(i => i.id === (deleteInstitutionId || activeInstitution?.id)) || null
+          }
           onSuccess={handleInstitutionDeleted}
         />
       </div>
