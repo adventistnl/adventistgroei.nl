@@ -45,6 +45,8 @@ import { EditInstitutionModal, DeleteInstitutionModal } from "@/components/modal
 
 import { Institutions_institutions } from "@/types/Institutions"
 import { useInstitution } from "@/contexts/institution-context"
+import { useInstitutionKPI } from "@/hooks/KPI/use-institution-kpi"
+import { InstitutionById_institution_departments, InstitutionById_institution_subsidy_requests } from "@/types/InstitutionById"
 import InstitutionsLoading from "./loading"
 
 /**
@@ -54,6 +56,7 @@ import InstitutionsLoading from "./loading"
 export default function InstitutionsPage() {
   const { t, i18n } = useTranslation()
   const { institutions: institutionsData, activeInstitution, loading: isLoading } = useInstitution();
+  const institutionKPIs = useInstitutionKPI();
 
   // const [selectedInstitution, setSelectedInstitution] = useState<string>("all")
   
@@ -67,13 +70,82 @@ export default function InstitutionsPage() {
   
   // Data states
   // const [institutionsData, setInstitutionsData] = useState<InstitutionWithDetails[]>([])
-  const [kpiData, setKpiData] = useState<any>(null)
-  const [chartData, setChartData] = useState<any>({
-    churchesByRegion: [],
-    usersByRole: [],
-    subsidyOverTime: [],
-    monthlySubsidies: []
-  })
+
+  // Geração dos dados dos gráficos a partir da activeInstitution
+  const chartData = useMemo(() => {
+    if (!activeInstitution) {
+      return {
+        churchesByRegion: [],
+        usersByRole: [],
+        subsidyOverTime: [],
+        monthlySubsidies: []
+      }
+    }
+
+    // Churches by Region
+    // Supondo que cada departamento tem um campo church_id e region (não temos region, então agrupamos por church_id)
+    const churchesByRegion: Array<{ region: string, churches: number, members: number }> = [];
+    // Se existisse region, poderíamos agrupar por ela. Aqui apenas um exemplo fictício:
+    // Agrupamento fictício por church_id
+    if (activeInstitution.departments) {
+      const regionMap: Record<string, { churches: number, members: number }> = {};
+      activeInstitution.departments.forEach((dep: InstitutionById_institution_departments) => {
+        const region = dep.church_id || '';
+        if (!regionMap[region]) regionMap[region] = { churches: 0, members: 0 };
+        regionMap[region].churches += 1;
+        // Não temos members, então deixamos 0
+      });
+      for (const region in regionMap) {
+        churchesByRegion.push({ region, ...regionMap[region] });
+      }
+    }
+
+    // Users by Role
+    // Não temos roles, então agrupamos todos como "User"
+    const usersByRole = [
+      {
+        name: 'User',
+        value: activeInstitution.users?.length || 0,
+        color: '#f59e0b',
+      }
+    ];
+
+    // Subsidy Over Time
+    // Agrupar subsidy_requests por mês
+    const subsidyOverTimeMap: Record<string, { requests: number, amount: number }> = {};
+    if (activeInstitution.subsidy_requests) {
+      activeInstitution.subsidy_requests.forEach((req: InstitutionById_institution_subsidy_requests) => {
+        const date = new Date(req.created_at);
+        const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        if (!subsidyOverTimeMap[month]) subsidyOverTimeMap[month] = { requests: 0, amount: 0 };
+        subsidyOverTimeMap[month].requests += 1;
+        subsidyOverTimeMap[month].amount += Number(req.total_budget) || 0;
+      });
+    }
+    const subsidyOverTime = Object.entries(subsidyOverTimeMap).map(([month, data]) => ({ month, ...data }));
+
+    // Monthly Subsidies (por status)
+    // Supondo que subsidy_statuses_id: 'approved', 'pending', 'under_review'
+    const monthlySubsidiesMap: Record<string, { approved: number, pending: number, under_review: number }> = {};
+    if (activeInstitution.subsidy_requests) {
+      activeInstitution.subsidy_requests.forEach((req: InstitutionById_institution_subsidy_requests) => {
+        const date = new Date(req.created_at);
+        const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        if (!monthlySubsidiesMap[month]) monthlySubsidiesMap[month] = { approved: 0, pending: 0, under_review: 0 };
+        if (req.subsidy_statuses_id === 'approved') monthlySubsidiesMap[month].approved += 1;
+        else if (req.subsidy_statuses_id === 'pending') monthlySubsidiesMap[month].pending += 1;
+        else monthlySubsidiesMap[month].under_review += 1;
+      });
+    }
+    const monthlySubsidies = Object.entries(monthlySubsidiesMap).map(([month, data]) => ({ month, ...data }));
+
+    return {
+      churchesByRegion,
+      usersByRole,
+      subsidyOverTime,
+      monthlySubsidies,
+    }
+  }, [activeInstitution]);
 
   const breadcrumbs = useMemo(() => [
     { name: "Structure & Organization" },
@@ -81,108 +153,40 @@ export default function InstitutionsPage() {
   ], [])
 
   // Dados para KPI Cards Carrossel
-  const kpiCardsData: KPICardData[] = useMemo(() => {
-    if (!kpiData) return []
-    
-    return [
-      {
-        id: "total_institutions",
-        title: "Total Institutions",
-        value: kpiData.totalInstitutions || 0,
-        icon: Building,
-        subtitle: "Active institutions",
-        trend: {
-          value: 8,
-          isPositive: true,
-          label: "vs. last month"
-        }
-      },
-      {
-        id: "total_regions",
-        title: "Total Regions",
-        value: kpiData.totalRegions || 0,
-        icon: MapPin,
-        subtitle: "Geographic regions",
-        trend: {
-          value: 12,
-          isPositive: true,
-          label: "vs. last month"
-        }
-      },
-      {
-        id: "total_churches",
-        title: "Total Churches",
-        value: kpiData.totalChurches || 0,
-        icon: Church,
-        subtitle: "Active churches",
-        trend: {
-          value: 15,
-          isPositive: true,
-          label: "vs. last month"
-        }
-      },
-      {
-        id: "total_users",
-        title: "Total Users",
-        value: kpiData.totalUsers || 0,
-        icon: Users,
-        subtitle: "Registered users",
-        trend: {
-          value: 22,
-          isPositive: true,
-          label: "vs. last month"
-        }
-      },
-      {
-        id: "total_members",
-        title: "Total Members",
-        value: `${((kpiData.totalMembers || 0) / 1000).toFixed(1)}K`,
-        icon: Users,
-        subtitle: "Church members",
-        trend: {
-          value: 5,
-          isPositive: true,
-          label: "vs. last month"
-        }
-      },
-      {
-        id: "subsidy_budget",
-        title: "Subsidy Budget",
-        value: `$${((kpiData.totalSubsidyBudget || 0) / 1000).toFixed(0)}K`,
-        icon: DollarSign,
-        subtitle: "Total subsidy budget",
-        trend: {
-          value: 18,
-          isPositive: true,
-          label: "vs. last year"
-        }
-      },
-      {
-        id: "department_budget",
-        title: "Department Budget",
-        value: `$${((kpiData.totalDepartmentBudget || 0) / 1000).toFixed(0)}K`,
-        icon: Shield,
-        subtitle: "Department budgets",
-        trend: {
-          value: 10,
-          isPositive: true,
-          label: "vs. last year"
-        }
-      },
-      {
-        id: "pending_subsidies",
-        title: "Pending Subsidies",
-        value: kpiData.pendingSubsidies || 0,
-        icon: Calendar,
-        subtitle: "Awaiting approval",
-        trend: {
-          value: 3,
-          isPositive: false,
-          label: "vs. last month"
-        }
-      }
-    ]
-  }, [kpiData])
+  const kpiCardsData: KPICardData[] = useMemo(() => [
+    {
+      id: "total_regions",
+      title: "Total Regions",
+      value: institutionKPIs.totalRegions,
+      icon: MapPin,
+      subtitle: "Geographic regions",
+      trend: undefined
+    },
+    {
+      id: "total_churches",
+      title: "Total Churches",
+      value: institutionKPIs.totalChurches,
+      icon: Church,
+      subtitle: "Active churches",
+      trend: undefined
+    },
+    {
+      id: "total_departments",
+      title: "Total Departments",
+      value: institutionKPIs.totalDepartments,
+      icon: Shield,
+      subtitle: "Departments",
+      trend: undefined
+    },
+    {
+      id: "total_users",
+      title: "Total Users",
+      value: institutionKPIs.totalUsers,
+      icon: Users,
+      subtitle: "Registered users",
+      trend: undefined
+    },
+  ], [institutionKPIs])
 
   usePageTitle({
     title: "Institutions Management",
