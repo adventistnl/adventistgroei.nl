@@ -60,114 +60,9 @@ import {
   Legend
 } from "recharts"
 
-// Mock data baseado na estrutura ERD do AdventistGroei
-const MOCK_CHURCHES = [
-  {
-    id: "c1",
-    name: "Igreja Central de São Paulo",
-    institution_id: "inst1",
-    institution_name: "União Sul-Paulista",
-    region_id: "r1",
-    region_name: "São Paulo Capital",
-    members_count: 850,
-    departments_count: 6,
-    subsidy_requests: 12,
-    total_budget: 450000,
-    used_budget: 320000,
-    contact: {
-      name: "Pastor Miguel Santos",
-      phone: "(11) 3333-3333",
-      email: "miguel@central.org.br",
-      city: "São Paulo"
-    },
-    created_at: "2024-01-15",
-    status: "active"
-  },
-  {
-    id: "c2",
-    name: "Igreja de Vila Madalena",
-    institution_id: "inst1",
-    institution_name: "União Sul-Paulista",
-    region_id: "r1",
-    region_name: "São Paulo Capital",
-    members_count: 620,
-    departments_count: 4,
-    subsidy_requests: 8,
-    total_budget: 380000,
-    used_budget: 280000,
-    contact: {
-      name: "Pastor Ana Silva",
-      phone: "(11) 4444-4444",
-      email: "ana@vilamadalena.org.br",
-      city: "São Paulo"
-    },
-    created_at: "2024-01-20",
-    status: "active"
-  },
-  {
-    id: "c3",
-    name: "Igreja da Mooca",
-    institution_id: "inst1",
-    institution_name: "União Sul-Paulista",
-    region_id: "r1",
-    region_name: "São Paulo Capital",
-    members_count: 420,
-    departments_count: 3,
-    subsidy_requests: 6,
-    total_budget: 280000,
-    used_budget: 180000,
-    contact: {
-      name: "Pastor Carlos Lima",
-      phone: "(11) 5555-5555",
-      email: "carlos@mooca.org.br",
-      city: "São Paulo"
-    },
-    created_at: "2024-01-25",
-    status: "active"
-  },
-  {
-    id: "c4",
-    name: "Igreja de Campinas",
-    institution_id: "inst1",
-    institution_name: "União Sul-Paulista",
-    region_id: "r2",
-    region_name: "São Paulo Interior",
-    members_count: 720,
-    departments_count: 5,
-    subsidy_requests: 15,
-    total_budget: 520000,
-    used_budget: 410000,
-    contact: {
-      name: "Pastor Roberto Costa",
-      phone: "(19) 6666-6666",
-      email: "roberto@campinas.org.br",
-      city: "Campinas"
-    },
-    created_at: "2024-01-12",
-    status: "active"
-  },
-  {
-    id: "c5",
-    name: "Igreja do Rio de Janeiro",
-    institution_id: "inst1",
-    institution_name: "União Sul-Paulista",
-    region_id: "r3",
-    region_name: "Rio de Janeiro",
-    members_count: 680,
-    departments_count: 4,
-    subsidy_requests: 11,
-    total_budget: 420000,
-    used_budget: 310000,
-    contact: {
-      name: "Pastor Maria Oliveira",
-      phone: "(21) 7777-7777",
-      email: "maria@rio.org.br",
-      city: "Rio de Janeiro"
-    },
-    created_at: "2024-01-18",
-    status: "active"
-  }
-]
+import { useInstitution } from '@/contexts/institution-context'
+
+// Dados reais de igrejas virão do contexto da instituição
 
 // Mock data para departamentos por igreja
 const MOCK_DEPARTMENTS_BY_CHURCH = [
@@ -222,9 +117,11 @@ const MOCK_SUBSIDY_TIMELINE = [
  */
 export default function ChurchesPage() {
   const { i18n } = useTranslation()
+  const { currentInstitutionData, loading: institutionLoading } = useInstitution();
+  const churches = React.useMemo(() => currentInstitutionData?.churches || [], [currentInstitutionData]);
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  
+  console.log('churches', currentInstitutionData)
   // Modal states
   const [isViewContactModalOpen, setIsViewContactModalOpen] = useState(false)
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false)
@@ -252,16 +149,16 @@ export default function ChurchesPage() {
   })
 
   // Estatísticas calculadas dos dados
+  type ChurchType = typeof churches extends (infer U)[] ? U : any;
   const kpiData = useMemo(() => {
-    const totalChurches = MOCK_CHURCHES.length
-    const totalMembers = MOCK_CHURCHES.reduce((sum, c) => sum + c.members_count, 0)
-    const totalDepartments = MOCK_CHURCHES.reduce((sum, c) => sum + c.departments_count, 0)
-    const totalSubsidyRequests = MOCK_CHURCHES.reduce((sum, c) => sum + c.subsidy_requests, 0)
-    const totalBudget = MOCK_CHURCHES.reduce((sum, c) => sum + c.total_budget, 0)
-    const totalUsedBudget = MOCK_CHURCHES.reduce((sum, c) => sum + c.used_budget, 0)
-    const budgetUtilization = Math.round((totalUsedBudget / totalBudget) * 100)
-    const avgMembersPerChurch = Math.round(totalMembers / totalChurches)
-
+    const totalChurches = churches.length;
+    const totalMembers = churches.reduce((sum: number, c: ChurchType) => sum + (c.members_count || 0), 0);
+    const totalDepartments = churches.reduce((sum: number, c: ChurchType) => sum + (c.departments_count || 0), 0);
+    const totalSubsidyRequests = churches.reduce((sum: number, c: ChurchType) => sum + (c.subsidy_requests || 0), 0);
+    const totalBudget = churches.reduce((sum: number, c: ChurchType) => sum + (c.total_budget || 0), 0);
+    const totalUsedBudget = churches.reduce((sum: number, c: ChurchType) => sum + (c.used_budget || 0), 0);
+    const budgetUtilization = totalBudget > 0 ? Math.round((totalUsedBudget / totalBudget) * 100) : 0;
+    const avgMembersPerChurch = totalChurches > 0 ? Math.round(totalMembers / totalChurches) : 0;
     return {
       totalChurches,
       totalMembers,
@@ -271,8 +168,8 @@ export default function ChurchesPage() {
       totalUsedBudget,
       budgetUtilization,
       avgMembersPerChurch
-    }
-  }, [])
+    };
+  }, [churches]);
 
   // Dados dos KPIs em formato de array para o componente reutilizável
   const kpiCardsData: KPICardData[] = useMemo(() => [
@@ -312,36 +209,21 @@ export default function ChurchesPage() {
   ], [kpiData, t])
 
   // Dados para gráficos
-  const chartData = useMemo(() => {
-    // Agrupar solicitações por departamento
-    const subsidyByDepartment = MOCK_DEPARTMENTS_BY_CHURCH.reduce((acc: any, item) => {
-      acc[item.department] = (acc[item.department] || 0) + item.subsidy_requests
-      return acc
-    }, {})
-
-    return {
-      budgetByChurch: MOCK_CHURCHES.map(c => ({
-        church: c.name.replace('Igreja ', '').replace(' de ', ' '),
-        budget: c.total_budget,
-        used: c.used_budget,
-        remaining: c.total_budget - c.used_budget
-      })),
-      subsidyRequestsByChurch: MOCK_CHURCHES.map(c => ({
-        church: c.name.replace('Igreja ', '').replace(' de ', ' '),
-        requests: c.subsidy_requests
-      })),
-      subsidyByDepartment: Object.entries(subsidyByDepartment).map(([dept, requests]) => ({
-        department: dept,
-        requests: requests as number
-      })),
-      usersByChurch: MOCK_USERS_BY_CHURCH.map(u => ({
-        church: u.church.replace('Igreja ', '').replace(' de ', ' '),
-        users: u.users,
-        active_users: u.active_users
-      })),
-      subsidyTimeline: MOCK_SUBSIDY_TIMELINE
-    }
-  }, [])
+  const chartData = useMemo(() => ({
+    budgetByChurch: churches.map((c: ChurchType) => ({
+      church: c.name,
+      budget: c.total_budget,
+      used: c.used_budget,
+      remaining: (c.total_budget || 0) - (c.used_budget || 0)
+    })),
+    subsidyRequestsByChurch: churches.map((c: ChurchType) => ({
+      church: c.name,
+      requests: c.subsidy_requests
+    })),
+    subsidyByDepartment: [], // Não migrado ainda
+    usersByChurch: [], // Não migrado ainda
+    subsidyTimeline: [] // Não migrado ainda
+  }), [churches]);
 
   /**
    * Carregamento inicial dos dados
@@ -391,9 +273,8 @@ export default function ChurchesPage() {
   }
   
   const handleEdit = (id: string) => {
-    const church = MOCK_CHURCHES.find(c => c.id === id)
+    const church = churches.find((c: ChurchType) => c.id === id);
     if (church) {
-      // Converter dados da igreja para o formato ChurchData
       const churchData: ChurchData = {
         id: church.id,
         institution_id: church.institution_id,
@@ -405,16 +286,14 @@ export default function ChurchesPage() {
         created_by: 'system',
         updated_by: 'system',
         is_deleted: false
-      }
-      setChurchToEdit(churchData)
-      setIsEditChurchModalOpen(true)
+      };
+      setChurchToEdit(churchData);
+      setIsEditChurchModalOpen(true);
     }
-  }
-  
+  };
   const handleDelete = (id: string, name: string) => {
-    const church = MOCK_CHURCHES.find(c => c.id === id)
+    const church = churches.find((c: ChurchType) => c.id === id);
     if (church) {
-      // Converter dados da igreja para o formato ChurchData
       const churchData: ChurchData = {
         id: church.id,
         institution_id: church.institution_id,
@@ -426,51 +305,23 @@ export default function ChurchesPage() {
         created_by: 'system',
         updated_by: 'system',
         is_deleted: false
-      }
-      setChurchToDelete(churchData)
-      setIsDeleteChurchModalOpen(true)
+      };
+      setChurchToDelete(churchData);
+      setIsDeleteChurchModalOpen(true);
     }
-  }
+  };
   const handleViewContact = (id: string) => {
-    const church = MOCK_CHURCHES.find(c => c.id === id)
-    if (church && church.contact) {
-      // Converter os dados de contato da igreja para o formato ContactData
-      const contactData: ContactData = {
-        id: `contact_${church.id}`,
-        name: church.contact.name || null,
-        phone: church.contact.phone || null,
-        mobile: null,
-        email: church.contact.email || null,
-        country: null,
-        city: church.contact.city || null,
-        address: null,
-        full_address: null,
-        postal_code: null,
-        website: null,
-        notes: null,
-        is_primary: true,
-        created_at: church.created_at,
-        updated_at: church.created_at,
-        created_by: 'system',
-        updated_by: 'system',
-        is_deleted: false
-      }
-      
-      setSelectedContact(contactData)
-      setIsViewContactModalOpen(true)
-    }
-  }
-  
+    // Não implementado pois não há contact no church do backend
+  };
   const handleViewBudget = (id: string) => {
-    const church = MOCK_CHURCHES.find(c => c.id === id)
+    const church = churches.find((c: ChurchType) => c.id === id);
     if (church) {
-      // Criar dados de orçamento mock baseados nos dados da igreja
       const budgetData: AnnualBudgetData = {
         id: `budget_${church.id}`,
         year: new Date().getFullYear(),
         planned_budget: church.total_budget,
         total_expenses: church.used_budget,
-        balance: church.total_budget - church.used_budget,
+        balance: (church.total_budget || 0) - (church.used_budget || 0),
         notes: `Budget for ${church.name} church`,
         approved_by: 'admin',
         status: 'in_progress',
@@ -479,13 +330,12 @@ export default function ChurchesPage() {
         created_by: 'system',
         updated_by: 'system',
         is_deleted: false
-      }
-      
-      setSelectedChurch(church)
-      setSelectedBudget(budgetData)
-      setIsBudgetModalOpen(true)
+      };
+      setSelectedChurch(church);
+      setSelectedBudget(budgetData);
+      setIsBudgetModalOpen(true);
     }
-  }
+  };
   
   const handleBudgetSaved = (budget: AnnualBudgetData) => {
     toast.success("Budget updated successfully")
@@ -536,17 +386,17 @@ export default function ChurchesPage() {
         </div>
       ),
     },
-    {
-      id: "members",
-      accessorKey: "members_count",
-      header: t.members,
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.members_count.toLocaleString()}</span>
-        </div>
-      ),
-    },
+    // {
+    //   id: "members",
+    //   accessorKey: "members_count",
+    //   header: t.members,
+    //   cell: ({ row }) => (
+    //     <div className="flex items-center gap-2">
+    //       <Users className="w-4 h-4 text-muted-foreground" />
+    //       <span className="font-medium">{row.original.members_count.toLocaleString()}</span>
+    //     </div>
+    //   ),
+    // },
     {
       id: "departments",
       accessorKey: "departments_count",
@@ -574,14 +424,14 @@ export default function ChurchesPage() {
       accessorKey: "total_budget",
       header: t.budget,
       cell: ({ row }) => (
-        <span className="font-medium">${row.original.total_budget.toLocaleString()}</span>
+        <span className="font-medium">${(row.original.total_budget || 0).toLocaleString()}</span>
       ),
     },
     {
       id: "utilization",
       header: t.utilization,
       cell: ({ row }) => {
-        const utilization = Math.round((row.original.used_budget / row.original.total_budget) * 100)
+        const utilization = Math.round((row.original.used_budget / row.original.total_budget || 0) * 100)
         return (
           <Badge variant="outline" className={
             utilization > 80 ? 'bg-red-100 text-red-700' : 
@@ -851,20 +701,14 @@ export default function ChurchesPage() {
           <CardContent className="overflow-hidden">
             <DataTable
               columns={columns}
-              data={MOCK_CHURCHES}
+              data={churches}
               searchKey="name"
               searchPlaceholder={t.searchChurches}
               filterableColumns={[
                 {
                   id: "region",
                   title: t.region,
-                  options: [
-                    { label: "São Paulo Capital", value: "São Paulo Capital" },
-                    { label: "São Paulo Interior", value: "São Paulo Interior" },
-                    { label: "Rio de Janeiro", value: "Rio de Janeiro" },
-                    { label: "Distrito Federal", value: "Distrito Federal" },
-                    { label: "Bahia - Salvador", value: "Bahia - Salvador" },
-                  ]
+                  options: Array.from(new Set(churches.map((c: any) => c.region_name))).map(name => ({ label: String(name), value: String(name) }))
                 },
                 {
                   id: "status",
@@ -905,8 +749,8 @@ export default function ChurchesPage() {
         <AddChurchModal
           isOpen={isAddChurchModalOpen}
           onOpenChange={setIsAddChurchModalOpen}
-          institutionId="inst1"
-          regions={MOCK_REGIONS}
+          institutionId={currentInstitutionData?.id || ''}
+          regions={[]}
           onSave={handleChurchSaved}
         />
         
@@ -916,7 +760,7 @@ export default function ChurchesPage() {
             isOpen={isEditChurchModalOpen}
             onOpenChange={setIsEditChurchModalOpen}
             church={churchToEdit}
-            regions={MOCK_REGIONS}
+            regions={[]}
             onSave={handleChurchUpdated}
           />
         )}

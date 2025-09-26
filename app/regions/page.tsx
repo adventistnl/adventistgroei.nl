@@ -58,109 +58,7 @@ import {
   Legend
 } from "recharts"
 
-// Mock data baseado na estrutura ERD do AdventistGroei
-const MOCK_REGIONS = [
-  {
-    id: "r1",
-    name: "São Paulo Capital",
-    institution_id: "inst1",
-    institution_name: "União Sul-Paulista",
-    parent_region_id: null,
-    churches_count: 45,
-    members_count: 12500,
-    subsidy_requests: 23,
-    total_budget: 850000,
-    used_budget: 620000,
-    contact: {
-      name: "Pastor João Silva",
-      phone: "(11) 99999-9999",
-      email: "joao@usp.org.br",
-      city: "São Paulo"
-    },
-    created_at: "2024-01-15",
-    status: "active"
-  },
-  {
-    id: "r2",
-    name: "São Paulo Interior",
-    institution_id: "inst1",
-    institution_name: "União Sul-Paulista",
-    parent_region_id: null,
-    churches_count: 78,
-    members_count: 18900,
-    subsidy_requests: 34,
-    total_budget: 1200000,
-    used_budget: 890000,
-    contact: {
-      name: "Pastor Maria Santos",
-      phone: "(19) 88888-8888",
-      email: "maria@usp.org.br",
-      city: "Campinas"
-    },
-    created_at: "2024-01-10",
-    status: "active"
-  },
-  {
-    id: "r3",
-    name: "Rio de Janeiro",
-    institution_id: "inst1",
-    institution_name: "União Sul-Paulista",
-    parent_region_id: null,
-    churches_count: 32,
-    members_count: 9800,
-    subsidy_requests: 18,
-    total_budget: 680000,
-    used_budget: 520000,
-    contact: {
-      name: "Pastor Carlos Lima",
-      phone: "(21) 77777-7777",
-      email: "carlos@usp.org.br",
-      city: "Rio de Janeiro"
-    },
-    created_at: "2024-01-20",
-    status: "active"
-  },
-  {
-    id: "r4",
-    name: "Distrito Federal",
-    institution_id: "inst2",
-    institution_name: "União Central Brasileira",
-    parent_region_id: null,
-    churches_count: 28,
-    members_count: 8500,
-    subsidy_requests: 15,
-    total_budget: 590000,
-    used_budget: 410000,
-    contact: {
-      name: "Pastor Ana Costa",
-      phone: "(61) 66666-6666",
-      email: "ana@ucb.org.br",
-      city: "Brasília"
-    },
-    created_at: "2024-01-12",
-    status: "active"
-  },
-  {
-    id: "r5",
-    name: "Bahia - Salvador",
-    institution_id: "inst3",
-    institution_name: "União Nordeste Brasileira",
-    parent_region_id: null,
-    churches_count: 41,
-    members_count: 11200,
-    subsidy_requests: 27,
-    total_budget: 720000,
-    used_budget: 480000,
-    contact: {
-      name: "Pastor Roberto Oliveira",
-      phone: "(71) 55555-5555",
-      email: "roberto@une.org.br",
-      city: "Salvador"
-    },
-    created_at: "2024-01-08",
-    status: "active"
-  },
-]
+import { useInstitution } from '@/contexts/institution-context'
 
 // Mock data para timeline de subsídios
 const MOCK_SUBSIDY_TIMELINE = [
@@ -178,6 +76,10 @@ const MOCK_SUBSIDY_TIMELINE = [
  */
 export default function RegionsPage() {
   const { i18n } = useTranslation()
+  const { currentInstitutionData, loading: institutionLoading } = useInstitution();
+  // Garante que regions venha do dado real da instituição ativa
+  console.log(currentInstitutionData)
+  const regions = React.useMemo(() => currentInstitutionData?.regions || [], [currentInstitutionData]);
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   
@@ -206,15 +108,15 @@ export default function RegionsPage() {
   })
 
   // Estatísticas calculadas dos dados
+  type RegionType = typeof regions extends (infer U)[] ? U : any;
   const kpiData = useMemo(() => {
-    const totalRegions = MOCK_REGIONS.length
-    const totalChurches = MOCK_REGIONS.reduce((sum, r) => sum + r.churches_count, 0)
-    const totalMembers = MOCK_REGIONS.reduce((sum, r) => sum + r.members_count, 0)
-    const totalSubsidyRequests = MOCK_REGIONS.reduce((sum, r) => sum + r.subsidy_requests, 0)
-    const totalBudget = MOCK_REGIONS.reduce((sum, r) => sum + r.total_budget, 0)
-    const totalUsedBudget = MOCK_REGIONS.reduce((sum, r) => sum + r.used_budget, 0)
-    const budgetUtilization = Math.round((totalUsedBudget / totalBudget) * 100)
-
+    const totalRegions = regions.length;
+    const totalChurches = regions.reduce((sum: number, r: RegionType) => sum + (r.churches_count || 0), 0);
+    const totalMembers = regions.reduce((sum: number, r: RegionType) => sum + (r.members_count || 0), 0);
+    const totalSubsidyRequests = regions.reduce((sum: number, r: RegionType) => sum + (r.subsidy_requests || 0), 0);
+    const totalBudget = regions.reduce((sum: number, r: RegionType) => sum + (r.total_budget || 0), 0);
+    const totalUsedBudget = regions.reduce((sum: number, r: RegionType) => sum + (r.used_budget || 0), 0);
+    const budgetUtilization = totalBudget > 0 ? Math.round((totalUsedBudget / totalBudget) * 100) : 0;
     return {
       totalRegions,
       totalChurches,
@@ -223,8 +125,8 @@ export default function RegionsPage() {
       totalBudget,
       totalUsedBudget,
       budgetUtilization
-    }
-  }, [])
+    };
+  }, [regions]);
 
   // Dados dos KPIs em formato de array para o componente reutilizável
   const kpiCardsData: KPICardData[] = useMemo(() => [
@@ -265,22 +167,22 @@ export default function RegionsPage() {
 
   // Dados para gráficos
   const chartData = useMemo(() => ({
-    budgetByRegion: MOCK_REGIONS.map(r => ({
+    budgetByRegion: regions.map((r: RegionType) => ({
       region: r.name,
       budget: r.total_budget,
       used: r.used_budget,
-      remaining: r.total_budget - r.used_budget
+      remaining: (r.total_budget || 0) - (r.used_budget || 0)
     })),
-    subsidyRequestsByRegion: MOCK_REGIONS.map(r => ({
+    subsidyRequestsByRegion: regions.map((r: RegionType) => ({
       region: r.name,
       requests: r.subsidy_requests
     })),
-    churchesByRegion: MOCK_REGIONS.map(r => ({
+    churchesByRegion: regions.map((r: RegionType) => ({
       region: r.name,
       churches: r.churches_count
     })),
-    subsidyTimeline: MOCK_SUBSIDY_TIMELINE
-  }), [])
+    subsidyTimeline: [] // Timeline ainda mock, backend não fornece
+  }), [regions]);
 
   /**
    * Carregamento inicial dos dados
@@ -330,25 +232,22 @@ export default function RegionsPage() {
   }
   
   const handleEdit = (id: string) => {
-    const region = MOCK_REGIONS.find(r => r.id === id)
+    const region = regions.find((r: RegionType) => r.id === id);
     if (region) {
-      setSelectedRegion(region)
-      setIsEditModalOpen(true)
+      setSelectedRegion(region);
+      setIsEditModalOpen(true);
     }
-  }
-  
+  };
   const handleDelete = (id: string, name: string) => {
-    const region = MOCK_REGIONS.find(r => r.id === id)
+    const region = regions.find((r: RegionType) => r.id === id);
     if (region) {
-      setSelectedRegion(region)
-      setIsDeleteModalOpen(true)
+      setSelectedRegion(region);
+      setIsDeleteModalOpen(true);
     }
-  }
-  
+  };
   const handleViewContact = (id: string) => {
-    const region = MOCK_REGIONS.find(r => r.id === id)
+    const region = regions.find((r: RegionType) => r.id === id);
     if (region && region.contact) {
-      // Converter os dados de contato da região para o formato ContactData
       const contactData: ContactData = {
         id: `contact_${region.id}`,
         name: region.contact.name || null,
@@ -368,23 +267,20 @@ export default function RegionsPage() {
         created_by: 'system',
         updated_by: 'system',
         is_deleted: false
-      }
-      
-      setSelectedContact(contactData)
-      setIsViewContactModalOpen(true)
+      };
+      setSelectedContact(contactData);
+      setIsViewContactModalOpen(true);
     }
-  }
-  
+  };
   const handleViewBudget = (id: string) => {
-    const region = MOCK_REGIONS.find(r => r.id === id)
+    const region = regions.find((r: RegionType) => r.id === id);
     if (region) {
-      // Criar dados de orçamento mock baseados nos dados da região
       const budgetData: AnnualBudgetData = {
         id: `budget_${region.id}`,
         year: new Date().getFullYear(),
         planned_budget: region.total_budget,
         total_expenses: region.used_budget,
-        balance: region.total_budget - region.used_budget,
+        balance: (region.total_budget || 0) - (region.used_budget || 0),
         notes: `Budget for ${region.name} region`,
         approved_by: 'admin',
         status: 'in_progress',
@@ -393,13 +289,12 @@ export default function RegionsPage() {
         created_by: 'system',
         updated_by: 'system',
         is_deleted: false
-      }
-      
-      setSelectedRegion(region)
-      setSelectedBudget(budgetData)
-      setIsBudgetModalOpen(true)
+      };
+      setSelectedRegion(region);
+      setSelectedBudget(budgetData);
+      setIsBudgetModalOpen(true);
     }
-  }
+  };
 
   // Modal handlers
   const handleRegionCreated = (newRegion: any) => {
@@ -451,14 +346,14 @@ export default function RegionsPage() {
                                     </div>
       ),
     },
-    {
-      id: "members",
-      accessorKey: "members_count",
-      header: t.members,
-      cell: ({ row }) => (
-        <span className="font-medium">{row.original.members_count.toLocaleString()}</span>
-      ),
-    },
+    // {
+    //   id: "members",
+    //   accessorKey: "members_count",
+    //   header: t.members,
+    //   cell: ({ row }) => (
+    //     <span className="font-medium">{row.original.members_count.toLocaleString()}</span>
+    //   ),
+    // },
     {
       id: "subsidy_requests",
       accessorKey: "subsidy_requests",
@@ -470,14 +365,14 @@ export default function RegionsPage() {
                     </div>
       ),
     },
-    {
-      id: "budget",
-      accessorKey: "total_budget",
-      header: t.budget,
-      cell: ({ row }) => (
-        <span className="font-medium">${row.original.total_budget.toLocaleString()}</span>
-      ),
-    },
+    // {
+    //   id: "budget",
+    //   accessorKey: "total_budget",
+    //   header: t.budget,
+    //   cell: ({ row }) => (
+    //     <span className="font-medium">${row.original.total_budget.toLocaleString()}</span>
+    //   ),
+    // },
     {
       id: "utilization",
       header: t.utilization,
@@ -761,18 +656,14 @@ export default function RegionsPage() {
           <CardContent className="overflow-hidden">
             <DataTable
               columns={columns}
-              data={MOCK_REGIONS}
+              data={regions}
               searchKey="name"
               searchPlaceholder={t.searchRegions}
               filterableColumns={[
                 {
                   id: "institution",
                   title: "Instituição",
-                  options: [
-                    { label: "União Sul-Paulista", value: "União Sul-Paulista" },
-                    { label: "União Central Brasileira", value: "União Central Brasileira" },
-                    { label: "União Nordeste Brasileira", value: "União Nordeste Brasileira" },
-                  ]
+                  options: Array.from(new Set(regions.map((r: any) => r.institution_name))).map(name => ({ label: String(name), value: String(name) }))
                 },
                 {
                   id: "status",
@@ -791,19 +682,8 @@ export default function RegionsPage() {
         <AddRegionModal
           isOpen={isCreateModalOpen}
           onOpenChange={setIsCreateModalOpen}
-          institutionId="inst1"
-          parentRegions={MOCK_REGIONS.map(r => ({
-            id: r.id,
-            name: r.name,
-            institution_id: r.institution_id,
-            parent_region_id: null,
-            contact_id: null,
-            created_at: r.created_at,
-            updated_at: r.created_at,
-            created_by: 'system',
-            updated_by: 'system',
-            is_deleted: false
-          }))}
+          institutionId={currentInstitutionData?.id || ''}
+          parentRegions={[]} // parentRegions será implementado depois
           onSave={handleRegionCreated}
         />
 
@@ -823,18 +703,7 @@ export default function RegionsPage() {
               updated_by: 'system',
               is_deleted: false
             }}
-            parentRegions={MOCK_REGIONS.map(r => ({
-              id: r.id,
-              name: r.name,
-              institution_id: r.institution_id,
-              parent_region_id: null,
-              contact_id: null,
-              created_at: r.created_at,
-              updated_at: r.created_at,
-              created_by: 'system',
-              updated_by: 'system',
-              is_deleted: false
-            }))}
+            parentRegions={[]}
             onSave={handleRegionUpdated}
           />
         )}

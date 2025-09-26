@@ -37,6 +37,7 @@ import toast from "react-hot-toast"
 import { structureTranslations } from "@/lib/translations/structure"
 import { DataTable } from "@/components/ui/data-table"
 import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal, DepartmentData, ChurchData } from "@/components/modals/department"
+import { useInstitution } from "@/contexts/institution-context"
 import { ViewContactModal, ContactData } from "@/components/modals/contact"
 import { AnnualBudgetModal, AnnualBudgetData } from "@/components/modals/budget"
 import { DepartmentsKPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
@@ -60,125 +61,6 @@ import {
   Line,
   Legend
 } from "recharts"
-
-// Mock data baseado na estrutura ERD do AdventistGroei
-const MOCK_DEPARTMENTS = [
-  {
-    id: "d1",
-    name: "Ministério Jovem",
-    description: "Ministério dedicado aos jovens e adolescentes",
-    institution_id: "inst1",
-    institution_name: "União Sul-Paulista",
-    church_id: "c1",
-    church_name: "Igreja Central de São Paulo",
-    annual_budget: 120000,
-    used_budget: 85000,
-    remaining_budget: 35000,
-    subsidy_requests: 18,
-    total_users: 12,
-    active_projects: 8,
-    contact: {
-      name: "Líder João Marcos",
-      phone: "(11) 91111-1111",
-      email: "joao@jovens.org.br",
-      city: "São Paulo"
-    },
-    created_at: "2024-01-15",
-    status: "active"
-  },
-  {
-    id: "d2",
-    name: "Educação Cristã",
-    description: "Departamento de ensino e educação bíblica",
-    institution_id: "inst1",
-    institution_name: "União Sul-Paulista",
-    church_id: "c1",
-    church_name: "Igreja Central de São Paulo",
-    annual_budget: 95000,
-    used_budget: 68000,
-    remaining_budget: 27000,
-    subsidy_requests: 14,
-    total_users: 8,
-    active_projects: 5,
-    contact: {
-      name: "Professora Maria Silva",
-      phone: "(11) 92222-2222",
-      email: "maria@educacao.org.br",
-      city: "São Paulo"
-    },
-    created_at: "2024-01-20",
-    status: "active"
-  },
-  {
-    id: "d3",
-    name: "Diaconia",
-    description: "Serviços sociais e assistência comunitária",
-    institution_id: "inst1",
-    institution_name: "União Sul-Paulista",
-    church_id: "c2",
-    church_name: "Igreja de Vila Madalena",
-    annual_budget: 80000,
-    used_budget: 55000,
-    remaining_budget: 25000,
-    subsidy_requests: 12,
-    total_users: 6,
-    active_projects: 4,
-    contact: {
-      name: "Diácono Carlos Santos",
-      phone: "(11) 93333-3333",
-      email: "carlos@diaconia.org.br",
-      city: "São Paulo"
-    },
-    created_at: "2024-01-25",
-    status: "active"
-  },
-  {
-    id: "d4",
-    name: "Música e Louvor",
-    description: "Ministério musical e de louvor",
-    institution_id: "inst1",
-    institution_name: "União Sul-Paulista",
-    church_id: "c3",
-    church_name: "Igreja da Mooca",
-    annual_budget: 70000,
-    used_budget: 42000,
-    remaining_budget: 28000,
-    subsidy_requests: 9,
-    total_users: 10,
-    active_projects: 3,
-    contact: {
-      name: "Maestro Pedro Lima",
-      phone: "(11) 94444-4444",
-      email: "pedro@musica.org.br",
-      city: "São Paulo"
-    },
-    created_at: "2024-01-30",
-    status: "active"
-  },
-  {
-    id: "d5",
-    name: "Evangelismo",
-    description: "Departamento de evangelização e missões",
-    institution_id: "inst1",
-    institution_name: "União Sul-Paulista",
-    church_id: "c4",
-    church_name: "Igreja de Campinas",
-    annual_budget: 110000,
-    used_budget: 78000,
-    remaining_budget: 32000,
-    subsidy_requests: 22,
-    total_users: 15,
-    active_projects: 7,
-    contact: {
-      name: "Pastor Roberto Costa",
-      phone: "(19) 95555-5555",
-      email: "roberto@evangelismo.org.br",
-      city: "Campinas"
-    },
-    created_at: "2024-01-10",
-    status: "active"
-  }
-]
 
 // Mock data para usuários por departamento (quem solicita mais)
 const MOCK_USERS_BY_DEPARTMENT = [
@@ -209,20 +91,16 @@ const MOCK_BUDGET_TIMELINE = [
   { month: 'Jun', 'Ministério Jovem': 120000, 'Educação Cristã': 95000, 'Diaconia': 80000, 'Música': 70000, 'Evangelismo': 110000 },
 ]
 
-// Mock data para churches
-const MOCK_CHURCHES: ChurchData[] = [
-  { id: "c1", name: "Igreja Central de São Paulo", institution_id: "inst1" },
-  { id: "c2", name: "Igreja de Vila Madalena", institution_id: "inst1" },
-  { id: "c3", name: "Igreja da Mooca", institution_id: "inst1" },
-  { id: "c4", name: "Igreja de Campinas", institution_id: "inst1" },
-  { id: "c5", name: "Igreja do Rio de Janeiro", institution_id: "inst1" },
-]
+
 
 /**
  * PÁGINA DE GESTÃO DE DEPARTAMENTOS
  * Interface dedicada para gerenciar departamentos baseada no ERD do AdventistGroei
  */
 export default function DepartmentsPage() {
+  const { currentInstitutionData } = useInstitution();
+  const departments: DepartmentData[] = currentInstitutionData?.departments || [];
+  const churches: ChurchData[] = currentInstitutionData?.churches || [];
   const { i18n } = useTranslation()
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -252,27 +130,15 @@ export default function DepartmentsPage() {
   })
 
   // Estatísticas calculadas dos dados
+  type DepartmentType = typeof departments extends (infer U)[] ? U : any;
   const kpiData = useMemo(() => {
-    const totalDepartments = MOCK_DEPARTMENTS.length
-    const totalAnnualBudget = MOCK_DEPARTMENTS.reduce((sum, d) => sum + d.annual_budget, 0)
-    const totalUsedBudget = MOCK_DEPARTMENTS.reduce((sum, d) => sum + d.used_budget, 0)
-    const totalRemainingBudget = MOCK_DEPARTMENTS.reduce((sum, d) => sum + d.remaining_budget, 0)
-    const totalSubsidyRequests = MOCK_DEPARTMENTS.reduce((sum, d) => sum + d.subsidy_requests, 0)
-    const totalUsers = MOCK_DEPARTMENTS.reduce((sum, d) => sum + d.total_users, 0)
-    const totalProjects = MOCK_DEPARTMENTS.reduce((sum, d) => sum + d.active_projects, 0)
-    const avgEfficiency = Math.round(MOCK_DEPARTMENTS.reduce((sum, d) => sum + ((d.used_budget / d.annual_budget) * 100), 0) / totalDepartments)
-
+    const totalDepartments = departments.length;
+    const totalAnnualBudget = departments.reduce((sum: number, d: DepartmentType) => sum + (d.annual_budget || 0), 0);
     return {
       totalDepartments,
-      totalAnnualBudget,
-      totalUsedBudget,
-      totalRemainingBudget,
-      totalSubsidyRequests,
-      totalUsers,
-      totalProjects,
-      avgEfficiency
-    }
-  }, [])
+      totalAnnualBudget
+    };
+  }, [departments]);
 
   // Dados para KPI Cards Carrossel
   const kpiCardsData: KPICardData[] = useMemo(() => [
@@ -283,7 +149,7 @@ export default function DepartmentsPage() {
       icon: Layers,
       subtitle: "Total de departamentos",
       trend: {
-        value: 12,
+        value: 0,
         isPositive: true,
         label: "vs. mês anterior"
       }
@@ -295,114 +161,25 @@ export default function DepartmentsPage() {
       icon: DollarSign,
       subtitle: "Orçamento total anual",
       trend: {
-        value: 8,
+        value: 0,
         isPositive: true,
         label: "vs. ano anterior"
       }
-    },
-    {
-      id: "used_budget",
-      title: t.budgetUsed,
-      value: `$${(kpiData.totalUsedBudget / 1000).toFixed(0)}K`,
-      icon: TrendingUp,
-      subtitle: "Orçamento utilizado",
-      trend: {
-        value: 15,
-        isPositive: true,
-        label: "vs. mês anterior"
-      }
-    },
-    {
-      id: "remaining_budget",
-      title: t.budgetRemaining,
-      value: `$${(kpiData.totalRemainingBudget / 1000).toFixed(0)}K`,
-      icon: Shield,
-      subtitle: "Orçamento disponível",
-      trend: {
-        value: 5,
-        isPositive: true,
-        label: "vs. mês anterior"
-      }
-    },
-    {
-      id: "subsidy_requests",
-      title: t.requests,
-      value: kpiData.totalSubsidyRequests,
-      icon: Calendar,
-      subtitle: "Solicitações de subsídio",
-      trend: {
-        value: 22,
-        isPositive: true,
-        label: "vs. mês anterior"
-      }
-    },
-    {
-      id: "total_users",
-      title: "Usuários",
-      value: kpiData.totalUsers,
-      icon: Users,
-      subtitle: "Total de usuários",
-      trend: {
-        value: 18,
-        isPositive: true,
-        label: "vs. mês anterior"
-      }
-    },
-    {
-      id: "active_projects",
-      title: "Projetos Ativos",
-      value: kpiData.totalProjects,
-      icon: Building,
-      subtitle: "Projetos em andamento",
-      trend: {
-        value: 10,
-        isPositive: true,
-        label: "vs. mês anterior"
-      }
-    },
-    {
-      id: "avg_efficiency",
-      title: t.efficiency,
-      value: `${kpiData.avgEfficiency}%`,
-      icon: TrendingUp,
-      subtitle: "Eficiência média",
-      trend: {
-        value: 3,
-        isPositive: true,
-        label: "vs. mês anterior"
-      }
     }
-  ], [kpiData, t])
+  ], [kpiData, t]);
 
-  // Dados para gráficos
+  // Dados para gráficos (apenas nome e orçamento)
   const chartData = useMemo(() => {
-    // Agrupar solicitações por usuário (top 10)
-    const userRequests = MOCK_USERS_BY_DEPARTMENT
-      .sort((a, b) => b.requests - a.requests)
-      .slice(0, 8)
-      .map(user => ({
-        user: user.user.split(' ').slice(0, 2).join(' '), // Apenas primeiro e segundo nome
-        requests: user.requests,
-        department: user.department,
-        role: user.role
-      }))
-
     return {
-      budgetByDepartment: MOCK_DEPARTMENTS.map(d => ({
+      budgetByDepartment: departments.map(d => ({
         department: d.name,
-        budget: d.annual_budget,
-        used: d.used_budget,
-        remaining: d.remaining_budget,
-        utilization: Math.round((d.used_budget / d.annual_budget) * 100)
+        budget: d.annual_budget
       })),
-      subsidyRequestsByDepartment: MOCK_DEPARTMENTS.map(d => ({
-        department: d.name,
-        requests: d.subsidy_requests
-      })),
-      userRequests,
-      budgetTimeline: MOCK_BUDGET_TIMELINE
-    }
-  }, [])
+      userRequests: [],
+      budgetTimeline: [],
+      subsidyRequestsByDepartment: [] // TODO: implementar quando backend fornecer
+    };
+  }, [departments]);
 
   /**
    * Carregamento inicial dos dados
@@ -452,61 +229,33 @@ export default function DepartmentsPage() {
   }
   
   const handleEdit = (id: string) => {
-    const department = MOCK_DEPARTMENTS.find(d => d.id === id)
+    const department = departments.find(d => d.id === id);
     if (department) {
-      // Converter dados do departamento para o formato DepartmentData
-      const departmentData: DepartmentData = {
-        id: department.id,
-        institution_id: department.institution_id,
-        church_id: department.church_id,
-        name: department.name,
-        description: department.description,
-        annual_budget: department.annual_budget,
-        contact_id: null,
-        created_at: department.created_at,
-        updated_at: department.created_at,
-        created_by: 'system',
-        updated_by: 'system',
-        is_deleted: false
-      }
-      setSelectedDepartment(departmentData)
-      setIsEditDepartmentModalOpen(true)
+      setSelectedDepartment(department);
+      setIsEditDepartmentModalOpen(true);
     }
-  }
+  };
   
   const handleDelete = (id: string, name: string) => {
-    const department = MOCK_DEPARTMENTS.find(d => d.id === id)
+    const department = departments.find(d => d.id === id);
     if (department) {
-      const departmentData: DepartmentData = {
-        id: department.id,
-        institution_id: department.institution_id,
-        church_id: department.church_id,
-        name: department.name,
-        description: department.description,
-        annual_budget: department.annual_budget,
-        contact_id: null,
-        created_at: department.created_at,
-        updated_at: department.created_at,
-        created_by: 'system',
-        updated_by: 'system',
-        is_deleted: false
-      }
-      setSelectedDepartment(departmentData)
-      setIsDeleteDepartmentModalOpen(true)
+      setSelectedDepartment(department);
+      setIsDeleteDepartmentModalOpen(true);
     }
-  }
+  };
   
   const handleViewContact = (id: string) => {
-    const department = MOCK_DEPARTMENTS.find(d => d.id === id)
-    if (department && department.contact) {
+    const department = departments.find(d => d.id === id);
+    if (department && (department as any).contact) {
+      const contact = (department as any).contact;
       const contactData: ContactData = {
         id: `contact_${department.id}`,
-        name: department.contact.name,
-        phone: department.contact.phone,
+        name: contact.name,
+        phone: contact.phone,
         mobile: null,
-        email: department.contact.email,
+        email: contact.email,
         country: null,
-        city: department.contact.city,
+        city: contact.city,
         address: null,
         full_address: null,
         postal_code: null,
@@ -518,23 +267,23 @@ export default function DepartmentsPage() {
         created_by: 'system',
         updated_by: 'system',
         is_deleted: false
-      }
-      setSelectedContact(contactData)
-      setIsViewContactModalOpen(true)
+      };
+      setSelectedContact(contactData);
+      setIsViewContactModalOpen(true);
     }
-  }
+  };
 
   const handleViewBudget = (id: string) => {
-    const department = MOCK_DEPARTMENTS.find(d => d.id === id)
+    const department = departments.find(d => d.id === id);
     if (department) {
-      setSelectedDepartment(department as any)
+      setSelectedDepartment(department as any);
       // Mock budget data
       const budgetData: AnnualBudgetData = {
         id: `budget_${department.id}`,
         year: new Date().getFullYear(),
         planned_budget: department.annual_budget,
-        total_expenses: department.used_budget,
-        balance: department.remaining_budget,
+        total_expenses: department.used_budget || 0, // TODO: implementar used_budget
+        balance: (department.annual_budget || 0) - (department.used_budget || 0),
         notes: `Budget for ${department.name}`,
         approved_by: undefined,
         status: 'approved' as const,
@@ -543,11 +292,11 @@ export default function DepartmentsPage() {
         created_by: 'system',
         updated_by: 'system',
         is_deleted: false
-      }
-      setSelectedBudget(budgetData)
-      setIsBudgetModalOpen(true)
+      };
+      setSelectedBudget(budgetData);
+      setIsBudgetModalOpen(true);
     }
-  }
+  };
   
   const handleDepartmentSaved = (department: DepartmentData) => {
     toast.success("Department created successfully")
@@ -582,19 +331,8 @@ export default function DepartmentsPage() {
           </div>
           <div>
             <div className="font-medium">{row.original.name}</div>
-            <div className="text-xs text-muted-foreground">{row.original.church_name}</div>
+            <div className="text-xs text-muted-foreground">{row.original.church_name || '-'} {/* TODO: church_name não existe, implementar quando backend fornecer */}</div>
           </div>
-        </div>
-      ),
-    },
-    {
-      id: "church",
-      accessorKey: "church_name",
-      header: t.church,
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Home className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.church_name}</span>
         </div>
       ),
     },
@@ -603,60 +341,35 @@ export default function DepartmentsPage() {
       accessorKey: "annual_budget",
       header: t.annualBudget,
       cell: ({ row }) => (
-        <span className="font-medium">${row.original.annual_budget.toLocaleString()}</span>
+        <span className="font-medium">{row.original.annual_budget?.toLocaleString() ?? 'N/A'}</span>
       ),
     },
     {
       id: "used_budget",
-      accessorKey: "used_budget",
       header: t.budgetUsed,
-      cell: ({ row }) => (
-        <span className="font-medium">${row.original.used_budget.toLocaleString()}</span>
+      cell: () => (
+        <span className="font-medium">0 {/* TODO: used_budget não existe, implementar quando backend fornecer */}</span>
       ),
     },
     {
       id: "remaining_budget",
-      accessorKey: "remaining_budget",
       header: t.budgetRemaining,
-      cell: ({ row }) => (
-        <span className="font-medium text-green-600">${row.original.remaining_budget.toLocaleString()}</span>
+      cell: () => (
+        <span className="font-medium text-green-600">0 {/* TODO: remaining_budget não existe, implementar quando backend fornecer */}</span>
       ),
     },
     {
       id: "subsidy_requests",
-      accessorKey: "subsidy_requests",
       header: t.requests,
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.subsidy_requests}</span>
-        </div>
+      cell: () => (
+        <span className="font-medium">0 {/* TODO: subsidy_requests não existe, implementar quando backend fornecer */}</span>
       ),
     },
     {
       id: "efficiency",
       header: t.efficiency,
-      cell: ({ row }) => {
-        const efficiency = Math.round((row.original.used_budget / row.original.annual_budget) * 100)
-        return (
-          <Badge variant="outline" className={
-            efficiency > 80 ? 'bg-red-100 text-red-700' : 
-            efficiency > 60 ? 'bg-yellow-100 text-yellow-700' : 
-            'bg-green-100 text-green-700'
-          }>
-            {efficiency}%
-          </Badge>
-        )
-      },
-    },
-    {
-      id: "status",
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => (
-        <Badge variant={row.original.status === 'active' ? 'default' : 'secondary'}>
-          {row.original.status === 'active' ? t.active : t.inactive}
-        </Badge>
+      cell: () => (
+        <Badge variant="outline" className="bg-gray-100 text-gray-700">N/A {/* TODO: efficiency não existe, implementar quando backend fornecer */}</Badge>
       ),
     },
     {
@@ -670,14 +383,6 @@ export default function DepartmentsPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => handleViewContact(row.original.id)}>
-              <ContactRound className="w-4 h-4 mr-2" />
-              {t.viewContact}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleViewBudget(row.original.id)}>
-              <DollarSign className="w-4 h-4 mr-2" />
-              View Budget
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
               <Edit className="w-4 h-4 mr-2" />
               {t.editDepartment}
@@ -907,7 +612,7 @@ export default function DepartmentsPage() {
           <CardContent className="overflow-hidden">
             <DataTable
               columns={columns}
-              data={MOCK_DEPARTMENTS}
+              data={departments}
               searchKey="name"
               searchPlaceholder={t.searchDepartments}
               filterableColumns={[
@@ -940,7 +645,7 @@ export default function DepartmentsPage() {
           isOpen={isAddDepartmentModalOpen}
           onOpenChange={setIsAddDepartmentModalOpen}
           institutionId="inst1"
-          churches={MOCK_CHURCHES}
+          churches={churches}
           onSave={handleDepartmentSaved}
         />
         
@@ -950,7 +655,7 @@ export default function DepartmentsPage() {
             isOpen={isEditDepartmentModalOpen}
             onOpenChange={setIsEditDepartmentModalOpen}
             department={selectedDepartment}
-            churches={MOCK_CHURCHES}
+            churches={churches}
             onSave={handleDepartmentUpdated}
           />
         )}
