@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import { useInstitution } from '@/contexts/institution-context'
 import { useTranslation } from "react-i18next"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -42,6 +43,7 @@ export function EditInstitutionModal({
   onSave
 }: EditInstitutionModalProps) {
   const { t } = useTranslation()
+  const { updateInstitution, updateLoading, updateError, refetchInstitutions } = useInstitution()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState<Partial<Institution>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -99,30 +101,23 @@ export function EditInstitutionModal({
     const loadingToast = toast.loading(t('institutions.toasts.updating'))
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      const updatedInstitution: Institution = {
-        ...institution,
-        ...formData,
-        name: formData.name!.trim(),
-        denomination: formData.denomination!.trim(),
-        language_preference: formData.language_preference!,
-        updated_at: new Date().toISOString()
+      const variables = {
+        id: institution.id,
+        name: formData.name?.trim(),
+        denomination: formData.denomination?.trim(),
+        language_preference: formData.language_preference,
       }
-
+      const { data } = await updateInstitution({ variables })
       toast.dismiss(loadingToast)
       toast.success(t('institutions.toasts.updated'), {
         duration: 3000,
         icon: '✅'
       })
-
-      if (onSave) {
-        onSave(updatedInstitution)
+      refetchInstitutions()
+      if (onSave && data?.updateInstitution) {
+        onSave({ ...institution, ...formData, ...data.updateInstitution })
       }
-
       onOpenChange(false)
-
     } catch (error) {
       toast.dismiss(loadingToast)
       toast.error(t('institutions.toasts.update_failed'))
@@ -195,7 +190,7 @@ export function EditInstitutionModal({
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">
-                {t('institutions.fields.name')} *
+                {t('institutions.fields.name')}
               </Label>
               <Input
                 id="name"
@@ -212,7 +207,7 @@ export function EditInstitutionModal({
 
             <div className="space-y-2">
               <Label htmlFor="denomination">
-                {t('institutions.fields.denomination')} *
+                {t('institutions.fields.denomination')}
               </Label>
               <Input
                 id="denomination"
@@ -229,7 +224,7 @@ export function EditInstitutionModal({
 
             <div className="space-y-2">
               <Label htmlFor="language_preference">
-                {t('institutions.fields.language_preference')} *
+                {t('institutions.fields.language_preference')}
               </Label>
               <Select
                 value={formData.language_preference || ''}
@@ -263,12 +258,15 @@ export function EditInstitutionModal({
             </Button>
             <Button 
               onClick={handleSave} 
-              disabled={isLoading}
+              disabled={isLoading || updateLoading}
               className="w-full sm:w-auto"
             >
               <Save className="w-4 h-4 mr-2" />
-              {isLoading ? t('institutions.saving') : t('common.save')}
+              {(isLoading || updateLoading) ? t('institutions.saving') : t('common.save')}
             </Button>
+            {updateError && (
+              <p className="text-sm text-red-600 mt-2">{t('institutions.toasts.update_failed')}</p>
+            )}
           </div>
         </div>
       </DialogContent>

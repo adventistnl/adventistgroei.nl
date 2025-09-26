@@ -60,6 +60,7 @@ export default function InstitutionsPage() {
   // Modal states
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
   const [isEditInstitutionModalOpen, setIsEditInstitutionModalOpen] = useState(false)
+  const [editInstitutionId, setEditInstitutionId] = useState<string | null>(null)
   const [isDeleteInstitutionModalOpen, setIsDeleteInstitutionModalOpen] = useState(false)
   const [deleteInstitutionId, setDeleteInstitutionId] = useState<string | null>(null)
   const [selectedContact, setSelectedContact] = useState<ContactData | null>(null)
@@ -359,13 +360,19 @@ export default function InstitutionsPage() {
             <DropdownMenuContent align="end">
               <DropdownMenuItem
                 onClick={() => {
-                  toast.success(t('institutions.toasts.institution_details_loaded'))
+                  // Exemplo: abrir modal de detalhes
+                  toast.success(t('institutions.toasts.institution_details_loaded'));
                 }}
               >
                 <Eye className="mr-2 h-4 w-4" />
                 {t('actions.view_details')}
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setEditInstitutionId(institution.id);
+                  setIsEditInstitutionModalOpen(true);
+                }}
+              >
                 <Edit className="mr-2 h-4 w-4" />
                 {t('common.edit')}
               </DropdownMenuItem>
@@ -528,27 +535,17 @@ export default function InstitutionsPage() {
         )}
 
         {/* Edit Institution Modal */}
-        {activeInstitution && (
-          <EditInstitutionModal
-            isOpen={isEditInstitutionModalOpen}
-            onOpenChange={setIsEditInstitutionModalOpen}
-            institution={{
-              id: activeInstitution.id,
-              name: activeInstitution.name,
-              denomination: activeInstitution.denomination,
-              language_preference: activeInstitution.language_preference as "en" | "nl",
-              contact_id: activeInstitution.contact_id,
-              created_at: activeInstitution.created_at,
-              updated_at: activeInstitution.updated_at,
-              created_by: activeInstitution.created_by || '',
-              updated_by: activeInstitution.updated_by || '',
-              is_deleted: activeInstitution.is_deleted || false,
-              deleted_at: null,
-              deleted_by: null
-            }}
-            onSave={handleInstitutionSaved}
-          />
-        )}
+        <EditInstitutionModal
+          isOpen={isEditInstitutionModalOpen}
+          onOpenChange={(open) => {
+            setIsEditInstitutionModalOpen(open);
+            if (!open) setEditInstitutionId(null);
+          }}
+          institution={
+            institutionsData.find(i => i.id === (editInstitutionId || activeInstitution?.id)) || null
+          }
+          onSave={handleInstitutionSaved}
+        />
 
         {/* Delete Institution Modal */}
         <DeleteInstitutionModal

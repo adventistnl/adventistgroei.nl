@@ -32,3 +32,19 @@ export const DELETE_INSTITUTION_MUTATION = gql`
       }
   }
 `;
+
+export const UPDATE_INSTITUTION_MUTATION = gql`
+  mutation UpdateInstitution (
+    $id: String!,
+    $name: String,
+    $denomination: String,
+    $language_preference: String
+  ) {
+    updateInstitution(
+        data: { name: $name, denomination: $denomination, language_preference: $language_preference }
+        id: $id
+    ) {
+        id
+    }
+  }
+`;

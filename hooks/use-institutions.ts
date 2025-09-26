@@ -5,7 +5,7 @@ import { Institutions_institutions } from "@/types/Institutions";
 import { InstitutionById_institution } from "@/types/InstitutionById";
 import { ApolloCache, ErrorLike } from "@apollo/client";
 import { CreateInstitution, CreateInstitutionVariables } from "@/types/CreateInstitution";
-import { useCreateInstitutionMutation, useDeleteInstitutionMutation } from "./graphql/use-institution-mutation";
+import { useCreateInstitutionMutation, useDeleteInstitutionMutation, useUpdateInstitutionMutation } from "./graphql/use-institution-mutation";
 
 export interface iInstitutions {
   institutions: Institutions_institutions[];
@@ -22,6 +22,10 @@ export interface iInstitutions {
   deleteLoading?: boolean;
   deleteError?: ErrorLike | undefined;
   deletedInstitution?: any;
+  updateInstitution: ReturnType<typeof useUpdateInstitutionMutation>[0];
+  updateLoading?: boolean;
+  updateError?: ErrorLike | undefined;
+  updatedInstitution?: any;
 }
 
 export function useInstitutions(id?: string): iInstitutions & {
@@ -44,6 +48,7 @@ export function useInstitutions(id?: string): iInstitutions & {
   );
   const [createInstitution, { data: createdInstitution, loading: createLoading, error: createError }] = useCreateInstitutionMutation();
   const [deleteInstitution, { data: deletedInstitution, loading: deleteLoading, error: deleteError }] = useDeleteInstitutionMutation();
+  const [updateInstitution, { data: updatedInstitution, loading: updateLoading, error: updateError }] = useUpdateInstitutionMutation();
 
   const institutions = useMemo(() => {
     if (!institutionsData || !institutionsData.institutions) {
@@ -81,6 +86,10 @@ export function useInstitutions(id?: string): iInstitutions & {
     deleteLoading,
     deleteError,
     deletedInstitution,
+    updateInstitution,
+    updateLoading,
+    updateError,
+    updatedInstitution,
     refetchInstitutions: () => { refetchInstitutionsRaw(); },
     refetchInstitutionById: () => { refetchInstitutionByIdRaw(); },
   };

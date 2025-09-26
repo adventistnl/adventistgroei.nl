@@ -31,6 +31,14 @@ interface InstitutionContextType {
   createLoading?: boolean
   createError?: any
   createdInstitution?: any
+  deleteInstitution: (...args: any[]) => any
+  deleteLoading?: boolean
+  deleteError?: any
+  deletedInstitution?: any
+  updateInstitution: (...args: any[]) => any
+  updateLoading?: boolean
+  updateError?: any
+  updatedInstitution?: any
   refetchInstitutions: () => void;
   refetchInstitutionById: () => void;
 }
@@ -63,8 +71,16 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     createLoading,
     createError,
     createdInstitution,
+    deleteInstitution,
+    deleteLoading,
+    deleteError,
+    deletedInstitution,
     refetchInstitutions,
     refetchInstitutionById,
+    updateInstitution,
+    updateLoading,
+    updateError,
+    updatedInstitution,
   } = useInstitutions(activeInstitution?.id);
 
   // Garante que cada instituição tenha um logo válido
@@ -129,9 +145,17 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     createLoading,
     createError,
     createdInstitution,
+    deleteInstitution,
+    deleteLoading,
+    deleteError,
+    deletedInstitution,
+    updateInstitution,
+    updateLoading,
+    updateError,
+    updatedInstitution,
     refetchInstitutions,
     refetchInstitutionById,
-  }), [institutions, activeInstitution, switchInstitution, addInstitution, loading, error, createInstitution, createLoading, createError, createdInstitution, refetchInstitutions, refetchInstitutionById]);
+  }), [institutions, activeInstitution, switchInstitution, addInstitution, loading, error, createInstitution, createLoading, createError, createdInstitution, deleteInstitution, deleteLoading, deleteError, deletedInstitution, updateInstitution, updateLoading, updateError, updatedInstitution, refetchInstitutions, refetchInstitutionById]);
 
   return (
     <InstitutionContext.Provider value={value}>
