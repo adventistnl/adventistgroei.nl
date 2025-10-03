@@ -1,0 +1,66 @@
+                <BigCalendar
+                  localizer={localizer}
+                  events={calendarEvents}
+                  startAccessor="start"
+                  endAccessor="end"
+                  view={calendarView}
+                  onView={setCalendarView}
+                  date={selectedDate}
+                  onNavigate={(date) => {
+                    setSelectedDate(date)
+                    // Força atualização do título quando navegar
+                    setCurrentTime(moment())
+                  }}
+                  eventPropGetter={handleEventStyleGetter}
+                  popup
+                  showMultiDayTimes
+                  step={30}
+                  showAllEvents
+                  culture="pt-BR"
+                  messages={{
+                    next: "Próximo",
+                    previous: "Anterior",
+                    today: "Hoje",
+                    month: "Mês",
+                    week: "Semana",
+                    day: "Dia",
+                    agenda: "Agenda",
+                    date: "Data",
+                    time: "Horário",
+                    event: "Evento",
+                    allDay: "Dia todo",
+                    noEventsInRange: "Nenhum evento neste período",
+                    showMore: (total: number) => `+ Ver mais ${total}`,
+                    yesterday: "Ontem",
+                    tomorrow: "Amanhã",
+                    work_week: "Semana de Trabalho"
+                  }}
+                  formats={{
+                    monthHeaderFormat: "MMMM [de] YYYY",
+                    dayHeaderFormat: "dddd, DD [de] MMMM",
+                    dayRangeHeaderFormat: ({ start, end }: { start: Date; end: Date }) => {
+                      const startMoment = moment(start)
+                      const endMoment = moment(end)
+                      if (startMoment.month() === endMoment.month()) {
+                        return `${startMoment.format('DD')} - ${endMoment.format('DD [de] MMMM [de] YYYY')}`
+                      }
+                      return `${startMoment.format('DD/MM')} - ${endMoment.format('DD/MM/YYYY')}`
+                    },
+                    agendaHeaderFormat: ({ start, end }: { start: Date; end: Date }) => 
+                      `${moment(start).format('DD [de] MMMM')} - ${moment(end).format('DD [de] MMMM [de] YYYY')}`,
+                    agendaDateFormat: "dddd, DD/MM",
+                    agendaTimeFormat: "HH:mm",
+                    dateFormat: "DD",
+                    dayFormat: "DD/MM",
+                    weekdayFormat: "ddd",
+                    timeGutterFormat: "HH:mm",
+                    selectRangeFormat: ({ start, end }: { start: Date; end: Date }) => 
+                      `${moment(start).format('HH:mm')} - ${moment(end).format('HH:mm')}`,
+                    eventTimeRangeFormat: ({ start, end }: { start: Date; end: Date }) => 
+                      `${moment(start).format('HH:mm')} - ${moment(end).format('HH:mm')}`
+                  }}
+                  onSelectEvent={(event) => {
+                    console.log('Evento selecionado:', event)
+                    // Aqui você pode abrir um modal com detalhes do evento
+                  }}
+                />

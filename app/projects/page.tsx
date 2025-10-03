@@ -15,6 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { ProjectsTable, ProjectTableData } from "@/components/projects/projects-table"
 import { useRouter } from "next/navigation"
 import { projectTranslations } from "@/lib/translations/projects"
@@ -41,7 +47,10 @@ import {
   BarChart3,
   PieChart,
   LineChart,
-  Eye
+  Eye,
+  Edit,
+  Trash2,
+  MoreHorizontal
 } from "lucide-react"
 import {
   Area,
@@ -434,6 +443,47 @@ export default function ProjectsPage() {
         return date.toLocaleDateString()
       },
     },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const project = row.original
+        
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => handleViewProject(project)}
+                className="cursor-pointer"
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                View Project
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleEditProject(project)}
+                className="cursor-pointer"
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                Edit Project
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleDeleteProject(project)}
+                className="cursor-pointer text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Project
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )
+      },
+    },
   ]
 
   // Simulate data loading
@@ -494,16 +544,21 @@ export default function ProjectsPage() {
 
 
   const handleViewProject = (project: ProjectTableData) => {
+    toast.success(`📋 Opening project: ${project.title}`, { duration: 2000 })
     router.push(`/projects/${project.id}`)
   }
 
   const handleEditProject = (project: ProjectTableData) => {
+    toast.success(`✏️ Editing project: ${project.title}`, { duration: 2000 })
     router.push(`/projects/new-project?edit=${project.id}`)
   }
 
   const handleDeleteProject = (project: ProjectTableData) => {
-    setProjects(prev => prev.filter(p => p.id !== project.id))
-    toast.success(t_project.toasts.projectDeleted, { duration: 3000 })
+    // Show confirmation before deleting
+    if (window.confirm(`Are you sure you want to delete "${project.title}"? This action cannot be undone.`)) {
+      setProjects(prev => prev.filter(p => p.id !== project.id))
+      toast.success(`🗑️ Project "${project.title}" deleted successfully`, { duration: 3000 })
+    }
   }
 
   const handleCreateEvent = (project: ProjectTableData) => {
