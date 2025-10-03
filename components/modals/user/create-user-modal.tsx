@@ -11,16 +11,19 @@ import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Users, Plus } from "lucide-react"
 import toast from "react-hot-toast"
-import { Institution, Church, Region, Department, Role } from "@/data/usersData"
+import { InstitutionById_institution_churches, InstitutionById_institution_departments, InstitutionById_institution_regions } from "@/types/InstitutionById"
+import { Institutions_institutions } from "@/types/Institutions"
+import { Role_role } from "@/types/Role"
+import { useLanguagePreferences } from '@/hooks/use-language-preferences';
 
 export interface CreateUserModalProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  institutions: Institution[]
-  churches: Church[]
-  regions: Region[]
-  departments: Department[]
-  roles: Role[]
+  institutions: Institutions_institutions[]
+  churches: InstitutionById_institution_churches[]
+  regions: InstitutionById_institution_regions[]
+  departments: InstitutionById_institution_departments[]
+  roles: Role_role[]
   onSuccess?: (userData: UserFormData) => void
 }
 
@@ -47,6 +50,8 @@ export function CreateUserModal({
   onSuccess
 }: CreateUserModalProps) {
   const { t } = useTranslation()
+  const languageOptions = useLanguagePreferences(); // Usando o novo hook
+
   const [isLoading, setIsLoading] = useState(false)
   const [userForm, setUserForm] = useState<UserFormData>({
     name: '',
@@ -209,10 +214,11 @@ export function CreateUserModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="pt">Português</SelectItem>
-                  <SelectItem value="es">Español</SelectItem>
-                  <SelectItem value="nl">Nederlands</SelectItem>
+                  {languageOptions.map((lang) => (
+                    <SelectItem key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

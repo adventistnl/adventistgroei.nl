@@ -181,7 +181,6 @@ export const GET_INSTITUTION_BY_ID_FULL_DATA_QUERY = gql`
             church_id
             name
             description
-            annual_budget
             contact_id
             created_at
             updated_at
@@ -206,8 +205,23 @@ export const GET_INSTITUTION_BY_ID_FULL_DATA_QUERY = gql`
             deleted_by
             contact_id
             institution_id
-            church_id
-            department_id
+            church {
+              id
+              name
+            }
+            institution {
+              id
+              name
+            }
+            user_roles {
+              id
+              role {
+                id
+                name
+                key_code
+                description
+              }
+            }
         }
         regions {
             id

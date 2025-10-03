@@ -13,17 +13,22 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Edit, Save } from "lucide-react"
 import toast from "react-hot-toast"
-import { User, Institution, Church, Region, Department, Role } from "@/data/usersData"
+import { InstitutionById_institution_churches, InstitutionById_institution_departments, InstitutionById_institution_regions, InstitutionById_institution_users as User } from "@/types/InstitutionById"
+import { Institutions_institutions } from "@/types/Institutions"
+import { Role_role } from "@/types/Role"
+import { useUser } from '@/hooks/use-user';
+import { useLanguagePreferences } from '@/hooks/use-language-preferences';
+import { useInstitution } from "@/contexts/institution-context"
 
 export interface EditUserModalProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   user: User | null
-  institutions: Institution[]
-  churches: Church[]
-  regions: Region[]
-  departments: Department[]
-  roles: Role[]
+  institutions: Institutions_institutions[]
+  churches: InstitutionById_institution_churches[]
+  regions: InstitutionById_institution_regions[]
+  departments: InstitutionById_institution_departments[]
+  roles: Role_role[]
   onSuccess?: (userData: EditUserFormData) => void
 }
 
@@ -52,6 +57,10 @@ export function EditUserModal({
   onSuccess
 }: EditUserModalProps) {
   const { t } = useTranslation()
+  const { updateUserById } = useUser({}); // Corrigido para usar o hook useUser
+  const { refetchInstitutionById } = useInstitution(); // Hook para refetch
+  const languageOptions = useLanguagePreferences(); // Usando o novo hook
+
   const [isLoading, setIsLoading] = useState(false)
   const [userForm, setUserForm] = useState<EditUserFormData>({
     id: '',
@@ -66,23 +75,31 @@ export function EditUserModal({
     is_active: true
   })
 
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [unselectedRoles, setUnselectedRoles] = useState<string[]>([]);
+
   // Update form when user changes
   useEffect(() => {
     if (user) {
-      setUserForm({
+      setUserForm((prev) => ({
+        ...prev,
         id: user.id,
         name: user.name,
         email: user.email,
         language_preference: user.language_preference,
         institution_id: user.institution_id,
-        church_id: user.church_id,
-        region_id: user.region_id || '',
-        department_id: user.department_id || '',
-        role_ids: user.user_roles.map(role => role.id),
-        is_active: !user.is_deleted
-      })
+        church_id: user.church.id,
+        region_id: '',
+        department_id: '',
+        role_ids: user.user_roles?.map((role) => role.role.id) || [], // Garantir que as roles sejam preselecionadas
+        is_active: !user.is_deleted,
+      }));
+
+      const userRoleIds = user.user_roles?.map((role) => role.role.id) || [];
+      setSelectedRoles(userRoleIds);
+      setUnselectedRoles(roles.map((role) => role.id).filter((id) => !userRoleIds.includes(id)));
     }
-  }, [user])
+  }, [user, roles])
 
   // Filter churches and regions based on selected institution
   const filteredChurches = churches.filter(church => 
@@ -99,45 +116,64 @@ export function EditUserModal({
 
   const handleSubmit = async () => {
     if (!userForm.name || !userForm.email || !userForm.institution_id || !userForm.church_id) {
-      toast.error("Please fill in all required fields")
-      return
+      toast.error("Please fill in all required fields");
+      return;
     }
 
-    if (userForm.role_ids.length === 0) {
-      toast.error("Please assign at least one role")
-      return
+    if (selectedRoles.length === 0) {
+      toast.error("Please assign at least one role");
+      return;
     }
 
-    setIsLoading(true)
-    const loadingToast = toast.loading(t('users.toasts.updating_user'))
-    
+    setIsLoading(true);
+    const loadingToast = toast.loading(t('users.toasts.updating_user'));
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      toast.dismiss(loadingToast)
+      const addedRoles = selectedRoles.filter(
+        (roleId) => !user?.user_roles?.some((role) => role.role.id === roleId)
+      );
+
+      const removedRoles = unselectedRoles.filter((roleId) =>
+        user?.user_roles?.some((role) => role.role.id === roleId)
+      );
+
+      await updateUserById(
+        userForm.id,
+        {
+          is_deleted: !userForm.is_active,
+          name: userForm.name,
+          email: userForm.email,
+          language_preference: userForm.language_preference,
+          institution_id: userForm.institution_id,
+          church_id: userForm.church_id,
+          department_id: userForm.department_id || "",
+        },
+        { add: addedRoles, remove: removedRoles }
+      );
+
+      refetchInstitutionById(); // Refetch após sucesso
+
+      toast.dismiss(loadingToast);
       toast.success(t('users.toasts.user_updated'), {
         duration: 3000,
         icon: '✅'
-      })
-      
-      // Call success callback if provided
+      });
+
       if (onSuccess) {
         const formDataToSend = {
           ...userForm,
           department_id: userForm.department_id === 'none' ? undefined : userForm.department_id
-        }
-        onSuccess(formDataToSend)
+        };
+        onSuccess(formDataToSend);
       }
-      
-      // Close modal
-      onOpenChange(false)
-      
+
+      onOpenChange(false);
+
     } catch (error) {
-      toast.dismiss(loadingToast)
-      toast.error(t('users.toasts.user_update_failed'))
+      toast.dismiss(loadingToast);
+      toast.error(t('users.toasts.user_update_failed'));
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -148,12 +184,13 @@ export function EditUserModal({
   }
 
   const handleRoleToggle = (roleId: string, checked: boolean) => {
-    setUserForm(prev => ({
-      ...prev,
-      role_ids: checked 
-        ? [...prev.role_ids, roleId]
-        : prev.role_ids.filter(id => id !== roleId)
-    }))
+    if (checked) {
+      setSelectedRoles((prev) => [...prev, roleId]);
+      setUnselectedRoles((prev) => prev.filter((id) => id !== roleId));
+    } else {
+      setUnselectedRoles((prev) => [...prev, roleId]);
+      setSelectedRoles((prev) => prev.filter((id) => id !== roleId));
+    }
   }
 
   const handleInstitutionChange = (institutionId: string) => {
@@ -241,10 +278,11 @@ export function EditUserModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="pt">Português</SelectItem>
-                  <SelectItem value="es">Español</SelectItem>
-                  <SelectItem value="nl">Nederlands</SelectItem>
+                  {languageOptions.map((lang) => (
+                    <SelectItem key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -348,8 +386,8 @@ export function EditUserModal({
                 <div key={role.id} className="flex items-center space-x-3">
                   <Checkbox
                     id={`edit-role-${role.id}`}
-                    checked={userForm.role_ids.includes(role.id)}
-                    onCheckedChange={(checked) => handleRoleToggle(role.id, checked as boolean)}
+                    checked={selectedRoles.includes(role.id)} // Ensure the checkbox reflects the selectedRoles state
+                    onCheckedChange={(checked) => handleRoleToggle(role.id, checked as boolean)} // Correctly update state on change
                     disabled={isLoading}
                   />
                   <Label htmlFor={`edit-role-${role.id}`} className="flex-1 cursor-pointer">

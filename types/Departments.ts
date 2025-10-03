@@ -14,7 +14,6 @@ export interface Departments_departments {
   church_id: string;
   name: string;
   description: string;
-  annual_budget: any;
   contact_id: string | null;
   created_at: any;
   updated_at: any;

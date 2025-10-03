@@ -16,6 +16,7 @@ export enum LanguagePreference {
 }
 
 export enum ProjectType {
+  CHURCH_PLANTING = "CHURCH_PLANTING",
   EVANGELISM = "EVANGELISM",
   MISSION = "MISSION",
   OTHER = "OTHER",

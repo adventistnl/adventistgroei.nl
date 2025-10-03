@@ -88,7 +88,7 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
       generateLinkForRole({
             inviter_id: loggedUserId, // Replace with actual inviter ID
             email: '',
-            institution_id: activeInstitution.id,
+            institution_id: activeInstitution?.id || "",
             language_preference: currentLanguage,
             role_ids: [selectedRole],
           });
@@ -137,7 +137,7 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
         const variables: InviteUserVariables = {
           email: data.email!,
           inviter_id: loggedUserId!, // Replace with actual inviter ID
-          institution_id: activeInstitution.id,
+          institution_id: activeInstitution?.id || "",
           language_preference: currentLanguage,
           role_ids: [data.role],
         }

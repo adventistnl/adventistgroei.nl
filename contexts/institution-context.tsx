@@ -4,6 +4,8 @@ import React, { createContext, useContext, useState, useCallback, useMemo } from
 import { Building2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useInstitutions } from '@/hooks/use-institutions'
+import { InstitutionById_institution } from '@/types/InstitutionById'
+import { Institutions_institutions } from '@/types/Institutions'
 
 interface Institution {
   id: string
@@ -20,8 +22,8 @@ interface Institution {
 }
 
 interface InstitutionContextType {
-  institutions: any[];
-  activeInstitution: any | null;
+  institutions: Institutions_institutions[];
+  activeInstitution: InstitutionById_institution  | null;
   setActiveInstitution: (institution: any) => void;
   switchInstitution: (institutionId: string) => void;
   addInstitution: (institution: any) => void;
@@ -41,7 +43,7 @@ interface InstitutionContextType {
   updatedInstitution?: any;
   refetchInstitutions: () => void;
   refetchInstitutionById: () => void;
-  currentInstitutionData?: any;
+  currentInstitutionData: InstitutionById_institution | null;
 }
 
 const InstitutionContext = createContext<InstitutionContextType | undefined>(undefined)
@@ -83,7 +85,6 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     updateError,
     updatedInstitution,
   } = useInstitutions(activeInstitution?.id);
-
   // Garante que cada instituição tenha um logo válido
   const institutions = React.useMemo(() => {
     return (rawInstitutions || []).map(inst => ({

@@ -11,7 +11,9 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { AlertTriangle, Trash2, Shield, ChevronDown, ChevronRight, Lock, Database, UserX } from "lucide-react"
 import toast from "react-hot-toast"
-import { User } from "@/data/usersData"
+import { InstitutionById_institution_users as User } from "@/types/InstitutionById"
+import { useUser } from '@/hooks/use-user';
+import { useInstitution } from "@/contexts/institution-context"
 
 export interface DeleteUserModalProps {
   isOpen: boolean
@@ -27,6 +29,8 @@ export function DeleteUserModal({
   onSuccess
 }: DeleteUserModalProps) {
   const { t } = useTranslation()
+  const { deleteUserById } = useUser({}); // Corrigido para usar o hook useUser
+  const { refetchInstitutionById } = useInstitution(); // Hook para refetch
   const [isLoading, setIsLoading] = useState(false)
   const [consequencesOpen, setConsequencesOpen] = useState(false)
   const [understoodConsequences, setUnderstoodConsequences] = useState(false)
@@ -39,9 +43,10 @@ export function DeleteUserModal({
     const loadingToast = toast.loading(t('users.toasts.deleting_user'))
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      await deleteUserById(user.id)
+
+      refetchInstitutionById(); // Refetch após sucesso
+
       toast.dismiss(loadingToast)
       toast.success(t('users.toasts.user_deleted'), {
         duration: 3000,
@@ -105,9 +110,9 @@ export function DeleteUserModal({
                   <h4 className="font-semibold text-lg truncate">{user.name}</h4>
                   <p className="text-sm text-muted-foreground font-mono truncate">{user.email}</p>
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {user.user_roles.map((role) => (
+                    {user.user_roles?.map((role) => (
                       <Badge key={role.id} variant="outline" className="text-xs">
-                        {role.name}
+                        {role.role.name}
                       </Badge>
                     ))}
                   </div>

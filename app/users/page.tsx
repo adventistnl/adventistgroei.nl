@@ -79,26 +79,9 @@ import {
   ResponsiveContainer
 } from "recharts"
 
-// Mock Data
-import {
-  users,
-  roles,
-  institutions,
-  churches,
-  regions,
-  departments,
-  getUsersKPIs,
-  getUsersByRole,
-  getUsersByInstitution,
-  getUsersByRegion,
-  getUserGrowthOverTime,
-  type User,
-  type Role,
-  type Institution,
-  type Church,
-  type Region,
-  type Department
-} from "@/data/usersData"
+// Hooks
+import { useUserKPI } from "@/hooks/KPI/use-users-kpi"
+import { useLanguagePreferences } from '@/hooks/use-language-preferences';
 
 // User Modals
 import { CreateUserModal, EditUserModal, DeleteUserModal } from "@/components/modals/user"
@@ -109,10 +92,23 @@ import { ColumnDef } from "@tanstack/react-table"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionGroup, PermissionResolverName } from "@/types/graphql-global-types"
 import UnauthorizedPage from "../unauthorized/page"
+import { useInstitution } from "@/contexts/institution-context"
+import { InstitutionById_institution_users as User } from "@/types/InstitutionById"
+import { useRoles } from "@/hooks/use-roles"
 
 export default function UsersPage() {
   const { t } = useTranslation()
   const router = useRouter()
+  const { currentInstitutionData, institutions} = useInstitution()
+  const { roles } = useRoles({}); // Obtém os roles através do hook
+  const languageOptions = useLanguagePreferences(); // Usando o novo hook
+
+  // Substitui os dados mockados por currentInstitutionData
+  const churches = currentInstitutionData?.churches || [];
+  const regions = currentInstitutionData?.regions || [];
+  const departments = currentInstitutionData?.departments || [];
+  const users = currentInstitutionData?.users || [];
+  
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
@@ -134,7 +130,6 @@ export default function UsersPage() {
     title: t('users.title'),
     breadcrumbs
   })
-
   // Load data
   useEffect(() => {
     const loadData = async () => {
@@ -215,12 +210,17 @@ export default function UsersPage() {
     setIsCreateUserOpen(true)
   }
 
-  // Get analytics data
-  const kpiData = getUsersKPIs()
-  const roleDistributionData = getUsersByRole()
-  const institutionDistributionData = getUsersByInstitution()
-  const regionDistributionData = getUsersByRegion()
-  const growthData = getUserGrowthOverTime()
+  // Substitui os dados mockados por KPIs calculados
+  const {
+    totalUsers,
+    activeUsers,
+    inactiveUsers,
+    newUsersThisMonth,
+    usersByRole,
+    usersByInstitution,
+    usersByRegion,
+    userGrowthOverTime,
+  } = useUserKPI()
 
   // User table columns
   const userColumns: ColumnDef<User>[] = [
@@ -267,26 +267,26 @@ export default function UsersPage() {
       id: "language",
       accessorKey: "language_preference",
       header: t('users.table.language'),
-      cell: ({ row }) => (
-        <Badge variant="outline" className="font-mono">
-          {row.original.language_preference.toUpperCase()}
-        </Badge>
-      ),
+      cell: ({ row }) => {
+        const user = row.original
+        const language = languageOptions.find(lang => lang.value === user.language_preference);
+        return language ? language.label : user.language_preference;
+      },
     },
     {
-      id: "institution",
-      accessorKey: "institution_name",
+      id: "institution_name",
+      accessorKey: "institution.name",
       header: t('users.table.institution'),
       cell: ({ row }) => (
-        <div className="text-sm max-w-xs truncate">{row.original.institution_name}</div>
+        <div className="text-sm max-w-xs truncate">{row.original.institution?.name || 'N/A'}</div>
       ),
     },
     {
-      id: "church",
-      accessorKey: "church_name",
+      id: "church_name",
+      accessorKey: "church.name",
       header: t('users.table.church'),
       cell: ({ row }) => (
-        <div className="text-sm max-w-xs truncate">{row.original.church_name}</div>
+        <div className="text-sm max-w-xs truncate">{row.original.church?.name  || 'N/A'}</div>
       ),
     },
     {
@@ -296,14 +296,14 @@ export default function UsersPage() {
         const user = row.original
         return (
           <div className="flex flex-wrap gap-1">
-            {user.user_roles.map((role) => (
+            {user.user_roles?.map((role) => (
               <Badge 
                 key={role.id} 
-                variant={role.key_code === 'ADMIN' ? 'default' : 'secondary'}
+                variant={role.role.key_code === 'ADMIN' ? 'default' : 'secondary'}
                 className="text-xs"
               >
-                {role.key_code === 'ADMIN' && <Crown className="w-3 h-3 mr-1" />}
-                {role.name}
+                {role.role.key_code === 'ADMIN' && <Crown className="w-3 h-3 mr-1" />}
+                {role.role.name}
               </Badge>
             ))}
           </div>
@@ -444,7 +444,7 @@ export default function UsersPage() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{kpiData.totalUsers}</div>
+                <div className="text-2xl font-bold">{totalUsers}</div>
                 <p className="text-xs text-muted-foreground">
                   {t('users.kpis.total_users_description')}
                 </p>
@@ -457,9 +457,9 @@ export default function UsersPage() {
                 <UserCheck className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">{kpiData.activeUsers}</div>
+                <div className="text-2xl font-bold text-green-600">{activeUsers}</div>
                 <p className="text-xs text-muted-foreground">
-                  {Math.round((kpiData.activeUsers / kpiData.totalUsers) * 100)}% {t('users.kpis.of_total')}
+                  {Math.round((activeUsers / totalUsers) * 100)}% {t('users.kpis.of_total')}
                 </p>
               </CardContent>
             </Card>
@@ -470,7 +470,7 @@ export default function UsersPage() {
                 <TrendingUp className="h-4 w-4 text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-600">{kpiData.newUsersThisMonth}</div>
+                <div className="text-2xl font-bold text-blue-600">{newUsersThisMonth}</div>
                 <p className="text-xs text-muted-foreground">
                   {t('users.kpis.new_users_month_description')}
                 </p>
@@ -483,7 +483,7 @@ export default function UsersPage() {
                 <UserX className="h-4 w-4 text-red-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-red-600">{kpiData.inactiveUsers}</div>
+                <div className="text-2xl font-bold text-red-600">{inactiveUsers}</div>
                 <p className="text-xs text-muted-foreground">
                   {t('users.kpis.deleted_users_description')}
                 </p>
@@ -508,7 +508,7 @@ export default function UsersPage() {
               </CardHeader>
               <CardContent>
                 <ChartContainer config={roleChartConfig} className="h-[300px] w-full">
-                  <BarChart data={roleDistributionData}>
+                  <BarChart data={usersByRole}>
                     <CartesianGrid vertical={false} />
                     <XAxis 
                       dataKey="role" 
@@ -550,7 +550,7 @@ export default function UsersPage() {
                       content={<ChartTooltipContent hideLabel />}
                     />
                     <Pie
-                      data={institutionDistributionData}
+                      data={usersByInstitution}
                       dataKey="users"
                       nameKey="institution"
                       cx="50%"
@@ -559,7 +559,7 @@ export default function UsersPage() {
                       outerRadius={120}
                       paddingAngle={2}
                     >
-                      {institutionDistributionData.map((entry, index) => (
+                      {usersByInstitution.map((entry, index) => (
                         <Cell
                           key={`cell-${index}`}
                           fill={[
@@ -586,7 +586,7 @@ export default function UsersPage() {
               </CardHeader>
               <CardContent>
                 <ChartContainer config={growthChartConfig} className="h-[300px] w-full">
-                  <AreaChart data={growthData}>
+                  <AreaChart data={userGrowthOverTime}>
                     <defs>
                       <linearGradient id="fillActive" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
@@ -655,7 +655,7 @@ export default function UsersPage() {
             <CardContent>
               <DataTable
                 columns={userColumns}
-                data={users.filter(u => !u.is_deleted)}
+                data={users}
                 searchKey="name"
                 searchPlaceholder={t('users.table.search_placeholder')}
                 filterableColumns={[
@@ -675,16 +675,16 @@ export default function UsersPage() {
                       value: church.name 
                     }))
                   },
-                  {
-                    id: "language_preference",
-                    title: "Language",
-                    options: [
-                      { label: "English", value: "en" },
-                      { label: "Portuguese", value: "pt" },
-                      { label: "Spanish", value: "es" },
-                      { label: "Dutch", value: "nl" }
-                    ]
-                  }
+                  // {
+                  //   id: "language_preference",
+                  //   title: "Language",
+                  //   options: [
+                  //     { label: "English", value: "en" },
+                  //     { label: "Portuguese", value: "pt" },
+                  //     { label: "Spanish", value: "es" },
+                  //     { label: "Dutch", value: "nl" }
+                  //   ]
+                  // }
                 ]}
               />
             </CardContent>
@@ -755,11 +755,11 @@ export default function UsersPage() {
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium">Institution:</span>
-                          <span className="text-sm">{selectedUser.institution_name}</span>
+                          <span className="text-sm">{selectedUser.institution.name}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium">Church:</span>
-                          <span className="text-sm">{selectedUser.church_name}</span>
+                          <span className="text-sm">{selectedUser.church.name}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium">Created:</span>
@@ -783,7 +783,7 @@ export default function UsersPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {selectedUser.user_roles.map((role) => (
+                        {selectedUser.user_roles?.map((role) => (
                           <div key={role.id} className="flex items-center justify-between p-3 border rounded-lg">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -791,14 +791,14 @@ export default function UsersPage() {
                               </div>
                               <div>
                                 <div className="font-medium flex items-center gap-2">
-                                  {role.name}
-                                  {role.key_code === 'ADMIN' && <Crown className="w-4 h-4 text-yellow-500" />}
+                                  {role.role.name}
+                                  {role.role.key_code === 'ADMIN' && <Crown className="w-4 h-4 text-yellow-500" />}
                                 </div>
-                                <div className="text-xs text-muted-foreground">{role.description}</div>
+                                <div className="text-xs text-muted-foreground">{role.role.description}</div>
                               </div>
                             </div>
                             <Badge variant="outline" className="font-mono">
-                              {role.key_code}
+                              {role.role.key_code}
                             </Badge>
                           </div>
                         ))}
@@ -836,7 +836,6 @@ export default function UsersPage() {
             departments={departments}
             roles={roles}
             onSuccess={(userData) => {
-              console.log('User created:', userData)
               // Here you would typically refresh the users list
             }}
           />
@@ -851,7 +850,6 @@ export default function UsersPage() {
             departments={departments}
             roles={roles}
             onSuccess={(userData) => {
-              console.log('User updated:', userData)
               setSelectedUser(null)
               // Here you would typically refresh the users list
             }}
@@ -862,7 +860,6 @@ export default function UsersPage() {
             onOpenChange={setIsDeleteUserOpen}
             user={selectedUser}
             onSuccess={(deletedUser) => {
-              console.log('User deleted:', deletedUser.name)
               setSelectedUser(null)
               // Here you would typically refresh the users list
             }}

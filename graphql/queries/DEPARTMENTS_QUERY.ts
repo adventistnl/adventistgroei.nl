@@ -8,7 +8,6 @@ export const GET_DEPARTMENTS_QUERY = gql`
       church_id
       name
       description
-      annual_budget
       contact_id
       created_at
       updated_at
