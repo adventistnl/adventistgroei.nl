@@ -34,7 +34,7 @@ import toast from "react-hot-toast"
 import { structureTranslations } from "@/lib/translations/structure"
 import { DataTable } from "@/components/ui/data-table"
 import { AddRegionModal, EditRegionModal, DeleteRegionModal } from "@/components/modals/region"
-import { ViewContactModal, ContactData } from "@/components/modals/contact"
+import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
 import { AnnualBudgetModal, AnnualBudgetData } from "@/components/modals/budget"
 import { UseKPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 
@@ -84,7 +84,6 @@ export default function RegionsPage() {
   const [refreshing, setRefreshing] = useState(false)
   
   // Modal states
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isViewContactModalOpen, setIsViewContactModalOpen] = useState(false)
@@ -108,7 +107,7 @@ export default function RegionsPage() {
   })
 
   // Estatísticas calculadas dos dados
-  type RegionType = typeof regions extends (infer U)[] ? U : any;
+  type RegionType = any; // Usar any para contornar limitações do tipo GraphQL
   const kpiData = useMemo(() => {
     const totalRegions = regions.length;
     const totalChurches = regions.reduce((sum: number, r: RegionType) => sum + (r.churches_count || 0), 0);
@@ -169,17 +168,17 @@ export default function RegionsPage() {
   const chartData = useMemo(() => ({
     budgetByRegion: regions.map((r: RegionType) => ({
       region: r.name,
-      budget: r.total_budget,
-      used: r.used_budget,
-      remaining: (r.total_budget || 0) - (r.used_budget || 0)
+      budget: (r as any).total_budget || 0,
+      used: (r as any).used_budget || 0,
+      remaining: ((r as any).total_budget || 0) - ((r as any).used_budget || 0)
     })),
     subsidyRequestsByRegion: regions.map((r: RegionType) => ({
       region: r.name,
-      requests: r.subsidy_requests
+      requests: (r as any).subsidy_requests || 0
     })),
     churchesByRegion: regions.map((r: RegionType) => ({
       region: r.name,
-      churches: r.churches_count
+      churches: (r as any).churches_count || 0
     })),
     subsidyTimeline: [] // Timeline ainda mock, backend não fornece
   }), [regions]);
@@ -227,12 +226,7 @@ export default function RegionsPage() {
     }
   }
 
-  const handleCreate = () => {
-    setIsCreateModalOpen(true)
-  }
-  
-  const handleEdit = (id: string) => {
-    const region = regions.find((r: RegionType) => r.id === id);
+  const handleEdit = (region: any) => {
     if (region) {
       setSelectedRegion(region);
       setIsEditModalOpen(true);
@@ -247,15 +241,15 @@ export default function RegionsPage() {
   };
   const handleViewContact = (id: string) => {
     const region = regions.find((r: RegionType) => r.id === id);
-    if (region && region.contact) {
+    if (region && (region as any).contact) {
       const contactData: ContactData = {
         id: `contact_${region.id}`,
-        name: region.contact.name || null,
-        phone: region.contact.phone || null,
+        name: (region as any).contact?.name || null,
+        phone: (region as any).contact?.phone || null,
         mobile: null,
-        email: region.contact.email || null,
+        email: (region as any).contact?.email || null,
         country: null,
-        city: region.contact.city || null,
+        city: (region as any).contact?.city || null,
         address: null,
         full_address: null,
         postal_code: null,
@@ -278,9 +272,9 @@ export default function RegionsPage() {
       const budgetData: AnnualBudgetData = {
         id: `budget_${region.id}`,
         year: new Date().getFullYear(),
-        planned_budget: region.total_budget,
-        total_expenses: region.used_budget,
-        balance: (region.total_budget || 0) - (region.used_budget || 0),
+        planned_budget: (region as any).total_budget || 0,
+        total_expenses: (region as any).used_budget || 0,
+        balance: ((region as any).total_budget || 0) - ((region as any).used_budget || 0),
         notes: `Budget for ${region.name} region`,
         approved_by: 'admin',
         status: 'in_progress',
@@ -377,7 +371,9 @@ export default function RegionsPage() {
       id: "utilization",
       header: t.utilization,
       cell: ({ row }) => {
-        const utilization = Math.round((row.original.used_budget / row.original.total_budget) * 100)
+        const totalBudget = (row.original as any).total_budget || 1
+        const usedBudget = (row.original as any).used_budget || 0
+        const utilization = Math.round((usedBudget / totalBudget) * 100)
         return (
           <Badge variant="outline" className={
             utilization > 80 ? 'bg-red-100 text-red-700' : 
@@ -481,10 +477,15 @@ export default function RegionsPage() {
                             </div>
           
           <div className="flex items-center gap-3">
-            <Button onClick={handleCreate}>
-              <Plus className="w-4 h-4 mr-2" />
-              {t.createRegion}
-            </Button>
+            <AddRegionModal
+              institutionId={currentInstitutionData?.id || ''}
+              onSuccess={handleRegionCreated}
+            >
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                {t.createRegion}
+              </Button>
+            </AddRegionModal>
             
                     <Button
                       variant="outline"
@@ -679,14 +680,6 @@ export default function RegionsPage() {
         </Card>
 
         {/* Modals */}
-        <AddRegionModal
-          isOpen={isCreateModalOpen}
-          onOpenChange={setIsCreateModalOpen}
-          institutionId={currentInstitutionData?.id || ''}
-          parentRegions={[]} // parentRegions será implementado depois
-          onSave={handleRegionCreated}
-        />
-
         {selectedRegion && (
           <EditRegionModal
             isOpen={isEditModalOpen}
@@ -729,7 +722,7 @@ export default function RegionsPage() {
         )}
 
         {/* View Contact Modal */}
-        <ViewContactModal
+        <ContactViewEditModal
           isOpen={isViewContactModalOpen}
           onOpenChange={setIsViewContactModalOpen}
           contact={selectedContact}

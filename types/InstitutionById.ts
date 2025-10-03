@@ -78,7 +78,6 @@ export interface InstitutionById_institution_projects {
   title: string;
   description: string;
   budget: any;
-  media_link: string;
   language_preference: LanguagePreference;
   type: ProjectType;
   created_at: any;

@@ -1,9 +1,16 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { useInstitution } from '@/contexts/institution-context'
 import { useTranslation } from "react-i18next"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useInstitutions } from "@/hooks/use-institutions"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import {
   Popover,
   PopoverContent,
@@ -17,21 +24,24 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
 import { 
+  Loader2, 
   Building2, 
-  Save, 
-  X, 
-  Globe, 
   ChevronLeft, 
-  ChevronRight,
+  ChevronRight, 
+  Save,
+  Globe,
   Mail,
   Phone,
+  MapPin,
   FileText,
+  User,
+  Building,
   Check,
   ChevronsUpDown
 } from "lucide-react"
@@ -39,44 +49,39 @@ import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
 import { institutionTranslations } from "@/lib/translations/institutions"
 
-export interface Institution {
-  id: string
+export interface RegisterInstitutionFormData {
   name: string
   denomination: string
-  language_preference: "en" | "nl"
-  country?: string
-  email?: string
+  country: string
+  email: string
   phone?: string
   website?: string
+  language_preference: "en" | "nl"
   description?: string
-  contact_id?: string | null
-  created_at: string
-  updated_at: string
-  created_by: string
-  updated_by: string
-  is_deleted: boolean
-  deleted_at?: string | null
-  deleted_by?: string | null
 }
 
-export interface EditInstitutionModalProps {
-  isOpen: boolean
-  onOpenChange: (open: boolean) => void
-  institution: Institution | null
-  onSave?: (institution: Institution) => void
+export interface RegisterInstitutionModalProps {
+  children: React.ReactNode
+  onSuccess?: (data: RegisterInstitutionFormData) => void
 }
 
-export function EditInstitutionModal({
-  isOpen,
-  onOpenChange,
-  institution,
-  onSave
-}: EditInstitutionModalProps) {
-  const { i18n } = useTranslation()
-  const { updateInstitution, updateLoading, updateError, refetchInstitutions } = useInstitution()
+export function RegisterInstitutionModal({
+  children,
+  onSuccess
+}: RegisterInstitutionModalProps) {
+  const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
-  const [formData, setFormData] = useState<Partial<Institution>>({})
+  const [formData, setFormData] = useState<RegisterInstitutionFormData>({
+    name: "",
+    denomination: "SDA",
+    country: "",
+    email: "",
+    phone: "",
+    website: "",
+    language_preference: "en",
+    description: "",
+  })
   const [errors, setErrors] = useState<Record<string, string>>({})
   
   // States for command popovers
@@ -84,6 +89,8 @@ export function EditInstitutionModal({
   const [openLanguage, setOpenLanguage] = useState(false)
 
   const totalSteps = 3
+  const { createInstitution, refetchInstitutions } = useInstitutions()
+  const { i18n } = useTranslation()
   
   // Get translations for current language
   const t_institution = institutionTranslations[i18n.language as keyof typeof institutionTranslations] || institutionTranslations.en
@@ -351,27 +358,28 @@ export function EditInstitutionModal({
   ]
 
   useEffect(() => {
-    if (institution) {
+    if (isOpen) {
       setFormData({
-        name: institution.name,
-        denomination: institution.denomination,
-        country: institution.country || "",
-        language_preference: institution.language_preference,
-        email: institution.email || "",
-        phone: institution.phone || "",
-        website: institution.website || "",
-        description: institution.description || ""
+        name: "",
+        denomination: "SDA",
+        country: "",
+        email: "",
+        phone: "",
+        website: "",
+        language_preference: "en",
+        description: "",
       })
       setErrors({})
       setCurrentStep(1)
     }
-  }, [institution])
+  }, [isOpen])
 
-  const handleInputChange = (field: keyof Institution, value: string) => {
+  const handleInputChange = (field: keyof RegisterInstitutionFormData, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }))
+    
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({
@@ -386,33 +394,37 @@ export function EditInstitutionModal({
 
     if (step === 1) {
       if (!formData.name?.trim()) {
-        newErrors.name = t_institution.validation.nameRequired
+        newErrors.name = "Institution name is required"
       } else if (formData.name.trim().length < 2) {
-        newErrors.name = t_institution.validation.nameMinLength
+        newErrors.name = "Institution name must be at least 2 characters"
       }
 
       if (!formData.denomination?.trim()) {
-        newErrors.denomination = t_institution.validation.denominationRequired
+        newErrors.denomination = "Denomination is required"
       } else if (formData.denomination.trim().length < 2) {
-        newErrors.denomination = t_institution.validation.denominationMinLength
+        newErrors.denomination = "Denomination must be at least 2 characters"
       }
 
       if (!formData.country?.trim()) {
-        newErrors.country = t_institution.validation.countryRequired
+        newErrors.country = "Country is required"
+      } else if (formData.country.trim().length < 2) {
+        newErrors.country = "Country must be at least 2 characters"
       }
 
       if (!formData.language_preference) {
-        newErrors.language_preference = t_institution.validation.languageRequired
+        newErrors.language_preference = "Language preference is required"
       }
     }
 
     if (step === 2) {
-      if (formData.email && formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        newErrors.email = t_institution.validation.emailInvalid
+      if (!formData.email?.trim()) {
+        newErrors.email = "Email is required"
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        newErrors.email = "Please enter a valid email address"
       }
 
       if (formData.website && formData.website.trim() && !formData.website.match(/^https?:\/\//)) {
-        newErrors.website = t_institution.validation.websiteInvalid
+        newErrors.website = "Website must start with http:// or https://"
       }
     }
 
@@ -431,60 +443,66 @@ export function EditInstitutionModal({
   }
 
   const handleSave = async () => {
-    if (!institution || !validateStep(1) || !validateStep(2)) {
-      toast.error(t_institution.validation.fixErrors)
+    if (!validateStep(1) || !validateStep(2)) {
+      toast.error("Please fix the errors before continuing")
       return
     }
 
     setIsLoading(true)
-    const loadingToast = toast.loading("🏢 Updating institution...")
+    const loadingToast = toast.loading("🏢 Creating new institution...")
 
     try {
+      // Chamada da mutation para criar a instituição
       const variables = {
-        id: institution.id,
-        name: formData.name?.trim(),
-        denomination: formData.denomination?.trim(),
-        country: formData.country?.trim(),
-        language_preference: formData.language_preference,
-        email: formData.email?.trim() || null,
-        phone: formData.phone?.trim() || null,
-        website: formData.website?.trim() || null,
+        name: formData.name.trim(),
+        denomination: formData.denomination.trim(),
         description: formData.description?.trim() || null,
+        contactEmail: formData.email.trim(),
+        contactPhone: formData.phone?.trim() || null,
+        contactCountry: formData.country.trim(),
+        contactWebsite: formData.website?.trim() || null,
+        languagePreference: formData.language_preference,
       }
-      const { data } = await updateInstitution({ variables })
-      toast.dismiss(loadingToast)
-      toast.success(`✅ Institution "${formData.name}" updated successfully!`, {
-        duration: 3000
-      })
+
+      const result = await createInstitution({ variables })
+
+      // Refetch institutions para atualizar lista global
       refetchInstitutions()
-      if (onSave && data?.updateInstitution) {
-        onSave({ ...institution, ...formData, ...data.updateInstitution })
-      }
-      onOpenChange(false)
+
+      toast.dismiss(loadingToast)
+      toast.success(
+        `🎉 Institution "${formData.name}" created successfully!`,
+        { duration: 4000 }
+      )
+
+      // Call success callback
+      onSuccess?.(formData)
+
+      // Close modal
+      setIsOpen(false)
     } catch (error) {
       toast.dismiss(loadingToast)
-      toast.error("❌ Failed to update institution")
+      toast.error("❌ Failed to create institution")
+      console.error("Error creating institution:", error)
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleCancel = () => {
-    if (institution) {
-      setFormData({
-        name: institution.name,
-        denomination: institution.denomination,
-        country: institution.country || "",
-        language_preference: institution.language_preference,
-        email: institution.email || "",
-        phone: institution.phone || "",
-        website: institution.website || "",
-        description: institution.description || ""
-      })
-    }
+    setFormData({
+      name: "",
+      denomination: "SDA",
+      country: "",
+      email: "",
+      phone: "",
+      website: "",
+      language_preference: "en",
+      description: "",
+    })
     setErrors({})
     setCurrentStep(1)
-    onOpenChange(false)
+    setIsOpen(false)
   }
 
   const renderStepContent = () => {
@@ -493,21 +511,21 @@ export function EditInstitutionModal({
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">{t_institution.basicInformation}</h3>
-              <p className="text-sm text-muted-foreground">{t_institution.basicInformationDesc}</p>
+              <h3 className="text-lg font-medium text-foreground">Basic Information</h3>
+              <p className="text-sm text-muted-foreground">Enter the institution name, denomination and location</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="name" className="flex items-center gap-2 text-sm">
-                  <Building2 className="w-4 h-4 text-muted-foreground" />
-                  {t_institution.institutionName} *
+                  <Building className="w-4 h-4 text-muted-foreground" />
+                  Institution Name *
                 </Label>
                 <Input
                   id="name"
-                  value={formData.name || ''}
+                  value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder={t_institution.institutionNamePlaceholder}
+                  placeholder="Enter institution name"
                   disabled={isLoading}
                   className={`h-12 text-base ${errors.name ? 'border-red-500' : ''}`}
                 />
@@ -519,13 +537,13 @@ export function EditInstitutionModal({
               <div className="space-y-2">
                 <Label htmlFor="denomination" className="flex items-center gap-2 text-sm">
                   <Building2 className="w-4 h-4 text-muted-foreground" />
-                  {t_institution.denomination} *
+                  Denomination *
                 </Label>
                 <Input
                   id="denomination"
-                  value={formData.denomination || ''}
+                  value={formData.denomination}
                   onChange={(e) => handleInputChange('denomination', e.target.value)}
-                  placeholder={t_institution.denominationPlaceholder}
+                  placeholder="e.g., SDA, Baptist, Methodist"
                   disabled={isLoading}
                   className={`h-12 text-base ${errors.denomination ? 'border-red-500' : ''}`}
                 />
@@ -659,22 +677,22 @@ export function EditInstitutionModal({
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">{t_institution.contactInformation}</h3>
-              <p className="text-sm text-muted-foreground">{t_institution.contactInformationDesc}</p>
+              <h3 className="text-lg font-medium text-foreground">Contact Information</h3>
+              <p className="text-sm text-muted-foreground">Add contact details for the institution</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="email" className="flex items-center gap-2 text-sm">
                   <Mail className="w-4 h-4 text-muted-foreground" />
-                  {t_institution.contactEmail}
+                  Contact Email *
                 </Label>
                 <Input
                   id="email"
                   type="email"
-                  value={formData.email || ''}
+                  value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder={t_institution.contactEmailPlaceholder}
+                  placeholder="contact@institution.org"
                   disabled={isLoading}
                   className={`h-12 text-base ${errors.email ? 'border-red-500' : ''}`}
                 />
@@ -686,13 +704,13 @@ export function EditInstitutionModal({
               <div className="space-y-2">
                 <Label htmlFor="phone" className="flex items-center gap-2 text-sm">
                   <Phone className="w-4 h-4 text-muted-foreground" />
-                  {t_institution.phone}
+                  Phone (Optional)
                 </Label>
                 <Input
                   id="phone"
-                  value={formData.phone || ''}
+                  value={formData.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder={t_institution.phonePlaceholder}
+                  placeholder="+1 (555) 123-4567"
                   disabled={isLoading}
                   className="h-12 text-base"
                 />
@@ -701,13 +719,13 @@ export function EditInstitutionModal({
               <div className="space-y-2">
                 <Label htmlFor="website" className="flex items-center gap-2 text-sm">
                   <Globe className="w-4 h-4 text-muted-foreground" />
-                  {t_institution.website}
+                  Website (Optional)
                 </Label>
                 <Input
                   id="website"
-                  value={formData.website || ''}
+                  value={formData.website}
                   onChange={(e) => handleInputChange('website', e.target.value)}
-                  placeholder={t_institution.websitePlaceholder}
+                  placeholder="https://www.institution.org"
                   disabled={isLoading}
                   className={`h-12 text-base ${errors.website ? 'border-red-500' : ''}`}
                 />
@@ -723,21 +741,21 @@ export function EditInstitutionModal({
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">{t_institution.additionalDetails}</h3>
-              <p className="text-sm text-muted-foreground">{t_institution.additionalDetailsDesc}</p>
+              <h3 className="text-lg font-medium text-foreground">Additional Details</h3>
+              <p className="text-sm text-muted-foreground">Add a description about the institution</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="description" className="flex items-center gap-2 text-sm">
                   <FileText className="w-4 h-4 text-muted-foreground" />
-                  {t_institution.description}
+                  Description (Optional)
                 </Label>
                 <Textarea
                   id="description"
-                  value={formData.description || ''}
+                  value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder={t_institution.descriptionPlaceholder}
+                  placeholder="Brief description about the institution, its mission, and activities..."
                   disabled={isLoading}
                   className="min-h-[120px] text-base resize-none"
                   rows={5}
@@ -752,18 +770,19 @@ export function EditInstitutionModal({
     }
   }
 
-  if (!institution) return null
-
   return (
-    <Dialog open={isOpen} onOpenChange={!isLoading ? onOpenChange : undefined}>
+    <Dialog open={isOpen} onOpenChange={!isLoading ? setIsOpen : undefined}>
+      <DialogTrigger asChild>
+        {children}
+      </DialogTrigger>
       <DialogContent className="w-[95vw] max-w-2xl max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Building2 className="w-5 h-5 text-muted-foreground" />
-            Edit Institution
+            Register New Institution
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Update institution information and settings
+            Create a new religious institution in your organization
           </DialogDescription>
           
           {/* Progress Bar */}
@@ -797,7 +816,7 @@ export function EditInstitutionModal({
                   className="flex items-center gap-1 text-xs"
                 >
                   <ChevronLeft className="w-3 h-3" />
-                  {t_institution.previous}
+                  Previous
                 </Button>
               )}
               <Button 
@@ -807,7 +826,7 @@ export function EditInstitutionModal({
                 size="sm"
                 className="text-xs"
               >
-                {t_institution.cancel}
+                Cancel
               </Button>
             </div>
 
@@ -819,25 +838,25 @@ export function EditInstitutionModal({
                   size="sm"
                   className="flex items-center gap-1 text-xs bg-gray-900 hover:bg-gray-800 text-white"
                 >
-                  {t_institution.next}
+                  Next
                   <ChevronRight className="w-3 h-3" />
                 </Button>
               ) : (
                 <Button 
                   onClick={handleSave} 
-                  disabled={isLoading || updateLoading}
+                  disabled={isLoading}
                   size="sm"
                   className="min-w-[100px] text-xs bg-gray-900 hover:bg-gray-800 text-white"
                 >
-                  {(isLoading || updateLoading) ? (
+                  {isLoading ? (
                     <>
-                      <Save className="w-3 h-3 animate-spin mr-1" />
-                      {t_institution.creating}
+                      <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                      Creating...
                     </>
                   ) : (
                     <>
                       <Save className="w-3 h-3 mr-1" />
-                      Update Institution
+                      Register Institution
                     </>
                   )}
                 </Button>

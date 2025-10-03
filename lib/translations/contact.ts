@@ -1,142 +1,68 @@
 export const contactTranslations = {
-  en: {
-    // Modal
+  en: { 
     title: "Contact Information",
+    description: "View and manage contact details",
     close: "Close",
-    
-    // Status
-    primaryContact: "Primary Contact",
-    secondaryContact: "Secondary Contact",
-    deleted: "Deleted",
-    
-    // Sections
-    contactDetails: "Contact Details",
+    edit: "Edit",
+    save: "Save Changes",
+    cancel: "Cancel",
+    previous: "Previous",
+    next: "Next",
+    saving: "Saving...",
+    updating: "Updating contact...",
+    updated: "Contact updated successfully!",
+    updateFailed: "Failed to update contact",
+    basicInformation: "Basic Information",
+    basicInformationDesc: "Contact name, email, and phone details",
     addressInformation: "Address Information",
+    addressInformationDesc: "Location and postal details",
     additionalInformation: "Additional Information",
-    systemInformation: "System Information",
-    
-    // Fields
+    additionalInformationDesc: "Website, notes, and preferences",
     contactName: "Contact Name",
+    contactNamePlaceholder: "Enter contact name",
     phone: "Phone",
+    phonePlaceholder: "+1 (555) 123-4567",
     mobile: "Mobile",
+    mobilePlaceholder: "+1 (555) 987-6543",
     email: "Email",
-    fullAddress: "Full Address",
+    emailPlaceholder: "contact@example.com",
     address: "Address",
+    addressPlaceholder: "Street address",
+    street: "Street",
+    streetPlaceholder: "Street address",
     city: "City",
+    cityPlaceholder: "Enter city",
+    state: "State/Province",
+    statePlaceholder: "Enter state or province",
     country: "Country",
+    countryPlaceholder: "Enter country",
     postalCode: "Postal Code",
+    postalCodePlaceholder: "12345",
+    fullAddress: "Full Address", 
+    fullAddressPlaceholder: "Complete address",
     website: "Website",
+    websitePlaceholder: "https://example.com",
     notes: "Notes",
-    
-    // System fields
+    notesPlaceholder: "Additional notes or comments...",
+    isPrimary: "Primary Contact",
+    copied: "Copied to clipboard!",
+    copyFailed: "Failed to copy",
+    copyToClipboard: "Copy to clipboard",
+    notProvided: "Not provided",
+    primaryContact: "Primary",
+    secondaryContact: "Secondary",
+    deleted: "Deleted",
+    systemInformation: "System Information",
+    contactDetails: "Contact Details",
     created: "Created",
-    updated: "Updated",
+    createdAt: "Created At",
+    updatedAt: "Updated At",
     createdBy: "Created By",
     updatedBy: "Updated By",
-    
-    // Entity types
-    entityTypes: {
-      region: "Region",
-      church: "Church",
-      department: "Department",
-      user: "User",
-      project: "Project",
-      event: "Event",
-      institution: "Institution"
-    }
-  },
-  
-  nl: {
-    // Modal
-    title: "Contact Informatie",
-    close: "Sluiten",
-    
-    // Status
-    primaryContact: "Primair Contact",
-    secondaryContact: "Secundair Contact",
-    deleted: "Verwijderd",
-    
-    // Sections
-    contactDetails: "Contact Details",
-    addressInformation: "Adres Informatie",
-    additionalInformation: "Aanvullende Informatie",
-    systemInformation: "Systeem Informatie",
-    
-    // Fields
-    contactName: "Contact Naam",
-    phone: "Telefoon",
-    mobile: "Mobiel",
-    email: "E-mail",
-    fullAddress: "Volledig Adres",
-    address: "Adres",
-    city: "Stad",
-    country: "Land",
-    postalCode: "Postcode",
-    website: "Website",
-    notes: "Notities",
-    
-    // System fields
-    created: "Aangemaakt",
-    updated: "Bijgewerkt",
-    createdBy: "Aangemaakt Door",
-    updatedBy: "Bijgewerkt Door",
-    
-    // Entity types
-    entityTypes: {
-      region: "Regio",
-      church: "Kerk",
-      department: "Afdeling",
-      user: "Gebruiker",
-      project: "Project",
-      event: "Evenement",
-      institution: "Instelling"
-    }
-  },
-  
-  pt: {
-    // Modal
-    title: "Informações de Contato",
-    close: "Fechar",
-    
-    // Status
-    primaryContact: "Contato Primário",
-    secondaryContact: "Contato Secundário",
-    deleted: "Excluído",
-    
-    // Sections
-    contactDetails: "Detalhes do Contato",
-    addressInformation: "Informações de Endereço",
-    additionalInformation: "Informações Adicionais",
-    systemInformation: "Informações do Sistema",
-    
-    // Fields
-    contactName: "Nome do Contato",
-    phone: "Telefone",
-    mobile: "Celular",
-    email: "E-mail",
-    fullAddress: "Endereço Completo",
-    address: "Endereço",
-    city: "Cidade",
-    country: "País",
-    postalCode: "CEP",
-    website: "Website",
-    notes: "Observações",
-    
-    // System fields
-    created: "Criado",
-    updated: "Atualizado",
-    createdBy: "Criado Por",
-    updatedBy: "Atualizado Por",
-    
-    // Entity types
-    entityTypes: {
-      region: "Região",
-      church: "Igreja",
-      department: "Departamento",
-      user: "Usuário",
-      project: "Projeto",
-      event: "Evento",
-      institution: "Instituição"
+    validation: {
+      emailInvalid: "Please enter a valid email address",
+      websiteInvalid: "Website must start with http:// or https://",
+      fixErrors: "Please fix the errors before continuing"
     }
   }
 }

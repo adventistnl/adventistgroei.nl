@@ -38,7 +38,7 @@ import { structureTranslations } from "@/lib/translations/structure"
 import { DataTable } from "@/components/ui/data-table"
 import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal, DepartmentData, ChurchData } from "@/components/modals/department"
 import { useInstitution } from "@/contexts/institution-context"
-import { ViewContactModal, ContactData } from "@/components/modals/contact"
+import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
 import { AnnualBudgetModal, AnnualBudgetData } from "@/components/modals/budget"
 import { DepartmentsKPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 
@@ -672,7 +672,7 @@ export default function DepartmentsPage() {
         
         {/* View Contact Modal */}
         {selectedContact && (
-          <ViewContactModal
+          <ContactViewEditModal
             isOpen={isViewContactModalOpen}
             onOpenChange={setIsViewContactModalOpen}
             contact={selectedContact}

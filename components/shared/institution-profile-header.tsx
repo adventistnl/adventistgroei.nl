@@ -33,10 +33,12 @@ import {
   X
 } from "lucide-react"
 import { Separator } from "@radix-ui/react-separator"
-import { useInstitutions } from "@/hooks/use-institutions"
+import { InstitutionById_institution } from "@/types/InstitutionById"
+import { AnnualBudgetViewEditModal } from "@/components/modals/annual-budget"
+import type { AnnualBudgetData } from "@/components/modals/annual-budget"
 
 export interface InstitutionProfileHeaderProps {
-  institutionId: string 
+  institution: InstitutionById_institution
   showBackButton?: boolean
   onBack?: () => void
   onEdit?: () => void
@@ -51,7 +53,7 @@ export interface InstitutionProfileHeaderProps {
 }
 
 export function InstitutionProfileHeader({
-  institutionId,
+  institution,
   showBackButton = false,
   onBack,
   onEdit,
@@ -65,9 +67,26 @@ export function InstitutionProfileHeader({
   className = ""
 }: InstitutionProfileHeaderProps) {
   const { t } = useTranslation()
-  const { currentInstitutionData: institution } = useInstitutions(institutionId)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [showBudgetModal, setShowBudgetModal] = useState(false)
+
+  // Example budget data (in real app, this would come from props or API)
+  const exampleBudget: AnnualBudgetData = {
+    id: "budget-2024",
+    year: 2024,
+    planned_budget: 150000,
+    total_expenses: 85000,
+    balance: 65000,
+    notes: "Annual operational budget for institutional activities and programs.",
+    status: "approved",
+    approved_by: "admin",
+    created_at: "2024-01-15T10:30:00Z",
+    updated_at: "2024-06-20T14:15:00Z",
+    created_by: "admin",
+    updated_by: "admin",
+    is_deleted: false
+  }
 
   if (!institution) return <div>Institution not found</div>
 
@@ -330,6 +349,10 @@ export function InstitutionProfileHeader({
                       Manage Departments
                     </DropdownMenuItem>
                   )}
+                  <DropdownMenuItem onClick={() => setShowBudgetModal(true)}>
+                    <DollarSign className="w-4 h-4 mr-2 text-yellow-600" />
+                    Manage Annual Budgets
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {onEdit && (
                     <DropdownMenuItem onClick={onEdit}>
@@ -353,6 +376,22 @@ export function InstitutionProfileHeader({
           </div>
         </CardContent>
       </Card>
+
+      {/* Annual Budget Modal */}
+      <AnnualBudgetViewEditModal
+        isOpen={showBudgetModal}
+        onOpenChange={setShowBudgetModal}
+        budget={exampleBudget}
+        entityName={institution.name}
+        entityType="Institution"
+        onSave={(updatedBudget) => {
+          console.log('Annual budget updated:', updatedBudget)
+          // TODO: Implementar atualização via GraphQL/API
+          // await updateAnnualBudget({ variables: { id: updatedBudget.id, ...updatedBudget } })
+          setShowBudgetModal(false)
+        }}
+        readonly={false}
+      />
     </div>
   )
 }

@@ -113,7 +113,6 @@ export const GET_INSTITUTION_BY_ID_FULL_DATA_QUERY = gql`
             title
             description
             budget
-            media_link
             language_preference
             type
             created_at

@@ -38,10 +38,9 @@ import "@/lib/i18n"
 import { InstitutionsCharts } from "@/components/institutions/institutions-charts"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { DataTable } from "@/components/ui/data-table"
-import { InstitutionModal } from "@/components/modals/institution-modal"
 import { InstitutionProfileHeader } from "@/components/shared"
-import { ViewContactModal, ContactData } from "@/components/modals/contact"
-import { EditInstitutionModal, DeleteInstitutionModal } from "@/components/modals/institution"
+import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
+import { EditInstitutionModal, DeleteInstitutionModal, RegisterInstitutionModal } from "@/components/modals/institution"
 
 import { Institutions_institutions } from "@/types/Institutions"
 import { useInstitution } from "@/contexts/institution-context"
@@ -211,10 +210,11 @@ export default function InstitutionsPage() {
   }
 
   const handleViewInstitutionContact = () => {
-    if (activeInstitution && activeInstitution.contact) {
+    if (activeInstitution) {
+      // Criar dados de contato mesmo se não existir contact específico na instituição
       const contactData: ContactData = {
-        id: activeInstitution.contact_id || '',
-        name: activeInstitution.contact?.name || null,
+        id: activeInstitution.contact_id || activeInstitution.id,
+        name: activeInstitution.contact?.name || activeInstitution.name,
         phone: activeInstitution.contact?.phone || null,
         mobile: activeInstitution.contact?.mobile || null,
         email: activeInstitution.contact?.email || null,
@@ -230,12 +230,15 @@ export default function InstitutionsPage() {
         updated_at: activeInstitution.updated_at,
         created_by: activeInstitution.created_by || '',
         updated_by: activeInstitution.updated_by || '',
-        is_deleted: false,
-        deleted_at: null,
-        deleted_by: null
+        is_deleted: activeInstitution.is_deleted || false,
+        deleted_at: activeInstitution.deleted_at || null,
+        deleted_by: activeInstitution.deleted_by || null
       }
+      
       setSelectedContact(contactData)
       setIsContactModalOpen(true)
+    } else {
+      toast.error('No institution selected')
     }
   }
 
@@ -463,12 +466,12 @@ export default function InstitutionsPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <InstitutionModal onSuccess={handleInstitutionCreated}>
+            <RegisterInstitutionModal onSuccess={handleInstitutionCreated}>
               <Button className="bg-gray-900 hover:bg-gray-800 text-white">
                 <Plus className="w-4 h-4 mr-2" />
                 {t('actions.create_institution')}
               </Button>
-            </InstitutionModal>
+            </RegisterInstitutionModal>
             
 
           </div>
@@ -477,7 +480,7 @@ export default function InstitutionsPage() {
         {/* Institution Profile Header */}
         {activeInstitution && (
           <InstitutionProfileHeader
-            institutionId={activeInstitution.id}
+            institution={activeInstitution}
             onEdit={handleEditInstitution}
             onDelete={handleDeleteInstitution}
             onViewContact={handleViewInstitutionContact}
@@ -528,15 +531,14 @@ export default function InstitutionsPage() {
         </Card>
 
         {/* Contact Modal */}
-        {selectedContact && (
-          <ViewContactModal
-            isOpen={isContactModalOpen}
-            onOpenChange={setIsContactModalOpen}
-            contact={selectedContact}
-            entityName={activeInstitution.name}
-            entityType="Institution"
-          />
-        )}
+        <ContactViewEditModal
+          isOpen={isContactModalOpen && selectedContact !== null}
+          onOpenChange={setIsContactModalOpen}
+          contact={selectedContact}
+          entityName={activeInstitution?.name || 'Institution'}
+          entityType="Institution"
+          onSave={handleContactSaved}
+        />
 
         {/* Edit Institution Modal */}
         <EditInstitutionModal

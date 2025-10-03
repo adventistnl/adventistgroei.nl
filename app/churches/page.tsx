@@ -35,7 +35,7 @@ import {
 import toast from "react-hot-toast"
 import { structureTranslations } from "@/lib/translations/structure"
 import { DataTable } from "@/components/ui/data-table"
-import { ViewContactModal, ContactData } from "@/components/modals/contact"
+import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
 import { AnnualBudgetModal, AnnualBudgetData } from "@/components/modals/budget"
 import { AddChurchModal, EditChurchModal, DeleteChurchModal, ChurchData, RegionData } from "@/components/modals/church"
 import { ChurchesKPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
@@ -724,7 +724,7 @@ export default function ChurchesPage() {
         </Card>
 
         {/* View Contact Modal */}
-        <ViewContactModal
+        <ContactViewEditModal
           isOpen={isViewContactModalOpen}
           onOpenChange={setIsViewContactModalOpen}
           contact={selectedContact}
