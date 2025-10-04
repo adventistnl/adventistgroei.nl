@@ -61,36 +61,8 @@ import {
   Line,
   Legend
 } from "recharts"
-
-// Mock data para usuários por departamento (quem solicita mais)
-const MOCK_USERS_BY_DEPARTMENT = [
-  { department: "Ministério Jovem", user: "João Marcos Silva", requests: 8, role: "Líder" },
-  { department: "Ministério Jovem", user: "Ana Paula Santos", requests: 6, role: "Coordenadora" },
-  { department: "Ministério Jovem", user: "Carlos Eduardo", requests: 4, role: "Voluntário" },
-  { department: "Educação Cristã", user: "Maria Silva", requests: 7, role: "Professora" },
-  { department: "Educação Cristã", user: "Pedro Oliveira", requests: 4, role: "Coordenador" },
-  { department: "Educação Cristã", user: "Lucia Costa", requests: 3, role: "Assistente" },
-  { department: "Diaconia", user: "Carlos Santos", requests: 5, role: "Diácono" },
-  { department: "Diaconia", user: "Rosa Lima", requests: 4, role: "Coordenadora" },
-  { department: "Diaconia", user: "José Silva", requests: 3, role: "Voluntário" },
-  { department: "Música e Louvor", user: "Pedro Lima", requests: 4, role: "Maestro" },
-  { department: "Música e Louvor", user: "Clara Santos", requests: 3, role: "Pianista" },
-  { department: "Música e Louvor", user: "Daniel Costa", requests: 2, role: "Cantor" },
-  { department: "Evangelismo", user: "Roberto Costa", requests: 9, role: "Pastor" },
-  { department: "Evangelismo", user: "Marcos Silva", requests: 7, role: "Evangelista" },
-  { department: "Evangelismo", user: "Patricia Lima", requests: 6, role: "Coordenadora" },
-]
-
-// Timeline de orçamento por departamento
-const MOCK_BUDGET_TIMELINE = [
-  { month: 'Jan', 'Ministério Jovem': 95000, 'Educação Cristã': 80000, 'Diaconia': 65000, 'Música': 55000, 'Evangelismo': 90000 },
-  { month: 'Feb', 'Ministério Jovem': 98000, 'Educação Cristã': 82000, 'Diaconia': 67000, 'Música': 57000, 'Evangelismo': 92000 },
-  { month: 'Mar', 'Ministério Jovem': 102000, 'Educação Cristã': 85000, 'Diaconia': 70000, 'Música': 60000, 'Evangelismo': 95000 },
-  { month: 'Apr', 'Ministério Jovem': 105000, 'Educação Cristã': 87000, 'Diaconia': 72000, 'Música': 62000, 'Evangelismo': 98000 },
-  { month: 'May', 'Ministério Jovem': 110000, 'Educação Cristã': 90000, 'Diaconia': 75000, 'Música': 65000, 'Evangelismo': 102000 },
-  { month: 'Jun', 'Ministério Jovem': 120000, 'Educação Cristã': 95000, 'Diaconia': 80000, 'Música': 70000, 'Evangelismo': 110000 },
-]
-
+import { CreateDepartment } from "@/types/CreateDepartment"
+import NotFound from "@/components/shared/not-found"
 
 
 /**
@@ -98,7 +70,7 @@ const MOCK_BUDGET_TIMELINE = [
  * Interface dedicada para gerenciar departamentos baseada no ERD do AdventistGroei
  */
 export default function DepartmentsPage() {
-  const { currentInstitutionData } = useInstitution();
+  const { currentInstitutionData, refetchInstitutionById } = useInstitution();
   const departments: DepartmentData[] = currentInstitutionData?.departments || [];
   const churches: ChurchData[] = currentInstitutionData?.churches || [];
   const { i18n } = useTranslation()
@@ -213,13 +185,12 @@ export default function DepartmentsPage() {
     const refreshToast = toast.loading(t.refreshing)
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      toast.dismiss(refreshToast)
+      await refetchInstitutionById()
       toast.success(t.dataRefreshed, { duration: 2000 })
     } catch (error) {
-      toast.dismiss(refreshToast)
       toast.error(t.errorRefreshing)
     } finally {
+      toast.dismiss(refreshToast)
       setRefreshing(false)
     }
   }
@@ -298,7 +269,7 @@ export default function DepartmentsPage() {
     }
   };
   
-  const handleDepartmentSaved = (department: DepartmentData) => {
+  const handleDepartmentSaved = (department: CreateDepartment) => {
     toast.success("Department created successfully")
     handleRefresh()
   }
@@ -318,6 +289,8 @@ export default function DepartmentsPage() {
     handleRefresh()
   }
 
+  if (!currentInstitutionData) return <NotFound />
+  
   // Colunas da tabela
   const columns: ColumnDef<any>[] = [
     {
@@ -644,7 +617,7 @@ export default function DepartmentsPage() {
         <AddDepartmentModal
           isOpen={isAddDepartmentModalOpen}
           onOpenChange={setIsAddDepartmentModalOpen}
-          institutionId="inst1"
+          institutionId={currentInstitutionData.id}
           churches={churches}
           onSave={handleDepartmentSaved}
         />

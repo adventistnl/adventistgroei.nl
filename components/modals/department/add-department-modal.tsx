@@ -29,15 +29,18 @@ import {
   ChevronRight,
   Check,
   Home,
-  DollarSign
+  DollarSign,
+  Variable
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { departmentTranslations } from "@/lib/translations/departments"
+import { CreateDepartment, CreateDepartmentVariables } from "@/types/CreateDepartment"
+import { useDepartments } from "@/hooks/use-departments"
 
 export interface DepartmentData {
   id: string
-  institution_id: string
-  church_id: string
+  institution: string
+  church: string
   name: string
   description: string
   annual_budget: number
@@ -77,7 +80,7 @@ export interface ContactData {
 export interface ChurchData {
   id: string
   name: string
-  institution_id: string
+  institution: string
 }
 
 export interface AddDepartmentModalProps {
@@ -85,7 +88,7 @@ export interface AddDepartmentModalProps {
   onOpenChange: (open: boolean) => void
   institutionId: string
   churches: ChurchData[]
-  onSave?: (department: DepartmentData) => void
+  onSave?: (department: CreateDepartment) => void
 }
 
 export function AddDepartmentModal({
@@ -95,79 +98,48 @@ export function AddDepartmentModal({
   churches = [],
   onSave
 }: AddDepartmentModalProps) {
-  const { t: tCommon } = useTranslation()
-  const [isLoading, setIsLoading] = useState(false)
-  const [currentStep, setCurrentStep] = useState(1)
-  const [formData, setFormData] = useState<Partial<DepartmentData & { contact: Partial<ContactData> }>>({
-    institution_id: institutionId,
-    church_id: '',
+  const { t: tCommon } = useTranslation();
+  const { createDepartment} = useDepartments()
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState<CreateDepartmentVariables>({
+    institution: institutionId,
+    church: '',
     name: '',
     description: '',
-    annual_budget: 0,
-    contact: {
-      name: '',
-      phone: '',
-      mobile: '',
-      email: '',
-      country: '',
-      city: '',
-      address: '',
-      full_address: '',
-      postal_code: '',
-      website: '',
-      notes: '',
-      is_primary: true
-    }
-  })
-  const [errors, setErrors] = useState<Record<string, string>>({})
+    contactName: '',
+    phone: '',
+    email: '',
+    city: ''
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const totalSteps = 2
+  const totalSteps = 2;
 
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        institution_id: institutionId,
-        church_id: '',
+        institution: institutionId,
+        church: '',
         name: '',
         description: '',
-        annual_budget: 0,
-        contact: {
-          name: '',
-          phone: '',
-          mobile: '',
-          email: '',
-          country: '',
-          city: '',
-          address: '',
-          full_address: '',
-          postal_code: '',
-          website: '',
-          notes: '',
-          is_primary: true
-        }
-      })
-      setErrors({})
-      setCurrentStep(1)
+        contactName: '',
+        phone: '',
+        email: '',
+        city: ''
+      });
+      setErrors({});
+      setCurrentStep(1);
     }
-  }, [isOpen, institutionId])
+  }, [isOpen, institutionId]);
 
   const handleInputChange = (field: string, value: string | number | boolean) => {
-    if (field.startsWith('contact.')) {
-      const contactField = field.replace('contact.', '')
-      setFormData(prev => ({
-        ...prev,
-        contact: {
-          ...prev.contact,
-          [contactField]: value
-        }
-      }))
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [field]: value
-      }))
-    }
-    
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({
@@ -187,8 +159,8 @@ export function AddDepartmentModal({
         newErrors.name = "Department name must be at least 2 characters"
       }
 
-      if (!formData.church_id) {
-        newErrors.church_id = "Church is required"
+      if (!formData.church) {
+        newErrors.church = "Church is required"
       }
 
       if (!formData.description?.trim()) {
@@ -196,15 +168,25 @@ export function AddDepartmentModal({
       } else if (formData.description.trim().length < 10) {
         newErrors.description = "Description must be at least 10 characters"
       }
-
-      if (!formData.annual_budget || formData.annual_budget <= 0) {
-        newErrors.annual_budget = "Annual budget is required and must be greater than 0"
-      }
     }
 
     if (step === 2) {
-      if (formData.contact?.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact.email)) {
-        newErrors['contact.email'] = "Please enter a valid email address"
+      if (!formData.contactName?.trim()) {
+        newErrors.contactName = "Contact name is required"
+      }
+
+      if (!formData.email?.trim()) {
+        newErrors.email = "Email is required"
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        newErrors.email = "Please enter a valid email address"
+      }
+
+      if (!formData.phone?.trim()) {
+        newErrors.phone = "Phone number is required"
+      }
+
+      if (!formData.city?.trim()) {
+        newErrors.city = "City is required"
       }
     }
 
@@ -232,32 +214,18 @@ export function AddDepartmentModal({
     const loadingToast = toast.loading("Creating department...")
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
 
-      const newDepartment: DepartmentData = {
-        id: `department_${Date.now()}`,
-        institution_id: institutionId,
-        church_id: formData.church_id!,
-        name: formData.name!.trim(),
-        description: formData.description!.trim(),
-        annual_budget: formData.annual_budget!,
-        contact_id: null, // Will be set after contact creation
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        created_by: 'current_user',
-        updated_by: 'current_user',
-        is_deleted: false
-      }
-
+      const res = await createDepartment({ variables: formData })
       toast.dismiss(loadingToast)
       toast.success("Department created successfully", {
         duration: 3000,
         icon: '🏢'
       })
 
+      if (!res || !res.data) throw new Error("Failed to create department")
+        
       if (onSave) {
-        onSave(newDepartment)
+        onSave(res.data)
       }
 
       onOpenChange(false)
@@ -272,32 +240,19 @@ export function AddDepartmentModal({
 
   const handleCancel = () => {
     setFormData({
-      institution_id: institutionId,
-      church_id: '',
+      institution: institutionId,
+      church: '',
       name: '',
       description: '',
-      annual_budget: 0,
-      contact: {
-        name: '',
-        phone: '',
-        mobile: '',
-        email: '',
-        country: '',
-        city: '',
-        address: '',
-        full_address: '',
-        postal_code: '',
-        website: '',
-        notes: '',
-        is_primary: true
-      }
+      contactName: '',
+      phone: '',
+      email: '',
+      city: ''
     })
     setErrors({})
     setCurrentStep(1)
     onOpenChange(false)
   }
-
-  const selectedChurch = churches.find(church => church.id === formData.church_id)
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -329,16 +284,16 @@ export function AddDepartmentModal({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="church_id" className="flex items-center gap-2 text-sm">
+                <Label htmlFor="church" className="flex items-center gap-2 text-sm">
                   <Home className="w-4 h-4 text-muted-foreground" />
                   Church *
                 </Label>
                 <Select
-                  value={formData.church_id || ''}
-                  onValueChange={(value) => handleInputChange('church_id', value)}
+                  value={formData.church || ''}
+                  onValueChange={(value) => handleInputChange('church', value)}
                   disabled={isLoading}
                 >
-                  <SelectTrigger className={`h-10 ${errors.church_id ? 'border-red-500' : ''}`}>
+                  <SelectTrigger className={`h-10 ${errors.church ? 'border-red-500' : ''}`}>
                     <SelectValue placeholder="Select church" />
                   </SelectTrigger>
                   <SelectContent>
@@ -349,8 +304,8 @@ export function AddDepartmentModal({
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.church_id && (
-                  <p className="text-sm text-red-600">{errors.church_id}</p>
+                {errors.church && (
+                  <p className="text-sm text-red-600">{errors.church}</p>
                 )}
               </div>
 
@@ -371,27 +326,6 @@ export function AddDepartmentModal({
                   <p className="text-sm text-red-600">{errors.description}</p>
                 )}
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="annual_budget" className="flex items-center gap-2 text-sm">
-                  <DollarSign className="w-4 h-4 text-muted-foreground" />
-                  Annual Budget *
-                </Label>
-                <Input
-                  id="annual_budget"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.annual_budget || ''}
-                  onChange={(e) => handleInputChange('annual_budget', parseFloat(e.target.value) || 0)}
-                  placeholder="Enter annual budget"
-                  disabled={isLoading}
-                  className={`h-10 ${errors.annual_budget ? 'border-red-500' : ''}`}
-                />
-                {errors.annual_budget && (
-                  <p className="text-sm text-red-600">{errors.annual_budget}</p>
-                )}
-              </div>
             </div>
           </div>
         )
@@ -408,65 +342,74 @@ export function AddDepartmentModal({
               <div className="space-y-2">
                 <Label htmlFor="contact_name" className="flex items-center gap-2 text-sm">
                   <User className="w-4 h-4 text-muted-foreground" />
-                  Contact Name
+                  Contact Name *
                 </Label>
                 <Input
                   id="contact_name"
-                  value={formData.contact?.name || ''}
-                  onChange={(e) => handleInputChange('contact.name', e.target.value)}
+                  value={formData.contactName || ''}
+                  onChange={(e) => handleInputChange('contactName', e.target.value)}
                   placeholder="Enter contact name"
                   disabled={isLoading}
-                  className="h-10"
+                  className={`h-10 ${errors.contactName ? 'border-red-500' : ''}`}
                 />
+                {errors.contactName && (
+                  <p className="text-sm text-red-600">{errors.contactName}</p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="contact_email" className="flex items-center gap-2 text-sm">
                   <Mail className="w-4 h-4 text-muted-foreground" />
-                  Contact Email
+                  Contact Email *
                 </Label>
                 <Input
                   id="contact_email"
                   type="email"
-                  value={formData.contact?.email || ''}
-                  onChange={(e) => handleInputChange('contact.email', e.target.value)}
+                  value={formData.email || ''}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
                   placeholder="Enter email address"
                   disabled={isLoading}
-                  className={`h-10 ${errors['contact.email'] ? 'border-red-500' : ''}`}
+                  className={`h-10 ${errors.email ? 'border-red-500' : ''}`}
                 />
-                {errors['contact.email'] && (
-                  <p className="text-sm text-red-600">{errors['contact.email']}</p>
+                {errors.email && (
+                  <p className="text-sm text-red-600">{errors.email}</p>
                 )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="contact_phone" className="flex items-center gap-2 text-sm">
                   <Phone className="w-4 h-4 text-muted-foreground" />
-                  Phone
+                  Phone *
                 </Label>
                 <Input
                   id="contact_phone"
-                  value={formData.contact?.phone || ''}
-                  onChange={(e) => handleInputChange('contact.phone', e.target.value)}
+                  value={formData.phone || ''}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
                   placeholder="Enter phone number"
                   disabled={isLoading}
-                  className="h-10"
+                  className={`h-10 ${errors.phone ? 'border-red-500' : ''}`}
                 />
+                {errors.phone && (
+                  <p className="text-sm text-red-600">{errors.phone}</p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="contact_city" className="flex items-center gap-2 text-sm">
                   <MapPin className="w-4 h-4 text-muted-foreground" />
-                  City
+                  City *
                 </Label>
                 <Input
                   id="contact_city"
-                  value={formData.contact?.city || ''}
-                  onChange={(e) => handleInputChange('contact.city', e.target.value)}
+                  value={formData.city || ''}
+                  onChange={(e) => handleInputChange('city', e.target.value)}
                   placeholder="Enter city"
                   disabled={isLoading}
-                  className="h-10"
+                  className={`h-10 ${errors.city ? 'border-red-500' : ''}`}
                 />
+                {errors.city && (
+                  <p className="text-sm text-red-600">{errors.city}</p>
+                )}
               </div>
             </div>
           </div>
