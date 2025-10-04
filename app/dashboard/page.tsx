@@ -35,7 +35,8 @@ import {
   Globe,
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Crown
 } from "lucide-react"
 import {
   Area,
@@ -85,6 +86,7 @@ import { UseTable } from "@/components/ui/use-table"
 import { ColumnDef } from "@tanstack/react-table"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
+import { structureTranslations } from "@/lib/translations/structure"
 
 // Dados para o gráfico interativo de crescimento
 const interactiveGrowthData = [
@@ -155,32 +157,56 @@ const userColumns: ColumnDef<any>[] = [
     header: "Email",
   },
   {
-    accessorKey: "role",
-    header: "Role",
+    id: "role",
+    header: "Roles",
+    cell: ({ row }) => {
+      const user = row.original;
+      return (
+        <div className="flex flex-wrap gap-1">
+          {user.user_roles?.map((role: any) => (
+            <Badge 
+              key={role.id} 
+              variant={role.role.key_code === 'ADMIN' ? 'default' : 'secondary'}
+              className="text-xs"
+            >
+              {role.role.key_code === 'ADMIN' && <Crown className="w-3 h-3 mr-1" />}
+              {role.role.name}
+            </Badge>
+          ))}
+        </div>
+      );
+    },
   },
   {
-    accessorKey: "status",
+    accessorKey: "is_deleted",
+    id: "status",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.getValue("status") as string
-      const color = status === "Active" ? "bg-green-100 text-green-700" : 
-                   status === "Inactive" ? "bg-red-100 text-red-700" : 
-                   "bg-yellow-100 text-yellow-700"
+      const status = row.getValue("is_deleted") as boolean;
+      const color = status ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700";
       return (
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}>
-          {status}
+          {status ? "Inactive" : "Active"}
         </span>
-      )
+      );
     },
   },
-  {
-    accessorKey: "lastLogin",
-    header: "Last Login",
-    cell: ({ row }) => {
-      const date = new Date(row.getValue("lastLogin"))
-      return date.toLocaleDateString()
-    },
-  },
+  // {
+  //   accessorKey: "lastLogin",
+  //   header: "Last Login",
+  //   cell: ({ row }) => {
+  //     const date = new Date(row.getValue("lastLogin"))
+  //     return date.toLocaleDateString()
+  //   },
+  // },
+  // {
+  //   accessorKey: "lastLogin",
+  //   header: "Last Login",
+  //   cell: ({ row }) => {
+  //     const date = new Date(row.getValue("lastLogin"))
+  //     return date.toLocaleDateString()
+  //   },
+  // },
 ]
 
 
@@ -466,7 +492,12 @@ const BudgetChart = () => (
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
-  const { currentInstitutionData } = useInstitution()
+  const { institutions, currentInstitutionData } = useInstitution()
+  const currentLanguage = i18n?.language || 'en'
+  const ts = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
+
+  const users = institutions?.flatMap(inst => inst.users) || []
+  console.log(users)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedPeriod, setSelectedPeriod] = useState("6m")
   const [refreshing, setRefreshing] = useState(false)
@@ -691,25 +722,23 @@ export default function DashboardPage() {
           <h3 className="text-xl font-semibold">User Management</h3>
           <UseTable
             columns={userColumns}
-            data={mockUsers}
+            data={users}
             searchKey="name"
             filters={[
               {
                 id: "role",
                 title: "Role",
-                options: [
-                  { label: "Admin", value: "Admin" },
-                  { label: "Manager", value: "Manager" },
-                  { label: "User", value: "User" }
-                ]
+                options: Array.from(new Set(users?.flatMap(user => user?.user_roles?.map(role => role.role.name) || []) || [])).map(role => ({
+                  label: role,
+                  value: role
+                }))
               },
               {
                 id: "status",
                 title: "Status",
                 options: [
-                  { label: "Active", value: "Active" },
-                  { label: "Inactive", value: "Inactive" },
-                  { label: "Pending", value: "Pending" }
+                  { label: ts.active, value: "active" },
+                  { label: ts.inactive, value: "inactive" },
                 ]
               }
             ]}

@@ -36,7 +36,7 @@ import {
 import toast from "react-hot-toast"
 import { structureTranslations } from "@/lib/translations/structure"
 import { DataTable } from "@/components/ui/data-table"
-import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal, DepartmentData, ChurchData } from "@/components/modals/department"
+import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal } from "@/components/modals/department"
 import { useInstitution } from "@/contexts/institution-context"
 import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
 import { AnnualBudgetModal, AnnualBudgetData } from "@/components/modals/budget"
@@ -63,6 +63,10 @@ import {
 } from "recharts"
 import { CreateDepartment } from "@/types/CreateDepartment"
 import NotFound from "@/components/shared/not-found"
+import {
+   InstitutionById_institution_departments as DepartmentData,
+   InstitutionById_institution_churches as ChurchData
+} from "@/types/InstitutionById"
 
 
 /**
