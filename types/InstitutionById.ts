@@ -138,6 +138,30 @@ export interface InstitutionById_institution_users {
   user_roles: InstitutionById_institution_users_user_roles[] | null;
 }
 
+export interface InstitutionById_institution_regions_contact {
+  __typename: "Contact";
+  id: string;
+  name: string | null;
+  phone: string | null;
+  mobile: string | null;
+  email: string | null;
+  country: string | null;
+  city: string | null;
+  address: string | null;
+  full_address: string | null;
+  postal_code: string | null;
+  website: string | null;
+  notes: string | null;
+  is_primary: boolean;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
+}
+
 export interface InstitutionById_institution_regions {
   __typename: "Region";
   id: string;
@@ -145,6 +169,7 @@ export interface InstitutionById_institution_regions {
   name: string;
   parent_region_id: string | null;
   contact_id: string | null;
+  contact: InstitutionById_institution_regions_contact | null;
   created_at: any;
   updated_at: any;
   created_by: string;

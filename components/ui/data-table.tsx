@@ -73,25 +73,20 @@ export function DataTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
   const [globalFilter, setGlobalFilter] = React.useState("")
-
+  console.log("globalFilter", globalFilter)
   const table = useReactTable({
     data,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: "includesString",
     state: {
       sorting,
       columnFilters,
-      columnVisibility,
-      rowSelection,
       globalFilter,
     },
     initialState: {
@@ -107,6 +102,12 @@ export function DataTable<TData, TValue>({
     table.resetColumnFilters()
   }
 
+  const clearAllFilters = () => {
+    setGlobalFilter("");
+    setColumnFilters([]);
+    table.resetColumnFilters();
+  };
+
   const hasActiveFilters = globalFilter !== "" || columnFilters.length > 0
 
   return (
@@ -118,10 +119,14 @@ export function DataTable<TData, TValue>({
           <div className="relative flex-1 sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
+              type="text"
               placeholder={searchPlaceholder || t('common.search')}
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
               className="pl-10"
+              autoComplete="new-password" // Valor alternativo para desativar autofill
+              name={`disable-autofill-${Math.random().toString(36).substring(2, 15)}`} // Nome único
+              id={`disable-autofill-${Math.random().toString(36).substring(2, 15)}`} // ID único
             />
             {globalFilter && (
               <Button
@@ -137,12 +142,15 @@ export function DataTable<TData, TValue>({
           {/* Column Filters */}
           {filterableColumns.map((column) => {
             const filterValue = table.getColumn(column.id)?.getFilterValue() as string
+            console.log("filterValue", filterValue)
             return (
               <Select
                 key={column.id}
                 value={filterValue || "all"}
-                onValueChange={(value) =>
+                onValueChange={(value) => {
+                  console.log("filterValue", table.getColumn(column.id)?.getFilterValue())
                   table.getColumn(column.id)?.setFilterValue(value === "all" ? "" : value)
+                }
                 }
               >
                 <SelectTrigger className="w-[180px]">

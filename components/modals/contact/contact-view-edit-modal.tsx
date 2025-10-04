@@ -66,6 +66,9 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
   updateMutation,
   entityId
 }: ContactViewEditModalProps<TMutationData, TMutationVariables>) {
+  console.log("contact", contact)
+  console.log("entityId", entityId)
+  
   const { i18n } = useTranslation()
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -172,12 +175,12 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
 
-      const updatedContact: TMutationVariables = {
+      const updateData: TMutationVariables = {
         contactId: contact.id,
         id: entityId,
         ...formData,
       }
-      const res = await updateMutation({ variables: updatedContact })
+      const res = await updateMutation({ variables: updateData })
       if (!res) throw new Error("Failed to update contact")
       toast.success(t_contact.updated || "Contact updated successfully!", {
         duration: 3000,

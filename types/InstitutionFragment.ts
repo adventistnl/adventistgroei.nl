@@ -138,6 +138,30 @@ export interface InstitutionFragment_users {
   user_roles: InstitutionFragment_users_user_roles[] | null;
 }
 
+export interface InstitutionFragment_regions_contact {
+  __typename: "Contact";
+  id: string;
+  name: string | null;
+  phone: string | null;
+  mobile: string | null;
+  email: string | null;
+  country: string | null;
+  city: string | null;
+  address: string | null;
+  full_address: string | null;
+  postal_code: string | null;
+  website: string | null;
+  notes: string | null;
+  is_primary: boolean;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
+}
+
 export interface InstitutionFragment_regions {
   __typename: "Region";
   id: string;
@@ -145,6 +169,7 @@ export interface InstitutionFragment_regions {
   name: string;
   parent_region_id: string | null;
   contact_id: string | null;
+  contact: InstitutionFragment_regions_contact | null;
   created_at: any;
   updated_at: any;
   created_by: string;

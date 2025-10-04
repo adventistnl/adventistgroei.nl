@@ -129,6 +129,9 @@ export const REGION_FRAGMENT = gql`
     name
     parent_region_id
     contact_id
+    contact {
+      ...ContactFragment
+    }
     created_at
     updated_at
     created_by

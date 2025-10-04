@@ -30,6 +30,8 @@ import {
   Loader2
 } from "lucide-react"
 import toast from "react-hot-toast"
+import { useRegions } from "@/hooks/use-regions"
+import { CreateRegion } from "@/types/CreateRegion"
 
 export interface AddRegionFormData {
   name: string
@@ -42,7 +44,7 @@ export interface AddRegionFormData {
 export interface AddRegionModalProps {
   children: React.ReactNode
   institutionId: string
-  onSuccess?: (data: AddRegionFormData) => void
+  onSuccess: (data: CreateRegion) => void
 }
 
 export function AddRegionModal({
@@ -50,6 +52,8 @@ export function AddRegionModal({
   institutionId,
   onSuccess
 }: AddRegionModalProps) {
+  const { createRegion } = useRegions();
+
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
@@ -148,15 +152,24 @@ export function AddRegionModal({
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
+      const res = await createRegion({
+        variables: {
+            institution_id: institutionId,
+            name: formData.name,
+            description: formData.description,
+            email: formData.email,
+            phone: formData.phone,
+            website: formData.website,
+        }
+      });
+      if (!res.data) throw new Error("Failed to create region")
 
-      toast.dismiss(loadingToast)
       toast.success(
         `🎉 Region "${formData.name}" created successfully!`,
         { duration: 4000 }
       )
-
       // Call success callback
-      onSuccess?.(formData)
+      onSuccess(res.data)
 
       // Close modal
       setIsOpen(false)
@@ -165,6 +178,7 @@ export function AddRegionModal({
       toast.error("❌ Failed to create region")
       console.error("Error creating region:", error)
     } finally {
+      toast.dismiss(loadingToast)
       setIsLoading(false)
     }
   }

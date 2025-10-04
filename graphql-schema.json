@@ -10453,6 +10453,18 @@
             "deprecationReason": null
           },
           {
+            "name": "description",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "institution_id",
             "description": null,
             "args": [],
@@ -16329,6 +16341,18 @@
             "defaultValue": null,
             "isDeprecated": false,
             "deprecationReason": null
+          },
+          {
+            "name": "description",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
           }
         ],
         "interfaces": null,
@@ -16383,7 +16407,7 @@
             "description": null,
             "type": {
               "kind": "INPUT_OBJECT",
-              "name": "ContactCreateDto",
+              "name": "ContactUpdateDto",
               "ofType": null
             },
             "defaultValue": null,
@@ -16396,6 +16420,18 @@
             "type": {
               "kind": "INPUT_OBJECT",
               "name": "AnnualBudgetUpdateDto",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "description",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
               "ofType": null
             },
             "defaultValue": null,

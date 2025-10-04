@@ -59,16 +59,7 @@ import {
 } from "recharts"
 
 import { useInstitution } from '@/contexts/institution-context'
-
-// Mock data para timeline de subsídios
-const MOCK_SUBSIDY_TIMELINE = [
-  { month: 'Jan', 'São Paulo Capital': 15, 'São Paulo Interior': 22, 'Rio de Janeiro': 12, 'Distrito Federal': 8, 'Bahia - Salvador': 18 },
-  { month: 'Feb', 'São Paulo Capital': 18, 'São Paulo Interior': 25, 'Rio de Janeiro': 14, 'Distrito Federal': 10, 'Bahia - Salvador': 20 },
-  { month: 'Mar', 'São Paulo Capital': 22, 'São Paulo Interior': 28, 'Rio de Janeiro': 16, 'Distrito Federal': 12, 'Bahia - Salvador': 23 },
-  { month: 'Apr', 'São Paulo Capital': 19, 'São Paulo Interior': 26, 'Rio de Janeiro': 15, 'Distrito Federal': 11, 'Bahia - Salvador': 21 },
-  { month: 'May', 'São Paulo Capital': 25, 'São Paulo Interior': 30, 'Rio de Janeiro': 18, 'Distrito Federal': 14, 'Bahia - Salvador': 25 },
-  { month: 'Jun', 'São Paulo Capital': 23, 'São Paulo Interior': 34, 'Rio de Janeiro': 18, 'Distrito Federal': 15, 'Bahia - Salvador': 27 },
-]
+import { useRegions } from "@/hooks/use-regions"
 
 /**
  * PÁGINA DE GESTÃO DE REGIÕES
@@ -76,9 +67,9 @@ const MOCK_SUBSIDY_TIMELINE = [
  */
 export default function RegionsPage() {
   const { i18n } = useTranslation()
-  const { currentInstitutionData, loading: institutionLoading } = useInstitution();
+  const { currentInstitutionData, refetchInstitutionById } = useInstitution();
+  const { updateRegion, updateRegionContact } = useRegions();
   // Garante que regions venha do dado real da instituição ativa
-  console.log(currentInstitutionData)
   const regions = React.useMemo(() => currentInstitutionData?.regions || [], [currentInstitutionData]);
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -215,7 +206,7 @@ export default function RegionsPage() {
     const refreshToast = toast.loading(t.refreshing)
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await refetchInstitutionById()
       toast.dismiss(refreshToast)
       toast.success(t.dataRefreshed, { duration: 2000 })
     } catch (error) {
@@ -241,28 +232,9 @@ export default function RegionsPage() {
   };
   const handleViewContact = (id: string) => {
     const region = regions.find((r: RegionType) => r.id === id);
+    console.log(region)
     if (region && (region as any).contact) {
-      const contactData: ContactData = {
-        id: `contact_${region.id}`,
-        name: (region as any).contact?.name || null,
-        phone: (region as any).contact?.phone || null,
-        mobile: null,
-        email: (region as any).contact?.email || null,
-        country: null,
-        city: (region as any).contact?.city || null,
-        address: null,
-        full_address: null,
-        postal_code: null,
-        website: null,
-        notes: null,
-        is_primary: true,
-        created_at: region.created_at,
-        updated_at: region.created_at,
-        created_by: 'system',
-        updated_by: 'system',
-        is_deleted: false
-      };
-      setSelectedContact(contactData);
+      setSelectedRegion(region)
       setIsViewContactModalOpen(true);
     }
   };
@@ -292,7 +264,8 @@ export default function RegionsPage() {
 
   // Modal handlers
   const handleRegionCreated = (newRegion: any) => {
-    toast.success(t.itemCreated)
+    // toast.success(t.itemCreated)
+    console.log('chamando sucesso', newRegion)
     handleRefresh()
   }
 
@@ -398,11 +371,11 @@ export default function RegionsPage() {
     },
     {
       id: "status",
-      accessorKey: "status",
+      accessorKey: "is_deleted",
       header: "Status",
       cell: ({ row }) => (
-        <Badge variant={row.original.status === 'active' ? 'default' : 'secondary'}>
-          {row.original.status === 'active' ? t.active : t.inactive}
+        <Badge variant={row.original.is_deleted ? 'secondary' : 'default'}>
+          {row.original.is_deleted ? t.inactive : t.active}
         </Badge>
       ),
     },
@@ -438,7 +411,7 @@ export default function RegionsPage() {
       ),
     },
   ]
-
+  console.log("selectedRegion", selectedRegion)
   if (isLoading) {
     return (
       <AppLayout>
@@ -661,19 +634,19 @@ export default function RegionsPage() {
               searchKey="name"
               searchPlaceholder={t.searchRegions}
               filterableColumns={[
-                {
-                  id: "institution",
-                  title: "Instituição",
-                  options: Array.from(new Set(regions.map((r: any) => r.institution_name))).map(name => ({ label: String(name), value: String(name) }))
-                },
-                {
-                  id: "status",
-                  title: "Status",
-                  options: [
-                    { label: t.active, value: "active" },
-                    { label: t.inactive, value: "inactive" },
-                  ]
-                }
+                // {
+                //   id: "institution",
+                //   title: "Instituição",
+                //   options: Array.from(new Set(regions.map((r: any) => r.institution_name))).map(name => ({ label: String(name), value: String(name) }))
+                // },
+                // {
+                //   id: "status",
+                //   title: "Status",
+                //   options: [
+                //     { label: t.active, value: "active" }, // Representa is_deleted: false
+                //     { label: t.inactive, value: "inactive" }, // Representa is_deleted: true
+                //   ]
+                // }
               ]}
             />
           </CardContent>
@@ -725,9 +698,11 @@ export default function RegionsPage() {
         <ContactViewEditModal
           isOpen={isViewContactModalOpen}
           onOpenChange={setIsViewContactModalOpen}
-          contact={selectedContact}
+          contact={selectedRegion?.contact}
           entityName={selectedRegion?.name}
           entityType="Region"
+          entityId={selectedRegion?.id}
+          updateMutation={updateRegionContact}
         />
         
         {/* Annual Budget Modal */}

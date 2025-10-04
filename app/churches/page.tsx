@@ -61,6 +61,7 @@ import {
 } from "recharts"
 
 import { useInstitution } from '@/contexts/institution-context'
+import { CreateChurch } from "@/types/CreateChurch"
 
 // Dados reais de igrejas virão do contexto da instituição
 
@@ -117,8 +118,9 @@ const MOCK_SUBSIDY_TIMELINE = [
  */
 export default function ChurchesPage() {
   const { i18n } = useTranslation()
-  const { currentInstitutionData, loading: institutionLoading } = useInstitution();
+  const { currentInstitutionData, refetchInstitutionById } = useInstitution();
   const churches = React.useMemo(() => currentInstitutionData?.churches || [], [currentInstitutionData]);
+  
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   console.log('churches', currentInstitutionData)
@@ -257,7 +259,7 @@ export default function ChurchesPage() {
     const refreshToast = toast.loading(t.refreshing)
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await refetchInstitutionById()
       toast.dismiss(refreshToast)
       toast.success(t.dataRefreshed, { duration: 2000 })
     } catch (error) {
@@ -342,8 +344,7 @@ export default function ChurchesPage() {
     handleRefresh()
   }
   
-  const handleChurchSaved = (church: ChurchData) => {
-    toast.success("Church created successfully")
+  const handleChurchSaved = (church: CreateChurch) => {
     handleRefresh()
   }
   
@@ -724,13 +725,15 @@ export default function ChurchesPage() {
         </Card>
 
         {/* View Contact Modal */}
-        <ContactViewEditModal
+        {/* <ContactViewEditModal
           isOpen={isViewContactModalOpen}
           onOpenChange={setIsViewContactModalOpen}
           contact={selectedContact}
           entityName={selectedChurch?.name}
           entityType="Church"
-        />
+          entityId={selectedChurch?.id}
+          updateMutation={null}
+        /> */}
         
         {/* Annual Budget Modal */}
         {selectedChurch && (
@@ -750,7 +753,7 @@ export default function ChurchesPage() {
           isOpen={isAddChurchModalOpen}
           onOpenChange={setIsAddChurchModalOpen}
           institutionId={currentInstitutionData?.id || ''}
-          regions={[]}
+          regions={currentInstitutionData?.regions || []}
           onSave={handleChurchSaved}
         />
         

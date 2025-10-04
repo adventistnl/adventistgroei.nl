@@ -32,13 +32,14 @@ import {
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { churchTranslations } from "@/lib/translations/churches"
+import { useChurches } from "@/hooks/use-churches"
+import { CreateChurch, CreateChurchVariables } from "@/types/CreateChurch"
 
 export interface ChurchData {
   id: string
   institution_id: string
   name: string
   region_id: string
-  annual_budget?: number
   contact_id?: string | null
   created_at: string
   updated_at: string
@@ -83,7 +84,7 @@ export interface AddChurchModalProps {
   onOpenChange: (open: boolean) => void
   institutionId: string
   regions: RegionData[]
-  onSave?: (church: ChurchData) => void
+  onSave?: (church: CreateChurch) => void
 }
 
 export function AddChurchModal({
@@ -94,27 +95,17 @@ export function AddChurchModal({
   onSave
 }: AddChurchModalProps) {
   const { t: tCommon } = useTranslation()
+  const { createChurch } = useChurches()
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
-  const [formData, setFormData] = useState<Partial<ChurchData & { contact: Partial<ContactData> }>>({
+  const [formData, setFormData] = useState<CreateChurchVariables>({
     institution_id: institutionId,
     name: '',
     region_id: '',
-    annual_budget: 0,
-    contact: {
-      name: '',
-      phone: '',
-      mobile: '',
-      email: '',
-      country: '',
-      city: '',
-      address: '',
-      full_address: '',
-      postal_code: '',
-      website: '',
-      notes: '',
-      is_primary: true
-    }
+    contactName: '',
+    phone: '',
+    email: '',
+    city: '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -126,21 +117,10 @@ export function AddChurchModal({
         institution_id: institutionId,
         name: '',
         region_id: '',
-        annual_budget: 0,
-        contact: {
-          name: '',
-          phone: '',
-          mobile: '',
-          email: '',
-          country: '',
-          city: '',
-          address: '',
-          full_address: '',
-          postal_code: '',
-          website: '',
-          notes: '',
-          is_primary: true
-        }
+        contactName: '',
+        phone: '',
+        email: '',
+        city: '',
       })
       setErrors({})
       setCurrentStep(1)
@@ -148,22 +128,11 @@ export function AddChurchModal({
   }, [isOpen, institutionId])
 
   const handleInputChange = (field: string, value: string | boolean | number) => {
-    if (field.startsWith('contact.')) {
-      const contactField = field.replace('contact.', '')
-      setFormData(prev => ({
-        ...prev,
-        contact: {
-          ...prev.contact,
-          [contactField]: value
-        }
-      }))
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [field]: value
-      }))
-    }
-    
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({
@@ -186,19 +155,30 @@ export function AddChurchModal({
       if (!formData.region_id) {
         newErrors.region_id = "Region is required"
       }
-
-      if (!formData.annual_budget || formData.annual_budget <= 0) {
-        newErrors.annual_budget = "Annual budget is required and must be greater than 0"
-      }
     }
 
     if (step === 2) {
-      if (formData.contact?.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact.email)) {
-        newErrors['contact.email'] = "Please enter a valid email address"
+      if (!formData.email?.trim()) {
+        newErrors.email = "Email is required"
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        newErrors.email = "Please enter a valid email address"
+      }
+
+      if (!formData.phone?.trim()) {
+        newErrors.phone = "Phone number is required"
+      }
+
+      if (!formData.contactName?.trim()) {
+        newErrors.contactName = "Contact name is required"
+      }
+
+      if (!formData.city?.trim()) {
+        newErrors.city = "City is required"
       }
     }
 
     setErrors(newErrors)
+
     return Object.keys(newErrors).length === 0
   }
 
@@ -215,7 +195,10 @@ export function AddChurchModal({
   const handleSave = async () => {
     if (!validateStep(1) || !validateStep(2)) {
       toast.error("Please fix the errors before continuing")
-      return
+
+      // Log errors for debugging
+      console.error("Validation errors:", errors);
+      return;
     }
 
     setIsLoading(true)
@@ -225,18 +208,18 @@ export function AddChurchModal({
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
 
-      const newChurch: ChurchData = {
-        id: `church_${Date.now()}`,
+      const variables: CreateChurchVariables = {
         institution_id: institutionId,
         name: formData.name!.trim(),
         region_id: formData.region_id!,
-        annual_budget: formData.annual_budget!,
-        contact_id: null, // Will be set after contact creation
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        created_by: 'current_user',
-        updated_by: 'current_user',
-        is_deleted: false
+        city: formData.city,
+        email: formData.email,
+        phone: formData.phone,
+        contactName: formData.contactName
+      }
+      const res = await createChurch({ variables })
+      if (!res || !res.data) {
+        throw new Error("Failed to create church")
       }
 
       toast.dismiss(loadingToast)
@@ -246,7 +229,7 @@ export function AddChurchModal({
       })
 
       if (onSave) {
-        onSave(newChurch)
+        onSave(res.data)
       }
 
       onOpenChange(false)
@@ -264,21 +247,10 @@ export function AddChurchModal({
       institution_id: institutionId,
       name: '',
       region_id: '',
-      annual_budget: 0,
-      contact: {
-        name: '',
-        phone: '',
-        mobile: '',
-        email: '',
-        country: '',
-        city: '',
-        address: '',
-        full_address: '',
-        postal_code: '',
-        website: '',
-        notes: '',
-        is_primary: true
-      }
+      contactName: '',
+      phone: '',
+      email: '',
+      city: '',
     })
     setErrors({})
     setCurrentStep(1)
@@ -339,26 +311,6 @@ export function AddChurchModal({
                   <p className="text-sm text-red-600">{errors.region_id}</p>
                 )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="annual_budget" className="flex items-center gap-2 text-sm">
-                  <DollarSign className="w-4 h-4 text-muted-foreground" />
-                  Annual Budget *
-                </Label>
-                <Input
-                  id="annual_budget"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.annual_budget || ''}
-                  onChange={(e) => handleInputChange('annual_budget', parseFloat(e.target.value) || 0)}
-                  placeholder="Enter annual budget"
-                  disabled={isLoading}
-                  className={`h-10 ${errors.annual_budget ? 'border-red-500' : ''}`}
-                />
-                {errors.annual_budget && (
-                  <p className="text-sm text-red-600">{errors.annual_budget}</p>
-                )}
-              </div>
             </div>
           </div>
         )
@@ -379,12 +331,15 @@ export function AddChurchModal({
                 </Label>
                 <Input
                   id="contact_name"
-                  value={formData.contact?.name || ''}
-                  onChange={(e) => handleInputChange('contact.name', e.target.value)}
+                  value={formData.contactName || ''}
+                  onChange={(e) => handleInputChange('contactName', e.target.value)}
                   placeholder="Enter contact name"
                   disabled={isLoading}
-                  className="h-10"
+                  className={`h-10 ${errors.contactName ? 'border-red-500' : ''}`}
                 />
+                {errors.contactName && (
+                  <p className="text-sm text-red-600">{errors.contactName}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -395,14 +350,14 @@ export function AddChurchModal({
                 <Input
                   id="contact_email"
                   type="email"
-                  value={formData.contact?.email || ''}
-                  onChange={(e) => handleInputChange('contact.email', e.target.value)}
+                  value={formData.email || ''}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
                   placeholder="Enter email address"
                   disabled={isLoading}
-                  className={`h-10 ${errors['contact.email'] ? 'border-red-500' : ''}`}
+                  className={`h-10 ${errors.email ? 'border-red-500' : ''}`}
                 />
-                {errors['contact.email'] && (
-                  <p className="text-sm text-red-600">{errors['contact.email']}</p>
+                {errors.email && (
+                  <p className="text-sm text-red-600">{errors.email}</p>
                 )}
               </div>
 
@@ -413,12 +368,15 @@ export function AddChurchModal({
                 </Label>
                 <Input
                   id="contact_phone"
-                  value={formData.contact?.phone || ''}
-                  onChange={(e) => handleInputChange('contact.phone', e.target.value)}
+                  value={formData.phone || ''}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
                   placeholder="Enter phone number"
                   disabled={isLoading}
-                  className="h-10"
+                  className={`h-10 ${errors.phone ? 'border-red-500' : ''}`}
                 />
+                {errors.phone && (
+                  <p className="text-sm text-red-600">{errors.phone}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -428,12 +386,16 @@ export function AddChurchModal({
                 </Label>
                 <Input
                   id="contact_city"
-                  value={formData.contact?.city || ''}
-                  onChange={(e) => handleInputChange('contact.city', e.target.value)}
+                  value={formData.city || ''}
+                  onChange={(e) => handleInputChange('city', e.target.value)}
                   placeholder="Enter city"
                   disabled={isLoading}
-                  className="h-10"
+                  className={`h-10 ${errors.city ? 'border-red-500' : ''}`}
+
                 />
+                {errors.city && (
+                  <p className="text-sm text-red-600">{errors.city}</p>
+                )}
               </div>
             </div>
           </div>

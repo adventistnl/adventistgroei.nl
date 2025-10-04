@@ -1481,6 +1481,7 @@ export type Region = {
   created_by: Scalars['String']['output'];
   deleted_at?: Maybe<Scalars['DateTime']['output']>;
   deleted_by?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   institution: Institution;
   institution_id: Scalars['String']['output'];
@@ -1501,6 +1502,7 @@ export type RegionCount = {
 export type RegionCreateDto = {
   annual_budget?: InputMaybe<AnnualBudgetCreateDto>;
   contact?: InputMaybe<ContactCreateDto>;
+  description?: InputMaybe<Scalars['String']['input']>;
   institution_id: Scalars['String']['input'];
   name: Scalars['String']['input'];
   parent_region_id?: InputMaybe<Scalars['String']['input']>;
@@ -1524,7 +1526,8 @@ export type RegionModel = {
 
 export type RegionUpdateDto = {
   annual_budget?: InputMaybe<AnnualBudgetUpdateDto>;
-  contact?: InputMaybe<ContactCreateDto>;
+  contact?: InputMaybe<ContactUpdateDto>;
+  description?: InputMaybe<Scalars['String']['input']>;
   institution_id?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   parent_region_id?: InputMaybe<Scalars['String']['input']>;

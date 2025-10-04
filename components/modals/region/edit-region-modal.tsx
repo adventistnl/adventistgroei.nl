@@ -35,6 +35,9 @@ import {
   AlertCircle
 } from "lucide-react"
 import toast from "react-hot-toast"
+import { useRegions } from "@/hooks/use-regions"
+import { UpdateRegion, UpdateRegionVariables } from "@/types/UpdateRegion"
+import { useInstitutions } from "@/hooks/use-institutions"
 
 export interface RegionData {
   id: string
@@ -96,6 +99,7 @@ export function EditRegionModal({
   onSave
 }: EditRegionModalProps) {
   const { i18n } = useTranslation()
+  const { updateRegion } = useRegions()
   const currentLanguage = i18n?.language || 'en'
   const t = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
   const [currentStep, setCurrentStep] = useState(1)
@@ -220,7 +224,18 @@ export function EditRegionModal({
         updated_at: new Date().toISOString(),
         updated_by: 'current_user'
       }
+      const variables: UpdateRegionVariables = {
+        id: region.id,
+        name: "",
+        institution_id: "",
+        parent_region_id: "",
+        description: "",
+        email: "",
+        phone: "",
+        website: "",
+      }
 
+      // const res = await updateRegion({variables: formData})
       toast.dismiss(loadingToast)
       toast.success(t.regions.toasts.updated, {
         duration: 3000,
