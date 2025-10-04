@@ -23,12 +23,12 @@ import toast from "react-hot-toast"
 import { useInstitutions } from "@/hooks/use-institutions"
 
 export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
-  const { institutions, activeInstitution, switchInstitution, addInstitution, refetchInstitutions, refetchInstitutionById } = useInstitution()
+  const { institutions, currentInstitutionData, switchInstitution, addInstitution, refetchInstitutions, refetchInstitutionById } = useInstitution()
   const [isReloading, setIsReloading] = React.useState(false)
 
   // Handler para mudança de instituição com reload e redirect
   const handleInstitutionChange = React.useCallback(async (institutionId: string) => {
-    if (institutionId === activeInstitution.id) return
+    if (institutionId === currentInstitutionData?.id) return
 
     setIsReloading(true)
     const loadingToast = toast.loading("🔄 Switching institution...")
@@ -53,7 +53,7 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
     } finally {
       setIsReloading(false)
     }
-  }, [activeInstitution, switchInstitution, refetchInstitutions, refetchInstitutionById])
+  }, [currentInstitutionData, switchInstitution, refetchInstitutions, refetchInstitutionById])
 
   // Handler para criação de nova instituição
   const handleInstitutionCreated = React.useCallback((data: any) => {
@@ -71,7 +71,7 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
     })
   }, [addInstitution])
 
-  if (!activeInstitution) {
+  if (!currentInstitutionData) {
     return null
   }
 
@@ -81,22 +81,22 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
         <div className="institution-switcher flex items-center gap-2 p-2">
           {/* Institution Logo */}
           <div className="institution-logo bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg shrink-0">
-            <activeInstitution.logo className="sidebar-icon-lg text-sidebar-primary-foreground" />
+            {/* <currentInstitutionData.logo className="sidebar-icon-lg text-sidebar-primary-foreground" /> */}
           </div>
 
           {/* Institution Select */}
           <div className="institution-select flex-1 min-w-0">
             <Select 
-              value={activeInstitution.id} 
+              value={currentInstitutionData.id} 
               onValueChange={handleInstitutionChange}
               disabled={isReloading}
             >
               <SelectTrigger className="h-10 border-0 bg-transparent shadow-none p-0 focus:ring-0">
                 <SelectValue>
                   <div className="text-left">
-                    <div className="font-medium text-sm truncate">{activeInstitution.name}</div>
+                    <div className="font-medium text-sm truncate">{currentInstitutionData.name}</div>
                     <div className="text-xs text-muted-foreground truncate">
-                      {activeInstitution.regions_count} regions • {activeInstitution.churches_count} churches
+                      {currentInstitutionData.regions_count} regions • {currentInstitutionData.churches_count} churches • {currentInstitutionData.users_count} users
                     </div>
                   </div>
                 </SelectValue>
@@ -110,12 +110,12 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
                   >
                     <div className="flex items-center gap-3 w-full">
                       <div className="flex size-6 items-center justify-center rounded-md bg-sidebar-primary/10">
-                        <institution.logo className="sidebar-icon text-sidebar-primary" />
+                        {/* <institution.logo className="sidebar-icon text-sidebar-primary" /> */}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm">{institution.name}</div>
                         <div className="text-xs text-muted-foreground">
-                          {institution.regions_count} regions • {institution.churches_count} churches
+                          {institution.regions_count} regions • {institution.churches_count} churches • {institution.users_count} users
                         </div>
                       </div>
                     </div>

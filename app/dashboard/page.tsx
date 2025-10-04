@@ -466,7 +466,7 @@ const BudgetChart = () => (
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
-  const { activeInstitution } = useInstitution()
+  const { currentInstitutionData } = useInstitution()
   const [isLoading, setIsLoading] = useState(true)
   const [selectedPeriod, setSelectedPeriod] = useState("6m")
   const [refreshing, setRefreshing] = useState(false)
@@ -480,10 +480,10 @@ export default function DashboardPage() {
   const [commPeriod, setCommPeriod] = useState("3m")
 
   // Dados específicos da instituição ativa
-  const currentInstitutionData = React.useMemo(() => {
-    if (!activeInstitution) return institutionSpecificData.usp;
-    return institutionSpecificData[activeInstitution.id as keyof typeof institutionSpecificData] || institutionSpecificData.usp;
-  }, [activeInstitution?.id])
+  // const currentInstitutionData = React.useMemo(() => {
+  //   if (!currentInstitutionData) return institutionSpecificData.usp;
+  //   return institutionSpecificData[currentInstitutionData.id as keyof typeof institutionSpecificData] || institutionSpecificData.usp;
+  // }, [currentInstitutionData?.id])
 
   // Dados para KPI Cards
   const kpiCardsData = [

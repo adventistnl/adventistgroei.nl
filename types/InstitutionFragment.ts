@@ -217,6 +217,7 @@ export interface InstitutionFragment {
   id: string;
   name: string;
   denomination: string;
+  description: string | null;
   language_preference: LanguagePreference;
   contact_id: string | null;
   created_at: any;

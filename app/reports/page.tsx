@@ -128,7 +128,7 @@ const statusChartConfig = {
 
 export default function ReportsPage() {
   const { t, i18n } = useTranslation()
-  const { activeInstitution } = useInstitution()
+  const { currentInstitutionData } = useInstitution()
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [reports, setReports] = useState<ReportTableData[]>([])
@@ -322,7 +322,7 @@ export default function ReportsPage() {
       start_at: new Date().toISOString(),
       end_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
       language_preference: "en",
-      institutionId: activeInstitution?.id || "1",
+      institutionId: currentInstitutionData?.id || "1",
       status: "active",
       subsidyRequests: 0,
       subsidyAmount: 0,

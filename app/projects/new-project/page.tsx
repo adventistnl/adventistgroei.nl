@@ -278,7 +278,6 @@ function ProjectRegisterContent() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { activeInstitution } = useInstitution()
   
   // Get translations for current language - usar o sistema i18n global
   const getCurrentTranslation = (key: string) => {

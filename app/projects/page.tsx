@@ -291,7 +291,6 @@ const ProjectsTimelineChart = () => (
 
 export default function ProjectsPage() {
   const { t, i18n } = useTranslation()
-  const { activeInstitution } = useInstitution()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)

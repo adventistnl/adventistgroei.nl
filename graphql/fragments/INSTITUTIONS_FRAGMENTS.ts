@@ -182,6 +182,7 @@ export const INSTITUTION_FRAGMENT = gql`
     id
     name
     denomination
+    description
     language_preference
     contact_id
     created_at
