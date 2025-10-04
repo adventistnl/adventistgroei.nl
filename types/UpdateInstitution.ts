@@ -21,4 +21,9 @@ export interface UpdateInstitutionVariables {
   name?: string | null;
   denomination?: string | null;
   language_preference?: string | null;
+  description?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  country?: string | null;
 }

@@ -91,78 +91,6 @@ export interface InstitutionById_institution_projects {
   institution_id: string | null;
 }
 
-export interface InstitutionById_institution_settings {
-  __typename: "Setting";
-  id: string;
-  institution_id: string;
-  key: string;
-  value: string;
-  description: string;
-  created_at: any;
-  updated_at: any;
-  created_by: string;
-  updated_by: string;
-  is_deleted: boolean;
-  deleted_at: any | null;
-  deleted_by: string | null;
-}
-
-export interface InstitutionById_institution_notifications {
-  __typename: "Notification";
-  id: string;
-  institution_id: string;
-  user_id: string;
-  type: string;
-  message: string;
-  read_status: boolean;
-  created_at: any;
-  updated_at: any;
-  created_by: string;
-  updated_by: string;
-  is_deleted: boolean;
-  deleted_at: any | null;
-  deleted_by: string | null;
-}
-
-export interface InstitutionById_institution_communications {
-  __typename: "Communication";
-  id: string;
-  institution_id: string;
-  title: string;
-  content: string;
-  type: string;
-  priority: string;
-  status: string;
-  language_preference: LanguagePreference;
-  schedule_at: any;
-  published_at: any;
-  author_id: string;
-  created_at: any;
-  updated_at: any;
-  created_by: string;
-  updated_by: string;
-  is_deleted: boolean;
-  deleted_at: any | null;
-  deleted_by: string | null;
-}
-
-export interface InstitutionById_institution_departments {
-  __typename: "Department";
-  id: string;
-  institution_id: string;
-  church_id: string;
-  name: string;
-  description: string;
-  contact_id: string | null;
-  created_at: any;
-  updated_at: any;
-  created_by: string;
-  updated_by: string;
-  is_deleted: boolean;
-  deleted_at: any | null;
-  deleted_by: string | null;
-}
-
 export interface InstitutionById_institution_users_church {
   __typename: "Church";
   id: string;
@@ -242,6 +170,23 @@ export interface InstitutionById_institution_churches {
   deleted_by: string | null;
 }
 
+export interface InstitutionById_institution_departments {
+  __typename: "Department";
+  id: string;
+  institution_id: string;
+  church_id: string;
+  name: string;
+  description: string;
+  contact_id: string | null;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
+}
+
 export interface InstitutionById_institution {
   __typename: "Institution";
   id: string;
@@ -264,13 +209,10 @@ export interface InstitutionById_institution {
   subsidy_requests: InstitutionById_institution_subsidy_requests[];
   direct_messages: InstitutionById_institution_direct_messages[];
   projects: InstitutionById_institution_projects[] | null;
-  settings: InstitutionById_institution_settings[] | null;
-  notifications: InstitutionById_institution_notifications[] | null;
-  communications: InstitutionById_institution_communications[] | null;
-  departments: InstitutionById_institution_departments[] | null;
   users: InstitutionById_institution_users[] | null;
   regions: InstitutionById_institution_regions[] | null;
   churches: InstitutionById_institution_churches[] | null;
+  departments: InstitutionById_institution_departments[] | null;
 }
 
 export interface InstitutionById {

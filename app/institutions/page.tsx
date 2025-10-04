@@ -12,7 +12,6 @@ import { Separator } from "@/components/ui/separator"
 import { 
   Building, 
   Plus, 
-  RefreshCw, 
   MoreHorizontal,
   Edit,
   Trash2,
@@ -21,9 +20,7 @@ import {
   Users,
   Church,
   Globe,
-  DollarSign,
   Shield,
-  Calendar
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -39,7 +36,7 @@ import { InstitutionsCharts } from "@/components/institutions/institutions-chart
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { DataTable } from "@/components/ui/data-table"
 import { InstitutionProfileHeader } from "@/components/shared"
-import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
+import { ContactViewEditModal } from "@/components/modals/contact"
 import { EditInstitutionModal, DeleteInstitutionModal, RegisterInstitutionModal } from "@/components/modals/institution"
 
 import { Institutions_institutions } from "@/types/Institutions"
@@ -47,14 +44,15 @@ import { useInstitution } from "@/contexts/institution-context"
 import { useInstitutionKPI } from "@/hooks/KPI/use-institution-kpi"
 import { InstitutionById_institution_departments, InstitutionById_institution_subsidy_requests } from "@/types/InstitutionById"
 import InstitutionsLoading from "./loading"
+import { Contact } from "@/types/graphql-global-types"
 
 /**
  * PÁGINA DE GESTÃO DE INSTITUIÇÕES
  * Interface dedicada para gerenciar instituições religiosas
  */
 export default function InstitutionsPage() {
-  const { t, i18n } = useTranslation()
-  const { institutions: institutionsData, activeInstitution, loading: isLoading } = useInstitution();
+  const { t } = useTranslation()
+  const { institutions: institutionsData, currentInstitutionData, loading: isLoading, updateInstitutionContact, refetchInstitutionById} = useInstitution();
   const institutionKPIs = useInstitutionKPI();
 
   // const [selectedInstitution, setSelectedInstitution] = useState<string>("all")
@@ -65,14 +63,13 @@ export default function InstitutionsPage() {
   const [editInstitutionId, setEditInstitutionId] = useState<string | null>(null)
   const [isDeleteInstitutionModalOpen, setIsDeleteInstitutionModalOpen] = useState(false)
   const [deleteInstitutionId, setDeleteInstitutionId] = useState<string | null>(null)
-  const [selectedContact, setSelectedContact] = useState<ContactData | null>(null)
   
   // Data states
   // const [institutionsData, setInstitutionsData] = useState<InstitutionWithDetails[]>([])
 
-  // Geração dos dados dos gráficos a partir da activeInstitution
+  // Geração dos dados dos gráficos a partir da currentInstitutionData
   const chartData = useMemo(() => {
-    if (!activeInstitution) {
+    if (!currentInstitutionData) {
       return {
         churchesByRegion: [],
         usersByRole: [],
@@ -86,9 +83,9 @@ export default function InstitutionsPage() {
     const churchesByRegion: Array<{ region: string, churches: number, members: number }> = [];
     // Se existisse region, poderíamos agrupar por ela. Aqui apenas um exemplo fictício:
     // Agrupamento fictício por church_id
-    if (activeInstitution.departments) {
+    if (currentInstitutionData.departments) {
       const regionMap: Record<string, { churches: number, members: number }> = {};
-      activeInstitution.departments.forEach((dep: InstitutionById_institution_departments) => {
+      currentInstitutionData.departments.forEach((dep: InstitutionById_institution_departments) => {
         const region = dep.church_id || '';
         if (!regionMap[region]) regionMap[region] = { churches: 0, members: 0 };
         regionMap[region].churches += 1;
@@ -104,7 +101,7 @@ export default function InstitutionsPage() {
     const usersByRole = [
       {
         name: 'User',
-        value: activeInstitution.users?.length || 0,
+        value: currentInstitutionData.users?.length || 0,
         color: '#f59e0b',
       }
     ];
@@ -112,8 +109,8 @@ export default function InstitutionsPage() {
     // Subsidy Over Time
     // Agrupar subsidy_requests por mês
     const subsidyOverTimeMap: Record<string, { requests: number, amount: number }> = {};
-    if (activeInstitution.subsidy_requests) {
-      activeInstitution.subsidy_requests.forEach((req: InstitutionById_institution_subsidy_requests) => {
+    if (currentInstitutionData.subsidy_requests) {
+      currentInstitutionData.subsidy_requests.forEach((req: InstitutionById_institution_subsidy_requests) => {
         const date = new Date(req.created_at);
         const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         if (!subsidyOverTimeMap[month]) subsidyOverTimeMap[month] = { requests: 0, amount: 0 };
@@ -126,8 +123,8 @@ export default function InstitutionsPage() {
     // Monthly Subsidies (por status)
     // Supondo que subsidy_statuses_id: 'approved', 'pending', 'under_review'
     const monthlySubsidiesMap: Record<string, { approved: number, pending: number, under_review: number }> = {};
-    if (activeInstitution.subsidy_requests) {
-      activeInstitution.subsidy_requests.forEach((req: InstitutionById_institution_subsidy_requests) => {
+    if (currentInstitutionData.subsidy_requests) {
+      currentInstitutionData.subsidy_requests.forEach((req: InstitutionById_institution_subsidy_requests) => {
         const date = new Date(req.created_at);
         const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         if (!monthlySubsidiesMap[month]) monthlySubsidiesMap[month] = { approved: 0, pending: 0, under_review: 0 };
@@ -144,7 +141,7 @@ export default function InstitutionsPage() {
       subsidyOverTime,
       monthlySubsidies,
     }
-  }, [activeInstitution]);
+  }, [currentInstitutionData]);
 
   const breadcrumbs = useMemo(() => [
     { name: "Structure & Organization" },
@@ -198,44 +195,20 @@ export default function InstitutionsPage() {
   }
 
   const handleEditInstitution = () => {
-    if (activeInstitution) {
+    if (currentInstitutionData) {
       setIsEditInstitutionModalOpen(true)
     }
   }
 
   const handleDeleteInstitution = () => {
-    if (activeInstitution) {
+    if (currentInstitutionData) {
       setIsDeleteInstitutionModalOpen(true)
     }
   }
 
   const handleViewInstitutionContact = () => {
-    if (activeInstitution) {
+    if (currentInstitutionData) {
       // Criar dados de contato mesmo se não existir contact específico na instituição
-      const contactData: ContactData = {
-        id: activeInstitution.contact_id || activeInstitution.id,
-        name: activeInstitution.contact?.name || activeInstitution.name,
-        phone: activeInstitution.contact?.phone || null,
-        mobile: activeInstitution.contact?.mobile || null,
-        email: activeInstitution.contact?.email || null,
-        country: activeInstitution.contact?.country || null,
-        city: activeInstitution.contact?.city || null,
-        address: activeInstitution.contact?.address || null,
-        full_address: activeInstitution.contact?.full_address || null,
-        postal_code: activeInstitution.contact?.postal_code || null,
-        website: activeInstitution.contact?.website || null,
-        notes: activeInstitution.contact?.notes || null,
-        is_primary: true,
-        created_at: activeInstitution.created_at,
-        updated_at: activeInstitution.updated_at,
-        created_by: activeInstitution.created_by || '',
-        updated_by: activeInstitution.updated_by || '',
-        is_deleted: activeInstitution.is_deleted || false,
-        deleted_at: activeInstitution.deleted_at || null,
-        deleted_by: activeInstitution.deleted_by || null
-      }
-      
-      setSelectedContact(contactData)
       setIsContactModalOpen(true)
     } else {
       toast.error('No institution selected')
@@ -243,6 +216,8 @@ export default function InstitutionsPage() {
   }
 
   const handleContactSaved = (contactData: any) => {
+    console.log("handleContactSaved", contactData)
+    refetchInstitutionById()
     toast.success(t('contacts.toasts.updated'))
   }
 
@@ -436,7 +411,7 @@ export default function InstitutionsPage() {
     )
   }
 
-  if (!activeInstitution) {
+  if (!currentInstitutionData) {
     return <InstitutionsLoading />
   }
 
@@ -452,14 +427,14 @@ export default function InstitutionsPage() {
             <p className="text-muted-foreground text-0.875rem sm:text-1rem">
               Manage religious institutions and their organizational structure
             </p>
-            {activeInstitution && (
+            {currentInstitutionData && (
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                   <Building className="w-3 h-3 mr-1" />
-                  Viewing: {activeInstitution.name}
+                  Viewing: {currentInstitutionData.name}
                 </Badge>
                 <Badge variant="outline" className="text-xs">
-                  {activeInstitution.denomination}
+                  {currentInstitutionData.denomination}
                 </Badge>
               </div>
             )}
@@ -478,9 +453,9 @@ export default function InstitutionsPage() {
         </div>
 
         {/* Institution Profile Header */}
-        {activeInstitution && (
+        {currentInstitutionData && (
           <InstitutionProfileHeader
-            institution={activeInstitution}
+            institution={currentInstitutionData}
             onEdit={handleEditInstitution}
             onDelete={handleDeleteInstitution}
             onViewContact={handleViewInstitutionContact}
@@ -507,7 +482,7 @@ export default function InstitutionsPage() {
           subsidyOverTimeData={chartData.subsidyOverTime}
           monthlySubsidiesData={chartData.monthlySubsidies}
           loading={isLoading}
-          institutionName={activeInstitution?.name}
+          institutionName={currentInstitutionData?.name}
         />
 
         {/* Institutions Table */}
@@ -532,12 +507,14 @@ export default function InstitutionsPage() {
 
         {/* Contact Modal */}
         <ContactViewEditModal
-          isOpen={isContactModalOpen && selectedContact !== null}
+          isOpen={isContactModalOpen && currentInstitutionData.contact !== null}
           onOpenChange={setIsContactModalOpen}
-          contact={selectedContact}
-          entityName={activeInstitution?.name || 'Institution'}
+          contact={currentInstitutionData.contact as Contact}
+          entityName={currentInstitutionData?.name || 'Institution'}
           entityType="Institution"
           onSave={handleContactSaved}
+          entityId={currentInstitutionData.id}
+          updateMutation={updateInstitutionContact}
         />
 
         {/* Edit Institution Modal */}
@@ -548,7 +525,7 @@ export default function InstitutionsPage() {
             if (!open) setEditInstitutionId(null);
           }}
           institution={
-            institutionsData.find(i => i.id === (editInstitutionId || activeInstitution?.id)) || null
+            institutionsData.find(i => i.id === (editInstitutionId || currentInstitutionData?.id)) || null
           }
           onSave={handleInstitutionSaved}
         />
@@ -561,7 +538,7 @@ export default function InstitutionsPage() {
             if (!open) setDeleteInstitutionId(null);
           }}
           institution={
-            institutionsData.find(i => i.id === (deleteInstitutionId || activeInstitution?.id)) || null
+            institutionsData.find(i => i.id === (deleteInstitutionId || currentInstitutionData?.id)) || null
           }
           onSuccess={handleInstitutionDeleted}
         />

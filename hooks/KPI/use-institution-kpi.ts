@@ -9,10 +9,10 @@ export interface IInstitutionKPIs {
 }
 
 export function useInstitutionKPI() {
-  const { activeInstitution } = useInstitution();
+  const { currentInstitutionData } = useInstitution();
 
   return useMemo<IInstitutionKPIs>(() => {
-    if (!activeInstitution) {
+    if (!currentInstitutionData) {
       return {
         totalRegions: 0,
         totalChurches: 0,
@@ -21,10 +21,10 @@ export function useInstitutionKPI() {
       };
     }
     return {
-      totalRegions: activeInstitution.regions_count || 0,
-      totalChurches: activeInstitution.churches_count || 0,
-      totalDepartments: activeInstitution.departments_count || 0,
-      totalUsers: activeInstitution.users_count || 0,
+      totalRegions: currentInstitutionData.regions_count || 0,
+      totalChurches: currentInstitutionData.churches_count || 0,
+      totalDepartments: currentInstitutionData.departments_count || 0,
+      totalUsers: currentInstitutionData.users_count || 0,
     };
-  }, [activeInstitution]);
+  }, [currentInstitutionData]);
 }

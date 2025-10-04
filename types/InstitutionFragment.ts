@@ -6,10 +6,10 @@
 import { LanguagePreference, ProjectType } from "./globalTypes";
 
 // ====================================================
-// GraphQL query operation: Institutions
+// GraphQL fragment: InstitutionFragment
 // ====================================================
 
-export interface Institutions_institutions_contact {
+export interface InstitutionFragment_contact {
   __typename: "Contact";
   id: string;
   name: string | null;
@@ -33,7 +33,7 @@ export interface Institutions_institutions_contact {
   deleted_by: string | null;
 }
 
-export interface Institutions_institutions_subsidy_requests {
+export interface InstitutionFragment_subsidy_requests {
   __typename: "SubsidyRequest";
   id: string;
   description: string;
@@ -53,7 +53,7 @@ export interface Institutions_institutions_subsidy_requests {
   project_id: string;
 }
 
-export interface Institutions_institutions_direct_messages {
+export interface InstitutionFragment_direct_messages {
   __typename: "DirectMessage";
   id: string;
   institution_id: string;
@@ -71,7 +71,7 @@ export interface Institutions_institutions_direct_messages {
   deleted_by: string | null;
 }
 
-export interface Institutions_institutions_projects {
+export interface InstitutionFragment_projects {
   __typename: "Project";
   id: string;
   department_id: string;
@@ -91,19 +91,19 @@ export interface Institutions_institutions_projects {
   institution_id: string | null;
 }
 
-export interface Institutions_institutions_users_church {
+export interface InstitutionFragment_users_church {
   __typename: "Church";
   id: string;
   name: string;
 }
 
-export interface Institutions_institutions_users_institution {
+export interface InstitutionFragment_users_institution {
   __typename: "Institution";
   id: string;
   name: string;
 }
 
-export interface Institutions_institutions_users_user_roles_role {
+export interface InstitutionFragment_users_user_roles_role {
   __typename: "Role";
   id: string;
   name: string;
@@ -111,13 +111,13 @@ export interface Institutions_institutions_users_user_roles_role {
   description: string;
 }
 
-export interface Institutions_institutions_users_user_roles {
+export interface InstitutionFragment_users_user_roles {
   __typename: "UserRole";
   id: string;
-  role: Institutions_institutions_users_user_roles_role;
+  role: InstitutionFragment_users_user_roles_role;
 }
 
-export interface Institutions_institutions_users {
+export interface InstitutionFragment_users {
   __typename: "User";
   id: string;
   name: string;
@@ -133,12 +133,12 @@ export interface Institutions_institutions_users {
   deleted_by: string | null;
   contact_id: string | null;
   institution_id: string;
-  church: Institutions_institutions_users_church;
-  institution: Institutions_institutions_users_institution;
-  user_roles: Institutions_institutions_users_user_roles[] | null;
+  church: InstitutionFragment_users_church;
+  institution: InstitutionFragment_users_institution;
+  user_roles: InstitutionFragment_users_user_roles[] | null;
 }
 
-export interface Institutions_institutions_regions {
+export interface InstitutionFragment_regions {
   __typename: "Region";
   id: string;
   institution_id: string;
@@ -154,7 +154,7 @@ export interface Institutions_institutions_regions {
   deleted_by: string | null;
 }
 
-export interface Institutions_institutions_churches {
+export interface InstitutionFragment_churches {
   __typename: "Church";
   id: string;
   institution_id: string;
@@ -170,7 +170,7 @@ export interface Institutions_institutions_churches {
   deleted_by: string | null;
 }
 
-export interface Institutions_institutions_departments {
+export interface InstitutionFragment_departments {
   __typename: "Department";
   id: string;
   institution_id: string;
@@ -187,7 +187,7 @@ export interface Institutions_institutions_departments {
   deleted_by: string | null;
 }
 
-export interface Institutions_institutions {
+export interface InstitutionFragment {
   __typename: "Institution";
   id: string;
   name: string;
@@ -205,16 +205,12 @@ export interface Institutions_institutions {
   churches_count: number;
   departments_count: number;
   users_count: number;
-  contact: Institutions_institutions_contact | null;
-  subsidy_requests: Institutions_institutions_subsidy_requests[];
-  direct_messages: Institutions_institutions_direct_messages[];
-  projects: Institutions_institutions_projects[] | null;
-  users: Institutions_institutions_users[] | null;
-  regions: Institutions_institutions_regions[] | null;
-  churches: Institutions_institutions_churches[] | null;
-  departments: Institutions_institutions_departments[] | null;
-}
-
-export interface Institutions {
-  institutions: Institutions_institutions[];
+  contact: InstitutionFragment_contact | null;
+  subsidy_requests: InstitutionFragment_subsidy_requests[];
+  direct_messages: InstitutionFragment_direct_messages[];
+  projects: InstitutionFragment_projects[] | null;
+  users: InstitutionFragment_users[] | null;
+  regions: InstitutionFragment_regions[] | null;
+  churches: InstitutionFragment_churches[] | null;
+  departments: InstitutionFragment_departments[] | null;
 }

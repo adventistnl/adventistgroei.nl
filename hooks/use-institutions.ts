@@ -5,7 +5,10 @@ import { Institutions_institutions } from "@/types/Institutions";
 import { InstitutionById_institution } from "@/types/InstitutionById";
 import { ApolloCache, ErrorLike } from "@apollo/client";
 import { CreateInstitution, CreateInstitutionVariables } from "@/types/CreateInstitution";
-import { useCreateInstitutionMutation, useDeleteInstitutionMutation, useUpdateInstitutionMutation } from "./graphql/use-institution-mutation";
+import { useCreateInstitutionMutation, useDeleteInstitutionMutation, useUpdateInstitutionContactMutation, useUpdateInstitutionMutation } from "./graphql/use-institution-mutation";
+import { UpdateInstitutionContact } from "@/types/UpdateInstitutionContact";
+import { DeleteInstitution } from "@/types/DeleteInstitution";
+import { UpdateInstitution } from "@/types/UpdateInstitution";
 
 export interface iInstitutions {
   institutions: Institutions_institutions[];
@@ -21,11 +24,15 @@ export interface iInstitutions {
   deleteInstitution: ReturnType<typeof useDeleteInstitutionMutation>[0];
   deleteLoading?: boolean;
   deleteError?: ErrorLike | undefined;
-  deletedInstitution?: any;
+  deletedInstitution?: DeleteInstitution | null | undefined;
   updateInstitution: ReturnType<typeof useUpdateInstitutionMutation>[0];
   updateLoading?: boolean;
   updateError?: ErrorLike | undefined;
-  updatedInstitution?: any;
+  updatedInstitution?: UpdateInstitution | null | undefined;
+  updateInstitutionContact: ReturnType<typeof useUpdateInstitutionContactMutation>[0]
+  updatedInstitutionContact: UpdateInstitutionContact | null | undefined
+  updateContactLoading: boolean
+  updateContactError: ErrorLike | undefined
 }
 
 export function useInstitutions(id?: string): iInstitutions & {
@@ -49,6 +56,7 @@ export function useInstitutions(id?: string): iInstitutions & {
   const [createInstitution, { data: createdInstitution, loading: createLoading, error: createError }] = useCreateInstitutionMutation();
   const [deleteInstitution, { data: deletedInstitution, loading: deleteLoading, error: deleteError }] = useDeleteInstitutionMutation();
   const [updateInstitution, { data: updatedInstitution, loading: updateLoading, error: updateError }] = useUpdateInstitutionMutation();
+  const [updateInstitutionContact, { data: updatedInstitutionContact, loading: updateContactLoading, error: updateContactError }] = useUpdateInstitutionContactMutation();
 
   const institutions = useMemo(() => {
     if (!institutionsData || !institutionsData.institutions) {
@@ -92,5 +100,9 @@ export function useInstitutions(id?: string): iInstitutions & {
     updatedInstitution,
     refetchInstitutions: () => { refetchInstitutionsRaw(); },
     refetchInstitutionById: () => { refetchInstitutionByIdRaw(); },
+    updatedInstitutionContact,
+    updateContactError,
+    updateInstitutionContact,
+    updateContactLoading,
   };
 }

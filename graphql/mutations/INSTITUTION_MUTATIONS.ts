@@ -34,17 +34,75 @@ export const DELETE_INSTITUTION_MUTATION = gql`
 `;
 
 export const UPDATE_INSTITUTION_MUTATION = gql`
-  mutation UpdateInstitution (
-    $id: String!,
-    $name: String,
-    $denomination: String,
+  mutation UpdateInstitution(
+    $id: String!
+    $name: String
+    $denomination: String
     $language_preference: String
+    $description: String
+    $email: String
+    $phone: String
+    $website: String
+    $country: String
   ) {
     updateInstitution(
-        data: { name: $name, denomination: $denomination, language_preference: $language_preference }
-        id: $id
+      data: {
+        name: $name
+        denomination: $denomination
+        language_preference: $language_preference
+        description: $description
+        contact: {
+          email: $email
+          phone: $phone
+          website: $website
+          country: $country
+        }
+      }
+      id: $id
     ) {
-        id
+      id
+    }
+  }
+`;
+
+export const UPDATE_INSTITUTION_CONTACT_MUTATION = gql`
+  mutation UpdateInstitutionContact(
+    $id: String!
+    $contactId: String!
+    $name: String
+    $phone: String
+    $mobile: String
+    $country: String
+    $email: String
+    $city: String
+    $address: String
+    $full_address: String
+    $postal_code: String
+    $website: String
+    $notes: String
+    $is_primary: Boolean
+  ) {
+    updateInstitution(
+      data: {
+        contact: {
+          name: $name
+          phone: $phone
+          mobile: $mobile
+          country: $country
+          email: $email
+          city: $city
+          address: $address
+          full_address: $full_address
+          postal_code: $postal_code
+          website: $website
+          notes: $notes
+          is_primary: $is_primary
+          id: $contactId
+        }
+      }
+      id: $id
+    ) {
+      id
     }
   }
 `;

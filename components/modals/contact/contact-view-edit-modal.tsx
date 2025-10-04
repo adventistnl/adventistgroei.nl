@@ -37,54 +37,40 @@ import {
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { contactTranslations } from "@/lib/translations/contact"
+import { useMutation } from "@apollo/client/react"
 
-export interface ContactData {
-  id: string
-  name?: string | null
-  phone?: string | null
-  mobile?: string | null
-  email?: string | null
-  country?: string | null
-  city?: string | null
-  address?: string | null
-  full_address?: string | null
-  postal_code?: string | null
-  website?: string | null
-  notes?: string | null
-  is_primary?: boolean
-  created_at: string
-  updated_at: string
-  created_by: string
-  updated_by: string
-  is_deleted?: boolean
-  deleted_at?: string | null
-  deleted_by?: string | null
-}
+import type { OperationVariables } from "@apollo/client"
+import { Contact } from "@/types/graphql-global-types"
 
-export interface ContactViewEditModalProps {
+
+export interface ContactViewEditModalProps<TMutationData, TMutationVariables extends OperationVariables> {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  contact: ContactData | null
+  contact: Contact | null
   entityName?: string
   entityType?: string
-  onSave?: (contact: ContactData) => void
+  onSave?: (contact: TMutationData | undefined) => void
   readonly?: boolean
+  updateMutation: useMutation.MutationFunction<TMutationData, TMutationVariables>
+  entityId: string
 }
 
-export function ContactViewEditModal({
+export function ContactViewEditModal<TMutationData, TMutationVariables extends OperationVariables>({
   isOpen,
   onOpenChange,
   contact,
   entityName,
   entityType = "Entity",
   onSave,
-  readonly = false
-}: ContactViewEditModalProps) {
+  readonly = false,
+  updateMutation,
+  entityId
+}: ContactViewEditModalProps<TMutationData, TMutationVariables>) {
   const { i18n } = useTranslation()
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
-  const [formData, setFormData] = useState<Partial<ContactData>>({})
+  const [formData, setFormData] = useState<Partial<Contact>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
@@ -127,7 +113,7 @@ export function ContactViewEditModal({
     }
   }, [isOpen])
 
-  const handleInputChange = (field: keyof ContactData, value: string | boolean) => {
+  const handleInputChange = (field: keyof Contact, value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -186,27 +172,27 @@ export function ContactViewEditModal({
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
 
-      const updatedContact: ContactData = {
-        ...contact,
+      const updatedContact: TMutationVariables = {
+        contactId: contact.id,
+        id: entityId,
         ...formData,
-        updated_at: new Date().toISOString()
       }
-
-      toast.dismiss(loadingToast)
+      const res = await updateMutation({ variables: updatedContact })
+      if (!res) throw new Error("Failed to update contact")
       toast.success(t_contact.updated || "Contact updated successfully!", {
         duration: 3000,
         icon: '✅'
       })
 
       if (onSave) {
-        onSave(updatedContact)
+        onSave(res.data)
       }
 
       setIsEditing(false)
     } catch (error) {
-      toast.dismiss(loadingToast)
       toast.error(t_contact.updateFailed || "Failed to update contact")
     } finally {
+      toast.dismiss(loadingToast)
       setIsLoading(false)
     }
   }
@@ -225,7 +211,8 @@ export function ContactViewEditModal({
         postal_code: contact.postal_code || '',
         website: contact.website || '',
         notes: contact.notes || '',
-        is_primary: contact.is_primary || false
+        is_primary: contact.is_primary || false,
+        id: contact.id
       })
     }
     setErrors({})

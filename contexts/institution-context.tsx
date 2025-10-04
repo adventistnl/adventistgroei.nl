@@ -6,6 +6,10 @@ import toast from 'react-hot-toast'
 import { useInstitutions } from '@/hooks/use-institutions'
 import { InstitutionById_institution } from '@/types/InstitutionById'
 import { Institutions_institutions } from '@/types/Institutions'
+import { UpdateInstitutionVariables } from '@/types/UpdateInstitution'
+import { useUpdateInstitutionContactMutation, useUpdateInstitutionMutation } from '@/hooks/graphql/use-institution-mutation'
+import { ErrorLike } from '@apollo/client'
+import { UpdateInstitutionContact } from '@/types/UpdateInstitutionContact'
 
 interface Institution {
   id: string
@@ -23,7 +27,6 @@ interface Institution {
 
 interface InstitutionContextType {
   institutions: Institutions_institutions[];
-  activeInstitution: InstitutionById_institution  | null;
   setActiveInstitution: (institution: any) => void;
   switchInstitution: (institutionId: string) => void;
   addInstitution: (institution: any) => void;
@@ -37,13 +40,17 @@ interface InstitutionContextType {
   deleteLoading?: boolean;
   deleteError?: any;
   deletedInstitution?: any;
-  updateInstitution: (...args: any[]) => any;
+  updateInstitution: ReturnType<typeof useUpdateInstitutionMutation>[0];
   updateLoading?: boolean;
   updateError?: any;
   updatedInstitution?: any;
   refetchInstitutions: () => void;
   refetchInstitutionById: () => void;
   currentInstitutionData: InstitutionById_institution | null;
+  updateInstitutionContact: ReturnType<typeof useUpdateInstitutionContactMutation>[0]
+  updatedInstitutionContact: UpdateInstitutionContact | null | undefined
+  updateContactLoading: boolean
+  updateContactError: ErrorLike | undefined
 }
 
 const InstitutionContext = createContext<InstitutionContextType | undefined>(undefined)
@@ -84,6 +91,10 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     updateLoading,
     updateError,
     updatedInstitution,
+    updateContactError,
+    updateContactLoading,
+    updateInstitutionContact,
+    updatedInstitutionContact
   } = useInstitutions(activeInstitution?.id);
   // Garante que cada instituição tenha um logo válido
   const institutions = React.useMemo(() => {
@@ -96,7 +107,9 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Atualiza activeInstitution quando institutions mudam ou ao inicializar
   React.useEffect(() => {
-    if (institutions && institutions.length > 0) {
+    if (currentInstitutionData) {
+      setActiveInstitution(currentInstitutionData)
+    }else if (institutions && institutions.length > 0) {
       setActiveInstitution((prev: typeof institutions[0] | null) => {
         if (!prev || !institutions.find(i => i.id === prev.id)) {
           return institutions[0];
@@ -106,7 +119,7 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     } else {
       setActiveInstitution(null);
     }
-  }, [institutions]);
+  }, [currentInstitutionData, institutions]);
 
   // Troca de instituição
   const switchInstitution = useCallback((institutionId: string) => {
@@ -132,12 +145,8 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [createInstitution]);
 
 
-  const value: InstitutionContextType & {
-    refetchInstitutions: () => void;
-    refetchInstitutionById: () => void;
-  } = useMemo(() => ({
+  const value: InstitutionContextType = useMemo(() => ({
     institutions,
-    activeInstitution,
     setActiveInstitution,
     switchInstitution,
     addInstitution,
@@ -158,7 +167,37 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     refetchInstitutions,
     refetchInstitutionById,
     currentInstitutionData,
-  }), [institutions, activeInstitution, switchInstitution, addInstitution, loading, error, createInstitution, createLoading, createError, createdInstitution, deleteInstitution, deleteLoading, deleteError, deletedInstitution, updateInstitution, updateLoading, updateError, updatedInstitution, refetchInstitutions, refetchInstitutionById]);
+    updateInstitutionContact,
+    updatedInstitutionContact,
+    updateContactLoading,
+    updateContactError
+  }), [
+    institutions,
+    setActiveInstitution,
+    switchInstitution,
+    addInstitution,
+    loading,
+    error,
+    createInstitution,
+    createLoading,
+    createError,
+    createdInstitution,
+    deleteInstitution,
+    deleteLoading,
+    deleteError,
+    deletedInstitution,
+    updateInstitution,
+    updateLoading,
+    updateError,
+    updatedInstitution,
+    refetchInstitutions,
+    refetchInstitutionById,
+    currentInstitutionData,
+    updateInstitutionContact,
+    updatedInstitutionContact,
+    updateContactLoading,
+    updateContactError
+  ]);
 
   return (
     <InstitutionContext.Provider value={value}>
