@@ -11,22 +11,13 @@ import {
   TrendingUp,
   PieChart as PieChartIcon,
   BarChart3,
-  LineChart as LineChartIcon,
   Calendar
 } from "lucide-react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+
 import { Progress } from "@/components/ui/progress"
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
   Line,
@@ -51,8 +42,7 @@ import { projectTranslations } from "@/lib/translations/projects"
 import { 
   mockSubsidyRequests, 
   mockSubsidyActivities, 
-  mockSubsidyReceipts,
-  projectMonthlyProgressData
+  mockSubsidyReceipts
 } from "@/data/mockData"
 import { ProjectTableData } from "@/components/projects/projects-table"
 
@@ -101,8 +91,6 @@ const activitiesChartConfig = {
 export function ProjectOverview({ project }: ProjectOverviewProps) {
   const { i18n } = useTranslation()
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
-  
-  const [selectedPeriod, setSelectedPeriod] = useState("6m")
 
   // Calculate project metrics
   const projectMetrics = useMemo(() => {
@@ -366,82 +354,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
         </CardContent>
       </Card>
 
-      {/* Monthly Progress Chart */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <LineChartIcon className="w-5 h-5" />
-              Progresso Mensal
-            </CardTitle>
-            <CardDescription className="mt-1">
-              Evolução mensal do projeto
-            </CardDescription>
-          </div>
-          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-            <SelectTrigger className="w-32 h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="3m">3 Meses</SelectItem>
-              <SelectItem value="6m">6 Meses</SelectItem>
-              <SelectItem value="1y">1 Ano</SelectItem>
-            </SelectContent>
-          </Select>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={budgetChartConfig} className="h-[350px] w-full">
-            <AreaChart data={projectMonthlyProgressData}>
-              <defs>
-                <linearGradient id="fillUsed" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="fillApproved" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="month"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                fontSize={12}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                tickFormatter={(value) => `R$ ${Number(value).toLocaleString()}`}
-                fontSize={12}
-              />
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent indicator="dot" />}
-              />
-              <Area
-                dataKey="budget_used"
-                type="natural"
-                fill="url(#fillUsed)"
-                stroke="#3b82f6"
-                stackId="a"
-                name="Orçamento Usado"
-              />
-              <Area
-                dataKey="subsidies_approved"
-                type="natural"
-                fill="url(#fillApproved)"
-                stroke="#10b981"
-                stackId="a"
-                name="Subsídios Aprovados"
-              />
-              <Legend />
-            </AreaChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
+
     </div>
   )
 }
