@@ -198,6 +198,52 @@ export interface InstitutionFragment_regions {
   deleted_by: string | null;
 }
 
+export interface InstitutionFragment_churches_contact {
+  __typename: "Contact";
+  id: string;
+  name: string | null;
+  phone: string | null;
+  mobile: string | null;
+  email: string | null;
+  country: string | null;
+  city: string | null;
+  address: string | null;
+  full_address: string | null;
+  postal_code: string | null;
+  website: string | null;
+  notes: string | null;
+  is_primary: boolean;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
+}
+
+export interface InstitutionFragment_churches_annual_budget {
+  __typename: "AnnualBudget";
+  planned_budget: any;
+  total_expenses: any;
+}
+
+export interface InstitutionFragment_churches_departments {
+  __typename: "Department";
+  id: string;
+}
+
+export interface InstitutionFragment_churches_region {
+  __typename: "Region";
+  id: string;
+  name: string;
+}
+
+export interface InstitutionFragment_churches_users {
+  __typename: "User";
+  id: string;
+}
+
 export interface InstitutionFragment_churches {
   __typename: "Church";
   id: string;
@@ -212,12 +258,52 @@ export interface InstitutionFragment_churches {
   is_deleted: boolean;
   deleted_at: any | null;
   deleted_by: string | null;
+  contact: InstitutionFragment_churches_contact | null;
+  annual_budget: InstitutionFragment_churches_annual_budget | null;
+  departments: InstitutionFragment_churches_departments[] | null;
+  region: InstitutionFragment_churches_region;
+  users: InstitutionFragment_churches_users[] | null;
+}
+
+export interface InstitutionFragment_departments_contact {
+  __typename: "Contact";
+  id: string;
+  name: string | null;
+  phone: string | null;
+  mobile: string | null;
+  email: string | null;
+  country: string | null;
+  city: string | null;
+  address: string | null;
+  full_address: string | null;
+  postal_code: string | null;
+  website: string | null;
+  notes: string | null;
+  is_primary: boolean;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
 }
 
 export interface InstitutionFragment_departments_church {
   __typename: "Church";
   id: string;
   name: string;
+}
+
+export interface InstitutionFragment_departments_annual_budget {
+  __typename: "AnnualBudget";
+  planned_budget: any;
+  total_expenses: any;
+}
+
+export interface InstitutionFragment_departments_users {
+  __typename: "User";
+  id: string;
 }
 
 export interface InstitutionFragment_departments {
@@ -235,7 +321,10 @@ export interface InstitutionFragment_departments {
   is_deleted: boolean;
   deleted_at: any | null;
   deleted_by: string | null;
+  contact: InstitutionFragment_departments_contact | null;
   church: InstitutionFragment_departments_church;
+  annual_budget: InstitutionFragment_departments_annual_budget | null;
+  users: InstitutionFragment_departments_users[] | null;
 }
 
 export interface InstitutionFragment {

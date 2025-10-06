@@ -107,9 +107,13 @@ export default function DepartmentsPage() {
 
   // Estatísticas calculadas dos dados
   type DepartmentType = typeof departments extends (infer U)[] ? U : any;
+  // Ajustar cálculo para acessar corretamente planned_budget e total_expenses
   const kpiData = useMemo(() => {
     const totalDepartments = departments.length;
-    const totalAnnualBudget = departments.reduce((sum: number, d: DepartmentType) => sum + (d.annual_budget || 0), 0);
+    const totalAnnualBudget = departments.reduce((sum: number, d: DepartmentType) => {
+      const plannedBudget = d.annual_budget?.planned_budget || 0;
+      return sum + plannedBudget;
+    }, 0);
     return {
       totalDepartments,
       totalAnnualBudget
@@ -248,30 +252,30 @@ export default function DepartmentsPage() {
     }
   };
 
-  const handleViewBudget = (id: string) => {
-    const department = departments.find(d => d.id === id);
-    if (department) {
-      setSelectedDepartment(department as any);
-      // Mock budget data
-      const budgetData: AnnualBudgetData = {
-        id: `budget_${department.id}`,
-        year: new Date().getFullYear(),
-        planned_budget: department.annual_budget,
-        total_expenses: department.used_budget || 0, // TODO: implementar used_budget
-        balance: (department.annual_budget || 0) - (department.used_budget || 0),
-        notes: `Budget for ${department.name}`,
-        approved_by: undefined,
-        status: 'approved' as const,
-        created_at: department.created_at,
-        updated_at: department.created_at,
-        created_by: 'system',
-        updated_by: 'system',
-        is_deleted: false
-      };
-      setSelectedBudget(budgetData);
-      setIsBudgetModalOpen(true);
-    }
-  };
+  // const handleViewBudget = (id: string) => {
+  //   const department = departments.find(d => d.id === id);
+  //   if (department) {
+  //     setSelectedDepartment(department as any);
+  //     // Mock budget data
+  //     const budgetData: AnnualBudgetData = {
+  //       id: `budget_${department.id}`,
+  //       year: new Date().getFullYear(),
+  //       planned_budget: department.annual_budget,
+  //       total_expenses: department.used_budget || 0, // TODO: implementar used_budget
+  //       balance: (department.annual_budget || 0) - (department.used_budget || 0),
+  //       notes: `Budget for ${department.name}`,
+  //       approved_by: undefined,
+  //       status: 'approved' as const,
+  //       created_at: department.created_at,
+  //       updated_at: department.created_at,
+  //       created_by: 'system',
+  //       updated_by: 'system',
+  //       is_deleted: false
+  //     };
+  //     setSelectedBudget(budgetData);
+  //     setIsBudgetModalOpen(true);
+  //   }
+  // };
   
   const handleDepartmentSaved = (department: CreateDepartment) => {
     toast.success("Department created successfully")
@@ -308,32 +312,65 @@ export default function DepartmentsPage() {
           </div>
           <div>
             <div className="font-medium">{row.original.name}</div>
-            <div className="text-xs text-muted-foreground">{row.original.church_name || '-'} {/* TODO: church_name não existe, implementar quando backend fornecer */}</div>
           </div>
         </div>
       ),
     },
     {
-      id: "annual_budget",
-      accessorKey: "annual_budget",
-      header: t.annualBudget,
+      id: "members",
+      accessorKey: "members_count",
+      header: t.members,
       cell: ({ row }) => (
-        <span className="font-medium">{row.original.annual_budget?.toLocaleString() ?? 'N/A'}</span>
+        <div className="flex items-center gap-2">
+          <Users className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">{row.original.users.length || 0}</span>
+        </div>
       ),
     },
     {
-      id: "used_budget",
-      header: t.budgetUsed,
-      cell: () => (
-        <span className="font-medium">0 {/* TODO: used_budget não existe, implementar quando backend fornecer */}</span>
-      ),
+      id: "budget",
+      accessorKey: "total_budget",
+      header: t.budget,
+      cell: ({ row }) => {
+        const annual_budget = row.original.annual_budget
+        const total_expenses = annual_budget ? annual_budget.total_expenses : 0
+        return (
+        <span className="font-medium">$ {total_expenses}</span>
+      )},
+    },
+    {
+      id: "utilization",
+      header: t.utilization,
+      cell: ({ row }) => {
+        const annual_budget = row.original.annual_budget
+        const totalBudget = annual_budget?.planned_budget || 1;
+        const usedBudget = annual_budget?.total_expenses || 0;
+        const utilization = Math.round((Number(usedBudget) / Number(totalBudget)) * 100)
+        return (
+          <Badge variant="outline" className={
+            utilization > 80 ? 'bg-red-100 text-red-700' : 
+            utilization > 60 ? 'bg-yellow-100 text-yellow-700' : 
+            'bg-green-100 text-green-700'
+          }>
+            {utilization}%
+          </Badge>
+        )
+      },
     },
     {
       id: "remaining_budget",
       header: t.budgetRemaining,
-      cell: () => (
-        <span className="font-medium text-green-600">0 {/* TODO: remaining_budget não existe, implementar quando backend fornecer */}</span>
-      ),
+      cell: ({ row }) => {
+        const annual_budget = row.original.annual_budget;
+        const totalBudget = annual_budget?.planned_budget || 0;
+        const usedBudget = annual_budget?.total_expenses || 0;
+        const remainingBudget = totalBudget - usedBudget;
+        return (
+          <span className="font-medium text-green-700">
+            $ {remainingBudget.toFixed(2).toLocaleString()}
+          </span>
+        );
+      },
     },
     {
       id: "subsidy_requests",
@@ -342,13 +379,13 @@ export default function DepartmentsPage() {
         <span className="font-medium">0 {/* TODO: subsidy_requests não existe, implementar quando backend fornecer */}</span>
       ),
     },
-    {
-      id: "efficiency",
-      header: t.efficiency,
-      cell: () => (
-        <Badge variant="outline" className="bg-gray-100 text-gray-700">N/A {/* TODO: efficiency não existe, implementar quando backend fornecer */}</Badge>
-      ),
-    },
+    // {
+    //   id: "efficiency",
+    //   header: t.efficiency,
+    //   cell: () => (
+    //     <Badge variant="outline" className="bg-gray-100 text-gray-700">N/A {/* TODO: efficiency não existe, implementar quando backend fornecer */}</Badge>
+    //   ),
+    // },
     {
       id: "actions",
       header: t.actions,
@@ -592,27 +629,27 @@ export default function DepartmentsPage() {
               data={departments}
               searchKey="name"
               searchPlaceholder={t.searchDepartments}
-              filterableColumns={[
-                {
-                  id: "church",
-                  title: t.church,
-                  options: [
-                    { label: "Igreja Central de São Paulo", value: "Igreja Central de São Paulo" },
-                    { label: "Igreja de Vila Madalena", value: "Igreja de Vila Madalena" },
-                    { label: "Igreja da Mooca", value: "Igreja da Mooca" },
-                    { label: "Igreja de Campinas", value: "Igreja de Campinas" },
-                    { label: "Igreja do Rio de Janeiro", value: "Igreja do Rio de Janeiro" },
-                  ]
-                },
-                {
-                  id: "status",
-                  title: "Status",
-                  options: [
-                    { label: t.active, value: "active" },
-                    { label: t.inactive, value: "inactive" },
-                  ]
-                }
-              ]}
+              // filterableColumns={[
+              //   {
+              //     id: "church",
+              //     title: t.church,
+              //     options: [
+              //       { label: "Igreja Central de São Paulo", value: "Igreja Central de São Paulo" },
+              //       { label: "Igreja de Vila Madalena", value: "Igreja de Vila Madalena" },
+              //       { label: "Igreja da Mooca", value: "Igreja da Mooca" },
+              //       { label: "Igreja de Campinas", value: "Igreja de Campinas" },
+              //       { label: "Igreja do Rio de Janeiro", value: "Igreja do Rio de Janeiro" },
+              //     ]
+              //   },
+              //   {
+              //     id: "status",
+              //     title: "Status",
+              //     options: [
+              //       { label: t.active, value: "active" },
+              //       { label: t.inactive, value: "inactive" },
+              //     ]
+              //   }
+              // ]}
             />
           </CardContent>
         </Card>

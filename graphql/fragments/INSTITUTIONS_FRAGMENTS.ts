@@ -166,6 +166,23 @@ export const CHURCH_FRAGMENT = gql`
     is_deleted
     deleted_at
     deleted_by
+    contact {
+      ...ContactFragment
+    }
+    annual_budget {
+      planned_budget
+      total_expenses
+    }
+    departments {
+      id
+    }
+    region {
+      id
+      name
+    }
+    users {
+      id
+    }
   }
 `;
 
@@ -184,9 +201,19 @@ export const DEPARTMENT_FRAGMENT = gql`
     is_deleted
     deleted_at
     deleted_by
+    contact {
+      ...ContactFragment
+    }
     church {
       id
       name
+    }
+    annual_budget {
+      planned_budget
+      total_expenses
+    }
+    users {
+      id
     }
   }
 `;

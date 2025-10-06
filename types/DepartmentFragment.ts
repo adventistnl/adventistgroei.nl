@@ -7,10 +7,45 @@
 // GraphQL fragment: DepartmentFragment
 // ====================================================
 
+export interface DepartmentFragment_contact {
+  __typename: "Contact";
+  id: string;
+  name: string | null;
+  phone: string | null;
+  mobile: string | null;
+  email: string | null;
+  country: string | null;
+  city: string | null;
+  address: string | null;
+  full_address: string | null;
+  postal_code: string | null;
+  website: string | null;
+  notes: string | null;
+  is_primary: boolean;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
+}
+
 export interface DepartmentFragment_church {
   __typename: "Church";
   id: string;
   name: string;
+}
+
+export interface DepartmentFragment_annual_budget {
+  __typename: "AnnualBudget";
+  planned_budget: any;
+  total_expenses: any;
+}
+
+export interface DepartmentFragment_users {
+  __typename: "User";
+  id: string;
 }
 
 export interface DepartmentFragment {
@@ -28,5 +63,8 @@ export interface DepartmentFragment {
   is_deleted: boolean;
   deleted_at: any | null;
   deleted_by: string | null;
+  contact: DepartmentFragment_contact | null;
   church: DepartmentFragment_church;
+  annual_budget: DepartmentFragment_annual_budget | null;
+  users: DepartmentFragment_users[] | null;
 }

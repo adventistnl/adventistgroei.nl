@@ -340,7 +340,7 @@ export default function RegionsPage() {
           const annual_budget = row.original.annual_budget
         const total_expenses = annual_budget ? annual_budget.total_expenses : 0
         return (
-        <span className="font-medium">$ {total_expenses.toFixed(2).toLocaleString()}</span>
+        <span className="font-medium">$ {total_expenses}</span>
       )},
     },
     {

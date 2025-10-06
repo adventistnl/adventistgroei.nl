@@ -371,7 +371,6 @@ export default function ChurchesPage() {
           </div>
           <div>
             <div className="font-medium">{row.original.name}</div>
-            <div className="text-xs text-muted-foreground">{row.original.region_name}</div>
           </div>
         </div>
       ),
@@ -383,21 +382,21 @@ export default function ChurchesPage() {
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <MapPin className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.region_name}</span>
+          <span className="font-medium">{row.original.region.name}</span>
         </div>
       ),
     },
-    // {
-    //   id: "members",
-    //   accessorKey: "members_count",
-    //   header: t.members,
-    //   cell: ({ row }) => (
-    //     <div className="flex items-center gap-2">
-    //       <Users className="w-4 h-4 text-muted-foreground" />
-    //       <span className="font-medium">{row.original.members_count.toLocaleString()}</span>
-    //     </div>
-    //   ),
-    // },
+    {
+      id: "members",
+      accessorKey: "members_count",
+      header: t.members,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Users className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">{row.original.users.length || 0}</span>
+        </div>
+      ),
+    },
     {
       id: "departments",
       accessorKey: "departments_count",
@@ -405,7 +404,7 @@ export default function ChurchesPage() {
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.departments_count}</span>
+          <span className="font-medium">{row.original.departments.length}</span>
         </div>
       ),
     },
@@ -416,7 +415,7 @@ export default function ChurchesPage() {
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.subsidy_requests}</span>
+          <span className="font-medium">{row.original.subsidy_requests || 0}</span>
         </div>
       ),
     },
@@ -424,15 +423,21 @@ export default function ChurchesPage() {
       id: "budget",
       accessorKey: "total_budget",
       header: t.budget,
-      cell: ({ row }) => (
-        <span className="font-medium">${(row.original.total_budget || 0).toLocaleString()}</span>
-      ),
+      cell: ({ row }) => {
+        const annual_budget = row.original.annual_budget
+        const total_expenses = annual_budget ? annual_budget.total_expenses : 0
+        return (
+        <span className="font-medium">$ {total_expenses}</span>
+      )},
     },
     {
       id: "utilization",
       header: t.utilization,
       cell: ({ row }) => {
-        const utilization = Math.round((row.original.used_budget / row.original.total_budget || 0) * 100)
+        const annual_budget = row.original.annual_budget
+        const totalBudget = annual_budget?.planned_budget || 1;
+        const usedBudget = annual_budget?.total_expenses || 0;
+        const utilization = Math.round((usedBudget / totalBudget) * 100)
         return (
           <Badge variant="outline" className={
             utilization > 80 ? 'bg-red-100 text-red-700' : 
@@ -449,8 +454,8 @@ export default function ChurchesPage() {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
-        <Badge variant={row.original.status === 'active' ? 'default' : 'secondary'}>
-          {row.original.status === 'active' ? t.active : t.inactive}
+        <Badge variant={row.original.is_deleted === false ? 'default' : 'secondary'}>
+          {row.original.is_deleted === true ? t.inactive : t.active}
         </Badge>
       ),
     },
