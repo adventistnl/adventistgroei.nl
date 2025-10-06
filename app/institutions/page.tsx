@@ -44,7 +44,9 @@ import { useInstitution } from "@/contexts/institution-context"
 import { useInstitutionKPI } from "@/hooks/KPI/use-institution-kpi"
 import { InstitutionById_institution_departments, InstitutionById_institution_subsidy_requests } from "@/types/InstitutionById"
 import InstitutionsLoading from "./loading"
-import { Contact } from "@/types/graphql-global-types"
+import { Contact, PermissionResolverName } from "@/types/graphql-global-types"
+import { WithPermission } from "@/hocs/with-permission"
+import { AccessDenied } from "@/components/access/access-denied"
 
 /**
  * PÁGINA DE GESTÃO DE INSTITUIÇÕES
@@ -417,6 +419,8 @@ export default function InstitutionsPage() {
 
   return (
     <AppLayout>
+      <WithPermission requiredPermissions={[PermissionResolverName.Institutions]} fallback={<AccessDenied/>}>
+      
       <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -543,6 +547,7 @@ export default function InstitutionsPage() {
           onSuccess={handleInstitutionDeleted}
         />
       </div>
+      </WithPermission>
     </AppLayout>
   )
 }

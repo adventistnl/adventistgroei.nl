@@ -18,6 +18,9 @@ import { Label } from "@/components/ui/label"
 import toast from "react-hot-toast"
 import { useRoles } from "@/hooks/use-roles"
 import { usePermissions } from "@/hooks/use-permissions"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
+import { AccessDenied } from "@/components/access/access-denied"
 
 export default function RolePermissionsPage() {
   const { t } = useTranslation();
@@ -195,6 +198,8 @@ export default function RolePermissionsPage() {
 
   return (
     <AppLayout>
+      <WithPermission requiredPermissions={[ PermissionResolverName.Roles, PermissionResolverName.Permissions, PermissionResolverName.UpdateRole ]} fallback={<AccessDenied/>}>
+      
       <div className="flex flex-1 flex-col gap-4 p-6 pt-4">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -618,6 +623,7 @@ export default function RolePermissionsPage() {
           </CardContent>
         </Card>
       </div>
+      </WithPermission>
     </AppLayout>
   );
 }

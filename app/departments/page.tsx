@@ -67,6 +67,9 @@ import {
    InstitutionById_institution_departments as DepartmentData,
    InstitutionById_institution_churches as ChurchData
 } from "@/types/InstitutionById"
+import { PermissionResolverName } from "@/types/graphql-global-types"
+import { AccessDenied } from "@/components/access/access-denied"
+import { WithPermission } from "@/hocs/with-permission"
 
 
 /**
@@ -436,6 +439,8 @@ export default function DepartmentsPage() {
 
   return (
     <AppLayout>
+      <WithPermission requiredPermissions={[PermissionResolverName.Departments]} fallback={<AccessDenied/>}>
+      
       <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -706,6 +711,7 @@ export default function DepartmentsPage() {
           />
         )}
       </div>
+      </WithPermission>
     </AppLayout>
   )
 }

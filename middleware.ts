@@ -36,7 +36,7 @@ const routePermissions: Record<string, { resolvers: PermissionResolverName[] }> 
   '/users': { resolvers: [] },
   '/users/[id]': { resolvers: [] },
   '/volunteers': { resolvers: [] },
-  '/institutions': { resolvers: [PermissionResolverName.Institution, PermissionResolverName.Institution] },
+  '/institutions': { resolvers: [] },
 }
 
 /**

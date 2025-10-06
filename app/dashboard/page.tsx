@@ -87,6 +87,9 @@ import { ColumnDef } from "@tanstack/react-table"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
 import { structureTranslations } from "@/lib/translations/structure"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
+import { AccessDenied } from "@/components/access/access-denied"
 
 // Dados para o gráfico interativo de crescimento
 const interactiveGrowthData = [
@@ -662,6 +665,7 @@ export default function DashboardPage() {
 
   return (
     <AppLayout>
+      <WithPermission requiredPermissions={[PermissionResolverName.Institutions]} fallback={<AccessDenied/>}>
       <div className="space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -746,6 +750,7 @@ export default function DashboardPage() {
         </div>
 
       </div>
+      </WithPermission>
     </AppLayout>
   )
 }
