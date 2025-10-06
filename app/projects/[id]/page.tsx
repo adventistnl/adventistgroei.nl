@@ -7,7 +7,7 @@ import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { ProjectHeader } from "@/components/projects/project-header"
 import { ProjectOverview } from "@/components/projects/project-overview"
-import { ProjectActivitiesTable, ActivityTableData } from "@/components/projects/project-activities-table"
+import { ProjectActivitiesTable, ProjectActivityData } from "@/components/projects/project-activities-table"
 import { ProjectSubsidiesTable, SubsidyRequestData, ActivityData } from "@/components/projects/project-subsidies-table"
 import { EditProjectModal, EditProjectFormData } from "@/components/modals/project/edit-project-modal"
 import { CreateEventModal, EventFormData } from "@/components/modals/project/create-event-modal"
@@ -21,6 +21,7 @@ import { DeleteActivityModal } from "@/components/modals/project/delete-activity
 import { UploadReceiptModal, ReceiptFormData } from "@/components/modals/project/upload-receipt-modal"
 import { ViewReceiptsModal } from "@/components/modals/project/view-receipts-modal"
 import { CreateReportModal, ReportFormData } from "@/components/modals/project/create-report-modal"
+
 import { ProjectTableData } from "@/components/projects/projects-table"
 import { projectTranslations } from "@/lib/translations/projects"
 import { mockProjects } from "@/data/mockData"
@@ -186,19 +187,29 @@ export default function ProjectDetailsPage() {
     toast.success(t.toasts.communicationCreated, { duration: 3000 })
   }
 
-  const handleEditActivity = (activity: ActivityTableData) => {
+  const handleEditActivity = (activity: ProjectActivityData) => {
     // TODO: Implement activity editing
     toast.success(`✏️ Editing activity: ${activity.name}`, { duration: 2000 })
   }
 
-  const handleDeleteActivity = (activity: ActivityTableData) => {
+  const handleDeleteActivity = (activity: ProjectActivityData) => {
     // TODO: Implement activity deletion
     toast.success(`🗑️ Activity deleted: ${activity.name}`, { duration: 3000 })
+  }
+
+  const handleViewActivity = (activity: ProjectActivityData) => {
+    // TODO: Implement view activity functionality
+    toast.success(`👁️ Visualizando: ${activity.name}`, { duration: 2000 })
   }
 
   const handleAddActivity = () => {
     // TODO: Implement add activity modal
     toast.success("➕ Add activity functionality coming soon!", { duration: 2000 })
+  }
+
+  const handleUploadReceiptForActivity = (activity: ProjectActivityData) => {
+    // TODO: Implement upload receipt modal for project activities
+    toast.success(`📄 Upload recibo para: ${activity.name}`, { duration: 2000 })
   }
 
   // Subsidy Management Handlers
@@ -372,13 +383,15 @@ export default function ProjectDetailsPage() {
           onViewReceipts={handleViewReceipts}
         />
         
-        {/* Original Project Activities Table (Legacy) */}
-        {/* <ProjectActivitiesTable
+        {/* Project Activities  Table */}
+        <ProjectActivitiesTable
           project={project}
+          onAddActivity={handleAddActivity}
           onEditActivity={handleEditActivity}
           onDeleteActivity={handleDeleteActivity}
-          onAddActivity={handleAddActivity}
-        /> */}
+          onViewActivity={handleViewActivity}
+          onUploadReceipt={handleUploadReceiptForActivity}
+        />
         
         {/* Modals */}
         <EditProjectModal
@@ -488,6 +501,7 @@ export default function ProjectDetailsPage() {
           onSubmit={handleReportSubmit}
           project={project}
         />
+
       </div>
     </AppLayout>
   )

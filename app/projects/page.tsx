@@ -689,7 +689,7 @@ export default function ProjectsPage() {
         {/* Charts Section */}
         <div className="space-y-6">
           <h3 className="text-lg sm:text-xl font-semibold">Project Analytics</h3>
-          <ResponsiveGridCarousel autoplayDelay={5000} className="p-2 sm:p-4">
+          <ResponsiveGridCarousel autoplayDelay={5000} className="">
             <ProjectsByDepartmentChart />
             <SubsidyStatusChart />
             <ProjectsTimelineChart />

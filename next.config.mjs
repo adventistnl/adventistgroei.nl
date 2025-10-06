@@ -13,7 +13,7 @@ const nextConfig = {
   trailingSlash: false,
   
   experimental: {
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    // Removido optimizePackageImports para corrigir erro de chunking do lucide-react
   },
   
   webpack: (config, { isServer }) => {

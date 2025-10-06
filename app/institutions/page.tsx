@@ -38,6 +38,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { InstitutionProfileHeader } from "@/components/shared"
 import { ContactViewEditModal } from "@/components/modals/contact"
 import { EditInstitutionModal, DeleteInstitutionModal, RegisterInstitutionModal } from "@/components/modals/institution"
+import { InstitutionDebugger } from "@/components/debug/institution-debugger"
 
 import { Institutions_institutions } from "@/types/Institutions"
 import { useInstitution } from "@/contexts/institution-context"
@@ -422,6 +423,9 @@ export default function InstitutionsPage() {
       <WithPermission requiredPermissions={[PermissionResolverName.Institutions]} fallback={<AccessDenied/>}>
       
       <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">
+        {/* Debug Component */}
+        <InstitutionDebugger />
+        
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
