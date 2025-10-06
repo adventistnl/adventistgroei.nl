@@ -125,12 +125,22 @@ export const USER_FRAGMENT = gql`
 export const REGION_FRAGMENT = gql`
   fragment RegionFragment on Region {
     id
-    institution_id
     name
     parent_region_id
     contact_id
     contact {
       ...ContactFragment
+    }
+    churches {
+      id
+    }
+    institution {
+      id
+      name
+    }
+    annual_budget {
+      planned_budget
+      total_expenses
     }
     created_at
     updated_at

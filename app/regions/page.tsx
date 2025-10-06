@@ -297,7 +297,7 @@ export default function RegionsPage() {
                 </div>
           <div>
             <div className="font-medium">{row.original.name}</div>
-            <div className="text-xs text-muted-foreground">{row.original.institution_name}</div>
+            <div className="text-xs text-muted-foreground">{row.original.institution.name}</div>
                             </div>
                                     </div>
       ),
@@ -309,7 +309,7 @@ export default function RegionsPage() {
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Home className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.churches_count}</span>
+          <span className="font-medium">{row.original.churches.length}</span>
                                     </div>
       ),
     },
@@ -321,31 +321,35 @@ export default function RegionsPage() {
     //     <span className="font-medium">{row.original.members_count.toLocaleString()}</span>
     //   ),
     // },
-    {
-      id: "subsidy_requests",
-      accessorKey: "subsidy_requests",
-      header: t.requests,
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.subsidy_requests}</span>
-                    </div>
-      ),
-    },
     // {
-    //   id: "budget",
-    //   accessorKey: "total_budget",
-    //   header: t.budget,
+    //   id: "subsidy_requests",
+    //   accessorKey: "subsidy_requests",
+    //   header: t.requests,
     //   cell: ({ row }) => (
-    //     <span className="font-medium">${row.original.total_budget.toLocaleString()}</span>
+    //     <div className="flex items-center gap-2">
+    //       <Calendar className="w-4 h-4 text-muted-foreground" />
+    //       <span className="font-medium">{row.original.subsidy_requests}</span>
+    //                 </div>
     //   ),
     // },
+    {
+      id: "budget",
+      accessorKey: "total_budget",
+      header: t.budget,
+      cell: ({ row }) => {
+          const annual_budget = row.original.annual_budget
+        const total_expenses = annual_budget ? annual_budget.total_expenses : 0
+        return (
+        <span className="font-medium">$ {total_expenses.toFixed(2).toLocaleString()}</span>
+      )},
+    },
     {
       id: "utilization",
       header: t.utilization,
       cell: ({ row }) => {
-        const totalBudget = (row.original as any).total_budget || 1
-        const usedBudget = (row.original as any).used_budget || 0
+        const annual_budget = row.original.annual_budget
+        const totalBudget = annual_budget ? annual_budget.planned_budget : 1
+        const usedBudget = annual_budget ? annual_budget.total_expenses : 0
         const utilization = Math.round((usedBudget / totalBudget) * 100)
         return (
           <Badge variant="outline" className={
@@ -365,7 +369,7 @@ export default function RegionsPage() {
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Building className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium text-xs">{row.original.institution_name}</span>
+          <span className="font-medium text-xs">{row.original.institution.name}</span>
                       </div>
       ),
     },

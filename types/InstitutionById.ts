@@ -162,14 +162,33 @@ export interface InstitutionById_institution_regions_contact {
   deleted_by: string | null;
 }
 
+export interface InstitutionById_institution_regions_churches {
+  __typename: "Church";
+  id: string;
+}
+
+export interface InstitutionById_institution_regions_institution {
+  __typename: "Institution";
+  id: string;
+  name: string;
+}
+
+export interface InstitutionById_institution_regions_annual_budget {
+  __typename: "AnnualBudget";
+  planned_budget: any;
+  total_expenses: any;
+}
+
 export interface InstitutionById_institution_regions {
   __typename: "Region";
   id: string;
-  institution_id: string;
   name: string;
   parent_region_id: string | null;
   contact_id: string | null;
   contact: InstitutionById_institution_regions_contact | null;
+  churches: InstitutionById_institution_regions_churches[] | null;
+  institution: InstitutionById_institution_regions_institution;
+  annual_budget: InstitutionById_institution_regions_annual_budget | null;
   created_at: any;
   updated_at: any;
   created_by: string;
@@ -195,6 +214,12 @@ export interface InstitutionById_institution_churches {
   deleted_by: string | null;
 }
 
+export interface InstitutionById_institution_departments_church {
+  __typename: "Church";
+  id: string;
+  name: string;
+}
+
 export interface InstitutionById_institution_departments {
   __typename: "Department";
   id: string;
@@ -210,6 +235,7 @@ export interface InstitutionById_institution_departments {
   is_deleted: boolean;
   deleted_at: any | null;
   deleted_by: string | null;
+  church: InstitutionById_institution_departments_church;
 }
 
 export interface InstitutionById_institution {

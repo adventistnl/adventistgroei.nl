@@ -31,14 +31,33 @@ export interface RegionFragment_contact {
   deleted_by: string | null;
 }
 
+export interface RegionFragment_churches {
+  __typename: "Church";
+  id: string;
+}
+
+export interface RegionFragment_institution {
+  __typename: "Institution";
+  id: string;
+  name: string;
+}
+
+export interface RegionFragment_annual_budget {
+  __typename: "AnnualBudget";
+  planned_budget: any;
+  total_expenses: any;
+}
+
 export interface RegionFragment {
   __typename: "Region";
   id: string;
-  institution_id: string;
   name: string;
   parent_region_id: string | null;
   contact_id: string | null;
   contact: RegionFragment_contact | null;
+  churches: RegionFragment_churches[] | null;
+  institution: RegionFragment_institution;
+  annual_budget: RegionFragment_annual_budget | null;
   created_at: any;
   updated_at: any;
   created_by: string;

@@ -7,6 +7,12 @@
 // GraphQL fragment: DepartmentFragment
 // ====================================================
 
+export interface DepartmentFragment_church {
+  __typename: "Church";
+  id: string;
+  name: string;
+}
+
 export interface DepartmentFragment {
   __typename: "Department";
   id: string;
@@ -22,4 +28,5 @@ export interface DepartmentFragment {
   is_deleted: boolean;
   deleted_at: any | null;
   deleted_by: string | null;
+  church: DepartmentFragment_church;
 }
