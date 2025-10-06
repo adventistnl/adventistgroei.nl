@@ -53,7 +53,7 @@ const navMainBase: NavItem[] = [
     title: "Dashboard",
     url: "/dashboard",
     icon: BarChart3,
-    permissions: [PermissionResolverName.Institutions],
+    permissions: [],
   },
   {
     title: "Structure & Organization",
