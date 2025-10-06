@@ -28,7 +28,9 @@ import {
   Crown,
   AlertTriangle,
   CheckCircle,
-  TrendingUp
+  TrendingUp,
+  BarChart3,
+  Activity
 } from "lucide-react"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
@@ -80,81 +82,37 @@ export default function AccessManagementPage() {
     { name: t('access.title') }
   ], [t])
 
-  // Dados para KPI Cards Carrossel
+  // KPIs essenciais para overview de roles e permissões
   const kpiCardsData: KPICardData[] = useMemo(() => [
-    {
-      id: "total_users",
-      title: "Total Users",
-      value: accessKpiData.totalUsers || 0,
-      icon: Users,
-      subtitle: "Registered users",
-      trend: {
-        value: 12,
-        isPositive: true,
-        label: "vs. last month"
-      }
-    },
     {
       id: "total_roles",
       title: "Total Roles",
-      value: accessKpiData.totalRoles || 0,
+      value: roles.length,
       icon: Shield,
-      subtitle: "Active roles",
-      trend: {
-        value: 8,
-        isPositive: true,
-        label: "vs. last month"
-      }
+      subtitle: "System roles"
     },
     {
       id: "total_permissions",
-      title: "Total Permissions",
-      value: accessKpiData.totalPermissions || 0,
+      title: "Permissions",
+      value: permissions.flatMap(p => p.data).length,
       icon: Lock,
-      subtitle: "Available permissions",
-      trend: {
-        value: 5,
-        isPositive: true,
-        label: "vs. last month"
-      }
+      subtitle: "Available permissions"
     },
     {
-      id: "active_users",
-      title: "Active Users",
-      value: accessKpiData.activeUsers || 0,
-      icon: CheckCircle,
-      subtitle: "Currently active",
-      trend: {
-        value: 15,
-        isPositive: true,
-        label: "vs. last month"
-      }
-    },
-    {
-      id: "admin_users",
-      title: "Admin Users",
-      value: accessKpiData.adminUsers || 0,
+      id: "admin_roles",
+      title: "Admin Roles",
+      value: roles.filter(role => role.key_code.includes('ADMIN') || role.key_code.includes('SUPER')).length,
       icon: Crown,
-      subtitle: "Administrator access",
-      trend: {
-        value: 2,
-        isPositive: true,
-        label: "vs. last month"
-      }
+      subtitle: "Administrative roles"
     },
     {
-      id: "user_growth_rate",
-      title: "Growth Rate",
-      value: `${accessKpiData.userGrowthRate || 0}%`,
-      icon: TrendingUp,
-      subtitle: "User growth rate",
-      trend: {
-        value: accessKpiData.userGrowthRate || 0,
-        isPositive: (accessKpiData.userGrowthRate || 0) > 0,
-        label: "active ratio"
-      }
+      id: "permission_groups",
+      title: "Groups",
+      value: permissions.length,
+      icon: Activity,
+      subtitle: "Permission groups"
     }
-  ], [accessKpiData])
+  ], [roles, permissions])
 
   // Componentes individuais de gráficos para o ResponsiveGridCarousel
   const analyticsComponents = useMemo(() => [
@@ -471,6 +429,10 @@ export default function AccessManagementPage() {
                 <Lock className="w-4 h-4 mr-2" />
                 {t('access.tabs.permissions')}
               </TabsTrigger>
+              <TabsTrigger value="charts" className="data-[state=active]:bg-background">
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Charts & Analytics
+              </TabsTrigger>
             </TabsList>
 
 
@@ -552,33 +514,126 @@ export default function AccessManagementPage() {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* Charts & Analytics Tab */}
+            <TabsContent value="charts" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Role Distribution Chart */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Shield className="w-4 h-4" />
+                      Role Distribution
+                    </CardTitle>
+                    <CardDescription>
+                      Overview of role allocation across the system
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <RoleDistributionChart
+                      data={roleDistribution}
+                      loading={isLoading}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Permissions by Group Chart */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Lock className="w-4 h-4" />
+                      Permissions by Group
+                    </CardTitle>
+                    <CardDescription>
+                      Permission distribution across functional groups
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <PermissionsByGroupChart
+                      data={permissionsByGroup}
+                      loading={isLoading}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Role Types Summary */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <BarChart3 className="w-4 h-4" />
+                      Role Types
+                    </CardTitle>
+                    <CardDescription>
+                      Breakdown by role categories
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {roles.reduce((acc, role) => {
+                        const type = role.key_code.includes('ADMIN') ? 'Admin' : 
+                                    role.key_code.includes('USER') ? 'User' : 
+                                    role.key_code.includes('MANAGER') ? 'Manager' : 'Other'
+                        const existing = acc.find(item => item.type === type)
+                        if (existing) {
+                          existing.count++
+                        } else {
+                          acc.push({ type, count: 1 })
+                        }
+                        return acc
+                      }, [] as { type: string, count: number }[]).map((item, index) => (
+                        <div key={item.type} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ 
+                                backgroundColor: item.type === 'Admin' ? '#ef4444' : 
+                                               item.type === 'Manager' ? '#f59e0b' : 
+                                               item.type === 'User' ? '#10b981' : '#6b7280'
+                              }}
+                            />
+                            <span className="text-sm font-medium">{item.type}</span>
+                          </div>
+                          <Badge variant="secondary">{item.count}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Permission Groups Summary */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Activity className="w-4 h-4" />
+                      Permission Groups
+                    </CardTitle>
+                    <CardDescription>
+                      System permission organization
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {permissions.map((group, index) => (
+                        <div key={group.group} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: `hsl(${index * 60}, 70%, 50%)` }}
+                            />
+                            <span className="text-sm font-medium">{group.group}</span>
+                          </div>
+                          <Badge variant="outline">{group.data.length}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
           </Tabs>
 
 
           <Separator />
-
-          {/* Analytics Charts - Responsive Grid/Carousel */}
-          <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">
-                  {t('access.charts.title', { defaultValue: 'Access Analytics' })}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Visual insights into system access patterns
-                </p>
-              </div>
-            </div>
-
-            {/* Responsive Grid/Carousel com componentes individuais */}
-            <AnalyticsGridCarousel
-              enableAutoplay={false}
-              autoplayDelay={5000}
-            >
-              {analyticsComponents}
-            </AnalyticsGridCarousel>
-          </div>
           {/* User Details Sheet */}
           {/* <Sheet open={isUserSheetOpen} onOpenChange={setIsUserSheetOpen}>
             <SheetContent className="w-[600px] sm:max-w-[600px]">

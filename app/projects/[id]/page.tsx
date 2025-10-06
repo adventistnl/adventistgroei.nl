@@ -369,7 +369,7 @@ export default function ProjectDetailsPage() {
         <ProjectOverview project={project} />
         
         {/* Project Subsidies Table */}
-        <ProjectSubsidiesTable
+        {/* <ProjectSubsidiesTable
           project={project}
           onAddSubsidy={handleAddSubsidy}
           onEditSubsidy={handleEditSubsidy}
@@ -381,7 +381,7 @@ export default function ProjectDetailsPage() {
           onDeleteActivity={handleDeleteActivityFromSubsidy}
           onUploadReceipt={handleUploadReceipt}
           onViewReceipts={handleViewReceipts}
-        />
+        /> */}
         
         {/* Project Activities  Table */}
         <ProjectActivitiesTable

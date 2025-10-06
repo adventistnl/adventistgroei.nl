@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ProjectsTable, ProjectTableData } from "@/components/projects/projects-table"
 import { useRouter } from "next/navigation"
+import { useNavigateWithLoading } from "@/hooks/use-navigation-loading"
 import { projectTranslations } from "@/lib/translations/projects"
 import {
   mockProjects,
@@ -292,6 +293,7 @@ const ProjectsTimelineChart = () => (
 export default function ProjectsPage() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
+  const { navigateWithLoading } = useNavigateWithLoading()
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [projects, setProjects] = useState<ProjectTableData[]>([])
@@ -543,13 +545,19 @@ export default function ProjectsPage() {
 
 
   const handleViewProject = (project: ProjectTableData) => {
-    toast.success(`📋 Opening project: ${project.title}`, { duration: 2000 })
-    router.push(`/projects/${project.id}`)
+    navigateWithLoading(`/projects/${project.id}`, {
+      message: `📋 Opening project: ${project.title}...`,
+      showToast: true,
+      delay: 1000
+    })
   }
 
   const handleEditProject = (project: ProjectTableData) => {
-    toast.success(`✏️ Editing project: ${project.title}`, { duration: 2000 })
-    router.push(`/projects/new-project?edit=${project.id}`)
+    navigateWithLoading(`/projects/new-project?edit=${project.id}`, {
+      message: `✏️ Loading project editor: ${project.title}...`,
+      showToast: true,
+      delay: 1000
+    })
   }
 
   const handleDeleteProject = (project: ProjectTableData) => {
@@ -669,7 +677,11 @@ export default function ProjectsPage() {
                 <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
               </Button>
               
-              <Button onClick={() => router.push('/projects/new-project')} className="gap-2 flex-1 sm:flex-none">
+              <Button onClick={() => navigateWithLoading('/projects/new-project', {
+                message: "🚀 Loading project creator...",
+                showToast: true,
+                delay: 800
+              })} className="gap-2 flex-1 sm:flex-none">
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">{t_project.newProject}</span>
                 <span className="sm:hidden">New</span>

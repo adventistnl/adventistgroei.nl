@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
 import {
   Folder,
   Forward,
@@ -30,6 +29,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
+import { useNavigateWithLoading } from "@/hooks/use-navigation-loading"
 
 interface NavProjectsProps {
   projects: any[]
@@ -38,6 +38,7 @@ interface NavProjectsProps {
 export const NavProjects = React.memo(function NavProjects({ projects }: NavProjectsProps) {
   const { isMobile } = useSidebar()
   const router = useRouter()
+  const { navigateWithLoading } = useNavigateWithLoading()
 
   return (
     <>
@@ -47,7 +48,11 @@ export const NavProjects = React.memo(function NavProjects({ projects }: NavProj
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push('/projects/new-project')}
+            onClick={() => navigateWithLoading('/projects/new-project', {
+              message: "🚀 Creating new project...",
+              showToast: true,
+              delay: 700
+            })}
             className="h-6 w-6 p-0 hover:bg-sidebar-accent"
           >
             <Plus className="h-3 w-3" />
@@ -57,16 +62,20 @@ export const NavProjects = React.memo(function NavProjects({ projects }: NavProj
         <SidebarMenu>
           {projects.map((project) => (
             <SidebarMenuItem key={project.id}>
-              <SidebarMenuButton asChild>
-                <Link href={`/projects/${project.id}`}>
-                  <div className="flex items-center gap-2 w-full">
-                    <Folder className="sidebar-icon text-blue-500 flex-shrink-0" />
-                    <span className="truncate flex-1 min-w-0">{project.title}</span>
-                    {project.is_private && (
-                      <Lock className="w-3 h-3 text-amber-500 flex-shrink-0" />
-                    )}
-                  </div>
-                </Link>
+              <SidebarMenuButton 
+                onClick={() => navigateWithLoading(`/projects/${project.id}`, {
+                  message: `📋 Opening ${project.title}...`,
+                  showToast: true,
+                  delay: 800
+                })}
+              >
+                <div className="flex items-center gap-2 w-full">
+                  <Folder className="sidebar-icon text-blue-500 flex-shrink-0" />
+                  <span className="truncate flex-1 min-w-0">{project.title}</span>
+                  {project.is_private && (
+                    <Lock className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                  )}
+                </div>
               </SidebarMenuButton>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -80,11 +89,13 @@ export const NavProjects = React.memo(function NavProjects({ projects }: NavProj
                   side={isMobile ? "bottom" : "right"}
                   align={isMobile ? "end" : "start"}
                 >
-                  <DropdownMenuItem asChild>
-                    <Link href={`/projects/${project.id}`}>
-                      <Folder className="text-muted-foreground" />
-                      <span>View Project</span>
-                    </Link>
+                  <DropdownMenuItem onClick={() => navigateWithLoading(`/projects/${project.id}`, {
+                    message: `📋 Opening ${project.title}...`,
+                    showToast: true,
+                    delay: 800
+                  })}>
+                    <Folder className="text-muted-foreground" />
+                    <span>View Project</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
                     <Forward className="text-muted-foreground" />

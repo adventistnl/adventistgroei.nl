@@ -6,6 +6,7 @@ import { GraphQLProvider } from "@/lib/apollo/graphql-provider"
 import { AuthProvider } from "@/contexts/auth-context"
 import { PageProvider } from "@/contexts/page-context"
 import { InstitutionProvider } from "@/contexts/institution-context"
+import { NavigationLoadingProvider } from "@/contexts/navigation-loading-context"
 import { ToastProvider } from "@/components/ui/toast-provider"
 import "./globals.css"
 
@@ -27,8 +28,10 @@ export default function RootLayout({
           <AuthProvider>
             <InstitutionProvider>
               <PageProvider>
-                {children}
-                <ToastProvider />
+                <NavigationLoadingProvider>
+                  {children}
+                  <ToastProvider />
+                </NavigationLoadingProvider>
               </PageProvider>
             </InstitutionProvider>
           </AuthProvider>
