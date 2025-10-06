@@ -3,10 +3,22 @@
 import React, { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -28,12 +40,13 @@ import {
   ChevronRight,
   Check,
   FileText,
-  DollarSign
+  ChevronsUpDown
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { churchTranslations } from "@/lib/translations/churches"
 import { useChurches } from "@/hooks/use-churches"
 import { CreateChurch, CreateChurchVariables } from "@/types/CreateChurch"
+import { cn } from "@/lib/utils"
 
 export interface ChurchData {
   id: string
@@ -108,6 +121,7 @@ export function AddChurchModal({
     city: '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [openRegion, setOpenRegion] = useState(false)
 
   const totalSteps = 2
 
@@ -291,22 +305,55 @@ export function AddChurchModal({
                   <MapPin className="w-4 h-4 text-muted-foreground" />
                   Region *
                 </Label>
-                <Select
-                  value={formData.region_id || ''}
-                  onValueChange={(value) => handleInputChange('region_id', value)}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger className={`h-10 ${errors.region_id ? 'border-red-500' : ''}`}>
-                    <SelectValue placeholder="Select region" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {regions.map((region) => (
-                      <SelectItem key={region.id} value={region.id}>
-                        {region.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={openRegion} onOpenChange={setOpenRegion}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openRegion}
+                      className={cn(
+                        "w-full h-10 justify-between font-normal",
+                        !formData.region_id && "text-muted-foreground",
+                        errors.region_id && "border-red-500"
+                      )}
+                      disabled={isLoading}
+                    >
+                      {formData.region_id
+                        ? regions.find(region => region.id === formData.region_id)?.name
+                        : "Select region"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search region..." />
+                      <CommandList>
+                        <CommandEmpty>No region found.</CommandEmpty>
+                        <CommandGroup>
+                          {regions.map((region) => (
+                            <CommandItem
+                              key={region.id}
+                              value={region.name}
+                              onSelect={() => {
+                                handleInputChange('region_id', region.id)
+                                setOpenRegion(false)
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.region_id === region.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
+                              {region.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 {errors.region_id && (
                   <p className="text-sm text-red-600">{errors.region_id}</p>
                 )}

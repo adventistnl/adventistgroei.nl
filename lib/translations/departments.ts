@@ -7,7 +7,7 @@ export const departmentTranslations = {
         description: "Add a new department to your organization"
       },
       edit: {
-        title: "Edit Department",
+        title: "Edit Department", 
         description: "Update department information and contact details"
       },
       delete: {
@@ -44,33 +44,45 @@ export const departmentTranslations = {
       step: "Step",
       of: "of",
       step_1_title: "Basic Information",
-      step_1_description: "Enter department details and select the church",
-      step_2_title: "Contact Details",
-      step_2_description: "Add contact information for the department"
+      step_1_description: "Enter department name and description",
+      step_2_title: "Department Type & Church",
+      step_2_description: "Define department type and select church",
+      step_3_title: "Contact Details", 
+      step_3_description: "Add contact information for the department"
     },
     
     // Fields
     fields: {
       name: "Department Name",
-      church: "Church",
+      church: "Church", 
       description: "Description",
       annual_budget: "Annual Budget",
       contact_name: "Contact Name",
       contact_email: "Contact Email",
       contact_phone: "Phone",
-      contact_city: "City"
+      contact_city: "City",
+      is_institution_department: "Institutional Department",
+      search_church: "Search church...",
+      no_church_found: "No church found."
     },
     
     // Placeholders
     placeholders: {
       name: "Enter department name",
       church: "Select church",
-      description: "Enter department description",
+      description: "Enter department description", 
       annual_budget: "Enter annual budget",
       contact_name: "Enter contact name",
       contact_email: "Enter email address",
       contact_phone: "Enter phone number",
       contact_city: "Enter city"
+    },
+    
+    // Department Type
+    department_type: {
+      institutional_tooltip: "Department directly related to the institution",
+      institutional_explanation_on: "Department is directly linked to the institution, not to a specific church",
+      institutional_explanation_off: "Department must be linked to a specific church"
     },
     
     // Labels
@@ -88,7 +100,9 @@ export const departmentTranslations = {
     // Buttons
     buttons: {
       previous: "Previous",
-      next: "Next",
+      next: "Next", 
+      cancel: "Cancel",
+      save: "Save",
       creating: "Creating...",
       updating: "Updating..."
     },
@@ -97,11 +111,14 @@ export const departmentTranslations = {
     validation: {
       name_required: "Department name is required",
       name_min_length: "Department name must be at least 2 characters",
-      church_required: "Church is required",
+      church_required: "Church is required when not an institutional department",
       description_required: "Description is required",
       description_min_length: "Description must be at least 10 characters",
-      budget_required: "Annual budget is required and must be greater than 0",
+      contact_name_required: "Contact name is required",
+      email_required: "Email is required",
       email_invalid: "Please enter a valid email address",
+      phone_required: "Phone number is required", 
+      city_required: "City is required",
       please_fix_errors: "Please fix the errors before continuing"
     },
     
@@ -172,9 +189,11 @@ export const departmentTranslations = {
       step: "Stap",
       of: "van",
       step_1_title: "Basis Informatie",
-      step_1_description: "Voer afdeling details in en selecteer de kerk",
-      step_2_title: "Contactgegevens",
-      step_2_description: "Voeg contactinformatie toe voor de afdeling"
+      step_1_description: "Voer afdeling naam en beschrijving in",
+      step_2_title: "Afdeling Type & Kerk",
+      step_2_description: "Definieer afdeling type en selecteer kerk",
+      step_3_title: "Contactgegevens",
+      step_3_description: "Voeg contactinformatie toe voor de afdeling"
     },
     
     // Fields
@@ -186,7 +205,17 @@ export const departmentTranslations = {
       contact_name: "Contactnaam",
       contact_email: "Contact E-mail",
       contact_phone: "Telefoon",
-      contact_city: "Stad"
+      contact_city: "Stad",
+      is_institution_department: "Institutionele Afdeling",
+      search_church: "Zoek kerk...",
+      no_church_found: "Geen kerk gevonden."
+    },
+
+    // Department Type
+    department_type: {
+      institutional_tooltip: "Afdeling direct gerelateerd aan de instelling",
+      institutional_explanation_on: "Afdeling is direct gekoppeld aan de instelling, niet aan een specifieke kerk",
+      institutional_explanation_off: "Afdeling moet gekoppeld worden aan een specifieke kerk"
     },
     
     // Placeholders
@@ -217,6 +246,8 @@ export const departmentTranslations = {
     buttons: {
       previous: "Vorige",
       next: "Volgende",
+      cancel: "Annuleren",
+      save: "Opslaan",
       creating: "Aanmaken...",
       updating: "Bijwerken..."
     },
@@ -225,12 +256,15 @@ export const departmentTranslations = {
     validation: {
       name_required: "Afdeling naam is verplicht",
       name_min_length: "Afdeling naam moet minimaal 2 karakters zijn",
-      church_required: "Kerk is verplicht",
+      church_required: "Kerk is verplicht wanneer het geen institutionele afdeling is",
       description_required: "Beschrijving is verplicht",
       description_min_length: "Beschrijving moet minimaal 10 karakters zijn",
-      budget_required: "Jaarlijks budget is verplicht en moet groter zijn dan 0",
+      contact_name_required: "Contactnaam is verplicht",
+      email_required: "E-mail is verplicht",
       email_invalid: "Voer een geldig e-mailadres in",
-      please_fix_errors: "Los de fouten op voordat u doorgaat"
+      phone_required: "Telefoonnummer is verplicht",
+      city_required: "Stad is verplicht",
+      please_fix_errors: "Corrigeer de fouten voordat je doorgaat"
     },
     
     // Toasts
@@ -300,21 +334,33 @@ export const departmentTranslations = {
       step: "Passo",
       of: "de",
       step_1_title: "Informações Básicas",
-      step_1_description: "Digite detalhes do departamento e selecione a igreja",
-      step_2_title: "Detalhes de Contato",
-      step_2_description: "Adicione informações de contato para o departamento"
+      step_1_description: "Digite o nome e descrição do departamento",
+      step_2_title: "Tipo de Departamento e Igreja",
+      step_2_description: "Defina o tipo de departamento e selecione a igreja", 
+      step_3_title: "Detalhes de Contato",
+      step_3_description: "Adicione informações de contato para o departamento"
     },
     
     // Fields
     fields: {
       name: "Nome do Departamento",
       church: "Igreja",
-      description: "Descrição",
+      description: "Descrição", 
       annual_budget: "Orçamento Anual",
       contact_name: "Nome do Contato",
       contact_email: "E-mail de Contato",
       contact_phone: "Telefone",
-      contact_city: "Cidade"
+      contact_city: "Cidade",
+      is_institution_department: "Departamento Institucional",
+      search_church: "Buscar igreja...",
+      no_church_found: "Nenhuma igreja encontrada."
+    },
+    
+    // Department Type
+    department_type: {
+      institutional_tooltip: "Departamento relacionado diretamente com a instituição",
+      institutional_explanation_on: "Departamento está vinculado diretamente à instituição, não a uma igreja específica",
+      institutional_explanation_off: "Departamento deve ser vinculado a uma igreja específica"
     },
     
     // Placeholders
@@ -345,6 +391,8 @@ export const departmentTranslations = {
     buttons: {
       previous: "Anterior",
       next: "Próximo",
+      cancel: "Cancelar",
+      save: "Salvar",
       creating: "Criando...",
       updating: "Atualizando..."
     },
@@ -353,11 +401,14 @@ export const departmentTranslations = {
     validation: {
       name_required: "Nome do departamento é obrigatório",
       name_min_length: "Nome do departamento deve ter pelo menos 2 caracteres",
-      church_required: "Igreja é obrigatória",
+      church_required: "Igreja é obrigatória quando não é um departamento institucional",
       description_required: "Descrição é obrigatória",
       description_min_length: "Descrição deve ter pelo menos 10 caracteres",
-      budget_required: "Orçamento anual é obrigatório e deve ser maior que 0",
+      contact_name_required: "Nome do contato é obrigatório",
+      email_required: "E-mail é obrigatório",
       email_invalid: "Digite um endereço de e-mail válido",
+      phone_required: "Número de telefone é obrigatório",
+      city_required: "Cidade é obrigatória",
       please_fix_errors: "Corrija os erros antes de continuar"
     },
     

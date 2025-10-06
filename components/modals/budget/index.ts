@@ -1,1 +1,1 @@
-export { AnnualBudgetModal, type AnnualBudgetData } from './annual-budget-modal'
+export { AnnualBudgetViewEditModal as AnnualBudgetModal, type AnnualBudgetData } from '../annual-budget'

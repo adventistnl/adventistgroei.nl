@@ -130,7 +130,7 @@ export function ResponsiveGridCarousel({
   // Renderizar Grid para desktop com layout inteligente
   const renderGrid = () => (
     <div className={cn(
-      "w-full mx-auto p-4 overflow-hidden",
+      "w-full mx-auto overflow-hidden",
       className
     )}>
       <div className={cn(

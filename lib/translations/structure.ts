@@ -10,8 +10,9 @@ export const structureTranslations = {
     regions: "Regions",
     churches: "Churches",
     departments: "Departments",
-    
-    // Institutions
+    deleteChurch: "Kerk Verwijderen",
+    editDepartment: "Afdeling Bewerken",
+    deleteDepartment: "Afdeling Verwijderen",// Institutions
     institutionsTitle: "Institutions Management",
     institutionsSubtitle: "Manage religious institutions and their organizational structure",
     createInstitution: "Create Institution",
@@ -77,6 +78,7 @@ export const structureTranslations = {
     edit: "Edit",
     delete: "Delete",
     viewContact: "View Contact",
+    manageBudget: "Manage Budget",
     editRegion: "Edit Region",
     deleteRegion: "Delete Region",
     editChurch: "Edit Church",
@@ -298,6 +300,7 @@ export const structureTranslations = {
     edit: "Bewerken",
     delete: "Verwijderen",
     viewContact: "Contact Bekijken",
+    manageBudget: "Budget Beheren",
     editRegion: "Regio Bewerken",
     deleteRegion: "Regio Verwijderen",
     editChurch: "Kerk Bewerken",
@@ -519,6 +522,7 @@ export const structureTranslations = {
     edit: "Editar",
     delete: "Excluir",
     viewContact: "Ver Contato",
+    manageBudget: "Gerenciar Orçamento",
     editRegion: "Editar Região",
     deleteRegion: "Excluir Região",
     editChurch: "Editar Igreja",

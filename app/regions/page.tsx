@@ -35,7 +35,7 @@ import { structureTranslations } from "@/lib/translations/structure"
 import { DataTable } from "@/components/ui/data-table"
 import { AddRegionModal, EditRegionModal, DeleteRegionModal } from "@/components/modals/region"
 import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
-import { AnnualBudgetModal, AnnualBudgetData } from "@/components/modals/budget"
+import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget"
 import { UseKPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 
 // Charts - usando a lib atual do sistema
@@ -715,13 +715,12 @@ export default function RegionsPage() {
         
         {/* Annual Budget Modal */}
         {selectedRegion && (
-          <AnnualBudgetModal
+          <AnnualBudgetViewEditModal
             isOpen={isBudgetModalOpen}
             onOpenChange={setIsBudgetModalOpen}
             budget={selectedBudget}
             entityType="region"
             entityName={selectedRegion.name}
-            entityId={selectedRegion.id}
             onSave={handleBudgetSaved}
           />
         )}

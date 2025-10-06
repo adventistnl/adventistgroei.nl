@@ -8,10 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
+import { cn } from "@/lib/utils"
 import {
   Select,
   SelectContent,
@@ -21,53 +19,36 @@ import {
 } from "@/components/ui/select"
 import { 
   MapPin, 
-  User, 
-  Phone, 
-  Mail, 
+  Save, 
   Globe, 
-  MapPin as LocationIcon,
-  Edit,
-  Save,
-  X,
-  ArrowRight,
-  ArrowLeft,
-  CheckCircle,
-  AlertCircle
+  Mail,
+  Phone,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+  Loader2
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { useRegions } from "@/hooks/use-regions"
 import { UpdateRegion, UpdateRegionVariables } from "@/types/UpdateRegion"
-import { useInstitutions } from "@/hooks/use-institutions"
+
+export interface EditRegionFormData {
+  name: string
+  description?: string
+  email: string
+  phone?: string
+  website?: string
+}
 
 export interface RegionData {
   id: string
   institution_id: string
   name: string
-  parent_region_id?: string | null
-  contact_id?: string | null
-  created_at: string
-  updated_at: string
-  created_by: string
-  updated_by: string
-  is_deleted: boolean
-  deleted_at?: string | null
-  deleted_by?: string | null
-}
-
-export interface ContactData {
-  id: string
-  name?: string | null
-  phone?: string | null
-  mobile?: string | null
+  description?: string | null
   email?: string | null
-  country?: string | null
-  city?: string | null
-  address?: string | null
-  full_address?: string | null
-  postal_code?: string | null
+  phone?: string | null
   website?: string | null
-  notes?: string | null
-  is_primary: boolean
+  parent_region_id?: string | null
   created_at: string
   updated_at: string
   created_by: string
@@ -87,7 +68,7 @@ export interface EditRegionModalProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   region: RegionData
-  parentRegions: ParentRegionData[]
+  parentRegions?: ParentRegionData[]
   onSave: (region: RegionData) => void
 }
 
@@ -95,96 +76,47 @@ export function EditRegionModal({
   isOpen,
   onOpenChange,
   region,
-  parentRegions,
+  parentRegions = [],
   onSave
 }: EditRegionModalProps) {
-  const { i18n } = useTranslation()
   const { updateRegion } = useRegions()
-  const currentLanguage = i18n?.language || 'en'
-  const t = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
-  const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  
-  // Form data
-  const [formData, setFormData] = useState({
-    name: region.name || '',
-    parent_region_id: region.parent_region_id || 'none',
-    contact: {
-      name: '',
-      email: '',
-      phone: '',
-      mobile: '',
-      country: '',
-      city: '',
-      address: '',
-      full_address: '',
-      postal_code: '',
-      website: '',
-      notes: ''
-    }
+  const [currentStep, setCurrentStep] = useState(1)
+  const [formData, setFormData] = useState<EditRegionFormData>({
+    name: "",
+    description: "",
+    email: "",
+    phone: "",
+    website: "",
   })
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const totalSteps = 3
+  const { i18n } = useTranslation()
+  
+  // Get translations for current language
+  const t_structure = structureTranslations[i18n.language as keyof typeof structureTranslations] || structureTranslations.en
 
   useEffect(() => {
-    if (region) {
+    if (region && isOpen) {
       setFormData({
-        name: region.name || '',
-        parent_region_id: region.parent_region_id || 'none',
-        contact: {
-          name: '',
-          email: '',
-          phone: '',
-          mobile: '',
-          country: '',
-          city: '',
-          address: '',
-          full_address: '',
-          postal_code: '',
-          website: '',
-          notes: ''
-        }
+        name: region.name || "",
+        description: region.description || "",
+        email: region.email || "",
+        phone: region.phone || "",
+        website: region.website || "",
       })
+      setErrors({})
+      setCurrentStep(1)
     }
-  }, [region])
+  }, [region, isOpen])
 
-  const validateStep = (step: number): boolean => {
-    const newErrors: Record<string, string> = {}
-
-    if (step === 1) {
-      if (!formData.name.trim()) {
-        newErrors.name = t.regions.validation.name_required
-      } else if (formData.name.trim().length < 2) {
-        newErrors.name = t.regions.validation.name_min_length
-      }
-    }
-
-    if (step === 2) {
-      if (formData.contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact.email)) {
-        newErrors.email = t.regions.validation.email_invalid
-      }
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleInputChange = (field: string, value: string) => {
-    if (field.startsWith('contact.')) {
-      const contactField = field.replace('contact.', '')
-      setFormData(prev => ({
-        ...prev,
-        contact: {
-          ...prev.contact,
-          [contactField]: value
-        }
-      }))
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [field]: value
-      }))
-    }
-
+  const handleInputChange = (field: keyof EditRegionFormData, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value === "" ? undefined : value
+    }))
+    
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({
@@ -194,365 +126,335 @@ export function EditRegionModal({
     }
   }
 
+  const validateStep = (step: number) => {
+    const newErrors: Record<string, string> = {}
+
+    if (step === 1) {
+      if (!formData.name?.trim()) {
+        newErrors.name = "Region name is required"
+      } else if (formData.name.trim().length < 2) {
+        newErrors.name = "Region name must be at least 2 characters"
+      }
+    }
+
+    if (step === 2) {
+      if (!formData.email?.trim()) {
+        newErrors.email = "Email is required"
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        newErrors.email = "Please enter a valid email address"
+      }
+
+      if (formData.website && formData.website.trim() && !formData.website.match(/^https?:\/\//)) {
+        newErrors.website = "Website must start with http:// or https://"
+      }
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep(2)
+      setCurrentStep(prev => Math.min(prev + 1, totalSteps))
     }
   }
 
   const handlePrevious = () => {
-    setCurrentStep(1)
+    setCurrentStep(prev => Math.max(prev - 1, 1))
   }
 
   const handleSave = async () => {
-    if (!validateStep(2)) {
-      toast.error(t.regions.validation.please_fix_errors)
+    if (!validateStep(1) || !validateStep(2)) {
+      toast.error("Please fix the errors before continuing")
       return
     }
 
     setIsLoading(true)
-    const loadingToast = toast.loading(t.regions.toasts.updating)
+    const loadingToast = toast.loading("🗺️ Updating region...")
 
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
-
-      const updatedRegion: RegionData = {
-        ...region,
-        name: formData.name.trim(),
-        parent_region_id: formData.parent_region_id === 'none' ? null : formData.parent_region_id,
-        updated_at: new Date().toISOString(),
-        updated_by: 'current_user'
-      }
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
       const variables: UpdateRegionVariables = {
         id: region.id,
-        name: "",
-        institution_id: "",
-        parent_region_id: "",
-        description: "",
-        email: "",
-        phone: "",
-        website: "",
+        name: formData.name || "",
+        institution_id: region.institution_id,
+        parent_region_id: null,
+        description: formData.description || null,
+        email: formData.email || null,
+        phone: formData.phone || null,
+        website: formData.website || null,
       }
 
-      // const res = await updateRegion({variables: formData})
-      toast.dismiss(loadingToast)
-      toast.success(t.regions.toasts.updated, {
-        duration: 3000,
-        icon: '✅'
-      })
+      const res = await updateRegion({ variables })
+      if (!res.data) throw new Error("Failed to update region")
 
+      toast.success(
+        `🎉 Region "${formData.name}" updated successfully!`,
+        { duration: 4000 }
+      )
+
+      // Create updated region object for callback
+      const updatedRegion: RegionData = {
+        ...region,
+        name: formData.name || "",
+        description: formData.description,
+        email: formData.email,
+        phone: formData.phone,
+        website: formData.website,
+        parent_region_id: null,
+        updated_at: new Date().toISOString(),
+        updated_by: "current_user"
+      }
+
+      // Call success callback
       onSave(updatedRegion)
-      onOpenChange(false)
 
+      // Close modal
+      onOpenChange(false)
     } catch (error) {
       toast.dismiss(loadingToast)
-      toast.error(t.regions.toasts.update_failed)
+      toast.error("❌ Failed to update region")
+      console.error("Error updating region:", error)
     } finally {
+      toast.dismiss(loadingToast)
       setIsLoading(false)
     }
   }
 
-  const handleClose = () => {
-    if (!isLoading) {
-      setCurrentStep(1)
-      setErrors({})
-      onOpenChange(false)
+  const handleCancel = () => {
+    if (region) {
+      setFormData({
+        name: region.name || "",
+        description: region.description || "",
+        email: region.email || "",
+        phone: region.phone || "",
+        website: region.website || "",
+      })
+    }
+    setErrors({})
+    setCurrentStep(1)
+    onOpenChange(false)
+  }
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="space-y-6 animate-in fade-in-0 duration-300">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-medium text-foreground">Basic Information</h3>
+              <p className="text-sm text-muted-foreground">Update the region details</p>
+            </div>
+            
+            <div className="space-y-4 max-w-md mx-auto">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="flex items-center gap-2 text-sm">
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  Region Name *
+                </Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  placeholder="Enter region name"
+                  disabled={isLoading}
+                  className={`h-12 text-base ${errors.name ? 'border-red-500' : ''}`}
+                />
+                {errors.name && (
+                  <p className="text-sm text-red-600">{errors.name}</p>
+                )}
+              </div>
+
+
+            </div>
+          </div>
+        )
+
+      case 2:
+        return (
+          <div className="space-y-6 animate-in fade-in-0 duration-300">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-medium text-foreground">Contact Information</h3>
+              <p className="text-sm text-muted-foreground">Update contact details for the region</p>
+            </div>
+            
+            <div className="space-y-4 max-w-md mx-auto">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="flex items-center gap-2 text-sm">
+                  <Mail className="w-4 h-4 text-muted-foreground" />
+                  Contact Email *
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  placeholder="contact@region.org"
+                  disabled={isLoading}
+                  className={`h-12 text-base ${errors.email ? 'border-red-500' : ''}`}
+                />
+                {errors.email && (
+                  <p className="text-sm text-red-600">{errors.email}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="flex items-center gap-2 text-sm">
+                  <Phone className="w-4 h-4 text-muted-foreground" />
+                  Phone (Optional)
+                </Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  placeholder="+1 (555) 123-4567"
+                  disabled={isLoading}
+                  className="h-12 text-base"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="website" className="flex items-center gap-2 text-sm">
+                  <Globe className="w-4 h-4 text-muted-foreground" />
+                  Website (Optional)
+                </Label>
+                <Input
+                  id="website"
+                  value={formData.website}
+                  onChange={(e) => handleInputChange('website', e.target.value)}
+                  placeholder="https://www.region.org"
+                  disabled={isLoading}
+                  className={`h-12 text-base ${errors.website ? 'border-red-500' : ''}`}
+                />
+                {errors.website && (
+                  <p className="text-sm text-red-600">{errors.website}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+
+      case 3:
+        return (
+          <div className="space-y-6 animate-in fade-in-0 duration-300">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-medium text-foreground">Additional Details</h3>
+              <p className="text-sm text-muted-foreground">Update description about the region</p>
+            </div>
+            
+            <div className="space-y-4 max-w-md mx-auto">
+              <div className="space-y-2">
+                <Label htmlFor="description" className="flex items-center gap-2 text-sm">
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                  Description (Optional)
+                </Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  placeholder="Brief description about the region, its mission, and activities..."
+                  disabled={isLoading}
+                  className="min-h-[120px] text-base resize-none"
+                  rows={5}
+                />
+              </div>
+            </div>
+          </div>
+        )
+
+      default:
+        return null
     }
   }
 
-  const progress = (currentStep / 2) * 100
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="space-y-3">
-          <DialogTitle className="flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-green-600" />
-            {t.regions.modals.edit.title}
+    <Dialog open={isOpen} onOpenChange={!isLoading ? onOpenChange : undefined}>
+      <DialogContent className="w-[95vw] max-w-2xl max-h-[95vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0 pb-4">
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <MapPin className="w-5 h-5 text-muted-foreground" />
+            Edit Region
           </DialogTitle>
-          <DialogDescription>
-            {t.regions.modals.edit.description}
+          <DialogDescription className="text-sm text-muted-foreground">
+            Update region information in your institution
           </DialogDescription>
+          
+          {/* Progress Bar */}
+          <div className="mt-4 space-y-2">
+            <div className="flex justify-between items-center text-xs text-muted-foreground">
+              <span>Step {currentStep} of {totalSteps}</span>
+              <span>{Math.round((currentStep / totalSteps) * 100)}%</span>
+            </div>
+            <Progress value={(currentStep / totalSteps) * 100} className="h-1" />
+          </div>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">
-                {t.regions.steps.step} {currentStep} {t.regions.steps.of} 2
-              </span>
-              <span className="font-medium">{Math.round(progress)}%</span>
-            </div>
-            <Progress value={progress} className="h-2" />
+        {/* Conteúdo dos Steps - Scrollable */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="space-y-6 p-1">
+            {/* Step Content */}
+            {renderStepContent()}
           </div>
+        </div>
 
-          {/* Step 1: Basic Information */}
-          {currentStep === 1 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  {t.regions.sections.basic_info}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">{t.regions.fields.name} *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    placeholder={t.regions.placeholders.name}
-                    disabled={isLoading}
-                    className={errors.name ? 'border-red-500' : ''}
-                  />
-                  {errors.name && (
-                    <div className="flex items-center gap-1 text-sm text-red-600">
-                      <AlertCircle className="w-3 h-3" />
-                      {errors.name}
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="parent_region">{t.regions.fields.parent_region}</Label>
-                  <Select
-                    value={formData.parent_region_id}
-                    onValueChange={(value) => handleInputChange('parent_region_id', value)}
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t.regions.placeholders.parent_region} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">{t.regions.placeholders.no_parent}</SelectItem>
-                      {parentRegions
-                        .filter(parent => parent.id !== region.id) // Don't allow self as parent
-                        .map((parent) => (
-                          <SelectItem key={parent.id} value={parent.id}>
-                            {parent.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Live Preview */}
-                <div className="mt-6 p-4 bg-muted/30 rounded-lg">
-                  <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    {t.regions.labels.region} Preview
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-3 h-3 text-muted-foreground" />
-                      <span className="font-medium">{formData.name || t.regions.placeholders.name}</span>
-                    </div>
-                    {formData.parent_region_id && formData.parent_region_id !== 'none' && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <span className="text-xs">Parent:</span>
-                        <span className="text-xs">
-                          {parentRegions.find(p => p.id === formData.parent_region_id)?.name}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Step 2: Contact Information */}
-          {currentStep === 2 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  {t.regions.sections.contact_info}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="contact_name">{t.regions.fields.contact_name}</Label>
-                    <Input
-                      id="contact_name"
-                      value={formData.contact.name}
-                      onChange={(e) => handleInputChange('contact.name', e.target.value)}
-                      placeholder={t.regions.placeholders.contact_name}
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="contact_email">{t.regions.fields.contact_email}</Label>
-                    <Input
-                      id="contact_email"
-                      type="email"
-                      value={formData.contact.email}
-                      onChange={(e) => handleInputChange('contact.email', e.target.value)}
-                      placeholder={t.regions.placeholders.contact_email}
-                      disabled={isLoading}
-                      className={errors.email ? 'border-red-500' : ''}
-                    />
-                    {errors.email && (
-                      <div className="flex items-center gap-1 text-sm text-red-600">
-                        <AlertCircle className="w-3 h-3" />
-                        {errors.email}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="contact_phone">{t.regions.fields.contact_phone}</Label>
-                    <Input
-                      id="contact_phone"
-                      value={formData.contact.phone}
-                      onChange={(e) => handleInputChange('contact.phone', e.target.value)}
-                      placeholder={t.regions.placeholders.contact_phone}
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="contact_mobile">{t.regions.fields.contact_mobile}</Label>
-                    <Input
-                      id="contact_mobile"
-                      value={formData.contact.mobile}
-                      onChange={(e) => handleInputChange('contact.mobile', e.target.value)}
-                      placeholder={t.regions.placeholders.contact_mobile}
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="contact_country">{t.regions.fields.contact_country}</Label>
-                    <Input
-                      id="contact_country"
-                      value={formData.contact.country}
-                      onChange={(e) => handleInputChange('contact.country', e.target.value)}
-                      placeholder={t.regions.placeholders.contact_country}
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="contact_city">{t.regions.fields.contact_city}</Label>
-                    <Input
-                      id="contact_city"
-                      value={formData.contact.city}
-                      onChange={(e) => handleInputChange('contact.city', e.target.value)}
-                      placeholder={t.regions.placeholders.contact_city}
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="contact_address">{t.regions.fields.contact_address}</Label>
-                  <Input
-                    id="contact_address"
-                    value={formData.contact.address}
-                    onChange={(e) => handleInputChange('contact.address', e.target.value)}
-                    placeholder={t.regions.placeholders.contact_address}
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="contact_postal_code">{t.regions.fields.contact_postal_code}</Label>
-                    <Input
-                      id="contact_postal_code"
-                      value={formData.contact.postal_code}
-                      onChange={(e) => handleInputChange('contact.postal_code', e.target.value)}
-                      placeholder={t.regions.placeholders.contact_postal_code}
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="contact_website">{t.regions.fields.contact_website}</Label>
-                    <Input
-                      id="contact_website"
-                      type="url"
-                      value={formData.contact.website}
-                      onChange={(e) => handleInputChange('contact.website', e.target.value)}
-                      placeholder={t.regions.placeholders.contact_website}
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                {/* Contact Preview */}
-                <div className="mt-6 p-4 bg-muted/30 rounded-lg">
-                  <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    {t.regions.labels.contact} Preview
-                  </h4>
-                  <div className="space-y-1 text-sm">
-                    {formData.contact.name && (
-                      <div className="flex items-center gap-2">
-                        <User className="w-3 h-3 text-muted-foreground" />
-                        <span>{formData.contact.name}</span>
-                      </div>
-                    )}
-                    {formData.contact.email && (
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-3 h-3 text-muted-foreground" />
-                        <span>{formData.contact.email}</span>
-                      </div>
-                    )}
-                    {formData.contact.phone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-3 h-3 text-muted-foreground" />
-                        <span>{formData.contact.phone}</span>
-                      </div>
-                    )}
-                    {formData.contact.country && formData.contact.city && (
-                      <div className="flex items-center gap-2">
-                        <LocationIcon className="w-3 h-3 text-muted-foreground" />
-                        <span>{formData.contact.city}, {formData.contact.country}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row justify-between gap-3 pt-4 border-t">
-            <div className="flex gap-3">
+        {/* Botões de Navegação - Fixos no rodapé */}
+        <div className="flex-shrink-0 border-t pt-4 mt-6">
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2">
               {currentStep > 1 && (
-                <Button variant="outline" onClick={handlePrevious} disabled={isLoading} className="w-full sm:w-auto">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  {t.regions.buttons.previous}
+                <Button 
+                  variant="outline" 
+                  onClick={handlePrevious} 
+                  disabled={isLoading}
+                  size="sm"
+                  className="flex items-center gap-1 text-xs"
+                >
+                  <ChevronLeft className="w-3 h-3" />
+                  Previous
                 </Button>
               )}
+              <Button 
+                variant="outline" 
+                onClick={handleCancel} 
+                disabled={isLoading}
+                size="sm"
+                className="text-xs"
+              >
+                Cancel
+              </Button>
             </div>
 
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={handleClose} disabled={isLoading} className="w-full sm:w-auto">
-                <X className="w-4 h-4 mr-2" />
-                {t.common.cancel}
-              </Button>
-
-              {currentStep < 2 ? (
-                <Button onClick={handleNext} disabled={isLoading} className="w-full sm:w-auto">
-                  {t.regions.buttons.next}
-                  <ArrowRight className="w-4 h-4 ml-2" />
+            <div className="flex gap-2">
+              {currentStep < totalSteps ? (
+                <Button 
+                  onClick={handleNext} 
+                  disabled={isLoading}
+                  size="sm"
+                  className="flex items-center gap-1 text-xs"
+                >
+                  Next
+                  <ChevronRight className="w-3 h-3" />
                 </Button>
               ) : (
-                <Button onClick={handleSave} disabled={isLoading} className="w-full sm:w-auto">
-                  <Save className="w-4 h-4 mr-2" />
-                  {isLoading ? t.regions.updating : t.common.save}
+                <Button 
+                  onClick={handleSave} 
+                  disabled={isLoading}
+                  size="sm"
+                  className="min-w-[100px] text-xs"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3 h-3 mr-1" />
+                      Update Region
+                    </>
+                  )}
                 </Button>
               )}
             </div>

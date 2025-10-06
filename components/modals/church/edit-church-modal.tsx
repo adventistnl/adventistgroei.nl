@@ -3,10 +3,22 @@
 import React, { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -29,17 +41,17 @@ import {
   Check,
   MapPin as MapPinIcon,
   FileText,
-  DollarSign
+  ChevronsUpDown
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { churchTranslations } from "@/lib/translations/churches"
+import { cn } from "@/lib/utils"
 
 export interface ChurchData {
   id: string
   institution_id: string
   name: string
   region_id: string
-  annual_budget?: number
   contact_id?: string | null
   created_at: string
   updated_at: string
@@ -100,7 +112,6 @@ export function EditChurchModal({
   const [formData, setFormData] = useState<Partial<ChurchData & { contact: Partial<ContactData> }>>({
     region_id: '',
     name: '',
-    annual_budget: 0,
     contact: {
       name: '',
       phone: '',
@@ -117,6 +128,7 @@ export function EditChurchModal({
     }
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [openRegion, setOpenRegion] = useState(false)
 
   const totalSteps = 2
 
@@ -127,7 +139,6 @@ export function EditChurchModal({
         institution_id: church.institution_id,
         region_id: church.region_id,
         name: church.name,
-        annual_budget: church.annual_budget || 0,
         contact: {
           name: '',
           phone: '',
@@ -187,10 +198,6 @@ export function EditChurchModal({
       if (!formData.region_id) {
         newErrors.region_id = "Region is required"
       }
-
-      if (!formData.annual_budget || formData.annual_budget <= 0) {
-        newErrors.annual_budget = "Annual budget is required and must be greater than 0"
-      }
     }
 
     if (step === 2) {
@@ -230,7 +237,6 @@ export function EditChurchModal({
         ...church,
         region_id: formData.region_id!,
         name: formData.name!.trim(),
-        annual_budget: formData.annual_budget!,
         updated_at: new Date().toISOString(),
         updated_by: 'current_user'
       }
@@ -262,7 +268,6 @@ export function EditChurchModal({
         institution_id: church.institution_id,
         region_id: church.region_id,
         name: church.name,
-        annual_budget: church.annual_budget || 0,
         contact: {
           name: '',
           phone: '',
@@ -320,47 +325,61 @@ export function EditChurchModal({
                   <MapPin className="w-4 h-4 text-muted-foreground" />
                   Region *
                 </Label>
-                <Select
-                  value={formData.region_id || ''}
-                  onValueChange={(value) => handleInputChange('region_id', value)}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger className={`h-10 ${errors.region_id ? 'border-red-500' : ''}`}>
-                    <SelectValue placeholder="Select region" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {regions.map((region) => (
-                      <SelectItem key={region.id} value={region.id}>
-                        {region.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={openRegion} onOpenChange={setOpenRegion}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openRegion}
+                      className={cn(
+                        "w-full h-10 justify-between font-normal",
+                        !formData.region_id && "text-muted-foreground",
+                        errors.region_id && "border-red-500"
+                      )}
+                      disabled={isLoading}
+                    >
+                      {formData.region_id
+                        ? regions.find(region => region.id === formData.region_id)?.name
+                        : "Select region"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search region..." />
+                      <CommandList>
+                        <CommandEmpty>No region found.</CommandEmpty>
+                        <CommandGroup>
+                          {regions.map((region) => (
+                            <CommandItem
+                              key={region.id}
+                              value={region.name}
+                              onSelect={() => {
+                                handleInputChange('region_id', region.id)
+                                setOpenRegion(false)
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.region_id === region.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
+                              {region.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 {errors.region_id && (
                   <p className="text-sm text-red-600">{errors.region_id}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="annual_budget" className="flex items-center gap-2 text-sm">
-                  <DollarSign className="w-4 h-4 text-muted-foreground" />
-                  Annual Budget *
-                </Label>
-                <Input
-                  id="annual_budget"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.annual_budget || ''}
-                  onChange={(e) => handleInputChange('annual_budget', parseFloat(e.target.value) || 0)}
-                  placeholder="Enter annual budget"
-                  disabled={isLoading}
-                  className={`h-10 ${errors.annual_budget ? 'border-red-500' : ''}`}
-                />
-                {errors.annual_budget && (
-                  <p className="text-sm text-red-600">{errors.annual_budget}</p>
-                )}
-              </div>
+
             </div>
           </div>
         )

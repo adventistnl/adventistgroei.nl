@@ -151,7 +151,7 @@ export function DeleteDepartmentModal({
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <DollarSign className="w-4 h-4" />
-                  <span>Budget: <strong className="text-foreground">${department.annual_budget.toLocaleString()}</strong></span>
+                  <span>Budget: <strong className="text-foreground">${department.annual_budget?.toLocaleString() ?? 'N/A'}</strong></span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Building className="w-4 h-4" />
