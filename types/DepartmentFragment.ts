@@ -52,7 +52,7 @@ export interface DepartmentFragment {
   __typename: "Department";
   id: string;
   institution_id: string;
-  church_id: string;
+  church_id: string | null;
   name: string;
   description: string;
   contact_id: string | null;
@@ -64,7 +64,7 @@ export interface DepartmentFragment {
   deleted_at: any | null;
   deleted_by: string | null;
   contact: DepartmentFragment_contact | null;
-  church: DepartmentFragment_church;
+  church: DepartmentFragment_church | null;
   annual_budget: DepartmentFragment_annual_budget | null;
   users: DepartmentFragment_users[] | null;
 }

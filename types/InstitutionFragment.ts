@@ -310,7 +310,7 @@ export interface InstitutionFragment_departments {
   __typename: "Department";
   id: string;
   institution_id: string;
-  church_id: string;
+  church_id: string | null;
   name: string;
   description: string;
   contact_id: string | null;
@@ -322,7 +322,7 @@ export interface InstitutionFragment_departments {
   deleted_at: any | null;
   deleted_by: string | null;
   contact: InstitutionFragment_departments_contact | null;
-  church: InstitutionFragment_departments_church;
+  church: InstitutionFragment_departments_church | null;
   annual_budget: InstitutionFragment_departments_annual_budget | null;
   users: InstitutionFragment_departments_users[] | null;
 }

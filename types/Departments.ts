@@ -11,7 +11,7 @@ export interface Departments_departments {
   __typename: "Department";
   id: string;
   institution_id: string;
-  church_id: string;
+  church_id: string | null;
   name: string;
   description: string;
   contact_id: string | null;

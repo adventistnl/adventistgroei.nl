@@ -257,7 +257,6 @@ export function AddDepartmentModal({
       // If it's an institutional department, use institution ID as church
       const finalPayload: CreateDepartmentVariables = {
         ...departmentData,
-        church: is_institution_department ? institutionId : formData.church
       }
 
       const res = await createDepartment({ variables: finalPayload })

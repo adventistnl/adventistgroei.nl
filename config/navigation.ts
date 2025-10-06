@@ -1,3 +1,4 @@
+import { PermissionResolverName } from "@/types/graphql-global-types"
 import {
   BarChart3,
   Users,
@@ -28,6 +29,7 @@ export interface NavItem {
   icon?: any
   isActive?: boolean
   items?: NavItem[]
+  permissions: PermissionResolverName[]
 }
 
 // Interface for projects/quick access
@@ -51,26 +53,29 @@ const navMainBase: NavItem[] = [
     title: "Dashboard",
     url: "/dashboard",
     icon: BarChart3,
+    permissions: [PermissionResolverName.Institutions],
   },
   {
     title: "Structure & Organization",
     url: "#",
     icon: Building2,
     items: [
-      { title: "Institutions", url: "/institutions" },
-      { title: "Regions", url: "/regions" },
-      { title: "Churches", url: "/churches" },
-      { title: "Departments", url: "/departments" },
+      { title: "Institutions", url: "/institutions", permissions: [PermissionResolverName.Institutions] },
+      { title: "Regions", url: "/regions", permissions: [PermissionResolverName.Regions] },
+      { title: "Churches", url: "/churches", permissions: [PermissionResolverName.Churches] },
+      { title: "Departments", url: "/departments", permissions: [PermissionResolverName.Departments] },
     ],
+    permissions:[]
   },
   {
     title: "Users & Access",
     url: "#",
     icon: Users,
     items: [
-      { title: "Users", url: "/users" },
-      { title: "Access Management", url: "/access" },
+      { title: "Users", url: "/users", permissions: [PermissionResolverName.Users] },
+      { title: "Access Management", url: "/access", permissions: [PermissionResolverName.Roles] },
     ],
+    permissions:[]
   },
   // {
   //   title: "Subsidies",
@@ -88,25 +93,29 @@ const navMainBase: NavItem[] = [
     url: "#",
     icon: File,
     items: [
-      { title: "Projects", url: "/projects" },
-      { title: "Reports", url: "/reports" },
+      { title: "Projects", url: "/projects", permissions: [PermissionResolverName.Projects] },
+      { title: "Reports", url: "/reports", permissions: [] },
     ],
+     permissions: []
   },
   {
     title: "Events",
     url: "/events",
     icon: Calendar,
+    permissions: []
   },
     {
       title: "Communications",
       url: "/communications",
       icon: MessageSquare,
+      permissions: [PermissionResolverName.Communications]
     },
-    // {
-    //   title: "Settings",
-    //   url: "/settings",
-    //   icon: Settings,
-    // }
+    {
+      title: "Settings",
+      url: "/settings",
+      icon: Settings,
+      permissions: [PermissionResolverName.Settings]
+    }
 ]
 
 // Função estável para obter navegação com estado ativo
