@@ -39,7 +39,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal } from "@/components/modals/department"
 import { useInstitution } from "@/contexts/institution-context"
 import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
-import { AnnualBudgetModal, AnnualBudgetData } from "@/components/modals/budget"
+import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget"
 import { DepartmentsKPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 
 // Charts - usando a lib atual do sistema
@@ -296,8 +296,20 @@ export default function DepartmentsPage() {
   }
   
   const handleBudgetSaved = (budget: AnnualBudgetData) => {
-    toast.success("Budget updated successfully")
-    handleRefresh()
+    // Update the selected department's annual_budget if it was changed
+    if (selectedDepartment && budget.planned_budget !== selectedDepartment.annual_budget) {
+      const updatedDepartment = {
+        ...selectedDepartment,
+        annual_budget: budget.planned_budget
+      };
+      setSelectedDepartment(updatedDepartment);
+    }
+    
+    toast.success("Budget updated successfully", {
+      duration: 3000,
+      icon: '💰'
+    });
+    handleRefresh();
   }
 
   if (!currentInstitutionData) return <NotFound />
@@ -315,9 +327,38 @@ export default function DepartmentsPage() {
           </div>
           <div>
             <div className="font-medium">{row.original.name}</div>
+            <div className="text-xs text-muted-foreground">{row.original.description || '-'}</div>
           </div>
         </div>
       ),
+    },
+    {
+      id: "church", 
+      accessorKey: "church",
+      header: t.church,
+      cell: ({ row }) => {
+        const church = churches.find(c => c.id === row.original.church);
+        const isInstitutional = !church;
+        return (
+          <div className="flex items-center gap-2">
+            {isInstitutional ? (
+              <Building className="w-4 h-4 text-muted-foreground" />
+            ) : (
+              <Home className="w-4 h-4 text-muted-foreground" />
+            )}
+            <span className="font-medium">
+              {isInstitutional ? 'Institutional' : church.name}
+            </span>
+          </div>
+        )
+      },
+      filterFn: (row, id, value) => {
+        if (value === "institutional") {
+          const church = churches.find(c => c.id === row.getValue(id));
+          return !church;
+        }
+        return value.includes(row.getValue(id))
+      },
     },
     {
       id: "members",
@@ -403,6 +444,10 @@ export default function DepartmentsPage() {
             <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
               <Edit className="w-4 h-4 mr-2" />
               {t.editDepartment}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleViewBudget(row.original.id)}>
+              <DollarSign className="w-4 h-4 mr-2" />
+              Manage Budget
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
               <Trash2 className="w-4 h-4 mr-2" />
@@ -634,6 +679,19 @@ export default function DepartmentsPage() {
               data={departments}
               searchKey="name"
               searchPlaceholder={t.searchDepartments}
+              filterableColumns={[
+                {
+                  id: "church",
+                  title: t.church,
+                  options: [
+                    { label: "Institutional", value: "institutional" },
+                    ...churches.map(church => ({
+                      label: church.name,
+                      value: church.id
+                    }))
+                  ]
+                }
+              ]}
               // filterableColumns={[
               //   {
               //     id: "church",
@@ -700,13 +758,12 @@ export default function DepartmentsPage() {
         
         {/* Annual Budget Modal */}
         {selectedDepartment && (
-          <AnnualBudgetModal
+          <AnnualBudgetViewEditModal
             isOpen={isBudgetModalOpen}
             onOpenChange={setIsBudgetModalOpen}
             budget={selectedBudget}
             entityType="department"
             entityName={selectedDepartment.name}
-            entityId={selectedDepartment.id}
             onSave={handleBudgetSaved}
           />
         )}

@@ -36,7 +36,7 @@ import toast from "react-hot-toast"
 import { structureTranslations } from "@/lib/translations/structure"
 import { DataTable } from "@/components/ui/data-table"
 import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
-import { AnnualBudgetModal, AnnualBudgetData } from "@/components/modals/budget"
+import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget"
 import { AddChurchModal, EditChurchModal, DeleteChurchModal, ChurchData, RegionData } from "@/components/modals/church"
 import { ChurchesKPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 
@@ -157,11 +157,11 @@ export default function ChurchesPage() {
   type ChurchType = typeof churches extends (infer U)[] ? U : any;
   const kpiData = useMemo(() => {
     const totalChurches = churches.length;
-    const totalMembers = churches.reduce((sum: number, c: ChurchType) => sum + (c.members_count || 0), 0);
-    const totalDepartments = churches.reduce((sum: number, c: ChurchType) => sum + (c.departments_count || 0), 0);
-    const totalSubsidyRequests = churches.reduce((sum: number, c: ChurchType) => sum + (c.subsidy_requests || 0), 0);
-    const totalBudget = churches.reduce((sum: number, c: ChurchType) => sum + (c.total_budget || 0), 0);
-    const totalUsedBudget = churches.reduce((sum: number, c: ChurchType) => sum + (c.used_budget || 0), 0);
+    const totalMembers = churches.reduce((sum: number, c: ChurchType) => sum + ((c as any).members_count || 0), 0);
+    const totalDepartments = churches.reduce((sum: number, c: ChurchType) => sum + ((c as any).departments_count || 0), 0);
+    const totalSubsidyRequests = churches.reduce((sum: number, c: ChurchType) => sum + ((c as any).subsidy_requests || 0), 0);
+    const totalBudget = churches.reduce((sum: number, c: ChurchType) => sum + ((c as any).total_budget || 0), 0);
+    const totalUsedBudget = churches.reduce((sum: number, c: ChurchType) => sum + ((c as any).used_budget || 0), 0);
     const budgetUtilization = totalBudget > 0 ? Math.round((totalUsedBudget / totalBudget) * 100) : 0;
     const avgMembersPerChurch = totalChurches > 0 ? Math.round(totalMembers / totalChurches) : 0;
     return {
@@ -215,16 +215,22 @@ export default function ChurchesPage() {
 
   // Dados para gráficos
   const chartData = useMemo(() => ({
-    budgetByChurch: churches.map((c: ChurchType) => ({
-      church: c.name,
-      budget: c.total_budget,
-      used: c.used_budget,
-      remaining: (c.total_budget || 0) - (c.used_budget || 0)
-    })),
-    subsidyRequestsByChurch: churches.map((c: ChurchType) => ({
-      church: c.name,
-      requests: c.subsidy_requests
-    })),
+    budgetByChurch: churches.map((c: ChurchType) => {
+      const churchExtended = c as any;
+      return {
+        church: c.name,
+        budget: churchExtended.total_budget || 0,
+        used: churchExtended.used_budget || 0,
+        remaining: (churchExtended.total_budget || 0) - (churchExtended.used_budget || 0)
+      };
+    }),
+    subsidyRequestsByChurch: churches.map((c: ChurchType) => {
+      const churchExtended = c as any;
+      return {
+        church: c.name,
+        requests: churchExtended.subsidy_requests || 0
+      };
+    }),
     subsidyByDepartment: [], // Não migrado ainda
     usersByChurch: [], // Não migrado ainda
     subsidyTimeline: [] // Não migrado ainda
@@ -316,17 +322,52 @@ export default function ChurchesPage() {
     }
   };
   const handleViewContact = (id: string) => {
-    // Não implementado pois não há contact no church do backend
+    const church = churches.find((c: ChurchType) => c.id === id);
+    if (church) {
+      // Use type assertion to access extended properties
+      const churchWithContact = church as any;
+      
+      // Create contact data from church information
+      const contactData: ContactData = {
+        id: `church_contact_${church.id}`,
+        name: churchWithContact.contact?.name || church.name || 'Church Contact',
+        phone: churchWithContact.contact?.phone || '',
+        mobile: churchWithContact.contact?.mobile || '',
+        email: churchWithContact.contact?.email || '',
+        country: churchWithContact.contact?.country || '',
+        city: churchWithContact.contact?.city || '',
+        address: churchWithContact.contact?.address || '',
+        full_address: churchWithContact.contact?.full_address || '',
+        postal_code: churchWithContact.contact?.postal_code || '',
+        website: churchWithContact.contact?.website || '',
+        notes: churchWithContact.contact?.notes || `Contact information for ${church.name}`,
+        is_primary: true,
+        created_at: church.created_at,
+        updated_at: church.created_at,
+        created_by: 'system',
+        updated_by: 'system',
+        is_deleted: false,
+        deleted_at: null,
+        deleted_by: null
+      };
+      
+      setSelectedContact(contactData);
+      setSelectedChurch(church);
+      setIsViewContactModalOpen(true);
+    }
   };
   const handleViewBudget = (id: string) => {
     const church = churches.find((c: ChurchType) => c.id === id);
     if (church) {
+      // Use type assertion for budget properties
+      const churchWithBudget = church as any;
+      
       const budgetData: AnnualBudgetData = {
         id: `budget_${church.id}`,
         year: new Date().getFullYear(),
-        planned_budget: church.total_budget,
-        total_expenses: church.used_budget,
-        balance: (church.total_budget || 0) - (church.used_budget || 0),
+        planned_budget: churchWithBudget.total_budget || 0,
+        total_expenses: churchWithBudget.used_budget || 0,
+        balance: (churchWithBudget.total_budget || 0) - (churchWithBudget.used_budget || 0),
         notes: `Budget for ${church.name} church`,
         approved_by: 'admin',
         status: 'in_progress',
@@ -735,25 +776,35 @@ export default function ChurchesPage() {
         </Card>
 
         {/* View Contact Modal */}
-        {/* <ContactViewEditModal
-          isOpen={isViewContactModalOpen}
-          onOpenChange={setIsViewContactModalOpen}
-          contact={selectedContact}
-          entityName={selectedChurch?.name}
-          entityType="Church"
-          entityId={selectedChurch?.id}
-          updateMutation={null}
-        /> */}
+        {selectedContact && selectedChurch && (
+          <ContactViewEditModal
+            isOpen={isViewContactModalOpen}
+            onOpenChange={setIsViewContactModalOpen}
+            contact={selectedContact}
+            entityName={selectedChurch.name}
+            entityType="Church"
+            entityId={selectedChurch.id}
+            updateMutation={async () => {
+              // Mock update function - replace with actual church contact update mutation
+              return { data: selectedContact };
+            }}
+            onSave={(updatedContact) => {
+              if (updatedContact) {
+                toast.success('Contact updated successfully');
+                handleRefresh();
+              }
+            }}
+          />
+        )}
         
         {/* Annual Budget Modal */}
         {selectedChurch && (
-          <AnnualBudgetModal
+          <AnnualBudgetViewEditModal
             isOpen={isBudgetModalOpen}
             onOpenChange={setIsBudgetModalOpen}
             budget={selectedBudget}
             entityType="church"
             entityName={selectedChurch.name}
-            entityId={selectedChurch.id}
             onSave={handleBudgetSaved}
           />
         )}
@@ -773,7 +824,7 @@ export default function ChurchesPage() {
             isOpen={isEditChurchModalOpen}
             onOpenChange={setIsEditChurchModalOpen}
             church={churchToEdit}
-            regions={[]}
+            regions={currentInstitutionData?.regions || []}
             onSave={handleChurchUpdated}
           />
         )}

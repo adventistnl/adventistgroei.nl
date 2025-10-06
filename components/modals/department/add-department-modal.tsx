@@ -3,11 +3,29 @@
 import React, { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -30,12 +48,21 @@ import {
   Check,
   Home,
   DollarSign,
-  Variable
+  Variable,
+  ChevronsUpDown,
+  Info,
+  Settings
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { departmentTranslations } from "@/lib/translations/departments"
 import { CreateDepartment, CreateDepartmentVariables } from "@/types/CreateDepartment"
 import { useDepartments } from "@/hooks/use-departments"
+import { cn } from "@/lib/utils"
+
+// Extended interface to include new field locally
+interface ExtendedDepartmentVariables extends CreateDepartmentVariables {
+  is_institution_department: boolean
+}
 
 export interface DepartmentData {
   id: string
@@ -44,6 +71,7 @@ export interface DepartmentData {
   name: string
   description: string
   annual_budget: number
+  is_institution_department: boolean
   contact_id?: string | null
   created_at: string
   updated_at: string
@@ -98,24 +126,30 @@ export function AddDepartmentModal({
   churches = [],
   onSave
 }: AddDepartmentModalProps) {
-  const { t: tCommon } = useTranslation();
+  const { t: tCommon, i18n } = useTranslation();
   const { createDepartment} = useDepartments()
+
+  // Get translations for current language
+  const currentLanguage = i18n?.language || 'en'
+  const t = departmentTranslations[currentLanguage as keyof typeof departmentTranslations] || departmentTranslations.en
 
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<CreateDepartmentVariables>({
+  const [formData, setFormData] = useState<ExtendedDepartmentVariables>({
     institution: institutionId,
     church: '',
     name: '',
     description: '',
+    is_institution_department: false,
     contactName: '',
     phone: '',
     email: '',
     city: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [openChurch, setOpenChurch] = useState(false);
 
-  const totalSteps = 2;
+  const totalSteps = 3;
 
   useEffect(() => {
     if (isOpen) {
@@ -124,6 +158,7 @@ export function AddDepartmentModal({
         church: '',
         name: '',
         description: '',
+        is_institution_department: false,
         contactName: '',
         phone: '',
         email: '',
@@ -154,39 +189,41 @@ export function AddDepartmentModal({
 
     if (step === 1) {
       if (!formData.name?.trim()) {
-        newErrors.name = "Department name is required"
+        newErrors.name = t.validation.name_required
       } else if (formData.name.trim().length < 2) {
-        newErrors.name = "Department name must be at least 2 characters"
-      }
-
-      if (!formData.church) {
-        newErrors.church = "Church is required"
+        newErrors.name = t.validation.name_min_length
       }
 
       if (!formData.description?.trim()) {
-        newErrors.description = "Description is required"
+        newErrors.description = t.validation.description_required
       } else if (formData.description.trim().length < 10) {
-        newErrors.description = "Description must be at least 10 characters"
+        newErrors.description = t.validation.description_min_length
       }
     }
 
     if (step === 2) {
+      if (!formData.is_institution_department && !formData.church) {
+        newErrors.church = t.validation.church_required
+      }
+    }
+
+    if (step === 3) {
       if (!formData.contactName?.trim()) {
-        newErrors.contactName = "Contact name is required"
+        newErrors.contactName = t.validation.contact_name_required
       }
 
       if (!formData.email?.trim()) {
-        newErrors.email = "Email is required"
+        newErrors.email = t.validation.email_required
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        newErrors.email = "Please enter a valid email address"
+        newErrors.email = t.validation.email_invalid
       }
 
       if (!formData.phone?.trim()) {
-        newErrors.phone = "Phone number is required"
+        newErrors.phone = t.validation.phone_required
       }
 
       if (!formData.city?.trim()) {
-        newErrors.city = "City is required"
+        newErrors.city = t.validation.city_required
       }
     }
 
@@ -205,19 +242,26 @@ export function AddDepartmentModal({
   }
 
   const handleSave = async () => {
-    if (!validateStep(1) || !validateStep(2)) {
-      toast.error("Please fix the errors before continuing")
+    if (!validateStep(1) || !validateStep(2) || !validateStep(3)) {
+      toast.error(t.validation.please_fix_errors)
       return
     }
 
     setIsLoading(true)
-    const loadingToast = toast.loading("Creating department...")
+    const loadingToast = toast.loading(t.toasts.creating)
 
     try {
+      // Prepare payload excluding local fields
+      const { is_institution_department, ...departmentData } = formData
+      
+      // If it's an institutional department, use institution ID as church
+      const finalPayload: CreateDepartmentVariables = {
+        ...departmentData,
+      }
 
-      const res = await createDepartment({ variables: formData })
+      const res = await createDepartment({ variables: finalPayload })
       toast.dismiss(loadingToast)
-      toast.success("Department created successfully", {
+      toast.success(t.toasts.created, {
         duration: 3000,
         icon: '🏢'
       })
@@ -232,7 +276,7 @@ export function AddDepartmentModal({
 
     } catch (error) {
       toast.dismiss(loadingToast)
-      toast.error("Failed to create department")
+      toast.error(t.toasts.create_failed)
     } finally {
       setIsLoading(false)
     }
@@ -244,6 +288,7 @@ export function AddDepartmentModal({
       church: '',
       name: '',
       description: '',
+      is_institution_department: false,
       contactName: '',
       phone: '',
       email: '',
@@ -260,21 +305,21 @@ export function AddDepartmentModal({
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">Basic Information</h3>
-              <p className="text-sm text-muted-foreground">Enter department details and select the church</p>
+              <h3 className="text-lg font-medium text-foreground">{t.steps.step_1_title}</h3>
+              <p className="text-sm text-muted-foreground">{t.steps.step_1_description}</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="name" className="flex items-center gap-2 text-sm">
                   <Layers className="w-4 h-4 text-muted-foreground" />
-                  Department Name *
+                  {t.fields.name} *
                 </Label>
                 <Input
                   id="name"
                   value={formData.name || ''}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="Enter department name"
+                  placeholder={t.placeholders.name}
                   disabled={isLoading}
                   className={`h-10 ${errors.name ? 'border-red-500' : ''}`}
                 />
@@ -284,41 +329,15 @@ export function AddDepartmentModal({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="church" className="flex items-center gap-2 text-sm">
-                  <Home className="w-4 h-4 text-muted-foreground" />
-                  Church *
-                </Label>
-                <Select
-                  value={formData.church || ''}
-                  onValueChange={(value) => handleInputChange('church', value)}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger className={`h-10 ${errors.church ? 'border-red-500' : ''}`}>
-                    <SelectValue placeholder="Select church" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {churches.map((church) => (
-                      <SelectItem key={church.id} value={church.id}>
-                        {church.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.church && (
-                  <p className="text-sm text-red-600">{errors.church}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="description" className="flex items-center gap-2 text-sm">
                   <Building className="w-4 h-4 text-muted-foreground" />
-                  Description *
+                  {t.fields.description} *
                 </Label>
                 <Textarea
                   id="description"
                   value={formData.description || ''}
                   onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder="Enter department description"
+                  placeholder={t.placeholders.description}
                   disabled={isLoading}
                   className={`min-h-[80px] resize-none ${errors.description ? 'border-red-500' : ''}`}
                 />
@@ -334,21 +353,132 @@ export function AddDepartmentModal({
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">Contact Details</h3>
-              <p className="text-sm text-muted-foreground">Add contact information for the department</p>
+              <h3 className="text-lg font-medium text-foreground">{t.steps.step_2_title}</h3>
+              <p className="text-sm text-muted-foreground">{t.steps.step_2_description}</p>
+            </div>
+            
+            <div className="space-y-4 max-w-md mx-auto">
+              {/* Institution Department Switch */}
+              <div className="flex items-center justify-between p-3 border border-border rounded-lg hover:border-primary/30 transition-colors">
+                <div className="space-y-1 flex-1">
+                  <div className="flex items-center gap-2">
+                    <Label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                      <Building className="w-4 h-4 text-muted-foreground" />
+                      {t.fields.is_institution_department}
+                    </Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-3 h-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">{t.department_type.institutional_tooltip}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {formData.is_institution_department 
+                      ? t.department_type.institutional_explanation_on
+                      : t.department_type.institutional_explanation_off}
+                  </p>
+                </div>
+                <Switch
+                  checked={formData.is_institution_department}
+                  onCheckedChange={(checked) => {
+                    handleInputChange('is_institution_department', checked)
+                    if (checked) {
+                      // Clear church selection when switching to institutional
+                      handleInputChange('church', '')
+                    }
+                  }}
+                  className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-gray-300"
+                  disabled={isLoading}
+                />
+              </div>
+
+              {/* Church Selection - Only show if not institutional department */}
+              {!formData.is_institution_department && (
+                <div className="space-y-2">
+                  <Label htmlFor="church" className="flex items-center gap-2 text-sm">
+                    <Home className="w-4 h-4 text-muted-foreground" />
+                    {t.fields.church} *
+                  </Label>
+                  <Popover open={openChurch} onOpenChange={setOpenChurch}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openChurch}
+                        className={cn(
+                          "w-full h-10 justify-between font-normal",
+                          !formData.church && "text-muted-foreground",
+                          errors.church && "border-red-500"
+                        )}
+                        disabled={isLoading}
+                      >
+                        {formData.church
+                          ? churches.find(church => church.id === formData.church)?.name
+                          : t.placeholders.church}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder={t.fields.search_church} />
+                        <CommandList>
+                          <CommandEmpty>{t.fields.no_church_found}</CommandEmpty>
+                          <CommandGroup>
+                            {churches.map((church) => (
+                              <CommandItem
+                                key={church.id}
+                                value={church.name}
+                                onSelect={() => {
+                                  handleInputChange('church', church.id)
+                                  setOpenChurch(false)
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    formData.church === church.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <Home className="mr-2 h-4 w-4 text-muted-foreground" />
+                                {church.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {errors.church && (
+                    <p className="text-sm text-red-600">{errors.church}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )
+
+      case 3:
+        return (
+          <div className="space-y-6 animate-in fade-in-0 duration-300">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-medium text-foreground">{t.steps.step_3_title}</h3>
+              <p className="text-sm text-muted-foreground">{t.steps.step_3_description}</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="contact_name" className="flex items-center gap-2 text-sm">
                   <User className="w-4 h-4 text-muted-foreground" />
-                  Contact Name *
+                  {t.fields.contact_name} *
                 </Label>
                 <Input
                   id="contact_name"
                   value={formData.contactName || ''}
                   onChange={(e) => handleInputChange('contactName', e.target.value)}
-                  placeholder="Enter contact name"
+                  placeholder={t.placeholders.contact_name}
                   disabled={isLoading}
                   className={`h-10 ${errors.contactName ? 'border-red-500' : ''}`}
                 />
@@ -360,14 +490,14 @@ export function AddDepartmentModal({
               <div className="space-y-2">
                 <Label htmlFor="contact_email" className="flex items-center gap-2 text-sm">
                   <Mail className="w-4 h-4 text-muted-foreground" />
-                  Contact Email *
+                  {t.fields.contact_email} *
                 </Label>
                 <Input
                   id="contact_email"
                   type="email"
                   value={formData.email || ''}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="Enter email address"
+                  placeholder={t.placeholders.contact_email}
                   disabled={isLoading}
                   className={`h-10 ${errors.email ? 'border-red-500' : ''}`}
                 />
@@ -379,13 +509,13 @@ export function AddDepartmentModal({
               <div className="space-y-2">
                 <Label htmlFor="contact_phone" className="flex items-center gap-2 text-sm">
                   <Phone className="w-4 h-4 text-muted-foreground" />
-                  Phone *
+                  {t.fields.contact_phone} *
                 </Label>
                 <Input
                   id="contact_phone"
                   value={formData.phone || ''}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder="Enter phone number"
+                  placeholder={t.placeholders.contact_phone}
                   disabled={isLoading}
                   className={`h-10 ${errors.phone ? 'border-red-500' : ''}`}
                 />
@@ -397,13 +527,13 @@ export function AddDepartmentModal({
               <div className="space-y-2">
                 <Label htmlFor="contact_city" className="flex items-center gap-2 text-sm">
                   <MapPin className="w-4 h-4 text-muted-foreground" />
-                  City *
+                  {t.fields.contact_city} *
                 </Label>
                 <Input
                   id="contact_city"
                   value={formData.city || ''}
                   onChange={(e) => handleInputChange('city', e.target.value)}
-                  placeholder="Enter city"
+                  placeholder={t.placeholders.contact_city}
                   disabled={isLoading}
                   className={`h-10 ${errors.city ? 'border-red-500' : ''}`}
                 />
@@ -426,16 +556,16 @@ export function AddDepartmentModal({
         <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Layers className="w-5 h-5 text-muted-foreground" />
-            Create Department
+            {t.modals.create.title}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Add a new department to your organization
+            {t.modals.create.description}
           </DialogDescription>
           
           {/* Progress Bar */}
           <div className="mt-4 space-y-2">
             <div className="flex justify-between items-center text-xs text-muted-foreground">
-              <span>Step {currentStep} of {totalSteps}</span>
+              <span>{t.steps.step} {currentStep} {t.steps.of} {totalSteps}</span>
               <span>{Math.round((currentStep / totalSteps) * 100)}%</span>
             </div>
             <Progress value={(currentStep / totalSteps) * 100} className="h-1" />
@@ -463,7 +593,7 @@ export function AddDepartmentModal({
                   className="flex items-center gap-1 text-xs"
                 >
                   <ChevronLeft className="w-3 h-3" />
-                  Previous
+                  {t.buttons.previous}
                 </Button>
               )}
               <Button 
@@ -473,7 +603,7 @@ export function AddDepartmentModal({
                 size="sm"
                 className="text-xs"
               >
-                Cancel
+                {t.buttons.cancel}
               </Button>
             </div>
 
@@ -485,7 +615,7 @@ export function AddDepartmentModal({
                   size="sm"
                   className="flex items-center gap-1 text-xs"
                 >
-                  Next
+                  {t.buttons.next}
                   <ChevronRight className="w-3 h-3" />
                 </Button>
               ) : (
@@ -498,12 +628,12 @@ export function AddDepartmentModal({
                   {isLoading ? (
                     <>
                       <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1" />
-                      Creating...
+                      {t.buttons.creating}
                     </>
                   ) : (
                     <>
                       <Save className="w-3 h-3 mr-1" />
-                      Save
+                      {t.buttons.save}
                     </>
                   )}
                 </Button>

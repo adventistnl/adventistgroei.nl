@@ -45,7 +45,7 @@ import {
 import toast from "react-hot-toast"
 import { ProjectTableData } from "@/components/projects/projects-table"
 import { mockProjectActivities, getActivitiesByProjectId } from "@/data/mockData"
-import { ActivityOverlayModal } from "@/components/modals/project/activity-overlay-modal"
+import { ActivityDetailsModal } from "@/components/modals/project/activity-details-modal"
 
 // Schema-based interfaces
 export interface ProjectActivityData {
@@ -658,15 +658,14 @@ export function ProjectActivitiesTable({
       </Sheet>
 
       {/* View Activity Modal */}
-      <ActivityOverlayModal
+      <ActivityDetailsModal
         isOpen={isViewActivityModalOpen}
         onClose={() => setIsViewActivityModalOpen(false)}
         activity={selectedActivityForView}
-        onEdit={(activity: ProjectActivityData) => {
-          console.log("Editar atividade:", activity)
-          setSelectedActivityForView(null)
-          setIsViewActivityModalOpen(false)
-          toast.success("Modal de edição seria aberta aqui")
+        project={project}
+        onSave={(updatedActivity) => {
+          console.log("Salvar atividade:", updatedActivity)
+          toast.success("Atividade salva com sucesso!")
         }}
       />
     </>

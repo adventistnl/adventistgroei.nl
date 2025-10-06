@@ -105,16 +105,33 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
         notes: contact.notes || '',
         is_primary: contact.is_primary || false
       })
+    } else {
+      // Inicializar com dados vazios para criar novo contato
+      setFormData({
+        name: '',
+        phone: '',
+        mobile: '',
+        email: '',
+        country: '',
+        city: '',
+        address: '',
+        full_address: '',
+        postal_code: '',
+        website: '',
+        notes: '',
+        is_primary: true
+      })
     }
   }, [contact])
 
   useEffect(() => {
     if (isOpen) {
       setCurrentStep(1)
-      setIsEditing(false)
+      // Se não há contato existente, iniciar no modo de edição
+      setIsEditing(!contact)
       setErrors({})
     }
-  }, [isOpen])
+  }, [isOpen, contact])
 
   const handleInputChange = (field: keyof Contact, value: string | boolean) => {
     setFormData(prev => ({
@@ -161,28 +178,30 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
   }
 
   const handleSave = async () => {
-    if (!contact) return
-
     if (!validateStep(1) || !validateStep(2) || !validateStep(3)) {
       toast.error(t_contact.validation?.fixErrors || "Please fix the errors before continuing")
       return
     }
 
     setIsLoading(true)
-    const loadingToast = toast.loading(t_contact.updating || "Updating contact...")
+    const isCreating = !contact
+    const loadingMessage = isCreating ? "Creating contact..." : (t_contact.updating || "Updating contact...")
+    const loadingToast = toast.loading(loadingMessage)
 
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
 
       const updateData: TMutationVariables = {
-        contactId: contact.id,
+        contactId: contact?.id || '',
         id: entityId,
         ...formData,
-      }
+      } as unknown as TMutationVariables
       const res = await updateMutation({ variables: updateData })
-      if (!res) throw new Error("Failed to update contact")
-      toast.success(t_contact.updated || "Contact updated successfully!", {
+      if (!res) throw new Error(`Failed to ${isCreating ? 'create' : 'update'} contact`)
+      
+      const successMessage = isCreating ? "Contact created successfully!" : (t_contact.updated || "Contact updated successfully!")
+      toast.success(successMessage, {
         duration: 3000,
         icon: '✅'
       })
@@ -778,15 +797,13 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
     }
   }
 
-  if (!contact) return null
-
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="w-[95vw] max-w-2xl max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg text-gray-900">
             <ContactRound className="w-5 h-5 text-gray-600" />
-            {t_contact.title || "Contact Information"}
+            {!contact ? "Create New Contact" : (t_contact.title || "Contact Information")}
           </DialogTitle>
           <DialogDescription className="text-sm text-gray-600">
             {entityName ? (
@@ -799,12 +816,17 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
           {/* Contact Status and Edit Button */}
           <div className="flex items-center justify-between mt-4">
             <div className="flex items-center gap-2">
-              <Badge variant={contact.is_primary ? "default" : "secondary"} className="bg-gray-100 text-gray-800 border-gray-300">
+              <Badge variant={(contact?.is_primary || formData.is_primary) ? "default" : "secondary"} className="bg-gray-100 text-gray-800 border-gray-300">
                 <ContactRound className="w-3 h-3 mr-1" />
-                {contact.is_primary ? (t_contact.primaryContact || "Primary") : (t_contact.secondaryContact || "Secondary")}
+                {(contact?.is_primary || formData.is_primary) ? (t_contact.primaryContact || "Primary") : (t_contact.secondaryContact || "Secondary")}
               </Badge>
-              {contact.is_deleted && (
+              {contact?.is_deleted && (
                 <Badge variant="destructive" className="bg-gray-800 text-white">{t_contact.deleted || "Deleted"}</Badge>
+              )}
+              {!contact && (
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
+                  New Contact
+                </Badge>
               )}
             </div>
             {!readonly && !isEditing && (

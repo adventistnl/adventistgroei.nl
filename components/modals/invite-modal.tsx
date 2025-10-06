@@ -207,16 +207,11 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
   };
 
   return (
-    <>
-      {!open && (
-        <button onClick={handleOpenModal}>{children}</button>
-      )}
-      {open && (
-        <Dialog open={open} onOpenChange={handleOpenChange}>
-          <WithPermission requiredPermissions={[ PermissionResolverName.Roles, PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail ]} >
-            <DialogTrigger asChild>
-              {children}
-            </DialogTrigger>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <WithPermission requiredPermissions={[ PermissionResolverName.Roles, PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail ]} >
+        <DialogTrigger asChild onClick={handleOpenModal}>
+          {children}
+        </DialogTrigger>
             
             <DialogContent className="w-[95vw] max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[95vh] overflow-y-auto p-4 sm:p-6">
               <DialogHeader className="text-left">
@@ -409,7 +404,5 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
             </DialogContent>
           </WithPermission>
         </Dialog>
-      )}
-    </>
   )
 }

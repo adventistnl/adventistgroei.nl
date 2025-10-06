@@ -20,7 +20,7 @@ export interface CreateDepartmentVariables {
   name: string;
   description: string;
   institution: string;
-  church: string;
+  church?: string | null;
   contactName?: string | null;
   email?: string | null;
   phone?: string | null;

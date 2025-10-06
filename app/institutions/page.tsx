@@ -38,6 +38,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { InstitutionProfileHeader } from "@/components/shared"
 import { ContactViewEditModal } from "@/components/modals/contact"
 import { EditInstitutionModal, DeleteInstitutionModal, RegisterInstitutionModal } from "@/components/modals/institution"
+import { InstitutionDebugger } from "@/components/debug/institution-debugger"
 
 import { Institutions_institutions } from "@/types/Institutions"
 import { useInstitution } from "@/contexts/institution-context"
@@ -210,10 +211,11 @@ export default function InstitutionsPage() {
 
   const handleViewInstitutionContact = () => {
     if (currentInstitutionData) {
-      // Criar dados de contato mesmo se não existir contact específico na instituição
+      // Sempre abrir o modal de contato, mesmo se não houver dados existentes
+      // O modal permite criar novos dados de contato se não existirem
       setIsContactModalOpen(true)
     } else {
-      toast.error('No institution selected')
+      toast.error('Nenhuma instituição selecionada')
     }
   }
 
@@ -422,6 +424,9 @@ export default function InstitutionsPage() {
       <WithPermission requiredPermissions={[PermissionResolverName.Institutions]} fallback={<AccessDenied/>}>
       
       <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">
+        {/* Debug Component */}
+        <InstitutionDebugger />
+        
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -510,16 +515,18 @@ export default function InstitutionsPage() {
         </Card>
 
         {/* Contact Modal */}
-        <ContactViewEditModal
-          isOpen={isContactModalOpen && currentInstitutionData.contact !== null}
-          onOpenChange={setIsContactModalOpen}
-          contact={currentInstitutionData.contact as Contact}
-          entityName={currentInstitutionData?.name || 'Institution'}
-          entityType="Institution"
-          onSave={handleContactSaved}
-          entityId={currentInstitutionData.id}
-          updateMutation={updateInstitutionContact}
-        />
+        {currentInstitutionData && (
+          <ContactViewEditModal
+            isOpen={isContactModalOpen}
+            onOpenChange={setIsContactModalOpen}
+            contact={(currentInstitutionData.contact || null) as Contact | null}
+            entityName={currentInstitutionData.name || 'Institution'}
+            entityType="Institution"
+            onSave={handleContactSaved}
+            entityId={currentInstitutionData.id}
+            updateMutation={updateInstitutionContact}
+          />
+        )}
 
         {/* Edit Institution Modal */}
         <EditInstitutionModal
@@ -529,7 +536,7 @@ export default function InstitutionsPage() {
             if (!open) setEditInstitutionId(null);
           }}
           institution={
-            institutionsData.find(i => i.id === (editInstitutionId || currentInstitutionData?.id)) || null
+            (institutionsData.find(i => i.id === (editInstitutionId || currentInstitutionData?.id)) || null) as any
           }
           onSave={handleInstitutionSaved}
         />
@@ -542,7 +549,7 @@ export default function InstitutionsPage() {
             if (!open) setDeleteInstitutionId(null);
           }}
           institution={
-            institutionsData.find(i => i.id === (deleteInstitutionId || currentInstitutionData?.id)) || null
+            (institutionsData.find(i => i.id === (deleteInstitutionId || currentInstitutionData?.id)) || null) as any
           }
           onSuccess={handleInstitutionDeleted}
         />

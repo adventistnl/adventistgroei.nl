@@ -5,7 +5,7 @@ export const CREATE_DEPARTMENT_MUTATION = gql`
     $name: String!,
     $description: String!,
     $institution: String!,
-    $church: String!,
+    $church: String,
     $contactName: String,
     $email: String,
     $phone: String,

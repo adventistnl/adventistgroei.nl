@@ -21,31 +21,26 @@ import {
 } from "@/components/ui/sidebar"
 
 import * as React from "react"
+import { it } from "node:test"
+import { NavItem } from "@/config/navigation"
+import { WithPermission } from "@/hocs/with-permission"
 
 interface NavMainProps {
-  items: {
-    title: string
-    url: string
-    icon?: LucideIcon
-    isActive?: boolean
-    items?: {
-      title: string
-      url: string
-      isActive?: boolean
-    }[]
-  }[]
+  items: NavItem[]
 }
 
 export const NavMain = React.memo(function NavMain({ items }: NavMainProps) {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
-      <SidebarMenu>
-        {items.map((item) => (
-          <NavMainItem key={item.title} item={item} />
-        ))}
-      </SidebarMenu>
-    </SidebarGroup>
+        <SidebarGroupLabel>Platform</SidebarGroupLabel>
+        <SidebarMenu>
+          {items.map((item) => (
+            <WithPermission requiredPermissions={item.permissions}>
+              <NavMainItem key={item.title} item={item} />
+            </WithPermission>
+          ))}
+        </SidebarMenu>
+      </SidebarGroup>
   )
 })
 
@@ -67,12 +62,12 @@ const NavMainItem = React.memo(function NavMainItem({
   if (!item.items || item.items.length === 0) {
     return (
       <SidebarMenuItem>
-                               <SidebarMenuButton asChild tooltip={item.title} isActive={item.isActive}>
-                         <Link href={item.url}>
-                           {item.icon && <item.icon className="sidebar-icon" />}
-                           <span>{item.title}</span>
-                         </Link>
-                       </SidebarMenuButton>
+        <SidebarMenuButton asChild tooltip={item.title} isActive={item.isActive}>
+          <Link href={item.url}>
+            {item.icon && <item.icon className="sidebar-icon" />}
+            <span>{item.title}</span>
+          </Link>
+        </SidebarMenuButton>
       </SidebarMenuItem>
     )
   }
@@ -99,13 +94,15 @@ const NavMainItem = React.memo(function NavMainItem({
         <CollapsibleContent>
           <SidebarMenuSub>
             {item.items.map((subItem) => (
-              <SidebarMenuSubItem key={subItem.title}>
-                <SidebarMenuSubButton asChild isActive={subItem.isActive}>
-                  <Link href={subItem.url}>
-                    <span>{subItem.title}</span>
-                  </Link>
-                </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
+              <WithPermission key={subItem.title} requiredPermissions={subItem.permissions}>
+                <SidebarMenuSubItem key={subItem.title}>
+                  <SidebarMenuSubButton asChild isActive={subItem.isActive}>
+                    <Link href={subItem.url}>
+                      <span>{subItem.title}</span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              </WithPermission>
             ))}
           </SidebarMenuSub>
         </CollapsibleContent>

@@ -387,8 +387,8 @@ export type Department = {
   annual_budget?: Maybe<AnnualBudget>;
   annual_budget_id?: Maybe<Scalars['String']['output']>;
   annual_reports?: Maybe<Array<AnnualReport>>;
-  church: Church;
-  church_id: Scalars['String']['output'];
+  church?: Maybe<Church>;
+  church_id?: Maybe<Scalars['String']['output']>;
   contact?: Maybe<Contact>;
   contact_id?: Maybe<Scalars['String']['output']>;
   created_at: Scalars['DateTime']['output'];
@@ -420,7 +420,7 @@ export type DepartmentCount = {
 
 export type DepartmentCreateDto = {
   annual_budget?: InputMaybe<AnnualBudgetCreateDto>;
-  church: Scalars['String']['input'];
+  church?: InputMaybe<Scalars['String']['input']>;
   contact?: InputMaybe<ContactCreateDto>;
   description: Scalars['String']['input'];
   institution: Scalars['String']['input'];
