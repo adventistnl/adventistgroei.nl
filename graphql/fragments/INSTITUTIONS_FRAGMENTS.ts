@@ -174,6 +174,10 @@ export const DEPARTMENT_FRAGMENT = gql`
     is_deleted
     deleted_at
     deleted_by
+    church {
+      id
+      name
+    }
   }
 `;
 

@@ -124,8 +124,10 @@ function RegisterPageContent() {
   // Obter traduções para o idioma atual
   const currentLanguage = i18n?.language || 'en'
   const t = registerTranslations[currentLanguage as keyof typeof registerTranslations] || registerTranslations.en
-  const { churches } = useChurches()
-  const { departments } = useDepartments()
+  const { currentInstitutionData } = useInstitutions(inviteData?.institution_id || "")
+  const departments = currentInstitutionData?.departments || []
+  const  churches = currentInstitutionData?.churches || []
+
   /**
    * CONFIGURAÇÃO DOS STEPS DO FORMULÁRIO
    * Cada step é um objeto com título, descrição, validação e campos

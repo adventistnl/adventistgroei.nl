@@ -182,7 +182,7 @@ const userColumns: ColumnDef<any>[] = [
     id: "status",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.getValue("is_deleted") as boolean;
+      const status = row.original.is_deleted;
       const color = status ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700";
       return (
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}>

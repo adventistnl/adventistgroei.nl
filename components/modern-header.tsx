@@ -22,6 +22,8 @@ import { usePageContext } from "@/contexts/page-context"
 import { UserPlus, MessageCircle } from "lucide-react"
 import { mockUsers } from "@/data/mockData"
 import toast from "react-hot-toast"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 export function ModernHeader() {
   // Ativar comando de teclado global para busca
@@ -122,16 +124,18 @@ export function ModernHeader() {
             <LanguageSelector />
 
             {/* Invite Button - Far Right */}
-            <InviteModal onInviteSent={handleInviteSent}>
-              <Button 
-                variant="default" 
-                size="sm"
-                className="flex items-center gap-2 h-9 px-4 ml-2"
-              >
-                <UserPlus className="w-4 h-4" />
-                <span className="hidden sm:inline">Invite</span>
-              </Button>
-            </InviteModal>
+            <WithPermission requiredPermissions={[PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail]} >
+              <InviteModal onInviteSent={handleInviteSent}>
+                <Button 
+                  variant="default" 
+                  size="sm"
+                  className="flex items-center gap-2 h-9 px-4 ml-2"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Invite</span>
+                </Button>
+              </InviteModal>
+            </WithPermission>
           </div>
         </div>
       </div>

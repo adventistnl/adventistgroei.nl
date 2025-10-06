@@ -30,4 +30,5 @@ export interface CreateUserVariables {
   institution_id: string;
   department_id: string;
   church_id: string;
+  roles: string[];
 }

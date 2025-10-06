@@ -20,12 +20,16 @@ import {
 import { Button } from "@/components/ui/button"
 import { RegisterInstitutionModal } from "@/components/modals/institution"
 import toast from "react-hot-toast"
-import { useInstitutions } from "@/hooks/use-institutions"
+import { useUser } from "@/hooks/use-user"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
   const { institutions, currentInstitutionData, switchInstitution, addInstitution, refetchInstitutions, refetchInstitutionById } = useInstitution()
   const [isReloading, setIsReloading] = React.useState(false)
-
+  console.log("Rendering InstitutionSwitcher");
+  console.log("Institutions:", institutions);
+  console.log("Current Institution Data:", currentInstitutionData);
   // Handler para mudança de instituição com reload e redirect
   const handleInstitutionChange = React.useCallback(async (institutionId: string) => {
     if (institutionId === currentInstitutionData?.id) return
@@ -71,8 +75,35 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
     })
   }, [addInstitution])
 
-  if (!currentInstitutionData) {
-    return null
+  const fetchInstitutionData = React.useCallback(async () => {
+    let attempts = 0;
+    while (attempts < 3) {
+      console.log("TENTATIVA: ", attempts + 1);
+      try {
+        await Promise.all([
+          refetchInstitutions?.(),
+          refetchInstitutionById?.()
+        ]);
+        console.log(`Dados carregados na tentativa ${attempts + 1}`);
+        break; // Sai do loop se os dados forem carregados com sucesso
+      } catch (error) {
+        attempts++;
+        if (attempts >= 3) {
+          console.error("Falha ao carregar dados após 3 tentativas", error);
+          toast.error("❌ Failed to load institution data after multiple attempts");
+        }
+      }
+    }
+  }, [refetchInstitutions, refetchInstitutionById]);
+
+  React.useEffect(() => {
+    if (!institutions && !currentInstitutionData) {
+      fetchInstitutionData();
+    }
+  }, [institutions, currentInstitutionData, fetchInstitutionData]);
+  
+  if (!institutions || !currentInstitutionData) {
+    return <div>Loading institutions...</div>;
   }
 
   return (
@@ -126,25 +157,26 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
                 <div className="px-3 py-2">
                   <div className="h-px bg-border"></div>
                 </div>
-                
                 {/* Create New Institution Option */}
-                <div className="p-3">
-                  <RegisterInstitutionModal onSuccess={handleInstitutionCreated}>
-                    <button className="w-full flex items-center gap-3 p-3 rounded-lg border border-dashed border-muted-foreground/30 hover:border-primary/50 hover:bg-muted/30 transition-all duration-200 group">
-                      <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 group-hover:from-primary/20 group-hover:to-primary/10 group-hover:border-primary/30 transition-all duration-200">
-                        <Plus className="w-4 h-4 text-primary group-hover:scale-110 transition-transform duration-200" />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <div className="font-medium text-sm text-foreground group-hover:text-primary transition-colors duration-200">
-                          Create New Institution
+                <WithPermission requiredPermissions={[PermissionResolverName.CreateInstitution]}>
+                  <div className="p-3">
+                    <RegisterInstitutionModal onSuccess={handleInstitutionCreated}>
+                      <button className="w-full flex items-center gap-3 p-3 rounded-lg border border-dashed border-muted-foreground/30 hover:border-primary/50 hover:bg-muted/30 transition-all duration-200 group">
+                        <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 group-hover:from-primary/20 group-hover:to-primary/10 group-hover:border-primary/30 transition-all duration-200">
+                          <Plus className="w-4 h-4 text-primary group-hover:scale-110 transition-transform duration-200" />
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          Add a new institution to the system
+                        <div className="flex-1 text-left">
+                          <div className="font-medium text-sm text-foreground group-hover:text-primary transition-colors duration-200">
+                            Create New Institution
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Add a new institution to the system
+                          </div>
                         </div>
-                      </div>
-                    </button>
-                  </RegisterInstitutionModal>
-                </div>
+                      </button>
+                    </RegisterInstitutionModal>
+                  </div>
+                </WithPermission>
               </SelectContent>
             </Select>
           </div>

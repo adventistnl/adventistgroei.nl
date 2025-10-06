@@ -70,7 +70,7 @@ export default function RegionsPage() {
   const { currentInstitutionData, refetchInstitutionById } = useInstitution();
   const { updateRegion, updateRegionContact } = useRegions();
   // Garante que regions venha do dado real da instituição ativa
-  const regions = React.useMemo(() => currentInstitutionData?.regions || [], [currentInstitutionData]);
+  const regions = currentInstitutionData?.regions || [];
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   

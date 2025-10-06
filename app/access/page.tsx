@@ -56,6 +56,7 @@ import { usePermissions } from "@/hooks/use-permissions"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { useAccessKPI } from "@/hooks/KPI/use-access-kpi"
+import { AccessDenied } from "@/components/access/access-denied"
 
 export default function AccessManagementPage() {
   const { t } = useTranslation()
@@ -433,29 +434,9 @@ export default function AccessManagementPage() {
     )
   }
 
-  const PermissionsFallback = () => (
-    <AppLayout>
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-8 text-center">
-            <AlertTriangle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
-            <p className="text-muted-foreground mb-4">
-              You don't have sufficient permissions to view this page.
-            </p>
-            <Button onClick={() => window.history.back()} variant="outline">
-              Go Back
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </AppLayout>
-    )
-
-
   return (
     <AppLayout>
-      <WithPermission requiredPermissions={[PermissionResolverName.Users, PermissionResolverName.Roles]} fallback={<PermissionsFallback/>}>
+      <WithPermission requiredPermissions={[PermissionResolverName.Users, PermissionResolverName.Roles]} fallback={<AccessDenied />}>
         <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

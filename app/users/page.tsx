@@ -90,11 +90,11 @@ import { CreateUserModal, EditUserModal, DeleteUserModal } from "@/components/mo
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { WithPermission } from "@/hocs/with-permission"
-import { PermissionGroup, PermissionResolverName } from "@/types/graphql-global-types"
-import UnauthorizedPage from "../unauthorized/page"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 import { useInstitution } from "@/contexts/institution-context"
 import { InstitutionById_institution_users as User } from "@/types/InstitutionById"
 import { useRoles } from "@/hooks/use-roles"
+import { AccessDenied } from "@/components/access/access-denied"
 
 export default function UsersPage() {
   const { t } = useTranslation()
@@ -342,17 +342,21 @@ export default function UsersPage() {
                 <Eye className="mr-2 h-4 w-4" />
                 {t('users.actions.view_details')}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleEditUser(user)}>
-                <Edit className="mr-2 h-4 w-4" />
-                {t('users.actions.edit_user')}
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => handleDeleteUser(user)}
-                className="text-red-600"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                {t('users.actions.delete_user')}
-              </DropdownMenuItem>
+              <WithPermission requiredPermissions={[PermissionResolverName.UpdateUser]} >
+                <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  {t('users.actions.edit_user')}
+                </DropdownMenuItem>
+              </WithPermission>
+              <WithPermission requiredPermissions={[PermissionResolverName.DeleteUser]} >
+                <DropdownMenuItem 
+                  onClick={() => handleDeleteUser(user)}
+                  className="text-red-600"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {t('users.actions.delete_user')}
+                </DropdownMenuItem>
+              </WithPermission>
             </DropdownMenuContent>
           </DropdownMenu>
         )
@@ -411,7 +415,7 @@ export default function UsersPage() {
 
   return (
     <AppLayout>
-      <WithPermission requiredPermissions={[PermissionResolverName.Users]} fallback={<UnauthorizedPage />}>
+      <WithPermission requiredPermissions={[PermissionResolverName.Users]} fallback={<AccessDenied />}>
         <div className="space-y-8">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -827,43 +831,47 @@ export default function UsersPage() {
           </Sheet>
 
           {/* User Modals */}
-          <CreateUserModal
-            isOpen={isCreateUserOpen}
-            onOpenChange={setIsCreateUserOpen}
-            institutions={institutions}
-            churches={churches}
-            regions={regions}
-            departments={departments}
-            roles={roles}
-            onSuccess={(userData) => {
-              // Here you would typically refresh the users list
-            }}
-          />
-
-          <EditUserModal
-            isOpen={isEditUserOpen}
-            onOpenChange={setIsEditUserOpen}
-            user={selectedUser}
-            institutions={institutions}
-            churches={churches}
-            regions={regions}
-            departments={departments}
-            roles={roles}
-            onSuccess={(userData) => {
-              setSelectedUser(null)
-              // Here you would typically refresh the users list
-            }}
-          />
-
-          <DeleteUserModal
-            isOpen={isDeleteUserOpen}
-            onOpenChange={setIsDeleteUserOpen}
-            user={selectedUser}
-            onSuccess={(deletedUser) => {
-              setSelectedUser(null)
-              // Here you would typically refresh the users list
-            }}
-          />
+          <WithPermission requiredPermissions={[PermissionResolverName.CreateUser]}>
+            <CreateUserModal
+              isOpen={isCreateUserOpen}
+              onOpenChange={setIsCreateUserOpen}
+              institutions={institutions}
+              churches={churches}
+              regions={regions}
+              departments={departments}
+              roles={roles}
+              onSuccess={(userData) => {
+                // Here you would typically refresh the users list
+              }}
+            />
+          </WithPermission>
+          <WithPermission requiredPermissions={[PermissionResolverName.UpdateUser]}>
+            <EditUserModal
+              isOpen={isEditUserOpen}
+              onOpenChange={setIsEditUserOpen}
+              user={selectedUser}
+              institutions={institutions}
+              churches={churches}
+              regions={regions}
+              departments={departments}
+              roles={roles}
+              onSuccess={(userData) => {
+                setSelectedUser(null)
+                // Here you would typically refresh the users list
+              }}
+            />
+          </WithPermission>
+          <WithPermission requiredPermissions={[PermissionResolverName.DeleteUser]}>
+            <DeleteUserModal
+              isOpen={isDeleteUserOpen}
+              onOpenChange={setIsDeleteUserOpen}
+              user={selectedUser}
+              onSuccess={(deletedUser) => {
+                setSelectedUser(null)
+                // Here you would typically refresh the users list
+              }}
+            />
+          </WithPermission>
         </div>
       </WithPermission>
     </AppLayout>

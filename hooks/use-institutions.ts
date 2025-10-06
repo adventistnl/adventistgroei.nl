@@ -3,8 +3,8 @@ import { useGetInstitutionsQuery } from "@/hooks/graphql/use-get-institutions-qu
 import { useGetInstitutionByIdQuery } from "@/hooks/graphql/use-get-institution-by-id-query";
 import { Institutions_institutions } from "@/types/Institutions";
 import { InstitutionById_institution } from "@/types/InstitutionById";
-import { ApolloCache, ErrorLike } from "@apollo/client";
-import { CreateInstitution, CreateInstitutionVariables } from "@/types/CreateInstitution";
+import { ErrorLike } from "@apollo/client";
+import { CreateInstitution } from "@/types/CreateInstitution";
 import { useCreateInstitutionMutation, useDeleteInstitutionMutation, useUpdateInstitutionContactMutation, useUpdateInstitutionMutation } from "./graphql/use-institution-mutation";
 import { UpdateInstitutionContact } from "@/types/UpdateInstitutionContact";
 import { DeleteInstitution } from "@/types/DeleteInstitution";
@@ -45,6 +45,7 @@ export function useInstitutions(id?: string): iInstitutions & {
     error: institutionsError,
     refetch: refetchInstitutionsRaw
   } = useGetInstitutionsQuery();
+
   const {
     data: institutionData,
     loading: institutionLoading,
@@ -52,20 +53,22 @@ export function useInstitutions(id?: string): iInstitutions & {
     refetch: refetchInstitutionByIdRaw
   } = useGetInstitutionByIdQuery(
     { id },
+    {
+      skip: !id, // Garante que a query não será chamada se o id for inválido
+    }
   );
-  const [createInstitution, { data: createdInstitution, loading: createLoading, error: createError }] = useCreateInstitutionMutation();
-  const [deleteInstitution, { data: deletedInstitution, loading: deleteLoading, error: deleteError }] = useDeleteInstitutionMutation();
-  const [updateInstitution, { data: updatedInstitution, loading: updateLoading, error: updateError }] = useUpdateInstitutionMutation();
-  const [updateInstitutionContact, { data: updatedInstitutionContact, loading: updateContactLoading, error: updateContactError }] = useUpdateInstitutionContactMutation();
 
   const institutions = useMemo(() => {
+    if (institutionsError) {
+      return [];
+    }
     if (!institutionsData || !institutionsData.institutions) {
       return [];
     }
     return (institutionsData.institutions as (Institutions_institutions | undefined)[]).filter(
       (institution): institution is Institutions_institutions => !!institution
     );
-  }, [institutionsData]);
+  }, [institutionsData, institutionsError]);
 
   const currentInstitutionData = useMemo(() => {
     const institution = institutionData?.institution;
@@ -77,7 +80,12 @@ export function useInstitutions(id?: string): iInstitutions & {
       return institution as InstitutionById_institution;
     }
     return null;
-  }, [institutionData]);
+  }, [institutionData]); // Removida dependência de institutionError para garantir que o dado seja processado mesmo com erros
+
+  const [createInstitution, { data: createdInstitution, loading: createLoading, error: createError }] = useCreateInstitutionMutation();
+  const [deleteInstitution, { data: deletedInstitution, loading: deleteLoading, error: deleteError }] = useDeleteInstitutionMutation();
+  const [updateInstitution, { data: updatedInstitution, loading: updateLoading, error: updateError }] = useUpdateInstitutionMutation();
+  const [updateInstitutionContact, { data: updatedInstitutionContact, loading: updateContactLoading, error: updateContactError }] = useUpdateInstitutionContactMutation();
 
   return {
     institutions,

@@ -17,6 +17,8 @@ import { useAuth } from "@/contexts/auth-context"
 import { useNavigation } from "@/hooks/use-navigation"
 import { mockProjects } from "@/data/projectsData"
 import { ProjectFormData } from "@/types/Project"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 // Prepare data structure for sidebar components
 function useSidebarData() {
@@ -51,7 +53,9 @@ export const AppSidebar = React.memo(function AppSidebar({ ...props }: React.Com
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <InstitutionSwitcher />
+        <WithPermission requiredPermissions={[PermissionResolverName.Institutions]}>
+          <InstitutionSwitcher />
+        </WithPermission>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />

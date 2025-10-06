@@ -9,6 +9,7 @@ export const CREATE_USER = gql`
     $institution_id: String!
     $department_id: String!
     $church_id: String!
+    $roles: [String!]!
   ) {
     createUser(
       data: {
@@ -19,6 +20,7 @@ export const CREATE_USER = gql`
         institution_id: $institution_id
         department_id: $department_id
         church_id: $church_id
+        roles: $roles
       }
     ) {
       id

@@ -29,7 +29,6 @@ export function useUser({token, id}:{token?: string, id?: string}) {
 
   const { data, error, loading } = useGetUserQuery({ id: id ? id : loggedUserId },);
 
-
   const [ createUser ] = useCreateUserMutation();
   const [ updateUser ] = useUpdateUserMutation();
   const [ addRoleToUser ] = useAddRoleToUserMutation();

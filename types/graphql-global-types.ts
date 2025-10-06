@@ -1087,6 +1087,7 @@ export type Permission = {
   deleted_at?: Maybe<Scalars['DateTime']['output']>;
   deleted_by?: Maybe<Scalars['String']['output']>;
   description: Scalars['String']['output'];
+  disabled_to_client: Scalars['Boolean']['output'];
   group?: Maybe<PermissionGroup>;
   id: Scalars['ID']['output'];
   is_deleted: Scalars['Boolean']['output'];
@@ -1836,6 +1837,7 @@ export type UserCreateDto = {
   language_preference: Scalars['String']['input'];
   name: Scalars['String']['input'];
   password: Scalars['String']['input'];
+  roles: Array<Scalars['String']['input']>;
 };
 
 export type UserModel = {

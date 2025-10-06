@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react'
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react'
 import { Building2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useInstitutions } from '@/hooks/use-institutions'
@@ -9,6 +9,8 @@ import { Institutions_institutions } from '@/types/Institutions'
 import { useUpdateInstitutionContactMutation, useUpdateInstitutionMutation } from '@/hooks/graphql/use-institution-mutation'
 import { ErrorLike } from '@apollo/client'
 import { UpdateInstitutionContact } from '@/types/UpdateInstitutionContact'
+import { useUser } from "@/hooks/use-user";
+import { useAuth } from './auth-context'
 
 interface Institution {
   id: string
@@ -26,7 +28,6 @@ interface Institution {
 
 interface InstitutionContextType {
   institutions: Institutions_institutions[];
-  setActiveInstitution: (institution: any) => void;
   switchInstitution: (institutionId: string) => void;
   addInstitution: (institution: any) => void;
   loading: boolean;
@@ -62,15 +63,14 @@ export const useInstitution = () => {
   return context
 }
 
-// Dados mockados das instituições
-
-
-
 export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Estado para instituição ativa
-  const [activeInstitution, setActiveInstitution] = useState<any>(null);
+  const { user: authUser } = useAuth();
+  const { user  } = useUser({});
+  const [activeInstitutionId, setActiveInstitutionId] = useState<string | undefined>(
+    authUser?.institution_id || user?.institution_id // Fallback para evitar undefined
+  );
 
-  // Hook original
   const {
     institutions: rawInstitutions,
     currentInstitutionData,
@@ -94,8 +94,18 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     updateContactLoading,
     updateInstitutionContact,
     updatedInstitutionContact
-  } = useInstitutions(activeInstitution?.id);
-  // Garante que cada instituição tenha um logo válido
+  } = useInstitutions(activeInstitutionId);
+
+    useEffect(() => {
+    if (authUser && authUser.institution_id) {
+      setActiveInstitutionId(authUser.institution_id);
+    } else if (user && user.institution_id) {
+      setActiveInstitutionId(user.institution_id);
+    } else if (institutions.length > 0) {
+      setActiveInstitutionId(institutions[0].id);
+    }
+  }, [user, authUser]);
+  // Mover o cálculo de institutions para antes do useEffect
   const institutions = React.useMemo(() => {
     return (rawInstitutions || []).map(inst => ({
       ...inst,
@@ -104,27 +114,11 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [rawInstitutions]);
 
 
-  // Atualiza activeInstitution quando institutions mudam ou ao inicializar
-  React.useEffect(() => {
-    if (currentInstitutionData) {
-      setActiveInstitution(currentInstitutionData)
-    }else if (institutions && institutions.length > 0) {
-      setActiveInstitution((prev: typeof institutions[0] | null) => {
-        if (!prev || !institutions.find(i => i.id === prev.id)) {
-          return institutions[0];
-        }
-        return prev;
-      });
-    } else {
-      setActiveInstitution(null);
-    }
-  }, [currentInstitutionData, institutions]);
-
   // Troca de instituição
   const switchInstitution = useCallback((institutionId: string) => {
     const institution = institutions.find(inst => inst.id === institutionId);
-    if (institution && (!activeInstitution || institution.id !== activeInstitution.id)) {
-      setActiveInstitution(institution);
+    if (institution && institution.id !== activeInstitutionId) {
+      setActiveInstitutionId(institution.id);
       toast.success(
         `🏢 Switched to ${institution.name}\n📊 Loading institution data...`,
         {
@@ -133,7 +127,7 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
         }
       );
     }
-  }, [activeInstitution, institutions]);
+  }, [activeInstitutionId, institutions]);
 
   // Adiciona instituição (apenas local, para efeito imediato; persistência via createInstitution)
   const addInstitution = useCallback((institutionData: any) => {
@@ -144,9 +138,14 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [createInstitution]);
 
 
+  useEffect(() => {
+    if (activeInstitutionId) {
+      refetchInstitutionById();
+    }
+  }, [activeInstitutionId]);
+
   const value: InstitutionContextType = useMemo(() => ({
     institutions,
-    setActiveInstitution,
     switchInstitution,
     addInstitution,
     loading,
@@ -172,7 +171,6 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     updateContactError
   }), [
     institutions,
-    setActiveInstitution,
     switchInstitution,
     addInstitution,
     loading,

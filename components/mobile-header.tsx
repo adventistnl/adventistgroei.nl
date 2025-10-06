@@ -20,6 +20,8 @@ import {
   MessageCircle
 } from "lucide-react"
 import toast from "react-hot-toast"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 export function MobileHeader() {
   // Ativar comando de teclado global para busca
@@ -93,14 +95,16 @@ export function MobileHeader() {
               <LanguageSelector />
               
               {/* Invite Button - Destaque Principal */}
-              <InviteModal onInviteSent={handleInviteSent}>
-                <Button 
-                  size="sm"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg h-9 px-2"
-                >
-                  <UserPlus className="w-4 h-4" />
-                </Button>
-              </InviteModal>
+              <WithPermission requiredPermissions={[PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail]} >
+                <InviteModal onInviteSent={handleInviteSent}>
+                  <Button 
+                    size="sm"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg h-9 px-2"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                  </Button>
+                </InviteModal>
+              </WithPermission>
             </div>
           </div>
         </div>
@@ -153,16 +157,18 @@ export function MobileHeader() {
               <LanguageSelector />
 
               {/* Invite Button - Destaque */}
+              <WithPermission requiredPermissions={[PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail]} >
               <InviteModal onInviteSent={handleInviteSent}>
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  className="flex items-center gap-2 h-9 px-4 ml-2 bg-primary hover:bg-primary/90 shadow-md"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  <span>Invite</span>
-                </Button>
-              </InviteModal>
+                  <Button 
+                    variant="default" 
+                    size="sm"
+                    className="flex items-center gap-2 h-9 px-4 ml-2 bg-primary hover:bg-primary/90 shadow-md"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>Invite</span>
+                  </Button>
+                </InviteModal>
+              </WithPermission>
             </div>
           </div>
         </div>

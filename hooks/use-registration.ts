@@ -8,10 +8,10 @@ import * as z from "zod"
 import toast from "react-hot-toast"
 import { validateToken } from "@/utils/validateToken"
 import { jwtDecode } from "jwt-decode"
-import { useCreateUserMutation } from "./graphql/use-create-user-mutation"
+import { useCreateUserMutation } from "./graphql/use-user-mutation"
 import { InviteUserVariables } from "@/types/InviteUser"
 import { useAuth } from "@/contexts/auth-context"
-import { DecodeError } from "next/dist/shared/lib/utils"
+import { roles } from "@/data/usersData"
 
 // Schema de validação para o formulário de registro
 const registrationSchema = z.object({
@@ -291,6 +291,7 @@ export function useRegistration({ translations, defaultInstitutionId }: UseRegis
         institution_id: inviteData.institution_id,
         department_id: data.department_id,
         church_id: data.church_id,
+        roles: inviteData.role_ids || [], // Role do convite ou padrão MEMBER
       }
       
       toast.dismiss(loadingToast)

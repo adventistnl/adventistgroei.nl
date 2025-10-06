@@ -27,7 +27,8 @@ export const inviteTranslations = {
     selectRoleToGenerate: "Select a role to generate the shareable link",
     shareableLinkTitle: "Shareable Link",
     shareableLinkDesc: "Copy and share this link with new members",
-    generateLinkError: "Error generating invite link"
+    generateLinkError: "Error generating invite link",
+    missingChurchOrDepartment: "Please ensure at least one church and one department are registered."
   },
   nl: {
     title: "Nieuwe Lid Uitnodigen",
@@ -57,7 +58,8 @@ export const inviteTranslations = {
     selectRoleToGenerate: "Selecteer een rol om de deelbare link te genereren",
     shareableLinkTitle: "Deelbare Link",
     shareableLinkDesc: "Kopieer en deel deze link met nieuwe leden",
-    generateLinkError: "Fout bij het genereren van de uitnodigingslink"
+    generateLinkError: "Fout bij het genereren van de uitnodigingslink",
+    missingChurchOrDepartment: "Zorg ervoor dat er minstens één kerk en één afdeling zijn geregistreerd."
   },
   pt: {
     title: "Convidar Novo Membro",
@@ -87,6 +89,7 @@ export const inviteTranslations = {
     selectRoleToGenerate: "Selecione uma função para gerar o link compartilhável",
     shareableLinkTitle: "Link Compartilhável",
     shareableLinkDesc: "Copie e compartilhe este link com novos membros",
-    generateLinkError: "Erro ao gerar link de convite"
+    generateLinkError: "Erro ao gerar link de convite",
+    missingChurchOrDepartment: "Por favor, certifique-se de que pelo menos uma igreja e um departamento estejam registrados."
   }
 }
