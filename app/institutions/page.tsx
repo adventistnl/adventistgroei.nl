@@ -424,9 +424,6 @@ export default function InstitutionsPage() {
       <WithPermission requiredPermissions={[PermissionResolverName.Institutions]} fallback={<AccessDenied/>}>
       
       <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">
-        {/* Debug Component */}
-        <InstitutionDebugger />
-        
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
