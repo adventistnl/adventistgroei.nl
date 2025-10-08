@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -13,13 +14,8 @@ import {
   Activity,
   Plus,
   MoreHorizontal,
-  Edit,
   Trash2,
-  Eye,
-  Filter,
-  Search,
-  Upload,
-  FileText,
+  Settings,
   CheckCircle,
   Clock,
   AlertCircle,
@@ -35,17 +31,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
+
 import toast from "react-hot-toast"
 import { ProjectTableData } from "@/components/projects/projects-table"
 import { mockProjectActivities, getActivitiesByProjectId } from "@/data/mockData"
 import { ActivityDetailsModal } from "@/components/modals/project/activity-details-modal"
+import { DeleteActivityModal } from "@/components/modals/project/delete-activity-modal"
 
 // Schema-based interfaces
 export interface ProjectActivityData {
@@ -133,18 +124,17 @@ export function ProjectActivitiesTable({
   onViewActivity,
   onUploadReceipt
 }: ProjectActivitiesTableProps) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [selectedActivity, setSelectedActivity] = useState<ProjectActivityData | null>(null)
-  const [isReceiptsSheetOpen, setIsReceiptsSheetOpen] = useState(false)
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<"subsidized" | "non-subsidized">("subsidized")
   const [isViewActivityModalOpen, setIsViewActivityModalOpen] = useState(false)
   const [selectedActivityForView, setSelectedActivityForView] = useState<ProjectActivityData | null>(null)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [selectedActivityForDelete, setSelectedActivityForDelete] = useState<ProjectActivityData | null>(null)
   
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [priorityFilter, setPriorityFilter] = useState<string>("all")
   const [tagFilter, setTagFilter] = useState<string>("all")
-  const [searchQuery, setSearchQuery] = useState("")
 
   // Get project activities
   const projectActivities = getActivitiesByProjectId(project.id) as ProjectActivityData[]
@@ -162,13 +152,10 @@ export function ProjectActivitiesTable({
       const matchesStatus = statusFilter === "all" || activity.status === statusFilter
       const matchesPriority = priorityFilter === "all" || activity.priority === priorityFilter
       const matchesTag = tagFilter === "all" || activity.activity_tag === tagFilter
-      const matchesSearch = searchQuery === "" || 
-        activity.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        activity.description.toLowerCase().includes(searchQuery.toLowerCase())
       
-      return matchesStatus && matchesPriority && matchesTag && matchesSearch
+      return matchesStatus && matchesPriority && matchesTag
     })
-  }, [currentActivities, statusFilter, priorityFilter, tagFilter, searchQuery])
+  }, [currentActivities, statusFilter, priorityFilter, tagFilter])
 
   // Helper functions
   const getActivityTagIcon = (tag: string) => {
@@ -210,52 +197,24 @@ export function ProjectActivitiesTable({
     }).format(amount)
   }
 
-  // Get receipts for activity
-  const getActivityReceipts = (activityId: string) => {
-    return mockReceipts.filter(receipt => receipt.project_activities_id === activityId)
-  }
+
 
   // Event handlers
-  const handleViewActivity = (activity: ProjectActivityData) => {
+  const handleManageActivity = (activity: ProjectActivityData) => {
     setSelectedActivityForView(activity)
     setIsViewActivityModalOpen(true)
   }
 
-  const handleEditActivity = (activity: ProjectActivityData) => {
-    if (onEditActivity) {
-      onEditActivity(activity)
-    } else {
-      toast.success(`Editando: ${activity.name}`, { duration: 2000 })
-    }
-  }
-
   const handleDeleteActivity = (activity: ProjectActivityData) => {
-    if (onDeleteActivity) {
-      onDeleteActivity(activity)
-    } else {
-      toast.success(`Removendo: ${activity.name}`, { duration: 2000 })
-    }
-  }
-
-  const handleUploadReceipt = (activity: ProjectActivityData) => {
-    if (onUploadReceipt) {
-      onUploadReceipt(activity)
-    } else {
-      toast.success(`Upload de recibo para: ${activity.name}`, { duration: 2000 })
-    }
-  }
-
-  const handleViewReceipts = (activity: ProjectActivityData) => {
-    setSelectedActivity(activity)
-    setIsReceiptsSheetOpen(true)
+    setSelectedActivityForDelete(activity)
+    setIsDeleteModalOpen(true)
   }
 
   const clearFilters = () => {
     setStatusFilter("all")
     setPriorityFilter("all")
     setTagFilter("all")
-    setSearchQuery("")
-    toast.success("Filtros limpos", { duration: 1500 })
+    toast.success(t('activities.table.filters_cleared'), { duration: 1500 })
   }
 
   // Table columns
@@ -263,7 +222,7 @@ export function ProjectActivitiesTable({
     {
       id: "name",
       accessorKey: "name",
-      header: "Atividade",
+      header: t('activities.table.activity'),
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -281,7 +240,7 @@ export function ProjectActivitiesTable({
     {
       id: "activity_tag",
       accessorKey: "activity_tag",
-      header: "Categoria",
+      header: t('activities.table.category'),
       cell: ({ row }) => (
         <Badge variant="outline" className={`${getActivityTagColor()} flex items-center gap-1 w-fit`}>
           {getActivityTagIcon(row.original.activity_tag)}
@@ -291,7 +250,7 @@ export function ProjectActivitiesTable({
     },
     {
       id: "subsidy_status",
-      header: "Subsídio",
+      header: t('activities.table.subsidy_status'),
       cell: ({ row }) => (
         <div className="flex items-center justify-center">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -309,7 +268,7 @@ export function ProjectActivitiesTable({
     {
       id: "budget_amount",
       accessorKey: "budget_amount",
-      header: "Orçamento",
+      header: t('activities.table.budget'),
       cell: ({ row }) => (
         <div className="font-medium">{formatCurrency(row.original.budget_amount)}</div>
       ),
@@ -317,7 +276,7 @@ export function ProjectActivitiesTable({
     {
       id: "status",
       accessorKey: "status",
-      header: "Status",
+      header: t('activities.table.status'),
       cell: ({ row }) => (
         <Badge variant="outline" className={`${getStatusColor()} flex items-center gap-1 w-fit`}>
           {getStatusIcon(row.original.status)}
@@ -328,7 +287,7 @@ export function ProjectActivitiesTable({
     {
       id: "priority",
       accessorKey: "priority",
-      header: "Prioridade",
+      header: t('activities.table.priority'),
       cell: ({ row }) => (
         <Badge variant="outline" className={`${getPriorityColor()} capitalize w-fit`}>
           {row.original.priority}
@@ -336,26 +295,8 @@ export function ProjectActivitiesTable({
       ),
     },
     {
-      id: "receipts",
-      header: "Recibos",
-      cell: ({ row }) => {
-        const receipts = getActivityReceipts(row.original.id)
-        const approvedCount = receipts.filter(r => r.approved).length
-        return (
-          <div className="text-center">
-            <div className="font-medium">{receipts.length}</div>
-            {approvedCount > 0 && (
-              <div className="text-xs text-green-600">
-                {approvedCount} aprovados
-              </div>
-            )}
-          </div>
-        )
-      },
-    },
-    {
       id: "actions",
-      header: "Ações",
+      header: t('activities.table.actions'),
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -364,22 +305,9 @@ export function ProjectActivitiesTable({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => handleViewActivity(row.original)}>
-              <Eye className="w-4 h-4 mr-2" />
-              Visualizar
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleViewReceipts(row.original)}>
-              <FileText className="w-4 h-4 mr-2" />
-              Ver Recibos
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => handleUploadReceipt(row.original)}>
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Recibo
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleEditActivity(row.original)}>
-              <Edit className="w-4 h-4 mr-2" />
-              Editar
+            <DropdownMenuItem onClick={() => handleManageActivity(row.original)}>
+              <Settings className="w-4 h-4 mr-2" />
+              {t('activities.table.manage_activity')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem 
@@ -387,7 +315,7 @@ export function ProjectActivitiesTable({
               className="text-red-600 focus:text-red-600"
             >
               <Trash2 className="w-4 h-4 mr-2" />
-              Remover
+              {t('activities.table.remove')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -403,15 +331,15 @@ export function ProjectActivitiesTable({
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Activity className="w-5 h-5 text-gray-600" />
-                Atividades do Projeto
+                {t('activities.table.activity')} do Projeto
               </CardTitle>
               <CardDescription>
-                Gerencie as atividades e seus respectivos recibos
+                Gerencie as atividades do projeto
               </CardDescription>
             </div>
             <Button onClick={onAddActivity}>
               <Plus className="w-4 h-4 mr-2" />
-              Nova Atividade
+              {t('activities.table.new_activity')}
             </Button>
           </div>
         </CardHeader>
@@ -423,36 +351,21 @@ export function ProjectActivitiesTable({
                 <div className="w-4 h-4 bg-green-100 rounded-full flex items-center justify-center">
                   <DollarSign className="w-2.5 h-2.5 text-green-600" />
                 </div>
-                Subsidiadas ({subsidizedActivities.length})
+                {t('activities.table.subsidized_tab')} ({subsidizedActivities.length})
               </TabsTrigger>
               <TabsTrigger value="non-subsidized" className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-gray-100 rounded-full flex items-center justify-center">
                   <DollarSign className="w-2.5 h-2.5 text-gray-400" />
                 </div>
-                Não Subsidiadas ({nonSubsidizedActivities.length})
+                {t('activities.table.non_subsidized_tab')} ({nonSubsidizedActivities.length})
               </TabsTrigger>
             </TabsList>
 
-            {/* Filters Section */}
-            <div className="flex flex-wrap items-center gap-4 p-4 bg-muted/50 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Filtros:</span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Search className="w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar atividade..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-48 h-8"
-                />
-              </div>
-
+            {/* Filters Section - positioned near columns */}
+            <div className="flex justify-end items-center gap-4 mb-4">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-32 h-8">
-                  <SelectValue placeholder="Status" />
+                  <SelectValue placeholder={t('activities.table.status')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
@@ -464,7 +377,7 @@ export function ProjectActivitiesTable({
 
               <Select value={priorityFilter} onValueChange={setPriorityFilter}>
                 <SelectTrigger className="w-32 h-8">
-                  <SelectValue placeholder="Prioridade" />
+                  <SelectValue placeholder={t('activities.table.priority')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas</SelectItem>
@@ -477,7 +390,7 @@ export function ProjectActivitiesTable({
 
               <Select value={tagFilter} onValueChange={setTagFilter}>
                 <SelectTrigger className="w-32 h-8">
-                  <SelectValue placeholder="Categoria" />
+                  <SelectValue placeholder={t('activities.table.category')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas</SelectItem>
@@ -488,7 +401,7 @@ export function ProjectActivitiesTable({
               </Select>
 
               <Button variant="outline" size="sm" onClick={clearFilters} className="h-8">
-                Limpar
+                {t('activities.table.clear_filters')}
               </Button>
             </div>
 
@@ -506,17 +419,17 @@ export function ProjectActivitiesTable({
                     <DollarSign className="w-6 h-6 text-green-600" />
                   </div>
                   <h3 className="text-lg font-semibold text-muted-foreground mb-2">
-                    Nenhuma atividade subsidiada encontrada
+                    {t('activities.table.no_subsidized_found')}
                   </h3>
                   <p className="text-muted-foreground mb-4">
-                    {searchQuery || statusFilter !== "all" || priorityFilter !== "all" || tagFilter !== "all"
-                      ? "Ajuste os filtros para ver mais atividades."
-                      : "Comece criando a primeira atividade subsidiada do projeto."
+                    {statusFilter !== "all" || priorityFilter !== "all" || tagFilter !== "all"
+                      ? t('activities.table.adjust_filters')
+                      : t('activities.table.create_first_subsidized')
                     }
                   </p>
                   <Button onClick={onAddActivity}>
                     <Plus className="w-4 h-4 mr-2" />
-                    Nova Atividade
+                    {t('activities.table.new_activity')}
                   </Button>
                 </div>
               )}
@@ -536,17 +449,17 @@ export function ProjectActivitiesTable({
                     <DollarSign className="w-6 h-6 text-gray-400" />
                   </div>
                   <h3 className="text-lg font-semibold text-muted-foreground mb-2">
-                    Nenhuma atividade não subsidiada encontrada
+                    {t('activities.table.no_non_subsidized_found')}
                   </h3>
                   <p className="text-muted-foreground mb-4">
-                    {searchQuery || statusFilter !== "all" || priorityFilter !== "all" || tagFilter !== "all"
-                      ? "Ajuste os filtros para ver mais atividades."
-                      : "Comece criando a primeira atividade não subsidiada do projeto."
+                    {statusFilter !== "all" || priorityFilter !== "all" || tagFilter !== "all"
+                      ? t('activities.table.adjust_filters')
+                      : t('activities.table.create_first_non_subsidized')
                     }
                   </p>
                   <Button onClick={onAddActivity}>
                     <Plus className="w-4 h-4 mr-2" />
-                    Nova Atividade
+                    {t('activities.table.new_activity')}
                   </Button>
                 </div>
               )}
@@ -555,107 +468,7 @@ export function ProjectActivitiesTable({
         </CardContent>
       </Card>
 
-      {/* Receipts Sheet */}
-      <Sheet open={isReceiptsSheetOpen} onOpenChange={setIsReceiptsSheetOpen}>
-        <SheetContent className="sm:max-w-[600px]">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Recibos da Atividade
-            </SheetTitle>
-            <SheetDescription>
-              {selectedActivity?.name}
-            </SheetDescription>
-          </SheetHeader>
-          
-          {selectedActivity && (
-            <div className="mt-6 space-y-4">
-              {/* Activity Summary */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Resumo da Atividade</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Orçamento:</span>
-                      <p className="font-medium">{formatCurrency(selectedActivity.budget_amount)}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Status:</span>
-                      <div className="mt-1">
-                        <Badge variant="outline" className={getStatusColor()}>
-                          {selectedActivity.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
-              {/* Receipts List */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">
-                    Recibos ({getActivityReceipts(selectedActivity.id).length})
-                  </h4>
-                  <Button size="sm" onClick={() => handleUploadReceipt(selectedActivity)}>
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload
-                  </Button>
-                </div>
-                
-                {getActivityReceipts(selectedActivity.id).map((receipt) => (
-                  <Card key={receipt.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                            receipt.approved ? "bg-green-100" : "bg-orange-100"
-                          }`}>
-                            <FileText className={`w-4 h-4 ${
-                              receipt.approved ? "text-green-600" : "text-orange-600"
-                            }`} />
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">Recibo #{receipt.id}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(receipt.created_at).toLocaleDateString('pt-BR')}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">{formatCurrency(receipt.amount)}</p>
-                          <Badge 
-                            variant="outline" 
-                            className={receipt.approved ? 
-                              "text-green-600 border-green-200 bg-green-50" : 
-                              "text-orange-600 border-orange-200 bg-orange-50"
-                            }
-                          >
-                            {receipt.approved ? "Aprovado" : "Pendente"}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-                
-                {getActivityReceipts(selectedActivity.id).length === 0 && (
-                  <div className="text-center py-8">
-                    <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-muted-foreground mb-4">Nenhum recibo encontrado</p>
-                    <Button onClick={() => handleUploadReceipt(selectedActivity)}>
-                      <Upload className="w-4 h-4 mr-2" />
-                      Upload Primeiro Recibo
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
 
       {/* View Activity Modal */}
       <ActivityDetailsModal
@@ -666,6 +479,19 @@ export function ProjectActivitiesTable({
         onSave={(updatedActivity) => {
           console.log("Salvar atividade:", updatedActivity)
           toast.success("Atividade salva com sucesso!")
+        }}
+      />
+
+      {/* Delete Activity Modal */}
+      <DeleteActivityModal
+        isOpen={isDeleteModalOpen}
+        onOpenChangeAction={setIsDeleteModalOpen}
+        activity={selectedActivityForDelete}
+        onSuccess={(deletedActivity) => {
+          if (onDeleteActivity) {
+            onDeleteActivity(deletedActivity)
+          }
+          setSelectedActivityForDelete(null)
         }}
       />
     </>

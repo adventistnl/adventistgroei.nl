@@ -17,6 +17,122 @@ const resources = {
         recent_activities: "Recent Activities",
         quick_actions: "Quick Actions"
       },
+      activities: {
+        modal: {
+          title: "Activity Details",
+          edit_title: "Edit Activity",
+          status: "Status",
+          priority: "Priority", 
+          category: "Category",
+          budget: "Budget",
+          subsidy: "Subsidy",
+          description: "Description",
+          documents: "Documents",
+          system_info: "System Information",
+          created_at: "Created at",
+          updated_at: "Updated at",
+          created_by: "Created by",
+          updated_by: "Updated by",
+          activity_id: "Activity ID",
+          total_budget: "Total Budget",
+          rich_editor: "Rich Editor",
+          click_to_edit: "Click to edit description",
+          drop_files: "Drop files here or click to upload",
+          supported_formats: "Supports PDF and images up to 10MB",
+          no_documents: "No documents attached",
+          use_button_above: "Use the button above to add documents",
+          save_changes: "Save Changes",
+          unsaved_changes: "There are unsaved changes",
+          close: "Close",
+          tooltips: {
+            status: "Current activity status",
+            priority: "Activity urgency level", 
+            category: "Type of activity",
+            subsidy: "Whether this activity is subsidized or not"
+          },
+          status_options: {
+            todo: "To Do",
+            in_progress: "In Progress", 
+            completed: "Completed",
+            on_hold: "On Hold"
+          },
+          priority_options: {
+            urgent: "Urgent",
+            high: "High",
+            medium: "Medium", 
+            low: "Low"
+          },
+          category_options: {
+            reforma: "Reform",
+            material: "Material",
+            training: "Training"
+          },
+          subsidy_info: {
+            subsidized: "This activity is subsidized",
+            not_subsidized: "This activity is not subsidized",
+            click_to_toggle: "Click to toggle subsidy status"
+          },
+          delete: {
+            title: "Delete Activity",
+            description: "This action will permanently delete the activity and all related data.",
+            affected_data: "Affected Data",
+            view_consequences: "View Consequences",
+            understand_consequences: "I understand the consequences of deleting this activity",
+            acknowledge_text: "I acknowledge that all activity data and progress will be permanently lost.",
+            type_confirmation: "Type \"DELETE ACTIVITY\" to confirm:",
+            confirmation_placeholder: "DELETE ACTIVITY",
+            confirmation_text: "delete activity",
+            confirmation_help: "Type exactly as shown above to enable the delete button",
+            delete_activity: "Delete Activity",
+            deleting: "Deleting...",
+            consequences: {
+              data_loss: "Complete Data Loss",
+              data_loss_desc: "All activity information, progress tracking, and metadata will be permanently removed.",
+              budget_impact: "Budget Impact",
+              budget_impact_desc: "The allocated budget will be returned to the project's available funds.",
+              progress_loss: "Progress Tracking Loss",
+              progress_loss_desc: "All progress tracking, milestones, and completion records will be lost.",
+              documentation_loss: "Documentation Loss",
+              documentation_loss_desc: "Any attached documents, notes, or related files will be permanently deleted."
+            },
+            permanent_warning: {
+              title: "This is a permanent action",
+              description: "Unlike institutions or users, activities cannot be recovered once deleted. All data will be permanently lost."
+            }
+          }
+        },
+        subsidized: "Subsidized",
+        budget: "Budget",
+        priority: "Priority",
+        status: "Status",
+        subsidy: "Subsidy",
+        toasts: {
+          deleting: "Deleting activity...",
+          deleted: "Activity deleted successfully",
+          delete_failed: "Failed to delete activity"
+        },
+        table: {
+          activity: "Activity",
+          category: "Category",
+          subsidy_status: "Subsidy",
+          budget: "Budget",
+          status: "Status",
+          priority: "Priority",
+          actions: "Actions",
+          manage_activity: "Manage Activity",
+          remove: "Remove",
+          subsidized_tab: "Subsidized",
+          non_subsidized_tab: "Not Subsidized",
+          no_subsidized_found: "No subsidized activities found",
+          no_non_subsidized_found: "No non-subsidized activities found",
+          adjust_filters: "Adjust the filters to see more activities.",
+          create_first_subsidized: "Start by creating the first subsidized activity for the project.",
+          create_first_non_subsidized: "Start by creating the first non-subsidized activity for the project.",
+          new_activity: "New Activity",
+          clear_filters: "Clear Filters",
+          filters_cleared: "Filters cleared"
+        }
+      },
       metrics: {
         total_users: "Total Users",
         total_institutions: "Total Institutions",
@@ -45,7 +161,8 @@ const resources = {
         refresh: "Refresh",
         columns: "Columns",
         clear_filters: "Clear Filters",
-        close: "Close"
+        close: "Close",
+        upload: "Upload"
       },
       actions: {
         add_member: "Add Member",
@@ -998,6 +1115,122 @@ const resources = {
         recent_activities: "Recente Activiteiten",
         quick_actions: "Snelle Acties"
       },
+      activities: {
+        modal: {
+          title: "Activiteitdetails",
+          edit_title: "Activiteit Bewerken",
+          status: "Status",
+          priority: "Prioriteit", 
+          category: "Categorie",
+          budget: "Budget",
+          subsidy: "Subsidie",
+          description: "Beschrijving",
+          documents: "Documenten",
+          system_info: "Systeeminformatie",
+          created_at: "Aangemaakt op",
+          updated_at: "Bijgewerkt op",
+          created_by: "Aangemaakt door",
+          updated_by: "Bijgewerkt door",
+          activity_id: "Activiteit ID",
+          total_budget: "Totaal Budget",
+          rich_editor: "Rijke Editor",
+          click_to_edit: "Klik om beschrijving te bewerken",
+          drop_files: "Sleep bestanden hier of klik om te uploaden",
+          supported_formats: "Ondersteunt PDF en afbeeldingen tot 10MB",
+          no_documents: "Geen documenten bijgevoegd",
+          use_button_above: "Gebruik de knop hierboven om documenten toe te voegen",
+          save_changes: "Wijzigingen Opslaan",
+          unsaved_changes: "Er zijn niet-opgeslagen wijzigingen",
+          close: "Sluiten",
+          tooltips: {
+            status: "Huidige activiteitstatus",
+            priority: "Urgentieniveau van activiteit", 
+            category: "Type activiteit",
+            subsidy: "Of deze activiteit gesubsidieerd is of niet"
+          },
+          status_options: {
+            todo: "Te Doen",
+            in_progress: "In Uitvoering", 
+            completed: "Voltooid",
+            on_hold: "In Wacht"
+          },
+          priority_options: {
+            urgent: "Urgent",
+            high: "Hoog",
+            medium: "Gemiddeld", 
+            low: "Laag"
+          },
+          category_options: {
+            reforma: "Hervorming",
+            material: "Materiaal",
+            training: "Training"
+          },
+          subsidy_info: {
+            subsidized: "Deze activiteit wordt gesubsidieerd",
+            not_subsidized: "Deze activiteit wordt niet gesubsidieerd",
+            click_to_toggle: "Klik om subsidiestatus te wisselen"
+          },
+          delete: {
+            title: "Activiteit Verwijderen",
+            description: "Deze actie zal de activiteit en alle gerelateerde gegevens permanent verwijderen.",
+            affected_data: "Beïnvloede Gegevens",
+            view_consequences: "Gevolgen Bekijken",
+            understand_consequences: "Ik begrijp de gevolgen van het verwijderen van deze activiteit",
+            acknowledge_text: "Ik bevestig dat alle activiteitsgegevens en voortgang permanent verloren gaan.",
+            type_confirmation: "Typ \"DELETE ACTIVITY\" om te bevestigen:",
+            confirmation_placeholder: "DELETE ACTIVITY",
+            confirmation_text: "delete activity",
+            confirmation_help: "Typ exact zoals hierboven weergegeven om de verwijderknop in te schakelen",
+            delete_activity: "Activiteit Verwijderen",
+            deleting: "Verwijderen...",
+            consequences: {
+              data_loss: "Volledig Gegevensverlies",
+              data_loss_desc: "Alle activiteitsinformatie, voortgangsregistratie en metadata worden permanent verwijderd.",
+              budget_impact: "Budget Impact",
+              budget_impact_desc: "Het toegewezen budget wordt teruggegeven aan de beschikbare fondsen van het project.",
+              progress_loss: "Voortgangsregistratie Verlies",
+              progress_loss_desc: "Alle voortgangsregistratie, mijlpalen en voltooiingsrecords gaan verloren.",
+              documentation_loss: "Documentatie Verlies",
+              documentation_loss_desc: "Alle bijgevoegde documenten, notities of gerelateerde bestanden worden permanent verwijderd."
+            },
+            permanent_warning: {
+              title: "Dit is een permanente actie",
+              description: "In tegenstelling tot instellingen of gebruikers kunnen activiteiten niet worden hersteld zodra ze zijn verwijderd. Alle gegevens gaan permanent verloren."
+            }
+          }
+        },
+        subsidized: "Gesubsidieerd",
+        budget: "Budget",
+        priority: "Prioriteit",
+        status: "Status",
+        subsidy: "Subsidie",
+        toasts: {
+          deleting: "Activiteit verwijderen...",
+          deleted: "Activiteit succesvol verwijderd",
+          delete_failed: "Kon activiteit niet verwijderen"
+        },
+        table: {
+          activity: "Activiteit",
+          category: "Categorie",
+          subsidy_status: "Subsidie",
+          budget: "Budget",
+          status: "Status",
+          priority: "Prioriteit",
+          actions: "Acties",
+          manage_activity: "Activiteit Beheren",
+          remove: "Verwijderen",
+          subsidized_tab: "Gesubsidieerd",
+          non_subsidized_tab: "Niet Gesubsidieerd",
+          no_subsidized_found: "Geen gesubsidieerde activiteiten gevonden",
+          no_non_subsidized_found: "Geen niet-gesubsidieerde activiteiten gevonden",
+          adjust_filters: "Pas de filters aan om meer activiteiten te zien.",
+          create_first_subsidized: "Begin met het maken van de eerste gesubsidieerde activiteit voor het project.",
+          create_first_non_subsidized: "Begin met het maken van de eerste niet-gesubsidieerde activiteit voor het project.",
+          new_activity: "Nieuwe Activiteit",
+          clear_filters: "Filters Wissen",
+          filters_cleared: "Filters gewist"
+        }
+      },
       metrics: {
         total_users: "Totaal Gebruikers",
         total_institutions: "Totaal Instellingen",
@@ -1026,7 +1259,8 @@ const resources = {
         refresh: "Vernieuwen",
         columns: "Kolommen",
         clear_filters: "Filters Wissen",
-        close: "Sluiten"
+        close: "Sluiten",
+        upload: "Uploaden"
       },
       actions: {
         add_member: "Lid Toevoegen",

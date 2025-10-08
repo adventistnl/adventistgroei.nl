@@ -35,8 +35,8 @@ export const NavMain = React.memo(function NavMain({ items }: NavMainProps) {
         <SidebarGroupLabel>Platform</SidebarGroupLabel>
         <SidebarMenu>
           {items.map((item) => (
-            <WithPermission requiredPermissions={item.permissions}>
-              <NavMainItem key={item.title} item={item} />
+            <WithPermission key={item.title} requiredPermissions={item.permissions}>
+              <NavMainItem item={item} />
             </WithPermission>
           ))}
         </SidebarMenu>
@@ -95,7 +95,7 @@ const NavMainItem = React.memo(function NavMainItem({
           <SidebarMenuSub>
             {item.items.map((subItem) => (
               <WithPermission key={subItem.title} requiredPermissions={subItem.permissions}>
-                <SidebarMenuSubItem key={subItem.title}>
+                <SidebarMenuSubItem>
                   <SidebarMenuSubButton asChild isActive={subItem.isActive}>
                     <Link href={subItem.url}>
                       <span>{subItem.title}</span>
