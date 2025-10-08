@@ -451,7 +451,7 @@ export default function InstitutionsPage() {
 
           <div className="flex items-center gap-3">
             <RegisterInstitutionModal onSuccess={handleInstitutionCreated}>
-              <Button className="bg-gray-900 hover:bg-gray-800 text-white">
+              <Button className="bg-primary hover:bg-primary/80">
                 <Plus className="w-4 h-4 mr-2" />
                 {t('actions.create_institution')}
               </Button>
