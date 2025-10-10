@@ -158,60 +158,10 @@ export function InstitutionProfileHeader({
             {/* Left Side - Institution Info */}
             <div className="flex-1 w-full">
               <div className="flex items-start gap-4 sm:gap-6">
-                <div className="relative h-44 sm:h-50">
-                  <Avatar className="h-full w-full aspect-square border-4 border-background shadow-lg rounded-lg">
-                    <AvatarImage 
-                      src={"/placeholder-logo.svg"} 
-                      className="object-cover" 
-                    />
-                    <AvatarFallback className="text-xl sm:text-2xl font-bold bg-primary/10 text-primary rounded-lg">
-                      {/* {institution.image_url ? ( */}
-                        <Building className="w-8 h-8 sm:w-12 sm:h-12" />
-                      {/* ) : ( */}
-                        {/* institution.name.split(' ').map(n => n[0]).join('').toUpperCase() */}
-                      {/* )} */}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  {/* Image Upload Button - Bottom Right Corner */}
-                  {/* <div className="absolute -bottom-2 -right-2">
-                    <div className="relative">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                        disabled={isUploading}
-                      />
-                      <Button
-                        size="sm"
-                        className="h-8 w-8 rounded-full bg-primary hover:bg-primary/90 shadow-lg border-2 border-background"
-                        disabled={isUploading}
-                      >
-                        {isUploading ? (
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : institution.image_url ? (
-                          <Camera className="w-4 h-4 text-white" />
-                        ) : (
-                          <Upload className="w-4 h-4 text-white" />
-                        )}
-                      </Button>
-                    </div>
-                  </div> */}
-                  
-                  {/* Remove Image Button - Top Right Corner (only show if image exists) */}
-                  {/* {institution.image_url && onImageRemove && (
-                    <div className="absolute -top-2 -right-2">
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        className="h-6 w-6 rounded-full shadow-lg border-2 border-background"
-                        onClick={handleImageRemove}
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  )} */}
+                <div className="relative h-50 sm:h-50">
+                  <div className="h-full w-full aspect-square border-4 border-background rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Building className="w-16 h-16 sm:w-20 sm:h-20 text-primary" />
+                  </div>
                 </div>
 
                 <Separator />

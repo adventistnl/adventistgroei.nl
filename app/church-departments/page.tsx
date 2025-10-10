@@ -73,10 +73,10 @@ import { WithPermission } from "@/hocs/with-permission"
 
 
 /**
- * PÁGINA DE GESTÃO DE DEPARTAMENTOS
- * Interface dedicada para gerenciar departamentos baseada no ERD do AdventistGroei
+ * PÁGINA DE GESTÃO DE DEPARTAMENTOS DE IGREJA
+ * Interface dedicada para gerenciar departamentos a nível de igreja baseada no ERD do AdventistGroei
  */
-export default function DepartmentsPage() {
+export default function ChurchDepartmentsPage() {
   const { currentInstitutionData, refetchInstitutionById } = useInstitution();
   const departments: DepartmentData[] = currentInstitutionData?.departments || [];
   const churches: ChurchData[] = currentInstitutionData?.churches || [];
@@ -99,7 +99,7 @@ export default function DepartmentsPage() {
   const t = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
 
   usePageTitle({
-    title: t.departmentsTitle
+    title: "Church Departments"
   })
 
   // Estatísticas calculadas dos dados
@@ -121,10 +121,10 @@ export default function DepartmentsPage() {
   const kpiCardsData: KPICardData[] = useMemo(() => [
     {
       id: "total_departments",
-      title: t.departments,
+      title: "Church Departments",
       value: kpiData.totalDepartments,
       icon: Layers,
-      subtitle: "Total de departamentos",
+      subtitle: "Total de departamentos de igreja",
       trend: {
         value: 0,
         isPositive: true,
@@ -133,7 +133,7 @@ export default function DepartmentsPage() {
     },
     {
       id: "annual_budget",
-      title: t.annualBudget,
+      title: "Annual Budget",
       value: `$${(kpiData.totalAnnualBudget / 1000).toFixed(0)}K`,
       icon: DollarSign,
       subtitle: "Orçamento total anual",
@@ -143,7 +143,7 @@ export default function DepartmentsPage() {
         label: "vs. ano anterior"
       }
     }
-  ], [kpiData, t]);
+  ], [kpiData]);
 
   // Dados para gráficos (apenas nome e orçamento)
   const chartData = useMemo(() => {
@@ -163,37 +163,37 @@ export default function DepartmentsPage() {
    */
   useEffect(() => {
     const loadData = async () => {
-      const loadingToast = toast.loading(t.loading)
+      const loadingToast = toast.loading("Loading...")
       
       try {
         await new Promise(resolve => setTimeout(resolve, 1500))
         
         toast.dismiss(loadingToast)
-        toast.success(t.dataRefreshed, { duration: 3000 })
+        toast.success("Data loaded successfully", { duration: 3000 })
         setIsLoading(false)
         
       } catch (error) {
         toast.dismiss(loadingToast)
-        toast.error(t.error)
+        toast.error("Error loading data")
         setIsLoading(false)
       }
     }
 
     loadData()
-  }, [t])
+  }, [])
 
   /**
    * Handlers para ações
    */
   const handleRefresh = async () => {
     setRefreshing(true)
-    const refreshToast = toast.loading(t.refreshing)
+    const refreshToast = toast.loading("Refreshing...")
     
     try {
       await refetchInstitutionById()
-      toast.success(t.dataRefreshed, { duration: 2000 })
+      toast.success("Data refreshed successfully", { duration: 2000 })
     } catch (error) {
-      toast.error(t.errorRefreshing)
+      toast.error("Error refreshing data")
     } finally {
       toast.dismiss(refreshToast)
       setRefreshing(false)
@@ -252,7 +252,7 @@ export default function DepartmentsPage() {
   const handleViewBudget = (id: string) => {
     const department = departments.find(d => d.id === id);
     if (department) {
-      setSelectedDepartment(department);
+      setSelectedDepartment(department as any);
       // Mock budget data
       const budgetData: AnnualBudgetData = {
         id: `budget_${department.id}`,
@@ -275,17 +275,17 @@ export default function DepartmentsPage() {
   };
   
   const handleDepartmentSaved = (department: CreateDepartment) => {
-    toast.success("Department created successfully")
+    toast.success("Church department created successfully")
     handleRefresh()
   }
   
   const handleDepartmentUpdated = (department: DepartmentData) => {
-    toast.success("Department updated successfully")
+    toast.success("Church department updated successfully")
     handleRefresh()
   }
   
   const handleDepartmentDeleted = (department: DepartmentData) => {
-    toast.success("Department deleted successfully")
+    toast.success("Church department deleted successfully")
     handleRefresh()
   }
   
@@ -294,14 +294,9 @@ export default function DepartmentsPage() {
     if (selectedDepartment && budget.planned_budget !== selectedDepartment.annual_budget?.planned_budget) {
       const updatedDepartment = {
         ...selectedDepartment,
-        annual_budget: selectedDepartment.annual_budget ? {
+        annual_budget: {
           ...selectedDepartment.annual_budget,
-          planned_budget: budget.planned_budget,
-          total_expenses: budget.total_expenses
-        } : {
-          __typename: "AnnualBudget" as const,
-          planned_budget: budget.planned_budget,
-          total_expenses: budget.total_expenses
+          planned_budget: budget.planned_budget
         }
       };
       setSelectedDepartment(updatedDepartment);
@@ -321,7 +316,7 @@ export default function DepartmentsPage() {
     {
       id: "name",
       accessorKey: "name",
-      header: t.name,
+      header: "Name",
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
@@ -337,7 +332,7 @@ export default function DepartmentsPage() {
     {
       id: "church", 
       accessorKey: "church",
-      header: t.church,
+      header: "Church",
       cell: ({ row }) => {
         const church = churches.find(c => c.id === row.original.church);
         const isInstitutional = !church;
@@ -365,7 +360,7 @@ export default function DepartmentsPage() {
     {
       id: "members",
       accessorKey: "members_count",
-      header: t.members,
+      header: "Members",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-muted-foreground" />
@@ -376,7 +371,7 @@ export default function DepartmentsPage() {
     {
       id: "budget",
       accessorKey: "total_budget",
-      header: t.budget,
+      header: "Budget",
       cell: ({ row }) => {
         const annual_budget = row.original.annual_budget
         const total_expenses = annual_budget ? annual_budget.total_expenses : 0
@@ -386,7 +381,7 @@ export default function DepartmentsPage() {
     },
     {
       id: "utilization",
-      header: t.utilization,
+      header: "Utilization",
       cell: ({ row }) => {
         const annual_budget = row.original.annual_budget
         const totalBudget = annual_budget?.planned_budget || 1;
@@ -405,7 +400,7 @@ export default function DepartmentsPage() {
     },
     {
       id: "remaining_budget",
-      header: t.budgetRemaining,
+      header: "Budget Remaining",
       cell: ({ row }) => {
         const annual_budget = row.original.annual_budget;
         const totalBudget = annual_budget?.planned_budget || 0;
@@ -420,21 +415,14 @@ export default function DepartmentsPage() {
     },
     {
       id: "subsidy_requests",
-      header: t.requests,
+      header: "Requests",
       cell: () => (
         <span className="font-medium">0 {/* TODO: subsidy_requests não existe, implementar quando backend fornecer */}</span>
       ),
     },
-    // {
-    //   id: "efficiency",
-    //   header: t.efficiency,
-    //   cell: () => (
-    //     <Badge variant="outline" className="bg-gray-100 text-gray-700">N/A {/* TODO: efficiency não existe, implementar quando backend fornecer */}</Badge>
-    //   ),
-    // },
     {
       id: "actions",
-      header: t.actions,
+      header: "Actions",
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -445,7 +433,7 @@ export default function DepartmentsPage() {
           <DropdownMenuContent>
             <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
               <Edit className="w-4 h-4 mr-2" />
-              {t.editDepartment}
+              Edit Department
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleViewBudget(row.original.id)}>
               <DollarSign className="w-4 h-4 mr-2" />
@@ -453,7 +441,7 @@ export default function DepartmentsPage() {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
               <Trash2 className="w-4 h-4 mr-2" />
-              {t.deleteDepartment}
+              Delete Department
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -493,17 +481,17 @@ export default function DepartmentsPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
-              {t.departmentsTitle}
+              Church Departments
             </h2>
             <p className="text-muted-foreground text-0.875rem sm:text-1rem">
-              {t.departmentsSubtitle}
+              Manage church-level departments and ministries
             </p>
           </div>
           
           <div className="flex items-center gap-3">
             <Button onClick={handleCreate}>
               <Plus className="w-4 h-4 mr-2" />
-              {t.createDepartment}
+              Create Church Department
             </Button>
             
             <Button 
@@ -532,9 +520,9 @@ export default function DepartmentsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="w-5 h-5" />
-                {t.budgetUtilizationTrends}
+                Budget Utilization Trends
               </CardTitle>
-              <CardDescription>Orçamento anual vs. Utilizado vs. Disponível por departamento</CardDescription>
+              <CardDescription>Orçamento anual vs. Utilizado vs. Disponível por departamento de igreja</CardDescription>
             </CardHeader>
             <CardContent>
               <ChartContainer 
@@ -568,7 +556,7 @@ export default function DepartmentsPage() {
                   <Calendar className="w-5 h-5" />
                   Solicitações por Departamento
                 </CardTitle>
-                <CardDescription>Qual departamento tem solicitado mais subsídios</CardDescription>
+                <CardDescription>Qual departamento de igreja tem solicitado mais subsídios</CardDescription>
               </CardHeader>
               <CardContent>
                 <ChartContainer 
@@ -636,7 +624,7 @@ export default function DepartmentsPage() {
                 <TrendingUp className="w-5 h-5" />
                 Evolução do Orçamento por Departamento
               </CardTitle>
-              <CardDescription>Crescimento mensal do orçamento disponível por departamento</CardDescription>
+              <CardDescription>Crescimento mensal do orçamento disponível por departamento de igreja</CardDescription>
             </CardHeader>
             <CardContent>
               <ChartContainer 
@@ -671,20 +659,20 @@ export default function DepartmentsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Layers className="w-5 h-5" />
-              {t.departments}
+              Church Departments
             </CardTitle>
-            <CardDescription>Lista completa de departamentos com ações de gerenciamento</CardDescription>
+            <CardDescription>Lista completa de departamentos de igreja com ações de gerenciamento</CardDescription>
           </CardHeader>
           <CardContent className="overflow-hidden">
             <DataTable
               columns={columns}
               data={departments}
               searchKey="name"
-              searchPlaceholder={t.searchDepartments}
+              searchPlaceholder="Search church departments..."
               filterableColumns={[
                 {
                   id: "church",
-                  title: t.church,
+                  title: "Church",
                   options: [
                     { label: "Institutional", value: "institutional" },
                     ...churches.map(church => ({
@@ -694,27 +682,6 @@ export default function DepartmentsPage() {
                   ]
                 }
               ]}
-              // filterableColumns={[
-              //   {
-              //     id: "church",
-              //     title: t.church,
-              //     options: [
-              //       { label: "Igreja Central de São Paulo", value: "Igreja Central de São Paulo" },
-              //       { label: "Igreja de Vila Madalena", value: "Igreja de Vila Madalena" },
-              //       { label: "Igreja da Mooca", value: "Igreja da Mooca" },
-              //       { label: "Igreja de Campinas", value: "Igreja de Campinas" },
-              //       { label: "Igreja do Rio de Janeiro", value: "Igreja do Rio de Janeiro" },
-              //     ]
-              //   },
-              //   {
-              //     id: "status",
-              //     title: "Status",
-              //     options: [
-              //       { label: t.active, value: "active" },
-              //       { label: t.inactive, value: "inactive" },
-              //     ]
-              //   }
-              // ]}
             />
           </CardContent>
         </Card>

@@ -71,7 +71,7 @@ export function LoginHeader({
       <div className="flex justify-between items-start">
 
         {/* Controles de idioma e tema */}
-        <div className="flex gap-2 mr-4">
+        <div className="flex gap-2  px-4 sm:px-6 mr-4">
           {/* Seletor de idioma */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

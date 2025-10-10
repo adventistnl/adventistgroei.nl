@@ -162,7 +162,25 @@ const resources = {
         columns: "Columns",
         clear_filters: "Clear Filters",
         close: "Close",
-        upload: "Upload"
+        upload: "Upload",
+        active: "Active",
+        inactive: "Inactive"
+      },
+      kanban: {
+        dropItemHere: "Drop item here",
+        noItemsYet: "No items yet",
+        addFirstItem: "Add first item",
+        addNewGroup: "Add New Group", 
+        createNewGroup: "Create a new group",
+        createGroup: "Create Group",
+        createGroupDescription: "Fill in the details below to create a new group",
+        groupName: "Group Name",
+        groupNamePlaceholder: "e.g., In Progress, Completed",
+        groupDescription: "Description",
+        groupDescriptionPlaceholder: "Brief description of this group's purpose",
+        groupColor: "Color",
+        item: "item",
+        items: "items"
       },
       actions: {
         add_member: "Add Member",
@@ -1260,7 +1278,25 @@ const resources = {
         columns: "Kolommen",
         clear_filters: "Filters Wissen",
         close: "Sluiten",
-        upload: "Uploaden"
+        upload: "Uploaden",
+        active: "Actief",
+        inactive: "Inactief"
+      },
+      kanban: {
+        dropItemHere: "Item hier neerzetten",
+        noItemsYet: "Nog geen items",
+        addFirstItem: "Eerste item toevoegen",
+        addNewGroup: "Nieuwe Groep Toevoegen",
+        createNewGroup: "Maak een nieuwe groep",
+        createGroup: "Groep Maken",
+        createGroupDescription: "Vul de onderstaande gegevens in om een nieuwe groep te maken",
+        groupName: "Groepsnaam",
+        groupNamePlaceholder: "bijv. In Behandeling, Voltooid",
+        groupDescription: "Beschrijving",
+        groupDescriptionPlaceholder: "Korte beschrijving van het doel van deze groep",
+        groupColor: "Kleur",
+        item: "item",
+        items: "items"
       },
       actions: {
         add_member: "Lid Toevoegen",

@@ -167,37 +167,61 @@ function LoginPageContent() {
         
         {/* Colunas 1-6: Área de Login */}
         <div className="col-span-6 flex items-center justify-center p-8 sm:p-16">
-          <div className="w-full max-w-md space-y-8">
+          <div className="w-full max-w-xl space-y-8">
             
             {/* Header com Logo, Título e Controles */}
             <div className="text-center space-y-8">
               
               {/* Logo da Igreja centralizada sem background */}
-              <div className="flex justify-center">
-                <AdventistLogo className="w-16 h-16 text-primary" />
-              </div>
+
               
               {/* Título principal da Igreja */}
-              <div className="space-y-3">
-                <h1 className="text-3xl sm:text-4xl font-bold text-foreground leading-tight tracking-tight">
-                  {t.title}
-                </h1>
-                <p className="text-lg text-muted-foreground font-medium">
+              <div className="space-y-0.5">
+
+                <p className="text-muted-foreground font-medium mb-0.5" style={{ fontSize: 'clamp(1rem, 2.5vw, 1.25rem)' }}>
                   {t.subtitle}
                 </p>
+                <div className="flex justify-center items-center mb-1">
+                  {/* Logo visível apenas em desktop */}
+                  <div className="hidden sm:block text-primary mr-3" style={{ width: 'clamp(2.5rem, 3vw, 3rem)', height: 'clamp(2.5rem, 3vw, 3rem)' }}>
+                    <AdventistLogo className="w-full h-full text-primary" />
+                  </div>
+                  
+                  <h1 className="text-foreground leading-tight tracking-tight" style={{ fontSize: 'clamp(1.5rem, 3vw, 2rem)' }}>
+                  {currentLanguage === 'en' && (
+                    <>
+                      <span className="font-bold">Seventh-day</span>{' '}
+                      <span className="font-light">Adventist Church</span>
+                    </>
+                  )}
+                  {currentLanguage === 'nl' && (
+                    <>
+                      <span className="font-bold">Zevende-dags</span>{' '}
+                      <span className="font-light">Adventistenkerk</span>
+                    </>
+                  )}
+                  {currentLanguage === 'pt' && (
+                    <>
+                      <span className="font-bold">Igreja Adventista</span>{' '}
+                      <span className="font-light">do Sétimo Dia</span>
+                    </>
+                  )}
+                </h1>
+              </div>
+
               </div>
               
               {/* Header com controles de idioma e tema */}
-              <LoginHeader
+              {/* <LoginHeader
                 title=""
                 subtitle=""
                 languages={LANGUAGES}
                 currentLanguage={currentLanguage}
-              />
+              /> */}
             </div>
 
             {/* Formulário de Login */}
-            <div className="space-y-6">
+            <div className="space-y-6 px-4 sm:px-6">
               <form onSubmit={handleSubmit} className="space-y-6">
                 {error && (
                   <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
@@ -209,7 +233,7 @@ function LoginPageContent() {
                 
                 {/* Campo Email */}
                 <div className="space-y-3">
-                  <Label htmlFor="email" className="text-sm font-medium text-foreground">
+                  <Label htmlFor="email" className="font-medium text-foreground" style={{ fontSize: 'clamp(0.875rem, 2vw, 1rem)' }}>
                     {t.email}
                   </Label>
                   <div className="relative">
@@ -220,7 +244,11 @@ function LoginPageContent() {
                       placeholder={t.emailPlaceholder}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-12 h-12 text-base bg-background border-border focus:border-primary transition-all duration-200"
+                      className="pl-12 bg-background border-border focus:border-primary transition-all duration-200"
+                      style={{ 
+                        height: 'clamp(3rem, 6vh, 4rem)',
+                        fontSize: 'clamp(0.875rem, 2.5vw, 1.125rem)'
+                      }}
                       disabled={isSubmitting}
                       autoComplete="email"
                     />
@@ -229,7 +257,7 @@ function LoginPageContent() {
                 
                 {/* Campo Senha */}
                 <div className="space-y-3">
-                  <Label htmlFor="password" className="text-sm font-medium text-foreground">
+                  <Label htmlFor="password" className="font-medium text-foreground" style={{ fontSize: 'clamp(0.875rem, 2vw, 1rem)' }}>
                     {t.password}
                   </Label>
                   <div className="relative">
@@ -240,7 +268,11 @@ function LoginPageContent() {
                       placeholder={t.passwordPlaceholder}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-12 pr-12 h-12 text-base bg-background border-border focus:border-primary transition-all duration-200"
+                      className="pl-12 pr-12 bg-background border-border focus:border-primary transition-all duration-200"
+                      style={{ 
+                        height: 'clamp(3rem, 6vh, 4rem)',
+                        fontSize: 'clamp(0.875rem, 2.5vw, 1.125rem)'
+                      }}
                       disabled={isSubmitting}
                       autoComplete="current-password"
                     />
@@ -268,10 +300,12 @@ function LoginPageContent() {
                     checked={rememberMe}
                     onCheckedChange={(checked) => setRememberMe(checked === true)}
                     disabled={isSubmitting}
+                    className="border-gray-400 dark:border-gray-500 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />
                   <Label
                     htmlFor="remember-me"
-                    className="text-sm font-medium text-foreground cursor-pointer"
+                    className="font-medium text-foreground cursor-pointer"
+                    style={{ fontSize: 'clamp(0.875rem, 2vw, 1rem)' }}
                   >
                     {t.rememberMe}
                   </Label>
@@ -280,7 +314,11 @@ function LoginPageContent() {
                 {/* Botão de Login */}
                 <Button 
                   type="submit" 
-                  className="w-full h-12 text-base bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200" 
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 dark:bg-primary dark:hover:bg-primary/90 dark:text-primary-foreground" 
+                  style={{ 
+                    height: 'clamp(3rem, 6vh, 4rem)',
+                    fontSize: 'clamp(1rem, 2.5vw, 1.25rem)'
+                  }}
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
@@ -297,7 +335,8 @@ function LoginPageContent() {
               {/* Link Esqueceu Senha - Desabilitado por enquanto */}
               <div className="text-center">
                 <button 
-                  className="text-sm text-muted-foreground cursor-not-allowed opacity-50"
+                  className="text-muted-foreground cursor-not-allowed opacity-50"
+                  style={{ fontSize: 'clamp(0.875rem, 2vw, 1rem)' }}
                   disabled
                   title="Funcionalidade em desenvolvimento"
                 >
@@ -313,8 +352,8 @@ function LoginPageContent() {
         <div className="col-span-1 bg-gray-900 dark:bg-gray-950 relative overflow-hidden">
           {/* Logo centralizado no topo */}
           <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-20">
-            <div className="w-16 h-16 flex items-center justify-center shadow-lg">
-              <AdventistLogo className="w-6 h-6 text-gray-900" />
+            <div className="flex items-center justify-center" style={{ width: 'clamp(3rem, 8vw, 5rem)', height: 'clamp(3rem, 8vw, 5rem)' }}>
+              <AdventistLogo className="w-full h-full text-white" />
             </div>
           </div>
           
