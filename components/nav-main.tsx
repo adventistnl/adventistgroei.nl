@@ -44,54 +44,7 @@ export const NavMain = React.memo(function NavMain({ items }: NavMainProps) {
   )
 })
 
-// Componente recursivo para sub-itens que podem ter seus próprios sub-itens
-const NavSubItem = React.memo(function NavSubItem({ 
-  item 
-}: { 
-  item: NavItem 
-}) {
-  // Se o item não tem subitens, renderizar como link direto
-  if (!item.items || item.items.length === 0) {
-    return (
-      <SidebarMenuSubItem>
-        <SidebarMenuSubButton asChild isActive={item.isActive}>
-          <Link href={item.url}>
-            <span>{item.title}</span>
-          </Link>
-        </SidebarMenuSubButton>
-      </SidebarMenuSubItem>
-    )
-  }
-
-  // Renderizar com subitens aninhados
-  return (
-    <Collapsible
-      asChild
-      defaultOpen={item.isActive}
-      className="group/collapsible"
-    >
-      <SidebarMenuSubItem>
-        <CollapsibleTrigger asChild>
-          <SidebarMenuSubButton isActive={item.isActive}>
-            <span>{item.title}</span>
-            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 sidebar-icon" />
-          </SidebarMenuSubButton>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <SidebarMenuSub>
-            {item.items.map((subItem) => (
-              <WithPermission key={subItem.title} requiredPermissions={subItem.permissions}>
-                <NavSubItem item={subItem} />
-              </WithPermission>
-            ))}
-          </SidebarMenuSub>
-        </CollapsibleContent>
-      </SidebarMenuSubItem>
-    </Collapsible>
-  )
-})
-
-// Componente memoizado para cada item principal
+// Componente memoizado para cada item
 const NavMainItem = React.memo(function NavMainItem({ 
   item 
 }: { 
@@ -105,7 +58,6 @@ const NavMainItem = React.memo(function NavMainItem({
       setOpen(true)
     }
   }, [state, item.items, setOpen])
-  
   // Se o item não tem subitens, renderizar como link direto
   if (!item.items || item.items.length === 0) {
     return (
@@ -143,7 +95,13 @@ const NavMainItem = React.memo(function NavMainItem({
           <SidebarMenuSub>
             {item.items.map((subItem) => (
               <WithPermission key={subItem.title} requiredPermissions={subItem.permissions}>
-                <NavSubItem item={subItem} />
+                <SidebarMenuSubItem>
+                  <SidebarMenuSubButton asChild isActive={subItem.isActive}>
+                    <Link href={subItem.url}>
+                      <span>{subItem.title}</span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
               </WithPermission>
             ))}
           </SidebarMenuSub>
