@@ -1,0 +1,179 @@
+{
+  "annual_budget": {
+    "title": "Annual Budget Management",
+    "subtitle": "Manage budget requests and approvals across all organizational entities",
+    "buttons": {
+      "new_budget_request": "New Budget Request",
+      "refresh": "Refresh",
+      "add_year": "Add Year"
+    },
+    "year_filter": {
+      "title": "Budget Year",
+      "subtitle_single": "{{count}} request for {{year}}",
+      "subtitle_plural": "{{count}} requests for {{year}}"
+    },
+    "kpi_cards": {
+      "total_requests": {
+        "title": "Total Requests",
+        "subtitle": "Budget requests submitted",
+        "trend": "vs. last quarter"
+      },
+      "total_requested": {
+        "title": "Total Requested",
+        "subtitle": "Amount requested",
+        "trend": "vs. last quarter"
+      },
+      "total_approved": {
+        "title": "Total Approved", 
+        "subtitle": "Amount approved",
+        "trend": "vs. last quarter"
+      },
+      "pending_review": {
+        "title": "Pending Review",
+        "subtitle": "Awaiting approval",
+        "trend": "vs. last week"
+      },
+      "approval_rate": {
+        "title": "Approval Rate",
+        "subtitle": "Success rate",
+        "trend": "vs. last quarter"
+      }
+    },
+    "charts": {
+      "spending_over_time": {
+        "title": "Entity Spending Over Time",
+        "subtitle": "Monthly spending by each organizational entity for {{year}}",
+        "time_ranges": {
+          "12m": "Last 12 months",
+          "6m": "Last 6 months", 
+          "3m": "Last 3 months"
+        }
+      },
+      "requests_by_status": {
+        "title": "Requests by Status",
+        "subtitle": "Status distribution for {{year}}"
+      },
+      "budget_distribution": {
+        "title": "Budget Distribution {{year}}",
+        "subtitle": "Total budget allocation and usage",
+        "footer": "Budget utilization tracking",
+        "footer_subtitle": "Showing budget usage for {{year}}"
+      },
+      "entity_spending": {
+        "title": "Entity Spending Limits",
+        "subtitle": "Approved vs spent amounts by entity"
+      }
+    },
+    "table": {
+      "title": "Budget Requests",
+      "subtitle": "Manage and review budget requests from all organizational entities", 
+      "headers": {
+        "entity": "Entity",
+        "amount": "Requested Amount",
+        "status": "Status", 
+        "priority": "Priority",
+        "category": "Category",
+        "submitted": "Submitted",
+        "actions": "Actions"
+      },
+      "search_placeholder": "Search budget requests...",
+      "filters": {
+        "status": "Status",
+        "entity_type": "Entity Type",
+        "category": "Category"
+      }
+    },
+    "kanban": {
+      "title": "Budget Requests - Kanban View",
+      "subtitle": "Drag and drop interface to manage budget request workflow"
+    },
+    "view_toggle": {
+      "table": "Table",
+      "kanban": "Kanban"
+    },
+    "statuses": {
+      "pending": "Pending",
+      "under_review": "Under Review", 
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "requires_revision": "Needs Revision"
+    },
+    "priorities": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High", 
+      "urgent": "Urgent"
+    },
+    "categories": {
+      "operational": "Operational",
+      "project": "Project",
+      "expansion": "Expansion",
+      "maintenance": "Maintenance",
+      "emergency": "Emergency"
+    },
+    "entity_types": {
+      "church": "Church",
+      "department": "Department", 
+      "region": "Region",
+      "institution": "Institution"
+    },
+    "actions": {
+      "review_request": "Review Request",
+      "quick_approve": "Quick Approve",
+      "request_revision": "Request Revision",
+      "edit_request": "Edit Request",
+      "approve": "Approve",
+      "reject": "Reject",
+      "close": "Close"
+    },
+    "modals": {
+      "create_request": {
+        "title": "Create Budget Request",
+        "subtitle": "Submit a new budget request for organizational review and approval",
+        "fields": {
+          "entity_type": "Entity Type",
+          "entity_name": "Entity Name",
+          "year": "Budget Year",
+          "amount": "Requested Amount ($)",
+          "priority": "Priority",
+          "category": "Category",
+          "description": "Description",
+          "justification": "Justification"
+        },
+        "placeholders": {
+          "entity_name": "e.g., Central Church São Paulo",
+          "amount": "e.g., 125000",
+          "description": "Brief description of the budget request",
+          "justification": "Detailed justification for this budget request"
+        },
+        "buttons": {
+          "cancel": "Cancel",
+          "submit": "Submit Request"
+        }
+      },
+      "review_request": {
+        "title": "Review Budget Request",
+        "labels": {
+          "requested_amount": "Requested Amount",
+          "status": "Status",
+          "submitted": "Submitted",
+          "notes": "Review Notes"
+        }
+      }
+    },
+    "messages": {
+      "refreshing": "Refreshing budget requests...",
+      "refresh_success": "Budget requests refreshed successfully",
+      "refresh_error": "Error refreshing budget requests",
+      "request_submitted": "Budget request submitted successfully",
+      "request_approved": "Budget request approved successfully",
+      "request_rejected": "Budget request rejected",
+      "revision_requested": "Revision requested successfully",
+      "status_updated": "Request status updated successfully",
+      "year_added": "Year {{year}} added successfully",
+      "year_exists": "This year already exists",
+      "year_limit": "Cannot add years beyond {{year}}",
+      "required_fields": "Please fill in all required fields"
+    }
+  }
+}

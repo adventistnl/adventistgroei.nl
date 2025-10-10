@@ -76,9 +76,14 @@ export interface KanbanBoardProps {
    */
   onItemMove?: (itemId: string, fromGroupId: string, toGroupId: string) => void
   /**
-   * Custom render function for item cards
+   * Custom render function for item cards - receives drag handlers as third parameter
    */
-  renderItem?: (item: KanbanItem, group: KanbanGroup) => ReactNode
+  renderItem?: (item: KanbanItem, group: KanbanGroup, dragHandlers?: {
+    onDragStart: (e: React.DragEvent) => void
+    onDragEnd: (e: React.DragEvent) => void
+    draggable: boolean
+    className?: string
+  }) => ReactNode
   /**
    * Custom render function for group headers
    */
@@ -179,6 +184,7 @@ export function KanbanBoard({
     if (!enableDragDrop) return
     e.preventDefault()
     setDragOverGroupId(null)
+    setDraggingItemId(null)
     
     try {
       const data = JSON.parse(e.dataTransfer.getData('text/plain'))
@@ -481,9 +487,18 @@ export function KanbanBoard({
                     {/* Container for items - full width cards in vertical layout with more internal spacing */}
                     <div className="space-y-3 max-h-96 overflow-y-auto px-2">
                       {groupItems.length > 0 ? (
-                        groupItems.map((item) => (
-                          renderItem ? renderItem(item, group) : defaultRenderItem(item, group)
-                        ))
+                        groupItems.map((item) => {
+                          if (renderItem) {
+                            const dragHandlers = enableDragDrop ? {
+                              onDragStart: (e: React.DragEvent) => handleDragStart(e, item),
+                              onDragEnd: handleDragEnd,
+                              draggable: true,
+                              className: draggingItemId === item.id ? 'rotate-2 scale-105 shadow-lg' : ''
+                            } : undefined
+                            return renderItem(item, group, dragHandlers)
+                          }
+                          return defaultRenderItem(item, group)
+                        })
                       ) : (
                         renderEmptyGroup ? renderEmptyGroup(group) : defaultRenderEmptyGroup(group)
                       )}

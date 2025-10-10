@@ -1,0 +1,179 @@
+{
+  "annual_budget": {
+    "title": "Gestão de Orçamento Anual",
+    "subtitle": "Gerencie solicitações de orçamento e aprovações em todas as entidades organizacionais",
+    "buttons": {
+      "new_budget_request": "Nova Solicitação de Orçamento",
+      "refresh": "Atualizar",
+      "add_year": "Adicionar Ano"
+    },
+    "year_filter": {
+      "title": "Ano do Orçamento",
+      "subtitle_single": "{{count}} solicitação para {{year}}",
+      "subtitle_plural": "{{count}} solicitações para {{year}}"
+    },
+    "kpi_cards": {
+      "total_requests": {
+        "title": "Total de Solicitações",
+        "subtitle": "Solicitações de orçamento enviadas",
+        "trend": "vs. último trimestre"
+      },
+      "total_requested": {
+        "title": "Total Solicitado",
+        "subtitle": "Valor solicitado",
+        "trend": "vs. último trimestre"
+      },
+      "total_approved": {
+        "title": "Total Aprovado",
+        "subtitle": "Valor aprovado",
+        "trend": "vs. último trimestre"
+      },
+      "pending_review": {
+        "title": "Aguardando Revisão",
+        "subtitle": "Aguardando aprovação",
+        "trend": "vs. última semana"
+      },
+      "approval_rate": {
+        "title": "Taxa de Aprovação",
+        "subtitle": "Taxa de sucesso",
+        "trend": "vs. último trimestre"
+      }
+    },
+    "charts": {
+      "spending_over_time": {
+        "title": "Gastos por Entidade ao Longo do Tempo",
+        "subtitle": "Gastos mensais por cada entidade organizacional para {{year}}",
+        "time_ranges": {
+          "12m": "Últimos 12 meses",
+          "6m": "Últimos 6 meses",
+          "3m": "Últimos 3 meses"
+        }
+      },
+      "requests_by_status": {
+        "title": "Solicitações por Status",
+        "subtitle": "Distribuição de status para {{year}}"
+      },
+      "budget_distribution": {
+        "title": "Distribuição do Orçamento {{year}}",
+        "subtitle": "Alocação e uso total do orçamento",
+        "footer": "Acompanhamento da utilização do orçamento",
+        "footer_subtitle": "Mostrando uso do orçamento para {{year}}"
+      },
+      "entity_spending": {
+        "title": "Limites de Gastos por Entidade",
+        "subtitle": "Valores aprovados vs gastos por entidade"
+      }
+    },
+    "table": {
+      "title": "Solicitações de Orçamento",
+      "subtitle": "Gerencie e revise solicitações de orçamento de todas as entidades organizacionais",
+      "headers": {
+        "entity": "Entidade",
+        "amount": "Valor Solicitado",
+        "status": "Status",
+        "priority": "Prioridade", 
+        "category": "Categoria",
+        "submitted": "Enviado",
+        "actions": "Ações"
+      },
+      "search_placeholder": "Buscar solicitações de orçamento...",
+      "filters": {
+        "status": "Status",
+        "entity_type": "Tipo de Entidade",
+        "category": "Categoria"
+      }
+    },
+    "kanban": {
+      "title": "Solicitações de Orçamento - Visão Kanban",
+      "subtitle": "Interface de arrastar e soltar para gerenciar fluxo de trabalho de solicitações"
+    },
+    "view_toggle": {
+      "table": "Tabela",
+      "kanban": "Kanban"
+    },
+    "statuses": {
+      "pending": "Pendente",
+      "under_review": "Em Revisão",
+      "approved": "Aprovado",
+      "rejected": "Rejeitado",
+      "requires_revision": "Requer Revisão"
+    },
+    "priorities": {
+      "low": "Baixa",
+      "medium": "Média",
+      "high": "Alta",
+      "urgent": "Urgente"
+    },
+    "categories": {
+      "operational": "Operacional",
+      "project": "Projeto",
+      "expansion": "Expansão",
+      "maintenance": "Manutenção",
+      "emergency": "Emergência"
+    },
+    "entity_types": {
+      "church": "Igreja",
+      "department": "Departamento",
+      "region": "Região",
+      "institution": "Instituição"
+    },
+    "actions": {
+      "review_request": "Revisar Solicitação",
+      "quick_approve": "Aprovar Rapidamente",
+      "request_revision": "Solicitar Revisão",
+      "edit_request": "Editar Solicitação",
+      "approve": "Aprovar",
+      "reject": "Rejeitar",
+      "close": "Fechar"
+    },
+    "modals": {
+      "create_request": {
+        "title": "Criar Solicitação de Orçamento",
+        "subtitle": "Envie uma nova solicitação de orçamento para revisão e aprovação organizacional",
+        "fields": {
+          "entity_type": "Tipo de Entidade",
+          "entity_name": "Nome da Entidade",
+          "year": "Ano do Orçamento",
+          "amount": "Valor Solicitado (R$)",
+          "priority": "Prioridade",
+          "category": "Categoria",
+          "description": "Descrição",
+          "justification": "Justificativa"
+        },
+        "placeholders": {
+          "entity_name": "ex., Igreja Central São Paulo",
+          "amount": "ex., 125000",
+          "description": "Breve descrição da solicitação de orçamento",
+          "justification": "Justificativa detalhada para esta solicitação de orçamento"
+        },
+        "buttons": {
+          "cancel": "Cancelar",
+          "submit": "Enviar Solicitação"
+        }
+      },
+      "review_request": {
+        "title": "Revisar Solicitação de Orçamento",
+        "labels": {
+          "requested_amount": "Valor Solicitado",
+          "status": "Status",
+          "submitted": "Enviado",
+          "notes": "Notas de Revisão"
+        }
+      }
+    },
+    "messages": {
+      "refreshing": "Atualizando solicitações de orçamento...",
+      "refresh_success": "Solicitações de orçamento atualizadas com sucesso",
+      "refresh_error": "Erro ao atualizar solicitações de orçamento",
+      "request_submitted": "Solicitação de orçamento enviada com sucesso",
+      "request_approved": "Solicitação de orçamento aprovada com sucesso",
+      "request_rejected": "Solicitação de orçamento rejeitada",
+      "revision_requested": "Revisão solicitada com sucesso",
+      "status_updated": "Status da solicitação atualizado com sucesso",
+      "year_added": "Ano {{year}} adicionado com sucesso",
+      "year_exists": "Este ano já existe",
+      "year_limit": "Não é possível adicionar anos além de {{year}}",
+      "required_fields": "Por favor, preencha todos os campos obrigatórios"
+    }
+  }
+}

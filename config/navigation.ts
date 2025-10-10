@@ -68,6 +68,15 @@ const navMainBase: NavItem[] = [
     ],
     permissions:[]
   },
+    {
+    title: "Finance Management",
+    url: "#",
+    icon: DollarSign,
+    items: [
+      { title: "Annual Budget", url: "/finance/annual-budget", permissions: [PermissionResolverName.Settings] },
+    ],
+    permissions: []
+  },
   {
     title: "Users & Access",
     url: "#",
@@ -89,6 +98,7 @@ const navMainBase: NavItem[] = [
   //     { title: "Receipts", url: "/subsidies/receipts" },
   //   ],
   // },
+
   {
     title: "Reports & Projects",
     url: "#",
