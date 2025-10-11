@@ -18,6 +18,7 @@ export const LOGIN_MUTATION = gql`
                 group
                 data {
                     name
+                    resolver_name
                 }
             }
         }

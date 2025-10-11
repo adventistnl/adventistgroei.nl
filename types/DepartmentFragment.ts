@@ -37,8 +37,9 @@ export interface DepartmentFragment_church {
   name: string;
 }
 
-export interface DepartmentFragment_annual_budget {
+export interface DepartmentFragment_annual_budgets {
   __typename: "AnnualBudget";
+  year: number;
   planned_budget: any;
   total_expenses: any;
 }
@@ -65,6 +66,6 @@ export interface DepartmentFragment {
   deleted_by: string | null;
   contact: DepartmentFragment_contact | null;
   church: DepartmentFragment_church | null;
-  annual_budget: DepartmentFragment_annual_budget | null;
+  annual_budgets: DepartmentFragment_annual_budgets[] | null;
   users: DepartmentFragment_users[] | null;
 }

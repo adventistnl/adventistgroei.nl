@@ -78,7 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data && data.login && data.login.accessToken && data.login.user) {
         const accessToken = data.login.accessToken;
         const permissions = data.login.user.user_roles.flatMap((role: RoleModel) =>
-          role.permissions.flatMap((group: { data: { name: string }[] }) => group.data.map((perm) => perm.name))
+          role.permissions.flatMap((group: { data: { resolver_name: string }[] }) => group.data.map((perm) => perm.resolver_name))
         );
 
         // Armazenar user no localStorage

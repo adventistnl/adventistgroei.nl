@@ -42,8 +42,9 @@ export interface RegionFragment_institution {
   name: string;
 }
 
-export interface RegionFragment_annual_budget {
+export interface RegionFragment_annual_budgets {
   __typename: "AnnualBudget";
+  year: number;
   planned_budget: any;
   total_expenses: any;
 }
@@ -57,7 +58,7 @@ export interface RegionFragment {
   contact: RegionFragment_contact | null;
   churches: RegionFragment_churches[] | null;
   institution: RegionFragment_institution;
-  annual_budget: RegionFragment_annual_budget | null;
+  annual_budgets: RegionFragment_annual_budgets[] | null;
   created_at: any;
   updated_at: any;
   created_by: string;

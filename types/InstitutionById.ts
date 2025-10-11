@@ -173,8 +173,9 @@ export interface InstitutionById_institution_regions_institution {
   name: string;
 }
 
-export interface InstitutionById_institution_regions_annual_budget {
+export interface InstitutionById_institution_regions_annual_budgets {
   __typename: "AnnualBudget";
+  year: number;
   planned_budget: any;
   total_expenses: any;
 }
@@ -188,7 +189,7 @@ export interface InstitutionById_institution_regions {
   contact: InstitutionById_institution_regions_contact | null;
   churches: InstitutionById_institution_regions_churches[] | null;
   institution: InstitutionById_institution_regions_institution;
-  annual_budget: InstitutionById_institution_regions_annual_budget | null;
+  annual_budgets: InstitutionById_institution_regions_annual_budgets[] | null;
   created_at: any;
   updated_at: any;
   created_by: string;
@@ -222,8 +223,9 @@ export interface InstitutionById_institution_churches_contact {
   deleted_by: string | null;
 }
 
-export interface InstitutionById_institution_churches_annual_budget {
+export interface InstitutionById_institution_churches_annual_budgets {
   __typename: "AnnualBudget";
+  year: number;
   planned_budget: any;
   total_expenses: any;
 }
@@ -259,7 +261,7 @@ export interface InstitutionById_institution_churches {
   deleted_at: any | null;
   deleted_by: string | null;
   contact: InstitutionById_institution_churches_contact | null;
-  annual_budget: InstitutionById_institution_churches_annual_budget | null;
+  annual_budgets: InstitutionById_institution_churches_annual_budgets[] | null;
   departments: InstitutionById_institution_churches_departments[] | null;
   region: InstitutionById_institution_churches_region;
   users: InstitutionById_institution_churches_users[] | null;
@@ -295,8 +297,9 @@ export interface InstitutionById_institution_departments_church {
   name: string;
 }
 
-export interface InstitutionById_institution_departments_annual_budget {
+export interface InstitutionById_institution_departments_annual_budgets {
   __typename: "AnnualBudget";
+  year: number;
   planned_budget: any;
   total_expenses: any;
 }
@@ -323,7 +326,7 @@ export interface InstitutionById_institution_departments {
   deleted_by: string | null;
   contact: InstitutionById_institution_departments_contact | null;
   church: InstitutionById_institution_departments_church | null;
-  annual_budget: InstitutionById_institution_departments_annual_budget | null;
+  annual_budgets: InstitutionById_institution_departments_annual_budgets[] | null;
   users: InstitutionById_institution_departments_users[] | null;
 }
 

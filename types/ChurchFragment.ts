@@ -31,8 +31,9 @@ export interface ChurchFragment_contact {
   deleted_by: string | null;
 }
 
-export interface ChurchFragment_annual_budget {
+export interface ChurchFragment_annual_budgets {
   __typename: "AnnualBudget";
+  year: number;
   planned_budget: any;
   total_expenses: any;
 }
@@ -68,7 +69,7 @@ export interface ChurchFragment {
   deleted_at: any | null;
   deleted_by: string | null;
   contact: ChurchFragment_contact | null;
-  annual_budget: ChurchFragment_annual_budget | null;
+  annual_budgets: ChurchFragment_annual_budgets[] | null;
   departments: ChurchFragment_departments[] | null;
   region: ChurchFragment_region;
   users: ChurchFragment_users[] | null;

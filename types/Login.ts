@@ -10,6 +10,7 @@
 export interface Login_login_user_user_roles_permissions_data {
   __typename: "PermissionModel";
   name: string;
+  resolver_name: string;
 }
 
 export interface Login_login_user_user_roles_permissions {

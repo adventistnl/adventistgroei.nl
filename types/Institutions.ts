@@ -173,8 +173,9 @@ export interface Institutions_institutions_regions_institution {
   name: string;
 }
 
-export interface Institutions_institutions_regions_annual_budget {
+export interface Institutions_institutions_regions_annual_budgets {
   __typename: "AnnualBudget";
+  year: number;
   planned_budget: any;
   total_expenses: any;
 }
@@ -188,7 +189,7 @@ export interface Institutions_institutions_regions {
   contact: Institutions_institutions_regions_contact | null;
   churches: Institutions_institutions_regions_churches[] | null;
   institution: Institutions_institutions_regions_institution;
-  annual_budget: Institutions_institutions_regions_annual_budget | null;
+  annual_budgets: Institutions_institutions_regions_annual_budgets[] | null;
   created_at: any;
   updated_at: any;
   created_by: string;
@@ -222,8 +223,9 @@ export interface Institutions_institutions_churches_contact {
   deleted_by: string | null;
 }
 
-export interface Institutions_institutions_churches_annual_budget {
+export interface Institutions_institutions_churches_annual_budgets {
   __typename: "AnnualBudget";
+  year: number;
   planned_budget: any;
   total_expenses: any;
 }
@@ -259,7 +261,7 @@ export interface Institutions_institutions_churches {
   deleted_at: any | null;
   deleted_by: string | null;
   contact: Institutions_institutions_churches_contact | null;
-  annual_budget: Institutions_institutions_churches_annual_budget | null;
+  annual_budgets: Institutions_institutions_churches_annual_budgets[] | null;
   departments: Institutions_institutions_churches_departments[] | null;
   region: Institutions_institutions_churches_region;
   users: Institutions_institutions_churches_users[] | null;
@@ -295,8 +297,9 @@ export interface Institutions_institutions_departments_church {
   name: string;
 }
 
-export interface Institutions_institutions_departments_annual_budget {
+export interface Institutions_institutions_departments_annual_budgets {
   __typename: "AnnualBudget";
+  year: number;
   planned_budget: any;
   total_expenses: any;
 }
@@ -323,7 +326,7 @@ export interface Institutions_institutions_departments {
   deleted_by: string | null;
   contact: Institutions_institutions_departments_contact | null;
   church: Institutions_institutions_departments_church | null;
-  annual_budget: Institutions_institutions_departments_annual_budget | null;
+  annual_budgets: Institutions_institutions_departments_annual_budgets[] | null;
   users: Institutions_institutions_departments_users[] | null;
 }
 

@@ -122,6 +122,14 @@ export const USER_FRAGMENT = gql`
   }
 `;
 
+export const ANNUAL_BUDGET_FRAGMENT = gql`
+  fragment AnnualBudgetFragment on AnnualBudget {
+    year
+    planned_budget
+    total_expenses
+  }
+`;
+
 export const REGION_FRAGMENT = gql`
   fragment RegionFragment on Region {
     id
@@ -138,9 +146,8 @@ export const REGION_FRAGMENT = gql`
       id
       name
     }
-    annual_budget {
-      planned_budget
-      total_expenses
+    annual_budgets {
+      ...AnnualBudgetFragment
     }
     created_at
     updated_at
@@ -169,9 +176,8 @@ export const CHURCH_FRAGMENT = gql`
     contact {
       ...ContactFragment
     }
-    annual_budget {
-      planned_budget
-      total_expenses
+    annual_budgets {
+      ...AnnualBudgetFragment
     }
     departments {
       id
@@ -208,9 +214,8 @@ export const DEPARTMENT_FRAGMENT = gql`
       id
       name
     }
-    annual_budget {
-      planned_budget
-      total_expenses
+    annual_budgets {
+      ...AnnualBudgetFragment
     }
     users {
       id
@@ -270,4 +275,5 @@ export const INSTITUTION_FRAGMENT = gql`
   ${REGION_FRAGMENT}
   ${CHURCH_FRAGMENT}
   ${DEPARTMENT_FRAGMENT}
+  ${ANNUAL_BUDGET_FRAGMENT}
 `;

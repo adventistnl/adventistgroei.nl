@@ -173,8 +173,9 @@ export interface InstitutionFragment_regions_institution {
   name: string;
 }
 
-export interface InstitutionFragment_regions_annual_budget {
+export interface InstitutionFragment_regions_annual_budgets {
   __typename: "AnnualBudget";
+  year: number;
   planned_budget: any;
   total_expenses: any;
 }
@@ -188,7 +189,7 @@ export interface InstitutionFragment_regions {
   contact: InstitutionFragment_regions_contact | null;
   churches: InstitutionFragment_regions_churches[] | null;
   institution: InstitutionFragment_regions_institution;
-  annual_budget: InstitutionFragment_regions_annual_budget | null;
+  annual_budgets: InstitutionFragment_regions_annual_budgets[] | null;
   created_at: any;
   updated_at: any;
   created_by: string;
@@ -222,8 +223,9 @@ export interface InstitutionFragment_churches_contact {
   deleted_by: string | null;
 }
 
-export interface InstitutionFragment_churches_annual_budget {
+export interface InstitutionFragment_churches_annual_budgets {
   __typename: "AnnualBudget";
+  year: number;
   planned_budget: any;
   total_expenses: any;
 }
@@ -259,7 +261,7 @@ export interface InstitutionFragment_churches {
   deleted_at: any | null;
   deleted_by: string | null;
   contact: InstitutionFragment_churches_contact | null;
-  annual_budget: InstitutionFragment_churches_annual_budget | null;
+  annual_budgets: InstitutionFragment_churches_annual_budgets[] | null;
   departments: InstitutionFragment_churches_departments[] | null;
   region: InstitutionFragment_churches_region;
   users: InstitutionFragment_churches_users[] | null;
@@ -295,8 +297,9 @@ export interface InstitutionFragment_departments_church {
   name: string;
 }
 
-export interface InstitutionFragment_departments_annual_budget {
+export interface InstitutionFragment_departments_annual_budgets {
   __typename: "AnnualBudget";
+  year: number;
   planned_budget: any;
   total_expenses: any;
 }
@@ -323,7 +326,7 @@ export interface InstitutionFragment_departments {
   deleted_by: string | null;
   contact: InstitutionFragment_departments_contact | null;
   church: InstitutionFragment_departments_church | null;
-  annual_budget: InstitutionFragment_departments_annual_budget | null;
+  annual_budgets: InstitutionFragment_departments_annual_budgets[] | null;
   users: InstitutionFragment_departments_users[] | null;
 }
 
