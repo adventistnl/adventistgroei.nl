@@ -65,7 +65,7 @@ import { CreateChurch } from "@/types/CreateChurch"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
-
+import { ChurchType as ChurchTypeEnum } from "@/types/graphql-global-types"
 // Dados reais de igrejas virão do contexto da instituição
 
 // Mock data para departamentos por igreja
@@ -141,7 +141,12 @@ export default function ChurchesPage() {
   // Obter traduções para o idioma atual
   const currentLanguage = i18n?.language || 'en'
   const t = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
-
+  const typeListParse: Record<ChurchTypeEnum, string> = {
+    STANDARD: t.standard,
+    PLANT: t.small,
+    COMPANY: t.company,
+       
+  }
   const breadcrumbs = useMemo(() => [
     { name: "Structure & Organization" },
     { name: t.churches }
@@ -499,6 +504,16 @@ export default function ChurchesPage() {
       cell: ({ row }) => (
         <Badge variant={row.original.is_deleted === false ? 'default' : 'secondary'}>
           {row.original.is_deleted === true ? t.inactive : t.active}
+        </Badge>
+      ),
+    },
+    {
+      id: "type",
+      accessorKey: "type",
+      header: "Type",
+      cell: ({ row }) => (
+        <Badge variant={'default'}>
+          {typeListParse[row.original.type as ChurchTypeEnum] || row.original.type}
         </Badge>
       ),
     },

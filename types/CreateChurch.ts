@@ -3,6 +3,8 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { ChurchType } from "./globalTypes";
+
 // ====================================================
 // GraphQL mutation operation: CreateChurch
 // ====================================================
@@ -24,4 +26,5 @@ export interface CreateChurchVariables {
   phone: string;
   contactName: string;
   city: string;
+  type?: ChurchType | null;
 }

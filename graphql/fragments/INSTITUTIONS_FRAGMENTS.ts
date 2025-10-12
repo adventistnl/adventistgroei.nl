@@ -173,6 +173,7 @@ export const CHURCH_FRAGMENT = gql`
     is_deleted
     deleted_at
     deleted_by
+    type
     contact {
       ...ContactFragment
     }

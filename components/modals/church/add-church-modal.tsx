@@ -47,6 +47,7 @@ import { churchTranslations } from "@/lib/translations/churches"
 import { useChurches } from "@/hooks/use-churches"
 import { CreateChurch, CreateChurchVariables } from "@/types/CreateChurch"
 import { cn } from "@/lib/utils"
+import { ChurchType } from "@/types/graphql-global-types"
 
 export interface ChurchData {
   id: string
@@ -119,9 +120,17 @@ export function AddChurchModal({
     phone: '',
     email: '',
     city: '',
+    type: ChurchType.Standard, // Tipo padrão
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [openRegion, setOpenRegion] = useState(false)
+  const [openType, setOpenType] = useState(false)
+
+  const typeList = [
+    { value: ChurchType.Standard, label: 'Standard' },
+    { value: ChurchType.Company, label: 'Company' },
+    { value: ChurchType.Plant, label: 'Plant' },
+  ]
 
   const totalSteps = 2
 
@@ -135,6 +144,7 @@ export function AddChurchModal({
         phone: '',
         email: '',
         city: '',
+        type: ChurchType.Standard, // Tipo padrão
       })
       setErrors({})
       setCurrentStep(1)
@@ -229,7 +239,8 @@ export function AddChurchModal({
         city: formData.city,
         email: formData.email,
         phone: formData.phone,
-        contactName: formData.contactName
+        contactName: formData.contactName,
+        type: formData.type,
       }
       const res = await createChurch({ variables })
       if (!res || !res.data) {
@@ -278,7 +289,7 @@ export function AddChurchModal({
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
               <h3 className="text-lg font-medium text-foreground">Basic Information</h3>
-              <p className="text-sm text-muted-foreground">Enter the church name and select the region</p>
+              <p className="text-sm text-muted-foreground">Enter the church name, select the region, and type</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
@@ -356,6 +367,63 @@ export function AddChurchModal({
                 </Popover>
                 {errors.region_id && (
                   <p className="text-sm text-red-600">{errors.region_id}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="type" className="flex items-center gap-2 text-sm">
+                  <Building className="w-4 h-4 text-muted-foreground" />
+                  Church Type *
+                </Label>
+                <Popover open={openType} onOpenChange={setOpenType}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openType}
+                      className={cn(
+                        "w-full h-10 justify-between font-normal",
+                        !formData.type && "text-muted-foreground",
+                        errors.type && "border-red-500"
+                      )}
+                      disabled={isLoading}
+                    >
+                      {formData.type || "Select type"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search type..." />
+                      <CommandList>
+                        <CommandEmpty>No type found.</CommandEmpty>
+                        <CommandGroup>
+                          {typeList.map((type) => (
+                            <CommandItem
+                              key={type.label}
+                              aria-placeholder={type.label}
+                              value={type.value}
+                              onSelect={() => {
+                                handleInputChange('type', type.value)
+                                setOpenType(false)
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  (formData.type ?? ChurchType.Standard) === type.value ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {type.label}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                {errors.type && (
+                  <p className="text-sm text-red-600">{errors.type}</p>
                 )}
               </div>
             </div>

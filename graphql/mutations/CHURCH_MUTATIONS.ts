@@ -9,12 +9,14 @@ export const CREATE_CHURCH_MUTATION = gql`
     $phone: String!
     $contactName: String!
     $city: String!
+    $type: ChurchType
   ) {
     createChurch(
       data: {
         institution_id: $institution_id
         name: $name
         region_id: $region_id
+        type: $type
         contact: {
           email: $email
           phone: $phone

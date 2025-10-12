@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { LanguagePreference, ProjectType } from "./globalTypes";
+import { LanguagePreference, ProjectType, ChurchType } from "./globalTypes";
 
 // ====================================================
 // GraphQL query operation: InstitutionById
@@ -260,6 +260,7 @@ export interface InstitutionById_institution_churches {
   is_deleted: boolean;
   deleted_at: any | null;
   deleted_by: string | null;
+  type: ChurchType;
   contact: InstitutionById_institution_churches_contact | null;
   annual_budgets: InstitutionById_institution_churches_annual_budgets[] | null;
   departments: InstitutionById_institution_churches_departments[] | null;

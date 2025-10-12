@@ -7,6 +7,12 @@
 // START Enums and Input Objects
 //==============================================================
 
+export enum ChurchType {
+  COMPANY = "COMPANY",
+  PLANT = "PLANT",
+  STANDARD = "STANDARD",
+}
+
 /**
  * Idioma preferencial do usuário
  */

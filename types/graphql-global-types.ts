@@ -177,6 +177,7 @@ export type Church = {
   region: Region;
   region_id: Scalars['String']['output'];
   subsidy_requests?: Maybe<Array<SubsidyRequest>>;
+  type: ChurchType;
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
   users?: Maybe<Array<User>>;
@@ -196,6 +197,7 @@ export type ChurchCreateDto = {
   institution_id: Scalars['String']['input'];
   name: Scalars['String']['input'];
   region_id: Scalars['String']['input'];
+  type?: InputMaybe<ChurchType>;
 };
 
 export type ChurchModel = {
@@ -214,6 +216,12 @@ export type ChurchModel = {
   updated_by: Scalars['String']['output'];
 };
 
+export enum ChurchType {
+  Company = 'COMPANY',
+  Plant = 'PLANT',
+  Standard = 'STANDARD'
+}
+
 export type ChurchUpdateDto = {
   annual_budget?: InputMaybe<AnnualBudgetUpdateDto>;
   contact?: InputMaybe<ContactCreateDto>;
@@ -222,6 +230,7 @@ export type ChurchUpdateDto = {
   name: Scalars['String']['input'];
   region_id: Scalars['String']['input'];
   subsidy_requests?: InputMaybe<Array<Scalars['String']['input']>>;
+  type?: InputMaybe<ChurchType>;
   users?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
@@ -606,7 +615,7 @@ export enum EventType {
 export type Institution = {
   __typename?: 'Institution';
   _count: InstitutionCount;
-  annual_budgets?: Maybe<Array<AnnualBudget>>;
+  annual_budgets: Array<AnnualBudget>;
   churches?: Maybe<Array<Church>>;
   churches_count: Scalars['Int']['output'];
   communications?: Maybe<Array<Communication>>;
