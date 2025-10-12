@@ -59,7 +59,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { KanbanBoard, KanbanGroup, KanbanItem, KanbanAction } from "@/components/ui/kanban-board"
 import { useInstitution } from "@/contexts/institution-context"
-import { PermissionResolverName } from "@/types/graphql-global-types"
+import { EntityType, PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
 import { WithPermission } from "@/hocs/with-permission"
 
@@ -91,6 +91,7 @@ import {
   Area,
   AreaChart
 } from "recharts"
+import { CreateAnnualBudgetModal } from "@/components/modals/annual-budget/create-annual-budget-modal"
 
 // Interfaces for Budget Management
 interface BudgetRequest {
@@ -314,16 +315,7 @@ export default function AnnualBudgetPage() {
   ])
 
   // Form state
-  const [requestFormData, setRequestFormData] = useState({
-    entity_type: 'church' as const,
-    entity_name: '',
-    year: new Date().getFullYear(),
-    requested_amount: '',
-    priority: 'medium' as const,
-    category: 'operational' as const,
-    description: '',
-    justification: ''
-  })
+
 
   // Available years for filtering
   const availableYears = useMemo(() => {
@@ -670,18 +662,6 @@ export default function AnnualBudgetPage() {
     toast.success('Revision requested successfully')
   }
 
-  const resetRequestForm = () => {
-    setRequestFormData({
-      entity_type: 'church',
-      entity_name: '',
-      year: new Date().getFullYear(),
-      requested_amount: '',
-      priority: 'medium',
-      category: 'operational',
-      description: '',
-      justification: ''
-    })
-  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -1521,137 +1501,10 @@ export default function AnnualBudgetPage() {
           )}
 
           {/* Create Request Modal */}
-          <Dialog open={isCreateRequestModalOpen} onOpenChange={setIsCreateRequestModalOpen}>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Create Budget Request</DialogTitle>
-                <DialogDescription>
-                  Submit a new budget request for organizational review and approval
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="entity-type">Entity Type *</Label>
-                    <Select 
-                      value={requestFormData.entity_type}
-                      onValueChange={(value: any) => setRequestFormData({...requestFormData, entity_type: value})}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select entity type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="church">Church</SelectItem>
-                        <SelectItem value="department">Department</SelectItem>
-                        <SelectItem value="region">Region</SelectItem>
-                        <SelectItem value="institution">Institution</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="entity-name">Entity Name *</Label>
-                    <Input
-                      id="entity-name"
-                      value={requestFormData.entity_name}
-                      onChange={(e) => setRequestFormData({...requestFormData, entity_name: e.target.value})}
-                      placeholder="e.g., Central Church São Paulo"
-                    />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="year">Budget Year *</Label>
-                    <Input
-                      id="year"
-                      type="number"
-                      value={requestFormData.year}
-                      onChange={(e) => setRequestFormData({...requestFormData, year: Number(e.target.value)})}
-                      min="2024"
-                      max="2030"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="amount">Requested Amount ($) *</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      value={requestFormData.requested_amount}
-                      onChange={(e) => setRequestFormData({...requestFormData, requested_amount: e.target.value})}
-                      placeholder="e.g., 125000"
-                      min="0"
-                    />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="priority">Priority</Label>
-                    <Select 
-                      value={requestFormData.priority}
-                      onValueChange={(value: any) => setRequestFormData({...requestFormData, priority: value})}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select priority" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="urgent">Urgent</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select 
-                      value={requestFormData.category}
-                      onValueChange={(value: any) => setRequestFormData({...requestFormData, category: value})}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="operational">Operational</SelectItem>
-                        <SelectItem value="project">Project</SelectItem>
-                        <SelectItem value="expansion">Expansion</SelectItem>
-                        <SelectItem value="maintenance">Maintenance</SelectItem>
-                        <SelectItem value="emergency">Emergency</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="description">Description *</Label>
-                  <Textarea
-                    id="description"
-                    value={requestFormData.description}
-                    onChange={(e) => setRequestFormData({...requestFormData, description: e.target.value})}
-                    placeholder="Brief description of the budget request"
-                    rows={3}
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="justification">Justification</Label>
-                  <Textarea
-                    id="justification"
-                    value={requestFormData.justification}
-                    onChange={(e) => setRequestFormData({...requestFormData, justification: e.target.value})}
-                    placeholder="Detailed justification for this budget request"
-                    rows={4}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateRequestModalOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateRequest}>Submit Request</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <CreateAnnualBudgetModal 
+            isCreateRequestModalOpen={isCreateRequestModalOpen}
+            setIsCreateRequestModalOpen={setIsCreateRequestModalOpen}
+          />
 
           {/* Review Request Modal */}
           {selectedRequest && (
