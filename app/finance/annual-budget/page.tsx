@@ -15,20 +15,17 @@ import {
   RefreshCw, 
   MoreHorizontal,
   Edit,
-  Trash2,
   Eye,
   CheckCircle,
   XCircle,
   Clock,
   TrendingUp,
-  Calendar,
   Building,
   Users,
   LayoutGrid,
   List,
   AlertTriangle,
   FileText,
-  Copy
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -44,9 +41,6 @@ import {
   DialogHeader, 
   DialogTitle, 
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { 
   Select,
   SelectContent,
@@ -59,7 +53,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { KanbanBoard, KanbanGroup, KanbanItem, KanbanAction } from "@/components/ui/kanban-board"
 import { useInstitution } from "@/contexts/institution-context"
-import { EntityType, PermissionResolverName } from "@/types/graphql-global-types"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
 import { WithPermission } from "@/hocs/with-permission"
 
@@ -81,8 +75,6 @@ import {
   PieChart as RechartsPieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
   Legend,
   RadialBarChart,
   RadialBar,
@@ -540,36 +532,6 @@ export default function AnnualBudgetPage() {
       toast.dismiss(refreshToast)
       setRefreshing(false)
     }
-  }
-
-  const handleCreateRequest = () => {
-    if (!requestFormData.entity_name || !requestFormData.requested_amount || !requestFormData.description) {
-      toast.error(t('annual_budget.messages.required_fields'))
-      return
-    }
-
-    const newRequest: BudgetRequest = {
-      id: `req-${Date.now()}`,
-      entity_type: requestFormData.entity_type,
-      entity_id: `${requestFormData.entity_type}-${Date.now()}`,
-      entity_name: requestFormData.entity_name,
-      year: requestFormData.year,
-      requested_amount: Number(requestFormData.requested_amount),
-      status: 'pending',
-      priority: requestFormData.priority,
-      category: requestFormData.category,
-      description: requestFormData.description,
-      justification: requestFormData.justification,
-      requested_by: 'Current User', // TODO: Get from auth context
-      submitted_date: new Date().toISOString().split('T')[0],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-
-    setBudgetRequests([...budgetRequests, newRequest])
-    setIsCreateRequestModalOpen(false)
-    resetRequestForm()
-    toast.success(t('annual_budget.messages.request_submitted'))
   }
 
   const handleAddYear = () => {
