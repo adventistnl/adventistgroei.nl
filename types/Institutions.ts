@@ -230,9 +230,67 @@ export interface Institutions_institutions_churches_annual_budgets {
   total_expenses: any;
 }
 
+export interface Institutions_institutions_churches_departments_contact {
+  __typename: "Contact";
+  id: string;
+  name: string | null;
+  phone: string | null;
+  mobile: string | null;
+  email: string | null;
+  country: string | null;
+  city: string | null;
+  address: string | null;
+  full_address: string | null;
+  postal_code: string | null;
+  website: string | null;
+  notes: string | null;
+  is_primary: boolean;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
+}
+
+export interface Institutions_institutions_churches_departments_church {
+  __typename: "Church";
+  id: string;
+  name: string;
+}
+
+export interface Institutions_institutions_churches_departments_annual_budgets {
+  __typename: "AnnualBudget";
+  year: number;
+  planned_budget: any;
+  total_expenses: any;
+}
+
+export interface Institutions_institutions_churches_departments_users {
+  __typename: "User";
+  id: string;
+}
+
 export interface Institutions_institutions_churches_departments {
   __typename: "Department";
   id: string;
+  institution_id: string;
+  church_id: string | null;
+  name: string;
+  description: string;
+  contact_id: string | null;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
+  contact: Institutions_institutions_churches_departments_contact | null;
+  church: Institutions_institutions_churches_departments_church | null;
+  annual_budgets: Institutions_institutions_churches_departments_annual_budgets[] | null;
+  users: Institutions_institutions_churches_departments_users[] | null;
 }
 
 export interface Institutions_institutions_churches_region {

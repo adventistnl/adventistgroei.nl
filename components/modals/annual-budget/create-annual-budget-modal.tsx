@@ -39,6 +39,7 @@ export const CreateAnnualBudgetModal = ({
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [selectedChurch, setSelectedChurch] = useState<string | null>(null)
 
   const resetRequestForm = () => {
     setRequestFormData({
@@ -50,13 +51,19 @@ export const CreateAnnualBudgetModal = ({
       justification: ''
     })
     setErrors({})
+    setSelectedChurch(null)
   }
 
+  // Atualizando a validação para diferenciar os erros de Church e Entity Name
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
     if (!requestFormData.entity_type) {
       newErrors.entity_type = 'Entity type is required.'
+    }
+
+    if (requestFormData.entity_type === EntityType.ChurchDepartment && !selectedChurch) {
+      newErrors.selectedChurch = 'Church is required.'
     }
 
     if (!requestFormData.entity_id) {
@@ -76,9 +83,15 @@ export const CreateAnnualBudgetModal = ({
     return Object.keys(newErrors).length === 0
   }
 
-  const handleInputChange = (field: keyof typeof requestFormData, value: string | number) => {
+  // Corrigindo o tipo de tratamento para resetar entity_id ao alterar entity_type ou selectedChurch
+  const handleInputChange = (field: keyof typeof requestFormData | 'selectedChurch', value: string | number) => {
     setRequestFormData((prev) => ({ ...prev, [field]: value }))
     setErrors((prev) => ({ ...prev, [field]: '' }))
+
+    // Resetar entity_id ao alterar entity_type ou selectedChurch
+    if (field === 'entity_type' || field === 'selectedChurch') {
+      setRequestFormData((prev) => ({ ...prev, entity_id: '' }))
+    }
   }
 
   const getEntityOptions = () => {
@@ -90,7 +103,9 @@ export const CreateAnnualBudgetModal = ({
       case EntityType.Church:
         return currentInstitutionData?.churches || [];
       case EntityType.ChurchDepartment:
-        return currentInstitutionData?.departments || [];
+        return selectedChurch
+          ? currentInstitutionData?.churches?.find(church => church.id === selectedChurch)?.departments || []
+          : [];
       case EntityType.InstitutionDepartment:
         return currentInstitutionData?.departments || [];
       default:
@@ -145,7 +160,12 @@ export const CreateAnnualBudgetModal = ({
               <Label htmlFor="entity-type">Entity Type *</Label>
               <Select 
                 value={requestFormData.entity_type || ''} // Ensure default value
-                onValueChange={(value: any) => handleInputChange('entity_type', value)}
+                onValueChange={(value: any) => {
+                  handleInputChange('entity_type', value);
+                  if (value !== EntityType.ChurchDepartment) {
+                    setSelectedChurch(null);
+                  }
+                }}
               >
                 <SelectTrigger className={errors.entity_type ? 'border-red-500' : ''}>
                   <SelectValue placeholder="Select entity type" />
@@ -158,6 +178,30 @@ export const CreateAnnualBudgetModal = ({
               </Select>
               {errors.entity_type && <p className="text-red-500 text-sm">{errors.entity_type}</p>}
             </div>
+
+            {requestFormData.entity_type === EntityType.ChurchDepartment && (
+              <div className="grid gap-2">
+                <Label htmlFor="church-name">Church *</Label>
+                <Select 
+                  value={selectedChurch || ''} // Ensure default value
+                  onValueChange={(value: any) => {
+                    setSelectedChurch(value);
+                    handleInputChange('selectedChurch', value);
+                  }}
+                >
+                  <SelectTrigger className={errors.selectedChurch ? 'border-red-500' : ''}>
+                    <SelectValue placeholder="Select church" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currentInstitutionData?.churches?.map((church) => (
+                      <SelectItem key={church.id} value={church.id}>{church.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.selectedChurch && <p className="text-red-500 text-sm">{errors.selectedChurch}</p>}
+              </div>
+            )}
+
             <div className="grid gap-2">
               <Label htmlFor="entity-name">Entity Name *</Label>
               <Select 

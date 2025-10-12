@@ -159,40 +159,6 @@ export const REGION_FRAGMENT = gql`
   }
 `;
 
-export const CHURCH_FRAGMENT = gql`
-  fragment ChurchFragment on Church {
-    id
-    institution_id
-    name
-    region_id
-    contact_id
-    created_at
-    updated_at
-    created_by
-    updated_by
-    is_deleted
-    deleted_at
-    deleted_by
-    type
-    contact {
-      ...ContactFragment
-    }
-    annual_budgets {
-      ...AnnualBudgetFragment
-    }
-    departments {
-      id
-    }
-    region {
-      id
-      name
-    }
-    users {
-      id
-    }
-  }
-`;
-
 export const DEPARTMENT_FRAGMENT = gql`
   fragment DepartmentFragment on Department {
     id
@@ -222,6 +188,41 @@ export const DEPARTMENT_FRAGMENT = gql`
       id
     }
   }
+`;
+
+export const CHURCH_FRAGMENT = gql`
+  fragment ChurchFragment on Church {
+    id
+    institution_id
+    name
+    region_id
+    contact_id
+    created_at
+    updated_at
+    created_by
+    updated_by
+    is_deleted
+    deleted_at
+    deleted_by
+    type
+    contact {
+      ...ContactFragment
+    }
+    annual_budgets {
+      ...AnnualBudgetFragment
+    }
+    departments {
+      ...DepartmentFragment
+    }
+    region {
+      id
+      name
+    }
+    users {
+      id
+    }
+  }
+  ${DEPARTMENT_FRAGMENT}
 `;
 
 export const INSTITUTION_FRAGMENT = gql`

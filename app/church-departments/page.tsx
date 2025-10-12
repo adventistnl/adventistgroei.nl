@@ -78,8 +78,9 @@ import { WithPermission } from "@/hocs/with-permission"
  */
 export default function ChurchDepartmentsPage() {
   const { currentInstitutionData, refetchInstitutionById } = useInstitution();
-  const departments: DepartmentData[] = currentInstitutionData?.departments || [];
   const churches: ChurchData[] = currentInstitutionData?.churches || [];
+  const departments: DepartmentData[] = churches.flatMap(church => church.departments?.flatMap(department => ({ ...department, church_name: church.name })) || []);
+  console.log("departments", departments)
   const { i18n } = useTranslation()
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -334,18 +335,10 @@ export default function ChurchDepartmentsPage() {
       accessorKey: "church",
       header: "Church",
       cell: ({ row }) => {
-        const church = churches.find(c => c.id === row.original.church);
-        const isInstitutional = !church;
         return (
-          <div className="flex items-center gap-2">
-            {isInstitutional ? (
-              <Building className="w-4 h-4 text-muted-foreground" />
-            ) : (
-              <Home className="w-4 h-4 text-muted-foreground" />
-            )}
-            <span className="font-medium">
-              {isInstitutional ? 'Institutional' : church.name}
-            </span>
+          <div className="flex flex-row items-center gap-2 font-medium">
+            <Home className="w-4 h-4 text-muted-foreground" />
+            { row.original.church_name }
           </div>
         )
       },
@@ -364,7 +357,7 @@ export default function ChurchDepartmentsPage() {
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.users.length || 0}</span>
+          <span className="font-medium">{row.original.users ? row.original.users.length : 0}</span>
         </div>
       ),
     },
