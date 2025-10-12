@@ -281,7 +281,6 @@ export function CreateReportModal({ isOpen, onClose, onSubmit, project }: Create
     }
     
     toast.success(`📄 Exportando relatório em ${formatNames[format]}...`, { duration: 3000 })
-    console.log(`Exporting report in ${format} format:`, formData)
   }
 
   const handleDrag = (e: React.DragEvent) => {

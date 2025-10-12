@@ -126,7 +126,6 @@ export default function ChurchesPage() {
   
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  console.log('churches', currentInstitutionData)
   // Modal states
   const [isViewContactModalOpen, setIsViewContactModalOpen] = useState(false)
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false)

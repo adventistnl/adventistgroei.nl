@@ -66,9 +66,6 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
   updateMutation,
   entityId
 }: ContactViewEditModalProps<TMutationData, TMutationVariables>) {
-  console.log("contact", contact)
-  console.log("entityId", entityId)
-  
   const { i18n } = useTranslation()
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)

@@ -277,7 +277,6 @@ export default function InstitutionsPage() {
   }
 
   const handleContactSaved = (contactData: any) => {
-    console.log("handleContactSaved", contactData)
     refetchInstitutionById()
     toast.success(t('contacts.toasts.updated'))
   }

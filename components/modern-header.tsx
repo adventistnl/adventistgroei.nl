@@ -44,7 +44,6 @@ export function ModernHeader() {
   }
 
   const handleInviteSent = (inviteData: any) => {
-    console.log('Invitation sent from header:', inviteData)
     // Aqui você pode atualizar estado global ou fazer outras ações
   }
 

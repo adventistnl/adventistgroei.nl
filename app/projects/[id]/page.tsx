@@ -175,14 +175,12 @@ export default function ProjectDetailsPage() {
 
   const handleEventSubmit = (data: EventFormData) => {
     // TODO: Implement event creation API call
-    console.log('Creating event:', data)
     setIsEventModalOpen(false)
     toast.success(t.toasts.eventCreated, { duration: 3000 })
   }
 
   const handleCommunicationSubmit = (data: CommunicationFormData) => {
     // TODO: Implement communication creation API call
-    console.log('Creating communication:', data)
     setIsCommunicationModalOpen(false)
     toast.success(t.toasts.communicationCreated, { duration: 3000 })
   }
@@ -274,7 +272,6 @@ export default function ProjectDetailsPage() {
 
   const handleReportSubmit = (data: ReportFormData) => {
     // TODO: Implement report creation API call
-    console.log('Creating report:', data)
     setIsCreateReportModalOpen(false)
     // The modal handles the redirection internally
   }
@@ -282,14 +279,12 @@ export default function ProjectDetailsPage() {
   // Modal submit handlers
   const handleSubsidySubmit = (data: SubsidyFormData) => {
     // TODO: Implement subsidy creation API call
-    console.log('Creating subsidy:', data)
     setIsAddSubsidyModalOpen(false)
     toast.success(t.subsidy.subsidyCreated, { duration: 3000 })
   }
 
   const handleEditSubsidySubmit = (data: EditSubsidyFormData) => {
     // TODO: Implement subsidy update API call
-    console.log('Updating subsidy:', data)
     setIsEditSubsidyModalOpen(false)
     setSelectedSubsidy(undefined)
     toast.success(t.subsidy.subsidyUpdated, { duration: 3000 })
@@ -304,7 +299,6 @@ export default function ProjectDetailsPage() {
 
   const handleActivitySubmit = (data: ActivityFormData) => {
     // TODO: Implement activity creation API call
-    console.log('Creating activity:', data)
     setIsAddActivityModalOpen(false)
     setSelectedSubsidy(undefined)
     toast.success(t.activity.activityCreated, { duration: 3000 })
@@ -312,7 +306,6 @@ export default function ProjectDetailsPage() {
 
   const handleReceiptSubmit = (data: ReceiptFormData) => {
     // TODO: Implement receipt upload API call
-    console.log('Uploading receipt:', data)
     setIsUploadReceiptModalOpen(false)
     setSelectedActivity(undefined)
     toast.success(t.activity.uploadSuccess, { duration: 3000 })
@@ -320,7 +313,6 @@ export default function ProjectDetailsPage() {
 
   const handleEditActivitySubmit = (data: EditActivityFormData) => {
     // TODO: Implement activity update API call
-    console.log('Updating activity:', data)
     setIsEditActivityModalOpen(false)
     setSelectedActivity(undefined)
     toast.success(t.activity.activityUpdated, { duration: 3000 })

@@ -73,7 +73,6 @@ export function DataTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
   const [globalFilter, setGlobalFilter] = React.useState("")
-  console.log("globalFilter", globalFilter)
   const table = useReactTable({
     data,
     columns,
@@ -142,13 +141,11 @@ export function DataTable<TData, TValue>({
           {/* Column Filters */}
           {filterableColumns.map((column) => {
             const filterValue = table.getColumn(column.id)?.getFilterValue() as string
-            console.log("filterValue", filterValue)
             return (
               <Select
                 key={column.id}
                 value={filterValue || "all"}
                 onValueChange={(value) => {
-                  console.log("filterValue", table.getColumn(column.id)?.getFilterValue())
                   table.getColumn(column.id)?.setFilterValue(value === "all" ? "" : value)
                 }
                 }

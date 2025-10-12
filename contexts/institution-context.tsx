@@ -96,17 +96,6 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     updatedInstitutionContact
   } = useInstitutions(activeInstitutionId);
 
-  // Debug logs
-  console.log('InstitutionContext Debug:', {
-    activeInstitutionId,
-    rawInstitutions,
-    currentInstitutionData,
-    loading,
-    error,
-    authUser: authUser?.institution_id,
-    user: user?.institution_id
-  });
-
     useEffect(() => {
     if (authUser && authUser.institution_id) {
       setActiveInstitutionId(authUser.institution_id);

@@ -291,7 +291,6 @@ export default function VolunteersPage() {
 
   const handleSubmit = () => {
     // Here you would submit the mission project data
-    console.log("Mission Project Data:", missionProject)
     setIsMissionModalOpen(false)
     setCurrentStep(1)
     setMissionProject({

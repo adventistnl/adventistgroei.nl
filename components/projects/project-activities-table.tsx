@@ -477,7 +477,6 @@ export function ProjectActivitiesTable({
         activity={selectedActivityForView}
         project={project}
         onSave={(updatedActivity) => {
-          console.log("Salvar atividade:", updatedActivity)
           toast.success("Atividade salva com sucesso!")
         }}
       />

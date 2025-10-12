@@ -472,8 +472,6 @@ export default function EventsPage() {
   }
 
   const handleSubmit = () => {
-    console.log("[v0] Submitting event:", formData)
-    console.log("[v0] Create news:", createNews)
     setIsCreateModalOpen(false)
     resetForm()
   }
@@ -795,7 +793,6 @@ export default function EventsPage() {
                       `${moment(start).format('HH:mm')} — ${moment(end).format('HH:mm')}`
                   }}
                   onSelectEvent={(event) => {
-                    console.log('Evento selecionado:', event)
                     // Aqui você pode abrir um modal com detalhes do evento
                   }}
                 />

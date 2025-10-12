@@ -235,7 +235,6 @@ export default function RegionsPage() {
   };
   const handleViewContact = (id: string) => {
     const region = regions.find((r: RegionType) => r.id === id);
-    console.log(region)
     if (region && (region as any).contact) {
       setSelectedRegion(region)
       setIsViewContactModalOpen(true);
@@ -268,7 +267,6 @@ export default function RegionsPage() {
   // Modal handlers
   const handleRegionCreated = (newRegion: any) => {
     // toast.success(t.itemCreated)
-    console.log('chamando sucesso', newRegion)
     handleRefresh()
   }
 
@@ -418,7 +416,6 @@ export default function RegionsPage() {
       ),
     },
   ]
-  console.log("selectedRegion", selectedRegion)
   if (isLoading) {
     return (
       <AppLayout>

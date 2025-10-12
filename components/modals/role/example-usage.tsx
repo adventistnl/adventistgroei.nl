@@ -20,7 +20,6 @@ export function ExampleRoleModalUsage() {
 
   // Success handlers
   const handleCreateSuccess = (roleData: any) => {
-    console.log('Role created:', roleData)
     // Here you would typically:
     // 1. Add the new role to your state/cache
     // 2. Refetch roles data
@@ -29,7 +28,6 @@ export function ExampleRoleModalUsage() {
   }
 
   const handleEditSuccess = (roleData: any) => {
-    console.log('Role updated:', roleData)
     // Here you would typically:
     // 1. Update the role in your state/cache
     // 2. Refetch roles data
@@ -37,9 +35,7 @@ export function ExampleRoleModalUsage() {
   }
 
   const handleDeleteSuccess = (deletedRole: Role, reassignmentRoleId?: string) => {
-    console.log('Role deleted:', deletedRole.name)
     if (reassignmentRoleId) {
-      console.log('Users reassigned to role:', reassignmentRoleId)
     }
     // Here you would typically:
     // 1. Remove the role from your state/cache

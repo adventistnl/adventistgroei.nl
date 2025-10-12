@@ -349,19 +349,16 @@ export default function AccessManagementPage() {
   const handleCreateRoleSuccess = () => {
     // Refresh data or update state as needed
     // In a real app, you might refetch the roles data
-    console.log('Role created successfully')
   }
 
   const handleEditRoleSuccess = () => {
     // Refresh data or update state as needed
     setSelectedRoleForEdit(null)
-    console.log('Role updated successfully')
   }
 
   const handleDeleteRoleSuccess = () => {
     // Refresh data or update state as needed
     setSelectedRoleForDelete(null)
-    console.log('Role deleted successfully')
   }
 
   const handleEditPermissions = (role: Role) => {

@@ -86,13 +86,11 @@ export function ViewReceiptsModal({
       setSelectedReceiptForView(receipt)
     } else {
       // For PDFs, trigger download
-      console.log('Download PDF:', receipt.file_path)
       // TODO: Implement actual download
     }
   }
 
   const handleDownloadReceipt = (receipt: any) => {
-    console.log('Download receipt:', receipt.file_path)
     // TODO: Implement actual download
   }
 

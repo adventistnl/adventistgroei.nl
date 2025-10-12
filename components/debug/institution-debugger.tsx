@@ -5,14 +5,6 @@ import { useInstitution } from "@/contexts/institution-context"
 export function InstitutionDebugger() {
   const { institutions, currentInstitutionData, loading, error } = useInstitution()
   
-  console.log('InstitutionDebugger rendered:', {
-    institutionsLength: institutions?.length || 0,
-    institutions,
-    currentInstitutionData,
-    loading,
-    error: error?.message
-  })
-
   if (loading) {
     return <div className="p-4 bg-yellow-100 border">🔄 Loading institutions...</div>
   }

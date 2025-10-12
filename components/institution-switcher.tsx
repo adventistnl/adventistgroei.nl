@@ -27,9 +27,6 @@ import { PermissionResolverName } from "@/types/graphql-global-types"
 export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
   const { institutions, currentInstitutionData, switchInstitution, addInstitution, refetchInstitutions, refetchInstitutionById } = useInstitution()
   const [isReloading, setIsReloading] = React.useState(false)
-  console.log("Rendering InstitutionSwitcher");
-  console.log("Institutions:", institutions);
-  console.log("Current Institution Data:", currentInstitutionData);
   // Handler para mudança de instituição com reload e redirect
   const handleInstitutionChange = React.useCallback(async (institutionId: string) => {
     if (institutionId === currentInstitutionData?.id) return
@@ -78,13 +75,11 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
   const fetchInstitutionData = React.useCallback(async () => {
     let attempts = 0;
     while (attempts < 3) {
-      console.log("TENTATIVA: ", attempts + 1);
       try {
         await Promise.all([
           refetchInstitutions?.(),
           refetchInstitutionById?.()
         ]);
-        console.log(`Dados carregados na tentativa ${attempts + 1}`);
         break; // Sai do loop se os dados forem carregados com sucesso
       } catch (error) {
         attempts++;

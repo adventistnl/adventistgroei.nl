@@ -43,7 +43,6 @@ export function MobileHeader() {
   }
 
   const handleInviteSent = (inviteData: any) => {
-    console.log('Invitation sent from mobile header:', inviteData)
     toast.success("Invitation sent successfully!", {
       duration: 3000,
       icon: '📧'

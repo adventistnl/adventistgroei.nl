@@ -244,7 +244,6 @@ export function UseTableExample() {
   ]
 
   const handleRowClick = (user: MockUser) => {
-    console.log("Row clicked:", user)
     // Aqui você pode abrir um modal, navegar para detalhes, etc.
   }
 

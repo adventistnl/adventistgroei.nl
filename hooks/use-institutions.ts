@@ -59,18 +59,6 @@ export function useInstitutions(id?: string): iInstitutions & {
     }
   );
 
-  // Debug logs
-  console.log('useInstitutions Hook Debug:', {
-    id,
-    institutionsData,
-    institutionsLoading,
-    institutionsError: institutionsError?.message,
-    institutionData,
-    institutionLoading,
-    institutionError: institutionError?.message,
-    skipInstitutionQuery: !id
-  });
-
   const institutions = useMemo(() => {
     // Se há erro ou dados não carregaram, usa dados mock
     if (institutionsError) {

@@ -500,7 +500,6 @@ export default function DashboardPage() {
   const ts = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
 
   const users = institutions?.flatMap(inst => inst.users) || []
-  console.log(users)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedPeriod, setSelectedPeriod] = useState("6m")
   const [refreshing, setRefreshing] = useState(false)

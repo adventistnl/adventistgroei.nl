@@ -35,7 +35,6 @@ function useSidebarData() {
   // Handle project creation
   const handleAddProject = React.useCallback((data: ProjectFormData) => {
     // TODO: Implement actual project creation logic
-    console.log("Creating project:", data)
   }, [])
   
   // Memoize entire data structure

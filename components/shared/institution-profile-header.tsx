@@ -335,7 +335,6 @@ export function InstitutionProfileHeader({
         entityName={institution.name}
         entityType="Institution"
         onSave={(updatedBudget) => {
-          console.log('Annual budget updated:', updatedBudget)
           // TODO: Implementar atualização via GraphQL/API
           // await updateAnnualBudget({ variables: { id: updatedBudget.id, ...updatedBudget } })
           setShowBudgetModal(false)

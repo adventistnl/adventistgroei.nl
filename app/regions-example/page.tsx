@@ -19,7 +19,6 @@ export default function RegionsExamplePage() {
 
   const handleRegionSuccess = (data: AddRegionFormData) => {
     // Handle successful region creation
-    console.log('New region created:', data)
     
     // Show success feedback
     toast.success(`🗺️ Region "${data.name}" created successfully!`)
