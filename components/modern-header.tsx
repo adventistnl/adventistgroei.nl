@@ -123,7 +123,7 @@ export function ModernHeader() {
             <LanguageSelector />
 
             {/* Invite Button - Far Right */}
-            <WithPermission requiredPermissions={[PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail]} >
+            <WithPermission requiredPermissions={[PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail]} partialPermissionCheck >
               <InviteModal onInviteSent={handleInviteSent}>
                 <Button 
                   variant="default" 

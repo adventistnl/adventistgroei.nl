@@ -94,7 +94,7 @@ export function MobileHeader() {
               <LanguageSelector />
               
               {/* Invite Button - Destaque Principal */}
-              <WithPermission requiredPermissions={[PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail]} >
+              <WithPermission requiredPermissions={[PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail]} partialPermissionCheck >
                 <InviteModal onInviteSent={handleInviteSent}>
                   <Button 
                     size="sm"
@@ -156,7 +156,7 @@ export function MobileHeader() {
               <LanguageSelector />
 
               {/* Invite Button - Destaque */}
-              <WithPermission requiredPermissions={[PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail]} >
+              <WithPermission requiredPermissions={[PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail]} partialPermissionCheck >
               <InviteModal onInviteSent={handleInviteSent}>
                   <Button 
                     variant="default" 

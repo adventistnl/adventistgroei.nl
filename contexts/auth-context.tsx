@@ -5,11 +5,13 @@ import { AuthModel, RoleModel } from '@/types/graphql-global-types';
 import { useCookies } from '@/hooks/use-cookies';
 import { validateToken } from '@/utils/validateToken';
 import { useLoginMutation } from '@/hooks/graphql/use-login-mutation';
+import { User } from '@/types/User';
 
 interface AuthContextType {
   user: AuthModel['user'] | null;
   token: string | null;
   permissions: string[]; // Adicionado para armazenar permissões derivadas
+  roles: RoleModel['key_code'][]; // Novo campo para armazenar roles
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
@@ -32,9 +34,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AuthModel['user'] | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]); // Novo estado para permissões
+  const [roles, setRoles] = useState<RoleModel['key_code'][]>([]); // Novo estado para roles
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
-
   // Verificar token no localStorage quando o componente monta
   useEffect(() => {
     
@@ -53,10 +55,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         storedUser &&
         Array.isArray(decodedPermissions) &&
         decodedPermissions.length > 0) {
-        const parsedUser = JSON.parse(storedUser);
+        const parsedUser: AuthModel['user'] = JSON.parse(storedUser);
         setUser(parsedUser);
         setToken(rawStoredToken);
         setPermissions(decodedPermissions);
+        setRoles(parsedUser.user_roles.map((role) => role.key_code) || []); // Define os roles a partir do usuário armazenado
       } else {
         throw new Error('fail on getting auth data');
       }
@@ -89,6 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setToken(accessToken);
         setUser(data.login.user);
         setPermissions(permissions);
+        setRoles(data.login.user.user_roles.map((role) => role.key_code) || []); // Define os roles a partir do login
 
         return true;
       }
@@ -105,6 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     token,
     permissions,
+    roles, // Inclui roles no valor do contexto
     login,
     logout: () => {
       localStorage.removeItem('auth-token');
@@ -114,6 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(null);
       setUser(null);
       setPermissions([]);
+      setRoles([]); // Limpa os roles ao fazer logout
     },
     isLoading,
     isAuthenticated: !!token && !!user,

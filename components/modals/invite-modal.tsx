@@ -208,7 +208,7 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <WithPermission requiredPermissions={[ PermissionResolverName.Roles, PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail ]} >
+      <WithPermission requiredPermissions={[ PermissionResolverName.Roles, PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail ]} partialPermissionCheck >
         <DialogTrigger asChild onClick={handleOpenModal}>
           {children}
         </DialogTrigger>
@@ -226,179 +226,186 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
 
               <Tabs value={inviteType} onValueChange={(value) => form.setValue("type", value as "email" | "link")} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="email" className="flex items-center gap-2">
-                    <Mail className="w-4 h-4" />
-                    {t.emailInvitation}
-                  </TabsTrigger>
-                  <TabsTrigger value="link" className="flex items-center gap-2">
-                    <LinkIcon className="w-4 h-4" />
-                    {t.shareableLink}
-                  </TabsTrigger>
+                  <WithPermission requiredPermissions={[ PermissionResolverName.SendInviteEmail ]} >
+                    <TabsTrigger value="email" className="flex items-center gap-2">
+                      <Mail className="w-4 h-4" />
+                      {t.emailInvitation}
+                    </TabsTrigger>
+                  </WithPermission>
+                  <WithPermission requiredPermissions={[ PermissionResolverName.InviteUser ]} >
+                    <TabsTrigger value="link" className="flex items-center gap-2">
+                      <LinkIcon className="w-4 h-4" />
+                      {t.shareableLink}
+                    </TabsTrigger>
+                  </WithPermission>
                 </TabsList>
                 
                 <Form {...form}>
-                  <TabsContent value="email" className="space-y-4 mt-6">
-                    {/* Instruction Message */}
-                    <div className="p-3 bg-muted/30 rounded-lg border">
-                      <p className="text-sm text-muted-foreground">
-                        {t.emailInstructionDesc}
-                      </p>
-                    </div>
-
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                      {/* Email Input */}
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t.emailAddress}</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder={t.emailPlaceholder} 
-                                type="email"
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      {/* Role Selection - Clickable Tags */}
-                      <RoleSelector
-                        control={form.control}
-                        name="role"
-                        label={t.memberRole}
-                        roles={roles}
-                      />
-
-                      {/* Personal Message */}
-                      <FormField
-                        control={form.control}
-                        name="message"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t.personalMessage}</FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                placeholder={t.personalMessagePlaceholder}
-                                className="resize-none"
-                                rows={3}
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              {t.personalMessageDesc}
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      {/* Footer Buttons */}
-                      <div className="flex justify-between items-center pt-4">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleClose}
-                        >
-                          {t.cancel}
-                        </Button>
-                        <Button type="submit" disabled={isSubmitting}>
-                          {isSubmitting ? (
-                            <>
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                              {t.creating}
-                            </>
-                          ) : (
-                            <>
-                              <Mail className="w-4 h-4 mr-2" />
-                              {t.sendInvitation}
-                            </>
-                          )}
-                        </Button>
+                  <WithPermission requiredPermissions={[ PermissionResolverName.SendInviteEmail ]} >
+                    <TabsContent value="email" className="space-y-4 mt-6">
+                      {/* Instruction Message */}
+                      <div className="p-3 bg-muted/30 rounded-lg border">
+                        <p className="text-sm text-muted-foreground">
+                          {t.emailInstructionDesc}
+                        </p>
                       </div>
-                    </form>
-                  </TabsContent>
-                  
-                  <TabsContent value="link" className="space-y-4 mt-6">
-                    {/* Instruction Message */}
-                    <div className="p-3 bg-muted/30 rounded-lg border">
-                      <p className="text-sm text-muted-foreground">
-                        {t.linkInstructionDesc}
-                      </p>
-                    </div>
 
-                    <div className="space-y-4">
-                      {/* Role Selection - Clickable Tags */}
-                      <RoleSelector
-                        control={form.control}
-                        name="role"
-                        label={t.memberRole}
-                        roles={roles}
-                      />
-
-                      {/* Generated Link Display */}
-                      <Card>
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-sm flex items-center gap-2">
-                            <LinkIcon className="w-4 h-4" />
-                            {t.shareableLinkTitle}
-                          </CardTitle>
-                          <CardDescription>
-                            {selectedRole ? t.shareableLinkDesc : t.selectRoleToGenerate}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          {generatedLink ? (
-                            <div className="flex gap-2">
-                              <Input 
-                                value={generatedLink} 
-                                readOnly 
-                                className="font-mono text-xs"
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                onClick={() => copyToClipboard(generatedLink)}
-                              >
-                                <Copy className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md">
-                              <LinkIcon className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground">
-                                {t.linkNotAvailable}
-                              </span>
-                            </div>
+                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        {/* Email Input */}
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t.emailAddress}</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder={t.emailPlaceholder} 
+                                  type="email"
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
                           )}
-                        </CardContent>
-                      </Card>
+                        />
 
-                      {/* Footer Buttons */}
-                      <div className="flex justify-between items-center pt-4">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleClose}
-                        >
-                          {t.cancel}
-                        </Button>
-                        {generatedLink && (
+                        {/* Role Selection - Clickable Tags */}
+                        <RoleSelector
+                          control={form.control}
+                          name="role"
+                          label={t.memberRole}
+                          roles={roles}
+                        />
+
+                        {/* Personal Message */}
+                        <FormField
+                          control={form.control}
+                          name="message"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t.personalMessage}</FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  placeholder={t.personalMessagePlaceholder}
+                                  className="resize-none"
+                                  rows={3}
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                {t.personalMessageDesc}
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Footer Buttons */}
+                        <div className="flex justify-between items-center pt-4">
                           <Button
                             type="button"
-                            onClick={() => copyToClipboard(generatedLink)}
+                            variant="outline"
+                            onClick={handleClose}
                           >
-                            <Copy className="w-4 h-4 mr-2" />
-                            {t.copyLink}
+                            {t.cancel}
                           </Button>
-                        )}
+                          <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                {t.creating}
+                              </>
+                            ) : (
+                              <>
+                                <Mail className="w-4 h-4 mr-2" />
+                                {t.sendInvitation}
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </form>
+                    </TabsContent>
+                  </WithPermission>
+                  <WithPermission requiredPermissions={[ PermissionResolverName.InviteUser ]} >
+                    <TabsContent value="link" className="space-y-4 mt-6">
+                      {/* Instruction Message */}
+                      <div className="p-3 bg-muted/30 rounded-lg border">
+                        <p className="text-sm text-muted-foreground">
+                          {t.linkInstructionDesc}
+                        </p>
                       </div>
-                    </div>
-                  </TabsContent>
+
+                      <div className="space-y-4">
+                        {/* Role Selection - Clickable Tags */}
+                        <RoleSelector
+                          control={form.control}
+                          name="role"
+                          label={t.memberRole}
+                          roles={roles}
+                        />
+
+                        {/* Generated Link Display */}
+                        <Card>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-sm flex items-center gap-2">
+                              <LinkIcon className="w-4 h-4" />
+                              {t.shareableLinkTitle}
+                            </CardTitle>
+                            <CardDescription>
+                              {selectedRole ? t.shareableLinkDesc : t.selectRoleToGenerate}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            {generatedLink ? (
+                              <div className="flex gap-2">
+                                <Input 
+                                  value={generatedLink} 
+                                  readOnly 
+                                  className="font-mono text-xs"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={() => copyToClipboard(generatedLink)}
+                                >
+                                  <Copy className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md">
+                                <LinkIcon className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-sm text-muted-foreground">
+                                  {t.linkNotAvailable}
+                                </span>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+
+                        {/* Footer Buttons */}
+                        <div className="flex justify-between items-center pt-4">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleClose}
+                          >
+                            {t.cancel}
+                          </Button>
+                          {generatedLink && (
+                            <Button
+                              type="button"
+                              onClick={() => copyToClipboard(generatedLink)}
+                            >
+                              <Copy className="w-4 h-4 mr-2" />
+                              {t.copyLink}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </TabsContent>
+                  </WithPermission>
                 </Form>
               </Tabs>
             </DialogContent>
