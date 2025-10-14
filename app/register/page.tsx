@@ -25,6 +25,8 @@ import { useChurches } from "@/hooks/use-churches"
 import { useInstitutions } from "@/hooks/use-institutions"
 import { departments } from "@/data/usersData"
 import { useDepartments } from "@/hooks/use-departments"
+import { GenderType } from "@/types/graphql-global-types"
+import { GenderSelectionStep } from "@/components/registration/steps/gender-selection-step"
 
 /**
  * CONFIGURAÇÕES E DADOS MOCK
@@ -189,6 +191,17 @@ function RegisterPageContent() {
           departments={departments}
           churches={churches}
           selectedDepartment={selectedDepartment}
+        />
+      )
+    },
+    {
+      id: "gender-selection",
+      title: t.genderSelection,
+      description: t.genderSelectionDesc,
+      validation: validateStep1, // Reutilizando validação do primeiro step
+      fields: (
+        <GenderSelectionStep
+          form={form.control}
         />
       )
     }

@@ -612,6 +612,11 @@ export enum EventType {
   Show = 'show'
 }
 
+export enum GenderType {
+  Female = 'FEMALE',
+  Male = 'MALE'
+}
+
 export type Institution = {
   __typename?: 'Institution';
   _count: InstitutionCount;
@@ -1817,6 +1822,7 @@ export type User = {
   email: Scalars['String']['output'];
   event_recipients?: Maybe<Array<EventRecipient>>;
   event_registrations?: Maybe<Array<EventRegistration>>;
+  gender?: Maybe<GenderType>;
   id: Scalars['ID']['output'];
   institution: Institution;
   institution_id: Scalars['String']['output'];
@@ -1854,6 +1860,7 @@ export type UserCreateDto = {
   contact?: InputMaybe<ContactCreateDto>;
   department_id: Scalars['String']['input'];
   email: Scalars['String']['input'];
+  gender: GenderType;
   institution_id: Scalars['String']['input'];
   language_preference: Scalars['String']['input'];
   name: Scalars['String']['input'];
@@ -1902,6 +1909,7 @@ export type UserUpdateDto = {
   contact_id?: InputMaybe<Scalars['String']['input']>;
   department_id?: InputMaybe<Scalars['String']['input']>;
   email?: InputMaybe<Scalars['String']['input']>;
+  gender?: InputMaybe<GenderType>;
   institution_id?: InputMaybe<Scalars['String']['input']>;
   is_deleted?: InputMaybe<Scalars['Boolean']['input']>;
   language_preference?: InputMaybe<Scalars['String']['input']>;

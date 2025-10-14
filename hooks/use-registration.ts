@@ -12,6 +12,8 @@ import { useCreateUserMutation } from "./graphql/use-user-mutation"
 import { InviteUserVariables } from "@/types/InviteUser"
 import { useAuth } from "@/contexts/auth-context"
 import { roles } from "@/data/usersData"
+import { CreateUserVariables } from "@/types/CreateUser"
+import { GenderType } from "@/types/globalTypes"
 
 // Schema de validação para o formulário de registro
 const registrationSchema = z.object({
@@ -21,6 +23,7 @@ const registrationSchema = z.object({
   confirmPassword: z.string().min(6, "Confirmação de senha é obrigatória"),
   department_id: z.string().min(1, "Departamento é obrigatório"),
   church_id: z.string().min(1, "Igreja é obrigatória"),
+  gender: z.nativeEnum(GenderType, { required_error: "Gênero é obrigatório" }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Senhas não coincidem",
   path: ["confirmPassword"],
@@ -107,6 +110,7 @@ export function useRegistration({ translations, defaultInstitutionId }: UseRegis
       confirmPassword: "",
       department_id: "",
       church_id: "",
+      gender: undefined, // Corrige o valor padrão para ser compatível com GenderType
       ...loadSavedData(), // Carrega dados salvos
     },
   })
@@ -283,7 +287,7 @@ export function useRegistration({ translations, defaultInstitutionId }: UseRegis
       await new Promise(resolve => setTimeout(resolve, 2500))
       
       // Estrutura de dados conforme especificado
-      const registrationData = {
+      const registrationData: CreateUserVariables = {
         name: data.name,
         email: data.email,
         password: data.password,
@@ -292,6 +296,7 @@ export function useRegistration({ translations, defaultInstitutionId }: UseRegis
         department_id: data.department_id,
         church_id: data.church_id,
         roles: inviteData.role_ids || [], // Role do convite ou padrão MEMBER
+        gender: data.gender
       }
       
       toast.dismiss(loadingToast)
