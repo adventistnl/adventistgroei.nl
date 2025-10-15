@@ -898,7 +898,11 @@ const resources = {
           search_placeholder: "Search users...",
           no_results: "No users found",
           active: "Active",
-          inactive: "Inactive"
+          gender: "Gender",
+        },
+        gender: {
+          MALE: "Male",
+          FEMALE: "Female",
         },
         actions: {
           create_user: "Create User",
@@ -2014,7 +2018,12 @@ const resources = {
           search_placeholder: "Zoek gebruikers...",
           no_results: "Geen gebruikers gevonden",
           active: "Actief",
-          inactive: "Inactief"
+          inactive: "Inactief",
+          gender: "Geslacht"
+        },
+        gender: {
+          MALE: "Man",
+          FEMALE: "Vrouw",
         },
         actions: {
           create_user: "Gebruiker Aanmaken",

@@ -326,6 +326,16 @@ export default function UsersPage() {
       },
     },
     {
+      id: "gender",
+      accessorKey: "gender",
+      header: t('users.table.gender'),
+      cell: ({ row }) => {
+        const user = row.original;
+        const genderLabel = t(`users.gender.${user.gender}`); // Tradução baseada no valor de gender
+        return <div className="text-sm">{genderLabel}</div>;
+      },
+    },
+    {
       id: "actions",
       header: t('users.table.actions'),
       cell: ({ row }) => {

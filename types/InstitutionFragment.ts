@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { LanguagePreference, ProjectType, ChurchType } from "./globalTypes";
+import { LanguagePreference, ProjectType, GenderType, ChurchType } from "./globalTypes";
 
 // ====================================================
 // GraphQL fragment: InstitutionFragment
@@ -133,6 +133,7 @@ export interface InstitutionFragment_users {
   deleted_by: string | null;
   contact_id: string | null;
   institution_id: string;
+  gender: GenderType | null;
   church: InstitutionFragment_users_church;
   institution: InstitutionFragment_users_institution;
   user_roles: InstitutionFragment_users_user_roles[] | null;

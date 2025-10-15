@@ -102,6 +102,7 @@ export const USER_FRAGMENT = gql`
     deleted_by
     contact_id
     institution_id
+    gender
     church {
       id
       name

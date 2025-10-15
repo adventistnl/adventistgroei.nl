@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { LanguagePreference } from "./globalTypes";
+import { LanguagePreference, GenderType } from "./globalTypes";
 
 // ====================================================
 // GraphQL fragment: UserFragment
@@ -51,6 +51,7 @@ export interface UserFragment {
   deleted_by: string | null;
   contact_id: string | null;
   institution_id: string;
+  gender: GenderType | null;
   church: UserFragment_church;
   institution: UserFragment_institution;
   user_roles: UserFragment_user_roles[] | null;
