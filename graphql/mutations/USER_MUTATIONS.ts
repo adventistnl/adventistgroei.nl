@@ -11,6 +11,7 @@ export const CREATE_USER = gql`
     $church_id: String!
     $roles: [String!]!
     $gender: GenderType!
+    $invite_token: String!
   ) {
     createUser(
       data: {
@@ -23,6 +24,7 @@ export const CREATE_USER = gql`
         church_id: $church_id
         roles: $roles
         gender: $gender
+        invite_token: $invite_token
       }
     ) {
       id

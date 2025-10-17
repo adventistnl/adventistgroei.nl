@@ -13,8 +13,8 @@ interface LoadingStateProps {
 interface InvalidInviteStateProps {
   title: string
   description: string
-  buttonText: string
-  onGoToLogin: () => void
+  // buttonText: string
+  // onGoToLogin: () => void
 }
 
 /**
@@ -59,8 +59,8 @@ export function ValidatingInviteState({ message }: LoadingStateProps) {
 export function InvalidInviteState({ 
   title, 
   description, 
-  buttonText, 
-  onGoToLogin 
+  // buttonText, 
+  // onGoToLogin 
 }: InvalidInviteStateProps) {
   return (
     <RegistrationLayout>
@@ -71,11 +71,11 @@ export function InvalidInviteState({
             <CardTitle>{title}</CardTitle>
             <CardDescription>{description}</CardDescription>
           </CardHeader>
-          <CardContent>
+          {/* <CardContent>
             <Button onClick={onGoToLogin} className="w-full">
               {buttonText}
             </Button>
-          </CardContent>
+          </CardContent> */}
         </Card>
       </div>
     </RegistrationLayout>

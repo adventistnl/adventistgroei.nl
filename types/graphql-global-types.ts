@@ -1862,6 +1862,7 @@ export type UserCreateDto = {
   email: Scalars['String']['input'];
   gender: GenderType;
   institution_id: Scalars['String']['input'];
+  invite_token: Scalars['String']['input'];
   language_preference: Scalars['String']['input'];
   name: Scalars['String']['input'];
   password: Scalars['String']['input'];
@@ -1939,6 +1940,7 @@ export type UserWithRoles = {
 export type ValidateOutputModel = {
   __typename?: 'ValidateOutputModel';
   email: Scalars['String']['output'];
+  exp: Scalars['Float']['output'];
   institution_id: Scalars['String']['output'];
   inviter_id: Scalars['String']['output'];
   language_preference?: Maybe<LanguagePreference>;

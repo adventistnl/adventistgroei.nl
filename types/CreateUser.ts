@@ -34,4 +34,5 @@ export interface CreateUserVariables {
   church_id: string;
   roles: string[];
   gender: GenderType;
+  invite_token: string;
 }

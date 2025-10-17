@@ -28,54 +28,6 @@ import { useDepartments } from "@/hooks/use-departments"
 import { GenderType } from "@/types/graphql-global-types"
 import { GenderSelectionStep } from "@/components/registration/steps/gender-selection-step"
 
-/**
- * CONFIGURAÇÕES E DADOS MOCK
- * Centralizados para fácil manutenção
- */
-
-// ID padrão da instituição (será obtido do contexto do usuário logado)
-const DEFAULT_INSTITUTION_ID = "1580c125-edfd-43e6-a169-cecd4b19e2e8"
-
-// Departamentos disponíveis para seleção
-const DEPARTMENTS = [
-  { id: "6107a2bc-c1d7-4567-b8f8-5818eb4c4a04", name: "Administração", description: "Gestão administrativa e financeira" },
-  { id: "7107a2bc-c1d7-4567-b8f8-5818eb4c4a05", name: "Pastoral", description: "Ministério pastoral e evangelismo" },
-  { id: "8107a2bc-c1d7-4567-b8f8-5818eb4c4a06", name: "Educação", description: "Ensino e educação cristã" },
-  { id: "9107a2bc-c1d7-4567-b8f8-5818eb4c4a07", name: "Comunicação", description: "Marketing e comunicação" },
-  { id: "a107a2bc-c1d7-4567-b8f8-5818eb4c4a08", name: "Jovens", description: "Ministério jovem e adolescentes" },
-  { id: "b107a2bc-c1d7-4567-b8f8-5818eb4c4a09", name: "Música", description: "Louvor e ministério musical" },
-  { id: "c107a2bc-c1d7-4567-b8f8-5818eb4c4a0a", name: "Diaconia", description: "Serviços sociais e assistência" },
-]
-
-// Igrejas organizadas por departamento
-const CHURCHES = {
-  "6107a2bc-c1d7-4567-b8f8-5818eb4c4a04": [
-    { id: "993acf3c-8b16-4cf2-a55d-9f93b06efe02", name: "Igreja Central de São Paulo", location: "Centro, SP" },
-    { id: "a93acf3c-8b16-4cf2-a55d-9f93b06efe03", name: "Igreja de Vila Madalena", location: "Vila Madalena, SP" },
-    { id: "b93acf3c-8b16-4cf2-a55d-9f93b06efe04", name: "Igreja da Mooca", location: "Mooca, SP" },
-    { id: "c93acf3c-8b16-4cf2-a55d-9f93b06efe05", name: "Igreja do Ipiranga", location: "Ipiranga, SP" },
-    { id: "d93acf3c-8b16-4cf2-a55d-9f93b06efe06", name: "Igreja de Santana", location: "Santana, SP" },
-  ],
-  "7107a2bc-c1d7-4567-b8f8-5818eb4c4a05": [
-    { id: "e93acf3c-8b16-4cf2-a55d-9f93b06efe07", name: "Igreja Pastoral Central", location: "Centro Pastoral, SP" },
-    { id: "f93acf3c-8b16-4cf2-a55d-9f93b06efe08", name: "Igreja Pastoral Norte", location: "Zona Norte, SP" },
-    { id: "g93acf3c-8b16-4cf2-a55d-9f93b06efe09", name: "Igreja Pastoral Sul", location: "Zona Sul, SP" },
-  ],
-  "8107a2bc-c1d7-4567-b8f8-5818eb4c4a06": [
-    { id: "h93acf3c-8b16-4cf2-a55d-9f93b06efe0a", name: "Centro Educacional Adventista", location: "Educação, SP" },
-    { id: "i93acf3c-8b16-4cf2-a55d-9f93b06efe0b", name: "Escola Adventista Central", location: "Centro Educacional, SP" },
-  ],
-  "9107a2bc-c1d7-4567-b8f8-5818eb4c4a07": [
-    { id: "j93acf3c-8b16-4cf2-a55d-9f93b06efe0c", name: "Centro de Comunicação", location: "Comunicação, SP" },
-    { id: "k93acf3c-8b16-4cf2-a55d-9f93b06efe0d", name: "Estúdio de Mídia Adventista", location: "Mídia, SP" },
-  ],
-  "a107a2bc-c1d7-4567-b8f8-5818eb4c4a08": [
-    { id: "l93acf3c-8b16-4cf2-a55d-9f93b06efe0e", name: "Centro de Jovens Central", location: "Jovens, SP" },
-    { id: "m93acf3c-8b16-4cf2-a55d-9f93b06efe0f", name: "Clube de Desbravadores", location: "Desbravadores, SP" },
-    { id: "n93acf3c-8b16-4cf2-a55d-9f93b06efe10", name: "Ministério Jovem Adventista", location: "Jovens, SP" },
-  ],
-}
-
 // Idiomas suportados pelo sistema
 const LANGUAGES = [
   { code: 'en', name: 'English', flag: '🇺🇸' },
@@ -118,10 +70,9 @@ function RegisterPageContent() {
     validateStep2,
     validateStep3,
     onSubmit,
-    goToLogin,
+    // goToLogin,
   } = useRegistration({
     translations: i18n?.language || "en",
-    defaultInstitutionId: DEFAULT_INSTITUTION_ID,
   })
   // Obter traduções para o idioma atual
   const currentLanguage = i18n?.language || 'en'
@@ -223,13 +174,13 @@ function RegisterPageContent() {
   }
 
   // Estado de convite inválido
-  if (!isValidInvite) {
+  if (!isValidInvite ) {
     return (
       <InvalidInviteState
         title={t.invalidInvite}
         description={t.invalidInviteDesc}
-        buttonText={t.goToLogin}
-        onGoToLogin={goToLogin}
+        // buttonText={t.goToLogin}
+        // onGoToLogin={goToLogin}
       />
     )
   }
