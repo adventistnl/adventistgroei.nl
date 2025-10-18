@@ -194,15 +194,15 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
   }
 
   const handleOpenChange = (newOpen: boolean) => {
-    setOpen(newOpen)
     if (!newOpen) {
+      setOpen(false);
       // Only reset when closing
       setTimeout(() => {
-        form.reset()
-        setGeneratedLink("")
-      }, 150)
+        form.reset();
+        setGeneratedLink("");
+      }, 150);
     }
-  }
+  };
 
   const handleOpenModal = () => {
     if (churches.length === 0 || departments.length === 0) {
