@@ -139,67 +139,6 @@ export interface InstitutionById_institution_users {
   user_roles: InstitutionById_institution_users_user_roles[] | null;
 }
 
-export interface InstitutionById_institution_regions_contact {
-  __typename: "Contact";
-  id: string;
-  name: string | null;
-  phone: string | null;
-  mobile: string | null;
-  email: string | null;
-  country: string | null;
-  city: string | null;
-  address: string | null;
-  full_address: string | null;
-  postal_code: string | null;
-  website: string | null;
-  notes: string | null;
-  is_primary: boolean;
-  created_at: any;
-  updated_at: any;
-  created_by: string;
-  updated_by: string;
-  is_deleted: boolean;
-  deleted_at: any | null;
-  deleted_by: string | null;
-}
-
-export interface InstitutionById_institution_regions_churches {
-  __typename: "Church";
-  id: string;
-}
-
-export interface InstitutionById_institution_regions_institution {
-  __typename: "Institution";
-  id: string;
-  name: string;
-}
-
-export interface InstitutionById_institution_regions_annual_budgets {
-  __typename: "AnnualBudget";
-  year: number;
-  planned_budget: any;
-  total_expenses: any;
-}
-
-export interface InstitutionById_institution_regions {
-  __typename: "Region";
-  id: string;
-  name: string;
-  parent_region_id: string | null;
-  contact_id: string | null;
-  contact: InstitutionById_institution_regions_contact | null;
-  churches: InstitutionById_institution_regions_churches[] | null;
-  institution: InstitutionById_institution_regions_institution;
-  annual_budgets: InstitutionById_institution_regions_annual_budgets[] | null;
-  created_at: any;
-  updated_at: any;
-  created_by: string;
-  updated_by: string;
-  is_deleted: boolean;
-  deleted_at: any | null;
-  deleted_by: string | null;
-}
-
 export interface InstitutionById_institution_churches_contact {
   __typename: "Contact";
   id: string;
@@ -405,7 +344,6 @@ export interface InstitutionById_institution {
   is_deleted: boolean;
   deleted_at: any | null;
   deleted_by: string | null;
-  regions_count: number;
   churches_count: number;
   departments_count: number;
   users_count: number;
@@ -414,7 +352,6 @@ export interface InstitutionById_institution {
   direct_messages: InstitutionById_institution_direct_messages[];
   projects: InstitutionById_institution_projects[] | null;
   users: InstitutionById_institution_users[] | null;
-  regions: InstitutionById_institution_regions[] | null;
   churches: InstitutionById_institution_churches[] | null;
   departments: InstitutionById_institution_departments[] | null;
 }

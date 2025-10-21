@@ -180,10 +180,6 @@ export default function UserProfilePage() {
     churches.find(church => church.id === user?.church_id), [user]
   )
   
-  const userRegion = useMemo(() => 
-    regions.find(region => region.id === user?.region_id), [user]
-  )
-  
   const userDepartment = useMemo(() => 
     departments.find(dept => dept.id === user?.department_id), [user]
   )
@@ -340,7 +336,6 @@ export default function UserProfilePage() {
           user={user}
           userInstitution={userInstitution}
           userChurch={userChurch}
-          userRegion={userRegion}
           userDepartment={userDepartment}
           onSendMessage={() => setIsMessageDrawerOpen(true)}
           onViewContact={() => setIsContactModalOpen(true)}
@@ -1236,7 +1231,6 @@ export default function UserProfilePage() {
           user={user}
           institutions={institutions}
           churches={churches}
-          regions={regions}
           departments={departments}
           roles={roles}
           onSuccess={() => {

@@ -218,7 +218,6 @@ export default function UsersPage() {
     newUsersThisMonth,
     usersByRole,
     usersByInstitution,
-    usersByRegion,
     userGrowthOverTime,
   } = useUserKPI()
 
@@ -862,7 +861,6 @@ export default function UsersPage() {
               user={selectedUser}
               institutions={institutions}
               churches={churches}
-              regions={regions}
               departments={departments}
               roles={roles}
               onSuccess={(userData) => {

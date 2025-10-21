@@ -17,13 +17,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
-import { cn } from "@/lib/utils"
 import { 
   MapPin, 
   Save, 
-  Globe, 
-  Mail,
-  Phone,
   FileText,
   ChevronLeft,
   ChevronRight,
@@ -32,6 +28,7 @@ import {
 import toast from "react-hot-toast"
 import { useRegions } from "@/hooks/use-regions"
 import { CreateRegion } from "@/types/CreateRegion"
+import { RegionCreateDto } from "@/types/graphql-global-types"
 
 export interface AddRegionFormData {
   name: string
@@ -43,13 +40,11 @@ export interface AddRegionFormData {
 
 export interface AddRegionModalProps {
   children: React.ReactNode
-  institutionId: string
   onSuccess: (data: CreateRegion) => void
 }
 
 export function AddRegionModal({
   children,
-  institutionId,
   onSuccess
 }: AddRegionModalProps) {
   const { createRegion } = useRegions();
@@ -57,12 +52,9 @@ export function AddRegionModal({
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
-  const [formData, setFormData] = useState<AddRegionFormData>({
+  const [formData, setFormData] = useState<RegionCreateDto>({
     name: "",
     description: "",
-    email: "",
-    phone: "",
-    website: "",
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -79,9 +71,6 @@ export function AddRegionModal({
       setFormData({
         name: "",
         description: "",
-        email: "",
-        phone: "",
-        website: "",
       })
       setErrors({})
       setCurrentStep(1)
@@ -114,18 +103,6 @@ export function AddRegionModal({
       }
     }
 
-    if (step === 2) {
-      if (!formData.email?.trim()) {
-        newErrors.email = "Email is required"
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        newErrors.email = "Please enter a valid email address"
-      }
-
-      if (formData.website && formData.website.trim() && !formData.website.match(/^https?:\/\//)) {
-        newErrors.website = "Website must start with http:// or https://"
-      }
-    }
-
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -154,12 +131,8 @@ export function AddRegionModal({
       await new Promise(resolve => setTimeout(resolve, 1000))
       const res = await createRegion({
         variables: {
-            institution_id: institutionId,
             name: formData.name,
             description: formData.description,
-            email: formData.email,
-            phone: formData.phone,
-            website: formData.website,
         }
       });
       if (!res.data) throw new Error("Failed to create region")
@@ -187,9 +160,6 @@ export function AddRegionModal({
     setFormData({
       name: "",
       description: "",
-      email: "",
-      phone: "",
-      website: "",
     })
     setErrors({})
     setCurrentStep(1)
@@ -228,70 +198,6 @@ export function AddRegionModal({
           </div>
         )
 
-      case 2:
-        return (
-          <div className="space-y-6 animate-in fade-in-0 duration-300">
-            <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">Contact Information</h3>
-              <p className="text-sm text-muted-foreground">Add contact details for the region</p>
-            </div>
-            
-            <div className="space-y-4 max-w-md mx-auto">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="flex items-center gap-2 text-sm">
-                  <Mail className="w-4 h-4 text-muted-foreground" />
-                  Contact Email *
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="contact@region.org"
-                  disabled={isLoading}
-                  className={`h-12 text-base ${errors.email ? 'border-red-500' : ''}`}
-                />
-                {errors.email && (
-                  <p className="text-sm text-red-600">{errors.email}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="flex items-center gap-2 text-sm">
-                  <Phone className="w-4 h-4 text-muted-foreground" />
-                  Phone (Optional)
-                </Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder="+1 (555) 123-4567"
-                  disabled={isLoading}
-                  className="h-12 text-base"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="website" className="flex items-center gap-2 text-sm">
-                  <Globe className="w-4 h-4 text-muted-foreground" />
-                  Website (Optional)
-                </Label>
-                <Input
-                  id="website"
-                  value={formData.website}
-                  onChange={(e) => handleInputChange('website', e.target.value)}
-                  placeholder="https://www.region.org"
-                  disabled={isLoading}
-                  className={`h-12 text-base ${errors.website ? 'border-red-500' : ''}`}
-                />
-                {errors.website && (
-                  <p className="text-sm text-red-600">{errors.website}</p>
-                )}
-              </div>
-            </div>
-          </div>
-        )
-
       case 3:
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
@@ -308,7 +214,7 @@ export function AddRegionModal({
                 </Label>
                 <Textarea
                   id="description"
-                  value={formData.description}
+                  value={formData.description || ""}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   placeholder="Brief description about the region, its mission, and activities..."
                   disabled={isLoading}

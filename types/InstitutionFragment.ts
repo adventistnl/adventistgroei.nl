@@ -139,67 +139,6 @@ export interface InstitutionFragment_users {
   user_roles: InstitutionFragment_users_user_roles[] | null;
 }
 
-export interface InstitutionFragment_regions_contact {
-  __typename: "Contact";
-  id: string;
-  name: string | null;
-  phone: string | null;
-  mobile: string | null;
-  email: string | null;
-  country: string | null;
-  city: string | null;
-  address: string | null;
-  full_address: string | null;
-  postal_code: string | null;
-  website: string | null;
-  notes: string | null;
-  is_primary: boolean;
-  created_at: any;
-  updated_at: any;
-  created_by: string;
-  updated_by: string;
-  is_deleted: boolean;
-  deleted_at: any | null;
-  deleted_by: string | null;
-}
-
-export interface InstitutionFragment_regions_churches {
-  __typename: "Church";
-  id: string;
-}
-
-export interface InstitutionFragment_regions_institution {
-  __typename: "Institution";
-  id: string;
-  name: string;
-}
-
-export interface InstitutionFragment_regions_annual_budgets {
-  __typename: "AnnualBudget";
-  year: number;
-  planned_budget: any;
-  total_expenses: any;
-}
-
-export interface InstitutionFragment_regions {
-  __typename: "Region";
-  id: string;
-  name: string;
-  parent_region_id: string | null;
-  contact_id: string | null;
-  contact: InstitutionFragment_regions_contact | null;
-  churches: InstitutionFragment_regions_churches[] | null;
-  institution: InstitutionFragment_regions_institution;
-  annual_budgets: InstitutionFragment_regions_annual_budgets[] | null;
-  created_at: any;
-  updated_at: any;
-  created_by: string;
-  updated_by: string;
-  is_deleted: boolean;
-  deleted_at: any | null;
-  deleted_by: string | null;
-}
-
 export interface InstitutionFragment_churches_contact {
   __typename: "Contact";
   id: string;
@@ -405,7 +344,6 @@ export interface InstitutionFragment {
   is_deleted: boolean;
   deleted_at: any | null;
   deleted_by: string | null;
-  regions_count: number;
   churches_count: number;
   departments_count: number;
   users_count: number;
@@ -414,7 +352,6 @@ export interface InstitutionFragment {
   direct_messages: InstitutionFragment_direct_messages[];
   projects: InstitutionFragment_projects[] | null;
   users: InstitutionFragment_users[] | null;
-  regions: InstitutionFragment_regions[] | null;
   churches: InstitutionFragment_churches[] | null;
   departments: InstitutionFragment_departments[] | null;
 }

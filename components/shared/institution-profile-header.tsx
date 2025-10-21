@@ -1,36 +1,26 @@
 "use client"
 
-import React, { use, useState } from "react"
+import React, { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
   Building,
-  MapPin,
   Home,
-  Shield,
   Globe,
   Users,
   MoreHorizontal,
-  Send,
   Eye,
   Edit,
   Trash2,
   ArrowLeft,
   ChevronDown,
   ChevronRight,
-  Mail,
-  Phone,
-  Calendar,
   DollarSign,
   Layers,
-  Camera,
-  Upload,
-  X
 } from "lucide-react"
 import { Separator } from "@radix-ui/react-separator"
 import { InstitutionById_institution } from "@/types/InstitutionById"
@@ -44,7 +34,6 @@ export interface InstitutionProfileHeaderProps {
   onEdit?: () => void
   onDelete?: () => void
   onViewContact?: () => void
-  onManageRegions?: () => void
   onManageChurches?: () => void
   onManageDepartments?: () => void
   onImageUpload?: (file: File) => void
@@ -59,16 +48,13 @@ export function InstitutionProfileHeader({
   onEdit,
   onDelete,
   onViewContact,
-  onManageRegions,
   onManageChurches,
   onManageDepartments,
   onImageUpload,
   onImageRemove,
   className = ""
 }: InstitutionProfileHeaderProps) {
-  const { t } = useTranslation()
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
   const [showBudgetModal, setShowBudgetModal] = useState(false)
 
   // Example budget data (in real app, this would come from props or API)
@@ -92,12 +78,6 @@ export function InstitutionProfileHeader({
 
   const organizationStats = [
     {
-      icon: MapPin,
-      label: "Regions",
-      value: institution.regions_count || 0,
-      color: "text-green-600"
-    },
-    {
       icon: Home,
       label: "Churches", 
       value: institution.churches_count || 0,
@@ -116,24 +96,6 @@ export function InstitutionProfileHeader({
       color: "text-purple-600"
     }
   ]
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file && onImageUpload) {
-      setIsUploading(true)
-      onImageUpload(file)
-      // Reset the input
-      event.target.value = ''
-      // Simulate upload completion (in real app, this would be handled by the parent)
-      setTimeout(() => setIsUploading(false), 1000)
-    }
-  }
-
-  const handleImageRemove = () => {
-    if (onImageRemove) {
-      onImageRemove()
-    }
-  }
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -281,12 +243,6 @@ export function InstitutionProfileHeader({
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  {onManageRegions && (
-                    <DropdownMenuItem onClick={onManageRegions}>
-                      <MapPin className="w-4 h-4 mr-2" />
-                      Manage Regions
-                    </DropdownMenuItem>
-                  )}
                   {onManageChurches && (
                     <DropdownMenuItem onClick={onManageChurches}>
                       <Home className="w-4 h-4 mr-2" />

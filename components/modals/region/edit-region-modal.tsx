@@ -9,20 +9,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
-import { cn } from "@/lib/utils"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+
 import { 
   MapPin, 
   Save, 
-  Globe, 
-  Mail,
-  Phone,
   FileText,
   ChevronLeft,
   ChevronRight,
@@ -30,64 +20,28 @@ import {
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { useRegions } from "@/hooks/use-regions"
-import { UpdateRegion, UpdateRegionVariables } from "@/types/UpdateRegion"
-
-export interface EditRegionFormData {
-  name: string
-  description?: string
-  email: string
-  phone?: string
-  website?: string
-}
-
-export interface RegionData {
-  id: string
-  institution_id: string
-  name: string
-  description?: string | null
-  email?: string | null
-  phone?: string | null
-  website?: string | null
-  parent_region_id?: string | null
-  created_at: string
-  updated_at: string
-  created_by: string
-  updated_by: string
-  is_deleted: boolean
-  deleted_at?: string | null
-  deleted_by?: string | null
-}
-
-export interface ParentRegionData {
-  id: string
-  name: string
-  institution_id: string
-}
+import { UpdateRegionVariables } from "@/types/UpdateRegion"
+import { Region, RegionUpdateDto } from "@/types/graphql-global-types"
 
 export interface EditRegionModalProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  region: RegionData
-  parentRegions?: ParentRegionData[]
-  onSave: (region: RegionData) => void
+  region: Region
+  onSave: (region: Region) => void
 }
 
 export function EditRegionModal({
   isOpen,
   onOpenChange,
   region,
-  parentRegions = [],
   onSave
 }: EditRegionModalProps) {
   const { updateRegion } = useRegions()
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
-  const [formData, setFormData] = useState<EditRegionFormData>({
+  const [formData, setFormData] = useState<RegionUpdateDto>({
     name: "",
     description: "",
-    email: "",
-    phone: "",
-    website: "",
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -102,16 +56,13 @@ export function EditRegionModal({
       setFormData({
         name: region.name || "",
         description: region.description || "",
-        email: region.email || "",
-        phone: region.phone || "",
-        website: region.website || "",
       })
       setErrors({})
       setCurrentStep(1)
     }
   }, [region, isOpen])
 
-  const handleInputChange = (field: keyof EditRegionFormData, value: string) => {
+  const handleInputChange = (field: keyof RegionUpdateDto, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value === "" ? undefined : value
@@ -134,18 +85,6 @@ export function EditRegionModal({
         newErrors.name = "Region name is required"
       } else if (formData.name.trim().length < 2) {
         newErrors.name = "Region name must be at least 2 characters"
-      }
-    }
-
-    if (step === 2) {
-      if (!formData.email?.trim()) {
-        newErrors.email = "Email is required"
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        newErrors.email = "Please enter a valid email address"
-      }
-
-      if (formData.website && formData.website.trim() && !formData.website.match(/^https?:\/\//)) {
-        newErrors.website = "Website must start with http:// or https://"
       }
     }
 
@@ -179,12 +118,7 @@ export function EditRegionModal({
       const variables: UpdateRegionVariables = {
         id: region.id,
         name: formData.name || "",
-        institution_id: region.institution_id,
-        parent_region_id: null,
         description: formData.description || null,
-        email: formData.email || null,
-        phone: formData.phone || null,
-        website: formData.website || null,
       }
 
       const res = await updateRegion({ variables })
@@ -196,16 +130,10 @@ export function EditRegionModal({
       )
 
       // Create updated region object for callback
-      const updatedRegion: RegionData = {
+      const updatedRegion: Region = {
         ...region,
         name: formData.name || "",
         description: formData.description,
-        email: formData.email,
-        phone: formData.phone,
-        website: formData.website,
-        parent_region_id: null,
-        updated_at: new Date().toISOString(),
-        updated_by: "current_user"
       }
 
       // Call success callback
@@ -228,9 +156,6 @@ export function EditRegionModal({
       setFormData({
         name: region.name || "",
         description: region.description || "",
-        email: region.email || "",
-        phone: region.phone || "",
-        website: region.website || "",
       })
     }
     setErrors({})
@@ -256,7 +181,7 @@ export function EditRegionModal({
                 </Label>
                 <Input
                   id="name"
-                  value={formData.name}
+                  value={formData.name || ""}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="Enter region name"
                   disabled={isLoading}
@@ -276,70 +201,6 @@ export function EditRegionModal({
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">Contact Information</h3>
-              <p className="text-sm text-muted-foreground">Update contact details for the region</p>
-            </div>
-            
-            <div className="space-y-4 max-w-md mx-auto">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="flex items-center gap-2 text-sm">
-                  <Mail className="w-4 h-4 text-muted-foreground" />
-                  Contact Email *
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="contact@region.org"
-                  disabled={isLoading}
-                  className={`h-12 text-base ${errors.email ? 'border-red-500' : ''}`}
-                />
-                {errors.email && (
-                  <p className="text-sm text-red-600">{errors.email}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="flex items-center gap-2 text-sm">
-                  <Phone className="w-4 h-4 text-muted-foreground" />
-                  Phone (Optional)
-                </Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder="+1 (555) 123-4567"
-                  disabled={isLoading}
-                  className="h-12 text-base"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="website" className="flex items-center gap-2 text-sm">
-                  <Globe className="w-4 h-4 text-muted-foreground" />
-                  Website (Optional)
-                </Label>
-                <Input
-                  id="website"
-                  value={formData.website}
-                  onChange={(e) => handleInputChange('website', e.target.value)}
-                  placeholder="https://www.region.org"
-                  disabled={isLoading}
-                  className={`h-12 text-base ${errors.website ? 'border-red-500' : ''}`}
-                />
-                {errors.website && (
-                  <p className="text-sm text-red-600">{errors.website}</p>
-                )}
-              </div>
-            </div>
-          </div>
-        )
-
-      case 3:
-        return (
-          <div className="space-y-6 animate-in fade-in-0 duration-300">
-            <div className="text-center space-y-2">
               <h3 className="text-lg font-medium text-foreground">Additional Details</h3>
               <p className="text-sm text-muted-foreground">Update description about the region</p>
             </div>
@@ -352,7 +213,7 @@ export function EditRegionModal({
                 </Label>
                 <Textarea
                   id="description"
-                  value={formData.description}
+                  value={formData.description || ""}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   placeholder="Brief description about the region, its mission, and activities..."
                   disabled={isLoading}

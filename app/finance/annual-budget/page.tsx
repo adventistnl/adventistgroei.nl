@@ -84,6 +84,7 @@ import {
   AreaChart
 } from "recharts"
 import { CreateAnnualBudgetModal } from "@/components/modals/annual-budget/create-annual-budget-modal"
+import { Label } from "@radix-ui/react-label"
 
 // Interfaces for Budget Management
 interface BudgetRequest {

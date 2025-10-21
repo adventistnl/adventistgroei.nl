@@ -98,8 +98,6 @@ export const CreateAnnualBudgetModal = ({
     switch (requestFormData.entity_type) {
       case EntityType.Institution:
         return institutions || [];
-      case EntityType.Region:
-        return currentInstitutionData?.regions || [];
       case EntityType.Church:
         return currentInstitutionData?.churches || [];
       case EntityType.ChurchDepartment:
