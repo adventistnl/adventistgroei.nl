@@ -12,7 +12,7 @@ interface AuthContextType {
   token: string | null;
   permissions: string[]; // Adicionado para armazenar permissões derivadas
   roles: RoleModel['key_code'][]; // Novo campo para armazenar roles
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string, rememberMe: boolean) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -67,14 +67,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('auth-token');
       localStorage.removeItem('auth-user');
       clearAllCookies(); // Limpa todos os cookies em caso de erro
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   }, []);
 
   const [loginMutation] = useLoginMutation();
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string, rememberMe: boolean): Promise<boolean> => {
     setIsLoading(true);
     try {
       const { data } = await loginMutation({ variables: { email, password } });
@@ -84,11 +84,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role.permissions.flatMap((group: { data: { resolver_name: string }[] }) => group.data.map((perm) => perm.resolver_name))
         );
 
+        const maxAge = rememberMe ? 2592000 : 86400; // 30 dias ou 1 dia
+
         // Armazenar user no localStorage
         localStorage.setItem('auth-user', JSON.stringify(data.login.user));
         // Armazenar token e permissões como cookies
-        setCookie('auth-token', accessToken, { path: '/', sameSite: 'Strict', secure: true, maxAge: 3600 });
-        setCookie('auth-permissions', JSON.stringify(permissions), { path: '/', sameSite: 'Strict', secure: true, maxAge: 3600 });
+        setCookie('auth-token', accessToken, { path: '/', sameSite: 'Strict', secure: true, maxAge });
+        setCookie('auth-permissions', JSON.stringify(permissions), { path: '/', sameSite: 'Strict', secure: true, maxAge });
         setToken(accessToken);
         setUser(data.login.user);
         setPermissions(permissions);

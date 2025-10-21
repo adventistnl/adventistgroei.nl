@@ -332,7 +332,7 @@ export function useRegistration({ translations }: UseRegistrationProps) {
       // Limpar dados salvos após registro bem-sucedido
       
       // // Redirecionar para login após sucesso
-      await login(data.email, data.password);
+      await login(data.email, data.password, true);
       router.push(`/dashboard`);
       clearSavedData()
       return userCreated.createUser || null;  
