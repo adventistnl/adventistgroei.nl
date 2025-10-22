@@ -17,6 +17,10 @@ const resources = {
         recent_activities: "Recent Activities",
         quick_actions: "Quick Actions"
       },
+      privacy: {
+        protected_content: "Protected Content",
+        contact_admin: "Contact administrator for access"
+      },
       activities: {
         modal: {
           title: "Activity Details",
@@ -1116,6 +1120,245 @@ const resources = {
             offline: "Offline"
           }
         }
+      },
+      annual_budget: {
+        title: "Annual Budget Management",
+        subtitle: "Manage budget requests and approvals across all organizational entities",
+        buttons: {
+          new_budget_request: "New Budget Request",
+          refresh: "Refresh",
+          add_year: "Add Year"
+        },
+        year_filter: {
+          title: "Budget Year",
+          subtitle_single: "{{count}} request for {{year}}",
+          subtitle_plural: "{{count}} requests for {{year}}"
+        },
+        kpi_cards: {
+          total_institution_budget: {
+            title: "Total Institution Budget",
+            subtitle: "Budget for {{year}}",
+            subtitle_not_set: "Click to set budget for {{year}}",
+            not_set: "Not Set",
+            trend: "vs last year"
+          },
+          total_allocated: {
+            title: "Total Allocated",
+            subtitle: "Allocated to departments",
+            trend: "vs last year"
+          },
+          total_spent: {
+            title: "Total Spent",
+            subtitle: "Current spending",
+            trend: "vs last month"
+          },
+          budget_remaining: {
+            title: "Budget Remaining",
+            subtitle_available: "Available for allocation",
+            subtitle_deficit: "Budget deficit",
+            trend: "vs last year"
+          },
+          budget_utilization: {
+            title: "Budget Utilization",
+            subtitle: "{{count}} active departments",
+            trend: "vs last year"
+          }
+        },
+        charts: {
+          budget_analytics: {
+            title: "Budget Analytics Overview"
+          },
+          spending_over_time: {
+            title: "Department Spending Over Time",
+            subtitle: "Showing spending trends for {{year}}",
+            time_ranges: {
+              "12m": "Last 12 months",
+              "6m": "Last 6 months",
+              "3m": "Last 3 months"
+            },
+            chart_types: {
+              area: "Area",
+              bar: "Bar"
+            }
+          },
+          budget_distribution: {
+            title: "Institution Budget Distribution {{year}}",
+            subtitle: "Total budget vs allocated to departments",
+            label: {
+              allocated: "Allocated",
+              percentage_text: "Allocated",
+              total_budget: "Total Budget"
+            },
+            legend: {
+              allocated: "Allocated",
+              remaining: "Remaining"
+            }
+          },
+          department_spending: {
+            title: "Department Spending"
+          }
+        },
+        table: {
+          title: "Budget Management Table",
+          subtitle: "Manage budget requests, lock/unlock budgets, and track spending across all entities",
+          headers: {
+            entity_name: "Entity Name",
+            entity_type: "Type",
+            budget_total: "Total Budget",
+            spent_amount: "Total Spent",
+            usage_percentage: "Usage %",
+            lock_status: "Lock Status",
+            budget_status: "Budget Status",
+            actions: "Actions"
+          },
+          lock_tooltips: {
+            locked: "Click to unlock",
+            unlocked: "Click to lock",
+            disabled: "Budget record missing"
+          },
+          lock_actions: {
+            lock: "Lock budget",
+            unlock: "Unlock budget"
+          },
+          budget_status_labels: {
+            completed: "Completed",
+            missing: "Missing"
+          },
+          actions_menu: {
+            manage: "Manage Budget",
+            lock: "Lock Budget",
+            unlock: "Unlock Budget",
+            delete: "Delete Budget"
+          }
+        },
+        modals: {
+          add: {
+            title: "Add Annual Budget",
+            description: "Create a new annual budget for the institution"
+          },
+          edit: {
+            title: "Edit Annual Budget",
+            description: "Update annual budget information"
+          },
+          steps: {
+            basic_information: "Budget Overview",
+            basic_information_desc: "Year, planned budget, and current status",
+            financial_details: "Financial Details",
+            financial_details_desc: "Expenses, balance, and financial tracking",
+            additional_info: "Additional Information",
+            additional_info_desc: "Notes, approvals, and comments"
+          },
+          fields: {
+            year: "Budget Year",
+            year_placeholder: "Enter budget year (e.g., 2024)",
+            year_help: "The fiscal year this budget applies to",
+            planned_budget: "Planned Budget",
+            planned_budget_placeholder: "Enter planned budget amount",
+            total_expenses: "Total Expenses",
+            total_expenses_placeholder: "Enter total expenses to date",
+            balance: "Current Balance",
+            balance_placeholder: "Calculated automatically",
+            balance_help: "Balance is calculated automatically as Planned Budget - Total Expenses",
+            status: "Budget Status",
+            status_placeholder: "Select budget status",
+            status_help: "Current stage of the budget process",
+            notes: "Notes",
+            notes_placeholder: "Additional notes or comments about this budget...",
+            no_notes: "No notes provided",
+            approved_by: "Approved By",
+            approved_by_placeholder: "Select approving user"
+          },
+          status_options: {
+            planned: "Planned",
+            approved: "Approved",
+            in_progress: "In Progress",
+            closed: "Closed"
+          },
+          validation: {
+            year_required: "Budget year is required",
+            year_invalid: "Please enter a valid year (e.g., 2024)",
+            year_min: "Year must be 2000 or later",
+            year_max: "Year cannot be more than 10 years in the future",
+            planned_budget_required: "Planned budget is required",
+            planned_budget_invalid: "Please enter a valid budget amount",
+            planned_budget_min: "Planned budget must be greater than 0",
+            total_expenses_invalid: "Please enter a valid expense amount",
+            total_expenses_negative: "Total expenses cannot be negative",
+            status_required: "Budget status is required",
+            fix_errors: "Please fix the errors before continuing"
+          },
+          buttons: {
+            previous: "Previous",
+            next: "Next",
+            cancel: "Cancel",
+            save: "Save Budget",
+            update: "Update Budget",
+            close: "Close",
+            edit: "Edit"
+          },
+          summary: {
+            title: "Budget Summary",
+            planned: "Planned",
+            expenses: "Expenses",
+            balance: "Balance"
+          },
+          review: {
+            title: "Review & Confirm"
+          },
+          system_info: {
+            title: "System Information",
+            created_at: "Created At",
+            updated_at: "Updated At"
+          },
+          lock_tooltip: {
+            locked: "Unlock first to be able to edit",
+            unlocked: "Unlocked - Can be edited"
+          },
+          status: {
+            positive: "Positive",
+            deficit: "Deficit",
+            deleted: "Deleted"
+          },
+          messages: {
+            saving: "Saving...",
+            updating: "Updating...",
+            loading: "Loading...",
+            saved: "Annual budget saved successfully!",
+            updated: "Annual budget updated successfully!",
+            save_failed: "Failed to save annual budget",
+            update_failed: "Failed to update annual budget"
+          },
+          delete: {
+            title: "Delete Budget",
+            description: "This action will permanently delete the budget and all related data.",
+            view_consequences: "View Consequences",
+            understand_consequences: "I understand the consequences of deleting this budget",
+            acknowledge_text: "I acknowledge that all budget data and history will be permanently lost.",
+            type_confirmation: "Type \"DELETE BUDGET\" to confirm:",
+            confirmation_placeholder: "DELETE BUDGET",
+            confirmation_help: "Type exactly as shown above to enable the delete button",
+            delete_budget: "Delete Budget",
+            consequences: {
+              financial_record: "Financial Record Loss",
+              financial_record_desc: "All financial records, transactions, and budget history will be permanently removed.",
+              historical_data: "Historical Data Loss",
+              historical_data_desc: "Budget trends, comparisons, and historical analytics will be affected.",
+              reporting_impact: "Reporting Impact",
+              reporting_impact_desc: "Financial reports and annual statements will no longer include this budget data.",
+              approval_chain: "Approval Chain Loss",
+              approval_chain_desc: "All approval history, reviewers, and authorization records will be deleted."
+            },
+            permanent_warning: {
+              title: "This is a permanent action",
+              description: "Budget records cannot be recovered once deleted. All data will be permanently lost."
+            },
+            messages: {
+              deleting: "Deleting...",
+              deleted: "Budget deleted successfully",
+              delete_failed: "Failed to delete budget"
+            }
+          }
+        }
       }
     }
   },
@@ -1132,6 +1375,10 @@ const resources = {
         communications_chart_title: "Communicatie & Berichtenstroom",
         recent_activities: "Recente Activiteiten",
         quick_actions: "Snelle Acties"
+      },
+      privacy: {
+        protected_content: "Beschermde Inhoud",
+        contact_admin: "Neem contact op met de beheerder voor toegang"
       },
       activities: {
         modal: {
@@ -2231,58 +2478,493 @@ const resources = {
             online: "Online",
             offline: "Offline"
           }
+        }
+      },
+      annual_budget: {
+        title: "Jaarbegroting Beheer",
+        subtitle: "Beheer begrotingsaanvragen en goedkeuringen voor alle organisatie-entiteiten",
+        buttons: {
+          new_budget_request: "Nieuwe Begrotingsaanvraag",
+          refresh: "Vernieuwen",
+          add_year: "Jaar Toevoegen"
         },
-
-        // Contact modal translations
-        contacts: {
-          modal: {
-            title: "Contact Information",
-            for_entity: "Contact details for {{entity}}"
+        year_filter: {
+          title: "Begrotingsjaar",
+          subtitle_single: "{{count}} aanvraag voor {{year}}",
+          subtitle_plural: "{{count}} aanvragen voor {{year}}"
+        },
+        kpi_cards: {
+          total_institution_budget: {
+            title: "Totaal Instellingsbudget",
+            subtitle: "Budget voor {{year}}",
+            subtitle_not_set: "Klik om budget voor {{year}} in te stellen",
+            not_set: "Niet Ingesteld",
+            trend: "vs vorig jaar"
           },
-          primary: "Primary Contact",
-          secondary: "Secondary Contact",
-          created_at: "Created {{date}}",
-          empty_field: "Not provided",
-          saving: "Saving...",
-          sections: {
-            basic_info: "Basic Information",
-            address: "Address Information",
-            additional: "Additional Information"
+          total_allocated: {
+            title: "Totaal Toegewezen",
+            subtitle: "Toegewezen aan afdelingen",
+            trend: "vs vorig jaar"
           },
-          fields: {
-            name: "Contact Name",
-            email: "Email Address",
-            phone: "Phone Number",
-            mobile: "Mobile Number",
-            website: "Website",
-            country: "Country",
-            city: "City",
-            address: "Street Address",
-            full_address: "Full Address",
-            postal_code: "Postal Code",
-            notes: "Notes",
-            is_primary: "Primary Contact"
+          total_spent: {
+            title: "Totaal Uitgegeven",
+            subtitle: "Huidige uitgaven",
+            trend: "vs vorige maand"
           },
-          placeholders: {
-            name: "Enter contact name",
-            email: "Enter email address",
-            phone: "Enter phone number",
-            mobile: "Enter mobile number",
-            website: "https://example.com",
-            country: "Enter country",
-            city: "Enter city",
-            address: "Enter street address",
-            full_address: "Enter complete address",
-            postal_code: "Enter postal code",
-            notes: "Additional notes or comments..."
+          budget_remaining: {
+            title: "Resterend Budget",
+            subtitle_available: "Beschikbaar voor toewijzing",
+            subtitle_deficit: "Budget tekort",
+            trend: "vs vorig jaar"
           },
-          toasts: {
-            updating: "Updating contact information...",
-            updated: "Contact information updated successfully",
-            update_failed: "Failed to update contact information"
+          budget_utilization: {
+            title: "Budgetbenutting",
+            subtitle: "{{count}} actieve afdelingen",
+            trend: "vs vorig jaar"
           }
         },
-
+        charts: {
+          budget_analytics: {
+            title: "Budget Analyse Overzicht"
+          },
+          spending_over_time: {
+            title: "Departement Uitgaven in de Tijd",
+            subtitle: "Uitgaventrends voor {{year}}",
+            time_ranges: {
+              "12m": "Laatste 12 maanden",
+              "6m": "Laatste 6 maanden",
+              "3m": "Laatste 3 maanden"
+            },
+            chart_types: {
+              area: "Area",
+              bar: "Balk"
+            }
+          },
+          budget_distribution: {
+            title: "Instelling Budgetverdeling {{year}}",
+            subtitle: "Totaal budget vs toegewezen aan afdelingen",
+            label: {
+              allocated: "Toegewezen",
+              percentage_text: "Toegewezen",
+              total_budget: "Totaal Budget"
+            },
+            legend: {
+              allocated: "Toegewezen",
+              remaining: "Resterend"
+            }
+          },
+          department_spending: {
+            title: "Afdelingsuitgaven"
+          }
+        },
+        table: {
+          title: "Budget Beheertabel",
+          subtitle: "Beheer begrotingsaanvragen, vergrendel/ontgrendel budgetten en volg uitgaven voor alle entiteiten",
+          headers: {
+            entity_name: "Naam Entiteit",
+            entity_type: "Type",
+            budget_total: "Totaal Budget",
+            spent_amount: "Totaal Uitgegeven",
+            usage_percentage: "Gebruik %",
+            lock_status: "Vergrendelstatus",
+            budget_status: "Budgetstatus",
+            actions: "Acties"
+          },
+          lock_tooltips: {
+            locked: "Klik om te ontgrendelen",
+            unlocked: "Klik om te vergrendelen",
+            disabled: "Budgetrecord ontbreekt"
+          },
+          lock_actions: {
+            lock: "Budget vergrendelen",
+            unlock: "Budget ontgrendelen"
+          },
+          budget_status_labels: {
+            completed: "Voltooid",
+            missing: "Ontbreekt"
+          },
+          actions_menu: {
+            manage: "Budget Beheren",
+            lock: "Budget Vergrendelen",
+            unlock: "Budget Ontgrendelen",
+            delete: "Budget Verwijderen"
+          }
+        },
+        modals: {
+          add: {
+            title: "Jaarbegroting Toevoegen",
+            description: "Maak een nieuwe jaarbegroting voor de instelling"
+          },
+          edit: {
+            title: "Jaarbegroting Bewerken",
+            description: "Werk jaarbegroting informatie bij"
+          },
+          steps: {
+            basic_information: "Begroting Overzicht",
+            basic_information_desc: "Jaar, geplande begroting en huidige status",
+            financial_details: "Financiële Details",
+            financial_details_desc: "Uitgaven, saldo en financiële tracking",
+            additional_info: "Aanvullende Informatie",
+            additional_info_desc: "Opmerkingen, goedkeuringen en commentaren"
+          },
+          fields: {
+            year: "Begrotingsjaar",
+            year_placeholder: "Voer begrotingsjaar in (bijv. 2024)",
+            year_help: "Het boekjaar waarop deze begroting betrekking heeft",
+            planned_budget: "Geplande Begroting",
+            planned_budget_placeholder: "Voer geplande begrotingsbedrag in",
+            total_expenses: "Totale Uitgaven",
+            total_expenses_placeholder: "Voer totale uitgaven tot nu toe in",
+            balance: "Huidig Saldo",
+            balance_placeholder: "Automatisch berekend",
+            balance_help: "Saldo wordt automatisch berekend als Geplande Begroting - Totale Uitgaven",
+            status: "Begrotingsstatus",
+            status_placeholder: "Selecteer begrotingsstatus",
+            status_help: "Huidige fase van het begrotingsproces",
+            notes: "Opmerkingen",
+            notes_placeholder: "Aanvullende opmerkingen of commentaren over deze begroting...",
+            no_notes: "Geen opmerkingen verstrekt",
+            approved_by: "Goedgekeurd Door",
+            approved_by_placeholder: "Selecteer goedkeurende gebruiker"
+          },
+          status_options: {
+            planned: "Gepland",
+            approved: "Goedgekeurd",
+            in_progress: "In Uitvoering",
+            closed: "Afgesloten"
+          },
+          validation: {
+            year_required: "Begrotingsjaar is verplicht",
+            year_invalid: "Voer een geldig jaar in (bijv. 2024)",
+            year_min: "Jaar moet 2000 of later zijn",
+            year_max: "Jaar kan niet meer dan 10 jaar in de toekomst zijn",
+            planned_budget_required: "Geplande begroting is verplicht",
+            planned_budget_invalid: "Voer een geldig begrotingsbedrag in",
+            planned_budget_min: "Geplande begroting moet groter zijn dan 0",
+            total_expenses_invalid: "Voer een geldig uitgavenbedrag in",
+            total_expenses_negative: "Totale uitgaven kunnen niet negatief zijn",
+            status_required: "Begrotingsstatus is verplicht",
+            fix_errors: "Los de fouten op voordat u doorgaat"
+          },
+          buttons: {
+            previous: "Vorige",
+            next: "Volgende",
+            cancel: "Annuleren",
+            save: "Begroting Opslaan",
+            update: "Begroting Bijwerken",
+            close: "Sluiten",
+            edit: "Bewerken"
+          },
+          summary: {
+            title: "Begrotingsoverzicht",
+            planned: "Gepland",
+            expenses: "Uitgaven",
+            balance: "Saldo"
+          },
+          review: {
+            title: "Controleren & Bevestigen"
+          },
+          system_info: {
+            title: "Systeeminformatie",
+            created_at: "Aangemaakt op",
+            updated_at: "Bijgewerkt op"
+          },
+          lock_tooltip: {
+            locked: "Ontgrendel eerst om te kunnen bewerken",
+            unlocked: "Ontgrendeld - Kan worden bewerkt"
+          },
+          status: {
+            positive: "Positief",
+            deficit: "Tekort",
+            deleted: "Verwijderd"
+          },
+          messages: {
+            saving: "Opslaan...",
+            updating: "Bijwerken...",
+            loading: "Laden...",
+            saved: "Jaarbegroting succesvol opgeslagen!",
+            updated: "Jaarbegroting succesvol bijgewerkt!",
+            save_failed: "Opslaan van jaarbegroting mislukt",
+            update_failed: "Bijwerken van jaarbegroting mislukt"
+          },
+          delete: {
+            title: "Begroting Verwijderen",
+            description: "Deze actie zal de begroting en alle gerelateerde gegevens permanent verwijderen.",
+            view_consequences: "Bekijk Gevolgen",
+            understand_consequences: "Ik begrijp de gevolgen van het verwijderen van deze begroting",
+            acknowledge_text: "Ik bevestig dat alle begrotingsgegevens en geschiedenis permanent verloren gaan.",
+            type_confirmation: "Typ \"DELETE BUDGET\" om te bevestigen:",
+            confirmation_placeholder: "DELETE BUDGET",
+            confirmation_help: "Typ exact zoals hierboven getoond om de verwijderknop in te schakelen",
+            delete_budget: "Begroting Verwijderen",
+            consequences: {
+              financial_record: "Verlies van Financiële Gegevens",
+              financial_record_desc: "Alle financiële gegevens, transacties en begrotingsgeschiedenis worden permanent verwijderd.",
+              historical_data: "Verlies van Historische Gegevens",
+              historical_data_desc: "Begrotingstrends, vergelijkingen en historische analyses worden beïnvloed.",
+              reporting_impact: "Impact op Rapportage",
+              reporting_impact_desc: "Financiële rapporten en jaarverklaringen zullen deze begrotingsgegevens niet meer bevatten.",
+              approval_chain: "Verlies van Goedkeuringsketen",
+              approval_chain_desc: "Alle goedkeuringsgeschiedenis, beoordelaars en autorisatierecords worden verwijderd."
+            },
+            permanent_warning: {
+              title: "Dit is een permanente actie",
+              description: "Begrotingsrecords kunnen niet worden hersteld zodra ze zijn verwijderd. Alle gegevens gaan permanent verloren."
+            },
+            messages: {
+              deleting: "Verwijderen...",
+              deleted: "Begroting succesvol verwijderd",
+              delete_failed: "Verwijderen van begroting mislukt"
+            }
+          }
+        }
+      }
+    }
+  },
+  pt: {
+    translation: {
+      privacy: {
+        protected_content: "Conteúdo Protegido",
+        contact_admin: "Entre em contato com o administrador para acesso"
+      },
+      annual_budget: {
+        title: "Gestão de Orçamento Anual",
+        subtitle: "Gerencie solicitações de orçamento e aprovações em todas as entidades organizacionais",
+        buttons: {
+          new_budget_request: "Nova Solicitação de Orçamento",
+          refresh: "Atualizar",
+          add_year: "Adicionar Ano"
+        },
+        year_filter: {
+          title: "Ano do Orçamento",
+          subtitle_single: "{{count}} solicitação para {{year}}",
+          subtitle_plural: "{{count}} solicitações para {{year}}"
+        },
+        kpi_cards: {
+          total_institution_budget: {
+            title: "Orçamento Total da Instituição",
+            subtitle: "Orçamento para {{year}}",
+            subtitle_not_set: "Clique para definir orçamento para {{year}}",
+            not_set: "Não Definido",
+            trend: "vs ano passado"
+          },
+          total_allocated: {
+            title: "Total Alocado",
+            subtitle: "Alocado aos departamentos",
+            trend: "vs ano passado"
+          },
+          total_spent: {
+            title: "Total Gasto",
+            subtitle: "Gasto atual",
+            trend: "vs último mês"
+          },
+          budget_remaining: {
+            title: "Orçamento Restante",
+            subtitle_available: "Disponível para alocação",
+            subtitle_deficit: "Déficit orçamentário",
+            trend: "vs ano passado"
+          },
+          budget_utilization: {
+            title: "Utilização do Orçamento",
+            subtitle: "{{count}} departamentos ativos",
+            trend: "vs ano passado"
+          }
+        },
+        charts: {
+          budget_analytics: {
+            title: "Visão Geral da Análise de Orçamento"
+          },
+          spending_over_time: {
+            title: "Gastos por Departamento ao Longo do Tempo",
+            subtitle: "Mostrando tendências de gastos para {{year}}",
+            time_ranges: {
+              "12m": "Últimos 12 meses",
+              "6m": "Últimos 6 meses",
+              "3m": "Últimos 3 meses"
+            },
+            chart_types: {
+              area: "Área",
+              bar: "Barra"
+            }
+          },
+          budget_distribution: {
+            title: "Distribuição do Orçamento Institucional {{year}}",
+            subtitle: "Orçamento total vs alocado para departamentos",
+            label: {
+              allocated: "Alocado",
+              percentage_text: "Alocado",
+              total_budget: "Orçamento Total"
+            },
+            legend: {
+              allocated: "Alocado",
+              remaining: "Restante"
+            }
+          },
+          department_spending: {
+            title: "Gastos por Departamento"
+          }
+        },
+        table: {
+          title: "Tabela de Gestão de Orçamento",
+          subtitle: "Gerencie solicitações de orçamento, bloqueie/desbloqueie orçamentos e acompanhe gastos em todas as entidades",
+          headers: {
+            entity_name: "Nome da Entidade",
+            entity_type: "Tipo",
+            budget_total: "Orçamento Total",
+            spent_amount: "Total Gasto",
+            usage_percentage: "Uso %",
+            lock_status: "Status de Bloqueio",
+            budget_status: "Status do Orçamento",
+            actions: "Ações"
+          },
+          lock_tooltips: {
+            locked: "Clique para desbloquear",
+            unlocked: "Clique para bloquear",
+            disabled: "Registro de orçamento ausente"
+          },
+          lock_actions: {
+            lock: "Bloquear orçamento",
+            unlock: "Desbloquear orçamento"
+          },
+          budget_status_labels: {
+            completed: "Concluído",
+            missing: "Ausente"
+          },
+          actions_menu: {
+            manage: "Gerenciar Orçamento",
+            lock: "Bloquear Orçamento",
+            unlock: "Desbloquear Orçamento",
+            delete: "Excluir Orçamento"
+          }
+        },
+        modals: {
+          add: {
+            title: "Adicionar Orçamento Anual",
+            description: "Criar um novo orçamento anual para a instituição"
+          },
+          edit: {
+            title: "Editar Orçamento Anual",
+            description: "Atualizar informações do orçamento anual"
+          },
+          steps: {
+            basic_information: "Visão Geral do Orçamento",
+            basic_information_desc: "Ano, orçamento planejado e status atual",
+            financial_details: "Detalhes Financeiros",
+            financial_details_desc: "Despesas, saldo e acompanhamento financeiro",
+            additional_info: "Informações Adicionais",
+            additional_info_desc: "Notas, aprovações e comentários"
+          },
+          fields: {
+            year: "Ano do Orçamento",
+            year_placeholder: "Digite o ano do orçamento (ex: 2024)",
+            year_help: "O ano fiscal ao qual este orçamento se aplica",
+            planned_budget: "Orçamento Planejado",
+            planned_budget_placeholder: "Digite o valor do orçamento planejado",
+            total_expenses: "Total de Despesas",
+            total_expenses_placeholder: "Digite o total de despesas até o momento",
+            balance: "Saldo Atual",
+            balance_placeholder: "Calculado automaticamente",
+            balance_help: "Saldo é calculado automaticamente como Orçamento Planejado - Total de Despesas",
+            status: "Status do Orçamento",
+            status_placeholder: "Selecione o status do orçamento",
+            status_help: "Estágio atual do processo orçamentário",
+            notes: "Observações",
+            notes_placeholder: "Observações ou comentários adicionais sobre este orçamento...",
+            no_notes: "Nenhuma observação fornecida",
+            approved_by: "Aprovado Por",
+            approved_by_placeholder: "Selecione o usuário aprovador"
+          },
+          status_options: {
+            planned: "Planejado",
+            approved: "Aprovado",
+            in_progress: "Em Andamento",
+            closed: "Fechado"
+          },
+          validation: {
+            year_required: "Ano do orçamento é obrigatório",
+            year_invalid: "Digite um ano válido (ex: 2024)",
+            year_min: "Ano deve ser 2000 ou posterior",
+            year_max: "Ano não pode ser mais de 10 anos no futuro",
+            planned_budget_required: "Orçamento planejado é obrigatório",
+            planned_budget_invalid: "Digite um valor de orçamento válido",
+            planned_budget_min: "Orçamento planejado deve ser maior que 0",
+            total_expenses_invalid: "Digite um valor de despesa válido",
+            total_expenses_negative: "Total de despesas não pode ser negativo",
+            status_required: "Status do orçamento é obrigatório",
+            fix_errors: "Corrija os erros antes de continuar"
+          },
+          buttons: {
+            previous: "Anterior",
+            next: "Próximo",
+            cancel: "Cancelar",
+            save: "Salvar Orçamento",
+            update: "Atualizar Orçamento",
+            close: "Fechar",
+            edit: "Editar"
+          },
+          summary: {
+            title: "Resumo do Orçamento",
+            planned: "Planejado",
+            expenses: "Despesas",
+            balance: "Saldo"
+          },
+          review: {
+            title: "Revisar & Confirmar"
+          },
+          system_info: {
+            title: "Informações do Sistema",
+            created_at: "Criado em",
+            updated_at: "Atualizado em"
+          },
+          lock_tooltip: {
+            locked: "Desbloqueie primeiro para poder editar",
+            unlocked: "Desbloqueado - Pode ser editado"
+          },
+          status: {
+            positive: "Positivo",
+            deficit: "Déficit",
+            deleted: "Excluído"
+          },
+          messages: {
+            saving: "Salvando...",
+            updating: "Atualizando...",
+            loading: "Carregando...",
+            saved: "Orçamento anual salvo com sucesso!",
+            updated: "Orçamento anual atualizado com sucesso!",
+            save_failed: "Falha ao salvar orçamento anual",
+            update_failed: "Falha ao atualizar orçamento anual"
+          },
+          delete: {
+            title: "Excluir Orçamento",
+            description: "Esta ação excluirá permanentemente o orçamento e todos os dados relacionados.",
+            view_consequences: "Ver Consequências",
+            understand_consequences: "Compreendo as consequências de excluir este orçamento",
+            acknowledge_text: "Reconheço que todos os dados do orçamento e histórico serão permanentemente perdidos.",
+            type_confirmation: "Digite \"DELETE BUDGET\" para confirmar:",
+            confirmation_placeholder: "DELETE BUDGET",
+            confirmation_help: "Digite exatamente como mostrado acima para habilitar o botão de exclusão",
+            delete_budget: "Excluir Orçamento",
+            consequences: {
+              financial_record: "Perda de Registro Financeiro",
+              financial_record_desc: "Todos os registros financeiros, transações e histórico de orçamento serão removidos permanentemente.",
+              historical_data: "Perda de Dados Históricos",
+              historical_data_desc: "Tendências de orçamento, comparações e análises históricas serão afetadas.",
+              reporting_impact: "Impacto em Relatórios",
+              reporting_impact_desc: "Relatórios financeiros e declarações anuais não incluirão mais estes dados de orçamento.",
+              approval_chain: "Perda da Cadeia de Aprovação",
+              approval_chain_desc: "Todo histórico de aprovação, revisores e registros de autorização serão excluídos."
+            },
+            permanent_warning: {
+              title: "Esta é uma ação permanente",
+              description: "Registros de orçamento não podem ser recuperados após a exclusão. Todos os dados serão permanentemente perdidos."
+            },
+            messages: {
+              deleting: "Excluindo...",
+              deleted: "Orçamento excluído com sucesso",
+              delete_failed: "Falha ao excluir orçamento"
+            }
+          }
+        }
       }
     }
   }
@@ -2292,22 +2974,62 @@ const resources = {
 const initializeI18n = async () => {
   if (!i18n.isInitialized) {
     try {
-      await i18n
-  .use(initReactI18next)
-  .init({
-    resources,
-    lng: 'en', // idioma padrão
-    fallbackLng: 'en',
-    interpolation: {
-      escapeValue: false
+      // Set a timeout for initialization
+      const initPromise = i18n
+        .use(initReactI18next)
+        .init({
+          resources,
+          lng: 'en', // idioma padrão
+          fallbackLng: 'en',
+          interpolation: {
+            escapeValue: false
           },
           react: {
             useSuspense: false
           },
-          debug: false
+          debug: false,
+          // Performance optimizations
+          load: 'languageOnly', // Only load language, not regional variants
+          preload: ['en'], // Preload default language
+          initImmediate: true, // Initialize immediately without waiting
         })
+
+      // Timeout after 2 seconds
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('i18n initialization timeout')), 2000)
+      )
+
+      await Promise.race([initPromise, timeoutPromise])
+      
+      console.log('[i18n] Initialization successful')
+      
+      // Load saved language preference after initialization
+      if (typeof window !== 'undefined') {
+        const savedLanguage = localStorage.getItem('preferred-language')
+        if (savedLanguage && savedLanguage !== 'en' && typeof i18n.changeLanguage === 'function') {
+          i18n.changeLanguage(savedLanguage).catch(err => {
+            console.warn('[i18n] Failed to load saved language, using EN:', err)
+          })
+        }
+      }
     } catch (error) {
-      console.error('Failed to initialize i18n:', error)
+      console.error('[i18n] Failed to initialize, falling back to EN:', error)
+      // Ensure we have at least EN as fallback
+      if (!i18n.isInitialized) {
+        try {
+          // Force a minimal initialization with EN
+          await i18n.use(initReactI18next).init({
+            resources: { en: resources.en },
+            lng: 'en',
+            fallbackLng: 'en',
+            interpolation: { escapeValue: false },
+            react: { useSuspense: false }
+          })
+          console.log('[i18n] Fallback initialization successful')
+        } catch (fallbackError) {
+          console.error('[i18n] Critical: Failed to set fallback language', fallbackError)
+        }
+      }
     }
   }
 }
