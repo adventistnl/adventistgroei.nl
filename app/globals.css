@@ -303,4 +303,60 @@
   [data-collapsible="icon"] .sidebar-logo {
     @apply mx-auto;
   }
+
+  /* ✅ CUSTOM SCROLLBAR STYLES */
+  
+  /* Scrollbar fino e moderno */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-gray-100 rounded-full;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+
+  /* Dark mode scrollbar */
+  .dark .scrollbar-thin {
+    scrollbar-color: #4b5563 transparent;
+  }
+
+  .dark .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-gray-800;
+  }
+
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-gray-600;
+  }
+
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-500;
+  }
+}
+
+/* Privacy Toggle Button - Debug & Visibility Styles */
+.privacy-toggle-button-header {
+  /* Debug: Add outline to identify where button is rendered */
+  outline: 2px dashed rgba(59, 130, 246, 0.3);
+  outline-offset: 2px;
+}
+
+/* Remove outline in production (optional) */
+@media (min-width: 1px) {
+  .privacy-toggle-button-header {
+    outline: none;
+  }
 }

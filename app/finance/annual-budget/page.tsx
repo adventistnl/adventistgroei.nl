@@ -7,25 +7,25 @@ import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { 
   DollarSign, 
   Plus, 
   RefreshCw, 
   MoreHorizontal,
-  Edit,
-  Eye,
   CheckCircle,
   XCircle,
   Clock,
-  TrendingUp,
   Building,
-  Users,
-  LayoutGrid,
-  List,
   AlertTriangle,
   FileText,
+  Lock,
+  Unlock,
+  Settings,
+  Trash2,
+  TrendingUp,
+  Eye,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -41,50 +41,27 @@ import {
   DialogHeader, 
   DialogTitle, 
 } from "@/components/ui/dialog"
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import toast from "react-hot-toast"
-import { DataTable } from "@/components/ui/data-table"
+import { UseTable } from "@/components/ui/use-table"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
-import { KanbanBoard, KanbanGroup, KanbanItem, KanbanAction } from "@/components/ui/kanban-board"
+import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { useInstitution } from "@/contexts/institution-context"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
 import { WithPermission } from "@/hocs/with-permission"
 
-// Charts
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  ChartConfig,
-  ChartLegend,
-  ChartLegendContent,
-} from "@/components/ui/chart"
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
-  Legend,
-  RadialBarChart,
-  RadialBar,
-  PolarRadiusAxis,
-  Label as RechartsLabel,
-  Area,
-  AreaChart
-} from "recharts"
-import { CreateAnnualBudgetModal } from "@/components/modals/annual-budget/create-annual-budget-modal"
-import { Label } from "@radix-ui/react-label"
+// Chart Components
+import { DepartmentSpendingChart } from "@/components/charts/annual-budget/department-spending-chart"
+import { BudgetDistributionChart } from "@/components/charts/annual-budget/budget-distribution-chart"
+import { SpendingOverTimeChart } from "@/components/charts/annual-budget/spending-over-time-chart"
+
+// Modal Components
+import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget/annual-budget-view-edit-modal"
+import { DeleteBudgetModal } from "@/components/modals/annual-budget/delete-budget-modal"
 
 // Interfaces for Budget Management
 interface BudgetRequest {
@@ -109,6 +86,8 @@ interface BudgetRequest {
   documents?: string[]
   created_at: string
   updated_at: string
+  is_locked?: boolean
+  has_budget_record?: boolean
 }
 
 interface BudgetRequestGroup {
@@ -129,17 +108,41 @@ export default function AnnualBudgetPage() {
   const { currentInstitutionData } = useInstitution()
   const [isLoading, setIsLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
-  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('kanban')
+
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   
   // Modal states
-  const [isCreateRequestModalOpen, setIsCreateRequestModalOpen] = useState(false)
-  const [isEditRequestModalOpen, setIsEditRequestModalOpen] = useState(false)
-  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false)
+  const [isViewEditModalOpen, setIsViewEditModalOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedRequest, setSelectedRequest] = useState<BudgetRequest | null>(null)
+  const [isInstitutionBudgetModalOpen, setIsInstitutionBudgetModalOpen] = useState(false)
+  const [institutionBudgetData, setInstitutionBudgetData] = useState<AnnualBudgetData | null>(null)
 
   usePageTitle({
     title: t('annual_budget.title')
+  })
+
+  // State to track if institution has budget for selected year
+  const [institutionBudgets, setInstitutionBudgets] = useState<Record<number, AnnualBudgetData | null>>({
+    2024: {
+      id: 'inst-budget-2024',
+      year: 2024,
+      planned_budget: 1500000,
+      total_expenses: 877500,
+      balance: 622500,
+      notes: 'Institution budget for 2024',
+      approved_by: 'Finance Committee',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z'
+    }
+    // 2025 and 2026 will not have budget initially
+  })
+
+  // State to track if institution budget is locked for selected year
+  const [institutionBudgetLocks, setInstitutionBudgetLocks] = useState<Record<number, boolean>>({
+    2024: false,
+    2025: false,
+    2026: false
   })
 
   // Mock data para solicitações de orçamento
@@ -164,7 +167,9 @@ export default function AnnualBudgetPage() {
       approval_date: '2024-02-10',
       notes: 'Approved with minor adjustments to equipment budget',
       created_at: '2024-01-15T10:30:00Z',
-      updated_at: '2024-02-10T14:15:00Z'
+      updated_at: '2024-02-10T14:15:00Z',
+      is_locked: true,
+      has_budget_record: true
     },
     {
       id: '2',
@@ -184,7 +189,9 @@ export default function AnnualBudgetPage() {
       review_date: '2024-03-01',
       notes: 'Under review - awaiting additional documentation',
       created_at: '2024-02-20T09:15:00Z',
-      updated_at: '2024-03-01T11:30:00Z'
+      updated_at: '2024-03-01T11:30:00Z',
+      is_locked: false,
+      has_budget_record: true
     },
     {
       id: '3',
@@ -201,7 +208,9 @@ export default function AnnualBudgetPage() {
       requested_by: 'Pastor Carlos Mendes',
       submitted_date: '2024-03-10',
       created_at: '2024-03-10T16:20:00Z',
-      updated_at: '2024-03-10T16:20:00Z'
+      updated_at: '2024-03-10T16:20:00Z',
+      is_locked: false,
+      has_budget_record: true
     },
     {
       id: '4',
@@ -221,7 +230,9 @@ export default function AnnualBudgetPage() {
       review_date: '2024-03-15',
       notes: 'Requires revision - need detailed breakdown of material costs',
       created_at: '2024-02-28T13:45:00Z',
-      updated_at: '2024-03-15T10:00:00Z'
+      updated_at: '2024-03-15T10:00:00Z',
+      is_locked: false,
+      has_budget_record: true
     },
     {
       id: '5',
@@ -241,7 +252,9 @@ export default function AnnualBudgetPage() {
       review_date: '2024-02-20',
       notes: 'Rejected - insufficient budget allocation for maintenance category',
       created_at: '2024-01-30T11:00:00Z',
-      updated_at: '2024-02-20T15:30:00Z'
+      updated_at: '2024-02-20T15:30:00Z',
+      is_locked: false,
+      has_budget_record: true
     },
     // Previous year requests (2023)
     {
@@ -264,7 +277,9 @@ export default function AnnualBudgetPage() {
       approval_date: '2023-02-01',
       notes: 'Approved with conditions',
       created_at: '2023-01-10T10:30:00Z',
-      updated_at: '2023-02-01T14:15:00Z'
+      updated_at: '2023-02-01T14:15:00Z',
+      is_locked: true,
+      has_budget_record: true
     },
     {
       id: '7',
@@ -285,7 +300,9 @@ export default function AnnualBudgetPage() {
       review_date: '2023-03-01',
       approval_date: '2023-03-10',
       created_at: '2023-02-15T09:15:00Z',
-      updated_at: '2023-03-10T11:30:00Z'
+      updated_at: '2023-03-10T11:30:00Z',
+      is_locked: true,
+      has_budget_record: true
     },
     // Future year requests (2025)
     {
@@ -303,12 +320,71 @@ export default function AnnualBudgetPage() {
       requested_by: 'Pastor Fernando Costa',
       submitted_date: '2024-12-01',
       created_at: '2024-12-01T16:20:00Z',
-      updated_at: '2024-12-01T16:20:00Z'
+      updated_at: '2024-12-01T16:20:00Z',
+      is_locked: false,
+      has_budget_record: true
+    },
+    // Missing budget record example
+    {
+      id: '9',
+      entity_type: 'department',
+      entity_id: 'dept-finance',
+      entity_name: 'Finance Department',
+      year: 2024,
+      requested_amount: 0,
+      status: 'pending',
+      priority: 'medium',
+      category: 'operational',
+      description: 'Budget record missing',
+      justification: 'No budget request submitted yet',
+      requested_by: 'System',
+      submitted_date: '2024-01-01',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+      is_locked: false,
+      has_budget_record: false
+    },
+    // Placeholder for 2025
+    {
+      id: '10',
+      entity_type: 'institution',
+      entity_id: 'institution-2025',
+      entity_name: 'System Placeholder 2025',
+      year: 2025,
+      requested_amount: 0,
+      status: 'pending',
+      priority: 'low',
+      category: 'operational',
+      description: 'Placeholder for year 2025',
+      justification: 'System generated placeholder',
+      requested_by: 'System',
+      submitted_date: '2024-01-01',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+      is_locked: false,
+      has_budget_record: false
+    },
+    // Placeholder for 2026
+    {
+      id: '11',
+      entity_type: 'institution',
+      entity_id: 'institution-2026',
+      entity_name: 'System Placeholder 2026',
+      year: 2026,
+      requested_amount: 0,
+      status: 'pending',
+      priority: 'low',
+      category: 'operational',
+      description: 'Placeholder for year 2026',
+      justification: 'System generated placeholder',
+      requested_by: 'System',
+      submitted_date: '2024-01-01',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+      is_locked: false,
+      has_budget_record: false
     }
   ])
-
-  // Form state
-
 
   // Available years for filtering
   const availableYears = useMemo(() => {
@@ -321,202 +397,347 @@ export default function AnnualBudgetPage() {
     return budgetRequests.filter(req => req.year === selectedYear)
   }, [budgetRequests, selectedYear])
 
+  // Check if institution has budget for selected year
+  const hasInstitutionBudget = useMemo(() => {
+    return !!institutionBudgets[selectedYear]
+  }, [institutionBudgets, selectedYear])
+
+  // Handler for creating institution budget (declared before useMemo)
+  const handleCreateInstitutionBudget = () => {
+    // Create a new budget for the institution with default values
+    const newBudget: AnnualBudgetData = {
+      id: `inst-budget-${selectedYear}`,
+      year: selectedYear,
+      planned_budget: 0,
+      total_expenses: 0,
+      balance: 0,
+      notes: `Institution budget for ${selectedYear}`,
+      approved_by: undefined,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+    
+    setInstitutionBudgetData(newBudget)
+    setIsInstitutionBudgetModalOpen(true)
+  }
+
+  // Handler for toggling institution budget lock
+  const handleToggleInstitutionBudgetLock = (e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent card onClick from firing
+    
+    const isCurrentlyLocked = institutionBudgetLocks[selectedYear] || false
+    
+    setInstitutionBudgetLocks(prev => ({
+      ...prev,
+      [selectedYear]: !isCurrentlyLocked
+    }))
+    
+    toast.success(
+      isCurrentlyLocked 
+        ? `Institution budget for ${selectedYear} unlocked successfully!` 
+        : `Institution budget for ${selectedYear} locked successfully!`,
+      { duration: 2000 }
+    )
+  }
+
+  // Handler for editing institution budget
+  const handleEditInstitutionBudget = () => {
+    const isLocked = institutionBudgetLocks[selectedYear] || false
+    
+    if (isLocked) {
+      toast.error('Budget is locked. Unlock it first to edit.', { duration: 3000 })
+      return
+    }
+    
+    const currentBudget = institutionBudgets[selectedYear]
+    if (currentBudget) {
+      setInstitutionBudgetData(currentBudget)
+      setIsInstitutionBudgetModalOpen(true)
+    }
+  }
+
   // KPI Data
   const kpiData = useMemo(() => {
-    const totalRequests = filteredBudgetRequests.length
-    const totalRequested = filteredBudgetRequests.reduce((sum, req) => sum + req.requested_amount, 0)
-    const totalApproved = filteredBudgetRequests
-      .filter(req => req.status === 'approved')
-      .reduce((sum, req) => sum + (req.approved_amount || 0), 0)
-    const pendingReview = filteredBudgetRequests.filter(req => 
-      req.status === 'pending' || req.status === 'under_review'
-    ).length
-    const approvalRate = totalRequests > 0 
-      ? Math.round((filteredBudgetRequests.filter(req => req.status === 'approved').length / totalRequests) * 100)
-      : 0
+    // If no institution budget is set, return zeros
+    if (!hasInstitutionBudget) {
+      return {
+        totalInstitutionBudget: 0,
+        totalAllocated: 0,
+        totalSpent: 0,
+        budgetRemaining: 0,
+        budgetUtilization: 0,
+        activeDepartments: 0
+      }
+    }
+
+    // Total Institution Budget (from institution departments)
+    const totalInstitutionBudget = institutionBudgets[selectedYear]?.planned_budget || 0
+    
+    // Calculate total allocated from institution departments
+    const institutionDepts = [
+      { approved: 220000 }, // Finance
+      { approved: 165000 }, // Operations
+      { approved: 140000 }, // HR
+      { approved: 185000 }, // IT
+      { approved: 110000 }, // Marketing
+      { approved: 150000 }, // Education
+    ]
+    const totalAllocated = institutionDepts.reduce((sum, dept) => sum + dept.approved, 0)
+    
+    // Calculate total spent (75% average spending rate)
+    const totalSpent = Math.round(totalAllocated * 0.75)
+    
+    // Budget remaining
+    const budgetRemaining = totalInstitutionBudget - totalAllocated
+    
+    // Budget utilization percentage
+    const budgetUtilization = totalInstitutionBudget > 0 ? Math.round((totalAllocated / totalInstitutionBudget) * 100) : 0
+    
+    // Number of active departments
+    const activeDepartments = institutionDepts.length
 
     return {
-      totalRequests,
-      totalRequested,
-      totalApproved,
-      pendingReview,
-      approvalRate
+      totalInstitutionBudget,
+      totalAllocated,
+      totalSpent,
+      budgetRemaining,
+      budgetUtilization,
+      activeDepartments
     }
-  }, [filteredBudgetRequests])
+  }, [selectedYear, hasInstitutionBudget, institutionBudgets])
 
-  const kpiCardsData: KPICardData[] = useMemo(() => [
+  const kpiCardsData: KPICardData[] = useMemo(() => {
+    const isLocked = institutionBudgetLocks[selectedYear] || false
+    const budgetRemainingValue = kpiData.budgetRemaining
+    const isDeficit = budgetRemainingValue < 0
+    const utilizationRate = kpiData.budgetUtilization
+    
+    return [
+      {
+        id: "total_budget",
+        title: t('annual_budget.kpi_cards.total_institution_budget.title'),
+        value: hasInstitutionBudget ? `$${(kpiData.totalInstitutionBudget / 1000).toFixed(0)}K` : t('annual_budget.kpi_cards.total_institution_budget.not_set'),
+        icon: DollarSign,
+        subtitle: hasInstitutionBudget 
+          ? t('annual_budget.kpi_cards.total_institution_budget.subtitle', { year: selectedYear })
+          : t('annual_budget.kpi_cards.total_institution_budget.subtitle_not_set', { year: selectedYear }),
+        trend: hasInstitutionBudget ? {
+          value: 5,
+          isPositive: true,
+          label: t('annual_budget.kpi_cards.total_institution_budget.trend')
+        } : undefined,
+        onClick: !hasInstitutionBudget ? handleCreateInstitutionBudget : handleEditInstitutionBudget,
+        className: !hasInstitutionBudget 
+          ? "border-2 border-dashed border-primary animate-pulse cursor-pointer hover:bg-primary/5 transition-all" 
+          : "cursor-pointer hover:bg-blue-50 transition-all border-l-4 border-l-blue-500",
+        headerAction: hasInstitutionBudget ? (
+          <button
+            onClick={handleToggleInstitutionBudgetLock}
+            className="relative group z-10"
+            title={isLocked ? t('annual_budget.table.lock_tooltips.locked') : t('annual_budget.table.lock_tooltips.unlocked')}
+          >
+            <div className={`w-6 h-6 border-2 border-dashed rounded-full flex items-center justify-center transition-all ${
+              isLocked 
+                ? 'border-gray-900 bg-gray-900 hover:bg-gray-800' 
+                : 'border-gray-400 bg-gray-50 opacity-60 hover:opacity-100 hover:border-gray-600'
+            }`}>
+              {isLocked ? (
+                <Lock className="w-3 h-3 text-white" />
+              ) : (
+                <Unlock className="w-3 h-3 text-gray-600" />
+              )}
+            </div>
+            {/* Tooltip */}
+            <div className="absolute bottom-full right-0 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              {isLocked ? t('annual_budget.table.lock_actions.unlock') : t('annual_budget.table.lock_actions.lock')}
+            </div>
+          </button>
+        ) : undefined
+      },
     {
-      id: "total_requests",
-      title: t('annual_budget.kpi_cards.total_requests.title'),
-      value: kpiData.totalRequests,
-      icon: FileText,
-      subtitle: t('annual_budget.kpi_cards.total_requests.subtitle'),
-      trend: {
-        value: 12,
-        isPositive: true,
-        label: t('annual_budget.kpi_cards.total_requests.trend')
-      }
-    },
-    {
-      id: "total_requested",
-      title: t('annual_budget.kpi_cards.total_requested.title'),
-      value: `$${(kpiData.totalRequested / 1000).toFixed(0)}K`,
-      icon: DollarSign,
-      subtitle: t('annual_budget.kpi_cards.total_requested.subtitle'),
+      id: "total_allocated",
+      title: t('annual_budget.kpi_cards.total_allocated.title'),
+      value: `$${(kpiData.totalAllocated / 1000).toFixed(0)}K`,
+      icon: CheckCircle,
+      subtitle: t('annual_budget.kpi_cards.total_allocated.subtitle'),
       trend: {
         value: 8,
         isPositive: true,
-        label: t('annual_budget.kpi_cards.total_requested.trend')
-      }
+        label: t('annual_budget.kpi_cards.total_allocated.trend')
+      },
+      className: !hasInstitutionBudget 
+        ? "opacity-40 pointer-events-none" 
+        : "hover:bg-green-50 transition-all border-l-4 border-l-green-500"
     },
     {
-      id: "total_approved",
-      title: t('annual_budget.kpi_cards.total_approved.title'),
-      value: `$${(kpiData.totalApproved / 1000).toFixed(0)}K`,
-      icon: CheckCircle,
-      subtitle: t('annual_budget.kpi_cards.total_approved.subtitle'),
+      id: "total_spent",
+      title: t('annual_budget.kpi_cards.total_spent.title'),
+      value: `$${(kpiData.totalSpent / 1000).toFixed(0)}K`,
+      icon: TrendingUp,
+      subtitle: t('annual_budget.kpi_cards.total_spent.subtitle'),
       trend: {
-        value: 15,
+        value: 12,
         isPositive: true,
-        label: t('annual_budget.kpi_cards.total_approved.trend')
-      }
+        label: t('annual_budget.kpi_cards.total_spent.trend')
+      },
+      className: !hasInstitutionBudget 
+        ? "opacity-40 pointer-events-none" 
+        : "hover:bg-purple-50 transition-all border-l-4 border-l-purple-500"
     },
     {
-      id: "pending_review",
-      title: t('annual_budget.kpi_cards.pending_review.title'),
-      value: kpiData.pendingReview,
-      icon: Clock,
-      subtitle: t('annual_budget.kpi_cards.pending_review.subtitle'),
+      id: "budget_remaining",
+      title: t('annual_budget.kpi_cards.budget_remaining.title'),
+      value: `$${Math.abs(budgetRemainingValue / 1000).toFixed(0)}K`,
+      icon: FileText,
+      subtitle: isDeficit ? t('annual_budget.kpi_cards.budget_remaining.subtitle_deficit') : t('annual_budget.kpi_cards.budget_remaining.subtitle_available'),
+      trend: {
+        value: 10,
+        isPositive: !isDeficit,
+        label: t('annual_budget.kpi_cards.budget_remaining.trend')
+      },
+      className: !hasInstitutionBudget 
+        ? "opacity-40 pointer-events-none" 
+        : isDeficit
+          ? "hover:bg-red-50 transition-all border-l-4 border-l-red-500"
+          : "hover:bg-orange-50 transition-all border-l-4 border-l-orange-500"
+    },
+    {
+      id: "budget_utilization",
+      title: t('annual_budget.kpi_cards.budget_utilization.title'),
+      value: `${kpiData.budgetUtilization}%`,
+      icon: Building,
+      subtitle: t('annual_budget.kpi_cards.budget_utilization.subtitle', { count: kpiData.activeDepartments }),
       trend: {
         value: 3,
-        isPositive: false,
-        label: t('annual_budget.kpi_cards.pending_review.trend')
-      }
+        isPositive: utilizationRate < 90,
+        label: t('annual_budget.kpi_cards.budget_utilization.trend')
+      },
+      className: !hasInstitutionBudget 
+        ? "opacity-40 pointer-events-none" 
+        : utilizationRate > 90
+          ? "hover:bg-yellow-50 transition-all border-l-4 border-l-yellow-500"
+          : "hover:bg-gray-50 transition-all border-l-4 border-l-gray-400"
+    }
+  ]}, [kpiData, selectedYear, hasInstitutionBudget, institutionBudgetLocks, handleCreateInstitutionBudget, handleEditInstitutionBudget, handleToggleInstitutionBudgetLock])
+
+  // Mock data for Institution Departments
+  const institutionDepartments = useMemo(() => [
+    {
+      name: 'Finance Dept',
+      planned: 250000,
+      approved: 220000,
+      reserved: 180000,
+      institution: 'Main Institution'
     },
     {
-      id: "approval_rate",
-      title: t('annual_budget.kpi_cards.approval_rate.title'),
-      value: `${kpiData.approvalRate}%`,
-      icon: TrendingUp,
-      subtitle: t('annual_budget.kpi_cards.approval_rate.subtitle'),
-      trend: {
-        value: 5,
-        isPositive: true,
-        label: t('annual_budget.kpi_cards.approval_rate.trend')
-      }
+      name: 'Operations Dept',
+      planned: 180000,
+      approved: 165000,
+      reserved: 140000,
+      institution: 'Main Institution'
+    },
+    {
+      name: 'HR Dept',
+      planned: 150000,
+      approved: 140000,
+      reserved: 120000,
+      institution: 'Main Institution'
+    },
+    {
+      name: 'IT Dept',
+      planned: 200000,
+      approved: 185000,
+      reserved: 160000,
+      institution: 'Main Institution'
+    },
+    {
+      name: 'Marketing Dept',
+      planned: 120000,
+      approved: 110000,
+      reserved: 95000,
+      institution: 'Main Institution'
+    },
+    {
+      name: 'Education Dept',
+      planned: 160000,
+      approved: 150000,
+      reserved: 130000,
+      institution: 'Regional Office'
     }
-  ], [kpiData, t])
+  ], [])
 
   // Chart data
   const chartData = useMemo(() => {
-    const totalBudgetForYear = 1000000 // Mock total annual budget
-    const totalUsed = filteredBudgetRequests
-      .filter(r => r.status === 'approved')
-      .reduce((sum, r) => sum + (r.approved_amount || 0), 0)
-    const remaining = totalBudgetForYear - totalUsed
+    // If no institution budget is set, return zeros
+    if (!hasInstitutionBudget) {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+      return {
+        budgetDistribution: {
+          total: 0,
+          allocated: 0,
+          remaining: 0,
+          percentageUsed: 0
+        },
+        departmentSpending: institutionDepartments.map(dept => ({
+          ...dept,
+          planned: 0,
+          approved: 0,
+          reserved: 0
+        })),
+        spendingOverTime: months.map((month, index) => ({
+          date: `${selectedYear}-${String(index + 1).padStart(2, '0')}-01`,
+          month: month,
+          finance: 0,
+          operations: 0,
+          hr: 0,
+          it: 0,
+          marketing: 0,
+        }))
+      }
+    }
+
+    // Total institution budget
+    const totalInstitutionBudget = institutionBudgets[selectedYear]?.planned_budget || 0
+    
+    // Calculate total allocated to departments
+    const totalAllocated = institutionDepartments.reduce((sum, dept) => sum + dept.approved, 0)
+    const remaining = totalInstitutionBudget - totalAllocated
 
     // Generate mock spending data over time for area chart
     const generateSpendingData = () => {
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
       return months.map((month, index) => {
-        const baseChurch = 15000 + (index * 2000) + Math.random() * 5000
-        const baseDepartment = 8000 + (index * 1500) + Math.random() * 3000
-        const baseRegion = 25000 + (index * 3000) + Math.random() * 8000
-        const baseInstitution = 12000 + (index * 1800) + Math.random() * 4000
+        // Generate individual monthly spending (not cumulative)
+        // Each month has its own spending amount with some variation
+        const baseFinance = 15000 + Math.random() * 5000 // 15K-20K per month
+        const baseOperations = 12000 + Math.random() * 4000 // 12K-16K per month
+        const baseHr = 10000 + Math.random() * 3000 // 10K-13K per month
+        const baseIt = 13000 + Math.random() * 4000 // 13K-17K per month
+        const baseMarketing = 8000 + Math.random() * 3000 // 8K-11K per month
         
         return {
           date: `${selectedYear}-${String(index + 1).padStart(2, '0')}-01`,
           month: month,
-          churches: Math.round(baseChurch),
-          departments: Math.round(baseDepartment),
-          regions: Math.round(baseRegion),
-          institutions: Math.round(baseInstitution),
+          finance: Math.round(baseFinance),
+          operations: Math.round(baseOperations),
+          hr: Math.round(baseHr),
+          it: Math.round(baseIt),
+          marketing: Math.round(baseMarketing),
         }
       })
     }
 
     return {
-      requestsByStatus: [
-        { status: 'Approved', count: filteredBudgetRequests.filter(r => r.status === 'approved').length, color: '#10b981' },
-        { status: 'Under Review', count: filteredBudgetRequests.filter(r => r.status === 'under_review').length, color: '#f59e0b' },
-        { status: 'Pending', count: filteredBudgetRequests.filter(r => r.status === 'pending').length, color: '#3b82f6' },
-        { status: 'Rejected', count: filteredBudgetRequests.filter(r => r.status === 'rejected').length, color: '#ef4444' },
-        { status: 'Needs Revision', count: filteredBudgetRequests.filter(r => r.status === 'requires_revision').length, color: '#8b5cf6' }
-      ],
-      budgetDistribution: [
-        { 
-          year: selectedYear.toString(), 
-          used: totalUsed, 
-          remaining: remaining > 0 ? remaining : 0 
-        }
-      ],
-      entitySpending: [
-        { 
-          entity: 'Churches', 
-          approved: filteredBudgetRequests
-            .filter(r => r.entity_type === 'church' && r.status === 'approved')
-            .reduce((sum, r) => sum + (r.approved_amount || 0), 0),
-          spent: filteredBudgetRequests
-            .filter(r => r.entity_type === 'church' && r.status === 'approved')
-            .reduce((sum, r) => sum + (r.approved_amount || 0) * 0.75, 0) // Mock 75% spent
-        },
-        { 
-          entity: 'Departments', 
-          approved: filteredBudgetRequests
-            .filter(r => r.entity_type === 'department' && r.status === 'approved')
-            .reduce((sum, r) => sum + (r.approved_amount || 0), 0),
-          spent: filteredBudgetRequests
-            .filter(r => r.entity_type === 'department' && r.status === 'approved')
-            .reduce((sum, r) => sum + (r.approved_amount || 0) * 0.60, 0) // Mock 60% spent
-        },
-        { 
-          entity: 'Regions', 
-          approved: filteredBudgetRequests
-            .filter(r => r.entity_type === 'region' && r.status === 'approved')
-            .reduce((sum, r) => sum + (r.approved_amount || 0), 0),
-          spent: filteredBudgetRequests
-            .filter(r => r.entity_type === 'region' && r.status === 'approved')
-            .reduce((sum, r) => sum + (r.approved_amount || 0) * 0.40, 0) // Mock 40% spent
-        },
-        { 
-          entity: 'Institution', 
-          approved: filteredBudgetRequests
-            .filter(r => r.entity_type === 'institution' && r.status === 'approved')
-            .reduce((sum, r) => sum + (r.approved_amount || 0), 0),
-          spent: filteredBudgetRequests
-            .filter(r => r.entity_type === 'institution' && r.status === 'approved')
-            .reduce((sum, r) => sum + (r.approved_amount || 0) * 0.85, 0) // Mock 85% spent
-        }
-      ],
+      budgetDistribution: {
+        total: totalInstitutionBudget,
+        allocated: totalAllocated,
+        remaining: remaining > 0 ? remaining : 0,
+        percentageUsed: totalInstitutionBudget > 0 ? Math.round((totalAllocated / totalInstitutionBudget) * 100) : 0
+      },
+      departmentSpending: institutionDepartments,
       spendingOverTime: generateSpendingData()
     }
-  }, [filteredBudgetRequests, selectedYear])
-
-  // Chart configuration for area chart
-  const spendingChartConfig = {
-    spending: {
-      label: "Spending",
-    },
-    churches: {
-      label: "Churches",
-      color: "var(--chart-1)",
-    },
-    departments: {
-      label: "Departments", 
-      color: "var(--chart-2)",
-    },
-    regions: {
-      label: "Regions",
-      color: "var(--chart-3)",
-    },
-    institutions: {
-      label: "Institutions",
-      color: "var(--chart-4)",
-    },
-  } satisfies ChartConfig
-
-  // Time range state for area chart
-  const [timeRange, setTimeRange] = useState("12m")
+  }, [selectedYear, institutionDepartments, hasInstitutionBudget, institutionBudgets])
 
   // Handlers
   const handleRefresh = async () => {
@@ -625,6 +846,35 @@ export default function AnnualBudgetPage() {
     toast.success('Revision requested successfully')
   }
 
+  const handleToggleLock = (requestId: string) => {
+    const updatedRequests = budgetRequests.map(req =>
+      req.id === requestId
+        ? {
+            ...req,
+            is_locked: !req.is_locked,
+            updated_at: new Date().toISOString()
+          }
+        : req
+    )
+    setBudgetRequests(updatedRequests)
+    const request = budgetRequests.find(req => req.id === requestId)
+    const isNowLocked = !request?.is_locked
+    toast.success(isNowLocked ? 'Budget locked successfully' : 'Budget unlocked successfully')
+  }
+
+  const handleDeleteBudget = (requestId: string) => {
+    const updatedRequests = budgetRequests.filter(req => req.id !== requestId)
+    setBudgetRequests(updatedRequests)
+    toast.success('Budget deleted successfully')
+  }
+
+  const handleSaveInstitutionBudget = (budget: AnnualBudgetData) => {
+    setInstitutionBudgets(prev => ({
+      ...prev,
+      [budget.year]: budget
+    }))
+    toast.success(`Institution budget for ${budget.year} saved successfully!`)
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -663,199 +913,247 @@ export default function AnnualBudgetPage() {
     {
       id: "entity",
       accessorKey: "entity_name",
-      header: t('annual_budget.table.headers.entity'),
+      header: () => (
+        <div className="text-left font-medium text-gray-900">
+          {t('annual_budget.table.headers.entity_name')}
+        </div>
+      ),
       cell: ({ row }) => {
-        const entityIcon = row.original.entity_type === 'church' ? Building : 
-                          row.original.entity_type === 'region' ? Users : 
-                          row.original.entity_type === 'department' ? Users : Building
-        const EntityIcon = entityIcon
-        
+        const isDisabled = !row.original.has_budget_record
         return (
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <EntityIcon className="w-4 h-4 text-blue-600" />
+          <div className={`flex items-center gap-3 ${isDisabled ? 'opacity-50' : ''}`}>
+            <div className="w-8 h-8 bg-gray-100 border border-gray-200 rounded-lg flex items-center justify-center">
+              <Building className="w-4 h-4 text-gray-600" />
             </div>
             <div>
-              <div className="font-medium">{row.original.entity_name}</div>
-              <div className="text-xs text-muted-foreground capitalize">{row.original.entity_type}</div>
+              <div className="font-medium text-gray-900">{row.original.entity_name}</div>
+              <div className="text-xs text-gray-500 capitalize">{row.original.entity_type}</div>
             </div>
           </div>
         )
       },
     },
     {
-      id: "amount",
-      accessorKey: "requested_amount",
-      header: t('annual_budget.table.headers.amount'),
-      cell: ({ row }) => (
-        <div className="text-right">
-          <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200 font-semibold">
-            ${row.original.requested_amount.toLocaleString()}
-          </Badge>
-          {row.original.approved_amount && (
-            <div className="text-xs text-green-600 mt-1">
-              Approved: ${row.original.approved_amount.toLocaleString()}
-            </div>
-          )}
+      id: "entity_type",
+      accessorKey: "entity_type",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('annual_budget.table.headers.entity_type')}
         </div>
       ),
-    },
-    {
-      id: "status",
-      accessorKey: "status",
-      header: t('annual_budget.table.headers.status'),
       cell: ({ row }) => {
-        const StatusIcon = getStatusIcon(row.original.status)
+        const isDisabled = !row.original.has_budget_record
         return (
-          <Badge className={`${getStatusColor(row.original.status)} flex items-center gap-1 font-medium`}>
-            <StatusIcon className="w-3 h-3" />
-            {row.original.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-          </Badge>
+          <div className={`text-center ${isDisabled ? 'opacity-50' : ''}`}>
+            <div className="text-sm font-medium text-gray-900 capitalize">
+              {row.original.entity_type}
+            </div>
+          </div>
         )
       },
     },
     {
-      id: "submitted_date",
-      accessorKey: "submitted_date",
-      header: t('annual_budget.table.headers.submitted'),
-      cell: ({ row }) => (
-        <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-300 font-medium">
-          {new Date(row.original.submitted_date).toLocaleDateString()}
-        </Badge>
+      id: "budget_total",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('annual_budget.table.headers.budget_total')}
+        </div>
       ),
+      cell: ({ row }) => {
+        const isDisabled = !row.original.has_budget_record
+        return (
+          <div className={`text-center ${isDisabled ? 'opacity-50' : ''}`}>
+            <div className="text-sm font-semibold text-gray-900">
+              ${row.original.requested_amount.toLocaleString()}
+            </div>
+            {/* {row.original.approved_amount && (
+              <div className="text-xs text-gray-500 mt-1">
+                Approved: ${row.original.approved_amount.toLocaleString()}
+              </div>
+            )} */}
+          </div>
+        )
+      },
+    },
+    {
+      id: "spent_amount",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('annual_budget.table.headers.spent_amount')}
+        </div>
+      ),
+      cell: ({ row }) => {
+        const approvedAmount = row.original.approved_amount || 0
+        const spentAmount = approvedAmount * 0.75 // Mock 75% spent
+        const isDisabled = !row.original.has_budget_record
+        
+        return (
+          <div className={`text-center ${isDisabled ? 'opacity-50' : ''}`}>
+            <div className="text-sm font-semibold text-gray-900 opacity-50">
+              ${spentAmount.toLocaleString()}
+            </div>
+          </div>
+        )
+      },
+    },
+    {
+      id: "usage_percentage",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('annual_budget.table.headers.usage_percentage')}
+        </div>
+      ),
+      cell: ({ row }) => {
+        const approvedAmount = row.original.approved_amount || 0
+        const spentAmount = approvedAmount * 0.75 // Mock 75% spent
+        const usagePercentage = approvedAmount > 0 ? Math.round((spentAmount / approvedAmount) * 100) : 0
+        const isDisabled = !row.original.has_budget_record
+        
+        return (
+          <div className={`flex flex-col items-center space-y-2 ${isDisabled ? 'opacity-50' : ''}`}>
+            <div className="text-xs font-medium text-gray-700">
+              {usagePercentage}%
+            </div>
+            <div className="w-16 bg-gray-200 rounded-full h-2 border border-gray-300">
+              <div 
+                className="bg-gray-600 h-full rounded-full transition-all duration-300" 
+                style={{ width: `${usagePercentage}%` }}
+              />
+            </div>
+          </div>
+        )
+      },
+    },
+    {
+      id: "lock_status",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('annual_budget.table.headers.lock_status')}
+        </div>
+      ),
+      cell: ({ row }) => {
+        const isLocked = row.original.is_locked
+        const isDisabled = !row.original.has_budget_record
+        
+        return (
+          <div className="flex justify-center">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                if (!isDisabled) {
+                  handleToggleLock(row.original.id)
+                }
+              }}
+              disabled={isDisabled}
+              className={`w-8 h-8 border-2 border-dashed rounded-full flex items-center justify-center transition-all ${
+                isDisabled 
+                  ? 'border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed'
+                  : isLocked 
+                    ? 'border-gray-900 bg-gray-900 hover:bg-gray-800 cursor-pointer' 
+                    : 'border-gray-300 bg-gray-50 opacity-60 hover:opacity-100 hover:border-gray-600 cursor-pointer'
+              }`}
+              title={isDisabled ? t('annual_budget.table.lock_tooltips.disabled') : isLocked ? t('annual_budget.table.lock_tooltips.locked') : t('annual_budget.table.lock_tooltips.unlocked')}
+            >
+              {isLocked ? (
+                <Lock className={`w-3 h-3 ${isDisabled ? 'text-gray-400' : 'text-white'}`} />
+              ) : (
+                <Unlock className={`w-3 h-3 ${isDisabled ? 'text-gray-400' : 'text-gray-600'}`} />
+              )}
+            </button>
+          </div>
+        )
+      },
+    },
+    {
+      id: "budget_status",
+      accessorKey: "has_budget_record",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('annual_budget.table.headers.budget_status')}
+        </div>
+      ),
+      cell: ({ row }) => {
+        const hasBudget = row.original.has_budget_record
+        
+        return (
+          <div className="flex justify-center">
+            {hasBudget ? (
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                {t('annual_budget.table.budget_status_labels.completed')}
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-300 text-xs flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-gray-400" />
+                {t('annual_budget.table.budget_status_labels.missing')}
+              </Badge>
+            )}
+          </div>
+        )
+      },
+      filterFn: (row, id, value) => {
+        // Se não houver filtro ativo (value é undefined/null/empty), mostrar todas as linhas
+        if (value === undefined || value === null || value === "") {
+          return true
+        }
+        // value será boolean após conversão no UseTable
+        return row.original.has_budget_record === value
+      },
     },
     {
       id: "actions",
-      header: t('annual_budget.table.headers.actions'),
+      header: () => (
+        <div className="text-right font-medium text-gray-900">
+          {t('annual_budget.table.headers.actions')}
+        </div>
+      ),
       cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <MoreHorizontal className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => {
-              setSelectedRequest(row.original)
-              setIsReviewModalOpen(true)
-            }}>
-              <Eye className="w-4 h-4 mr-2" />
-              Review Request
-            </DropdownMenuItem>
-            {row.original.status === 'pending' && (
-              <>
-                <DropdownMenuItem onClick={() => handleApproveRequest(row.original.id)}>
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Quick Approve
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleRequestRevision(row.original.id, 'Needs additional information')}>
-                  <AlertTriangle className="w-4 h-4 mr-2" />
-                  Request Revision
-                </DropdownMenuItem>
-              </>
-            )}
-            <DropdownMenuItem onClick={() => {
-              setSelectedRequest(row.original)
-              setIsEditRequestModalOpen(true)
-            }}>
-              <Edit className="w-4 h-4 mr-2" />
-              Edit Request
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 border border-gray-200">
+                <MoreHorizontal className="w-4 h-4 text-gray-600" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => {
+                setSelectedRequest(row.original)
+                setIsViewEditModalOpen(true)
+              }}>
+                <Settings className="w-4 h-4 mr-2" />
+                {t('annual_budget.table.actions_menu.manage')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleToggleLock(row.original.id)}>
+                {row.original.is_locked ? (
+                  <>
+                    <Unlock className="w-4 h-4 mr-2" />
+                    {t('annual_budget.table.actions_menu.unlock')}
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4 mr-2" />
+                    {t('annual_budget.table.actions_menu.lock')}
+                  </>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => {
+                  setSelectedRequest(row.original)
+                  setIsDeleteModalOpen(true)
+                }}
+                className="text-red-600 focus:text-red-600"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {t('annual_budget.table.actions_menu.delete')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       ),
     },
-  ], [t])
+  ], [filteredBudgetRequests, t])
 
-  // Kanban setup
-  const kanbanGroups: KanbanGroup[] = [
-    { id: 'pending', name: 'Pending Review', description: 'New requests awaiting initial review', color: '#3b82f6', active: true },
-    { id: 'under_review', name: 'Under Review', description: 'Requests being evaluated', color: '#f59e0b', active: true },
-    { id: 'requires_revision', name: 'Needs Revision', description: 'Requests requiring additional information', color: '#8b5cf6', active: true },
-    { id: 'approved', name: 'Approved', description: 'Approved budget requests', color: '#10b981', active: true },
-    { id: 'rejected', name: 'Rejected', description: 'Rejected requests', color: '#ef4444', active: true }
-  ]
 
-  const kanbanItems: KanbanItem[] = useMemo(() => {
-    return filteredBudgetRequests.map(request => ({
-      id: request.id,
-      groupId: request.status,
-      title: request.entity_name,
-      description: request.description,
-      metadata: {
-        amount: `$${request.requested_amount.toLocaleString()}`,
-        priority: request.priority,
-        category: request.category,
-        entity_type: request.entity_type,
-        submitted_date: request.submitted_date
-      }
-    }))
-  }, [filteredBudgetRequests])
-
-  const kanbanActions: KanbanAction[] = [
-    {
-      id: 'review-request',
-      label: 'Review',
-      icon: Eye,
-      showInItem: true,
-      onClick: (group, item) => {
-        const request = budgetRequests.find(r => r.id === item?.id)
-        if (request) {
-          setSelectedRequest(request)
-          setIsReviewModalOpen(true)
-        }
-      }
-    },
-    {
-      id: 'approve-request',
-      label: 'Approve',
-      icon: CheckCircle,
-      showInItem: true,
-      onClick: (group, item) => {
-        if (item?.id) {
-          handleApproveRequest(item.id)
-        }
-      }
-    },
-    {
-      id: 'request-revision',
-      label: 'Request Revision',
-      icon: AlertTriangle,
-      showInItem: true,
-      onClick: (group, item) => {
-        if (item?.id) {
-          handleRequestRevision(item.id, 'Needs additional information')
-        }
-      }
-    }
-  ]
-
-  const handleKanbanItemMove = (itemId: string, fromGroupId: string, toGroupId: string) => {
-    const request = budgetRequests.find(req => req.id === itemId)
-    if (!request) return
-
-    const updatedRequests = budgetRequests.map(req =>
-      req.id === itemId
-        ? { 
-            ...req, 
-            status: toGroupId as BudgetRequest['status'], 
-            updated_at: new Date().toISOString(),
-            review_date: toGroupId !== 'pending' ? new Date().toISOString().split('T')[0] : req.review_date
-          }
-        : req
-    )
-    setBudgetRequests(updatedRequests)
-    
-    const statusNames = {
-      pending: 'Pending Review',
-      under_review: 'Under Review',
-      requires_revision: 'Needs Revision',
-      approved: 'Approved',
-      rejected: 'Rejected'
-    }
-    
-    toast.success(`${request.entity_name} moved to ${statusNames[toGroupId as keyof typeof statusNames]}`)
-  }
 
   // Year Filter Component
   const YearFilter = () => {
@@ -916,29 +1214,7 @@ export default function AnnualBudgetPage() {
     )
   }
 
-  // View Toggle Component
-  const ViewToggle = () => (
-    <div className="flex items-center border rounded-md">
-      <Button
-        variant={viewMode === 'table' ? 'default' : 'ghost'}
-        size="sm"
-        onClick={() => setViewMode('table')}
-        className="rounded-r-none border-r"
-      >
-        <List className="w-4 h-4 mr-2" />
-        Table
-      </Button>
-      <Button
-        variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-        size="sm"
-        onClick={() => setViewMode('kanban')}
-        className="rounded-l-none"
-      >
-        <LayoutGrid className="w-4 h-4 mr-2" />
-        Kanban
-      </Button>
-    </div>
-  )
+
 
   if (isLoading) {
     return (
@@ -979,11 +1255,6 @@ export default function AnnualBudgetPage() {
             </div>
             
             <div className="flex items-center gap-3">
-              <Button onClick={() => setIsCreateRequestModalOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                {t('annual_budget.buttons.new_budget_request')}
-              </Button>
-              
               <Button 
                 variant="outline" 
                 size="icon"
@@ -1005,555 +1276,141 @@ export default function AnnualBudgetPage() {
             isLoading={isLoading}
             minCardsForCarousel={5}
             showCarousel={true}
+            variant="minimal"
           />
 
           <Separator />
 
           {/* Charts Section */}
-          <div className="space-y-6">
-            {/* Entity Spending Over Time - Full Width Area Chart */}
-            <Card>
-              <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
-                <div className="grid flex-1 gap-1">
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5" />
-                    {t('annual_budget.charts.spending_over_time.title')}
-                  </CardTitle>
-                  <CardDescription>
-                    {t('annual_budget.charts.spending_over_time.subtitle', { year: selectedYear })}
-                  </CardDescription>
-                </div>
-                <Select value={timeRange} onValueChange={setTimeRange}>
-                  <SelectTrigger
-                    className="w-[160px] rounded-lg"
-                    aria-label="Select time range"
-                  >
-                    <SelectValue placeholder="Last 12 months" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="12m" className="rounded-lg">
-                      {t('annual_budget.charts.spending_over_time.time_ranges.12m')}
-                    </SelectItem>
-                    <SelectItem value="6m" className="rounded-lg">
-                      {t('annual_budget.charts.spending_over_time.time_ranges.6m')}
-                    </SelectItem>
-                    <SelectItem value="3m" className="rounded-lg">
-                      {t('annual_budget.charts.spending_over_time.time_ranges.3m')}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </CardHeader>
-              <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-                <ChartContainer
-                  config={spendingChartConfig}
-                  className="aspect-auto h-[300px] w-full"
-                >
-                  <AreaChart data={chartData.spendingOverTime}>
-                    <defs>
-                      <linearGradient id="fillChurches" x1="0" y1="0" x2="0" y2="1">
-                        <stop
-                          offset="5%"
-                          stopColor="var(--color-churches)"
-                          stopOpacity={0.8}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor="var(--color-churches)"
-                          stopOpacity={0.1}
-                        />
-                      </linearGradient>
-                      <linearGradient id="fillDepartments" x1="0" y1="0" x2="0" y2="1">
-                        <stop
-                          offset="5%"
-                          stopColor="var(--color-departments)"
-                          stopOpacity={0.8}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor="var(--color-departments)"
-                          stopOpacity={0.1}
-                        />
-                      </linearGradient>
-                      <linearGradient id="fillRegions" x1="0" y1="0" x2="0" y2="1">
-                        <stop
-                          offset="5%"
-                          stopColor="var(--color-regions)"
-                          stopOpacity={0.8}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor="var(--color-regions)"
-                          stopOpacity={0.1}
-                        />
-                      </linearGradient>
-                      <linearGradient id="fillInstitutions" x1="0" y1="0" x2="0" y2="1">
-                        <stop
-                          offset="5%"
-                          stopColor="var(--color-institutions)"
-                          stopOpacity={0.8}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor="var(--color-institutions)"
-                          stopOpacity={0.1}
-                        />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                      dataKey="month"
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      minTickGap={32}
-                    />
-                    <YAxis tickFormatter={(value) => `$${(value / 1000)}K`} />
-                    <ChartTooltip
-                      cursor={false}
-                      content={
-                        <ChartTooltipContent
-                          labelFormatter={(value) => `${value} ${selectedYear}`}
-                          indicator="dot"
-                          formatter={(value: any, name: any) => [
-                            `$${(typeof value === 'number' ? value : 0).toLocaleString()}`,
-                            spendingChartConfig[name as keyof typeof spendingChartConfig]?.label || String(name)
-                          ]}
-                        />
-                      }
-                    />
-                    <Area
-                      dataKey="institutions"
-                      type="natural"
-                      fill="url(#fillInstitutions)"
-                      stroke="var(--color-institutions)"
-                      stackId="a"
-                    />
-                    <Area
-                      dataKey="regions"
-                      type="natural"
-                      fill="url(#fillRegions)"
-                      stroke="var(--color-regions)"
-                      stackId="a"
-                    />
-                    <Area
-                      dataKey="departments"
-                      type="natural"
-                      fill="url(#fillDepartments)"
-                      stroke="var(--color-departments)"
-                      stackId="a"
-                    />
-                    <Area
-                      dataKey="churches"
-                      type="natural"
-                      fill="url(#fillChurches)"
-                      stroke="var(--color-churches)"
-                      stackId="a"
-                    />
-                    <ChartLegend content={<ChartLegendContent />} />
-                  </AreaChart>
-                </ChartContainer>
-              </CardContent>
-            </Card>
+          <div className={`space-y-6 transition-opacity duration-300 ${!hasInstitutionBudget ? 'opacity-40 pointer-events-none' : ''}`}>
+            <h3 className="text-xl font-semibold">{t('annual_budget.charts.budget_analytics.title')}</h3>
+            <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
+              <SpendingOverTimeChart 
+                data={chartData.spendingOverTime}
+                year={selectedYear}
+              />
+              <DepartmentSpendingChart data={chartData.departmentSpending} />
+              
+              <BudgetDistributionChart 
+                data={chartData.budgetDistribution} 
+                year={selectedYear}
+              />
+              
 
-            {/* Other Charts - Reorganized Layout */}
-            <div className="grid lg:grid-cols-7 gap-6">
-              {/* Left Column - Smaller Charts */}
-              <div className="lg:col-span-3 space-y-6">
-                {/* Requests by Status - PIE Chart */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <CheckCircle className="w-4 h-4" />
-                      Requests by Status
-                    </CardTitle>
-                    <CardDescription className="text-sm">Status distribution for {selectedYear}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ChartContainer 
-                      config={{
-                        count: { label: "Count", color: "#3b82f6" }
-                      }} 
-                      className="h-[200px] w-full"
-                    >
-                      <RechartsPieChart>
-                        <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                        <Pie
-                          data={chartData.requestsByStatus}
-                          dataKey="count"
-                          nameKey="status"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={60}
-                          paddingAngle={2}
-                        >
-                          {chartData.requestsByStatus.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Legend />
-                      </RechartsPieChart>
-                    </ChartContainer>
-                  </CardContent>
-                </Card>
-
-                {/* Budget Distribution - Radial Chart */}
-                <Card className="flex flex-col">
-                  <CardHeader className="items-center pb-0">
-                    <CardTitle className="text-lg">Budget Distribution {selectedYear}</CardTitle>
-                    <CardDescription className="text-sm">Total budget allocation and usage</CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex flex-1 items-center pb-0">
-                    <ChartContainer
-                      config={{
-                        used: {
-                          label: "Used",
-                          color: "var(--chart-1)",
-                        },
-                        remaining: {
-                          label: "Remaining",
-                          color: "var(--chart-2)",
-                        },
-                      }}
-                      className="mx-auto aspect-square w-full max-w-[180px]"
-                    >
-                      <RadialBarChart
-                        data={chartData.budgetDistribution}
-                        endAngle={180}
-                        innerRadius={60}
-                        outerRadius={90}
-                      >
-                        <ChartTooltip
-                          cursor={false}
-                          content={<ChartTooltipContent hideLabel />}
-                        />
-                        <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
-                          <RechartsLabel
-                            content={({ viewBox }) => {
-                              if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                                const totalBudget = chartData.budgetDistribution[0]?.used + chartData.budgetDistribution[0]?.remaining || 0
-                                const usedAmount = chartData.budgetDistribution[0]?.used || 0
-                                const percentage = totalBudget > 0 ? Math.round((usedAmount / totalBudget) * 100) : 0
-                                
-                                return (
-                                  <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle">
-                                    <tspan
-                                      x={viewBox.cx}
-                                      y={(viewBox.cy || 0) - 10}
-                                      className="fill-foreground text-xl font-bold"
-                                    >
-                                      {percentage}%
-                                    </tspan>
-                                    <tspan
-                                      x={viewBox.cx}
-                                      y={(viewBox.cy || 0) + 8}
-                                      className="fill-muted-foreground text-sm"
-                                    >
-                                      Used
-                                    </tspan>
-                                  </text>
-                                )
-                              }
-                            }}
-                          />
-                        </PolarRadiusAxis>
-                        <RadialBar
-                          dataKey="used"
-                          stackId="a"
-                          cornerRadius={5}
-                          fill="var(--color-used)"
-                          className="stroke-transparent stroke-2"
-                        />
-                        <RadialBar
-                          dataKey="remaining"
-                          fill="var(--color-remaining)"
-                          stackId="a"
-                          cornerRadius={5}
-                          className="stroke-transparent stroke-2"
-                        />
-                      </RadialBarChart>
-                    </ChartContainer>
-                  </CardContent>
-                  <CardFooter className="flex-col gap-1 text-xs">
-                    <div className="flex items-center gap-1 leading-none font-medium">
-                      Budget utilization tracking <TrendingUp className="h-3 w-3" />
-                    </div>
-                    <div className="text-muted-foreground leading-none">
-                      Showing budget usage for {selectedYear}
-                    </div>
-                  </CardFooter>
-                </Card>
-              </div>
-
-              {/* Right Column - Entity Spending Bar Chart */}
-              <div className="lg:col-span-4">
-                <Card className="h-full">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Building className="w-5 h-5" />
-                      Entity Spending Limits
-                    </CardTitle>
-                    <CardDescription>
-                      Approved vs spent amounts by entity
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex-1">
-                    <ChartContainer 
-                      config={{
-                        approved: {
-                          label: "Approved",
-                          color: "var(--chart-1)",
-                        },
-                        spent: {
-                          label: "Spent",
-                          color: "var(--chart-2)",
-                        },
-                      }}
-                      className="h-[400px] w-full"
-                    >
-                      <BarChart data={chartData.entitySpending}>
-                        <XAxis
-                          dataKey="entity"
-                          tickLine={false}
-                          tickMargin={10}
-                          axisLine={false}
-                          tickFormatter={(value) => value.slice(0, 10)}
-                        />
-                        <YAxis tickFormatter={(value) => `$${(value / 1000)}K`} />
-                        <Bar
-                          dataKey="approved"
-                          stackId="a"
-                          fill="var(--color-approved)"
-                          radius={[0, 0, 4, 4]}
-                        />
-                        <Bar
-                          dataKey="spent"
-                          stackId="a"
-                          fill="var(--color-spent)"
-                          radius={[4, 4, 0, 0]}
-                        />
-                        <ChartTooltip
-                          content={
-                            <ChartTooltipContent labelKey="entity" indicator="line" />
-                          }
-                          cursor={false}
-                        />
-                      </BarChart>
-                    </ChartContainer>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+            </ResponsiveGridCarousel>
           </div>
 
           <Separator />
 
-          {/* Budget Requests - Table or Kanban View */}
-          {viewMode === 'table' ? (
-            <Card>
-              <CardHeader>
+          {/* Budget Requests - Table View */}
+          <div className={`transition-opacity duration-300 ${!hasInstitutionBudget ? 'opacity-40 pointer-events-none' : ''}`}>
+            <Card className="border-gray-200 bg-white">
+              <CardHeader className="border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <DollarSign className="w-5 h-5" />
-                      Budget Requests
+                    <CardTitle className="flex items-center gap-2 text-gray-900">
+                      <DollarSign className="w-5 h-5 text-gray-700" />
+                      {t('annual_budget.table.title')}
                     </CardTitle>
-                    <CardDescription>
-                      Manage and review budget requests from all organizational entities
+                    <CardDescription className="text-gray-600">
+                      {t('annual_budget.table.subtitle')}
                     </CardDescription>
                   </div>
-                  
-                  <ViewToggle />
                 </div>
               </CardHeader>
-              <CardContent className="overflow-hidden">
-                <DataTable
-                  columns={columns}
-                  data={filteredBudgetRequests}
-                  searchKey="entity_name"
-                  searchPlaceholder="Search budget requests..."
-                  filterableColumns={[
-                    {
-                      id: "status",
-                      title: "Status",
-                      options: [
-                        { label: "Pending", value: "pending" },
-                        { label: "Under Review", value: "under_review" },
-                        { label: "Approved", value: "approved" },
-                        { label: "Rejected", value: "rejected" },
-                        { label: "Needs Revision", value: "requires_revision" },
-                      ]
-                    },
-                    {
-                      id: "entity_type",
-                      title: "Entity Type",
-                      options: [
-                        { label: "Church", value: "church" },
-                        { label: "Department", value: "department" },
-                        { label: "Region", value: "region" },
-                        { label: "Institution", value: "institution" },
-                      ]
-                    }
-                  ]}
-                />
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <LayoutGrid className="w-5 h-5" />
-                      Budget Requests - Kanban View
-                    </CardTitle>
-                    <CardDescription>
-                      Drag and drop interface to manage budget request workflow
-                    </CardDescription>
-                  </div>
-                  
-                  <ViewToggle />
+              <CardContent className="overflow-hidden p-4">
+                <div className="bg-white">
+                  <UseTable
+                    columns={columns}
+                    data={filteredBudgetRequests}
+                    filters={[
+                      {
+                        id: "entity_type",
+                        title: "Entity Type",
+                        options: [
+                          { label: "Church", value: "church" },
+                          { label: "Department", value: "department" },
+                          { label: "Region", value: "region" },
+                          { label: "Institution", value: "institution" },
+                        ]
+                      },
+                      {
+                        id: "budget_status",
+                        title: "Budget Status",
+                        options: [
+                          { label: "Completed", value: "true" },
+                          { label: "Missing", value: "false" },
+                        ]
+                      }
+                    ]}
+                  />
                 </div>
-              </CardHeader>
-              <CardContent className="overflow-hidden">
-                <KanbanBoard
-                  groups={kanbanGroups}
-                  items={kanbanItems}
-                  actions={kanbanActions}
-                  onItemMove={handleKanbanItemMove}
-                  isLoading={isLoading}
-                  maxHeight="calc(100vh - 300px)"
-                  enableDragDrop={true}
-                  renderItem={(item, group, dragHandlers) => (
-                    <Card 
-                      key={item.id}
-                      className={`relative w-full p-3 border border-border/50 hover:border-border transition-all duration-200 cursor-grab active:cursor-grabbing hover:shadow-md ${dragHandlers?.className || ''}`}
-                      draggable={dragHandlers?.draggable}
-                      onDragStart={dragHandlers?.onDragStart}
-                      onDragEnd={dragHandlers?.onDragEnd}
-                    >
-                      <div 
-                        className="absolute top-2 right-2 w-3 h-3 rounded-full flex-shrink-0" 
-                        style={{ backgroundColor: group.color }}
-                      />
-                      
-                      <div className="space-y-3 pr-4">
-                        <div className="flex items-start gap-2">
-                          <DollarSign className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                          <span className="font-medium text-sm line-clamp-2 flex-1">{item.title}</span>
-                        </div>
-                        
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {item.description}
-                        </p>
-                        
-                        <div className="flex items-center justify-between">
-                          <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200 font-semibold">
-                            {item.metadata?.amount}
-                          </Badge>
-                          
-                          <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-300 capitalize">
-                            {item.metadata?.entity_type}
-                          </Badge>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-                />
               </CardContent>
             </Card>
+          </div>
+
+          {/* View/Edit Budget Modal */}
+          {selectedRequest && (
+            <AnnualBudgetViewEditModal
+              isOpen={isViewEditModalOpen}
+              onOpenChange={setIsViewEditModalOpen}
+              budget={{
+                id: selectedRequest.id,
+                year: selectedRequest.year,
+                planned_budget: selectedRequest.requested_amount,
+                total_expenses: selectedRequest.approved_amount ? selectedRequest.approved_amount * 0.75 : 0,
+                balance: selectedRequest.approved_amount ? selectedRequest.approved_amount * 0.25 : selectedRequest.requested_amount,
+                notes: selectedRequest.notes || '',
+                approved_by: selectedRequest.reviewed_by,
+                created_at: selectedRequest.created_at,
+                updated_at: selectedRequest.updated_at
+              }}
+              entityName={selectedRequest.entity_name}
+              entityType={selectedRequest.entity_type}
+              isLocked={selectedRequest.is_locked}
+              onSave={(budget) => {
+                const updatedRequests = budgetRequests.map(req =>
+                  req.id === selectedRequest.id
+                    ? {
+                        ...req,
+                        requested_amount: budget.planned_budget,
+                        approved_amount: budget.total_expenses + budget.balance,
+                        notes: budget.notes || undefined,
+                        updated_at: new Date().toISOString()
+                      }
+                    : req
+                )
+                setBudgetRequests(updatedRequests)
+                toast.success('Budget updated successfully')
+              }}
+            />
           )}
 
-          {/* Create Request Modal */}
-          <CreateAnnualBudgetModal 
-            isCreateRequestModalOpen={isCreateRequestModalOpen}
-            setIsCreateRequestModalOpen={setIsCreateRequestModalOpen}
-          />
-
-          {/* Review Request Modal */}
+          {/* Delete Budget Modal */}
           {selectedRequest && (
-            <Dialog open={isReviewModalOpen} onOpenChange={setIsReviewModalOpen}>
-              <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                  <DialogTitle>{t('annual_budget.modals.review_request.title')}</DialogTitle>
-                  <DialogDescription>
-                    {selectedRequest.entity_name} - {t(`annual_budget.entity_types.${selectedRequest.entity_type}`)}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-6">
-                  {/* Request Amount */}
-                  <div className="text-center">
-                    <Label className="text-sm font-medium text-muted-foreground">{t('annual_budget.modals.review_request.labels.requested_amount')}</Label>
-                    <div className="mt-2">
-                      <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200 font-bold text-lg px-4 py-2">
-                        ${selectedRequest.requested_amount.toLocaleString()}
-                      </Badge>
-                      {selectedRequest.approved_amount && (
-                        <div className="text-sm text-green-600 mt-2">
-                          Approved: ${selectedRequest.approved_amount.toLocaleString()}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Status and Submitted Date */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center">
-                      <Label className="text-sm font-medium text-muted-foreground">{t('annual_budget.modals.review_request.labels.status')}</Label>
-                      <div className="mt-2">
-                        <Badge className={`${getStatusColor(selectedRequest.status)} flex items-center gap-1 justify-center`}>
-                          {selectedRequest.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <Label className="text-sm font-medium text-muted-foreground">{t('annual_budget.modals.review_request.labels.submitted')}</Label>
-                      <div className="mt-2">
-                        <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-300">
-                          {new Date(selectedRequest.submitted_date).toLocaleDateString()}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Notes */}
-                  {selectedRequest.notes && (
-                    <div>
-                      <Label className="text-sm font-medium text-muted-foreground">{t('annual_budget.modals.review_request.labels.notes')}</Label>
-                      <div className="mt-2 p-3 bg-muted rounded-lg border">
-                        <p className="text-sm">{selectedRequest.notes}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <DialogFooter className="flex justify-between">
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => handleRequestRevision(selectedRequest.id, 'Needs additional documentation')}
-                    >
-                      <AlertTriangle className="w-4 h-4 mr-2" />
-                      {t('annual_budget.actions.request_revision')}
-                    </Button>
-                    <Button 
-                      variant="destructive" 
-                      onClick={() => handleRejectRequest(selectedRequest.id, 'Does not meet budget criteria')}
-                    >
-                      <XCircle className="w-4 h-4 mr-2" />
-                      {t('annual_budget.actions.reject')}
-                    </Button>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setIsReviewModalOpen(false)}>
-                      {t('annual_budget.actions.close')}
-                    </Button>
-                    <Button onClick={() => handleApproveRequest(selectedRequest.id)}>
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      {t('annual_budget.actions.approve')}
-                    </Button>
-                  </div>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <DeleteBudgetModal
+              isOpen={isDeleteModalOpen}
+              onOpenChange={setIsDeleteModalOpen}
+              budget={selectedRequest}
+              onSuccess={(deletedBudget) => {
+                handleDeleteBudget(deletedBudget.id)
+              }}
+            />
+          )}
+
+          {/* Institution Budget Modal */}
+          {institutionBudgetData && (
+            <AnnualBudgetViewEditModal
+              isOpen={isInstitutionBudgetModalOpen}
+              onOpenChange={setIsInstitutionBudgetModalOpen}
+              budget={institutionBudgetData}
+              entityName={currentInstitutionData?.name || "Main Institution"}
+              entityType="Institution"
+              onSave={handleSaveInstitutionBudget}
+              readonly={false}
+              isLocked={institutionBudgetLocks[selectedYear] || false}
+              defaultYear={selectedYear}
+            />
           )}
 
 
