@@ -32,10 +32,12 @@ import {
   User,
   Copy,
   Check,
-  ChevronDown
+  ChevronDown,
+  Lock,
+  Unlock
 } from "lucide-react"
 import toast from "react-hot-toast"
-import { annualBudgetTranslations } from "@/lib/translations/annual-budget"
+import { cn } from "@/lib/utils"
 
 export interface AnnualBudgetData {
   id?: string
@@ -45,7 +47,6 @@ export interface AnnualBudgetData {
   balance: number
   notes?: string | null
   approved_by?: string | null
-  status: "planned" | "approved" | "in_progress" | "closed"
   created_at?: string
   updated_at?: string
   created_by?: string
@@ -60,7 +61,6 @@ export interface AnnualBudgetFormData {
   planned_budget: string
   total_expenses: string
   notes: string
-  status: "planned" | "approved" | "in_progress" | "closed"
   approved_by?: string
 }
 
@@ -72,6 +72,8 @@ export interface AnnualBudgetViewEditModalProps {
   entityType?: string
   onSave?: (budget: AnnualBudgetData) => void
   readonly?: boolean
+  isLocked?: boolean
+  defaultYear?: number // Year to pre-populate when creating new budget
 }
 
 export function AnnualBudgetViewEditModal({
@@ -81,18 +83,20 @@ export function AnnualBudgetViewEditModal({
   entityName,
   entityType = "Institution",
   onSave,
-  readonly = false
+  readonly = false,
+  isLocked = false,
+  defaultYear
 }: AnnualBudgetViewEditModalProps) {
-  const { i18n } = useTranslation()
+  const { t } = useTranslation()
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
+  const [isEditingYear, setIsEditingYear] = useState(false)
   const [formData, setFormData] = useState<AnnualBudgetFormData>({
     year: "",
     planned_budget: "",
     total_expenses: "",
     notes: "",
-    status: "planned",
     approved_by: undefined
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -106,37 +110,17 @@ export function AnnualBudgetViewEditModal({
 
   const totalSteps = 3
 
-  // Get translations for current language
-  const currentLanguage = i18n?.language || 'en'
-  const t_budget = annualBudgetTranslations[currentLanguage as keyof typeof annualBudgetTranslations] || annualBudgetTranslations.en
-
-  // Status options with icons and colors
-  const statusOptions = [
-    { 
-      value: "planned", 
-      label: t_budget.statusOptions.planned,
-      icon: Calendar,
-      color: "text-blue-600"
-    },
-    { 
-      value: "approved", 
-      label: t_budget.statusOptions.approved,
-      icon: CheckCircle,
-      color: "text-green-600"
-    },
-    { 
-      value: "in_progress", 
-      label: t_budget.statusOptions.in_progress,
-      icon: TrendingUp,
-      color: "text-orange-600"
-    },
-    { 
-      value: "closed", 
-      label: t_budget.statusOptions.closed,
-      icon: AlertCircle,
-      color: "text-gray-600"
+  // Generate available years (current year + 10 years forward)
+  const generateYearOptions = () => {
+    const currentYear = new Date().getFullYear()
+    const years = []
+    for (let i = 0; i <= 10; i++) {
+      years.push(currentYear + i)
     }
-  ]
+    return years
+  }
+
+  const yearOptions = generateYearOptions()
 
   // Calculate balance automatically
   const calculateBalance = (plannedBudget: string | number, totalExpenses: string | number) => {
@@ -152,19 +136,30 @@ export function AnnualBudgetViewEditModal({
         planned_budget: budget.planned_budget.toString(),
         total_expenses: budget.total_expenses.toString(),
         notes: budget.notes || "",
-        status: budget.status,
         approved_by: budget.approved_by || undefined
       })
+    } else if (defaultYear) {
+      // If no budget but defaultYear is provided, use it
+      setFormData({
+        year: defaultYear.toString(),
+        planned_budget: "",
+        total_expenses: "0",
+        notes: "",
+        approved_by: undefined
+      })
     }
-  }, [budget])
+  }, [budget, defaultYear])
 
   useEffect(() => {
     if (isOpen) {
       setCurrentStep(1)
-      setIsEditing(false)
+      setIsEditingYear(false)
+      // If it's a new budget (no planned_budget set), open in edit mode
+      const isNewBudget = !budget?.planned_budget || budget.planned_budget === 0
+      setIsEditing(isNewBudget)
       setErrors({})
     }
-  }, [isOpen])
+  }, [isOpen, budget])
 
   const handleInputChange = (field: keyof AnnualBudgetFormData, value: string) => {
     setFormData(prev => ({
@@ -188,34 +183,31 @@ export function AnnualBudgetViewEditModal({
     if (step === 1) {
       // Year validation
       if (!formData.year?.trim()) {
-        newErrors.year = t_budget.validation.yearRequired
+        newErrors.year = t("annual_budget.modals.validation.year_required")
       } else {
         const year = parseInt(formData.year)
         if (isNaN(year)) {
-          newErrors.year = t_budget.validation.yearInvalid
+          newErrors.year = t("annual_budget.modals.validation.year_invalid")
         } else if (year < 2000) {
-          newErrors.year = t_budget.validation.yearMin
+          newErrors.year = t("annual_budget.modals.validation.year_min")
         } else if (year > currentYear + 10) {
-          newErrors.year = t_budget.validation.yearMax
+          newErrors.year = t("annual_budget.modals.validation.year_max")
         }
       }
 
       // Planned budget validation
       if (!formData.planned_budget?.trim()) {
-        newErrors.planned_budget = t_budget.validation.plannedBudgetRequired
+        newErrors.planned_budget = t("annual_budget.modals.validation.planned_budget_required")
       } else {
         const budgetAmount = parseFloat(formData.planned_budget)
         if (isNaN(budgetAmount)) {
-          newErrors.planned_budget = t_budget.validation.plannedBudgetInvalid
+          newErrors.planned_budget = t("annual_budget.modals.validation.planned_budget_invalid")
         } else if (budgetAmount <= 0) {
-          newErrors.planned_budget = t_budget.validation.plannedBudgetMin
+          newErrors.planned_budget = t("annual_budget.modals.validation.planned_budget_min")
         }
       }
 
-      // Status validation
-      if (!formData.status) {
-        newErrors.status = t_budget.validation.statusRequired
-      }
+
     }
 
     if (step === 2) {
@@ -223,9 +215,9 @@ export function AnnualBudgetViewEditModal({
       if (formData.total_expenses?.trim()) {
         const expenses = parseFloat(formData.total_expenses)
         if (isNaN(expenses)) {
-          newErrors.total_expenses = t_budget.validation.totalExpensesInvalid
+          newErrors.total_expenses = t("annual_budget.modals.validation.total_expenses_invalid")
         } else if (expenses < 0) {
-          newErrors.total_expenses = t_budget.validation.totalExpensesNegative
+          newErrors.total_expenses = t("annual_budget.modals.validation.total_expenses_negative")
         }
       }
     }
@@ -248,12 +240,12 @@ export function AnnualBudgetViewEditModal({
     if (!budget) return
 
     if (!validateStep(1) || !validateStep(2) || !validateStep(3)) {
-      toast.error(t_budget.validation?.fixErrors || "Please fix the errors before continuing")
+      toast.error(t("annual_budget.modals.validation.fix_errors"))
       return
     }
 
     setIsLoading(true)
-    const loadingToast = toast.loading(t_budget.updating || "Updating budget...")
+    const loadingToast = toast.loading(t("annual_budget.modals.messages.updating"))
 
     try {
       // Simulate API call
@@ -266,13 +258,12 @@ export function AnnualBudgetViewEditModal({
         total_expenses: parseFloat(formData.total_expenses) || 0,
         balance: calculateBalance(formData.planned_budget, formData.total_expenses),
         notes: formData.notes || null,
-        status: formData.status,
         approved_by: formData.approved_by || null,
         updated_at: new Date().toISOString()
       }
 
       toast.dismiss(loadingToast)
-      toast.success(t_budget.updated || "Annual budget updated successfully!", {
+      toast.success(t("annual_budget.modals.messages.updated"), {
         duration: 3000,
         icon: '✅'
       })
@@ -284,7 +275,7 @@ export function AnnualBudgetViewEditModal({
       setIsEditing(false)
     } catch (error) {
       toast.dismiss(loadingToast)
-      toast.error(t_budget.updateFailed || "Failed to update annual budget")
+      toast.error(t("annual_budget.modals.messages.update_failed"))
     } finally {
       setIsLoading(false)
     }
@@ -297,7 +288,6 @@ export function AnnualBudgetViewEditModal({
         planned_budget: budget.planned_budget.toString(),
         total_expenses: budget.total_expenses.toString(),
         notes: budget.notes || "",
-        status: budget.status,
         approved_by: budget.approved_by || undefined
       })
     }
@@ -314,8 +304,7 @@ export function AnnualBudgetViewEditModal({
   }
 
   const formatDate = (dateString: string) => {
-    const locale = currentLanguage === 'pt' ? 'pt-BR' : currentLanguage === 'nl' ? 'nl-NL' : 'en-US'
-    return new Date(dateString).toLocaleDateString(locale, {
+    return new Date(dateString).toLocaleDateString('en-US', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
@@ -416,17 +405,7 @@ export function AnnualBudgetViewEditModal({
     )
   }
 
-  const getStatusBadge = (status: string) => {
-    const statusOption = statusOptions.find(s => s.value === status)
-    const Icon = statusOption?.icon || AlertCircle
-    
-    return (
-      <Badge variant="outline" className="flex items-center gap-1 text-xs">
-        <Icon className={`w-3 h-3 ${statusOption?.color || 'text-gray-500'}`} />
-        {statusOption?.label || status}
-      </Badge>
-    )
-  }
+
 
   const renderViewMode = () => {
     if (!budget) return null
@@ -437,30 +416,23 @@ export function AnnualBudgetViewEditModal({
         {renderCollapsibleSection(
           'overview',
           <DollarSign className="w-4 h-4 text-gray-500" />,
-          t_budget.basicInformation || "Budget Overview",
+          t("annual_budget.modals.steps.basic_information"),
           <div className="space-y-3">
             <div>
               <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                {t_budget.year || "Year"}
+                {t("annual_budget.modals.fields.year")}
               </Label>
               {renderCopyableField(budget.year, 'year')}
             </div>
             
             <div>
               <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                {t_budget.plannedBudget || "Planned Budget"}
+                {t("annual_budget.modals.fields.planned_budget")}
               </Label>
               {renderCopyableField(budget.planned_budget, 'planned_budget', undefined, formatCurrency)}
             </div>
             
-            <div>
-              <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                {t_budget.status || "Status"}
-              </Label>
-              <div className="py-2">
-                {getStatusBadge(budget.status)}
-              </div>
-            </div>
+
           </div>
         )}
 
@@ -468,18 +440,18 @@ export function AnnualBudgetViewEditModal({
         {renderCollapsibleSection(
           'financial',
           <Calculator className="w-4 h-4 text-gray-500" />,
-          t_budget.financialDetails || "Financial Details",
+          t("annual_budget.modals.steps.financial_details"),
           <div className="space-y-3">
             <div>
               <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                {t_budget.totalExpenses || "Total Expenses"}
+                {t("annual_budget.modals.fields.total_expenses")}
               </Label>
               {renderCopyableField(budget.total_expenses, 'total_expenses', undefined, formatCurrency)}
             </div>
             
             <div>
               <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                {t_budget.balance || "Balance"}
+                {t("annual_budget.modals.fields.balance")}
               </Label>
               <div className="flex items-center justify-between group py-2">
                 <div className="flex items-center gap-2">
@@ -490,7 +462,7 @@ export function AnnualBudgetViewEditModal({
                     variant={budget.balance >= 0 ? "default" : "destructive"}
                     className="text-xs"
                   >
-                    {budget.balance >= 0 ? "Positive" : "Deficit"}
+                    {budget.balance >= 0 ? (t("annual_budget.modals.status.positive") || "Positive") : (t("annual_budget.modals.status.deficit") || "Deficit")}
                   </Badge>
                 </div>
                 <Button
@@ -510,18 +482,18 @@ export function AnnualBudgetViewEditModal({
 
             {/* Budget Summary */}
             <div className="bg-gray-50 rounded-lg p-4 space-y-3 border border-gray-200">
-              <h4 className="text-sm font-medium text-gray-900">Budget Summary</h4>
+              <h4 className="text-sm font-medium text-gray-900">{t("annual_budget.modals.summary.title") || "Budget Summary"}</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Planned:</span>
+                  <span className="text-gray-600">{t("annual_budget.modals.summary.planned") || "Planned"}:</span>
                   <span className="font-medium text-gray-900">{formatCurrency(budget.planned_budget)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Expenses:</span>
+                  <span className="text-gray-600">{t("annual_budget.modals.summary.expenses") || "Expenses"}:</span>
                   <span className="font-medium text-gray-900">{formatCurrency(budget.total_expenses)}</span>
                 </div>
                 <div className="flex justify-between border-t border-gray-200 pt-2">
-                  <span className="text-gray-600">Balance:</span>
+                  <span className="text-gray-600">{t("annual_budget.modals.summary.balance") || "Balance"}:</span>
                   <span className={`font-semibold ${budget.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {formatCurrency(budget.balance)}
                   </span>
@@ -535,16 +507,16 @@ export function AnnualBudgetViewEditModal({
         {renderCollapsibleSection(
           'additional',
           <FileText className="w-4 h-4 text-gray-500" />,
-          t_budget.additionalInfo || "Additional Information",
+          t("annual_budget.modals.steps.additional_info"),
           <div className="space-y-3">
             <div>
               <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                {t_budget.notes || "Notes"}
+                {t("annual_budget.modals.fields.notes")}
               </Label>
               <div className="flex items-start justify-between group">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-900 whitespace-pre-wrap break-words py-2">
-                    {budget.notes || <span className="text-gray-500 italic">No notes provided</span>}
+                    {budget.notes || <span className="text-gray-500 italic">{t("annual_budget.modals.fields.no_notes") || "No notes provided"}</span>}
                   </p>
                 </div>
                 {budget.notes && (
@@ -567,7 +539,7 @@ export function AnnualBudgetViewEditModal({
             {budget.approved_by && (
               <div>
                 <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                  {t_budget.approvedBy || "Approved By"}
+                  {t("annual_budget.modals.fields.approved_by")}
                 </Label>
                 {renderCopyableField(budget.approved_by, 'approved_by')}
               </div>
@@ -579,12 +551,12 @@ export function AnnualBudgetViewEditModal({
         {renderCollapsibleSection(
           'system',
           <Calendar className="w-4 h-4 text-gray-500" />,
-          "System Information",
+          t("annual_budget.modals.system_info.title") || "System Information",
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                  Created At
+                  {t("annual_budget.modals.system_info.created_at") || "Created At"}
                 </Label>
                 <p className="text-sm text-gray-900 mt-1">
                   {budget.created_at ? formatDate(budget.created_at) : '-'}
@@ -593,7 +565,7 @@ export function AnnualBudgetViewEditModal({
               
               <div>
                 <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                  Updated At
+                  {t("annual_budget.modals.system_info.updated_at") || "Updated At"}
                 </Label>
                 <p className="text-sm text-gray-900 mt-1">
                   {budget.updated_at ? formatDate(budget.updated_at) : '-'}
@@ -615,25 +587,62 @@ export function AnnualBudgetViewEditModal({
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
                 <DollarSign className="w-6 h-6 text-gray-600" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900">{t_budget.basicInformation || "Budget Overview"}</h3>
-              <p className="text-sm text-gray-600">{t_budget.basicInformationDesc || "Year, planned budget, and status"}</p>
+              <h3 className="text-lg font-medium text-gray-900">{t("annual_budget.modals.steps.basic_information")}</h3>
+              <p className="text-sm text-gray-600">{t("annual_budget.modals.steps.basic_information_desc")}</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
-                <Label htmlFor="year" className="flex items-center gap-2 text-sm text-gray-600">
+                <Label className="flex items-center gap-2 text-sm text-gray-600">
                   <Calendar className="w-4 h-4 text-gray-500" />
-                  {t_budget.year || "Year"} *
+                  {t("annual_budget.modals.fields.year")} *
                 </Label>
-                <Input
-                  id="year"
-                  type="number"
-                  value={formData.year}
-                  onChange={(e) => handleInputChange('year', e.target.value)}
-                  placeholder={t_budget.yearPlaceholder || "Enter budget year"}
-                  disabled={isLoading}
-                  className={`h-12 text-base border-gray-300 focus:border-gray-500 focus:ring-gray-500 ${errors.year ? 'border-red-500' : ''}`}
-                />
+                
+                {!isEditingYear ? (
+                  // Year as Tag with Edit Button
+                  <div className="flex items-center justify-between h-12 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-base font-medium px-3 py-1 bg-white">
+                        {formData.year || t("annual_budget.modals.fields.year_placeholder") || "Select Year"}
+                      </Badge>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsEditingYear(true)}
+                      disabled={isLoading}
+                      className="h-8 px-3 text-xs hover:bg-gray-200"
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      {t("annual_budget.modals.buttons.edit") || "Edit"}
+                    </Button>
+                  </div>
+                ) : (
+                  // Year Dropdown (Edit Mode)
+                  <div className="relative">
+                    <select
+                      value={formData.year}
+                      onChange={(e) => {
+                        handleInputChange('year', e.target.value)
+                        setIsEditingYear(false)
+                      }}
+                      disabled={isLoading}
+                      autoFocus
+                      onBlur={() => setIsEditingYear(false)}
+                      className={`w-full h-12 px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-200 focus:border-gray-400 transition-colors bg-white appearance-none ${errors.year ? 'border-red-500' : ''}`}
+                    >
+                      <option value="">{t("annual_budget.modals.fields.year_placeholder") || "Select Year"}</option>
+                      {yearOptions.map((year) => (
+                        <option key={year} value={year.toString()}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  </div>
+                )}
+                
                 {errors.year && (
                   <p className="text-sm text-red-600">{errors.year}</p>
                 )}
@@ -642,49 +651,45 @@ export function AnnualBudgetViewEditModal({
               <div className="space-y-2">
                 <Label htmlFor="planned_budget" className="flex items-center gap-2 text-sm text-gray-600">
                   <DollarSign className="w-4 h-4 text-gray-500" />
-                  {t_budget.plannedBudget || "Planned Budget"} *
+                  {t("annual_budget.modals.fields.planned_budget")} *
                 </Label>
+                
+                {/* Quick Amount Selection Tags - Horizontal Scroll */}
+                <div className="overflow-x-auto scrollbar-thin pb-2 mb-3">
+                  <div className="flex gap-2 min-w-max">
+                    {[100000, 250000, 500000, 750000, 1000000, 1500000, 2000000, 2500000].map((amount) => (
+                      <Button
+                        key={amount}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleInputChange('planned_budget', amount.toString())}
+                        disabled={isLoading}
+                        className={cn(
+                          "h-8 text-xs font-medium transition-all hover:bg-primary hover:text-primary-foreground border-2 flex-shrink-0",
+                          formData.planned_budget === amount.toString() 
+                            ? "bg-primary text-primary-foreground border-primary" 
+                            : "border-gray-300 text-gray-700"
+                        )}
+                      >
+                        ${(amount / 1000)}K
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                
                 <Input
                   id="planned_budget"
                   type="number"
                   step="0.01"
                   value={formData.planned_budget}
                   onChange={(e) => handleInputChange('planned_budget', e.target.value)}
-                  placeholder={t_budget.plannedBudgetPlaceholder || "Enter planned budget"}
+                  placeholder={t("annual_budget.modals.fields.planned_budget_placeholder")}
                   disabled={isLoading}
                   className={`h-12 text-base border-gray-300 focus:border-gray-500 focus:ring-gray-500 ${errors.planned_budget ? 'border-red-500' : ''}`}
                 />
                 {errors.planned_budget && (
                   <p className="text-sm text-red-600">{errors.planned_budget}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-sm text-gray-600">
-                  <CheckCircle className="w-4 h-4 text-gray-500" />
-                  {t_budget.status || "Status"} *
-                </Label>
-                <div className="flex flex-wrap gap-2">
-                  {statusOptions.map((status) => {
-                    const Icon = status.icon
-                    const isSelected = formData.status === status.value
-                    return (
-                      <Button
-                        key={status.value}
-                        variant={isSelected ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handleInputChange('status', status.value as any)}
-                        disabled={isLoading}
-                        className={`flex items-center gap-1 ${isSelected ? 'bg-gray-900 text-white' : 'border-gray-300 text-gray-700'}`}
-                      >
-                        <Icon className={`w-3 h-3 ${isSelected ? 'text-white' : status.color}`} />
-                        {status.label}
-                      </Button>
-                    )
-                  })}
-                </div>
-                {errors.status && (
-                  <p className="text-sm text-red-600">{errors.status}</p>
                 )}
               </div>
             </div>
@@ -698,15 +703,15 @@ export function AnnualBudgetViewEditModal({
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
                 <Calculator className="w-6 h-6 text-gray-600" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900">{t_budget.financialDetails || "Financial Details"}</h3>
-              <p className="text-sm text-gray-600">{t_budget.financialDetailsDesc || "Expenses and balance tracking"}</p>
+              <h3 className="text-lg font-medium text-gray-900">{t("annual_budget.modals.steps.financial_details")}</h3>
+              <p className="text-sm text-gray-600">{t("annual_budget.modals.steps.financial_details_desc")}</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="total_expenses" className="flex items-center gap-2 text-sm text-gray-600">
                   <Calculator className="w-4 h-4 text-gray-500" />
-                  {t_budget.totalExpenses || "Total Expenses"}
+                  {t("annual_budget.modals.fields.total_expenses")}
                 </Label>
                 <Input
                   id="total_expenses"
@@ -714,7 +719,7 @@ export function AnnualBudgetViewEditModal({
                   step="0.01"
                   value={formData.total_expenses}
                   onChange={(e) => handleInputChange('total_expenses', e.target.value)}
-                  placeholder={t_budget.totalExpensesPlaceholder || "Enter total expenses"}
+                  placeholder={t("annual_budget.modals.fields.total_expenses_placeholder")}
                   disabled={isLoading}
                   className={`h-12 text-base border-gray-300 focus:border-gray-500 focus:ring-gray-500 ${errors.total_expenses ? 'border-red-500' : ''}`}
                 />
@@ -727,7 +732,7 @@ export function AnnualBudgetViewEditModal({
               <div className="space-y-2">
                 <Label className="flex items-center gap-2 text-sm text-gray-600">
                   <TrendingUp className="w-4 h-4 text-gray-500" />
-                  {t_budget.balance || "Balance"}
+                  {t("annual_budget.modals.fields.balance")}
                 </Label>
                 <div className="relative">
                   <Input
@@ -741,31 +746,31 @@ export function AnnualBudgetViewEditModal({
                       variant={calculateBalance(formData.planned_budget, formData.total_expenses) >= 0 ? "default" : "destructive"}
                       className="text-xs"
                     >
-                      {calculateBalance(formData.planned_budget, formData.total_expenses) >= 0 ? "Positive" : "Deficit"}
+                      {calculateBalance(formData.planned_budget, formData.total_expenses) >= 0 ? (t("annual_budget.modals.status.positive") || "Positive") : (t("annual_budget.modals.status.deficit") || "Deficit")}
                     </Badge>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500">{t_budget.balanceHelp || "Balance is calculated automatically"}</p>
+                <p className="text-xs text-gray-500">{t("annual_budget.modals.fields.balance_help")}</p>
               </div>
 
               {/* Budget Summary Card */}
               <div className="bg-gray-50 rounded-lg p-4 space-y-3 border border-gray-200">
-                <h4 className="text-sm font-medium text-gray-900">Budget Summary</h4>
+                <h4 className="text-sm font-medium text-gray-900">{t("annual_budget.modals.summary.title") || "Budget Summary"}</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Planned Budget:</span>
+                    <span className="text-gray-600">{t("annual_budget.modals.fields.planned_budget") || "Planned Budget"}:</span>
                     <span className="font-medium text-gray-900">
                       {formatCurrency(parseFloat(formData.planned_budget || "0"))}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Total Expenses:</span>
+                    <span className="text-gray-600">{t("annual_budget.modals.fields.total_expenses") || "Total Expenses"}:</span>
                     <span className="font-medium text-gray-900">
                       {formatCurrency(parseFloat(formData.total_expenses || "0"))}
                     </span>
                   </div>
                   <div className="flex justify-between border-t border-gray-200 pt-2">
-                    <span className="text-gray-600">Balance:</span>
+                    <span className="text-gray-600">{t("annual_budget.modals.fields.balance") || "Balance"}:</span>
                     <span className={`font-semibold ${calculateBalance(formData.planned_budget, formData.total_expenses) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {formatCurrency(calculateBalance(formData.planned_budget, formData.total_expenses))}
                     </span>
@@ -783,21 +788,21 @@ export function AnnualBudgetViewEditModal({
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
                 <FileText className="w-6 h-6 text-gray-600" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900">{t_budget.additionalInfo || "Additional Information"}</h3>
-              <p className="text-sm text-gray-600">{t_budget.additionalInfoDesc || "Notes and approvals"}</p>
+              <h3 className="text-lg font-medium text-gray-900">{t("annual_budget.modals.steps.additional_info")}</h3>
+              <p className="text-sm text-gray-600">{t("annual_budget.modals.steps.additional_info_desc")}</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="notes" className="flex items-center gap-2 text-sm text-gray-600">
                   <FileText className="w-4 h-4 text-gray-500" />
-                  {t_budget.notes || "Notes"}
+                  {t("annual_budget.modals.fields.notes")}
                 </Label>
                 <Textarea
                   id="notes"
                   value={formData.notes}
                   onChange={(e) => handleInputChange('notes', e.target.value)}
-                  placeholder={t_budget.notesPlaceholder || "Additional notes or comments..."}
+                  placeholder={t("annual_budget.modals.fields.notes_placeholder")}
                   disabled={isLoading}
                   rows={4}
                   className="text-base border-gray-300 focus:border-gray-500 focus:ring-gray-500"
@@ -808,25 +813,22 @@ export function AnnualBudgetViewEditModal({
               <div className="bg-gray-50 rounded-lg p-4 space-y-3 border border-gray-200">
                 <h4 className="text-sm font-medium text-gray-900 flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-gray-500" />
-                  Review & Confirm
+                  {t("annual_budget.modals.review.title") || "Review & Confirm"}
                 </h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Year:</span>
+                    <span className="text-gray-600">{t("annual_budget.modals.fields.year") || "Year"}:</span>
                     <span className="font-medium text-gray-900">{formData.year}</span>
                   </div>
+
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Status:</span>
-                    {getStatusBadge(formData.status)}
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Planned Budget:</span>
+                    <span className="text-gray-600">{t("annual_budget.modals.fields.planned_budget") || "Planned Budget"}:</span>
                     <span className="font-medium text-gray-900">
                       {formatCurrency(parseFloat(formData.planned_budget || "0"))}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Balance:</span>
+                    <span className="text-gray-600">{t("annual_budget.modals.fields.balance") || "Balance"}:</span>
                     <span className={`font-semibold ${calculateBalance(formData.planned_budget, formData.total_expenses) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {formatCurrency(calculateBalance(formData.planned_budget, formData.total_expenses))}
                     </span>
@@ -850,33 +852,62 @@ export function AnnualBudgetViewEditModal({
         <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg text-gray-900">
             <DollarSign className="w-5 h-5 text-yellow-600" />
-            {t_budget.title || "Annual Budget"}
+            {t("annual_budget.modals.edit.title")}
           </DialogTitle>
           <DialogDescription className="text-sm text-gray-600">
             {entityName ? (
               `${entityType}: ${entityName} - ${budget.year}`
             ) : (
-              t_budget.description || "View and manage annual budget details"
+              t("annual_budget.modals.edit.description")
             )}
           </DialogDescription>
           
           {/* Budget Status and Edit Button */}
           <div className="flex items-center justify-between mt-4">
             <div className="flex items-center gap-2">
-              {getStatusBadge(budget.status)}
               <Badge variant="outline" className="text-xs">
-                Year {budget.year}
+                {t("annual_budget.modals.fields.year") || "Year"} {budget.year}
               </Badge>
               {budget.is_deleted && (
-                <Badge variant="destructive" className="bg-gray-800 text-white">Deleted</Badge>
+                <Badge variant="destructive" className="bg-gray-800 text-white">{t("annual_budget.modals.status.deleted") || "Deleted"}</Badge>
               )}
             </div>
-            {!readonly && !isEditing && (
-              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="border-gray-300 text-gray-700 hover:bg-gray-50">
-                <Edit className="w-4 h-4 mr-2" />
-                {t_budget.edit || "Edit"}
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {/* Lock/Unlock Icon */}
+              {!readonly && !isEditing && (
+                <div className="relative group">
+                  <div className={`w-8 h-8 border-2 border-dashed rounded-full flex items-center justify-center ${
+                    isLocked 
+                      ? 'border-gray-900 bg-gray-900' 
+                      : 'border-gray-400 bg-gray-50 opacity-60'
+                  }`}>
+                    {isLocked ? (
+                      <Lock className="w-3 h-3 text-white" />
+                    ) : (
+                      <Unlock className="w-3 h-3 text-gray-600" />
+                    )}
+                  </div>
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                    {isLocked ? (t("annual_budget.modals.lock_tooltip.locked") || 'Unlock first to be able to edit') : (t("annual_budget.modals.lock_tooltip.unlocked") || 'Unlocked - Can be edited')}
+                  </div>
+                </div>
+              )}
+              
+              {/* Edit Button */}
+              {!readonly && !isEditing && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setIsEditing(true)} 
+                  disabled={isLocked}
+                  className={`border-gray-300 ${isLocked ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'}`}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  {t("annual_budget.modals.buttons.edit")}
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Progress Bar - Only show when editing */}
@@ -910,7 +941,7 @@ export function AnnualBudgetViewEditModal({
                   className="flex items-center gap-1 text-xs border-gray-300 text-gray-700 hover:bg-gray-50"
                 >
                   <ChevronLeft className="w-3 h-3" />
-                  {t_budget.previous || "Previous"}
+                  {t("annual_budget.modals.buttons.previous")}
                 </Button>
               )}
               <Button
@@ -920,7 +951,7 @@ export function AnnualBudgetViewEditModal({
                 className="text-xs border-gray-300 text-gray-700 hover:bg-gray-50"
               >
                 <X className="w-3 h-3 mr-1" />
-                {isEditing ? (t_budget.cancel || "Cancel") : (t_budget.close || "Close")}
+                {isEditing ? (t("annual_budget.modals.buttons.cancel")) : (t("annual_budget.modals.buttons.close"))}
               </Button>
             </div>
 
@@ -931,7 +962,7 @@ export function AnnualBudgetViewEditModal({
                   disabled={isLoading}
                   className="flex items-center gap-1 text-xs bg-gray-900 hover:bg-gray-800 text-white"
                 >
-                  {t_budget.next || "Next"}
+                  {t("annual_budget.modals.buttons.next")}
                   <ChevronRight className="w-3 h-3" />
                 </Button>
               )}
@@ -942,7 +973,7 @@ export function AnnualBudgetViewEditModal({
                   className="min-w-[100px] text-xs bg-gray-900 hover:bg-gray-800 text-white"
                 >
                   <Save className="w-3 h-3 mr-1" />
-                  {isLoading ? (t_budget.saving || "Saving...") : (t_budget.save || "Save Changes")}
+                  {isLoading ? (t("annual_budget.modals.messages.saving")) : (t("annual_budget.modals.buttons.save"))}
                 </Button>
               )}
             </div>

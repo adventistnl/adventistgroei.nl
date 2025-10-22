@@ -233,9 +233,16 @@ export function UseTable<TData, TValue>({
                     <Select
                       key={filter.id}
                       value={filterValue || "all"}
-                      onValueChange={(value) =>
-                        table.getColumn(filter.id)?.setFilterValue(value === "all" ? "" : value)
-                      }
+                      onValueChange={(value) => {
+                        if (value === "all") {
+                          table.getColumn(filter.id)?.setFilterValue("")
+                        } else if (filter.id === "has_budget_record") {
+                          // Handle boolean filters
+                          table.getColumn(filter.id)?.setFilterValue(value === "true")
+                        } else {
+                          table.getColumn(filter.id)?.setFilterValue(value)
+                        }
+                      }}
                     >
                       <SelectTrigger className={`w-[120px] h-8 border-2 ${isActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}>
                         <SelectValue placeholder={filter.title} />

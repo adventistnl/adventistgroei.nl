@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import toast from "react-hot-toast"
+import { useI18nReady } from "@/hooks/use-i18n-ready"
 
 const languages = [
   { code: 'pt', name: 'Português', initials: 'PT' },
@@ -20,58 +21,56 @@ const languages = [
 
 export function LanguageSelector() {
   const { i18n, t } = useTranslation()
-  const [isReady, setIsReady] = React.useState(false)
+  const { isReady, hasTimedOut, currentLanguage } = useI18nReady()
 
   const changeLanguage = (languageCode: string) => {
-    if (!i18n.isInitialized || !i18n.changeLanguage) {
-      console.warn('i18n is not properly initialized')
+    // Verificação simplificada - o hook useI18nReady já garante que está pronto
+    if (typeof i18n.changeLanguage !== 'function') {
+      console.warn('[Language Selector] changeLanguage method not available')
+      toast.error('Unable to change language at this time', { duration: 2000 })
       return
     }
-
-    const previousLang = i18n.language
-    
-    i18n.changeLanguage(languageCode)
     
     const selectedLang = languages.find(lang => lang.code === languageCode)
     
-    toast.success(
-      `🌍 ${t('common.language')} changed to ${selectedLang?.name}`,
-      {
-        duration: 3000,
-        style: { minWidth: '250px' }
-      }
-    )
-
-    // Salvar preferência no localStorage
-    localStorage.setItem('preferred-language', languageCode)
+    i18n.changeLanguage(languageCode)
+      .then(() => {
+        toast.success(
+          `🌍 Language changed to ${selectedLang?.name}`,
+          {
+            duration: 2000,
+            style: { minWidth: '250px' }
+          }
+        )
+        // Salvar preferência no localStorage
+        localStorage.setItem('preferred-language', languageCode)
+      })
+      .catch((err) => {
+        console.error('Failed to change language:', err)
+        toast.error('Failed to change language', { duration: 2000 })
+      })
   }
 
-  // Wait for i18n to be ready and load saved language
+  // Load saved language preference on mount
   React.useEffect(() => {
-    const checkI18nReady = () => {
-      if (i18n.isInitialized) {
-        setIsReady(true)
-        const savedLanguage = localStorage.getItem('preferred-language')
-        if (savedLanguage && savedLanguage !== i18n.language && i18n.changeLanguage) {
-          i18n.changeLanguage(savedLanguage)
-        }
-      } else {
-        // Retry after a short delay
-        setTimeout(checkI18nReady, 100)
+    if (isReady && i18n.isInitialized) {
+      const savedLanguage = localStorage.getItem('preferred-language')
+      if (savedLanguage && savedLanguage !== i18n.language && i18n.changeLanguage) {
+        i18n.changeLanguage(savedLanguage).catch(err => {
+          console.warn('Failed to load saved language:', err)
+        })
       }
     }
-    
-    checkI18nReady()
-  }, [i18n])
+  }, [isReady, i18n])
 
-  const currentLanguage = languages.find(lang => lang.code === i18n.language)
+  const displayLanguage = languages.find(lang => lang.code === currentLanguage) || languages[1] // Default to EN
 
-  // Show loading state if i18n is not ready
+  // Show minimal loading state with EN as default display
   if (!isReady) {
     return (
       <Button variant="outline" size="sm" className="gap-2 h-9 px-3" disabled>
-        <Globe className="h-4 w-4 animate-spin" />
-        <span className="hidden sm:inline text-sm">Loading...</span>
+        <Globe className="h-4 w-4" />
+        <span className="text-sm font-medium">EN</span>
       </Button>
     )
   }
@@ -82,7 +81,7 @@ export function LanguageSelector() {
         <Button variant="outline" size="sm" className="gap-2 h-9 px-3">
           <Globe className="h-4 w-4" />
           <span className="text-sm font-medium">
-            {currentLanguage?.initials}
+            {displayLanguage.initials}
           </span>
         </Button>
       </DropdownMenuTrigger>
@@ -97,7 +96,7 @@ export function LanguageSelector() {
               <span className="text-sm font-medium">{language.initials}</span>
               <span className="text-sm text-muted-foreground">{language.name}</span>
             </div>
-            {i18n.language === language.code && (
+            {currentLanguage === language.code && (
               <Check className="h-4 w-4 text-primary" />
             )}
           </DropdownMenuItem>
