@@ -83,11 +83,6 @@ import {
   Legend
 } from "recharts"
 
-// Funding Rules Component
-import { FundingRulesManager } from "@/components/funding-rules/funding-rules-manager"
-
-// Funding Rules Tab Component has been moved to /components/funding-rules/funding-rules-manager.tsx
-
 export default function InstitutionsPage() {
   const { t } = useTranslation()
   const { institutions: institutionsData, currentInstitutionData, loading: isLoading, updateInstitutionContact, refetchInstitutionById} = useInstitution();
@@ -536,14 +531,10 @@ export default function InstitutionsPage() {
 
         {/* Tabs Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsList className="grid w-full grid-cols-1">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Building className="w-4 h-4" />
               Overview
-            </TabsTrigger>
-            <TabsTrigger value="funding-rules" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              Funding Rules
             </TabsTrigger>
           </TabsList>
 
@@ -588,24 +579,6 @@ export default function InstitutionsPage() {
                 />
               </CardContent>
             </Card>
-          </TabsContent>
-
-
-
-
-
-          {/* Funding Rules Tab */}
-          <TabsContent value="funding-rules" className="space-y-6">
-            <FundingRulesManager 
-              context="institution"
-              entityId={currentInstitutionData?.id}
-              isLoading={isLoading}
-              onRefresh={handleRefresh}
-              title="Institution Funding Rules"
-              description="Manage funding rules and groups for this institution's subsidy requests"
-              showCharts={true}
-              showKPICards={true}
-            />
           </TabsContent>
         </Tabs>
 
