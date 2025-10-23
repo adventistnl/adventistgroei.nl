@@ -1,38 +1,26 @@
 "use client"
 
-import React, { use, useState } from "react"
+import React, { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
   Building,
   MapPin,
   Home,
-  Shield,
   Globe,
-  Users,
   MoreHorizontal,
-  Send,
   Eye,
   Edit,
   Trash2,
   ArrowLeft,
-  ChevronDown,
-  ChevronRight,
   Mail,
-  Phone,
   Calendar,
   DollarSign,
-  Layers,
-  Camera,
-  Upload,
-  X
+  Layers
 } from "lucide-react"
-import { Separator } from "@radix-ui/react-separator"
 import { InstitutionById_institution } from "@/types/InstitutionById"
 import { AnnualBudgetViewEditModal } from "@/components/modals/annual-budget"
 import type { AnnualBudgetData } from "@/components/modals/annual-budget"
@@ -67,8 +55,6 @@ export function InstitutionProfileHeader({
   className = ""
 }: InstitutionProfileHeaderProps) {
   const { t } = useTranslation()
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
   const [showBudgetModal, setShowBudgetModal] = useState(false)
 
   // Example budget data (in real app, this would come from props or API)
@@ -79,7 +65,6 @@ export function InstitutionProfileHeader({
     total_expenses: 85000,
     balance: 65000,
     notes: "Annual operational budget for institutional activities and programs.",
-    status: "approved",
     approved_by: "admin",
     created_at: "2024-01-15T10:30:00Z",
     updated_at: "2024-06-20T14:15:00Z",
@@ -89,51 +74,6 @@ export function InstitutionProfileHeader({
   }
 
   if (!institution) return <div>Institution not found</div>
-
-  const organizationStats = [
-    {
-      icon: MapPin,
-      label: "Regions",
-      value: institution.regions_count || 0,
-      color: "text-green-600"
-    },
-    {
-      icon: Home,
-      label: "Churches", 
-      value: institution.churches_count || 0,
-      color: "text-blue-600"
-    },
-    {
-      icon: Layers,
-      label: "Departments",
-      value: institution.departments_count || 0,
-      color: "text-emerald-600"
-    },
-    {
-      icon: Users,
-      label: "Users",
-      value: institution.users_count || 0,
-      color: "text-purple-600"
-    }
-  ]
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file && onImageUpload) {
-      setIsUploading(true)
-      onImageUpload(file)
-      // Reset the input
-      event.target.value = ''
-      // Simulate upload completion (in real app, this would be handled by the parent)
-      setTimeout(() => setIsUploading(false), 1000)
-    }
-  }
-
-  const handleImageRemove = () => {
-    if (onImageRemove) {
-      onImageRemove()
-    }
-  }
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -152,124 +92,70 @@ export function InstitutionProfileHeader({
       )}
 
       {/* Institution Header */}
-      <Card className="bg-gradient-to-r from-muted/30 to-muted/10 border-muted">
-        <CardContent className="p-4 sm:p-6">
-          <div className="flex flex-col lg:flex-row items-start gap-6">
+      <Card className="border-muted bg-muted/30">
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-6">
             {/* Left Side - Institution Info */}
-            <div className="flex-1 w-full">
-              <div className="flex items-start gap-4 sm:gap-6">
-                <div className="relative h-50 sm:h-50">
-                  <div className="h-full w-full aspect-square border-4 border-background rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Building className="w-16 h-16 sm:w-20 sm:h-20 text-primary" />
-                  </div>
+            <div className="flex items-start gap-4 flex-1">
+              {/* Icon */}
+              <div className="w-14 h-14 bg-background rounded-lg border flex items-center justify-center flex-shrink-0">
+                <Building className="w-7 h-7 text-muted-foreground" />
+              </div>
+              
+              {/* Information */}
+              <div className="flex-1 min-w-0 space-y-2">
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">{institution.name}</h1>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {institution.denomination}
+                  </p>
                 </div>
-
-                <Separator />
                 
-                <div className="space-y-3 flex-1 min-w-0">
-                  {/* Institution type above name */}
-                  <div className="flex flex-wrap gap-1">
-                    <Badge variant="outline" className="text-xs border-muted-foreground/30">
-                      {institution.denomination}
+                {/* Contact Info */}
+                {institution.contact?.email && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Mail className="w-4 h-4" />
+                    <span>{institution.contact.email}</span>
+                  </div>
+                )}
+                
+                {/* Metadata */}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {institution.contact?.country && (
+                    <Badge variant="outline" className="text-xs">
+                      <Globe className="w-3 h-3 mr-1" />
+                      {institution.contact.country}
                     </Badge>
-                    <Badge variant="outline" className="text-xs border-muted-foreground/30 font-mono">
-                      {institution.language_preference.toUpperCase()}
-                    </Badge>
-                  </div>
-                  
-                  <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-foreground truncate">{institution.name}</h1>
-                    <p className="text-muted-foreground text-sm sm:text-base truncate">
-                      {institution.contact?.email || 'No contact email'}
-                    </p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge variant="outline" className="text-xs">
-                        <Globe className="w-3 h-3 mr-1" />
-                        {institution.contact?.country || 'Global'}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {new Date(institution.created_at).getFullYear()} • Est.
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  {/* Organization Stats - Desktop */}
-                  <div className="hidden sm:flex w-full mt-4 border rounded-lg bg-background/50">
-                    {organizationStats.map((stat, index) => (
-                      <div 
-                        key={index} 
-                        className={`flex items-center gap-2 text-sm p-3 flex-1 ${
-                          index < organizationStats.length - 1 ? 'border-r border-muted-foreground/20' : ''
-                        }`}
-                      >
-                        <stat.icon className={`w-4 h-4 ${stat.color} flex-shrink-0`} />
-                        <div className="min-w-0 flex-1">
-                          <div className="text-xs text-muted-foreground">{stat.label}</div>
-                          <div className="font-medium">{stat.value.toLocaleString()}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Organization Stats - Mobile Collapsible */}
-                  <div className="sm:hidden">
-                    <Collapsible open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="outline" size="sm" className="w-full justify-between">
-                          <span className="flex items-center gap-2">
-                            <Building className="w-4 h-4" />
-                            Organization Statistics
-                          </span>
-                          {isDetailsOpen ? (
-                            <ChevronDown className="w-4 h-4" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="space-y-2 mt-3">
-                        {organizationStats.map((stat, index) => (
-                          <div key={index} className="flex items-center gap-2 text-sm border rounded-lg p-2 bg-background/50">
-                            <stat.icon className={`w-4 h-4 ${stat.color} flex-shrink-0`} />
-                            <div className="min-w-0 flex-1">
-                              <div className="text-xs text-muted-foreground">{stat.label}</div>
-                              <div className="font-medium">{stat.value.toLocaleString()}</div>
-                            </div>
-                          </div>
-                        ))}
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </div>
+                  )}
+                  <Badge variant="outline" className="text-xs">
+                    <Calendar className="w-3 h-3 mr-1" />
+                    {new Date(institution.created_at).getFullYear()}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs font-mono">
+                    {institution.language_preference.toUpperCase()}
+                  </Badge>
                 </div>
               </div>
             </div>
 
             {/* Right Side - Status & Actions */}
-            <div className="flex flex-row items-center gap-4 w-full lg:w-auto">
-              {/* Status & Contact */}
-              <div className="flex items-center gap-2">
-                <Badge 
-                  variant={institution.is_deleted ? 'destructive' : 'default'}
-                  className={`font-medium ${
-                    institution.is_deleted 
-                      ? 'bg-red-100 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800' 
-                      : 'bg-green-100 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800'
-                  }`}
-                >
-                  {institution.is_deleted ? 'Inactive' : 'Active'}
-                </Badge>
-                {institution.contact?.country && (
-                  <Badge variant="outline" className="font-mono border-muted-foreground/30">
-                    <Globe className="w-3 h-3 mr-1" />
-                    {institution.contact.country}
-                  </Badge>
-                )}
-              </div>
+            <div className="flex items-center gap-3">
+              {/* Status Badge */}
+              <Badge 
+                variant={institution.is_deleted ? 'destructive' : 'default'}
+                className={`${
+                  institution.is_deleted 
+                    ? 'bg-red-100 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800' 
+                    : 'bg-green-100 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800'
+                }`}
+              >
+                {institution.is_deleted ? 'Inactive' : 'Active'}
+              </Badge>
 
               {/* Action Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-10 w-10 p-0">
+                  <Button variant="outline" size="sm" className="h-9 w-9 p-0">
                     <MoreHorizontal className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -300,7 +186,7 @@ export function InstitutionProfileHeader({
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem onClick={() => setShowBudgetModal(true)}>
-                    <DollarSign className="w-4 h-4 mr-2 text-yellow-600" />
+                    <DollarSign className="w-4 h-4 mr-2" />
                     Manage Annual Budgets
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -313,7 +199,6 @@ export function InstitutionProfileHeader({
                   {onDelete && (
                     <DropdownMenuItem 
                       onClick={onDelete}
-                      // className="text-destructive focus:text-destructive"
                       variant="destructive"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />

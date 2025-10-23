@@ -21,12 +21,6 @@ import {
   Church,
   Globe,
   Shield,
-  Layers,
-  Home,
-  DollarSign,
-  Calendar,
-  TrendingUp,
-  Settings,
   RefreshCw
 } from "lucide-react"
 import {
@@ -35,61 +29,35 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
 
 // Components
-import { InstitutionsCharts } from "@/components/institutions/institutions-charts"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
-import { DataTable } from "@/components/ui/data-table"
+import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
+import { UseTable } from "@/components/ui/use-table"
 import { InstitutionProfileHeader } from "@/components/shared"
 import { ContactViewEditModal } from "@/components/modals/contact"
 import { EditInstitutionModal, DeleteInstitutionModal, RegisterInstitutionModal } from "@/components/modals/institution"
-import { InstitutionDebugger } from "@/components/debug/institution-debugger"
+import { DepartmentActivityChart, UsersByRoleChart, ChurchesByRegionChart } from "@/components/institutions/charts"
 
 import { Institutions_institutions } from "@/types/Institutions"
 import { useInstitution } from "@/contexts/institution-context"
 import { useInstitutionKPI } from "@/hooks/KPI/use-institution-kpi"
-import { InstitutionById_institution_departments, InstitutionById_institution_subsidy_requests } from "@/types/InstitutionById"
 import InstitutionsLoading from "./loading"
 import { Contact, PermissionResolverName } from "@/types/graphql-global-types"
 import { WithPermission } from "@/hocs/with-permission"
 import { AccessDenied } from "@/components/access/access-denied"
 
 // Additional imports for tabs
-import { structureTranslations } from "@/lib/translations/structure"
-import { DepartmentsKPICards } from "@/components/shared/kpi-cards-carousel"
-import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal } from "@/components/modals/department"
-import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget"
-import { ContactData } from "@/components/modals/contact"
-import { CreateDepartment } from "@/types/CreateDepartment"
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  Legend
-} from "recharts"
+
 
 export default function InstitutionsPage() {
   const { t } = useTranslation()
   const { institutions: institutionsData, currentInstitutionData, loading: isLoading, updateInstitutionContact, refetchInstitutionById} = useInstitution();
   const institutionKPIs = useInstitutionKPI();
 
-  // Tab state
-  const [activeTab, setActiveTab] = useState("overview")
+  // State
   const [refreshing, setRefreshing] = useState(false)
   
   // Modal states
@@ -99,84 +67,7 @@ export default function InstitutionsPage() {
   const [isDeleteInstitutionModalOpen, setIsDeleteInstitutionModalOpen] = useState(false)
   const [deleteInstitutionId, setDeleteInstitutionId] = useState<string | null>(null)
   
-  // Data states
-  // const [institutionsData, setInstitutionsData] = useState<InstitutionWithDetails[]>([])
 
-  // Geração dos dados dos gráficos a partir da currentInstitutionData
-  const chartData = useMemo(() => {
-    if (!currentInstitutionData) {
-      return {
-        churchesByRegion: [],
-        usersByRole: [],
-        subsidyOverTime: [],
-        monthlySubsidies: []
-      }
-    }
-
-    // Churches by Region
-    // Supondo que cada departamento tem um campo church_id e region (não temos region, então agrupamos por church_id)
-    const churchesByRegion: Array<{ region: string, churches: number, members: number }> = [];
-    // Se existisse region, poderíamos agrupar por ela. Aqui apenas um exemplo fictício:
-    // Agrupamento fictício por church_id
-    if (currentInstitutionData.departments) {
-      const regionMap: Record<string, { churches: number, members: number }> = {};
-      currentInstitutionData.departments.forEach((dep: InstitutionById_institution_departments) => {
-        const region = dep.church_id || '';
-        if (!regionMap[region]) regionMap[region] = { churches: 0, members: 0 };
-        regionMap[region].churches += 1;
-        // Não temos members, então deixamos 0
-      });
-      for (const region in regionMap) {
-        churchesByRegion.push({ region, ...regionMap[region] });
-      }
-    }
-
-    // Users by Role
-    // Não temos roles, então agrupamos todos como "User"
-    const usersByRole = [
-      {
-        name: 'User',
-        value: currentInstitutionData.users?.length || 0,
-        color: '#f59e0b',
-      }
-    ];
-
-    // Subsidy Over Time
-    // Agrupar subsidy_requests por mês
-    const subsidyOverTimeMap: Record<string, { requests: number, amount: number }> = {};
-    if (currentInstitutionData.subsidy_requests) {
-      currentInstitutionData.subsidy_requests.forEach((req: InstitutionById_institution_subsidy_requests) => {
-        const date = new Date(req.created_at);
-        const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        if (!subsidyOverTimeMap[month]) subsidyOverTimeMap[month] = { requests: 0, amount: 0 };
-        subsidyOverTimeMap[month].requests += 1;
-        subsidyOverTimeMap[month].amount += Number(req.total_budget) || 0;
-      });
-    }
-    const subsidyOverTime = Object.entries(subsidyOverTimeMap).map(([month, data]) => ({ month, ...data }));
-
-    // Monthly Subsidies (por status)
-    // Supondo que subsidy_statuses_id: 'approved', 'pending', 'under_review'
-    const monthlySubsidiesMap: Record<string, { approved: number, pending: number, under_review: number }> = {};
-    if (currentInstitutionData.subsidy_requests) {
-      currentInstitutionData.subsidy_requests.forEach((req: InstitutionById_institution_subsidy_requests) => {
-        const date = new Date(req.created_at);
-        const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        if (!monthlySubsidiesMap[month]) monthlySubsidiesMap[month] = { approved: 0, pending: 0, under_review: 0 };
-        if (req.subsidy_statuses_id === 'approved') monthlySubsidiesMap[month].approved += 1;
-        else if (req.subsidy_statuses_id === 'pending') monthlySubsidiesMap[month].pending += 1;
-        else monthlySubsidiesMap[month].under_review += 1;
-      });
-    }
-    const monthlySubsidies = Object.entries(monthlySubsidiesMap).map(([month, data]) => ({ month, ...data }));
-
-    return {
-      churchesByRegion,
-      usersByRole,
-      subsidyOverTime,
-      monthlySubsidies,
-    }
-  }, [currentInstitutionData]);
 
   const breadcrumbs = useMemo(() => [
     { name: "Structure & Organization" },
@@ -222,12 +113,6 @@ export default function InstitutionsPage() {
   usePageTitle({
     title: "Institutions Management"
   })
-
-  // Extract organizational structure data
-  const departments = currentInstitutionData?.departments || []
-  const regions = currentInstitutionData?.regions || []
-  const churches = currentInstitutionData?.churches || []
-  const users = currentInstitutionData?.users || []
 
   // Refresh handler
   const handleRefresh = async () => {
@@ -372,6 +257,25 @@ export default function InstitutionsPage() {
         </div>
       ),
     },
+    {
+      id: "status",
+      accessorKey: "is_deleted",
+      header: "Status",
+      cell: ({ row }) => {
+        const isActive = !row.original.is_deleted
+        return (
+          <Badge variant={isActive ? "default" : "secondary"} className={isActive ? "bg-green-500 hover:bg-green-600" : ""}>
+            {isActive ? "Active" : "Inactive"}
+          </Badge>
+        )
+      },
+      filterFn: (row, id, value) => {
+        // Convert string to boolean for filtering
+        if (value === "all") return true
+        const isActive = !row.original.is_deleted
+        return value === "true" ? isActive : !isActive
+      },
+    },
     // {
     //   id: "members",
     //   accessorKey: "members_count",
@@ -390,7 +294,7 @@ export default function InstitutionsPage() {
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" data-action-button>
                 <MoreHorizontal className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -434,11 +338,19 @@ export default function InstitutionsPage() {
   const filterableColumns = [
     {
       id: "language",
-      title: t('institutions.filters.language'),
+      title: "Language",
       options: [
         { label: "English", value: "en" },
         { label: "Nederlands", value: "nl" },
         { label: "Português", value: "pt" },
+      ]
+    },
+    {
+      id: "status",
+      title: "Status",
+      options: [
+        { label: "Active", value: "true" },
+        { label: "Inactive", value: "false" },
       ]
     }
   ]
@@ -523,64 +435,58 @@ export default function InstitutionsPage() {
             onEdit={handleEditInstitution}
             onDelete={handleDeleteInstitution}
             onViewContact={handleViewInstitutionContact}
-            onManageRegions={() => setActiveTab('regions')}
-            onManageChurches={() => setActiveTab('churches')}
-            onManageDepartments={() => setActiveTab('departments')}
+            onManageRegions={() => {}}
+            onManageChurches={() => {}}
+            onManageDepartments={() => {}}
           />
         )}
 
-        {/* Tabs Navigation */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-1">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <Building className="w-4 h-4" />
-              Overview
-            </TabsTrigger>
-          </TabsList>
+        {/* KPI Cards Carousel */}
+        <KPICards 
+          data={kpiCardsData}
+          isLoading={isLoading}
+          minCardsForCarousel={4}
+          showCarousel={true}
+        />
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            {/* KPI Cards Carrossel */}
-            <KPICards 
-              data={kpiCardsData}
-              isLoading={isLoading}
-              minCardsForCarousel={4}
-              showCarousel={true}
-            />
+        <Separator />
 
-            <Separator />
-
-            {/* Charts Section */}
-            <InstitutionsCharts
-              churchesByRegionData={chartData.churchesByRegion}
-              usersByRoleData={chartData.usersByRole}
-              subsidyOverTimeData={chartData.subsidyOverTime}
-              monthlySubsidiesData={chartData.monthlySubsidies}
+        {/* Charts Section */}
+        <div className="space-y-6">
+          <h3 className="text-xl font-semibold">Institution Analytics</h3>
+          <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
+            <DepartmentActivityChart loading={isLoading} />
+            
+            <UsersByRoleChart loading={isLoading} />
+            
+            <ChurchesByRegionChart 
+              regions={currentInstitutionData?.regions || undefined}
+              churches={currentInstitutionData?.churches || undefined}
               loading={isLoading}
-              institutionName={currentInstitutionData?.name}
             />
+          </ResponsiveGridCarousel>
+        </div>
 
-            {/* Institutions Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building className="w-5 h-5" />
-                  Institutions List
-                </CardTitle>
-                <CardDescription>Complete list of institutions with management actions</CardDescription>
-              </CardHeader>
-              <CardContent className="overflow-hidden">
-                <DataTable
-                  columns={columns}
-                  data={institutionsData}
-                  searchKey="name"
-                  searchPlaceholder="Search institutions..."
-                  filterableColumns={filterableColumns}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        <Separator />
+
+        {/* Institutions Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building className="w-5 h-5" />
+              Institutions List
+            </CardTitle>
+            <CardDescription>Complete list of institutions with management actions</CardDescription>
+          </CardHeader>
+          <CardContent className="overflow-hidden">
+            <UseTable
+              columns={columns}
+              data={institutionsData}
+              filters={filterableColumns}
+              searchKey="name"
+            />
+          </CardContent>
+        </Card>
 
         {/* Contact Modal */}
         {currentInstitutionData && (
