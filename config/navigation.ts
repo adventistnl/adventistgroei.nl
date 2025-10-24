@@ -74,6 +74,7 @@ const navMainBase: NavItem[] = [
     icon: DollarSign,
     items: [
       { title: "Annual Budget", url: "/finance/annual-budget", permissions: [PermissionResolverName.Settings] },
+      { title: "Funding Rules", url: "/finance/funding-rules", permissions: [PermissionResolverName.Institutions] },
     ],
     permissions: []
   },
