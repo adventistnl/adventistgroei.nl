@@ -13,7 +13,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Edit, Save } from "lucide-react"
 import toast from "react-hot-toast"
-import { InstitutionById_institution_churches, InstitutionById_institution_departments, InstitutionById_institution_regions, InstitutionById_institution_users as User } from "@/types/InstitutionById"
+import { InstitutionById_institution_churches, InstitutionById_institution_departments, InstitutionById_institution_users as User } from "@/types/InstitutionById"
 import { Institutions_institutions } from "@/types/Institutions"
 import { Role_role } from "@/types/Role"
 import { useUser } from '@/hooks/use-user';
@@ -26,7 +26,6 @@ export interface EditUserModalProps {
   user: User | null
   institutions: Institutions_institutions[]
   churches: InstitutionById_institution_churches[]
-  regions: InstitutionById_institution_regions[]
   departments: InstitutionById_institution_departments[]
   roles: Role_role[]
   onSuccess?: (userData: EditUserFormData) => void
@@ -39,7 +38,6 @@ export interface EditUserFormData {
   language_preference: string
   institution_id: string
   church_id: string
-  region_id: string
   department_id?: string
   role_ids: string[]
   is_active: boolean
@@ -51,7 +49,6 @@ export function EditUserModal({
   user,
   institutions,
   churches,
-  regions,
   departments,
   roles,
   onSuccess
@@ -69,7 +66,6 @@ export function EditUserModal({
     language_preference: 'en',
     institution_id: '',
     church_id: '',
-    region_id: '',
     department_id: '',
     role_ids: [],
     is_active: true
@@ -106,10 +102,6 @@ export function EditUserModal({
     church.institution_id === userForm.institution_id
   )
   
-  const filteredRegions = regions.filter(region => 
-    region.institution_id === userForm.institution_id
-  )
-
   const filteredDepartments = departments.filter(dept => 
     dept.institution_id === userForm.institution_id
   )
@@ -307,26 +299,6 @@ export function EditUserModal({
                     {institutions.map((institution) => (
                       <SelectItem key={institution.id} value={institution.id}>
                         {institution.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-user-region">{t('users.modals.create_user.region')}</Label>
-                <Select 
-                  value={userForm.region_id} 
-                  onValueChange={(value) => setUserForm(prev => ({ ...prev, region_id: value }))}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select region" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredRegions.map((region) => (
-                      <SelectItem key={region.id} value={region.id}>
-                        {region.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

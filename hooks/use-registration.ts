@@ -6,12 +6,13 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import toast from "react-hot-toast"
-import { validateToken } from "@/utils/validateToken"
-import { jwtDecode } from "jwt-decode"
 import { useCreateUserMutation } from "./graphql/use-user-mutation"
-import { InviteUserVariables } from "@/types/InviteUser"
 import { useAuth } from "@/contexts/auth-context"
-import { roles } from "@/data/usersData"
+import { CreateUserVariables } from "@/types/CreateUser"
+import { GenderType } from "@/types/globalTypes"
+import { useValidateInviteTokenMutation } from "./graphql/use-invite-user-mutation"
+import { ValidateInviteToken } from "@/types/ValidateInviteToken"
+import { LanguagePreference } from "@/types/graphql-global-types"
 
 // Schema de validação para o formulário de registro
 const registrationSchema = z.object({
@@ -21,6 +22,7 @@ const registrationSchema = z.object({
   confirmPassword: z.string().min(6, "Confirmação de senha é obrigatória"),
   department_id: z.string().min(1, "Departamento é obrigatório"),
   church_id: z.string().min(1, "Igreja é obrigatória"),
+  gender: z.nativeEnum(GenderType, { required_error: "Gênero é obrigatório" }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Senhas não coincidem",
   path: ["confirmPassword"],
@@ -39,20 +41,20 @@ export interface InviteData {
 
 interface UseRegistrationProps {
   translations: any
-  defaultInstitutionId: string
 }
 
 /**
  * Hook customizado para gerenciar toda a lógica de registro
  * Centraliza validação de convites, formulário e submissão
  */
-export function useRegistration({ translations, defaultInstitutionId }: UseRegistrationProps) {
+export function useRegistration({ translations }: UseRegistrationProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [ createUser ] = useCreateUserMutation();
+  const [ validateInviteToken ] = useValidateInviteTokenMutation();
   const {login} = useAuth();
   // Estados do componente
-  const [inviteData, setInviteData] = useState<InviteUserVariables | null>(null)
+  const [inviteData, setInviteData] = useState< ValidateInviteToken['validateInviteToken'] | null>(null)
   const [isValidInvite, setIsValidInvite] = useState<boolean | null>(null)
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -60,6 +62,8 @@ export function useRegistration({ translations, defaultInstitutionId }: UseRegis
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [showContent, setShowContent] = useState(false)
+  const [inviteToken, setInviteToken] = useState<string | null>(null)
+  const [isTokenValidated, setIsTokenValidated] = useState(false); // New state for token validation
 
   // Função para carregar dados salvos do localStorage
   const loadSavedData = (): Partial<RegistrationForm> => {
@@ -107,6 +111,7 @@ export function useRegistration({ translations, defaultInstitutionId }: UseRegis
       confirmPassword: "",
       department_id: "",
       church_id: "",
+      gender: undefined, // Corrige o valor padrão para ser compatível com GenderType
       ...loadSavedData(), // Carrega dados salvos
     },
   })
@@ -174,29 +179,44 @@ export function useRegistration({ translations, defaultInstitutionId }: UseRegis
    * Decodifica JWT e verifica expiração
    */
   useEffect(() => {
-    const token = searchParams.get("invite")
-
-    if (!token) {
-      setIsValidInvite(false)
-      setIsLoading(false)
-      return
-    }
-
-    const isValid = validateToken(token)
-    setIsValidInvite(isValid)
-
-    if (isValid) {
+    async function validateInviteTokenHandle() {
+      setIsLoading(true);
       try {
-        const decodedToken = jwtDecode<InviteUserVariables>(token)
-        setInviteData(decodedToken)
-        form.register("email", { value: decodedToken.email || "" });
+        const token = searchParams.get("invite");
+
+        if (!token) {
+          setIsValidInvite(false);
+          setIsTokenValidated(true);
+          setIsLoading(false);
+          return;
+        }
+
+        const isValid = await validateInviteToken({ variables: { token } });
+
+        if (isValid.data && isValid.data.validateInviteToken) {
+          setIsValidInvite(true);
+          setInviteData(isValid.data.validateInviteToken);
+          form.register("email", { value: isValid.data.validateInviteToken.email || "" });
+          setInviteToken(token);
+        } else {
+          setIsValidInvite(false);
+        }
       } catch (error) {
-        setIsValidInvite(false)
+        setIsValidInvite(false);
+      } finally {
+        setIsTokenValidated(true); // Mark validation as complete
+        setIsLoading(false);
       }
     }
+    validateInviteTokenHandle();
+  }, [searchParams]);
 
-    setIsLoading(false)
-  }, [searchParams])
+  useEffect(() => {
+    if (isTokenValidated && isValidInvite) {
+      // Additional API calls or logic after token validation
+      form.setValue("email", inviteData?.email || "");
+    }
+  }, [isTokenValidated, isValidInvite, inviteData, form])
 
   /**
    * Limpar igreja quando departamento muda
@@ -283,15 +303,17 @@ export function useRegistration({ translations, defaultInstitutionId }: UseRegis
       await new Promise(resolve => setTimeout(resolve, 2500))
       
       // Estrutura de dados conforme especificado
-      const registrationData = {
+      const registrationData: CreateUserVariables = {
         name: data.name,
         email: data.email,
         password: data.password,
-        language_preference: inviteData.language_preference,
+        language_preference: inviteData.language_preference || LanguagePreference.En,
         institution_id: inviteData.institution_id,
         department_id: data.department_id,
         church_id: data.church_id,
         roles: inviteData.role_ids || [], // Role do convite ou padrão MEMBER
+        gender: data.gender,
+        invite_token: inviteToken || "",
       }
       
       toast.dismiss(loadingToast)
@@ -310,7 +332,7 @@ export function useRegistration({ translations, defaultInstitutionId }: UseRegis
       // Limpar dados salvos após registro bem-sucedido
       
       // // Redirecionar para login após sucesso
-      await login(data.email, data.password);
+      await login(data.email, data.password, true);
       router.push(`/dashboard`);
       clearSavedData()
       return userCreated.createUser || null;  

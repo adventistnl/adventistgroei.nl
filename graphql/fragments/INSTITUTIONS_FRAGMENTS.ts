@@ -102,6 +102,7 @@ export const USER_FRAGMENT = gql`
     deleted_by
     contact_id
     institution_id
+    gender
     church {
       id
       name
@@ -134,20 +135,8 @@ export const REGION_FRAGMENT = gql`
   fragment RegionFragment on Region {
     id
     name
-    parent_region_id
-    contact_id
-    contact {
-      ...ContactFragment
-    }
     churches {
       id
-    }
-    institution {
-      id
-      name
-    }
-    annual_budgets {
-      ...AnnualBudgetFragment
     }
     created_at
     updated_at
@@ -240,7 +229,6 @@ export const INSTITUTION_FRAGMENT = gql`
     is_deleted
     deleted_at
     deleted_by
-    regions_count
     churches_count
     departments_count
     users_count
@@ -259,9 +247,6 @@ export const INSTITUTION_FRAGMENT = gql`
     users {
       ...UserFragment
     }
-    regions {
-      ...RegionFragment
-    }
     churches {
       ...ChurchFragment
     }
@@ -274,7 +259,6 @@ export const INSTITUTION_FRAGMENT = gql`
   ${DIRECT_MESSAGE_FRAGMENT}
   ${PROJECT_FRAGMENT}
   ${USER_FRAGMENT}
-  ${REGION_FRAGMENT}
   ${CHURCH_FRAGMENT}
   ${DEPARTMENT_FRAGMENT}
   ${ANNUAL_BUDGET_FRAGMENT}

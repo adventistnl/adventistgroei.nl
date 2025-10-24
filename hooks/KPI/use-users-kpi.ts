@@ -9,7 +9,6 @@ export interface IUserKPIs {
   usersByLanguage: { language: string; count: number }[];
   usersByRole: { role: string; users: number }[];
   usersByInstitution: { institution: string; users: number }[];
-  usersByRegion: { region: string; users: number }[];
   userGrowthOverTime: { month: string; total: number; active: number }[];
 }
 
@@ -70,26 +69,6 @@ export function useUserKPI() {
       return acc;
     }, [] as { institution: string; users: number }[]);
 
-    // Distribuição por região
-    const usersByRegion = users.reduce((acc, user) => {
-      const regionId = currentInstitutionData?.churches?.find(
-        (church) => church.id === user.church?.id
-      )?.region_id;
-
-      const regionName =
-        currentInstitutionData?.regions?.find(
-          (region) => region.id === regionId
-        )?.name || "N/A";
-
-      const existing = acc.find((item) => item.region === regionName);
-      if (existing) {
-        existing.users += 1;
-      } else {
-        acc.push({ region: regionName, users: 1 });
-      }
-      return acc;
-    }, [] as { region: string; users: number }[]);
-
     // Crescimento de usuários ao longo do tempo
     const userGrowthOverTime = users.reduce((acc, user) => {
       const createdAt = new Date(user.created_at);
@@ -120,7 +99,6 @@ export function useUserKPI() {
       usersByLanguage,
       usersByRole,
       usersByInstitution,
-      usersByRegion,
       userGrowthOverTime,
     };
   }, [currentInstitutionData]);

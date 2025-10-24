@@ -3,6 +3,8 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { GenderType } from "./globalTypes";
+
 // ====================================================
 // GraphQL mutation operation: CreateUser
 // ====================================================
@@ -31,4 +33,6 @@ export interface CreateUserVariables {
   department_id: string;
   church_id: string;
   roles: string[];
+  gender: GenderType;
+  invite_token: string;
 }

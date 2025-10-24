@@ -114,7 +114,13 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
       }
       return;
     } catch (error) {
-      toast.error(t.generateLinkError);
+      console.log(error);
+      if (error instanceof Error && error.message.includes("Email already in use")) {
+        toast.error(t.emailInUse);
+        return;
+      } else {
+        toast.error(t.generateLinkError);
+      }
     }
   };
 
@@ -146,7 +152,7 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
         const generated = await generateLinkForRole(variables);
 
         if (!generated || !generated.inviteToken || !generated.generatedLink) {
-          toast.error(t.invitationFailed);
+          // toast.error(t.invitationFailed);
           setIsSubmitting(false);
           return;
         }
@@ -188,15 +194,15 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
   }
 
   const handleOpenChange = (newOpen: boolean) => {
-    setOpen(newOpen)
     if (!newOpen) {
+      setOpen(false);
       // Only reset when closing
       setTimeout(() => {
-        form.reset()
-        setGeneratedLink("")
-      }, 150)
+        form.reset();
+        setGeneratedLink("");
+      }, 150);
     }
-  }
+  };
 
   const handleOpenModal = () => {
     if (churches.length === 0 || departments.length === 0) {

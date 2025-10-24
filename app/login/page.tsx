@@ -103,13 +103,7 @@ function LoginPageContent() {
     }
 
     try {
-      const success = await login(email, password)
-      
-      // TODO: Implementar funcionalidade "lembrar por 30 dias" no contexto de auth
-      if (rememberMe) {
-        localStorage.setItem('rememberLogin', 'true')
-        localStorage.setItem('rememberExpiry', (Date.now() + 30 * 24 * 60 * 60 * 1000).toString())
-      }
+      const success = await login(email, password, rememberMe)
       
       if (success) {
         toast.success(`🎉 ${t.welcomeBack}`, {

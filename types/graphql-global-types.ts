@@ -99,8 +99,6 @@ export type AnnualBudget = {
   justification?: Maybe<Scalars['String']['output']>;
   notes?: Maybe<Scalars['String']['output']>;
   planned_budget: Scalars['Decimal']['output'];
-  region?: Maybe<Region>;
-  region_id?: Maybe<Scalars['String']['output']>;
   status: AnnualBudgetStatus;
   total_expenses: Scalars['Decimal']['output'];
   updated_at: Scalars['DateTime']['output'];
@@ -313,7 +311,6 @@ export type Contact = {
   Department?: Maybe<Array<Department>>;
   Event?: Maybe<Array<Event>>;
   Institution?: Maybe<Institution>;
-  Region?: Maybe<Array<Region>>;
   User?: Maybe<Array<User>>;
   _count: ContactCount;
   address?: Maybe<Scalars['String']['output']>;
@@ -343,7 +340,6 @@ export type ContactCount = {
   Church: Scalars['Int']['output'];
   Department: Scalars['Int']['output'];
   Event: Scalars['Int']['output'];
-  Region: Scalars['Int']['output'];
   User: Scalars['Int']['output'];
 };
 
@@ -612,6 +608,11 @@ export enum EventType {
   Show = 'show'
 }
 
+export enum GenderType {
+  Female = 'FEMALE',
+  Male = 'MALE'
+}
+
 export type Institution = {
   __typename?: 'Institution';
   _count: InstitutionCount;
@@ -636,8 +637,6 @@ export type Institution = {
   name: Scalars['String']['output'];
   notifications?: Maybe<Array<Notification>>;
   projects?: Maybe<Array<Project>>;
-  regions?: Maybe<Array<Region>>;
-  regions_count: Scalars['Int']['output'];
   settings?: Maybe<Array<Setting>>;
   subsidy_requests: Array<SubsidyRequest>;
   updated_at: Scalars['DateTime']['output'];
@@ -655,7 +654,6 @@ export type InstitutionCount = {
   direct_messages: Scalars['Int']['output'];
   notifications: Scalars['Int']['output'];
   projects: Scalars['Int']['output'];
-  regions: Scalars['Int']['output'];
   settings: Scalars['Int']['output'];
   subsidy_requests: Scalars['Int']['output'];
   users: Scalars['Int']['output'];
@@ -1493,41 +1491,27 @@ export type QueryUserArgs = {
 export type Region = {
   __typename?: 'Region';
   _count: RegionCount;
-  annual_budgets?: Maybe<Array<AnnualBudget>>;
-  children: Array<Region>;
   churches?: Maybe<Array<Church>>;
-  contact?: Maybe<Contact>;
-  contact_id?: Maybe<Scalars['String']['output']>;
   created_at: Scalars['DateTime']['output'];
   created_by: Scalars['String']['output'];
   deleted_at?: Maybe<Scalars['DateTime']['output']>;
   deleted_by?: Maybe<Scalars['String']['output']>;
   description?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
-  institution: Institution;
-  institution_id: Scalars['String']['output'];
   is_deleted: Scalars['Boolean']['output'];
   name: Scalars['String']['output'];
-  parent_region?: Maybe<Region>;
-  parent_region_id?: Maybe<Scalars['String']['output']>;
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
 };
 
 export type RegionCount = {
   __typename?: 'RegionCount';
-  annual_budgets: Scalars['Int']['output'];
-  children: Scalars['Int']['output'];
   churches: Scalars['Int']['output'];
 };
 
 export type RegionCreateDto = {
-  annual_budget?: InputMaybe<AnnualBudgetCreateDto>;
-  contact?: InputMaybe<ContactCreateDto>;
   description?: InputMaybe<Scalars['String']['input']>;
-  institution_id: Scalars['String']['input'];
   name: Scalars['String']['input'];
-  parent_region_id?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type RegionModel = {
@@ -1547,12 +1531,8 @@ export type RegionModel = {
 };
 
 export type RegionUpdateDto = {
-  annual_budget?: InputMaybe<AnnualBudgetUpdateDto>;
-  contact?: InputMaybe<ContactUpdateDto>;
   description?: InputMaybe<Scalars['String']['input']>;
-  institution_id?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
-  parent_region_id?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type RemoveProjectVoluntaryDto = {
@@ -1817,6 +1797,7 @@ export type User = {
   email: Scalars['String']['output'];
   event_recipients?: Maybe<Array<EventRecipient>>;
   event_registrations?: Maybe<Array<EventRegistration>>;
+  gender?: Maybe<GenderType>;
   id: Scalars['ID']['output'];
   institution: Institution;
   institution_id: Scalars['String']['output'];
@@ -1854,7 +1835,9 @@ export type UserCreateDto = {
   contact?: InputMaybe<ContactCreateDto>;
   department_id: Scalars['String']['input'];
   email: Scalars['String']['input'];
+  gender: GenderType;
   institution_id: Scalars['String']['input'];
+  invite_token: Scalars['String']['input'];
   language_preference: Scalars['String']['input'];
   name: Scalars['String']['input'];
   password: Scalars['String']['input'];
@@ -1902,6 +1885,7 @@ export type UserUpdateDto = {
   contact_id?: InputMaybe<Scalars['String']['input']>;
   department_id?: InputMaybe<Scalars['String']['input']>;
   email?: InputMaybe<Scalars['String']['input']>;
+  gender?: InputMaybe<GenderType>;
   institution_id?: InputMaybe<Scalars['String']['input']>;
   is_deleted?: InputMaybe<Scalars['Boolean']['input']>;
   language_preference?: InputMaybe<Scalars['String']['input']>;
@@ -1931,6 +1915,7 @@ export type UserWithRoles = {
 export type ValidateOutputModel = {
   __typename?: 'ValidateOutputModel';
   email: Scalars['String']['output'];
+  exp: Scalars['Float']['output'];
   institution_id: Scalars['String']['output'];
   inviter_id: Scalars['String']['output'];
   language_preference?: Maybe<LanguagePreference>;

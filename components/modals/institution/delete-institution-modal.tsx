@@ -122,10 +122,6 @@ export function DeleteInstitutionModal({
               </h4>
               <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="w-4 h-4" />
-                  <span>{t('institutions.stats.regions')}: <strong className="text-foreground">{institution.regions_count || 0}</strong></span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Home className="w-4 h-4" />
                   <span>{t('institutions.stats.churches')}: <strong className="text-foreground">{institution.churches_count || 0}</strong></span>
                 </div>

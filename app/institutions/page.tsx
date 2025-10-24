@@ -16,7 +16,6 @@ import {
   Edit,
   Trash2,
   Eye,
-  MapPin,
   Users,
   Church,
   Globe,
@@ -76,14 +75,6 @@ export default function InstitutionsPage() {
 
   // Dados para KPI Cards Carrossel
   const kpiCardsData: KPICardData[] = useMemo(() => [
-    {
-      id: "total_regions",
-      title: "Total Regions",
-      value: institutionKPIs.totalRegions,
-      icon: MapPin,
-      subtitle: "Geographic regions",
-      trend: undefined
-    },
     {
       id: "total_churches",
       title: "Total Churches",
@@ -198,13 +189,11 @@ export default function InstitutionsPage() {
       header: t('institutions.table.country'),
       cell: ({ row }) => {
         const country = row.original.contact?.country
-        // const city = row.original.contact?.city //TODO: usar cidade se disponível
         return (
           <div className="flex items-center gap-2">
             <Globe className="w-4 h-4 text-muted-foreground" />
             <div>
               <div className="font-medium">{country}</div>
-              {/* <div className="text-xs text-muted-foreground">{city}</div> */}
             </div>
           </div>
         )
@@ -223,17 +212,6 @@ export default function InstitutionsPage() {
           </Badge>
         )
       },
-    },
-    {
-      id: "regions",
-      accessorKey: "regions_count",
-      header: t('institutions.table.regions'),
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.regions_count}</span>
-        </div>
-      ),
     },
     {
       id: "churches",
@@ -435,7 +413,6 @@ export default function InstitutionsPage() {
             onEdit={handleEditInstitution}
             onDelete={handleDeleteInstitution}
             onViewContact={handleViewInstitutionContact}
-            onManageRegions={() => {}}
             onManageChurches={() => {}}
             onManageDepartments={() => {}}
           />
@@ -460,7 +437,6 @@ export default function InstitutionsPage() {
             <UsersByRoleChart loading={isLoading} />
             
             <ChurchesByRegionChart 
-              regions={currentInstitutionData?.regions || undefined}
               churches={currentInstitutionData?.churches || undefined}
               loading={isLoading}
             />

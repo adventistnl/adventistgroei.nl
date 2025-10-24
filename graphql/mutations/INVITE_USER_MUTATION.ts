@@ -21,3 +21,18 @@ export const INVITE_USER_MUTATION = gql`
     }
   }
 `;
+
+export const VALIDATE_INVITE_TOKEN_MUTATION = gql`
+  mutation ValidateInviteToken($token: String!) {
+      validateInviteToken(
+          token: $token
+      ) {
+          role_ids
+          email
+          institution_id
+          inviter_id
+          language_preference
+          exp
+      }
+  }
+`;

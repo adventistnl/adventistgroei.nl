@@ -12,20 +12,6 @@ import { UpdateInstitutionContact } from '@/types/UpdateInstitutionContact'
 import { useUser } from "@/hooks/use-user";
 import { useAuth } from './auth-context'
 
-interface Institution {
-  id: string
-  name: string
-  denomination: string
-  language_preference: "en" | "nl"
-  logo: React.ElementType
-  description: string
-  regions_count: number
-  churches_count: number
-  members_count: number
-  active_users: number
-  created_at: string
-}
-
 interface InstitutionContextType {
   institutions: Institutions_institutions[];
   switchInstitution: (institutionId: string) => void;

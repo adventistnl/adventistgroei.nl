@@ -18,10 +18,5 @@ export interface CreateRegion {
 
 export interface CreateRegionVariables {
   name: string;
-  institution_id: string;
-  parent_region_id?: string | null;
   description?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  website?: string | null;
 }

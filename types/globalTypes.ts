@@ -13,6 +13,11 @@ export enum ChurchType {
   STANDARD = "STANDARD",
 }
 
+export enum GenderType {
+  FEMALE = "FEMALE",
+  MALE = "MALE",
+}
+
 /**
  * Idioma preferencial do usuário
  */

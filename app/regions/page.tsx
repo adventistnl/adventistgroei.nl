@@ -16,11 +16,8 @@ import {
   MoreHorizontal,
   Edit,
   Trash2,
-  Users,
   Home,
   DollarSign,
-  Building,
-  ContactRound,
   TrendingUp,
   Calendar
 } from "lucide-react"
@@ -58,7 +55,6 @@ import {
   Legend
 } from "recharts"
 
-import { useInstitution } from '@/contexts/institution-context'
 import { useRegions } from "@/hooks/use-regions"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
@@ -70,10 +66,9 @@ import { AccessDenied } from "@/components/access/access-denied"
  */
 export default function RegionsPage() {
   const { i18n } = useTranslation()
-  const { currentInstitutionData, refetchInstitutionById } = useInstitution();
-  const { updateRegion, updateRegionContact } = useRegions();
+  // const { currentInstitutionData, refetchInstitutionById } = useInstitution();
+  const { updateRegionContact, regions, refetchRegions } = useRegions();
   // Garante que regions venha do dado real da instituição ativa
-  const regions = currentInstitutionData?.regions || [];
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   
@@ -83,7 +78,6 @@ export default function RegionsPage() {
   const [isViewContactModalOpen, setIsViewContactModalOpen] = useState(false)
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false)
   const [selectedRegion, setSelectedRegion] = useState<any>(null)
-  const [selectedContact, setSelectedContact] = useState<ContactData | null>(null)
   const [selectedBudget, setSelectedBudget] = useState<AnnualBudgetData | null>(null)
   
   // Obter traduções para o idioma atual
@@ -105,19 +99,9 @@ export default function RegionsPage() {
   const kpiData = useMemo(() => {
     const totalRegions = regions.length;
     const totalChurches = regions.reduce((sum: number, r: RegionType) => sum + (r.churches_count || 0), 0);
-    const totalMembers = regions.reduce((sum: number, r: RegionType) => sum + (r.members_count || 0), 0);
-    const totalSubsidyRequests = regions.reduce((sum: number, r: RegionType) => sum + (r.subsidy_requests || 0), 0);
-    const totalBudget = regions.reduce((sum: number, r: RegionType) => sum + (r.total_budget || 0), 0);
-    const totalUsedBudget = regions.reduce((sum: number, r: RegionType) => sum + (r.used_budget || 0), 0);
-    const budgetUtilization = totalBudget > 0 ? Math.round((totalUsedBudget / totalBudget) * 100) : 0;
     return {
       totalRegions,
       totalChurches,
-      totalMembers,
-      totalSubsidyRequests,
-      totalBudget,
-      totalUsedBudget,
-      budgetUtilization
     };
   }, [regions]);
 
@@ -129,32 +113,6 @@ export default function RegionsPage() {
       value: kpiData.totalRegions,
       icon: MapPin,
       subtitle: "Active regions"
-    },
-    {
-      id: "total-budget", 
-      title: t.totalBudget,
-      value: `$${(kpiData.totalBudget / 1000000).toFixed(1)}M`,
-      icon: DollarSign,
-      subtitle: "Annual budget"
-    },
-    {
-      id: "total-requests",
-      title: t.requests,
-      value: kpiData.totalSubsidyRequests,
-      icon: Calendar,
-      subtitle: "Subsidy requests"
-    },
-    {
-      id: "budget-utilization",
-      title: t.budgetUtilization,
-      value: `${kpiData.budgetUtilization}%`,
-      icon: TrendingUp,
-      subtitle: "Budget efficiency",
-      trend: {
-        value: 5.2,
-        isPositive: true,
-        label: "vs last month"
-      }
     }
   ], [kpiData, t])
 
@@ -209,7 +167,7 @@ export default function RegionsPage() {
     const refreshToast = toast.loading(t.refreshing)
     
     try {
-      await refetchInstitutionById()
+      await refetchRegions()
       toast.dismiss(refreshToast)
       toast.success(t.dataRefreshed, { duration: 2000 })
     } catch (error) {
@@ -231,36 +189,6 @@ export default function RegionsPage() {
     if (region) {
       setSelectedRegion(region);
       setIsDeleteModalOpen(true);
-    }
-  };
-  const handleViewContact = (id: string) => {
-    const region = regions.find((r: RegionType) => r.id === id);
-    if (region && (region as any).contact) {
-      setSelectedRegion(region)
-      setIsViewContactModalOpen(true);
-    }
-  };
-  const handleViewBudget = (id: string) => {
-    const region = regions.find((r: RegionType) => r.id === id);
-    if (region) {
-      const budgetData: AnnualBudgetData = {
-        id: `budget_${region.id}`,
-        year: new Date().getFullYear(),
-        planned_budget: (region as any).total_budget || 0,
-        total_expenses: (region as any).used_budget || 0,
-        balance: ((region as any).total_budget || 0) - ((region as any).used_budget || 0),
-        notes: `Budget for ${region.name} region`,
-        approved_by: 'admin',
-        status: 'in_progress',
-        created_at: region.created_at,
-        updated_at: new Date().toISOString(),
-        created_by: 'system',
-        updated_by: 'system',
-        is_deleted: false
-      };
-      setSelectedRegion(region);
-      setSelectedBudget(budgetData);
-      setIsBudgetModalOpen(true);
     }
   };
 
@@ -298,9 +226,8 @@ export default function RegionsPage() {
                 </div>
           <div>
             <div className="font-medium">{row.original.name}</div>
-            <div className="text-xs text-muted-foreground">{row.original.institution.name}</div>
-                            </div>
-                                    </div>
+          </div>
+        </div>
       ),
     },
     {
@@ -312,66 +239,6 @@ export default function RegionsPage() {
           <Home className="w-4 h-4 text-muted-foreground" />
           <span className="font-medium">{row.original.churches.length}</span>
                                     </div>
-      ),
-    },
-    // {
-    //   id: "members",
-    //   accessorKey: "members_count",
-    //   header: t.members,
-    //   cell: ({ row }) => (
-    //     <span className="font-medium">{row.original.members_count.toLocaleString()}</span>
-    //   ),
-    // },
-    // {
-    //   id: "subsidy_requests",
-    //   accessorKey: "subsidy_requests",
-    //   header: t.requests,
-    //   cell: ({ row }) => (
-    //     <div className="flex items-center gap-2">
-    //       <Calendar className="w-4 h-4 text-muted-foreground" />
-    //       <span className="font-medium">{row.original.subsidy_requests}</span>
-    //                 </div>
-    //   ),
-    // },
-    {
-      id: "budget",
-      accessorKey: "total_budget",
-      header: t.budget,
-      cell: ({ row }) => {
-          const annual_budget = row.original.annual_budget
-        const total_expenses = annual_budget ? annual_budget.total_expenses : 0
-        return (
-        <span className="font-medium">$ {total_expenses}</span>
-      )},
-    },
-    {
-      id: "utilization",
-      header: t.utilization,
-      cell: ({ row }) => {
-        const annual_budget = row.original.annual_budget
-        const totalBudget = annual_budget ? annual_budget.planned_budget : 1
-        const usedBudget = annual_budget ? annual_budget.total_expenses : 0
-        const utilization = Math.round((usedBudget / totalBudget) * 100)
-        return (
-          <Badge variant="outline" className={
-            utilization > 80 ? 'bg-red-100 text-red-700' : 
-            utilization > 60 ? 'bg-yellow-100 text-yellow-700' : 
-            'bg-green-100 text-green-700'
-          }>
-            {utilization}%
-          </Badge>
-        )
-      },
-    },
-    {
-      id: "institution",
-      accessorKey: "institution_name",
-      header: "Institution",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Building className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium text-xs">{row.original.institution.name}</span>
-                      </div>
       ),
     },
     {
@@ -395,14 +262,6 @@ export default function RegionsPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => handleViewBudget(row.original.id)}>
-              <DollarSign className="w-4 h-4 mr-2" />
-              View Budget
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleViewContact(row.original.id)}>
-              <ContactRound className="w-4 h-4 mr-2" />
-              {t.viewContact}
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
               <Edit className="w-4 h-4 mr-2" />
               {t.editRegion}
@@ -432,9 +291,9 @@ export default function RegionsPage() {
                   </CardContent>
                 </Card>
               ))}
-                              </div>
-                      </div>
-                    </div>
+            </div>
+          </div>
+        </div>
       </AppLayout>
     )
   }
@@ -451,12 +310,11 @@ export default function RegionsPage() {
             </h2>
             <p className="text-muted-foreground text-0.875rem sm:text-1rem">
               {t.regionsSubtitle}
-                              </p>
-                            </div>
+          </p>
+        </div>
           
           <div className="flex items-center gap-3">
             <AddRegionModal
-              institutionId={currentInstitutionData?.id || ''}
               onSuccess={handleRegionCreated}
             >
               <Button>
@@ -464,16 +322,15 @@ export default function RegionsPage() {
                 {t.createRegion}
               </Button>
             </AddRegionModal>
-            
-                    <Button
-                      variant="outline"
+            <Button
+              variant="outline"
               size="icon"
               onClick={handleRefresh}
               disabled={refreshing}
             >
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                    </Button>
-                  </div>
+            </Button>
+          </div>
         </div>
 
         {/* KPI Cards */}
@@ -662,19 +519,7 @@ export default function RegionsPage() {
           <EditRegionModal
             isOpen={isEditModalOpen}
             onOpenChange={setIsEditModalOpen}
-            region={{
-              id: selectedRegion.id,
-              institution_id: selectedRegion.institution_id,
-              name: selectedRegion.name,
-              parent_region_id: null,
-              contact_id: null,
-              created_at: selectedRegion.created_at,
-              updated_at: selectedRegion.created_at,
-              created_by: 'system',
-              updated_by: 'system',
-              is_deleted: false
-            }}
-            parentRegions={[]}
+            region={selectedRegion}
             onSave={handleRegionUpdated}
           />
         )}

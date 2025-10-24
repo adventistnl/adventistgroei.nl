@@ -33,6 +33,7 @@ export interface Login_login_user {
   id: string;
   name: string;
   email: string;
+  language_preference: string;
   user_roles: Login_login_user_user_roles[];
 }
 

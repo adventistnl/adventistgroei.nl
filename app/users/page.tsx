@@ -218,7 +218,6 @@ export default function UsersPage() {
     newUsersThisMonth,
     usersByRole,
     usersByInstitution,
-    usersByRegion,
     userGrowthOverTime,
   } = useUserKPI()
 
@@ -323,6 +322,16 @@ export default function UsersPage() {
             {user.is_deleted ? t('users.table.inactive') : t('users.table.active')}
           </Badge>
         )
+      },
+    },
+    {
+      id: "gender",
+      accessorKey: "gender",
+      header: t('users.table.gender'),
+      cell: ({ row }) => {
+        const user = row.original;
+        const genderLabel = t(`users.gender.${user.gender}`); // Tradução baseada no valor de gender
+        return <div className="text-sm">{genderLabel}</div>;
       },
     },
     {
@@ -852,7 +861,6 @@ export default function UsersPage() {
               user={selectedUser}
               institutions={institutions}
               churches={churches}
-              regions={regions}
               departments={departments}
               roles={roles}
               onSuccess={(userData) => {

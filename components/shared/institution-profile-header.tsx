@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
   Building,
-  MapPin,
   Home,
   Globe,
   MoreHorizontal,
@@ -32,7 +31,6 @@ export interface InstitutionProfileHeaderProps {
   onEdit?: () => void
   onDelete?: () => void
   onViewContact?: () => void
-  onManageRegions?: () => void
   onManageChurches?: () => void
   onManageDepartments?: () => void
   onImageUpload?: (file: File) => void
@@ -47,13 +45,13 @@ export function InstitutionProfileHeader({
   onEdit,
   onDelete,
   onViewContact,
-  onManageRegions,
   onManageChurches,
   onManageDepartments,
   onImageUpload,
   onImageRemove,
   className = ""
 }: InstitutionProfileHeaderProps) {
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const { t } = useTranslation()
   const [showBudgetModal, setShowBudgetModal] = useState(false)
 
@@ -167,12 +165,6 @@ export function InstitutionProfileHeader({
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  {onManageRegions && (
-                    <DropdownMenuItem onClick={onManageRegions}>
-                      <MapPin className="w-4 h-4 mr-2" />
-                      Manage Regions
-                    </DropdownMenuItem>
-                  )}
                   {onManageChurches && (
                     <DropdownMenuItem onClick={onManageChurches}>
                       <Home className="w-4 h-4 mr-2" />

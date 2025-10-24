@@ -46,6 +46,12 @@ export const registerTranslations = {
     selectChurch: "Select your church",
     selectDepartmentFirst: "Select a department first",
     
+    // Gender selection
+    genderSelection: "Gender Selection",
+    genderSelectionDesc: "Please select your gender.",
+    genderLabel: "Gender",
+    genderPlaceholder: "Select your gender",
+    
     // Languages
     languages: {
       en: "English",
@@ -74,7 +80,13 @@ export const registerTranslations = {
     reviewPersonalData: "Personal Data",
     reviewInstitutionData: "Institution Data",
     reviewRole: "Role",
-    reviewLanguage: "Language"
+    reviewLanguage: "Language",
+    
+    // Gender
+    gender: {
+      FEMALE: "Female",
+      MALE: "Male",
+    }
   },
   nl: {
     title: "Lid Registratie",
@@ -123,6 +135,12 @@ export const registerTranslations = {
     selectChurch: "Selecteer je kerk",
     selectDepartmentFirst: "Selecteer eerst een afdeling",
     
+    // Gender selection
+    genderSelection: "Geslachtsselectie",
+    genderSelectionDesc: "Selecteer uw geslacht.",
+    genderLabel: "Geslacht",
+    genderPlaceholder: "Selecteer uw geslacht",
+    
     // Languages
     languages: {
       en: "English",
@@ -151,7 +169,13 @@ export const registerTranslations = {
     reviewPersonalData: "Persoonlijke Gegevens",
     reviewInstitutionData: "Instituut Gegevens",
     reviewRole: "Rol",
-    reviewLanguage: "Taal"
+    reviewLanguage: "Taal",
+    
+    // Gender
+    gender: {
+      FEMALE: "Vrouw",
+      MALE: "Man",
+    }
   },
   pt: {
     title: "Registro de Membro",
@@ -200,6 +224,12 @@ export const registerTranslations = {
     selectChurch: "Selecione sua igreja",
     selectDepartmentFirst: "Selecione um departamento primeiro",
     
+    // Gender selection
+    genderSelection: "Seleção de Gênero",
+    genderSelectionDesc: "Por favor, selecione seu gênero.",
+    genderLabel: "Gênero",
+    genderPlaceholder: "Selecione seu gênero",
+    
     // Languages
     languages: {
       en: "English",
@@ -228,6 +258,12 @@ export const registerTranslations = {
     reviewPersonalData: "Dados Pessoais",
     reviewInstitutionData: "Dados da Instituição", 
     reviewRole: "Função",
-    reviewLanguage: "Idioma"
+    reviewLanguage: "Idioma",
+    
+    // Gender
+    gender: {
+      FEMALE: "Feminino",
+      MALE: "Masculino",
+    }
   }
 }

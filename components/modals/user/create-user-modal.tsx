@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Users, Plus } from "lucide-react"
 import toast from "react-hot-toast"
-import { InstitutionById_institution_churches, InstitutionById_institution_departments, InstitutionById_institution_regions } from "@/types/InstitutionById"
+import { InstitutionById_institution_churches, InstitutionById_institution_departments } from "@/types/InstitutionById"
 import { Institutions_institutions } from "@/types/Institutions"
 import { Role_role } from "@/types/Role"
 import { useLanguagePreferences } from '@/hooks/use-language-preferences';
@@ -21,7 +21,6 @@ export interface CreateUserModalProps {
   onOpenChange: (open: boolean) => void
   institutions: Institutions_institutions[]
   churches: InstitutionById_institution_churches[]
-  regions: InstitutionById_institution_regions[]
   departments: InstitutionById_institution_departments[]
   roles: Role_role[]
   onSuccess?: (userData: UserFormData) => void
@@ -44,7 +43,6 @@ export function CreateUserModal({
   onOpenChange,
   institutions,
   churches,
-  regions,
   departments,
   roles,
   onSuccess
@@ -70,10 +68,6 @@ export function CreateUserModal({
     church.institution_id === userForm.institution_id
   )
   
-  const filteredRegions = regions.filter(region => 
-    region.institution_id === userForm.institution_id
-  )
-
   const filteredDepartments = departments.filter(dept => 
     dept.institution_id === userForm.institution_id
   )
@@ -249,25 +243,6 @@ export function CreateUserModal({
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="user-region">{t('users.modals.create_user.region')}</Label>
-                <Select 
-                  value={userForm.region_id} 
-                  onValueChange={(value) => setUserForm(prev => ({ ...prev, region_id: value }))}
-                  disabled={isLoading || !userForm.institution_id}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select region" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredRegions.map((region) => (
-                      <SelectItem key={region.id} value={region.id}>
-                        {region.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

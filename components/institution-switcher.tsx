@@ -1,8 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronsUpDown, Plus, Building2, RefreshCw } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { Plus, Building2, RefreshCw } from "lucide-react"
 import { useInstitution } from "@/contexts/institution-context"
 import {
   Select,
@@ -13,14 +12,10 @@ import {
 } from "@/components/ui/select"
 import {
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
 import { RegisterInstitutionModal } from "@/components/modals/institution"
 import toast from "react-hot-toast"
-import { useUser } from "@/hooks/use-user"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 
@@ -65,7 +60,6 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
       language_preference: data.language_preference,
       logo: Building2,
       description: data.description || `${data.denomination} Institution`,
-      regions_count: 0,
       churches_count: 0,
       members_count: 0,
       active_users: 0,
@@ -122,7 +116,7 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
                   <div className="text-left">
                     <div className="font-medium text-sm truncate">{currentInstitutionData.name}</div>
                     <div className="text-xs text-muted-foreground truncate">
-                      {currentInstitutionData.regions_count} regions • {currentInstitutionData.churches_count} churches • {currentInstitutionData.users_count} users
+                      {currentInstitutionData.churches_count} churches • {currentInstitutionData.users_count} users
                     </div>
                   </div>
                 </SelectValue>
@@ -141,7 +135,7 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm">{institution.name}</div>
                         <div className="text-xs text-muted-foreground">
-                          {institution.regions_count} regions • {institution.churches_count} churches • {institution.users_count} users
+                          {institution.churches_count} churches • {institution.users_count} users
                         </div>
                       </div>
                     </div>
