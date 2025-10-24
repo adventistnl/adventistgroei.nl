@@ -38,6 +38,7 @@ interface KPICardsProps {
   isLoading?: boolean
   skeletonCount?: number
   variant?: "default" | "minimal" // "default" shows colors, "minimal" shows no colors
+  customFirstCard?: React.ReactNode // Card customizado para primeira posição
 }
 
 /**
@@ -51,7 +52,8 @@ export function KPICards({
   showCarousel = true,
   isLoading = false,
   skeletonCount = 4,
-  variant = "default" // Default shows colors
+  variant = "default", // Default shows colors
+  customFirstCard
 }: KPICardsProps) {
   const { i18n } = useTranslation()
   
@@ -88,14 +90,14 @@ export function KPICards({
     // Remove color-related classes when variant is minimal
     const cardClassName = variant === "minimal" 
       ? cn(
-          "w-full min-w-0 relative h-full flex flex-col",
+          "w-full min-w-0 relative flex flex-col h-full",
           // Remove border colors and hover effects for minimal variant
           item.className?.replace(/border-l-\w+-\d+/g, '')
                         .replace(/hover:bg-\w+-\d+/g, '')
                         .replace(/border-\w+-\d+/g, '')
         )
       : cn(
-          "w-full min-w-0 relative h-full flex flex-col",
+          "w-full min-w-0 relative flex flex-col h-full",
           item.className
         )
 
@@ -113,7 +115,7 @@ export function KPICards({
           </div>
           </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-between">
-          <div>
+          <div className="flex-1">
             <div className="text-2xl font-bold truncate">{formatValue(item.value)}</div>
             {item.subtitle && (
               <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
@@ -168,18 +170,32 @@ export function KPICards({
 
   // Se não deve usar carrossel, renderizar grid normal
   if (!shouldUseCarousel) {
+    const totalCards = (customFirstCard ? 1 : 0) + data.length
+    
     return (
       <div className={cn(
         "grid gap-6 auto-rows-fr",
-        data.length === 1 && "grid-cols-1",
-        data.length === 2 && "grid-cols-1 md:grid-cols-2",
-        data.length === 3 && "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
-        data.length >= 4 && "grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
+        totalCards === 1 && "grid-cols-1",
+        totalCards === 2 && "grid-cols-1 md:grid-cols-2",
+        totalCards === 3 && "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
+        totalCards >= 4 && "grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
         className
       )}>
+        {customFirstCard && <div>{customFirstCard}</div>}
         {data.map((item, index) => renderCard(item, index))}
       </div>
     )
+  }
+
+  // Calcular basis dinâmico baseado na quantidade total de cards (incluindo custom)
+  const totalCards = (customFirstCard ? 1 : 0) + data.length
+  
+  const getCardBasis = () => {
+    if (totalCards === 1) return "basis-full"
+    if (totalCards === 2) return "basis-full sm:basis-1/2"
+    if (totalCards === 3) return "basis-full sm:basis-1/2 lg:basis-1/3"
+    // 4 ou mais cards
+    return "basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4"
   }
 
   // Renderizar carrossel
@@ -195,13 +211,26 @@ export function KPICards({
         }}
       >
         <CarouselContent className="-ml-1 md:-ml-2 lg:-ml-4 items-stretch">
+          {/* Custom First Card (se fornecido) */}
+          {customFirstCard && (
+            <CarouselItem 
+              className={cn(
+                "pl-2 md:pl-4 lg:pl-4 flex",
+                getCardBasis(),
+                "min-w-0"
+              )}
+            >
+              {customFirstCard}
+            </CarouselItem>
+          )}
+          
+          {/* Regular KPI Cards */}
           {data.map((item, index) => (
             <CarouselItem 
               key={item.id} 
               className={cn(
                 "pl-2 md:pl-4 lg:pl-4 flex",
-                // Responsive basis - sempre mostra pelo menos 1, máximo 4
-                "basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4",
+                getCardBasis(),
                 // Garantir que não ultrapasse os limites
                 "min-w-0"
               )}
@@ -212,7 +241,7 @@ export function KPICards({
         </CarouselContent>
         
         {/* Mostrar controles apenas se houver mais cards que cabem na tela */}
-        {data.length > 2 && (
+        {totalCards > 2 && (
           <>
             <CarouselPrevious className="left-2 h-8 w-8 bg-background/80 backdrop-blur-sm border hover:bg-background/90" />
             <CarouselNext className="right-2 h-8 w-8 bg-background/80 backdrop-blur-sm border hover:bg-background/90" />

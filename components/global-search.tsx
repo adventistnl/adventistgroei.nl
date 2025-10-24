@@ -47,7 +47,7 @@ const getNavStructure = (t: any) => [
       { title: t.pages.institutions, url: "/institutions", icon: Building, description: t.descriptions.institutions },
       { title: t.pages.regions, url: "/regions", icon: Building, description: t.descriptions.regions },
       { title: t.pages.churches, url: "/churches", icon: Building, description: t.descriptions.churches },
-      { title: t.pages.departments, url: "/departments", icon: Building, description: t.descriptions.departments },
+      { title: t.pages.departments, url: "/institutional-departments", icon: Building, description: t.descriptions.departments },
     ]
   },
   { 

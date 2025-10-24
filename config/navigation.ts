@@ -61,7 +61,7 @@ const navMainBase: NavItem[] = [
     icon: Building2,
     items: [
       { title: "Institutions", url: "/institutions", permissions: [PermissionResolverName.Institutions] },
-      { title: "Inst. Departments", url: "/departments", permissions: [PermissionResolverName.Departments] },
+      { title: "Inst. Departments", url: "/institutional-departments", permissions: [PermissionResolverName.Departments] },
       { title: "Regions", url: "/regions", permissions: [PermissionResolverName.Regions] },
       { title: "Churches", url: "/churches", permissions: [PermissionResolverName.Churches] },
       { title: "C. Departments", url: "/church-departments", permissions: [PermissionResolverName.Departments] },
@@ -173,7 +173,7 @@ export const navigation: NavigationItem[] = [
     icon: Building,
     items: [
       { name: "Institutions", href: "/institutions", icon: Building },
-      { name: "Inst. Departments", href: "/departments", icon: Briefcase },
+      { name: "Inst. Departments", href: "/institutional-departments", icon: Briefcase },
       { name: "Regions", href: "/regions", icon: Map },
       { name: "Churches", href: "/churches", icon: Church },
       { name: "Church Departments", href: "/church-departments", icon: Briefcase },

@@ -168,7 +168,17 @@ const resources = {
         close: "Close",
         upload: "Upload",
         active: "Active",
-        inactive: "Inactive"
+        inactive: "Inactive",
+        status: "Status",
+        structure_organization: "Structure & Organization",
+        members: "Members",
+        budget: "Budget",
+        actions: "Actions",
+        refreshing: "Refreshing...",
+        data_refreshed: "Data refreshed",
+        error_refreshing: "Error refreshing data",
+        annual_budget: "Annual Budget",
+        data_loaded: "Data loaded successfully"
       },
       kanban: {
         dropItemHere: "Drop item here",
@@ -201,6 +211,32 @@ const resources = {
         subtitle: "Manage institutions and their relationships",
         overview: "Overview",
         all_institutions: "All Institutions",
+        page_header: {
+          title: "Institution Overview",
+          subtitle: "Complete management interface for institutional structure",
+          new_institution: "New Institution"
+        },
+        entity_info: {
+          header_title: "Institution Info",
+          active: "Active",
+          inactive: "Inactive",
+          established: "Est."
+        },
+        actions: {
+          view_contact_details: "View Contact Details",
+          manage_churches: "Manage Churches",
+          manage_departments: "Manage Departments",
+          manage_annual_budgets: "Manage Annual Budgets",
+          edit_institution: "Edit Institution",
+          delete_institution: "Delete Institution"
+        },
+        analytics: {
+          title: "Institution Analytics"
+        },
+        table_card: {
+          title: "Institutions List",
+          description: "Complete list of institutions with management actions"
+        },
         filters: {
           institution: "Institution",
           denomination: "Denomination",
@@ -211,6 +247,7 @@ const resources = {
           total_institutions: "Total Institutions",
           total_regions: "Total Regions",
           total_churches: "Total Churches",
+          total_departments: "Total Departments",
           total_users: "Total Users",
           total_budget: "Total Budget",
           annual_budget: "Annual Budget",
@@ -347,7 +384,12 @@ const resources = {
           image_upload_failed: "Failed to upload image",
           image_removing: "Removing image...",
           image_removed: "Image removed successfully",
-          image_remove_failed: "Failed to remove image"
+          image_remove_failed: "Failed to remove image",
+          created: "Institution created successfully",
+          refreshing_data: "Refreshing data...",
+          data_refreshed: "Data refreshed successfully",
+          error_refreshing_data: "Error refreshing data",
+          no_institution_selected: "No institution selected"
         }
       },
       regions: {
@@ -463,6 +505,8 @@ const resources = {
       churches: {
         title: "Churches",
         subtitle: "Manage churches and their organization",
+        church: "Church",
+        active_churches: "Active churches",
         modals: {
           create: {
             title: "Add New Church",
@@ -683,7 +727,16 @@ const resources = {
           deactivating: "Deactivating department...",
           deactivated: "Department deactivated successfully",
           deactivate_failed: "Failed to deactivate department"
-        }
+        },
+        analytics: "Analytics",
+        utilization: "Utilization",
+        budget_remaining: "Budget Remaining",
+        requests: "Requests",
+        table_title: "Departments",
+        table_description: "Complete list of departments with management actions",
+        create_department: "Create Department",
+        edit_department: "Edit Department",
+        delete_department: "Delete Department"
       },
       access: {
         title: "Access Management",
@@ -862,6 +915,7 @@ const resources = {
         title: "User Management",
         subtitle: "Manage system users, roles, and permissions",
         overview: "Users Overview",
+        registered_users: "Registered users",
         kpis: {
           total_users: "Total Users",
           active_users: "Active Users",
@@ -1531,7 +1585,17 @@ const resources = {
         close: "Sluiten",
         upload: "Uploaden",
         active: "Actief",
-        inactive: "Inactief"
+        inactive: "Inactief",
+        status: "Status",
+        structure_organization: "Structuur & Organisatie",
+        members: "Leden",
+        budget: "Budget",
+        actions: "Acties",
+        refreshing: "Vernieuwen...",
+        data_refreshed: "Gegevens vernieuwd",
+        error_refreshing: "Fout bij vernieuwen van gegevens",
+        annual_budget: "Jaarbudget",
+        data_loaded: "Gegevens succesvol geladen"
       },
       kanban: {
         dropItemHere: "Item hier neerzetten",
@@ -1564,6 +1628,32 @@ const resources = {
         subtitle: "Beheer instellingen en hun relaties",
         overview: "Overzicht",
         all_institutions: "Alle Instellingen",
+        page_header: {
+          title: "Instellingoverzicht",
+          subtitle: "Volledige beheerinterface voor institutionele structuur",
+          new_institution: "Nieuwe Instelling"
+        },
+        entity_info: {
+          header_title: "Instellingsinformatie",
+          active: "Actief",
+          inactive: "Inactief",
+          established: "Opgericht"
+        },
+        actions: {
+          view_contact_details: "Contactgegevens Bekijken",
+          manage_churches: "Kerken Beheren",
+          manage_departments: "Afdelingen Beheren",
+          manage_annual_budgets: "Jaarbudgetten Beheren",
+          edit_institution: "Instelling Bewerken",
+          delete_institution: "Instelling Verwijderen"
+        },
+        analytics: {
+          title: "Instellingsanalyses"
+        },
+        table_card: {
+          title: "Instellingenlijst",
+          description: "Volledige lijst van instellingen met beheeracties"
+        },
         filters: {
           institution: "Instelling",
           denomination: "Denominatie",
@@ -1574,6 +1664,7 @@ const resources = {
           total_institutions: "Totaal Instellingen",
           total_regions: "Totaal Regio's",
           total_churches: "Totaal Kerken",
+          total_departments: "Totaal Afdelingen",
           total_users: "Totaal Gebruikers",
           total_budget: "Totaal Budget",
           annual_budget: "Jaarlijks Budget",
@@ -1710,7 +1801,12 @@ const resources = {
           image_upload_failed: "Kon afbeelding niet uploaden",
           image_removing: "Afbeelding verwijderen...",
           image_removed: "Afbeelding succesvol verwijderd",
-          image_remove_failed: "Kon afbeelding niet verwijderen"
+          image_remove_failed: "Kon afbeelding niet verwijderen",
+          created: "Instelling succesvol aangemaakt",
+          refreshing_data: "Gegevens vernieuwen...",
+          data_refreshed: "Gegevens succesvol vernieuwd",
+          error_refreshing_data: "Fout bij vernieuwen van gegevens",
+          no_institution_selected: "Geen instelling geselecteerd"
         }
       },
       regions: {
@@ -1826,6 +1922,8 @@ const resources = {
       churches: {
         title: "Kerken",
         subtitle: "Beheer kerken en hun organisatie",
+        church: "Kerk",
+        active_churches: "Actieve kerken",
         modals: {
           create: {
             title: "Nieuwe Kerk Toevoegen",
@@ -2046,7 +2144,16 @@ const resources = {
           deactivating: "Afdeling deactiveren...",
           deactivated: "Afdeling succesvol gedeactiveerd",
           deactivate_failed: "Kon afdeling niet deactiveren"
-        }
+        },
+        analytics: "Analytics",
+        utilization: "Benutting",
+        budget_remaining: "Resterend Budget",
+        requests: "Aanvragen",
+        table_title: "Afdelingen",
+        table_description: "Volledige lijst van afdelingen met beheeracties",
+        create_department: "Afdeling Maken",
+        edit_department: "Afdeling Bewerken",
+        delete_department: "Afdeling Verwijderen"
       },
       access: {
         title: "Toegangsbeheer",
@@ -2225,6 +2332,7 @@ const resources = {
         title: "Gebruikersbeheer",
         subtitle: "Beheer systeemgebruikers, rollen en machtigingen",
         overview: "Gebruikersoverzicht",
+        registered_users: "Geregistreerde gebruikers",
         kpis: {
           total_users: "Totaal Gebruikers",
           active_users: "Actieve Gebruikers",

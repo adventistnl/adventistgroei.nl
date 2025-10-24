@@ -20,7 +20,10 @@ import {
   Church,
   Globe,
   Shield,
-  RefreshCw
+  RefreshCw,
+  Home,
+  Layers,
+  DollarSign
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -30,12 +33,14 @@ import {
 } from "@/components/ui/dropdown-menu"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
+import { cn } from "@/lib/utils"
 
 // Components
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { UseTable } from "@/components/ui/use-table"
 import { InstitutionProfileHeader } from "@/components/shared"
+import { EntityInfoCard, EntityInfoCardAction } from "@/components/shared/entity-info-card"
 import { ContactViewEditModal } from "@/components/modals/contact"
 import { EditInstitutionModal, DeleteInstitutionModal, RegisterInstitutionModal } from "@/components/modals/institution"
 import { DepartmentActivityChart, UsersByRoleChart, ChurchesByRegionChart } from "@/components/institutions/charts"
@@ -69,52 +74,52 @@ export default function InstitutionsPage() {
 
 
   const breadcrumbs = useMemo(() => [
-    { name: "Structure & Organization" },
-    { name: "Institutions" }
-  ], [])
+    { name: t('common.structure_organization') },
+    { name: t('institutions.title') }
+  ], [t])
 
   // Dados para KPI Cards Carrossel
   const kpiCardsData: KPICardData[] = useMemo(() => [
     {
       id: "total_churches",
-      title: "Total Churches",
+      title: t('institutions.kpis.total_churches'),
       value: institutionKPIs.totalChurches,
       icon: Church,
-      subtitle: "Active churches",
+      subtitle: t('churches.active_churches'),
       trend: undefined
     },
     {
       id: "total_departments",
-      title: "Total Departments",
+      title: t('institutions.kpis.total_departments'),
       value: institutionKPIs.totalDepartments,
       icon: Shield,
-      subtitle: "Departments",
+      subtitle: t('departments.title'),
       trend: undefined
     },
     {
       id: "total_users",
-      title: "Total Users",
+      title: t('institutions.kpis.total_users'),
       value: institutionKPIs.totalUsers,
       icon: Users,
-      subtitle: "Registered users",
+      subtitle: t('users.registered_users'),
       trend: undefined
     },
-  ], [institutionKPIs])
+  ], [institutionKPIs, t])
 
   usePageTitle({
-    title: "Institutions Management"
+    title: t('institutions.title')
   })
 
   // Refresh handler
   const handleRefresh = async () => {
     setRefreshing(true)
-    const refreshToast = toast.loading("Refreshing data...")
+    const refreshToast = toast.loading(t('institutions.toasts.refreshing_data'))
     
     try {
       await refetchInstitutionById()
-      toast.success("Data refreshed successfully", { duration: 2000 })
+      toast.success(t('institutions.toasts.data_refreshed'), { duration: 2000 })
     } catch (error) {
-      toast.error("Error refreshing data")
+      toast.error(t('institutions.toasts.error_refreshing_data'))
     } finally {
       toast.dismiss(refreshToast)
       setRefreshing(false)
@@ -143,7 +148,7 @@ export default function InstitutionsPage() {
       // O modal permite criar novos dados de contato se não existirem
       setIsContactModalOpen(true)
     } else {
-      toast.error('Nenhuma instituição selecionada')
+      toast.error(t('institutions.toasts.no_institution_selected'))
     }
   }
 
@@ -159,6 +164,83 @@ export default function InstitutionsPage() {
   const handleInstitutionDeleted = (institutionData: any) => {
     toast.success(t('institutions.toasts.deactivated'))
   }
+
+  // Ações para o Entity Info Card
+  const institutionCardActions: EntityInfoCardAction[] = useMemo(() => [
+    {
+      label: t('institutions.actions.view_contact_details'),
+      icon: Eye,
+      onClick: handleViewInstitutionContact,
+      showSeparatorAfter: true
+    },
+    {
+      label: t('institutions.actions.manage_churches'),
+      icon: Home,
+      onClick: () => {}
+    },
+    {
+      label: t('institutions.actions.manage_departments'),
+      icon: Layers,
+      onClick: () => {}
+    },
+    {
+      label: t('institutions.actions.manage_annual_budgets'),
+      icon: DollarSign,
+      onClick: () => {},
+      showSeparatorAfter: true
+    },
+    {
+      label: t('institutions.actions.edit_institution'),
+      icon: Edit,
+      onClick: handleEditInstitution
+    },
+    {
+      label: t('institutions.actions.delete_institution'),
+      icon: Trash2,
+      onClick: handleDeleteInstitution,
+      variant: "destructive"
+    }
+  ], [t, handleViewInstitutionContact, handleEditInstitution, handleDeleteInstitution])
+
+  // Custom First Card com informações da instituição
+  const customFirstCard = useMemo(() => {
+    if (!currentInstitutionData) return null
+    
+    const isActive = !currentInstitutionData.is_deleted
+    
+    return (
+      <EntityInfoCard
+        headerTitle={t('institutions.entity_info.header_title')}
+        name={currentInstitutionData.name}
+        description={currentInstitutionData.denomination}
+        icon={Building}
+        actions={institutionCardActions}
+        accentColor="gray"
+        badges={[
+          {
+            label: isActive ? t('institutions.entity_info.active') : t('institutions.entity_info.inactive'),
+            variant: isActive ? "default" : "secondary",
+            className: cn(
+              "text-xs",
+              isActive 
+                ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800" 
+                : "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700"
+            )
+          },
+          {
+            label: `${t('institutions.entity_info.established')} ${new Date(currentInstitutionData.created_at).getFullYear()}`,
+            variant: "outline",
+            className: "text-xs font-normal"
+          },
+          {
+            label: currentInstitutionData.language_preference.toUpperCase(),
+            variant: "outline",
+            className: "text-xs font-mono"
+          }
+        ]}
+      />
+    )
+  }, [currentInstitutionData, institutionCardActions, t])
 
   // Colunas da tabela
   const columns: ColumnDef<Institutions_institutions>[] = [
@@ -205,7 +287,7 @@ export default function InstitutionsPage() {
       header: t('institutions.table.language'),
       cell: ({ row }) => {
         const lang = row.original.language_preference
-        const langLabel = lang === "en" ? "English" : lang === "nl" ? "Nederlands" : lang
+        const langLabel = lang === "en" ? t('common.english') : lang === "nl" ? t('common.dutch') : lang
         return (
           <Badge variant="outline">
             {langLabel}
@@ -238,12 +320,12 @@ export default function InstitutionsPage() {
     {
       id: "status",
       accessorKey: "is_deleted",
-      header: "Status",
+      header: t('common.status'),
       cell: ({ row }) => {
         const isActive = !row.original.is_deleted
         return (
           <Badge variant={isActive ? "default" : "secondary"} className={isActive ? "bg-green-500 hover:bg-green-600" : ""}>
-            {isActive ? "Active" : "Inactive"}
+            {isActive ? t('common.active') : t('common.inactive')}
           </Badge>
         )
       },
@@ -316,19 +398,19 @@ export default function InstitutionsPage() {
   const filterableColumns = [
     {
       id: "language",
-      title: "Language",
+      title: t('common.language'),
       options: [
-        { label: "English", value: "en" },
-        { label: "Nederlands", value: "nl" },
+        { label: t('common.english'), value: "en" },
+        { label: t('common.dutch'), value: "nl" },
         { label: "Português", value: "pt" },
       ]
     },
     {
       id: "status",
-      title: "Status",
+      title: t('common.status'),
       options: [
-        { label: "Active", value: "true" },
-        { label: "Inactive", value: "false" },
+        { label: t('common.active'), value: "true" },
+        { label: t('common.inactive'), value: "false" },
       ]
     }
   ]
@@ -369,22 +451,11 @@ export default function InstitutionsPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold text-foreground mb-2">
-              Institution Overview
+              {t('institutions.page_header.title')}
             </h2>
             <p className="text-muted-foreground text-0.875rem sm:text-1rem">
-              Complete management interface for institutional structure
+              {t('institutions.page_header.subtitle')}
             </p>
-            {currentInstitutionData && (
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                  <Building className="w-3 h-3 mr-1" />
-                  {currentInstitutionData.name}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {currentInstitutionData.denomination}
-                </Badge>
-              </div>
-            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -400,14 +471,14 @@ export default function InstitutionsPage() {
             <RegisterInstitutionModal onSuccess={handleInstitutionCreated}>
               <Button className="bg-primary hover:bg-primary/80">
                 <Plus className="w-4 h-4 mr-2" />
-                New Institution
+                {t('institutions.page_header.new_institution')}
               </Button>
             </RegisterInstitutionModal>
           </div>
         </div>
 
         {/* Institution Profile Header */}
-        {currentInstitutionData && (
+        {/* {currentInstitutionData && (
           <InstitutionProfileHeader
             institution={currentInstitutionData}
             onEdit={handleEditInstitution}
@@ -416,21 +487,22 @@ export default function InstitutionsPage() {
             onManageChurches={() => {}}
             onManageDepartments={() => {}}
           />
-        )}
+        )} */}
 
         {/* KPI Cards Carousel */}
         <KPICards 
           data={kpiCardsData}
           isLoading={isLoading}
-          minCardsForCarousel={4}
+          minCardsForCarousel={3}
           showCarousel={true}
+          customFirstCard={customFirstCard}
         />
 
         <Separator />
 
         {/* Charts Section */}
         <div className="space-y-6">
-          <h3 className="text-xl font-semibold">Institution Analytics</h3>
+          <h3 className="text-xl font-semibold">{t('institutions.analytics.title')}</h3>
           <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
             <DepartmentActivityChart loading={isLoading} />
             
@@ -450,9 +522,9 @@ export default function InstitutionsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building className="w-5 h-5" />
-              Institutions List
+              {t('institutions.table_card.title')}
             </CardTitle>
-            <CardDescription>Complete list of institutions with management actions</CardDescription>
+            <CardDescription>{t('institutions.table_card.description')}</CardDescription>
           </CardHeader>
           <CardContent className="overflow-hidden">
             <UseTable
@@ -470,8 +542,8 @@ export default function InstitutionsPage() {
             isOpen={isContactModalOpen}
             onOpenChange={setIsContactModalOpen}
             contact={(currentInstitutionData.contact || null) as Contact | null}
-            entityName={currentInstitutionData.name || 'Institution'}
-            entityType="Institution"
+            entityName={currentInstitutionData.name || t('institutions.title')}
+            entityType={t('institutions.title')}
             onSave={handleContactSaved}
             entityId={currentInstitutionData.id}
             updateMutation={updateInstitutionContact}
