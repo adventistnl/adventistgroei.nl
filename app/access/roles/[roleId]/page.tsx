@@ -21,6 +21,7 @@ import { usePermissions } from "@/hooks/use-permissions"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
+import { twMerge } from "tailwind-merge"
 
 export default function RolePermissionsPage() {
   const { t } = useTranslation();
@@ -34,6 +35,8 @@ export default function RolePermissionsPage() {
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
+  const [addPermissionIds, setAddPermissionIds] = useState<string[]>([]);
+  const [removePermissionIds, setRemovePermissionIds] = useState<string[]>([]);
 
   // Normaliza os dados de permissões em grupos
   const permissionGroups = useMemo(() => {
@@ -80,10 +83,16 @@ export default function RolePermissionsPage() {
     )
   }
 
-  const handlePermissionToggle = (permissionId: string, permissionName: string, isEssential: boolean) => {
+  const handlePermissionToggle = (permissionId: string, permissionName: string, isEssential: boolean, checked: boolean) => {
     if (isEssential) {
       toast.error(`Essential permissions cannot be removed`);
       return;
+    }
+
+    if (checked) {
+      setAddPermissionIds(prev => prev.filter(id => id !== permissionId));
+    } else {
+      setRemovePermissionIds(prev => prev.filter(id => id !== permissionId));
     }
     const isCurrentlySelected = selectedPermissions.includes(permissionId)
     const newSelected = isCurrentlySelected 
@@ -128,8 +137,6 @@ export default function RolePermissionsPage() {
 
   const handleSave = async (roleId: string) => {
     try {
-      const addPermissionIds = [];
-      const removePermissionIds = [];
 
       await updateRole({
         id: roleId,
@@ -489,14 +496,21 @@ export default function RolePermissionsPage() {
                             .find(p => p.group === group.label)?.data
                             .some(p => p.id === permission.id) || false
                           const isModified = isChecked !== originallyChecked
-                          const isEssential = !!permission.is_essential
+                          const isEssential = permission.is_essential
                           return (
                             <div 
                               key={permission.id} 
-                              className={`flex items-start space-x-4 p-4 rounded-lg border-2 transition-all duration-200 ${isEssential ? 'cursor-not-allowed bg-muted/30 border-border' : 'cursor-pointer hover:shadow-sm hover:bg-muted/30 border-border'} ${
-                                isChecked ? 'bg-muted/50 border-foreground/20' : ''}`}
+                              className={twMerge(
+                                "flex items-start space-x-4 p-4 rounded-lg border-2 transition-all duration-200",
+                                isEssential
+                                  ? "cursor-not-allowed bg-muted/30 border-border"
+                                  : "cursor-pointer hover:shadow-sm hover:bg-muted/30 border-border",
+                                isChecked
+                                  ? "bg-muted/50 border-foreground/20"
+                                  : ""
+                              )}
                               
-                              onClick={() => !isEssential && handlePermissionToggle(permission.id, permission.name, isEssential)}
+                              onClick={() => !isEssential && handlePermissionToggle(permission.id, permission.name, isEssential, isChecked)}
                             >
                               <div className="relative mt-1">
                                 <Checkbox 
