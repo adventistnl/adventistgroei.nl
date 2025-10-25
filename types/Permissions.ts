@@ -14,6 +14,7 @@ export interface Permissions_permissions_data {
   description: string;
   key_code: string;
   group: string | null;
+  is_essential: boolean | null;
 }
 
 export interface Permissions_permissions {

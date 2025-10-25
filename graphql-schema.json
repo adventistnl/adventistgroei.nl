@@ -106,6 +106,18 @@
             },
             "isDeprecated": false,
             "deprecationReason": null
+          },
+          {
+            "name": "is_essential",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
           }
         ],
         "inputFields": null,
@@ -117,6 +129,17 @@
         "kind": "SCALAR",
         "name": "String",
         "description": "The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.",
+        "specifiedByUrl": null,
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "SCALAR",
+        "name": "Boolean",
+        "description": "The `Boolean` scalar type represents `true` or `false`.",
         "specifiedByUrl": null,
         "fields": null,
         "inputFields": null,
@@ -188,6 +211,22 @@
               "ofType": {
                 "kind": "SCALAR",
                 "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "is_fixed",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
                 "ofType": null
               }
             },
@@ -345,17 +384,6 @@
         ],
         "inputFields": null,
         "interfaces": [],
-        "enumValues": null,
-        "possibleTypes": null
-      },
-      {
-        "kind": "SCALAR",
-        "name": "Boolean",
-        "description": "The `Boolean` scalar type represents `true` or `false`.",
-        "specifiedByUrl": null,
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
         "enumValues": null,
         "possibleTypes": null
       },
@@ -2328,6 +2356,22 @@
             "deprecationReason": null
           },
           {
+            "name": "is_essential",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "created_at",
             "description": null,
             "args": [],
@@ -3189,6 +3233,22 @@
               "ofType": {
                 "kind": "SCALAR",
                 "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "is_fixed",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
                 "ofType": null
               }
             },
@@ -16800,7 +16860,27 @@
             "deprecationReason": null
           },
           {
-            "name": "permissionIds",
+            "name": "addPermissionIds",
+            "description": null,
+            "type": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                }
+              }
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "removePermissionIds",
             "description": null,
             "type": {
               "kind": "LIST",

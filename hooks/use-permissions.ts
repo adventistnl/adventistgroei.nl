@@ -11,7 +11,7 @@ interface iUserpermissions {
 
 export function usePermissions(): iUserpermissions {
   const { data: dataPermissions, loading: permissionsLoading, error: permissionsError } = useGetAllPermissionsQuery();
-
+  console.log(dataPermissions);
   const permissions = useMemo(() => {
     if (!dataPermissions || !dataPermissions.permissions) {
       return [];

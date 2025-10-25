@@ -7,6 +7,7 @@ export const GET_ALL_ROLES_QUERY = gql`
       name
       description
       key_code
+      is_fixed
       users {
         user_id
         is_deleted
@@ -20,6 +21,7 @@ export const GET_ALL_ROLES_QUERY = gql`
           description
           key_code
           group
+          is_essential
         }
       }
     }
@@ -33,6 +35,7 @@ export const GET_ROLE_BY_ID_QUERY = gql`
           name
           description
           key_code
+          is_fixed
           color
           users {
               user_id
@@ -46,6 +49,7 @@ export const GET_ROLE_BY_ID_QUERY = gql`
                   description
                   key_code
                   group
+                  is_essential
               }
           }
       }

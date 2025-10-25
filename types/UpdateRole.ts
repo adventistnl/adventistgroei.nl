@@ -9,6 +9,7 @@
 
 export interface UpdateRole_updateRole_permissions_data {
   __typename: "PermissionModel";
+  is_essential: boolean | null;
   id: string;
   name: string;
   description: string;
@@ -27,6 +28,7 @@ export interface UpdateRole_updateRole {
   id: string;
   name: string;
   description: string;
+  is_fixed: boolean;
   key_code: string;
   permissions: UpdateRole_updateRole_permissions[];
 }
@@ -40,5 +42,6 @@ export interface UpdateRoleVariables {
   name?: string | null;
   description?: string | null;
   key_code?: string | null;
-  permissionIds?: string[] | null;
+  addPermissionIds?: string[] | null;
+  removePermissionIds?: string[] | null;
 }

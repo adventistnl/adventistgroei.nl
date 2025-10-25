@@ -6,7 +6,8 @@ export const UPDATE_ROLE_MUTATION = gql`
         $name: String
         $description: String
         $key_code: String
-        $permissionIds: [String!]
+        $addPermissionIds: [String!]
+        $removePermissionIds: [String!]
     ) {
         updateRole(
             input: {
@@ -14,16 +15,19 @@ export const UPDATE_ROLE_MUTATION = gql`
                 name: $name
                 description: $description
                 key_code: $key_code
-                permissionIds: $permissionIds
+                addPermissionIds: $addPermissionIds
+                removePermissionIds: $removePermissionIds
             }
         ) {
             id
             name
             description
+            is_fixed
             key_code
             permissions {
                 group
                 data {
+                    is_essential
                     id
                     name
                     description

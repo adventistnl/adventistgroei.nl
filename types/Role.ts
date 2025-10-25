@@ -20,6 +20,7 @@ export interface Role_role_permissions_data {
   description: string;
   key_code: string;
   group: string | null;
+  is_essential: boolean | null;
 }
 
 export interface Role_role_permissions {
@@ -34,6 +35,7 @@ export interface Role_role {
   name: string;
   description: string;
   key_code: string;
+  is_fixed: boolean;
   color: string | null;
   users: (Role_role_users | null)[] | null;
   permissions: Role_role_permissions[];
