@@ -28,23 +28,27 @@ export default function RolePermissionsPage() {
   const params = useParams();
   const roleId = params.roleId as string;
 
-  const { currentRole: selectedRole, currentRoleLoading, currentRoleError, rolesError, rolesLoading, updateRole } = useRoles({ id: roleId });
+  const { currentRole, currentRoleLoading, currentRoleError, rolesError, rolesLoading, updateRole } = useRoles({ id: roleId });
   const { permissions: rawPermissions, permissionsError, permissionsLoading } = usePermissions();
 
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState<string[]>(['USER', 'ROLE']);
-  const [initialPermissions, setInitialPermissions] = useState<string[]>([]);
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
   // Normaliza os dados de permissões em grupos
   const permissionGroups = useMemo(() => {
-    if (!rawPermissions) return [];
+    if (!rawPermissions && !currentRole) return [];
+    const currentPermissions = currentRole?.permissions.flatMap(p => p.data.map(d => d)) || [];
+    const currentPermissionsIds = currentRole?.permissions.flatMap(p => p.data.map(d => d.id)) || [];
     return rawPermissions.map((group) => ({
       name: group.group,
       label: group.group,
       description: '',
-      permissions: group.data
+      permissions: group.data.map((permission) => ({
+        ...permission,
+        is_essential: currentPermissions.some(p => p.id === permission.id && p.is_essential) || false,
+        is_selected: currentPermissionsIds.includes(permission.id)
+      }))
     }));
   }, [rawPermissions]);
 
@@ -58,30 +62,15 @@ export default function RolePermissionsPage() {
     { name: "Dashboard", href: "/dashboard" },
     { name: "Users & Access" },
     { name: "Access Management", href: "/access" },
-    { name: selectedRole?.name || "Role Permissions" }
-  ], [selectedRole?.name]);
+    { name: currentRole?.name || "Role Permissions" }
+  ], [currentRole?.name]);
+
+
 
   usePageTitle({
-    title: `${selectedRole?.name || 'Role'} Permissions`,
+    title: `${currentRole?.name || 'Role'} Permissions`,
     breadcrumbs
   });
-
-  // Initialize permissions when role is loaded
-  useEffect(() => {
-    if (selectedRole) {
-      const currentPermissionIds: string[] = [];
-      selectedRole.permissions.forEach((group) => {
-        group.data.forEach((permission) => {
-          currentPermissionIds.push(permission.id);
-        });
-      });
-      setSelectedPermissions(currentPermissionIds);
-      setInitialPermissions(currentPermissionIds);
-      setIsLoading(false);
-    } else if (roleId) {
-      setIsLoading(false);
-    }
-  }, [selectedRole, roleId]);
 
   const toggleGroup = (groupName: string) => {
     setExpandedGroups(prev => 
@@ -137,14 +126,13 @@ export default function RolePermissionsPage() {
     toast.success(`${groupName} permissions cleared`)
   }
 
-  const handleSave = async () => {
-    if (!selectedRole) return;
+  const handleSave = async (roleId: string) => {
     try {
-      const addPermissionIds = selectedPermissions.filter(id => !initialPermissions.includes(id));
-      const removePermissionIds = initialPermissions.filter(id => !selectedPermissions.includes(id) && !selectedRole.permissions.some(group => group.data.some(p => p.id === id && p.is_essential)));
+      const addPermissionIds = [];
+      const removePermissionIds = [];
 
       await updateRole({
-        id: selectedRole.id,
+        id: roleId,
         addPermissionIds,
         removePermissionIds,
       });
@@ -153,11 +141,11 @@ export default function RolePermissionsPage() {
         icon: '🎉'
       });
       setHasUnsavedChanges(false);
-      setInitialPermissions(selectedPermissions); // Update initial permissions after save
     } catch (error) {
       toast.error(t('access.toasts.permissions_update_failed', 'Erro ao atualizar permissões.'));
     }
   };
+
 
   const handleCancel = () => {
     if (hasUnsavedChanges) {
@@ -169,7 +157,14 @@ export default function RolePermissionsPage() {
     }
   }
 
-  if (currentRoleLoading || isLoading || permissionsLoading || rolesLoading) {
+  useEffect(() => {
+    const groupKeys = currentRole?.permissions.map(p => p.group) || [];
+    const permissionsId = currentRole?.permissions.flatMap(p => p.data.flatMap(d => d.id)) || [];
+    setExpandedGroups(groupKeys);
+    setSelectedPermissions(permissionsId);
+  }, [currentRole])
+
+  if (currentRoleLoading || permissionsLoading || rolesLoading) {
     return (
       <AppLayout>
         <div className="space-y-6 animate-pulse">
@@ -185,7 +180,9 @@ export default function RolePermissionsPage() {
     );
   }
 
-  if (!selectedRole || currentRoleError || permissionsError || rolesError) {
+
+
+  if (!currentRole || currentRoleError || permissionsError || rolesError) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -245,23 +242,23 @@ export default function RolePermissionsPage() {
                   <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center shadow-sm">
                     <Shield className="w-8 h-8 text-foreground" />
                   </div>
-                  {selectedRole.key_code === 'ADMIN' && (
+                  {currentRole.key_code === 'ADMIN' && (
                     <Crown className="absolute -top-2 -right-2 w-6 h-6 text-yellow-500" />
                   )}
                 </div>
                 <div className="space-y-2">
                   <div>
                     <CardTitle className="text-2xl font-bold text-foreground">
-                      {selectedRole.name}
+                      {currentRole.name}
                     </CardTitle>
                     <div className="flex items-center gap-2 mt-2">
                       <Badge variant="secondary" className="text-sm font-mono px-3 py-1">
-                        {selectedRole.key_code}
+                        {currentRole.key_code}
                       </Badge>
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground max-w-md leading-relaxed">
-                    {selectedRole.description}
+                    {currentRole.description}
                   </p>
                 </div>
               </div>
@@ -369,15 +366,15 @@ export default function RolePermissionsPage() {
 
         {/* Permission Groups */}
         <div className="space-y-6">
-          {rawPermissions.map((group) => {
-            const isExpanded = expandedGroups.includes(group.group)
-            const groupPermissionIds = group.data.map(p => p.id)
+          {permissionGroups.map((group) => {
+            const isExpanded = expandedGroups.includes(group.label)
+            const groupPermissionIds = group.permissions.map(p => p.id)
             const selectedInGroup = selectedPermissions.filter(id => groupPermissionIds.includes(id)).length
-            const allGroupSelected = selectedInGroup === group.data.length
-            const someGroupSelected = selectedInGroup > 0 && selectedInGroup < group.data.length
+            const allGroupSelected = selectedInGroup === group.permissions.length
+            const someGroupSelected = selectedInGroup > 0 && selectedInGroup < group.permissions.length
             return (
-              <Card key={group.group} className="border-2">
-                <Collapsible open={isExpanded} onOpenChange={() => toggleGroup(group.group)}>
+              <Card key={group.label} className="border-2">
+                <Collapsible open={isExpanded} onOpenChange={() => toggleGroup(group.label)}>
                   <CollapsibleTrigger className="w-full">
                     <CardHeader className="hover:bg-muted/30 transition-colors">
                       <div className="flex items-center justify-between">
@@ -392,7 +389,7 @@ export default function RolePermissionsPage() {
                           <div className="text-left space-y-1">
                             <CardTitle className="text-lg flex items-center gap-3">
                               <span className="text-foreground">
-                                {t(`access.roles.permissions.groups.${group.group}`, { defaultValue: group.group })}
+                                { group.label }
                               </span>
                               <div className="flex gap-1">
                                 {!allGroupSelected && (
@@ -402,7 +399,7 @@ export default function RolePermissionsPage() {
                                     className="h-7 px-3 text-xs hover:bg-muted"
                                     onClick={(e) => {
                                       e.stopPropagation()
-                                      handleGroupSelect(groupPermissionIds, group.group)
+                                      handleGroupSelect(groupPermissionIds, group.label)
                                     }}
                                   >
                                     Select All
@@ -415,7 +412,7 @@ export default function RolePermissionsPage() {
                                     className="h-7 px-3 text-xs hover:bg-muted"
                                     onClick={(e) => {
                                       e.stopPropagation()
-                                      handleGroupClear(groupPermissionIds, group.group)
+                                      handleGroupClear(groupPermissionIds, group.label)
                                     }}
                                   >
                                     Clear
@@ -435,7 +432,7 @@ export default function RolePermissionsPage() {
                             variant="outline"
                             className="text-sm px-4 py-2 font-bold border-2"
                           >
-                            {selectedInGroup}/{group.data.length}
+                            {selectedInGroup}/{group.permissions.length}
                           </Badge>
                           {allGroupSelected && (
                             <Badge className="bg-green-500 text-white">
@@ -465,7 +462,7 @@ export default function RolePermissionsPage() {
                                 }`}
                                 fill="none"
                                 strokeWidth="3"
-                                strokeDasharray={`${(selectedInGroup / group.data.length) * 100}, 100`}
+                                strokeDasharray={`${(selectedInGroup / group.permissions.length) * 100}, 100`}
                                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                               />
                             </svg>
@@ -486,33 +483,26 @@ export default function RolePermissionsPage() {
                   <CollapsibleContent>
                     <CardContent className="pt-0 pb-6">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        {group.data.map((permission) => {
-                          const isChecked = selectedPermissions.includes(permission.id)
-                          const originallyChecked = selectedRole.permissions
-                            .find(p => p.group === group.group)?.data
+                        {group.permissions.map((permission) => {
+                          const isChecked = permission.is_selected || selectedPermissions.includes(permission.id)
+                          const originallyChecked = currentRole.permissions
+                            .find(p => p.group === group.label)?.data
                             .some(p => p.id === permission.id) || false
                           const isModified = isChecked !== originallyChecked
-                          const currentPermission = selectedRole.permissions.find(p => p.group === group.group)?.data
-                            .find(p => p.id === permission.id)
-                          const isEssential = selectedRole.permissions.some(group => 
-                            group.data.some(p => p.id === permission.id && p.is_essential)
-                          )
+                          const isEssential = !!permission.is_essential
                           return (
                             <div 
                               key={permission.id} 
-                              className={`flex items-start space-x-4 p-4 rounded-lg border-2 transition-all duration-200 ${isEssential ? 'cursor-not-allowed' : 'cursor-pointer hover:shadow-sm'} ${
-                                isChecked 
-                                  ? 'bg-muted/50 border-foreground/20' 
-                                  : isEssential ? 'bg-muted/30 border-border' : 'hover:bg-muted/30 border-border'
-                              }`}
+                              className={`flex items-start space-x-4 p-4 rounded-lg border-2 transition-all duration-200 ${isEssential ? 'cursor-not-allowed bg-muted/30 border-border' : 'cursor-pointer hover:shadow-sm hover:bg-muted/30 border-border'} ${
+                                isChecked ? 'bg-muted/50 border-foreground/20' : ''}`}
                               
-                              onClick={() => handlePermissionToggle(permission.id, permission.name, isEssential)}
+                              onClick={() => !isEssential && handlePermissionToggle(permission.id, permission.name, isEssential)}
                             >
                               <div className="relative mt-1">
                                 <Checkbox 
                                   id={permission.id}
                                   checked={isChecked}
-                                  className="w-5 h-5"
+                                  className="w-5 h-5 border-foreground/20"
                                   disabled={isEssential}
                                   onCheckedChange={() => {}} // Handled by parent click
                                 />
@@ -527,17 +517,21 @@ export default function RolePermissionsPage() {
                                       htmlFor={permission.id} 
                                       className={`text-sm font-semibold ${isEssential ? 'cursor-not-allowed' : 'cursor-pointer'} leading-tight text-foreground`}
                                     >
-                                      {permission.name}
+                                      <>
+                                        {permission.name}
+                                        {isEssential && (
+                                          <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-600">
+                                            Essential
+                                          </Badge>
+                                        )}
+                                      </>
+                                      
                                     </Label>
                                     <div className="flex items-center gap-2">
                                       <Badge variant="outline" className="text-xs font-mono bg-muted/50">
                                         {permission.key_code}
                                       </Badge>
-                                      {isEssential && (
-                                        <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-600">
-                                          Essential
-                                        </Badge>
-                                      )}
+
                                       {isChecked && (
                                         <Badge className="text-xs bg-green-500 text-white">
                                           Active
@@ -628,7 +622,7 @@ export default function RolePermissionsPage() {
                   Cancel
                 </Button>
                 <Button 
-                  onClick={handleSave}
+                  onClick={() => handleSave(currentRole.id)}
                   disabled={!hasUnsavedChanges}
                   className={`px-6 h-11 bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 transition-all duration-200 ${
                     hasUnsavedChanges ? 'shadow-lg' : ''
