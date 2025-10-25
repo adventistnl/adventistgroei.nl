@@ -1153,6 +1153,7 @@ export type PermissionModel = {
   description: Scalars['String']['output'];
   group?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
+  is_essential?: Maybe<Scalars['Boolean']['output']>;
   key_code: Scalars['String']['output'];
   name: Scalars['String']['output'];
   resolver_name: Scalars['String']['output'];
@@ -1552,6 +1553,7 @@ export type Role = {
   direct_message_recipients?: Maybe<Array<DirectMessageRecipient>>;
   id: Scalars['ID']['output'];
   is_deleted: Scalars['Boolean']['output'];
+  is_fixed: Scalars['Boolean']['output'];
   key_code: Scalars['String']['output'];
   name: Scalars['String']['output'];
   role_permissions?: Maybe<Array<RolePermission>>;
@@ -1578,6 +1580,7 @@ export type RoleModel = {
   color?: Maybe<Scalars['String']['output']>;
   description: Scalars['String']['output'];
   id: Scalars['String']['output'];
+  is_fixed: Scalars['Boolean']['output'];
   key_code: Scalars['String']['output'];
   name: Scalars['String']['output'];
   permissions: Array<PermissionGroupPermissionsModel>;
@@ -1592,6 +1595,7 @@ export type RolePermission = {
   deleted_by?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   is_deleted: Scalars['Boolean']['output'];
+  is_essential: Scalars['Boolean']['output'];
   permission: Permission;
   permission_id: Scalars['String']['output'];
   role: Role;
@@ -1758,11 +1762,12 @@ export type SubsidyStatusCount = {
 };
 
 export type UpdateRoleInput = {
+  addPermissionIds?: InputMaybe<Array<Scalars['String']['input']>>;
   description?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['String']['input'];
   key_code?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
-  permissionIds?: InputMaybe<Array<Scalars['String']['input']>>;
+  removePermissionIds?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 export type UpdateSubsidyStatusDto = {

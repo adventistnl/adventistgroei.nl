@@ -10,6 +10,7 @@ export const GET_ALL_PERMISSIONS_QUERY = gql`
               description
               key_code
               group
+              is_essential
           }
       }
   }

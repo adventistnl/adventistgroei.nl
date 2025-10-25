@@ -28,13 +28,14 @@ export default function RolePermissionsPage() {
   const params = useParams();
   const roleId = params.roleId as string;
 
-  const { currentRole: selectedRole, currentRoleLoading, currentRoleError, roles, rolesError, rolesLoading, updateRole, updateRoleLoading } = useRoles({ id: roleId });
+  const { currentRole: selectedRole, currentRoleLoading, currentRoleError, rolesError, rolesLoading, updateRole } = useRoles({ id: roleId });
   const { permissions: rawPermissions, permissionsError, permissionsLoading } = usePermissions();
 
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<string[]>(['USER', 'ROLE']);
+  const [initialPermissions, setInitialPermissions] = useState<string[]>([]);
 
   // Normaliza os dados de permissões em grupos
   const permissionGroups = useMemo(() => {
@@ -75,6 +76,7 @@ export default function RolePermissionsPage() {
         });
       });
       setSelectedPermissions(currentPermissionIds);
+      setInitialPermissions(currentPermissionIds);
       setIsLoading(false);
     } else if (roleId) {
       setIsLoading(false);
@@ -89,7 +91,11 @@ export default function RolePermissionsPage() {
     )
   }
 
-  const handlePermissionToggle = (permissionId: string, permissionName: string) => {
+  const handlePermissionToggle = (permissionId: string, permissionName: string, isEssential: boolean) => {
+    if (isEssential) {
+      toast.error(`Essential permissions cannot be removed`);
+      return;
+    }
     const isCurrentlySelected = selectedPermissions.includes(permissionId)
     const newSelected = isCurrentlySelected 
       ? selectedPermissions.filter(id => id !== permissionId)
@@ -134,16 +140,20 @@ export default function RolePermissionsPage() {
   const handleSave = async () => {
     if (!selectedRole) return;
     try {
+      const addPermissionIds = selectedPermissions.filter(id => !initialPermissions.includes(id));
+      const removePermissionIds = initialPermissions.filter(id => !selectedPermissions.includes(id) && !selectedRole.permissions.some(group => group.data.some(p => p.id === id && p.is_essential)));
+
       await updateRole({
         id: selectedRole.id,
-        permissionIds: selectedPermissions,
+        addPermissionIds,
+        removePermissionIds,
       });
       toast.success(t('access.toasts.permissions_updated', 'Permissões atualizadas com sucesso!'), {
         duration: 4000,
         icon: '🎉'
       });
       setHasUnsavedChanges(false);
-      router.push('/access');
+      setInitialPermissions(selectedPermissions); // Update initial permissions after save
     } catch (error) {
       toast.error(t('access.toasts.permissions_update_failed', 'Erro ao atualizar permissões.'));
     }
@@ -359,15 +369,15 @@ export default function RolePermissionsPage() {
 
         {/* Permission Groups */}
         <div className="space-y-6">
-          {permissionGroups.map((group) => {
-            const isExpanded = expandedGroups.includes(group.name)
-            const groupPermissionIds = group.permissions.map(p => p.id)
+          {rawPermissions.map((group) => {
+            const isExpanded = expandedGroups.includes(group.group)
+            const groupPermissionIds = group.data.map(p => p.id)
             const selectedInGroup = selectedPermissions.filter(id => groupPermissionIds.includes(id)).length
-            const allGroupSelected = selectedInGroup === group.permissions.length
-            const someGroupSelected = selectedInGroup > 0 && selectedInGroup < group.permissions.length
+            const allGroupSelected = selectedInGroup === group.data.length
+            const someGroupSelected = selectedInGroup > 0 && selectedInGroup < group.data.length
             return (
-              <Card key={group.name} className="border-2">
-                <Collapsible open={isExpanded} onOpenChange={() => toggleGroup(group.name)}>
+              <Card key={group.group} className="border-2">
+                <Collapsible open={isExpanded} onOpenChange={() => toggleGroup(group.group)}>
                   <CollapsibleTrigger className="w-full">
                     <CardHeader className="hover:bg-muted/30 transition-colors">
                       <div className="flex items-center justify-between">
@@ -382,7 +392,7 @@ export default function RolePermissionsPage() {
                           <div className="text-left space-y-1">
                             <CardTitle className="text-lg flex items-center gap-3">
                               <span className="text-foreground">
-                                {t(`access.roles.permissions.groups.${group.name}`, { defaultValue: group.label })}
+                                {t(`access.roles.permissions.groups.${group.group}`, { defaultValue: group.group })}
                               </span>
                               <div className="flex gap-1">
                                 {!allGroupSelected && (
@@ -392,7 +402,7 @@ export default function RolePermissionsPage() {
                                     className="h-7 px-3 text-xs hover:bg-muted"
                                     onClick={(e) => {
                                       e.stopPropagation()
-                                      handleGroupSelect(groupPermissionIds, group.label)
+                                      handleGroupSelect(groupPermissionIds, group.group)
                                     }}
                                   >
                                     Select All
@@ -405,7 +415,7 @@ export default function RolePermissionsPage() {
                                     className="h-7 px-3 text-xs hover:bg-muted"
                                     onClick={(e) => {
                                       e.stopPropagation()
-                                      handleGroupClear(groupPermissionIds, group.label)
+                                      handleGroupClear(groupPermissionIds, group.group)
                                     }}
                                   >
                                     Clear
@@ -413,11 +423,11 @@ export default function RolePermissionsPage() {
                                 )}
                               </div>
                             </CardTitle>
-                            <CardDescription className="text-sm">
-                              {t(`access.roles.permissions.group_descriptions.${group.name}`, { 
+                            {/* <CardDescription className="text-sm">
+                              {t(`access.roles.permissions.group_descriptions.${group.group}`, { 
                                 defaultValue: group.description 
                               })}
-                            </CardDescription>
+                            </CardDescription> */}
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -425,7 +435,7 @@ export default function RolePermissionsPage() {
                             variant="outline"
                             className="text-sm px-4 py-2 font-bold border-2"
                           >
-                            {selectedInGroup}/{group.permissions.length}
+                            {selectedInGroup}/{group.data.length}
                           </Badge>
                           {allGroupSelected && (
                             <Badge className="bg-green-500 text-white">
@@ -455,7 +465,7 @@ export default function RolePermissionsPage() {
                                 }`}
                                 fill="none"
                                 strokeWidth="3"
-                                strokeDasharray={`${(selectedInGroup / group.permissions.length) * 100}, 100`}
+                                strokeDasharray={`${(selectedInGroup / group.data.length) * 100}, 100`}
                                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                               />
                             </svg>
@@ -476,27 +486,34 @@ export default function RolePermissionsPage() {
                   <CollapsibleContent>
                     <CardContent className="pt-0 pb-6">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        {group.permissions.map((permission) => {
+                        {group.data.map((permission) => {
                           const isChecked = selectedPermissions.includes(permission.id)
                           const originallyChecked = selectedRole.permissions
-                            .find(p => p.group === group.name)?.data
+                            .find(p => p.group === group.group)?.data
                             .some(p => p.id === permission.id) || false
                           const isModified = isChecked !== originallyChecked
+                          const currentPermission = selectedRole.permissions.find(p => p.group === group.group)?.data
+                            .find(p => p.id === permission.id)
+                          const isEssential = selectedRole.permissions.some(group => 
+                            group.data.some(p => p.id === permission.id && p.is_essential)
+                          )
                           return (
                             <div 
                               key={permission.id} 
-                              className={`flex items-start space-x-4 p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer hover:shadow-sm ${
+                              className={`flex items-start space-x-4 p-4 rounded-lg border-2 transition-all duration-200 ${isEssential ? 'cursor-not-allowed' : 'cursor-pointer hover:shadow-sm'} ${
                                 isChecked 
                                   ? 'bg-muted/50 border-foreground/20' 
-                                  : 'hover:bg-muted/30 border-border'
+                                  : isEssential ? 'bg-muted/30 border-border' : 'hover:bg-muted/30 border-border'
                               }`}
-                              onClick={() => handlePermissionToggle(permission.id, permission.name)}
+                              
+                              onClick={() => handlePermissionToggle(permission.id, permission.name, isEssential)}
                             >
                               <div className="relative mt-1">
                                 <Checkbox 
                                   id={permission.id}
                                   checked={isChecked}
                                   className="w-5 h-5"
+                                  disabled={isEssential}
                                   onCheckedChange={() => {}} // Handled by parent click
                                 />
                                 {isModified && (
@@ -508,7 +525,7 @@ export default function RolePermissionsPage() {
                                   <div className="space-y-1">
                                     <Label 
                                       htmlFor={permission.id} 
-                                      className="text-sm font-semibold cursor-pointer leading-tight text-foreground"
+                                      className={`text-sm font-semibold ${isEssential ? 'cursor-not-allowed' : 'cursor-pointer'} leading-tight text-foreground`}
                                     >
                                       {permission.name}
                                     </Label>
@@ -516,6 +533,11 @@ export default function RolePermissionsPage() {
                                       <Badge variant="outline" className="text-xs font-mono bg-muted/50">
                                         {permission.key_code}
                                       </Badge>
+                                      {isEssential && (
+                                        <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-600">
+                                          Essential
+                                        </Badge>
+                                      )}
                                       {isChecked && (
                                         <Badge className="text-xs bg-green-500 text-white">
                                           Active
