@@ -21,6 +21,7 @@ export interface Role_role_permissions_data {
   key_code: string;
   group: string | null;
   is_essential: boolean | null;
+  is_selected: boolean | null;
 }
 
 export interface Role_role_permissions {

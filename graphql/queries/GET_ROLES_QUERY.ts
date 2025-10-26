@@ -50,6 +50,7 @@ export const GET_ROLE_BY_ID_QUERY = gql`
                   key_code
                   group
                   is_essential
+                  is_selected
               }
           }
       }

@@ -1154,6 +1154,7 @@ export type PermissionModel = {
   group?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
   is_essential?: Maybe<Scalars['Boolean']['output']>;
+  is_selected?: Maybe<Scalars['Boolean']['output']>;
   key_code: Scalars['String']['output'];
   name: Scalars['String']['output'];
   resolver_name: Scalars['String']['output'];
