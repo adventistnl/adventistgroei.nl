@@ -792,7 +792,8 @@ const resources = {
             description: "Description",
             permissions_count: "Permissions",
             users_count: "Users",
-            actions: "Actions"
+            actions: "Actions",
+            type: "Type"
           },
           actions: {
             create_role: "Create Role",
@@ -2209,7 +2210,8 @@ const resources = {
             description: "Beschrijving",
             permissions_count: "Machtigingen",
             users_count: "Gebruikers",
-            actions: "Acties"
+            actions: "Acties",
+            type: "Type"
           },
           actions: {
             create_role: "Rol Aanmaken",

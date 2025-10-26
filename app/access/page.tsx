@@ -238,6 +238,18 @@ export default function AccessManagementPage() {
       },
     },
     {
+      id: "is_fixed",
+      header: t('access.roles.table.type'),
+      cell: ({ row }) => {
+        const isFixed = row.original.is_fixed
+        return (
+          <Badge variant="secondary">
+            {isFixed ? 'Fixed' : 'Customized'}
+          </Badge>
+        )
+      },
+    },
+    {
       id: "actions",
       header: t('access.roles.table.actions'),
       cell: ({ row }) => {
@@ -250,15 +262,17 @@ export default function AccessManagementPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {!role.is_fixed && (
                 <DropdownMenuItem
                   onClick={() => {
                   setSelectedRoleForEdit(role)
                   setIsEditRoleOpen(true)
                 }}
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                {t('access.roles.actions.edit_role')}
-              </DropdownMenuItem>
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  {t('access.roles.actions.edit_role')}
+                </DropdownMenuItem>
+              )}
               <WithPermission requiredPermissions={[PermissionResolverName.UpdateRole]}>
                 <DropdownMenuItem
                   onClick={() => handleEditPermissions(role)}
@@ -267,18 +281,20 @@ export default function AccessManagementPage() {
                   {t('access.roles.actions.edit_permissions')}
                 </DropdownMenuItem>
               </WithPermission>
-              <WithPermission requiredPermissions={[PermissionResolverName.DeleteRole]}>
-                <DropdownMenuItem
-                    className="text-red-600"
-                    onClick={() => {
-                      setSelectedRoleForDelete(role)
-                      setIsDeleteRoleOpen(true)
-                    }}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    {t('access.roles.actions.delete_role')}
-                  </DropdownMenuItem>
-              </WithPermission>
+              {!role.is_fixed && (
+                <WithPermission requiredPermissions={[PermissionResolverName.DeleteRole]}>
+                  <DropdownMenuItem
+                      className="text-red-600"
+                      onClick={() => {
+                        setSelectedRoleForDelete(role)
+                        setIsDeleteRoleOpen(true)
+                      }}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {t('access.roles.actions.delete_role')}
+                    </DropdownMenuItem>
+                </WithPermission>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         )
