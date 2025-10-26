@@ -35,7 +35,7 @@ export default function RolePermissionsPage() {
 
   // const { currentRole, currentRoleLoading, currentRoleError, rolesError, rolesLoading, updateRole } = useRoles({ id: roleId });
   const { data: currentRoleData, loading: currentRoleLoading, error: currentRoleError, refetch: refetchCurrentRole } = useGetRoleByIdQuery({ id: roleId });
-  const [useUpdateRoleMutate, { data: updateRoleData, error: updateRoleError, loading: updateRoleLoading }] = useMutation<UpdateRole, UpdateRoleVariables>(UPDATE_ROLE_MUTATION);
+  const [useUpdateRoleMutate] = useMutation<UpdateRole, UpdateRoleVariables>(UPDATE_ROLE_MUTATION);
   const updateRole = async (variables: UpdateRoleVariables) => {
     await useUpdateRoleMutate({ variables });
     await refetchCurrentRole();
@@ -49,8 +49,6 @@ export default function RolePermissionsPage() {
   const [addPermissions, setAddPermissions] = useState<string[]>([]);
   const [removePermissions, setRemovePermissions] = useState<string[]>([]);
 
-  // Normaliza os dados de permissões em grupos
-  // Normaliza os dados de permissões em grupos a partir da fonte global `rawPermissions`.
   const permissionGroups = useMemo(() => {
     if (!currentRole?.permissions) return [];
 
@@ -68,7 +66,6 @@ export default function RolePermissionsPage() {
     });
   }, [currentRole, selectedPermissions]);
 
-  // Lista de todas as permissões disponíveis (flat) — agora reflete o total global
   const permissions = useMemo(() => {
     return permissionGroups.flatMap((group) => group.permissions);
   }, [permissionGroups]);
@@ -86,8 +83,6 @@ export default function RolePermissionsPage() {
     { name: currentRole?.name || "Role Permissions" }
   ], [currentRole?.name]);
 
-
-
   usePageTitle({
     title: `${currentRole?.name || 'Role'} Permissions`,
     breadcrumbs
@@ -100,8 +95,7 @@ export default function RolePermissionsPage() {
         : [...prev, groupName]
     )
   }
-  console.log("addPermissions", addPermissions);
-  console.log("removePermissions", removePermissions);
+
   const handlePermissionToggle = (permissionId: string, permissionName: string, isEssential: boolean, checked: boolean) => {
     if (isEssential) {
       toast.error(`Essential permissions cannot be removed`);
@@ -136,7 +130,6 @@ export default function RolePermissionsPage() {
   }
 
   const handleClearAll = () => {
-    // Preserve essential permissions when clearing all
     const essentialIds = permissions.filter(p => p.is_essential).map(p => p.id)
     setSelectedPermissions(essentialIds)
     setHasUnsavedChanges(true)
@@ -155,7 +148,6 @@ export default function RolePermissionsPage() {
   }
 
   const handleGroupClear = (groupPermissionIds: string[], groupName: string) => {
-    // Do not remove essential permissions
     const essentialIds = permissions.filter(p => p.is_essential).map(p => p.id)
     const removable = groupPermissionIds.filter(id => !essentialIds.includes(id))
     const newSelected = selectedPermissions.filter(id => !removable.includes(id))
@@ -172,15 +164,7 @@ export default function RolePermissionsPage() {
 
   const handleSave = async (roleId: string) => {
     try {
-
-      // Compute diffs between current role permissions and selectedPermissions
-      // const originalPermissionIds: string[] = currentRole?.permissions.flatMap(p => p.data.map(d => d.id)) || [];
       const essentialPermissionIds: string[] = permissions.filter(p => p.is_essential).map(p => p.id) || [];
-
-      // const addPermissionIds = selectedPermissions.filter(id => !originalPermissionIds.includes(id));
-      // const removePermissionIds = originalPermissionIds.filter(id => !selectedPermissions.includes(id));
-
-      // Ensure we do not attempt to remove essential permissions
       const filteredRemovePermissionIds = removePermissions.filter(id => !essentialPermissionIds.includes(id));
       const preventedRemovals = removePermissions.length - filteredRemovePermissionIds.length;
       if (preventedRemovals > 0) {
@@ -236,8 +220,6 @@ export default function RolePermissionsPage() {
       </AppLayout>
     );
   }
-
-
 
   if (!currentRole || currentRoleError) {
     return (
@@ -476,11 +458,6 @@ export default function RolePermissionsPage() {
                                   )}
                                 </div>
                               </CardTitle>
-                              {/* <CardDescription className="text-sm">
-                                {t(`access.roles.permissions.group_descriptions.${group.group}`, { 
-                                  defaultValue: group.description || 'No description available.' 
-                                })}
-                              </CardDescription> */}
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
@@ -540,10 +517,7 @@ export default function RolePermissionsPage() {
                       <CardContent className="pt-0 pb-6">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                           {group.data.map((permission) => {
-                            // A permissão é considerada marcada se vier marcada do backend
-                            // (`permission.is_selected`) ou se estiver no estado local `selectedPermissions`.
-                            const isChecked = !!permission.is_selected || selectedPermissions.includes(permission.id)
-                            // Verifica se originalmente (na role carregada) a permissão estava marcada.
+                            const isChecked = selectedPermissions.includes(permission.id)
                             const originallyChecked = currentRole.permissions
                               .find(p => p.group === group.group)?.data
                               .some(p => p.id === permission.id && p.is_selected) || false
