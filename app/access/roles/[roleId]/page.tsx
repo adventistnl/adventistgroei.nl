@@ -48,6 +48,7 @@ export default function RolePermissionsPage() {
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
   const [addPermissions, setAddPermissions] = useState<string[]>([]);
   const [removePermissions, setRemovePermissions] = useState<string[]>([]);
+  const [isExpanded, setIsExpanded] = useState(false)
 
   const permissionGroups = useMemo(() => {
     if (!currentRole?.permissions) return [];
@@ -198,12 +199,15 @@ export default function RolePermissionsPage() {
   }
 
   useEffect(() => {
-    const groupKeys = currentRole?.permissions.map(p => p.group) || [];
-    const permissionsId = currentRole?.permissions
-      .flatMap(p => p.data.filter(d => d.is_selected).map(d => d.id)) || [];
+    const groupKeys = (currentRole?.permissions
+      .flatMap(p => p.data.filter(d => d.is_selected).map(d => d.group)) || [])
+      .filter((g): g is string => typeof g === 'string' && g !== null);
+    const permissionsId = (currentRole?.permissions
+      .flatMap(p => p.data.filter(d => d.is_selected).map(d => d.id)) || [])
+      .filter((id): id is string => typeof id === 'string' && id !== null);
     setExpandedGroups(groupKeys);
     setSelectedPermissions(permissionsId);
-  }, [currentRole])
+  }, [currentRole]);
 
   if (currentRoleLoading) {
     return (
@@ -226,7 +230,7 @@ export default function RolePermissionsPage() {
       <AppLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <Card className="w-full max-w-md">
-            <CardContent className="p-8 text-center">
+            <CardContent className="!p-8 text-center">
               <AlertTriangle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <h2 className="text-xl font-semibold mb-2">Role Not Found</h2>
               <p className="text-muted-foreground mb-4">
@@ -272,8 +276,8 @@ export default function RolePermissionsPage() {
           </div>
 
           {/* Role Information Card */}
-          <Card className="border-2">
-            <CardHeader className="pb-6">
+          <Card className="border-2 !p-2">
+            <CardHeader className="!p-2">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
                   <div className="relative">
@@ -317,7 +321,7 @@ export default function RolePermissionsPage() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="!p-1 !px-1">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center p-3 bg-muted/50 rounded-lg border">
                   <div className="text-lg font-bold text-foreground">
@@ -356,8 +360,8 @@ export default function RolePermissionsPage() {
           </Card>
 
           {/* Global Actions */}
-          <Card>
-            <CardContent className="p-6">
+          <Card className="!p-2">
+            <CardContent className="!p-1 !px-1">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="space-y-2">
                   <h4 className="text-lg font-semibold flex items-center gap-2">
@@ -411,10 +415,10 @@ export default function RolePermissionsPage() {
               const allGroupSelected = selectedInGroup === group.data.length
               const someGroupSelected = selectedInGroup > 0 && selectedInGroup < group.data.length
               return (
-                <Card key={group.group} className="border-2">
+                <Card key={group.group} className="border-2 !p-2">
                   <Collapsible open={isExpanded} onOpenChange={() => toggleGroup(group.group)}>
                     <CollapsibleTrigger className="w-full">
-                      <CardHeader className="hover:bg-muted/30 transition-colors">
+                      <CardHeader className="hover:bg-muted/30 transition-colors !p-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center">
@@ -514,7 +518,7 @@ export default function RolePermissionsPage() {
                       </CardHeader>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <CardContent className="pt-0 pb-6">
+                      <CardContent className="!p-1 !px-1">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                           {group.data.map((permission) => {
                             const isChecked = selectedPermissions.includes(permission.id)
@@ -554,7 +558,6 @@ export default function RolePermissionsPage() {
                                   <div className="flex items-start justify-between gap-2">
                                     <div className="space-y-1">
                                       <Label 
-                                        htmlFor={permission.id} 
                                         className={`text-sm font-semibold ${isEssential ? 'cursor-not-allowed' : 'cursor-pointer'} leading-tight text-foreground`}
                                       >
                                         <>
@@ -607,9 +610,9 @@ export default function RolePermissionsPage() {
           </div>
 
           {/* Action Buttons */}
-          <Card className={`sticky bottom-4 border-2 ${hasUnsavedChanges ? 'border-yellow-200' : 'border-border'}`}>
-            <CardContent className="p-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <Card className={`sticky bottom-4 border-2 !p-2 ${hasUnsavedChanges ? 'border-yellow-200' : 'border-border'}`}>
+            <CardContent className="!p-1">
+              <div className="flex items-end justify-between gap-4">
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
                     <div className={`w-3 h-3 rounded-full ${
@@ -635,44 +638,54 @@ export default function RolePermissionsPage() {
                       </p>
                     </div>
                   )}
-                  <div className="flex flex-wrap gap-2">
-                    {permissionGroups?.map((group) => {
-                      const groupPermissionIds = group.permissions.map(p => p.id)
-                      const selectedInGroup = selectedPermissions.filter(id => groupPermissionIds.includes(id)).length
-                      const percentage = Math.round((selectedInGroup / group.permissions.length) * 100)
-                      return (
-                        <Badge 
-                          key={group.name}
-                          variant={selectedInGroup > 0 ? "default" : "outline"}
-                          className="text-xs"
-                        >
-                          {group.name}: {selectedInGroup}/{group.permissions.length} ({percentage}%)
-                        </Badge>
-                      )
-                    })}
-                  </div>
+                  <Card className="!p-1">
+                    <CardContent className="flex flex-wrap gap-2 p-1">
+                      <Collapsible onOpenChange={() => setIsExpanded(prev => !prev)}>
+                        <CollapsibleTrigger  className="text-sm font-medium text-primary cursor-pointer flex items-center gap-1">
+                          { isExpanded ?
+                            <ChevronDown className="w-4 h-4 transition-transform duration-200" data-state-open="rotate-90" />
+                            :
+                            <ChevronRight className="w-4 h-4 transition-transform duration-200" data-state-open="rotate-90" />
+                          }
+                          Coverage Details
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="p-2 flex flex-wrap gap-1.5">
+                          {permissionGroups?.map((group) => {
+                            const groupPermissionIds = group.permissions.map(p => p.id);
+                            const selectedInGroup = selectedPermissions.filter(id => groupPermissionIds.includes(id)).length;
+                            const percentage = group.permissions.length > 0 
+                              ? Math.round((selectedInGroup / group.permissions.length) * 100) 
+                              : 0;
+                            return (
+                              <Badge 
+                                key={group.name}
+                                variant={selectedInGroup > 0 ? "default" : "outline"}
+                                className="text-xs"
+                              >
+                                {group.name}: {selectedInGroup}/{group.permissions.length} ({percentage}%)
+                              </Badge>
+                            );
+                          })}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </CardContent>
+                  </Card>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                   <Button 
-                    variant="outline" 
-                    onClick={handleCancel}
-                    className="px-6 h-11 hover:bg-muted"
-                  >
-                    <X className="w-4 h-4 mr-2" />
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={() => handleSave(currentRole.id)}
+                    onClick={handleSave.bind(null, roleId)} 
                     disabled={!hasUnsavedChanges}
-                    className={`px-6 h-11 bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 transition-all duration-200 ${
-                      hasUnsavedChanges ? 'shadow-lg' : ''
-                    }`}
+                    className="w-full sm:w-auto cursor-pointer"
                   >
                     <Save className="w-4 h-4 mr-2" />
                     Save Changes
-                    {hasUnsavedChanges && (
-                      <div className="ml-2 w-2 h-2 bg-yellow-400 rounded-full animate-ping" />
-                    )}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleCancel}
+                    className="w-full sm:w-auto"
+                  >
+                    Cancel
                   </Button>
                 </div>
               </div>
