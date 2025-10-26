@@ -204,51 +204,77 @@ export default function AccessManagementPage() {
       },
     },
     {
+      id: "is_fixed",
+      header: t('access.roles.table.type'),
+      cell: ({ row }) => {
+        const isFixed = row.original.is_fixed
+        return (
+          <Badge variant="secondary">
+            {userCount} users
+          </Badge>
+        )
+      },
+    },
+    {
+      id: "is_fixed",
+      header: t('access.roles.table.type'),
+      cell: ({ row }) => {
+        const isFixed = row.original.is_fixed
+        return (
+          <Badge variant="secondary">
+            {isFixed ? 'Fixed' : 'Customized'}
+          </Badge>
+        )
+      },
+    },
+    {
       id: "actions",
       header: () => <div className="text-right">{t('access.roles.table.actions')}</div>,
       cell: ({ row }) => {
         const role = row.original
         return (
-          <div className="flex justify-end" data-action-button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {!role.is_fixed && (
                 <DropdownMenuItem
                   onClick={() => {
-                    setSelectedRoleForEdit(role)
-                    setIsEditRoleOpen(true)
-                  }}
+                  setSelectedRoleForEdit(role)
+                  setIsEditRoleOpen(true)
+                }}
                 >
                   <Edit className="mr-2 h-4 w-4" />
                   {t('access.roles.actions.edit_role')}
                 </DropdownMenuItem>
-                <WithPermission requiredPermissions={[PermissionResolverName.UpdateRole]}>
-                  <DropdownMenuItem
-                    onClick={() => handleEditPermissions(role)}
-                  >
-                    <Settings className="mr-2 h-4 w-4" />
-                    {t('access.roles.actions.edit_permissions')}
-                  </DropdownMenuItem>
-                </WithPermission>
+              )}
+              <WithPermission requiredPermissions={[PermissionResolverName.UpdateRole]}>
+                <DropdownMenuItem
+                  onClick={() => handleEditPermissions(role)}
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  {t('access.roles.actions.edit_permissions')}
+                </DropdownMenuItem>
+              </WithPermission>
+              {!role.is_fixed && (
                 <WithPermission requiredPermissions={[PermissionResolverName.DeleteRole]}>
                   <DropdownMenuItem
-                    className="text-red-600"
-                    onClick={() => {
-                      setSelectedRoleForDelete(role)
-                      setIsDeleteRoleOpen(true)
-                    }}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    {t('access.roles.actions.delete_role')}
-                  </DropdownMenuItem>
+                      className="text-red-600"
+                      onClick={() => {
+                        setSelectedRoleForDelete(role)
+                        setIsDeleteRoleOpen(true)
+                      }}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {t('access.roles.actions.delete_role')}
+                    </DropdownMenuItem>
                 </WithPermission>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )
       },
     },
