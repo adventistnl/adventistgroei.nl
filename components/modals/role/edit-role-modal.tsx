@@ -14,6 +14,9 @@ import toast from "react-hot-toast"
 import { useRoles } from "@/hooks/use-roles"
 import { User } from "@/data/accessData"
 import { Roles_roles } from "@/types/Roles"
+import { useMutation } from "@apollo/client/react"
+import { UpdateRole, UpdateRoleVariables } from "@/types/UpdateRole"
+import { UPDATE_ROLE_MUTATION } from "@/graphql/mutations/ROLE_MUTATIONS"
 
 export interface EditRoleModalProps {
   isOpen: boolean
@@ -47,8 +50,14 @@ export function EditRoleModal({
     description: ''
   })
   // Hook para mutation real
-  const { updateRole, updateRoleLoading } = useRoles({ id: role?.id })
-  const isLoading = updateRoleLoading
+  // const { updateRole, updateRoleLoading } = useRoles({ id: role?.id })
+  const [useUpdateRoleMutate, {loading}] = useMutation<UpdateRole, UpdateRoleVariables>(UPDATE_ROLE_MUTATION);
+  const updateRole = async (variables: UpdateRoleVariables) => {
+    await useUpdateRoleMutate({ variables });
+    // await refetchCurrentRole();
+  }
+
+  const isLoading = loading
 
   // Update form when role changes
   useEffect(() => {

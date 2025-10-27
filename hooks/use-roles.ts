@@ -13,11 +13,11 @@ import { DeleteRole, DeleteRoleVariables } from "@/types/DeleteRole";
 
 interface iUserRoles {
   roles: Roles_roles[];
-  currentRole?: Role_role | null;
+  // currentRole?: Role_role | null;
   rolesLoading: boolean;
   rolesError: ErrorLike | undefined;
-  currentRoleLoading: boolean;
-  currentRoleError: ErrorLike | undefined;
+  // currentRoleLoading: boolean;
+  // currentRoleError: ErrorLike | undefined;
   updateRole: (variables: UpdateRoleVariables) => Promise<void>;
   updateRoleData?: UpdateRole | null;
   updateRoleError?: ErrorLike;
@@ -33,9 +33,9 @@ interface iUserRoles {
   deleteRoleLoading: boolean;
 }
 
-export function useRoles({ id }: { id?: string }): iUserRoles {
+export function useRoles(): iUserRoles {
   const { data: dataRoles, loading: rolesLoading, error: rolesError, refetch: refetchAllRoles } = useGetAllRolesQuery();
-  const { data: dataRole, loading: currentRoleLoading, error: currentRoleError, refetch: refetchCurrentRole } = useGetRoleByIdQuery({ id });
+  // const { data: dataRole, loading: currentRoleLoading, error: currentRoleError, refetch: refetchCurrentRole } = useGetRoleByIdQuery({ id });
 
   const [useUpdateRoleMutate, { data: updateRoleData, error: updateRoleError, loading: updateRoleLoading }] = useMutation<UpdateRole, UpdateRoleVariables>(UPDATE_ROLE_MUTATION);
   const [useCreateRoleMutate, { data: createRoleData, error: createRoleError, loading: createRoleLoading }] = useMutation<CreateRole, CreateRoleInput>(CREATE_ROLE_MUTATION);
@@ -53,13 +53,13 @@ export function useRoles({ id }: { id?: string }): iUserRoles {
     roles,
     rolesLoading,
     rolesError,
-    currentRole: dataRole ? dataRole.role : undefined,
-    currentRoleError,
-    currentRoleLoading,
+    // currentRole: dataRole ? dataRole.role : undefined,
+    // currentRoleError,
+    // currentRoleLoading,
     updateRole: async (variables: UpdateRoleVariables) => {
       await useUpdateRoleMutate({ variables });
       await refetchAllRoles();
-      await refetchCurrentRole();
+      // await refetchCurrentRole();
     },
     updateRoleData,
     updateRoleError,
@@ -68,7 +68,7 @@ export function useRoles({ id }: { id?: string }): iUserRoles {
     createRole: async (variables: CreateRoleInput) => {
       await useCreateRoleMutate({ variables });
       await refetchAllRoles();
-      await refetchCurrentRole();
+      // await refetchCurrentRole();
     },
     createRoleData,
     createRoleError,
@@ -76,7 +76,7 @@ export function useRoles({ id }: { id?: string }): iUserRoles {
     deleteRole: async (variables: DeleteRoleVariables) => {
       await useDeleteRoleMutate({ variables });
       await refetchAllRoles();
-      await refetchCurrentRole();
+      // await refetchCurrentRole();
     },
     deleteRoleData,
     deleteRoleError,

@@ -100,7 +100,7 @@ export default function UsersPage() {
   const { t } = useTranslation()
   const router = useRouter()
   const { currentInstitutionData, institutions} = useInstitution()
-  const { roles } = useRoles({}); // Obtém os roles através do hook
+  const { roles } = useRoles(); // Obtém os roles através do hook
   const languageOptions = useLanguagePreferences(); // Usando o novo hook
 
   // Substitui os dados mockados por currentInstitutionData
