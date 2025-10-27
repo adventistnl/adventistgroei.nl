@@ -39,7 +39,7 @@ const generateKeyCode = (name: string): string => {
 
 export function CreateRoleModal({ isOpen, onOpenChange, onSuccess }: CreateRoleModalProps) {
   const { t } = useTranslation()
-  const { createRole, createRoleLoading } = useRoles({})
+  const { createRole, createRoleLoading } = useRoles()
   const [roleForm, setRoleForm] = useState<RoleFormData>({
     name: '',
     key_code: '',

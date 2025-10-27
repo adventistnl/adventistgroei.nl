@@ -30,36 +30,39 @@ const chartColors = ['#158f93', '#4c39d5'];
 
 export function useAccessKPI() {
   // Hooks que conectam à API
-  const { roles } = useRoles({});
+  const { roles } = useRoles();
   const { permissions } = usePermissions();
 
+  // Validar dados antes de processá-los
+  const validRoles = Array.isArray(roles) ? roles : [];
+  const validPermissions = Array.isArray(permissions) ? permissions : [];
+
   return useMemo<IAccessKPIs>(() => {
-    const totalUsers = Array.isArray(roles) ? roles.flatMap(r => r.users).length : 0;
-    const totalRoles = Array.isArray(roles) ? roles.length : 0;
-    const totalPermissions = Array.isArray(permissions) ? permissions.flatMap(pe => pe.data).length : 0;
-    const activeUsers = Array.isArray(roles)
-      ? roles.flatMap(r =>
-          r.users?.filter(u => u && !u.is_deleted) ?? []
-        ).length
-      : 0;
-    const adminUsers = Array.isArray(roles) ? roles.find(u => u.key_code === 'ADMIN')?.users?.length ?? 0 : 0;
+    const totalUsers = validRoles.flatMap(r => r.users).length;
+    const totalRoles = validRoles.length;
+    const totalPermissions = validPermissions.flatMap(pe => pe.data).length;
+    const activeUsers = validRoles.flatMap(r =>
+      r.users?.filter(u => u && !u.is_deleted) ?? []
+    ).length;
+    const adminUsers = validRoles.find(u => u.key_code === 'ADMIN')?.users?.length ?? 0;
     const userGrowthRate = 0; // TODO: Implemente userGrowthRate
-    const roleDistribution = roles.map((role, i) => {
+    const roleDistribution = validRoles.map((role, i) => {
       const userCount = role.users?.length || 0;
       return {
         name: role.name,
         value: userCount,
-        color: role.color || chartColors[i % chartColors.length],
-      }
-    }).filter(item => item.value > 0)
-    const permissionsByGroup = permissions.map((p,i) => {
-      const color = chartColors[i % chartColors.length];
+        color: chartColors[i % chartColors.length],
+      };
+    });
+
+    const permissionsByGroup = validPermissions.map((group, i) => {
+      const permissionCount = group.data.length;
       return {
-        group: p.group,
-        permissions: p.data.length,
-        color
-      }
-    })
+        group: group.group,
+        permissions: permissionCount,
+        color: chartColors[i % chartColors.length],
+      };
+    });
 
     return {
       totalUsers,
@@ -69,7 +72,7 @@ export function useAccessKPI() {
       adminUsers,
       userGrowthRate,
       roleDistribution,
-      permissionsByGroup
+      permissionsByGroup,
     };
-  }, [roles, permissions]);
+  }, [validRoles, validPermissions]);
 }

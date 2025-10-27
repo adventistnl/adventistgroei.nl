@@ -14,9 +14,16 @@ export function useGetRoleByIdQuery(
   variables: Variables,
   options?: useQuery.Options<Role, Variables>
 ) {
+  // Validar se o ID está definido antes de executar a consulta
+  if (!variables.id) {
+    console.warn("useGetRoleByIdQuery chamado sem um ID válido.");
+    return { data: null, loading: false, error: null };
+  }
+
+  console.log("🔍 Executing useGetRoleByIdQuery with variables:", variables);
+
   return useQuery<Role, Variables>(GET_ROLE_BY_ID_QUERY, {
     variables,
-    skip: !variables.id,
     ...options,
   });
 }

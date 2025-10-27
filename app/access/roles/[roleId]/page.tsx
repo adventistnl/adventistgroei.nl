@@ -10,31 +10,32 @@ import { LanguageSelector } from "@/components/language-selector"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { AlertTriangle, ArrowLeft, CheckCircle, X, Shield, Crown, Settings, ChevronDown, ChevronRight, Save, Circle } from "lucide-react"
-import { CardTitle, CardDescription } from "@/components/ui/card"
+import { CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import toast from "react-hot-toast"
-import { useRoles } from "@/hooks/use-roles"
-import { usePermissions } from "@/hooks/use-permissions"
 import { WithPermission } from "@/hocs/with-permission"
-import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
 import { twMerge } from "tailwind-merge"
-import { useGetRoleByIdQuery } from "@/hooks/graphql/use-get-roles-query"
-import { useMutation } from "@apollo/client/react"
+import { Variables } from "@/hooks/graphql/use-get-roles-query"
+import { useMutation, useQuery } from "@apollo/client/react"
 import { UpdateRole, UpdateRoleVariables } from "@/types/UpdateRole"
 import { UPDATE_ROLE_MUTATION } from "@/graphql/mutations/ROLE_MUTATIONS"
+import { GET_ROLE_BY_ID_QUERY } from "@/graphql/queries/GET_ROLES_QUERY"
+import { Role } from "@/types/Role"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
-export default function RolePermissionsPage() {
+function RolePermissionsPage({ roleId }: { roleId: string }) {
   const { t } = useTranslation();
   const router = useRouter();
-  const params = useParams();
-  const roleId = params.roleId as string;
 
-  // const { currentRole, currentRoleLoading, currentRoleError, rolesError, rolesLoading, updateRole } = useRoles({ id: roleId });
-  const { data: currentRoleData, loading: currentRoleLoading, error: currentRoleError, refetch: refetchCurrentRole } = useGetRoleByIdQuery({ id: roleId });
+  const { data: currentRoleData, loading: currentRoleLoading, error: currentRoleError, refetch: refetchCurrentRole } = useQuery<Role, Variables>(GET_ROLE_BY_ID_QUERY, {
+    variables: { id: roleId },
+    skip: !roleId,
+    fetchPolicy: 'no-cache',
+  });
   const [useUpdateRoleMutate] = useMutation<UpdateRole, UpdateRoleVariables>(UPDATE_ROLE_MUTATION);
   const updateRole = async (variables: UpdateRoleVariables) => {
     await useUpdateRoleMutate({ variables });
@@ -124,42 +125,51 @@ export default function RolePermissionsPage() {
   }
 
   const handleSelectAll = () => {
-    const allPermissionIds = permissions.map(p => p.id)
-    setSelectedPermissions(allPermissionIds)
-    setHasUnsavedChanges(true)
-    toast.success(`All ${permissions.length} permissions selected`, { duration: 3000 })
-  }
+    const allPermissionIds = permissions.map(p => p.id);
+    setSelectedPermissions(allPermissionIds);
+    setAddPermissions(allPermissionIds); // Atualiza o estado de permissões a serem adicionadas
+    setRemovePermissions([]); // Limpa as permissões a serem removidas
+    setHasUnsavedChanges(true);
+    toast.success(`All ${permissions.length} permissions selected`, { duration: 3000 });
+  };
 
   const handleClearAll = () => {
-    const essentialIds = permissions.filter(p => p.is_essential).map(p => p.id)
-    setSelectedPermissions(essentialIds)
-    setHasUnsavedChanges(true)
+    const essentialIds = permissions.filter(p => p.is_essential).map(p => p.id);
+    const removableIds = permissions.filter(p => !p.is_essential).map(p => p.id);
+    setSelectedPermissions(essentialIds);
+    setRemovePermissions(removableIds); // Atualiza o estado de permissões a serem removidas
+    setAddPermissions([]); // Limpa as permissões a serem adicionadas
+    setHasUnsavedChanges(true);
     if (essentialIds.length > 0) {
-      toast.success(`Cleared non-essential permissions — preserved ${essentialIds.length} essential permission(s)`, { duration: 2500 })
+      toast.success(`Cleared non-essential permissions — preserved ${essentialIds.length} essential permission(s)`, { duration: 2500 });
     } else {
-      toast.success('All permissions cleared', { duration: 2000 })
+      toast.success('All permissions cleared', { duration: 2000 });
     }
   }
 
   const handleGroupSelect = (groupPermissionIds: string[], groupName: string) => {
-    const newSelected = [...new Set([...selectedPermissions, ...groupPermissionIds])]
-    setSelectedPermissions(newSelected)
-    setHasUnsavedChanges(true)
-    toast.success(`All ${groupName} permissions selected`)
-  }
+    const newSelected = [...new Set([...selectedPermissions, ...groupPermissionIds])];
+    setSelectedPermissions(newSelected);
+    setAddPermissions(prev => [...new Set([...prev, ...groupPermissionIds])]); // Atualiza permissões a serem adicionadas
+    setRemovePermissions(prev => prev.filter(id => !groupPermissionIds.includes(id))); // Remove do estado de remoção
+    setHasUnsavedChanges(true);
+    toast.success(`All ${groupName} permissions selected`);
+  };
 
   const handleGroupClear = (groupPermissionIds: string[], groupName: string) => {
-    const essentialIds = permissions.filter(p => p.is_essential).map(p => p.id)
-    const removable = groupPermissionIds.filter(id => !essentialIds.includes(id))
-    const newSelected = selectedPermissions.filter(id => !removable.includes(id))
-    setSelectedPermissions(newSelected)
-    setHasUnsavedChanges(true)
+    const essentialIds = permissions.filter(p => p.is_essential).map(p => p.id);
+    const removable = groupPermissionIds.filter(id => !essentialIds.includes(id));
+    const newSelected = selectedPermissions.filter(id => !removable.includes(id));
+    setSelectedPermissions(newSelected);
+    setRemovePermissions(prev => [...new Set([...prev, ...removable])]); // Atualiza permissões a serem removidas
+    setAddPermissions(prev => prev.filter(id => !removable.includes(id))); // Remove do estado de adição
+    setHasUnsavedChanges(true);
     if (removable.length === 0) {
-      toast.success(`${groupName} cleared (no non-essential permissions to remove)`)
+      toast.success(`${groupName} cleared (no non-essential permissions to remove)`);
     } else {
-      toast.success(`${groupName} permissions cleared`)
+      toast.success(`${groupName} permissions cleared`);
     }
-  }
+  };
 
   console.log(selectedPermissions);
 
@@ -696,3 +706,5 @@ export default function RolePermissionsPage() {
     </AppLayout>
   );
 }
+
+export default RolePermissionsPage;
