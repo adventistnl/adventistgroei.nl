@@ -6,13 +6,14 @@ import { useCookies } from '@/hooks/use-cookies';
 import { validateToken } from '@/utils/validateToken';
 import { useLoginMutation } from '@/hooks/graphql/use-login-mutation';
 import { User } from '@/types/User';
+import { th } from 'date-fns/locale';
 
 interface AuthContextType {
   user: AuthModel['user'] | null;
   token: string | null;
   permissions: string[]; // Adicionado para armazenar permissões derivadas
   roles: RoleModel['key_code'][]; // Novo campo para armazenar roles
-  login: (email: string, password: string, rememberMe: boolean) => Promise<boolean>;
+  login: (email: string, password: string, rememberMe: boolean) => Promise<boolean | undefined>;
   logout: () => void;
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -74,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [loginMutation] = useLoginMutation();
 
-  const login = async (email: string, password: string, rememberMe: boolean): Promise<boolean> => {
+  const login = async (email: string, password: string, rememberMe: boolean): Promise<boolean | undefined> => {
     setIsLoading(true);
     try {
       const { data } = await loginMutation({ variables: { email, password } });
@@ -97,11 +98,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setRoles(data.login.user.user_roles.map((role) => role.key_code) || []); // Define os roles a partir do login
 
         return true;
+      } else {
+        throw new Error('Login failed');
       }
-      return false;
     } catch (error) {
-      setError(true);
-      return false;
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error('An unknown error occurred during login');
+      } 
     } finally {
       setIsLoading(false);
     }

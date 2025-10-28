@@ -103,19 +103,35 @@ function LoginPageContent() {
     }
 
     try {
-      const success = await login(email, password, rememberMe)
+      await login(email, password, rememberMe)
       
-      if (success) {
-        toast.success(`🎉 ${t.welcomeBack}`, {
-          duration: 3000
-        })
-        // Redirecionar para dashboard após login bem-sucedido
-        router.push('/dashboard')
-      } else {
-        setError(t.invalidCredentials)
-      }
+      toast.success(`🎉 ${t.welcomeBack}`, {
+        duration: 3000
+      })
+      // Redirecionar para dashboard após login bem-sucedido
+      router.push('/dashboard')
     } catch (error) {
-      setError(t.loginError)
+      if (error instanceof Error) {
+        if (error.message === 'User not found') {
+          setError(t.invalidCredentials)
+          return
+        } else if (error.message === 'User has no active roles') {
+          setError(t.noActiveRoles)
+          return
+        } else if (error.message === 'invalid token') {
+          setError(t.loginError)
+          return
+        } else if (error.message === 'Invalid credentials') {
+          setError(t.invalidCredentials)
+          return
+        } else {
+          setError(t.loginError)
+          return
+        }
+      } else {
+        setError(t.loginError)
+        return
+      }
     } finally {
       setIsSubmitting(false)
     }
