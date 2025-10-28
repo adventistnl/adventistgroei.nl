@@ -4,7 +4,7 @@ import { Roles } from "@/types/Roles";
 import { Role } from "@/types/Role";
 
 export function useGetAllRolesQuery(options?: useQuery.Options<Roles>): useQuery.Result<Roles> {
-  return useQuery<Roles>(GET_ALL_ROLES_QUERY, options);
+  return useQuery<Roles>(GET_ALL_ROLES_QUERY, { ...options, fetchPolicy: "no-cache" });
 }
 
 export interface Variables {
@@ -24,6 +24,7 @@ export function useGetRoleByIdQuery(
 
   return useQuery<Role, Variables>(GET_ROLE_BY_ID_QUERY, {
     variables,
+    fetchPolicy: "no-cache",
     ...options,
   });
 }

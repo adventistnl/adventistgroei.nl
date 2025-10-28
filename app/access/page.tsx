@@ -18,7 +18,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { 
-  Users, 
   Plus, 
   MoreHorizontal,
   Edit,
@@ -51,7 +50,7 @@ import { AccessDenied } from "@/components/access/access-denied"
 
 export default function AccessManagementPage() {
   const { t } = useTranslation()
-  const { roles } = useRoles({});
+  const { roles, refetchAllRoles } = useRoles();
   const { permissions } = usePermissions();
 
   const [isLoading, setIsLoading] = useState(true)
@@ -345,6 +344,7 @@ export default function AccessManagementPage() {
 
   // Modal handlers
   const handleCreateRoleSuccess = () => {
+    refetchAllRoles();
     // Refresh data or update state as needed
     // In a real app, you might refetch the roles data
   }
@@ -352,11 +352,13 @@ export default function AccessManagementPage() {
   const handleEditRoleSuccess = () => {
     // Refresh data or update state as needed
     setSelectedRoleForEdit(null)
+    refetchAllRoles();
   }
 
   const handleDeleteRoleSuccess = () => {
     // Refresh data or update state as needed
     setSelectedRoleForDelete(null)
+    refetchAllRoles();
   }
 
   const handleEditPermissions = (role: Role) => {
