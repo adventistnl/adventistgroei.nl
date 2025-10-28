@@ -39,7 +39,8 @@ export const loginTranslations = {
     fillAllFields: "Please fill in all fields.",
     invalidCredentials: "Invalid email or password. Please try again.",
     loginError: "Error signing in. Please try again.",
-    
+    noActiveRoles: "Your account has no active roles. Please contact the administrator.",
+
     // Languages
     languages: {
       en: "English",
@@ -87,7 +88,8 @@ export const loginTranslations = {
     fillAllFields: "Vul alle velden in.",
     invalidCredentials: "Ongeldig e-mailadres of wachtwoord. Probeer opnieuw.",
     loginError: "Fout bij inloggen. Probeer opnieuw.",
-    
+    noActiveRoles: "Uw account heeft geen actieve rollen. Neem contact op met de beheerder.",
+
     // Languages
     languages: {
       en: "English",
@@ -135,6 +137,7 @@ export const loginTranslations = {
     fillAllFields: "Por favor, preencha todos os campos.",
     invalidCredentials: "Email ou senha inválidos. Tente novamente.",
     loginError: "Erro ao fazer login. Tente novamente.",
+    noActiveRoles: "Sua conta não possui funções ativas. Por favor, contate o administrador.",
     
     // Languages
     languages: {

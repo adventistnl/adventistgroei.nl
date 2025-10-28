@@ -329,8 +329,6 @@ export function useRegistration({ translations }: UseRegistrationProps) {
         style: { minWidth: '350px' }
       })
       
-      // Limpar dados salvos após registro bem-sucedido
-      
       // // Redirecionar para login após sucesso
       await login(data.email, data.password, true);
       router.push(`/dashboard`);
@@ -338,8 +336,27 @@ export function useRegistration({ translations }: UseRegistrationProps) {
       return userCreated.createUser || null;  
       
     } catch (error) {
-      console.error("Registration error:", error)
-      toast.error(translations.registrationError, { duration: 5000 })
+      if (error instanceof Error) {
+        if (error.message === 'User not found') {
+          toast.error(translations.invalidCredentials, { duration: 5000 })
+          return
+        } else if (error.message === 'User has no active roles') {
+          toast.error(translations.noActiveRoles, { duration: 5000 })
+          return
+        } else if (error.message === 'invalid token') {
+          toast.error(translations.loginError, { duration: 5000 })
+          return
+        } else if (error.message === 'Invalid credentials') {
+          toast.error(translations.invalidCredentials, { duration: 5000 })
+          return
+        } else {
+          toast.error(translations.registrationError, { duration: 5000 })
+          return
+        }
+      } else {
+        toast.error(translations.registrationError, { duration: 5000 })
+        return
+      }
     } finally {
       setIsSubmitting(false)
     }
