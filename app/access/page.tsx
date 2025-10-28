@@ -41,7 +41,6 @@ import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { CreateRoleModal, EditRoleModal, DeleteRoleModal } from "@/components/modals/role"
 
 // Data
-import { users } from "@/data/accessData"
 import {
   users,
 } from "@/data/accessData"
