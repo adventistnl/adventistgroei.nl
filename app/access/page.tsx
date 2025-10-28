@@ -17,7 +17,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { 
-  Users, 
   Plus, 
   MoreHorizontal,
   Edit,
@@ -26,8 +25,6 @@ import {
   Lock,
   Settings,
   Crown,
-  AlertTriangle,
-  CheckCircle,
   TrendingUp,
   BarChart3,
   Activity
@@ -39,7 +36,6 @@ import "@/lib/i18n"
 import { RoleDistributionChart, PermissionsByGroupChart, UserActivityChart } from "@/components/access/access-charts"
 import { UseTable } from "@/components/ui/use-table"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
-import { AnalyticsGridCarousel } from "@/components/shared/responsive-grid-carousel"
 
 // Role Modals
 import { CreateRoleModal, EditRoleModal, DeleteRoleModal } from "@/components/modals/role"
@@ -47,9 +43,6 @@ import { CreateRoleModal, EditRoleModal, DeleteRoleModal } from "@/components/mo
 // Data
 import {
   users,
-  getRoleDistribution,
-  getPermissionsByGroup,
-  getUserActivityOverTime,
 } from "@/data/accessData"
 import { useRoles } from "@/hooks/use-roles"
 import { Roles_roles as Role } from "@/types/Roles"
@@ -62,7 +55,7 @@ import { AccessDenied } from "@/components/access/access-denied"
 
 export default function AccessManagementPage() {
   const { t } = useTranslation()
-  const { roles } = useRoles({});
+  const { roles, refetchAllRoles } = useRoles();
   const { permissions } = usePermissions();
 
   const [isLoading, setIsLoading] = useState(true)
@@ -74,7 +67,6 @@ export default function AccessManagementPage() {
 
   // KPIs via hook integrado
   const {roleDistribution, permissionsByGroup, ...accessKpiData} = useAccessKPI();
-  // const userActivityData = getUserActivityOverTime()
 
   const breadcrumbs = useMemo(() => [
     { name: "Dashboard", href: "/dashboard" },
@@ -363,6 +355,7 @@ export default function AccessManagementPage() {
 
   // Modal handlers
   const handleCreateRoleSuccess = () => {
+    refetchAllRoles();
     // Refresh data or update state as needed
     // In a real app, you might refetch the roles data
   }
@@ -370,11 +363,13 @@ export default function AccessManagementPage() {
   const handleEditRoleSuccess = () => {
     // Refresh data or update state as needed
     setSelectedRoleForEdit(null)
+    refetchAllRoles();
   }
 
   const handleDeleteRoleSuccess = () => {
     // Refresh data or update state as needed
     setSelectedRoleForDelete(null)
+    refetchAllRoles();
   }
 
   const handleEditPermissions = (role: Role) => {

@@ -36,11 +36,9 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
     skip: !roleId,
     fetchPolicy: 'no-cache',
   });
+  
   const [useUpdateRoleMutate] = useMutation<UpdateRole, UpdateRoleVariables>(UPDATE_ROLE_MUTATION);
-  const updateRole = async (variables: UpdateRoleVariables) => {
-    await useUpdateRoleMutate({ variables });
-    await refetchCurrentRole();
-  }
+
 
   const currentRole = useMemo(() => currentRoleData ? currentRoleData.role : null, [currentRoleData]);
 
@@ -50,6 +48,14 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
   const [addPermissions, setAddPermissions] = useState<string[]>([]);
   const [removePermissions, setRemovePermissions] = useState<string[]>([]);
   const [isExpanded, setIsExpanded] = useState(false)
+
+  const updateRole = async (variables: UpdateRoleVariables) => {
+    await useUpdateRoleMutate({ variables });
+    setHasUnsavedChanges(false);
+    setAddPermissions([]);
+    setRemovePermissions([]);
+    await refetchCurrentRole();
+  }
 
   const permissionGroups = useMemo(() => {
     if (!currentRole?.permissions) return [];
@@ -125,19 +131,19 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
   }
 
   const handleSelectAll = () => {
-    const allPermissionIds = permissions.map(p => p.id);
+    const allPermissionIds = permissions.filter(p => !p.is_essential).map(p => p.id); // Ignora permissões essenciais
     setSelectedPermissions(allPermissionIds);
     setAddPermissions(allPermissionIds); // Atualiza o estado de permissões a serem adicionadas
     setRemovePermissions([]); // Limpa as permissões a serem removidas
     setHasUnsavedChanges(true);
-    toast.success(`All ${permissions.length} permissions selected`, { duration: 3000 });
+    toast.success(`All ${allPermissionIds.length} non-essential permissions selected`, { duration: 3000 });
   };
 
   const handleClearAll = () => {
     const essentialIds = permissions.filter(p => p.is_essential).map(p => p.id);
     const removableIds = permissions.filter(p => !p.is_essential).map(p => p.id);
-    setSelectedPermissions(essentialIds);
-    setRemovePermissions(removableIds); // Atualiza o estado de permissões a serem removidas
+    setSelectedPermissions(essentialIds); // Mantém apenas permissões essenciais
+    setRemovePermissions(removableIds); // Atualiza permissões a serem removidas
     setAddPermissions([]); // Limpa as permissões a serem adicionadas
     setHasUnsavedChanges(true);
     if (essentialIds.length > 0) {
@@ -148,17 +154,18 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
   }
 
   const handleGroupSelect = (groupPermissionIds: string[], groupName: string) => {
-    const newSelected = [...new Set([...selectedPermissions, ...groupPermissionIds])];
+    const nonEssentialGroupIds = groupPermissionIds.filter(id => !permissions.find(p => p.id === id)?.is_essential); // Ignora permissões essenciais
+    const newSelected = [...new Set([...selectedPermissions, ...nonEssentialGroupIds])];
     setSelectedPermissions(newSelected);
-    setAddPermissions(prev => [...new Set([...prev, ...groupPermissionIds])]); // Atualiza permissões a serem adicionadas
-    setRemovePermissions(prev => prev.filter(id => !groupPermissionIds.includes(id))); // Remove do estado de remoção
+    setAddPermissions(prev => [...new Set([...prev, ...nonEssentialGroupIds])]); // Atualiza permissões a serem adicionadas
+    setRemovePermissions(prev => prev.filter(id => !nonEssentialGroupIds.includes(id))); // Remove do estado de remoção
     setHasUnsavedChanges(true);
-    toast.success(`All ${groupName} permissions selected`);
-  };
+    toast.success(`All ${groupName} non-essential permissions selected`);
+  }
 
   const handleGroupClear = (groupPermissionIds: string[], groupName: string) => {
     const essentialIds = permissions.filter(p => p.is_essential).map(p => p.id);
-    const removable = groupPermissionIds.filter(id => !essentialIds.includes(id));
+    const removable = groupPermissionIds.filter(id => !essentialIds.includes(id)); // Ignora permissões essenciais
     const newSelected = selectedPermissions.filter(id => !removable.includes(id));
     setSelectedPermissions(newSelected);
     setRemovePermissions(prev => [...new Set([...prev, ...removable])]); // Atualiza permissões a serem removidas
@@ -167,9 +174,9 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
     if (removable.length === 0) {
       toast.success(`${groupName} cleared (no non-essential permissions to remove)`);
     } else {
-      toast.success(`${groupName} permissions cleared`);
+      toast.success(`${groupName} non-essential permissions cleared`);
     }
-  };
+  }
 
   console.log(selectedPermissions);
 
