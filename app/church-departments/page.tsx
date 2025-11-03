@@ -79,17 +79,8 @@ import { WithPermission } from "@/hocs/with-permission"
 export default function ChurchDepartmentsPage() {
   const { currentInstitutionData, refetchInstitutionById } = useInstitution();
   const churches: ChurchData[] = currentInstitutionData?.churches || [];
-  
-  // Flatten departments from all churches with church information
-  const departments: DepartmentData[] = churches.flatMap(church => 
-    church.departments?.map(department => ({ 
-      ...department, 
-      church_name: church.name,
-      church_id: church.id 
-    } as DepartmentData)) || []
-  );
-  
-  const { t } = useTranslation()
+  const departments: DepartmentData[] = churches.flatMap(church => church.departments?.flatMap(department => ({ ...department, church_name: church.name })) || []);
+  const { i18n } = useTranslation()
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   

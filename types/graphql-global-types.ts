@@ -691,7 +691,10 @@ export type InviteModel = {
 };
 
 export type InviteUserDto = {
+  church_department_id?: InputMaybe<Scalars['String']['input']>;
+  church_id?: InputMaybe<Scalars['String']['input']>;
   email: Scalars['String']['input'];
+  institution_department_id?: InputMaybe<Scalars['String']['input']>;
   institution_id: Scalars['String']['input'];
   inviter_id: Scalars['String']['input'];
   language_preference?: InputMaybe<Scalars['String']['input']>;
@@ -1837,11 +1840,12 @@ export type UserCount = {
 };
 
 export type UserCreateDto = {
-  church_id: Scalars['String']['input'];
+  church_department_id?: InputMaybe<Scalars['String']['input']>;
+  church_id?: InputMaybe<Scalars['String']['input']>;
   contact?: InputMaybe<ContactCreateDto>;
-  department_id: Scalars['String']['input'];
   email: Scalars['String']['input'];
   gender: GenderType;
+  institution_department_id?: InputMaybe<Scalars['String']['input']>;
   institution_id: Scalars['String']['input'];
   invite_token: Scalars['String']['input'];
   language_preference: Scalars['String']['input'];
@@ -1920,8 +1924,11 @@ export type UserWithRoles = {
 
 export type ValidateOutputModel = {
   __typename?: 'ValidateOutputModel';
+  church_department_id?: Maybe<Scalars['String']['output']>;
+  church_id?: Maybe<Scalars['String']['output']>;
   email: Scalars['String']['output'];
   exp: Scalars['Float']['output'];
+  institution_department_id?: Maybe<Scalars['String']['output']>;
   institution_id: Scalars['String']['output'];
   inviter_id: Scalars['String']['output'];
   language_preference?: Maybe<LanguagePreference>;

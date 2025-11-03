@@ -20,8 +20,6 @@ export function useGetRoleByIdQuery(
     return { data: null, loading: false, error: null };
   }
 
-  console.log("🔍 Executing useGetRoleByIdQuery with variables:", variables);
-
   return useQuery<Role, Variables>(GET_ROLE_BY_ID_QUERY, {
     variables,
     fetchPolicy: "no-cache",

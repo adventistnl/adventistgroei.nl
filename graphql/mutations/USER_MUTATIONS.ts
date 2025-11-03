@@ -7,8 +7,9 @@ export const CREATE_USER = gql`
     $password: String!
     $language_preference: String!
     $institution_id: String!
-    $department_id: String!
-    $church_id: String!
+    $institution_department_id: String
+    $church_department_id: String
+    $church_id: String
     $roles: [String!]!
     $gender: GenderType!
     $invite_token: String!
@@ -20,7 +21,8 @@ export const CREATE_USER = gql`
         password: $password
         language_preference: $language_preference
         institution_id: $institution_id
-        department_id: $department_id
+        church_department_id: $church_department_id
+        institution_department_id: $institution_department_id
         church_id: $church_id
         roles: $roles
         gender: $gender

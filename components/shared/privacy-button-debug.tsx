@@ -64,18 +64,6 @@ export function PrivacyButtonDebugPanel() {
     return () => clearInterval(interval)
   }, [isOpen])
 
-  // Log no console quando o painel abre
-  React.useEffect(() => {
-    if (isOpen) {
-      console.group('🔍 Privacy Button Debug Panel Opened')
-      console.log('📋 Privacy State:', privacyState)
-      console.log('👤 User Role:', userRole)
-      console.log('📦 Registered Components:', getRegisteredComponents())
-      console.log('🔎 Looking for button with class: .privacy-toggle-button-header')
-      console.groupEnd()
-    }
-  }, [isOpen, privacyState, userRole, getRegisteredComponents])
-
   // Apenas em desenvolvimento
   if (process.env.NODE_ENV === 'production') {
     return null

@@ -178,8 +178,6 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
     }
   }
 
-  console.log(selectedPermissions);
-
   const handleSave = async (roleId: string) => {
     try {
       const essentialPermissionIds: string[] = permissions.filter(p => p.is_essential).map(p => p.id) || [];

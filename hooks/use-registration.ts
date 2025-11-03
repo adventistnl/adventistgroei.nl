@@ -13,15 +13,14 @@ import { GenderType } from "@/types/globalTypes"
 import { useValidateInviteTokenMutation } from "./graphql/use-invite-user-mutation"
 import { ValidateInviteToken } from "@/types/ValidateInviteToken"
 import { LanguagePreference } from "@/types/graphql-global-types"
-
+import { registerTranslations } from "@/lib/translations/register"
+import { loginTranslations } from "@/lib/translations/login"
 // Schema de validação para o formulário de registro
 const registrationSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
   confirmPassword: z.string().min(6, "Confirmação de senha é obrigatória"),
-  department_id: z.string().min(1, "Departamento é obrigatório"),
-  church_id: z.string().min(1, "Igreja é obrigatória"),
   gender: z.nativeEnum(GenderType, { required_error: "Gênero é obrigatório" }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Senhas não coincidem",
@@ -40,19 +39,23 @@ export interface InviteData {
 }
 
 interface UseRegistrationProps {
-  translations: any
+  language: string
 }
 
 /**
  * Hook customizado para gerenciar toda a lógica de registro
  * Centraliza validação de convites, formulário e submissão
  */
-export function useRegistration({ translations }: UseRegistrationProps) {
+export function useRegistration({ language }: UseRegistrationProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [ createUser ] = useCreateUserMutation();
   const [ validateInviteToken ] = useValidateInviteTokenMutation();
   const {login} = useAuth();
+  // Busca o objeto de traduções correto
+  // @ts-ignore
+  const translations = registerTranslations[language as keyof typeof registerTranslations] || registerTranslations.en;
+  const LTranslations = loginTranslations[language as keyof typeof loginTranslations] || loginTranslations.en;
   // Estados do componente
   const [inviteData, setInviteData] = useState< ValidateInviteToken['validateInviteToken'] | null>(null)
   const [isValidInvite, setIsValidInvite] = useState<boolean | null>(null)
@@ -109,13 +112,10 @@ export function useRegistration({ translations }: UseRegistrationProps) {
       email: "",
       password: "",
       confirmPassword: "",
-      department_id: "",
-      church_id: "",
       gender: undefined, // Corrige o valor padrão para ser compatível com GenderType
       ...loadSavedData(), // Carrega dados salvos
     },
   })
-  const selectedDepartment = form.watch("department_id")
 
   /**
    * Animação de loading inicial
@@ -138,7 +138,7 @@ export function useRegistration({ translations }: UseRegistrationProps) {
     const subscription = form.watch((data) => {
       // Debounce para evitar muitas operações de escrita
       const timeoutId = setTimeout(() => {
-        if (data.name || data.email || data.department_id || data.church_id) {
+        if (data.name || data.email) {
           saveToLocalStorage(data)
         }
       }, 500) // Salva após 500ms de inatividade
@@ -219,18 +219,10 @@ export function useRegistration({ translations }: UseRegistrationProps) {
   }, [isTokenValidated, isValidInvite, inviteData, form])
 
   /**
-   * Limpar igreja quando departamento muda
-   * Garante consistência na seleção
-   */
-  useEffect(() => {
-    form.setValue("church_id", "")
-  }, [selectedDepartment, form])
-
-  /**
    * Validação do Step 1 (Informações Pessoais)
    */
   const validateStep1 = async (): Promise<boolean> => {
-    const isValid = await form.trigger(['name', 'email'])
+    const isValid = await form.trigger(['name', 'email', 'gender'])
     if (!isValid) {
       toast.error(translations.fillRequiredFields, { duration: 4000 })
       return false
@@ -270,7 +262,7 @@ export function useRegistration({ translations }: UseRegistrationProps) {
    * Validação do Step 3 (Dados Institucionais)
    */
   const validateStep3 = async (): Promise<boolean> => {
-    const isValid = await form.trigger(['department_id', 'church_id'])
+    const isValid = await form.trigger(['gender'])
     if (!isValid) {
       toast.error(translations.fillRequiredFields, { duration: 4000 })
       return false
@@ -307,13 +299,14 @@ export function useRegistration({ translations }: UseRegistrationProps) {
         name: data.name,
         email: data.email,
         password: data.password,
-        language_preference: inviteData.language_preference || LanguagePreference.En,
-        institution_id: inviteData.institution_id,
-        department_id: data.department_id,
-        church_id: data.church_id,
-        roles: inviteData.role_ids || [], // Role do convite ou padrão MEMBER
         gender: data.gender,
+        language_preference: inviteData.language_preference || LanguagePreference.En,
+        roles: inviteData.role_ids || [], // Role do convite ou padrão MEMBER
         invite_token: inviteToken || "",
+        institution_id: inviteData.institution_id,
+        institution_department_id: inviteData.institution_department_id,
+        church_id: inviteData.church_id,
+        church_department_id: inviteData.church_department_id,
       }
       
       toast.dismiss(loadingToast)
@@ -329,25 +322,26 @@ export function useRegistration({ translations }: UseRegistrationProps) {
         style: { minWidth: '350px' }
       })
       
-      // // Redirecionar para login após sucesso
+      // Redirecionar para login após sucesso
       await login(data.email, data.password, true);
       router.push(`/dashboard`);
       clearSavedData()
       return userCreated.createUser || null;  
+      // return null
       
     } catch (error) {
       if (error instanceof Error) {
         if (error.message === 'User not found') {
-          toast.error(translations.invalidCredentials, { duration: 5000 })
+          toast.error(LTranslations.invalidCredentials, { duration: 5000 })
           return
         } else if (error.message === 'User has no active roles') {
-          toast.error(translations.noActiveRoles, { duration: 5000 })
+          toast.error(LTranslations.noActiveRoles, { duration: 5000 })
           return
         } else if (error.message === 'invalid token') {
-          toast.error(translations.loginError, { duration: 5000 })
+          toast.error(LTranslations.loginError, { duration: 5000 })
           return
         } else if (error.message === 'Invalid credentials') {
-          toast.error(translations.invalidCredentials, { duration: 5000 })
+          toast.error(LTranslations.invalidCredentials, { duration: 5000 })
           return
         } else {
           toast.error(translations.registrationError, { duration: 5000 })
@@ -372,7 +366,6 @@ export function useRegistration({ translations }: UseRegistrationProps) {
     showConfirmPassword,
     isLoading,
     showContent,
-    selectedDepartment,
     
     // Setters
     setCurrentStep,
@@ -385,7 +378,6 @@ export function useRegistration({ translations }: UseRegistrationProps) {
     // Validações
     validateStep1,
     validateStep2,
-    validateStep3,
     
     // Submissão
     onSubmit,

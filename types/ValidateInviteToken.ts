@@ -14,6 +14,9 @@ export interface ValidateInviteToken_validateInviteToken {
   role_ids: string[];
   email: string;
   institution_id: string;
+  institution_department_id: string | null;
+  church_id: string | null;
+  church_department_id: string | null;
   inviter_id: string;
   language_preference: LanguagePreference | null;
   exp: number;
