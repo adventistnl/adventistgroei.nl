@@ -36,8 +36,6 @@ export function makeClient() {
           fields: {
             permissions: {
               merge(existing = [], incoming) {
-                // console.log("🔄 Merge Permissions:", { existing, incoming });
-
                 // Evitar duplicação com base no campo 'group'
                 const merged = [...existing, ...incoming];
                 const uniquePermissions = merged.reduce((acc: any[], item: any) => {
@@ -47,7 +45,6 @@ export function makeClient() {
                   return acc;
                 }, []);
 
-                // console.log("✅ Unique Permissions:", uniquePermissions);
                 return uniquePermissions;
               },
             },

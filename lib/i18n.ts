@@ -3120,8 +3120,6 @@ const initializeI18n = async () => {
 
       await Promise.race([initPromise, timeoutPromise])
       
-      console.log('[i18n] Initialization successful')
-      
       // Load saved language preference after initialization
       if (typeof window !== 'undefined') {
         const savedLanguage = localStorage.getItem('preferred-language')
@@ -3144,7 +3142,6 @@ const initializeI18n = async () => {
             interpolation: { escapeValue: false },
             react: { useSuspense: false }
           })
-          console.log('[i18n] Fallback initialization successful')
         } catch (fallbackError) {
           console.error('[i18n] Critical: Failed to set fallback language', fallbackError)
         }

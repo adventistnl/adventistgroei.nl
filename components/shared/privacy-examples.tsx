@@ -377,7 +377,6 @@ export function Example8_WithAnalytics() {
           userAgent: navigator.userAgent,
         }
         
-        console.log('📊 Privacy Event:', event)
         // analytics.track(event.action, event)
       }}
     >

@@ -21,7 +21,7 @@ export function RegistrationLayout({ children, isVisible = true }: RegistrationL
         
         {/* Colunas 1-6: Conteúdo Principal */}
         <div className="col-span-6 flex items-center justify-center p-1rem sm:p-2rem">
-          <div className="w-full max-w-2xl grid gap-4">
+          <div className="w-full max-w-2xl grid gap-4 p-4">
             {children}
           </div>
         </div>

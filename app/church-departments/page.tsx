@@ -80,7 +80,6 @@ export default function ChurchDepartmentsPage() {
   const { currentInstitutionData, refetchInstitutionById } = useInstitution();
   const churches: ChurchData[] = currentInstitutionData?.churches || [];
   const departments: DepartmentData[] = churches.flatMap(church => church.departments?.flatMap(department => ({ ...department, church_name: church.name })) || []);
-  console.log("departments", departments)
   const { i18n } = useTranslation()
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)

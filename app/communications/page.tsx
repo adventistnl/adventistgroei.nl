@@ -804,7 +804,7 @@ export default function CommunicationsPage() {
                             </div>
                             <div className="flex items-center justify-between">
                               <div className="flex gap-1">
-                                <Badge className={getPriorityBadgeColor(template.priority)} className="text-xs">
+                                <Badge className={getPriorityBadgeColor(template.priority) + " text-xs"}>
                                   {template.priority}
                                 </Badge>
                                 <Badge className="bg-blue-600 text-white text-xs">{template.audience}</Badge>

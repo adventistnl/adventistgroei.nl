@@ -10,23 +10,15 @@ import { MultiStepForm } from "@/components/shared/multi-step-form"
 // Componentes organizados
 import { RegistrationLayout } from "@/components/registration/registration-layout"
 import { RegistrationHeader } from "@/components/registration/registration-header"
-import { RoleBadge } from "@/components/registration/role-badge"
 import { LoadingState, ValidatingInviteState, InvalidInviteState } from "@/components/registration/registration-states"
 
 // Steps do formulário
 import { PersonalInfoStep } from "@/components/registration/steps/personal-info-step"
 import { PasswordSetupStep } from "@/components/registration/steps/password-setup-step"
-import { InstitutionDataStep } from "@/components/registration/steps/institution-data-step"
 
 // Hook customizado para lógica de registro
 import { useRegistration } from "@/hooks/use-registration"
-import { validateToken } from "@/utils/validateToken"
-import { useChurches } from "@/hooks/use-churches"
 import { useInstitutions } from "@/hooks/use-institutions"
-import { departments } from "@/data/usersData"
-import { useDepartments } from "@/hooks/use-departments"
-import { GenderType } from "@/types/graphql-global-types"
-import { GenderSelectionStep } from "@/components/registration/steps/gender-selection-step"
 
 // Idiomas suportados pelo sistema
 const LANGUAGES = [
@@ -34,15 +26,6 @@ const LANGUAGES = [
   { code: 'nl', name: 'Nederlands', flag: '🇳🇱' },
   { code: 'pt', name: 'Português', flag: '🇧🇷' }
 ]
-
-// Labels para os roles de usuário
-const ROLE_LABELS = {
-  member: "Membro",
-  volunteer: "Voluntário",
-  leader: "Líder",
-  pastor: "Pastor",
-  admin: "Administrador",
-}
 
 /**
  * COMPONENTE PRINCIPAL DE REGISTRO
@@ -61,25 +44,24 @@ function RegisterPageContent() {
     showConfirmPassword,
     isLoading,
     showContent,
-    selectedDepartment,
     setCurrentStep,
     setShowPassword,
     setShowConfirmPassword,
     form,
     validateStep1,
     validateStep2,
-    validateStep3,
     onSubmit,
-    // goToLogin,
+    goToLogin,
   } = useRegistration({
-    translations: i18n?.language || "en",
+    language: i18n?.language || "en",
   })
   // Obter traduções para o idioma atual
   const currentLanguage = i18n?.language || 'en'
   const t = registerTranslations[currentLanguage as keyof typeof registerTranslations] || registerTranslations.en
   const { currentInstitutionData } = useInstitutions(inviteData?.institution_id || "")
-  const departments = currentInstitutionData?.departments || []
-  const  churches = currentInstitutionData?.churches || []
+  const institutionDepartment = currentInstitutionData?.departments ? currentInstitutionData.departments.find(department => department.id === inviteData?.institution_department_id) : undefined
+  const church = currentInstitutionData?.churches ? currentInstitutionData.churches.find(church => church.id === inviteData?.church_id) : undefined
+  const churchDepartment = church?.departments ? church.departments.find(department => department.id === inviteData?.church_department_id) : undefined
 
   /**
    * CONFIGURAÇÃO DOS STEPS DO FORMULÁRIO
@@ -100,9 +82,21 @@ function RegisterPageContent() {
             namePlaceholder: t.namePlaceholder,
             email: t.email,
             emailPlaceholder: t.emailPlaceholder,
-            emailAutoFilled: t.emailAutoFilled
+            emailAutoFilled: t.emailAutoFilled,
+            church: t.church,
+            churchDepartment: t.churchDepartment,
+            institution: t.institution,
+            institutionDepartment: t.institutionDepartment,
+            infoSubtitle: t.personalInfoSubtitle,
+            genderLabel: t.genderLabel,
+            genderPlaceholder: t.genderPlaceholder,
+            gender: t.gender
           }}
           inviteEmail={inviteData?.email}
+          church={church?.name}
+          churchDepartment={churchDepartment?.name}
+          institution={currentInstitutionData?.name || ""}
+          institutionDepartment={institutionDepartment?.name}
         />
       )
     },
@@ -127,35 +121,6 @@ function RegisterPageContent() {
         />
       )
     },
-    {
-      id: "department-church",
-      title: t.institutionData,
-      description: t.institutionDataDesc,
-      validation: validateStep3,
-      fields: (
-        <InstitutionDataStep
-          control={form.control}
-          translations={{
-            department: t.department,
-            church: t.church
-          }}
-          departments={departments}
-          churches={churches}
-          selectedDepartment={selectedDepartment}
-        />
-      )
-    },
-    {
-      id: "gender-selection",
-      title: t.genderSelection,
-      description: t.genderSelectionDesc,
-      validation: validateStep1, // Reutilizando validação do primeiro step
-      fields: (
-        <GenderSelectionStep
-          form={form.control}
-        />
-      )
-    }
   ]
 
   /**
@@ -179,8 +144,8 @@ function RegisterPageContent() {
       <InvalidInviteState
         title={t.invalidInvite}
         description={t.invalidInviteDesc}
-        // buttonText={t.goToLogin}
-        // onGoToLogin={goToLogin}
+        buttonText={t.goToLogin}
+        onGoToLogin={goToLogin}
       />
     )
   }
@@ -198,12 +163,6 @@ function RegisterPageContent() {
         languages={LANGUAGES}
         currentLanguage={currentLanguage}
       />
-      
-      {/* Badge do role do convite */}
-      {/* <RoleBadge 
-        inviteData={inviteData} 
-        roleLabels={ROLE_LABELS} 
-      /> */}
 
       {/* Formulário multi-step */}
       <Form {...form}>
@@ -222,7 +181,7 @@ function RegisterPageContent() {
           fieldsLayout="stack"
           containerGap="2.5rem"
         />
-              </Form>
+      </Form>
     </RegistrationLayout>
   )
 }
