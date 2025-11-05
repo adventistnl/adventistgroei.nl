@@ -271,6 +271,7 @@ const resources = {
           members: "Members",
           regions: "Regions",
           budget: "Budget",
+          budget_status: "Budget Status",
           actions: "Actions",
           search_placeholder: "Search institutions...",
           no_results: "No institutions found",
@@ -633,7 +634,8 @@ const resources = {
             acknowledge_text: "I acknowledge that this action will affect department members and related data.",
             type_confirmation: "Type 'delete department' to confirm",
             confirmation_placeholder: "delete department",
-            confirmation_help: "This action cannot be undone. Type the exact text to confirm.",
+            confirmation_text: "delete department",
+            confirmation_help: "This action will temporarily deactivate the department. It can be reactivated later if needed.",
             deactivating: "Deactivating...",
             deactivate_department: "Deactivate Department",
             affected_components: "Affected Components",
@@ -951,12 +953,15 @@ const resources = {
           institution: "Institution",
           church: "Church",
           department: "Department",
+          department_type: "Department Type",
           roles: "Roles",
           status: "Status",
           actions: "Actions",
           search_placeholder: "Search users...",
           no_results: "No users found",
+          no_users: "No users found",
           active: "Active",
+          inactive: "Inactive",
           gender: "Gender",
         },
         gender: {
@@ -968,6 +973,7 @@ const resources = {
           edit_user: "Edit User",
           delete_user: "Delete User",
           view_details: "View Details",
+          view_contact: "View Contact",
           assign_roles: "Assign Roles",
           activate_user: "Activate User",
           deactivate_user: "Deactivate User"
@@ -1418,6 +1424,181 @@ const resources = {
             }
           }
         }
+      },
+      funding_rules: {
+        create_modal: {
+          title: "Create New Rule for \"{{groupName}}\"",
+          steps: {
+            basic_info: "Basic Information",
+            condition: "Build Condition",
+            review: "Review & Confirm"
+          },
+          progress_labels: {
+            information: "Information",
+            condition: "Condition",
+            review: "Review"
+          },
+          step1: {
+            rule_name_label: "Rule Name",
+            rule_name_placeholder: "e.g., Maximum budget per request",
+            description_label: "Description (Optional)",
+            description_placeholder: "Brief description of this rule...",
+            required: "*"
+          },
+          step2: {
+            condition_type_label: "What type of condition?",
+            value_types: {
+              amount: "Value ($)",
+              percentage: "Percentage (%)",
+              requests: "Requests (#)"
+            },
+            operator_label: "Comparison Operator",
+            operator_placeholder: "Select an operator...",
+            operators: {
+              greater_than: {
+                label: "Greater than (>)",
+                description: "Value must be greater than specified"
+              },
+              less_than: {
+                label: "Less than (<)",
+                description: "Value must be less than specified"
+              },
+              equal_to: {
+                label: "Equal to (=)",
+                description: "Value must be exactly equal"
+              },
+              between: {
+                label: "Between (range)",
+                description: "Value must be between two numbers"
+              }
+            },
+            value_label: "Value",
+            min_value_label: "Minimum value",
+            max_value_label: "Maximum value",
+            max_quantity_label: "Maximum quantity",
+            period_label: "Time period",
+            period_placeholder: "Select a period...",
+            periods: {
+              month: {
+                label: "Per month",
+                description: "Monthly limit"
+              },
+              quarter: {
+                label: "Per quarter",
+                description: "Quarterly limit (3 months)"
+              },
+              semester: {
+                label: "Per semester",
+                description: "Semester limit (6 months)"
+              },
+              year: {
+                label: "Per year",
+                description: "Annual limit"
+              }
+            },
+            scope_label: "Scope",
+            scope_placeholder: "Select a scope...",
+            scopes: {
+              per_user: {
+                label: "Per user",
+                description: "Individual limit per user"
+              },
+              total: {
+                label: "In total",
+                description: "Total limit for all users"
+              }
+            }
+          },
+          step3: {
+            rule_name_label: "Rule Name",
+            condition_label: "Condition",
+            description_label: "Description",
+            preview_label: "Rule preview:",
+            preview_badges: {
+              value: "value",
+              percentage: "percentage",
+              requests: "requests",
+              condition: "Condition"
+            }
+          },
+          buttons: {
+            back: "Back",
+            next: "Next",
+            cancel: "Cancel",
+            create: "Create Rule"
+          },
+          validation: {
+            enter_name: "Please enter a rule name",
+            enter_value: "Please enter a value for the condition",
+            enter_second_value: "Please enter a second value for the 'between' condition",
+            fill_required: "Please fill in all required fields"
+          },
+          toasts: {
+            created: "Rule created successfully",
+            create_failed: "Failed to create rule"
+          },
+          auto_description: {
+            operators: {
+              greater_than: "greater than",
+              less_than: "less than",
+              equal_to: "equal to",
+              between: "between"
+            },
+            value_types: {
+              amount: "value",
+              percentage: "percentage",
+              requests: "requests"
+            },
+            periods: {
+              month: "per month",
+              quarter: "per quarter",
+              semester: "per semester",
+              year: "per year"
+            },
+            per_user: "per user",
+            in_total: "in total",
+            maximum: "Maximum of",
+            and: "and"
+          }
+        },
+        edit_modal: {
+          title: "Edit Rule \"{{ruleName}}\"",
+          buttons: {
+            update: "Update Rule"
+          },
+          toasts: {
+            updated: "Rule updated successfully",
+            update_failed: "Failed to update rule"
+          }
+        },
+        delete_modal: {
+          title: "Delete Rule",
+          description: "This action cannot be undone",
+          confirm_message: "Are you sure you want to delete this rule from \"{{groupName}}\"?",
+          rule_preview: {
+            title: "Rule to be deleted:",
+            condition: "Condition"
+          },
+          warning: {
+            title: "Permanent Deletion",
+            message: "This rule will be permanently removed and cannot be recovered. All associated conditions and configurations will be lost."
+          },
+          understand_consequences: "I understand the consequences",
+          acknowledge_text: "I acknowledge that this rule will be permanently deleted and this action is irreversible.",
+          type_confirmation: "Type \"delete rule\" to confirm:",
+          confirmation_placeholder: "delete rule",
+          confirmation_help: "Type exactly \"delete rule\" (lowercase) to enable deletion.",
+          buttons: {
+            cancel: "Cancel",
+            delete: "Delete Rule",
+            deleting: "Deleting..."
+          },
+          toasts: {
+            deleting: "Deleting rule...",
+            deleted: "Rule deleted successfully",
+            delete_failed: "Failed to delete rule"
+          }
+        }
       }
     }
   },
@@ -1689,6 +1870,7 @@ const resources = {
           members: "Leden",
           regions: "Regio's",
           budget: "Budget",
+          budget_status: "Budget Status",
           actions: "Acties",
           search_placeholder: "Zoek instellingen...",
           no_results: "Geen instellingen gevonden",
@@ -2051,7 +2233,8 @@ const resources = {
             acknowledge_text: "Ik erken dat deze actie afdelingsleden en gerelateerde gegevens zal beïnvloeden.",
             type_confirmation: "Typ 'delete department' om te bevestigen",
             confirmation_placeholder: "delete department",
-            confirmation_help: "Deze actie kan niet ongedaan worden gemaakt. Typ de exacte tekst om te bevestigen.",
+            confirmation_text: "delete department",
+            confirmation_help: "Deze actie zal de afdeling tijdelijk deactiveren. Het kan later indien nodig opnieuw worden geactiveerd.",
             deactivating: "Deactiveren...",
             deactivate_department: "Afdeling Deactiveren",
             affected_components: "Getroffen Componenten",
@@ -2369,11 +2552,13 @@ const resources = {
           institution: "Instelling",
           church: "Kerk",
           department: "Afdeling",
+          department_type: "Afdelingstype",
           roles: "Rollen",
           status: "Status",
           actions: "Acties",
           search_placeholder: "Zoek gebruikers...",
           no_results: "Geen gebruikers gevonden",
+          no_users: "Geen gebruikers gevonden",
           active: "Actief",
           inactive: "Inactief",
           gender: "Geslacht"
@@ -2387,6 +2572,7 @@ const resources = {
           edit_user: "Gebruiker Bewerken",
           delete_user: "Gebruiker Verwijderen",
           view_details: "Details Bekijken",
+          view_contact: "Contact Bekijken",
           assign_roles: "Rollen Toewijzen",
           activate_user: "Gebruiker Activeren",
           deactivate_user: "Gebruiker Deactiveren"
@@ -3082,6 +3268,181 @@ const resources = {
               deleted: "Orçamento excluído com sucesso",
               delete_failed: "Falha ao excluir orçamento"
             }
+          }
+        }
+      },
+      funding_rules: {
+        create_modal: {
+          title: "Nieuwe Regel Maken voor \"{{groupName}}\"",
+          steps: {
+            basic_info: "Basisinformatie",
+            condition: "Voorwaarde Bouwen",
+            review: "Controleren & Bevestigen"
+          },
+          progress_labels: {
+            information: "Informatie",
+            condition: "Voorwaarde",
+            review: "Controleren"
+          },
+          step1: {
+            rule_name_label: "Regelnaam",
+            rule_name_placeholder: "bijv.: Maximaal budget per aanvraag",
+            description_label: "Beschrijving (Optioneel)",
+            description_placeholder: "Korte beschrijving van deze regel...",
+            required: "*"
+          },
+          step2: {
+            condition_type_label: "Welk type voorwaarde?",
+            value_types: {
+              amount: "Waarde ($)",
+              percentage: "Percentage (%)",
+              requests: "Aanvragen (#)"
+            },
+            operator_label: "Vergelijkingsoperator",
+            operator_placeholder: "Selecteer een operator...",
+            operators: {
+              greater_than: {
+                label: "Groter dan (>)",
+                description: "Waarde moet groter zijn dan gespecificeerd"
+              },
+              less_than: {
+                label: "Kleiner dan (<)",
+                description: "Waarde moet kleiner zijn dan gespecificeerd"
+              },
+              equal_to: {
+                label: "Gelijk aan (=)",
+                description: "Waarde moet exact gelijk zijn"
+              },
+              between: {
+                label: "Tussen (bereik)",
+                description: "Waarde moet tussen twee getallen liggen"
+              }
+            },
+            value_label: "Waarde",
+            min_value_label: "Minimale waarde",
+            max_value_label: "Maximale waarde",
+            max_quantity_label: "Maximale hoeveelheid",
+            period_label: "Tijdsperiode",
+            period_placeholder: "Selecteer een periode...",
+            periods: {
+              month: {
+                label: "Per maand",
+                description: "Maandelijkse limiet"
+              },
+              quarter: {
+                label: "Per kwartaal",
+                description: "Kwartaallimiet (3 maanden)"
+              },
+              semester: {
+                label: "Per semester",
+                description: "Semesterlimiet (6 maanden)"
+              },
+              year: {
+                label: "Per jaar",
+                description: "Jaarlijkse limiet"
+              }
+            },
+            scope_label: "Bereik",
+            scope_placeholder: "Selecteer een bereik...",
+            scopes: {
+              per_user: {
+                label: "Per gebruiker",
+                description: "Individuele limiet per gebruiker"
+              },
+              total: {
+                label: "In totaal",
+                description: "Totale limiet voor alle gebruikers"
+              }
+            }
+          },
+          step3: {
+            rule_name_label: "Regelnaam",
+            condition_label: "Voorwaarde",
+            description_label: "Beschrijving",
+            preview_label: "Regelvoorbeeld:",
+            preview_badges: {
+              value: "waarde",
+              percentage: "percentage",
+              requests: "aanvragen",
+              condition: "Voorwaarde"
+            }
+          },
+          buttons: {
+            back: "Terug",
+            next: "Volgende",
+            cancel: "Annuleren",
+            create: "Regel Maken"
+          },
+          validation: {
+            enter_name: "Voer een regelnaam in",
+            enter_value: "Voer een waarde in voor de voorwaarde",
+            enter_second_value: "Voer een tweede waarde in voor de 'tussen' voorwaarde",
+            fill_required: "Vul alle verplichte velden in"
+          },
+          toasts: {
+            created: "Regel succesvol aangemaakt",
+            create_failed: "Kon regel niet aanmaken"
+          },
+          auto_description: {
+            operators: {
+              greater_than: "groter dan",
+              less_than: "kleiner dan",
+              equal_to: "gelijk aan",
+              between: "tussen"
+            },
+            value_types: {
+              amount: "waarde",
+              percentage: "percentage",
+              requests: "aanvragen"
+            },
+            periods: {
+              month: "per maand",
+              quarter: "per kwartaal",
+              semester: "per semester",
+              year: "per jaar"
+            },
+            per_user: "per gebruiker",
+            in_total: "in totaal",
+            maximum: "Maximum van",
+            and: "en"
+          }
+        },
+        edit_modal: {
+          title: "Regel Bewerken \"{{ruleName}}\"",
+          buttons: {
+            update: "Regel Bijwerken"
+          },
+          toasts: {
+            updated: "Regel succesvol bijgewerkt",
+            update_failed: "Kon regel niet bijwerken"
+          }
+        },
+        delete_modal: {
+          title: "Regel Verwijderen",
+          description: "Deze actie kan niet ongedaan worden gemaakt",
+          confirm_message: "Weet u zeker dat u deze regel wilt verwijderen uit \"{{groupName}}\"?",
+          rule_preview: {
+            title: "Regel om te verwijderen:",
+            condition: "Voorwaarde"
+          },
+          warning: {
+            title: "Permanente Verwijdering",
+            message: "Deze regel wordt permanent verwijderd en kan niet worden hersteld. Alle bijbehorende voorwaarden en configuraties gaan verloren."
+          },
+          understand_consequences: "Ik begrijp de gevolgen",
+          acknowledge_text: "Ik erken dat deze regel permanent wordt verwijderd en dat deze actie onomkeerbaar is.",
+          type_confirmation: "Typ \"delete rule\" om te bevestigen:",
+          confirmation_placeholder: "delete rule",
+          confirmation_help: "Typ exact \"delete rule\" (kleine letters) om verwijdering mogelijk te maken.",
+          buttons: {
+            cancel: "Annuleren",
+            delete: "Regel Verwijderen",
+            deleting: "Verwijderen..."
+          },
+          toasts: {
+            deleting: "Regel wordt verwijderd...",
+            deleted: "Regel succesvol verwijderd",
+            delete_failed: "Kon regel niet verwijderen"
           }
         }
       }

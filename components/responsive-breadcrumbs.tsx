@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button"
 interface BreadcrumbData {
   name: string
   href?: string
+  onClick?: () => void
 }
 
 interface ResponsiveBreadcrumbsProps {
@@ -76,6 +77,11 @@ export function ResponsiveBreadcrumbs({
                     <ChevronRight className="w-3 h-3" />
                     {crumb.name}
                   </a>
+                ) : crumb.onClick ? (
+                  <button onClick={crumb.onClick} className="flex items-center gap-2 w-full text-left">
+                    <ChevronRight className="w-3 h-3" />
+                    {crumb.name}
+                  </button>
                 ) : (
                   <div className="flex items-center gap-2">
                     <ChevronRight className="w-3 h-3" />
@@ -99,6 +105,12 @@ export function ResponsiveBreadcrumbs({
                   {crumb.href ? (
                     <BreadcrumbLink href={crumb.href} className="text-sm">
                       {crumb.name}
+                    </BreadcrumbLink>
+                  ) : crumb.onClick ? (
+                    <BreadcrumbLink asChild className="text-sm cursor-pointer">
+                      <button onClick={crumb.onClick}>
+                        {crumb.name}
+                      </button>
                     </BreadcrumbLink>
                   ) : (
                     <BreadcrumbPage className="text-sm font-medium">
@@ -129,6 +141,12 @@ export function ResponsiveBreadcrumbs({
                 {crumb.href ? (
                   <BreadcrumbLink href={crumb.href} className="text-sm">
                     {crumb.name}
+                  </BreadcrumbLink>
+                ) : crumb.onClick ? (
+                  <BreadcrumbLink asChild className="text-sm cursor-pointer">
+                    <button onClick={crumb.onClick}>
+                      {crumb.name}
+                    </button>
                   </BreadcrumbLink>
                 ) : (
                   <BreadcrumbPage className="text-sm font-medium">

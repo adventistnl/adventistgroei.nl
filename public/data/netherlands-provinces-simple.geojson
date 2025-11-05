@@ -1,0 +1,149 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "iso_3166_2": "NL-DR",
+        "name": "Drenthe",
+        "code": "NLDR"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [6.5665, 52.9476]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "iso_3166_2": "NL-FL",
+        "name": "Flevoland",
+        "code": "NLFL"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [5.5222, 52.5269]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "iso_3166_2": "NL-FR",
+        "name": "Friesland",
+        "code": "NLFR"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [5.7985, 53.1641]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "iso_3166_2": "NL-GE",
+        "name": "Gelderland",
+        "code": "NLGE"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [5.8987, 52.0451]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "iso_3166_2": "NL-GR",
+        "name": "Groningen",
+        "code": "NLGR"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [6.5665, 53.2194]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "iso_3166_2": "NL-LI",
+        "name": "Limburg",
+        "code": "NLLI"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [5.9699, 51.4427]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "iso_3166_2": "NL-NB",
+        "name": "Noord-Brabant",
+        "code": "NLNB"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [5.3037, 51.6978]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "iso_3166_2": "NL-NH",
+        "name": "Noord-Holland",
+        "code": "NLNH"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.7903, 52.5208]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "iso_3166_2": "NL-OV",
+        "name": "Overijssel",
+        "code": "NLOV"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [6.1604, 52.4387]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "iso_3166_2": "NL-UT",
+        "name": "Utrecht",
+        "code": "NLUT"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [5.1214, 52.0907]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "iso_3166_2": "NL-ZL",
+        "name": "Zeeland",
+        "code": "NLZL"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [3.6129, 51.4940]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "iso_3166_2": "NL-ZH",
+        "name": "Zuid-Holland",
+        "code": "NLZH"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.4777, 52.0115]
+      }
+    }
+  ]
+}

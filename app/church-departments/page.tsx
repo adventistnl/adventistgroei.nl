@@ -7,6 +7,7 @@ import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/ui/status-badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { 
@@ -20,12 +21,15 @@ import {
   Home,
   DollarSign,
   Building,
+  Building2,
   ContactRound,
   TrendingUp,
   Calendar,
   Shield,
   MapPin,
-  User
+  User,
+  FileText,
+  CheckCircle2
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -40,27 +44,23 @@ import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal } from "
 import { useInstitution } from "@/contexts/institution-context"
 import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
 import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget"
-import { DepartmentsKPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
+import { DepartmentsKPICards, KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
+import { DepartmentActivityChart } from "@/components/institutions/charts/department-activity-chart"
+import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
+import { UseTable } from "@/components/ui/use-table"
+import { EntityInfoCard } from "@/components/shared/entity-info-card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Crown } from "lucide-react"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import { Eye } from "lucide-react"
 
-// Charts - usando a lib atual do sistema
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  Legend
-} from "recharts"
 import { CreateDepartment } from "@/types/CreateDepartment"
 import NotFound from "@/components/shared/not-found"
 import {
@@ -73,8 +73,8 @@ import { WithPermission } from "@/hocs/with-permission"
 
 
 /**
- * PÁGINA DE GESTÃO DE DEPARTAMENTOS DE IGREJA
- * Interface dedicada para gerenciar departamentos a nível de igreja baseada no ERD do AdventistGroei
+ * PÁGINA DE GESTÃO DE DEPARTAMENTOS DE IGREJAS
+ * Interface dedicada para gerenciar departamentos vinculados a igrejas
  */
 export default function ChurchDepartmentsPage() {
   const { currentInstitutionData, refetchInstitutionById } = useInstitution();
@@ -83,6 +83,10 @@ export default function ChurchDepartmentsPage() {
   const { i18n } = useTranslation()
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  
+  // View mode states - controla se está na lista ou em detalhes
+  const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
+  const [selectedDepartmentDetail, setSelectedDepartmentDetail] = useState<DepartmentData | null>(null)
   
   // Modal states
   const [isAddDepartmentModalOpen, setIsAddDepartmentModalOpen] = useState(false)
@@ -93,10 +97,6 @@ export default function ChurchDepartmentsPage() {
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentData | null>(null)
   const [selectedContact, setSelectedContact] = useState<ContactData | null>(null)
   const [selectedBudget, setSelectedBudget] = useState<AnnualBudgetData | null>(null)
-  
-  // Obter traduções para o idioma atual
-  const currentLanguage = i18n?.language || 'en'
-  const t = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
 
   usePageTitle({
     title: "Church Departments"
@@ -104,16 +104,37 @@ export default function ChurchDepartmentsPage() {
 
   // Estatísticas calculadas dos dados
   type DepartmentType = typeof departments extends (infer U)[] ? U : any;
-  // Ajustar cálculo para acessar corretamente planned_budget e total_expenses
   const kpiData = useMemo(() => {
     const totalDepartments = departments.length;
-    const totalAnnualBudget = departments.reduce((sum: number, d: DepartmentType) => {
-      const plannedBudget = d.annual_budget?.planned_budget || 0;
-      return sum + plannedBudget;
-    }, 0);
+    
+    // Total de churches únicas que têm departamentos
+    const uniqueChurches = new Set(departments.map(d => d.church_id));
+    const totalChurches = uniqueChurches.size;
+    
+    // Total de projetos registrados, em aberto e concluídos
+    let totalProjects = 0;
+    let openProjects = 0;
+    let completedProjects = 0;
+    
+    departments.forEach((d: DepartmentType) => {
+      const projects = (d as any).projects || [];
+      totalProjects += projects.length;
+      
+      projects.forEach((project: any) => {
+        if (project.status === 'COMPLETED' || project.is_completed) {
+          completedProjects++;
+        } else {
+          openProjects++;
+        }
+      });
+    });
+    
     return {
       totalDepartments,
-      totalAnnualBudget
+      totalChurches,
+      totalProjects,
+      openProjects,
+      completedProjects
     };
   }, [departments]);
 
@@ -124,34 +145,48 @@ export default function ChurchDepartmentsPage() {
       title: "Church Departments",
       value: kpiData.totalDepartments,
       icon: Layers,
-      subtitle: "Total de departamentos de igreja",
-      trend: {
-        value: 0,
-        isPositive: true,
-        label: "vs. mês anterior"
-      }
+      subtitle: "Total church departments"
     },
     {
-      id: "annual_budget",
-      title: "Annual Budget",
-      value: `$${(kpiData.totalAnnualBudget / 1000).toFixed(0)}K`,
-      icon: DollarSign,
-      subtitle: "Orçamento total anual",
-      trend: {
-        value: 0,
-        isPositive: true,
-        label: "vs. ano anterior"
-      }
+      id: "total_churches",
+      title: "Total Churches",
+      value: kpiData.totalChurches,
+      icon: Home,
+      subtitle: "Churches with departments"
+    },
+    {
+      id: "total_projects",
+      title: "Total Projects",
+      value: kpiData.totalProjects,
+      icon: TrendingUp,
+      subtitle: "All registered projects"
+    },
+    {
+      id: "open_projects",
+      title: "Open Projects",
+      value: kpiData.openProjects,
+      icon: Calendar,
+      subtitle: "Projects in progress"
+    },
+    {
+      id: "completed_projects",
+      title: "Completed Projects",
+      value: kpiData.completedProjects,
+      icon: Shield,
+      subtitle: "Successfully completed"
     }
   ], [kpiData]);
 
   // Dados para gráficos (apenas nome e orçamento)
   const chartData = useMemo(() => {
     return {
-      budgetByDepartment: departments.map(d => ({
-        department: d.name,
-        budget: d.annual_budget
-      })),
+      budgetByDepartment: departments.map(d => {
+        const latestBudget = d.annual_budgets?.[0];
+        return {
+          department: d.name,
+          budget: latestBudget?.planned_budget || 0
+        };
+      }),
       userRequests: [],
       budgetTimeline: [],
       subsidyRequestsByDepartment: [] // TODO: implementar quando backend fornecer
@@ -163,37 +198,37 @@ export default function ChurchDepartmentsPage() {
    */
   useEffect(() => {
     const loadData = async () => {
-      const loadingToast = toast.loading("Loading...")
+      const loadingToast = toast.loading(t('common.loading') || "Loading...")
       
       try {
         await new Promise(resolve => setTimeout(resolve, 1500))
         
         toast.dismiss(loadingToast)
-        toast.success("Data loaded successfully", { duration: 3000 })
+        toast.success(t('common.data_loaded') || "Data loaded successfully", { duration: 3000 })
         setIsLoading(false)
         
       } catch (error) {
         toast.dismiss(loadingToast)
-        toast.error("Error loading data")
+        toast.error(t('common.error') || "An error occurred")
         setIsLoading(false)
       }
     }
 
     loadData()
-  }, [])
+  }, [t])
 
   /**
    * Handlers para ações
    */
   const handleRefresh = async () => {
     setRefreshing(true)
-    const refreshToast = toast.loading("Refreshing...")
+    const refreshToast = toast.loading(t('common.refreshing') || "Refreshing...")
     
     try {
       await refetchInstitutionById()
-      toast.success("Data refreshed successfully", { duration: 2000 })
+      toast.success(t('common.data_refreshed') || "Data refreshed", { duration: 2000 })
     } catch (error) {
-      toast.error("Error refreshing data")
+      toast.error(t('common.error_refreshing') || "Error refreshing")
     } finally {
       toast.dismiss(refreshToast)
       setRefreshing(false)
@@ -203,6 +238,23 @@ export default function ChurchDepartmentsPage() {
   const handleCreate = () => {
     setIsAddDepartmentModalOpen(true)
   }
+  
+  const handleCreateInstitutional = () => {
+    setIsAddDepartmentModalOpen(true)
+  }
+  
+  const handleViewDetails = (id: string) => {
+    const department = departments.find(d => d.id === id);
+    if (department) {
+      setSelectedDepartmentDetail(department);
+      setViewMode('detail');
+    }
+  };
+  
+  const handleBackToList = () => {
+    setViewMode('list');
+    setSelectedDepartmentDetail(null);
+  };
   
   const handleEdit = (id: string) => {
     const department = departments.find(d => d.id === id);
@@ -252,17 +304,17 @@ export default function ChurchDepartmentsPage() {
   const handleViewBudget = (id: string) => {
     const department = departments.find(d => d.id === id);
     if (department) {
-      setSelectedDepartment(department as any);
+      setSelectedDepartment(department);
       // Mock budget data
+      const latestBudget = department.annual_budgets?.[0];
       const budgetData: AnnualBudgetData = {
         id: `budget_${department.id}`,
         year: new Date().getFullYear(),
-        planned_budget: department.annual_budget?.planned_budget || 0,
-        total_expenses: department.annual_budget?.total_expenses || 0,
-        balance: (department.annual_budget?.planned_budget || 0) - (department.annual_budget?.total_expenses || 0),
+        planned_budget: latestBudget?.planned_budget || 0,
+        total_expenses: latestBudget?.total_expenses || 0,
+        balance: (latestBudget?.planned_budget || 0) - (latestBudget?.total_expenses || 0),
         notes: `Budget for ${department.name}`,
         approved_by: undefined,
-        status: 'approved' as const,
         created_at: department.created_at,
         updated_at: department.created_at,
         created_by: 'system',
@@ -290,19 +342,23 @@ export default function ChurchDepartmentsPage() {
   }
   
   const handleBudgetSaved = (budget: AnnualBudgetData) => {
-    // Update the selected department's annual_budget if it was changed
-    if (selectedDepartment && budget.planned_budget !== selectedDepartment.annual_budget?.planned_budget) {
+    // Update the selected department's annual_budgets if it was changed
+    const latestBudget = selectedDepartment?.annual_budgets?.[0];
+    if (selectedDepartment && budget.planned_budget !== latestBudget?.planned_budget) {
+      const updatedBudget = {
+        __typename: "AnnualBudget" as const,
+        year: budget.year,
+        planned_budget: budget.planned_budget,
+        total_expenses: budget.total_expenses
+      };
       const updatedDepartment = {
         ...selectedDepartment,
-        annual_budget: {
-          ...selectedDepartment.annual_budget,
-          planned_budget: budget.planned_budget
-        }
+        annual_budgets: [updatedBudget, ...(selectedDepartment.annual_budgets?.slice(1) || [])]
       };
       setSelectedDepartment(updatedDepartment);
     }
     
-    toast.success("Budget updated successfully", {
+    toast.success(t('annual_budget.messages.updated_success') || "Budget updated successfully", {
       duration: 3000,
       icon: '💰'
     });
@@ -311,8 +367,8 @@ export default function ChurchDepartmentsPage() {
 
   if (!currentInstitutionData) return <NotFound />
   
-  // Colunas da tabela
-  const columns: ColumnDef<any>[] = [
+  // Colunas da tabela de departamentos
+  const departmentColumns: ColumnDef<any>[] = [
     {
       id: "name",
       accessorKey: "name",
@@ -330,91 +386,120 @@ export default function ChurchDepartmentsPage() {
       ),
     },
     {
-      id: "church", 
-      accessorKey: "church",
-      header: "Church",
+      id: "church_id",
+      accessorKey: "church_id",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          Church
+        </div>
+      ),
       cell: ({ row }) => {
+        const church = churches.find((c: any) => c.id === row.original.church_id)
         return (
-          <div className="flex flex-row items-center gap-2 font-medium">
-            <Home className="w-4 h-4 text-muted-foreground" />
-            { row.original.church_name }
+          <div className="flex items-center justify-center gap-2">
+            <Home className="h-4 w-4 text-muted-foreground" />
+            <span className="font-medium">{church ? church.name : '-'}</span>
           </div>
         )
       },
       filterFn: (row, id, value) => {
-        if (value === "institutional") {
-          const church = churches.find(c => c.id === row.getValue(id));
-          return !church;
-        }
-        return value.includes(row.getValue(id))
+        if (!value || value === "all") return true
+        return row.getValue(id) === value
       },
     },
     {
       id: "members",
       accessorKey: "members_count",
-      header: "Members",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          Members
+        </div>
+      ),
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center gap-2">
           <Users className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.users ? row.original.users.length : 0}</span>
+          <span className="font-medium">{row.original.users?.length || 0}</span>
         </div>
       ),
     },
     {
-      id: "budget",
-      accessorKey: "total_budget",
-      header: "Budget",
+      id: "open_projects",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          Open Projects
+        </div>
+      ),
       cell: ({ row }) => {
-        const annual_budget = row.original.annual_budget
-        const total_expenses = annual_budget ? annual_budget.total_expenses : 0
+        const projects = (row.original as any).projects || [];
+        const openCount = projects.filter((p: any) => 
+          p.status !== 'COMPLETED' && !p.is_completed
+        ).length;
+        
         return (
-        <span className="font-medium">$ {total_expenses}</span>
-      )},
-    },
-    {
-      id: "utilization",
-      header: "Utilization",
-      cell: ({ row }) => {
-        const annual_budget = row.original.annual_budget
-        const totalBudget = annual_budget?.planned_budget || 1;
-        const usedBudget = annual_budget?.total_expenses || 0;
-        const utilization = Math.round((Number(usedBudget) / Number(totalBudget)) * 100)
-        return (
-          <Badge variant="outline" className={
-            utilization > 80 ? 'bg-red-100 text-red-700' : 
-            utilization > 60 ? 'bg-yellow-100 text-yellow-700' : 
-            'bg-green-100 text-green-700'
-          }>
-            {utilization}%
-          </Badge>
+          <div className="flex items-center justify-center gap-2">
+            <FileText className="w-4 h-4 text-muted-foreground" />
+            <span className="font-medium">{openCount}</span>
+          </div>
         )
       },
     },
     {
-      id: "remaining_budget",
-      header: "Budget Remaining",
+      id: "completed_projects",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          Completed Projects
+        </div>
+      ),
       cell: ({ row }) => {
-        const annual_budget = row.original.annual_budget;
-        const totalBudget = annual_budget?.planned_budget || 0;
-        const usedBudget = annual_budget?.total_expenses || 0;
-        const remainingBudget = totalBudget - usedBudget;
+        const projects = (row.original as any).projects || [];
+        const completedCount = projects.filter((p: any) => 
+          p.status === 'COMPLETED' || p.is_completed
+        ).length;
+        
         return (
-          <span className="font-medium text-green-700">
-            $ {remainingBudget.toFixed(2).toLocaleString()}
-          </span>
-        );
+          <div className="flex items-center justify-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
+            <span className="font-medium">{completedCount}</span>
+          </div>
+        )
       },
     },
     {
-      id: "subsidy_requests",
-      header: "Requests",
-      cell: () => (
-        <span className="font-medium">0 {/* TODO: subsidy_requests não existe, implementar quando backend fornecer */}</span>
+      id: "status",
+      accessorKey: "is_deleted",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('common.status') || "Status"}
+        </div>
       ),
+      cell: ({ row }) => {
+        const isActive = !row.original.is_deleted
+        return (
+          <div className="flex justify-center">
+            <StatusBadge
+              label={isActive ? (t('common.active') || "Active") : (t('common.inactive') || "Inactive")}
+              variant={isActive ? "success" : "neutral"}
+              showDot
+            />
+          </div>
+        )
+      },
+      filterFn: (row, id, value) => {
+        if (value === "all") return true
+        const isActive = !row.original.is_deleted
+        return value === "true" ? isActive : !isActive
+      },
     },
+    // {
+    //   id: "efficiency",
+    //   header: t.efficiency,
+    //   cell: () => (
+    //     <Badge variant="outline" className="bg-gray-100 text-gray-700">N/A {/* TODO: efficiency não existe, implementar quando backend fornecer */}</Badge>
+    //   ),
+    // },
     {
       id: "actions",
-      header: "Actions",
+      header: t('common.actions') || "Actions",
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -423,21 +508,143 @@ export default function ChurchDepartmentsPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => handleViewDetails(row.original.id)}>
+              <Eye className="w-4 h-4 mr-2" />
+              {t('departments.actions.view_details') || "View Details"}
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
               <Edit className="w-4 h-4 mr-2" />
-              Edit Department
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleViewBudget(row.original.id)}>
-              <DollarSign className="w-4 h-4 mr-2" />
-              Manage Budget
+              {t('departments.edit_department') || "Edit Department"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
               <Trash2 className="w-4 h-4 mr-2" />
-              Delete Department
+              {t('departments.delete_department') || "Delete Department"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
+    },
+  ]
+
+  // Colunas da tabela de usuários (para detail view)
+  const userColumns: ColumnDef<any>[] = [
+    {
+      id: "avatar",
+      header: t('users.table.avatar') || "Avatar",
+      cell: ({ row }) => {
+        const user = row.original
+        return (
+          <Avatar className="w-8 h-8">
+            <AvatarImage src="/placeholder-user.jpg" />
+            <AvatarFallback>
+              {user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || '??'}
+            </AvatarFallback>
+          </Avatar>
+        )
+      },
+    },
+    {
+      id: "name",
+      accessorKey: "name",
+      header: t('users.table.name') || "Name",
+      cell: ({ row }) => {
+        const user = row.original
+        return (
+          <div>
+            <div className="font-medium">{user.name}</div>
+            <div className="text-xs text-muted-foreground">
+              {user.email || '-'}
+            </div>
+          </div>
+        )
+      },
+    },
+    {
+      id: "language",
+      accessorKey: "language_preference",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('users.table.language') || "Language"}
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex justify-center">
+          <Badge variant="outline" className="text-xs font-mono">
+            {row.original.language_preference?.toUpperCase() || 'N/A'}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      id: "roles",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('users.table.roles') || "Roles"}
+        </div>
+      ),
+      cell: ({ row }) => {
+        const user = row.original
+        return (
+          <div className="flex flex-wrap gap-1 justify-center">
+            {user.user_roles?.map((role: any) => (
+              <Badge 
+                key={role.id} 
+                variant={role.role.key_code === 'ADMIN' ? 'default' : 'secondary'}
+                className="text-xs"
+              >
+                {role.role.key_code === 'ADMIN' && <Crown className="w-3 h-3 mr-1" />}
+                {role.role.name}
+              </Badge>
+            )) || <span className="text-xs text-muted-foreground">{t('users.table.no_roles') || "No roles"}</span>}
+          </div>
+        )
+      },
+    },
+    {
+      id: "gender",
+      accessorKey: "gender",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('users.table.gender') || "Gender"}
+        </div>
+      ),
+      cell: ({ row }) => {
+        const user = row.original;
+        const genderLabel = user.gender ? t(`users.gender.${user.gender}`) : 'N/A';
+        return (
+          <div className="text-center">
+            <Badge variant="outline" className="text-xs">
+              {genderLabel}
+            </Badge>
+          </div>
+        )
+      },
+    },
+    {
+      id: "status",
+      accessorKey: "is_deleted",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('users.table.status') || "Status"}
+        </div>
+      ),
+      cell: ({ row }) => {
+        const isActive = !row.original.is_deleted
+        return (
+          <div className="flex justify-center">
+            <StatusBadge
+              label={isActive ? (t('users.table.active') || "Active") : (t('users.table.inactive') || "Inactive")}
+              variant={isActive ? "success" : "error"}
+              showDot
+            />
+          </div>
+        )
+      },
+      filterFn: (row, id, value) => {
+        if (value === "all") return true
+        const isActive = !row.original.is_deleted
+        return value === "true" ? isActive : !isActive
+      },
     },
   ]
 
@@ -469,22 +676,56 @@ export default function ChurchDepartmentsPage() {
       <WithPermission requiredPermissions={[PermissionResolverName.Departments]} fallback={<AccessDenied/>}>
       
       <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">
+        {/* Breadcrumbs Navigation - Only in Detail View */}
+        {viewMode === 'detail' && selectedDepartmentDetail && (
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleBackToList();
+                  }}
+                  className="cursor-pointer hover:text-foreground"
+                >
+                  See All Church Departments
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage className="font-semibold">
+                  {selectedDepartmentDetail.name}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
-              Church Departments
+              {viewMode === 'detail' && selectedDepartmentDetail 
+                ? `${selectedDepartmentDetail.name} - Details`
+                : "Church Departments"
+              }
             </h2>
             <p className="text-muted-foreground text-0.875rem sm:text-1rem">
-              Manage church-level departments and ministries
+              {viewMode === 'detail' && selectedDepartmentDetail
+                ? selectedDepartmentDetail.description || "Department details and members"
+                : "Manage church-level departments and ministries"
+              }
             </p>
           </div>
           
           <div className="flex items-center gap-3">
-            <Button onClick={handleCreate}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Church Department
-            </Button>
+            {viewMode === 'list' && (
+              <Button onClick={handleCreate}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Church Department
+              </Button>
+            )}
             
             <Button 
               variant="outline" 
@@ -497,194 +738,206 @@ export default function ChurchDepartmentsPage() {
           </div>
         </div>
 
-        {/* KPI Cards Carrossel */}
-        <DepartmentsKPICards 
-          data={kpiCardsData}
-          isLoading={isLoading}
-        />
+        {/* KPI Cards - Conditional Rendering */}
+        {viewMode === 'detail' && selectedDepartmentDetail ? (
+          <>
+            {/* Detail View KPI Cards usando KPICards component com carrossel */}
+            {(() => {
+              const projects = (selectedDepartmentDetail as any).projects || [];
+              const openProjectsCount = projects.filter((p: any) => 
+                p.status !== 'COMPLETED' && !p.is_completed
+              ).length;
+              const completedProjectsCount = projects.filter((p: any) => 
+                p.status === 'COMPLETED' || p.is_completed
+              ).length;
+              
+              const detailKPIData: KPICardData[] = [
+                {
+                  id: "members",
+                  title: t('departments.kpi.members.title') || "Members",
+                  value: selectedDepartmentDetail.users?.length || 0,
+                  icon: Users,
+                  subtitle: t('departments.kpi.members.subtitle') || "Department members",
+                },
+                {
+                  id: "total_projects",
+                  title: "Total Projects",
+                  value: projects.length,
+                  icon: TrendingUp,
+                  subtitle: "All registered projects",
+                },
+                {
+                  id: "open_projects",
+                  title: "Open Projects",
+                  value: openProjectsCount,
+                  icon: Calendar,
+                  subtitle: "Projects in progress",
+                },
+                {
+                  id: "completed_projects",
+                  title: "Completed Projects",
+                  value: completedProjectsCount,
+                  icon: Shield,
+                  subtitle: "Successfully completed",
+                }
+              ];
+              
+              const customFirstCard = (
+                <EntityInfoCard
+                  headerTitle={t('departments.detail.info_card.header_title') || "Department Info"}
+                  name={selectedDepartmentDetail.name}
+                  description={selectedDepartmentDetail.description || (t('departments.detail.info_card.no_description') || "No description available")}
+                  icon={Layers}
+                  badges={[
+                    {
+                      label: churches.find(c => c.id === selectedDepartmentDetail.church_id)?.name || (t('departments.detail.info_card.institutional') || "Institutional"),
+                      variant: "outline",
+                      className: "text-xs"
+                    },
+                    {
+                      label: !selectedDepartmentDetail.is_deleted ? (t('departments.detail.info_card.active') || "Active") : (t('departments.detail.info_card.inactive') || "Inactive"),
+                      variant: !selectedDepartmentDetail.is_deleted ? "default" : "secondary",
+                      className: !selectedDepartmentDetail.is_deleted 
+                        ? "text-xs bg-green-100 text-green-700" 
+                        : "text-xs bg-gray-100 text-gray-700"
+                    }
+                  ]}
+                  actions={[
+                    {
+                      label: t('departments.actions.edit_department') || "Edit Department",
+                      icon: Edit,
+                      onClick: () => handleEdit(selectedDepartmentDetail.id),
+                      variant: "default"
+                    },
+                    {
+                      label: t('departments.actions.manage_budget') || "Manage Budget",
+                      icon: DollarSign,
+                      onClick: () => handleViewBudget(selectedDepartmentDetail.id),
+                      variant: "default"
+                    },
+                    {
+                      label: t('departments.actions.delete_department') || "Delete Department",
+                      icon: Trash2,
+                      onClick: () => handleDelete(selectedDepartmentDetail.id, selectedDepartmentDetail.name),
+                      variant: "destructive",
+                      showSeparatorAfter: false
+                    }
+                  ]}
+                />
+              );
+              
+              return (
+                <KPICards
+                  data={detailKPIData}
+                  isLoading={false}
+                  minCardsForCarousel={3}
+                  showCarousel={true}
+                  customFirstCard={customFirstCard}
+                />
+              );
+            })()}
+          </>
+        ) : (
+            <KPICards
+              data={kpiCardsData}
+              isLoading={isLoading}
+              minCardsForCarousel={2}
+              showCarousel={true}
+            />
+        )}
 
         <Separator />
 
-        {/* Charts Section */}
-        <div className="space-y-6">
-          {/* Main Chart - Department Budget Utilization */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5" />
-                Budget Utilization Trends
-              </CardTitle>
-              <CardDescription>Orçamento anual vs. Utilizado vs. Disponível por departamento de igreja</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer 
-                config={{
-                  budget: { label: "Orçamento Anual", color: "#10b981" },
-                  used: { label: "Utilizado", color: "#f59e0b" },
-                  remaining: { label: "Disponível", color: "#3b82f6" }
-                }} 
-                className="h-[300px] sm:h-[360px] w-full"
-              >
-                <BarChart data={chartData.budgetByDepartment}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis dataKey="department" fontSize={11} />
-                  <YAxis fontSize={11} tickFormatter={(value) => `$${(value / 1000)}K`} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Legend />
-                  <Bar dataKey="budget" fill="#10b981" radius={4} />
-                  <Bar dataKey="used" fill="#f59e0b" radius={4} />
-                  <Bar dataKey="remaining" fill="#3b82f6" radius={4} />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
+        {/* Charts Section - Visible in both views */}
+        <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
+          <DepartmentActivityChart loading={isLoading} />
+        </ResponsiveGridCarousel>
 
-          {/* Secondary Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Subsidy Requests by Department */}
+        <Separator />
+
+        {/* Conditional Content - Users Table or Departments Table */}
+        {viewMode === 'detail' && selectedDepartmentDetail ? (
+          <>
+            {/* Users Table */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  Solicitações por Departamento
+                  <Users className="w-5 h-5" />
+                  {t('departments.detail.members_table.title') || "Department Members"}
                 </CardTitle>
-                <CardDescription>Qual departamento de igreja tem solicitado mais subsídios</CardDescription>
+                <CardDescription>
+                  {t('departments.detail.members_table.description', { name: selectedDepartmentDetail.name }) || `List of all members in ${selectedDepartmentDetail.name}`}
+                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <ChartContainer 
-                  config={{
-                    requests: { label: "Solicitações", color: "#8b5cf6" }
-                  }} 
-                  className="h-[250px] sm:h-[300px] w-full"
-                >
-                  <RechartsPieChart>
-                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                    <Pie
-                      data={chartData.subsidyRequestsByDepartment}
-                      dataKey="requests"
-                      nameKey="department"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      paddingAngle={2}
-                    >
-                      {chartData.subsidyRequestsByDepartment.map((entry: any, index: number) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"][index % 5]}
-                        />
-                      ))}
-                    </Pie>
-                    <Legend />
-                  </RechartsPieChart>
-                </ChartContainer>
+              <CardContent className="overflow-hidden p-0">
+                <UseTable
+                  columns={userColumns}
+                  data={selectedDepartmentDetail.users || []}
+                  searchKey="name"
+                  emptyEntityName={selectedDepartmentDetail.name}
+                  filters={[
+                    {
+                      id: "status",
+                      title: t('common.status') || "Status",
+                      options: [
+                        { label: t('common.active') || "Active", value: "true" },
+                        { label: t('common.inactive') || "Inactive", value: "false" }
+                      ]
+                    }
+                  ]}
+                />
               </CardContent>
             </Card>
-
-            {/* Top Users by Requests */}
+          </>
+        ) : (
+          <>
+            {/* Departments Table */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Usuários que Mais Solicitam
+                  <Layers className="w-5 h-5" />
+                  Church Departments
                 </CardTitle>
-                <CardDescription>Top 8 usuários com mais solicitações de subsídio</CardDescription>
+                <CardDescription>Complete list of church departments with management actions</CardDescription>
               </CardHeader>
-              <CardContent>
-                <ChartContainer 
-                  config={{
-                    requests: { label: "Solicitações", color: "#f59e0b" }
-                  }} 
-                  className="h-[250px] sm:h-[300px] w-full"
-                >
-                  <BarChart data={chartData.userRequests} layout="horizontal">
-                    <CartesianGrid horizontal={false} />
-                    <XAxis type="number" fontSize={11} />
-                    <YAxis dataKey="user" type="category" fontSize={10} width={100} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="requests" fill="#f59e0b" radius={4} />
-                  </BarChart>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Budget Evolution Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
-                Evolução do Orçamento por Departamento
-              </CardTitle>
-              <CardDescription>Crescimento mensal do orçamento disponível por departamento de igreja</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer 
-                config={{
-                  'Ministério Jovem': { label: "Ministério Jovem", color: "#3b82f6" },
-                  'Educação Cristã': { label: "Educação Cristã", color: "#10b981" },
-                  'Diaconia': { label: "Diaconia", color: "#f59e0b" },
-                  'Música': { label: "Música", color: "#ef4444" },
-                  'Evangelismo': { label: "Evangelismo", color: "#8b5cf6" }
-                }} 
-                className="h-[300px] sm:h-[400px] w-full"
-              >
-                <LineChart data={chartData.budgetTimeline}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis dataKey="month" fontSize={11} />
-                  <YAxis fontSize={11} tickFormatter={(value) => `$${(value / 1000)}K`} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Legend />
-                  <Line dataKey="Ministério Jovem" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line dataKey="Educação Cristã" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line dataKey="Diaconia" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line dataKey="Música" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line dataKey="Evangelismo" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} />
-                </LineChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Departments Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Layers className="w-5 h-5" />
-              Church Departments
-            </CardTitle>
-            <CardDescription>Lista completa de departamentos de igreja com ações de gerenciamento</CardDescription>
-          </CardHeader>
-          <CardContent className="overflow-hidden">
-            <DataTable
-              columns={columns}
-              data={departments}
-              searchKey="name"
-              searchPlaceholder="Search church departments..."
-              filterableColumns={[
+              <CardContent className="overflow-hidden p-0">
+                <UseTable
+                  columns={departmentColumns}
+                  data={departments}
+                  searchKey="name"
+                  emptyEntityName="Church Departments"
+                  filters={[
                 {
-                  id: "church",
+                  id: "church_id",
                   title: "Church",
+                  options: churches.map(church => ({
+                    label: church.name,
+                    value: church.id
+                  }))
+                },
+                {
+                  id: "status",
+                  title: "Status",
                   options: [
-                    { label: "Institutional", value: "institutional" },
-                    ...churches.map(church => ({
-                      label: church.name,
-                      value: church.id
-                    }))
+                    { label: "Active", value: "true" },
+                    { label: "Inactive", value: "false" }
                   ]
                 }
               ]}
             />
           </CardContent>
         </Card>
+          </>
+        )}
         
-        {/* Add Department Modal */}
+        {/* Add Department Modal - CHURCH DEPARTMENT */}
         <AddDepartmentModal
           isOpen={isAddDepartmentModalOpen}
           onOpenChange={setIsAddDepartmentModalOpen}
           institutionId={currentInstitutionData.id}
-          churches={churches}
+          churches={churches as any}
           onSave={handleDepartmentSaved}
+          departmentType="church"
         />
         
         {/* Edit Department Modal */}
@@ -692,9 +945,9 @@ export default function ChurchDepartmentsPage() {
           <EditDepartmentModal
             isOpen={isEditDepartmentModalOpen}
             onOpenChange={setIsEditDepartmentModalOpen}
-            department={selectedDepartment}
-            churches={churches}
-            onSave={handleDepartmentUpdated}
+            department={selectedDepartment as any}
+            churches={churches as any}
+            onSave={handleDepartmentUpdated as any}
           />
         )}
         
@@ -703,19 +956,20 @@ export default function ChurchDepartmentsPage() {
           <DeleteDepartmentModal
             isOpen={isDeleteDepartmentModalOpen}
             onOpenChange={setIsDeleteDepartmentModalOpen}
-            department={selectedDepartment}
-            onSuccess={handleDepartmentDeleted}
+            department={selectedDepartment as any}
+            onSuccess={handleDepartmentDeleted as any}
           />
         )}
         
         {/* View Contact Modal */}
-        {selectedContact && (
+        {/* TODO: Fix ContactViewEditModal - requires updateMutation and entityId props */}
+        {/* {selectedContact && (
           <ContactViewEditModal
             isOpen={isViewContactModalOpen}
             onOpenChange={setIsViewContactModalOpen}
-            contact={selectedContact}
+            contact={selectedContact as any}
           />
-        )}
+        )} */}
         
         {/* Annual Budget Modal */}
         {selectedDepartment && (
