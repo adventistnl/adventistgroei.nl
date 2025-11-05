@@ -24,7 +24,7 @@ const routePermissions: Record<string, { resolvers: PermissionResolverName[] }> 
   '/profile': { resolvers: [] },
   '/projects': { resolvers: [] },
   '/projects/[id]': { resolvers: [] },
-  '/regions': { resolvers: [] },
+  '/regions-example': { resolvers: [] },
   '/reports': { resolvers: [] },
   '/settings': { resolvers: [] },
   '/structure': { resolvers: [] },

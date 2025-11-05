@@ -66,6 +66,8 @@ interface UseTableProps<TData, TValue> {
   searchKey?: string
   className?: string
   onRowClick?: (row: TData) => void
+  emptyMessage?: string // Mensagem customizada quando não há dados
+  emptyEntityName?: string // Nome da entidade para mensagem padrão
 }
 
 export function UseTable<TData, TValue>({
@@ -75,6 +77,8 @@ export function UseTable<TData, TValue>({
   searchKey = "name",
   className = "",
   onRowClick,
+  emptyMessage,
+  emptyEntityName,
 }: UseTableProps<TData, TValue>) {
   const { t } = useTranslation()
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -329,13 +333,13 @@ export function UseTable<TData, TValue>({
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
+                    <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
                     const isActionHeader = header.column.id === 'actions'
                     return (
                       <TableHead 
                         key={header.id} 
-                        className={`whitespace-nowrap ${isActionHeader ? 'text-right' : 'text-left'}`}
+                        className={`whitespace-nowrap px-4 py-3 ${isActionHeader ? 'text-right' : 'text-left'}`}
                       >
                         {header.isPlaceholder
                           ? null
@@ -389,7 +393,7 @@ export function UseTable<TData, TValue>({
                         return (
                           <TableCell 
                             key={cell.id} 
-                            className={`whitespace-nowrap ${isActionCell ? 'text-right' : 'text-left'}`}
+                            className={`whitespace-nowrap px-4 py-3 ${isActionCell ? 'text-right' : 'text-left'}`}
                           >
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </TableCell>
@@ -434,8 +438,17 @@ export function UseTable<TData, TValue>({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={columns.length + 1} className="h-24 text-center">
-                    No results found.
+                  <TableCell colSpan={columns.length + 1} className="h-24 text-center px-4 py-3">
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <p className="text-muted-foreground">
+                        {emptyMessage || 
+                          (emptyEntityName 
+                            ? `No data registered for ${emptyEntityName} yet.`
+                            : "No results found."
+                          )
+                        }
+                      </p>
+                    </div>
                   </TableCell>
                 </TableRow>
               )}

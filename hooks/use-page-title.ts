@@ -3,7 +3,7 @@ import { usePageContext } from '@/contexts/page-context'
 
 interface UsePageTitleOptions {
   title: string
-  breadcrumbs?: { name: string; href?: string }[]
+  breadcrumbs?: { name: string; href?: string; onClick?: () => void }[]
 }
 
 export function usePageTitle({ title, breadcrumbs }: UsePageTitleOptions) {

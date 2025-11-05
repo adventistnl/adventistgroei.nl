@@ -7,6 +7,7 @@ import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/ui/status-badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -26,38 +27,26 @@ import {
   Lock,
   Settings,
   Crown,
-  AlertTriangle,
-  CheckCircle,
-  TrendingUp,
-  BarChart3,
   Activity
 } from "lucide-react"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
 
 // Components
-import { RoleDistributionChart, PermissionsByGroupChart, UserActivityChart } from "@/components/access/access-charts"
 import { UseTable } from "@/components/ui/use-table"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
-import { AnalyticsGridCarousel } from "@/components/shared/responsive-grid-carousel"
 
 // Role Modals
 import { CreateRoleModal, EditRoleModal, DeleteRoleModal } from "@/components/modals/role"
 
 // Data
-import {
-  users,
-  getRoleDistribution,
-  getPermissionsByGroup,
-  getUserActivityOverTime,
-} from "@/data/accessData"
+import { users } from "@/data/accessData"
 import { useRoles } from "@/hooks/use-roles"
 import { Roles_roles as Role } from "@/types/Roles"
 import { Permissions_permissions_data as Permission } from "@/types/Permissions"
 import { usePermissions } from "@/hooks/use-permissions"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
-import { useAccessKPI } from "@/hooks/KPI/use-access-kpi"
 import { AccessDenied } from "@/components/access/access-denied"
 
 export default function AccessManagementPage() {
@@ -71,16 +60,6 @@ export default function AccessManagementPage() {
   const [isDeleteRoleOpen, setIsDeleteRoleOpen] = useState(false)
   const [selectedRoleForEdit, setSelectedRoleForEdit] = useState<Role | null>(null)
   const [selectedRoleForDelete, setSelectedRoleForDelete] = useState<Role | null>(null)
-
-  // KPIs via hook integrado
-  const {roleDistribution, permissionsByGroup, ...accessKpiData} = useAccessKPI();
-  // const userActivityData = getUserActivityOverTime()
-
-  const breadcrumbs = useMemo(() => [
-    { name: "Dashboard", href: "/dashboard" },
-    { name: "Users & Access" },
-    { name: t('access.title') }
-  ], [t])
 
   // KPIs essenciais para overview de roles e permissões
   const kpiCardsData: KPICardData[] = useMemo(() => [
@@ -114,28 +93,8 @@ export default function AccessManagementPage() {
     }
   ], [roles, permissions])
 
-  // Componentes individuais de gráficos para o ResponsiveGridCarousel
-  const analyticsComponents = useMemo(() => [
-    <RoleDistributionChart
-      key="role_distribution"
-      data={roleDistribution}
-      loading={isLoading}
-    />,
-    <PermissionsByGroupChart
-      key="permissions_by_group"
-      data={permissionsByGroup}
-      loading={isLoading}
-    />,
-    // <UserActivityChart
-    //   key="user_activity"
-    //   data={userActivityData}
-    //   loading={isLoading}
-    // />
-  ], [roleDistribution, permissionsByGroup, isLoading])
-
   usePageTitle({
-    title: t('access.title'),
-    breadcrumbs
+    title: t('access.title')
   })
 
   // Load data
@@ -194,13 +153,14 @@ export default function AccessManagementPage() {
       header: "Type",
       cell: ({ row }) => {
         const role = row.original
+        const isAdmin = role.key_code === 'ADMIN' || role.key_code.includes('ADMIN')
         return (
-          <Badge 
-            variant={role.key_code === 'ADMIN' ? 'default' : 'secondary'}
-            className="font-mono"
-          >
-            {role.key_code}
-          </Badge>
+          <StatusBadge 
+            label={role.key_code}
+            variant="neutral"
+            icon={isAdmin ? Crown : Shield}
+            size="sm"
+          />
         )
       },
     },
@@ -219,9 +179,12 @@ export default function AccessManagementPage() {
         const role = row.original
         const permissionCount = role.permissions.reduce((sum, group) => sum + group.data.length, 0)
         return (
-          <Badge variant="outline">
-            {permissionCount} permissions
-          </Badge>
+          <StatusBadge 
+            label={`${permissionCount} permissions`}
+            variant="neutral"
+            icon={Lock}
+            size="sm"
+          />
         )
       },
     },
@@ -231,44 +194,48 @@ export default function AccessManagementPage() {
       cell: ({ row }) => {
         const userCount = row.original.users?.length || 0
         return (
-          <Badge variant="secondary">
-            {userCount} users
-          </Badge>
+          <StatusBadge 
+            label={`${userCount} users`}
+            variant="neutral"
+            icon={Users}
+            size="sm"
+          />
         )
       },
     },
     {
       id: "actions",
-      header: t('access.roles.table.actions'),
+      header: () => <div className="text-right">{t('access.roles.table.actions')}</div>,
       cell: ({ row }) => {
         const role = row.original
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+          <div className="flex justify-end" data-action-button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
                 <DropdownMenuItem
                   onClick={() => {
-                  setSelectedRoleForEdit(role)
-                  setIsEditRoleOpen(true)
-                }}
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                {t('access.roles.actions.edit_role')}
-              </DropdownMenuItem>
-              <WithPermission requiredPermissions={[PermissionResolverName.UpdateRole]}>
-                <DropdownMenuItem
-                  onClick={() => handleEditPermissions(role)}
+                    setSelectedRoleForEdit(role)
+                    setIsEditRoleOpen(true)
+                  }}
                 >
-                  <Settings className="mr-2 h-4 w-4" />
-                  {t('access.roles.actions.edit_permissions')}
+                  <Edit className="mr-2 h-4 w-4" />
+                  {t('access.roles.actions.edit_role')}
                 </DropdownMenuItem>
-              </WithPermission>
-              <WithPermission requiredPermissions={[PermissionResolverName.DeleteRole]}>
-                <DropdownMenuItem
+                <WithPermission requiredPermissions={[PermissionResolverName.UpdateRole]}>
+                  <DropdownMenuItem
+                    onClick={() => handleEditPermissions(role)}
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    {t('access.roles.actions.edit_permissions')}
+                  </DropdownMenuItem>
+                </WithPermission>
+                <WithPermission requiredPermissions={[PermissionResolverName.DeleteRole]}>
+                  <DropdownMenuItem
                     className="text-red-600"
                     onClick={() => {
                       setSelectedRoleForDelete(role)
@@ -278,9 +245,10 @@ export default function AccessManagementPage() {
                     <Trash2 className="mr-2 h-4 w-4" />
                     {t('access.roles.actions.delete_role')}
                   </DropdownMenuItem>
-              </WithPermission>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                </WithPermission>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         )
       },
     },
@@ -316,9 +284,11 @@ export default function AccessManagementPage() {
       cell: ({ row }) => {
         const permission = row.original
         return (
-          <Badge variant="outline" className="font-mono">
-            {permission.key_code}
-          </Badge>
+          <StatusBadge 
+            label={permission.key_code}
+            variant="neutral"
+            size="sm"
+          />
         )
       },
     },
@@ -337,9 +307,11 @@ export default function AccessManagementPage() {
       cell: ({ row }) => {
         const group = row.original.group
         return (
-          <Badge variant="outline" className="font-mono">
-            {group}
-          </Badge>
+          <StatusBadge 
+            label={group || '-'}
+            variant="neutral"
+            size="sm"
+          />
         )
       },
     },
@@ -426,10 +398,6 @@ export default function AccessManagementPage() {
                 <Lock className="w-4 h-4 mr-2" />
                 {t('access.tabs.permissions')}
               </TabsTrigger>
-              <TabsTrigger value="charts" className="data-[state=active]:bg-background">
-                <TrendingUp className="w-4 h-4 mr-2" />
-                Charts & Analytics
-              </TabsTrigger>
             </TabsList>
 
 
@@ -456,7 +424,7 @@ export default function AccessManagementPage() {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="overflow-hidden p-0">
                   <UseTable
                     columns={roleColumns}
                     data={roles}
@@ -473,6 +441,8 @@ export default function AccessManagementPage() {
                         }, [] as { label: string, value: string }[])
                       }
                     ]}
+                    emptyMessage={t('access.roles.table.no_results') || "No roles found"}
+                    emptyEntityName="role"
                   />
                 </CardContent>
               </Card>
@@ -490,7 +460,7 @@ export default function AccessManagementPage() {
                     {t('access.permissions.subtitle')}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="overflow-hidden p-0">
                   <UseTable
                     columns={permissionColumns}
                     data={permissions.flatMap(p => p.data.flatMap(perm => perm))}
@@ -507,125 +477,11 @@ export default function AccessManagementPage() {
                         }, [] as { label: string, value: string }[])
                       }
                     ]}
+                    emptyMessage={t('access.permissions.table.no_results') || "No permissions found"}
+                    emptyEntityName="permission"
                   />
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            {/* Charts & Analytics Tab */}
-            <TabsContent value="charts" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Role Distribution Chart */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Shield className="w-4 h-4" />
-                      Role Distribution
-                    </CardTitle>
-                    <CardDescription>
-                      Overview of role allocation across the system
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <RoleDistributionChart
-                      data={roleDistribution}
-                      loading={isLoading}
-                    />
-                  </CardContent>
-                </Card>
-
-                {/* Permissions by Group Chart */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Lock className="w-4 h-4" />
-                      Permissions by Group
-                    </CardTitle>
-                    <CardDescription>
-                      Permission distribution across functional groups
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <PermissionsByGroupChart
-                      data={permissionsByGroup}
-                      loading={isLoading}
-                    />
-                  </CardContent>
-                </Card>
-
-                {/* Role Types Summary */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <BarChart3 className="w-4 h-4" />
-                      Role Types
-                    </CardTitle>
-                    <CardDescription>
-                      Breakdown by role categories
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {roles.reduce((acc, role) => {
-                        const type = role.key_code.includes('ADMIN') ? 'Admin' : 
-                                    role.key_code.includes('USER') ? 'User' : 
-                                    role.key_code.includes('MANAGER') ? 'Manager' : 'Other'
-                        const existing = acc.find(item => item.type === type)
-                        if (existing) {
-                          existing.count++
-                        } else {
-                          acc.push({ type, count: 1 })
-                        }
-                        return acc
-                      }, [] as { type: string, count: number }[]).map((item, index) => (
-                        <div key={item.type} className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ 
-                                backgroundColor: item.type === 'Admin' ? '#ef4444' : 
-                                               item.type === 'Manager' ? '#f59e0b' : 
-                                               item.type === 'User' ? '#10b981' : '#6b7280'
-                              }}
-                            />
-                            <span className="text-sm font-medium">{item.type}</span>
-                          </div>
-                          <Badge variant="secondary">{item.count}</Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Permission Groups Summary */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Activity className="w-4 h-4" />
-                      Permission Groups
-                    </CardTitle>
-                    <CardDescription>
-                      System permission organization
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {permissions.map((group, index) => (
-                        <div key={group.group} className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ backgroundColor: `hsl(${index * 60}, 70%, 50%)` }}
-                            />
-                            <span className="text-sm font-medium">{group.group}</span>
-                          </div>
-                          <Badge variant="outline">{group.data.length}</Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
             </TabsContent>
           </Tabs>
 

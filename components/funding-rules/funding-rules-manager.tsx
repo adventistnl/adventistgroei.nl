@@ -24,7 +24,9 @@ import {
   ToggleLeft,
   ToggleRight,
   LayoutGrid,
-  List
+  List,
+  Save,
+  X
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -51,9 +53,17 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import toast from "react-hot-toast"
-import { DataTable } from "@/components/ui/data-table"
+import { UseTable } from "@/components/ui/use-table"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { KanbanBoard, KanbanGroup, KanbanItem, KanbanAction } from "@/components/ui/kanban-board"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { 
+  CreateFundingRuleModal, 
+  EditFundingRuleModal, 
+  DeleteFundingRuleModal 
+} from "@/components/modals/funding-rule"
+import { DeleteFundingPolicyGroupModal } from "@/components/modals/funding-policy-group/delete-funding-policy-group-modal"
+import { EditFundingPolicyGroupModal } from "@/components/modals/funding-policy-group/edit-funding-policy-group-modal"
 
 // Charts
 import {
@@ -82,6 +92,7 @@ interface FundingRule {
   condition: string
   value: any
   description: string
+  ruleCategory: 'justification' | 'condition'
 }
 
 interface FundingRuleGroup {
@@ -134,8 +145,6 @@ export function FundingRulesManager({
   entityId,
   isLoading = false,
   onRefresh,
-  title = "Funding Rules",
-  description = "Manage funding rules and groups for subsidy requests",
   showCharts = true,
   showKPICards = true
 }: FundingRulesManagerProps) {
@@ -147,8 +156,13 @@ export function FundingRulesManager({
   const [isEditGroupModalOpen, setIsEditGroupModalOpen] = useState(false)
   const [groupToEdit, setGroupToEdit] = useState<FundingRuleGroup | null>(null)
   const [isEditRuleModalOpen, setIsEditRuleModalOpen] = useState(false)
+  const [isDeleteRuleModalOpen, setIsDeleteRuleModalOpen] = useState(false)
+  const [isDeleteGroupModalOpen, setIsDeleteGroupModalOpen] = useState(false)
   const [ruleToEdit, setRuleToEdit] = useState<FundingRule | null>(null)
+  const [ruleToDelete, setRuleToDelete] = useState<FundingRule | null>(null)
+  const [groupToDelete, setGroupToDelete] = useState<FundingRuleGroup | null>(null)
   const [editRuleGroupId, setEditRuleGroupId] = useState<string | null>(null)
+  const [deleteRuleGroupId, setDeleteRuleGroupId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table')
   const [dragOverGroupId, setDragOverGroupId] = useState<string | null>(null)
 
@@ -168,7 +182,8 @@ export function FundingRulesManager({
           type: 'percentage',
           condition: 'max_percentage',
           value: 65,
-          description: 'Maximum 65% of total budget'
+          description: 'Maximum 65% of total budget',
+          ruleCategory: 'condition'
         },
         {
           id: '2',
@@ -176,7 +191,8 @@ export function FundingRulesManager({
           type: 'amount',
           condition: 'max_amount',
           value: 5000,
-          description: 'Maximum $5,000 per request'
+          description: 'Maximum $5,000 per request',
+          ruleCategory: 'condition'
         },
         {
           id: '3',
@@ -184,7 +200,8 @@ export function FundingRulesManager({
           type: 'number',
           condition: 'min_activities',
           value: 2,
-          description: 'At least 2 activities required'
+          description: 'At least 2 activities required',
+          ruleCategory: 'condition'
         }
       ]
     },
@@ -202,7 +219,8 @@ export function FundingRulesManager({
           type: 'category',
           condition: 'allowed_categories',
           value: ['education', 'recreation', 'outreach'],
-          description: 'Only education, recreation, and outreach activities'
+          description: 'Only education, recreation, and outreach activities',
+          ruleCategory: 'condition'
         },
         {
           id: '5',
@@ -210,7 +228,8 @@ export function FundingRulesManager({
           type: 'amount',
           condition: 'max_monthly',
           value: 1500,
-          description: 'Maximum $1,500 per month'
+          description: 'Maximum $1,500 per month',
+          ruleCategory: 'condition'
         }
       ]
     },
@@ -228,7 +247,8 @@ export function FundingRulesManager({
           type: 'amount',
           condition: 'auto_approve_under',
           value: 1000,
-          description: 'Auto-approve requests under $1,000'
+          description: 'Auto-approve requests under $1,000',
+          ruleCategory: 'condition'
         },
         {
           id: '7',
@@ -236,7 +256,8 @@ export function FundingRulesManager({
           type: 'boolean',
           condition: 'requires_documentation',
           value: true,
-          description: 'Documentation required for all requests'
+          description: 'Documentation required for all requests',
+          ruleCategory: 'justification'
         }
       ]
     }
@@ -247,20 +268,6 @@ export function FundingRulesManager({
     name: '',
     description: '',
     color: '#10b981'
-  })
-
-  const [ruleFormData, setRuleFormData] = useState<{
-    name: string
-    type: 'percentage' | 'amount' | 'number' | 'category' | 'boolean'
-    condition: string
-    value: string
-    description: string
-  }>({
-    name: '',
-    type: 'amount',
-    condition: '',
-    value: '',
-    description: ''
   })
 
   // KPI Data
@@ -374,23 +381,15 @@ export function FundingRulesManager({
     toast.success('Funding rule group created successfully')
   }
 
-  const handleCreateRule = () => {
-    if (!selectedGroup || !ruleFormData.name || !ruleFormData.condition || !ruleFormData.value) {
-      toast.error('Please fill in all required fields')
+  const handleCreateRule = (newRuleData: Omit<FundingRule, 'id'>) => {
+    if (!selectedGroup) {
+      toast.error('No group selected')
       return
     }
 
     const newRule: FundingRule = {
       id: `rule-${Date.now()}`,
-      name: ruleFormData.name,
-      type: ruleFormData.type,
-      condition: ruleFormData.condition,
-      value: ['number', 'amount', 'percentage'].includes(ruleFormData.type)
-        ? Number(ruleFormData.value) 
-        : ruleFormData.type === 'boolean' 
-          ? ruleFormData.value === 'true' 
-          : ruleFormData.value,
-      description: ruleFormData.description
+      ...newRuleData
     }
 
     const updatedGroups = fundingRuleGroups.map(group =>
@@ -400,9 +399,6 @@ export function FundingRulesManager({
     )
 
     setFundingRuleGroups(updatedGroups)
-    setIsCreateRuleModalOpen(false)
-    resetRuleForm()
-    toast.success('Rule added to group successfully')
   }
 
   const handleToggleGroup = (groupId: string) => {
@@ -415,8 +411,38 @@ export function FundingRulesManager({
   }
 
   const handleDeleteGroup = (groupId: string) => {
-    setFundingRuleGroups(fundingRuleGroups.filter(g => g.id !== groupId))
-    toast.success('Funding rule group deleted successfully')
+    const group = fundingRuleGroups.find(g => g.id === groupId)
+    if (!group) return
+    
+    setGroupToDelete(group)
+    setIsDeleteGroupModalOpen(true)
+  }
+
+  const handleConfirmDeleteGroup = () => {
+    if (!groupToDelete) return
+    
+    setFundingRuleGroups(fundingRuleGroups.filter(g => g.id !== groupToDelete.id))
+    setGroupToDelete(null)
+    setIsDeleteGroupModalOpen(false)
+  }
+
+  const handleUpdateGroup = (updatedGroupData: any) => {
+    if (!groupToEdit) return
+    
+    const updatedGroups = fundingRuleGroups.map(group =>
+      group.id === groupToEdit.id
+        ? {
+            ...group,
+            name: updatedGroupData.name,
+            description: updatedGroupData.description || '',
+            active: updatedGroupData.is_active
+          }
+        : group
+    )
+    
+    setFundingRuleGroups(updatedGroups)
+    setGroupToEdit(null)
+    setIsEditGroupModalOpen(false)
   }
 
   const handleDuplicateRule = (ruleId: string, groupId: string) => {
@@ -442,13 +468,28 @@ export function FundingRulesManager({
   }
 
   const handleDeleteRule = (ruleId: string, groupId: string) => {
+    const group = fundingRuleGroups.find(g => g.id === groupId)
+    const ruleToDelete = group?.rules.find(r => r.id === ruleId)
+    
+    if (!ruleToDelete || !group) return
+
+    setRuleToDelete(ruleToDelete)
+    setDeleteRuleGroupId(groupId)
+    setIsDeleteRuleModalOpen(true)
+  }
+
+  const handleConfirmDeleteRule = () => {
+    if (!ruleToDelete || !deleteRuleGroupId) return
+
     const updatedGroups = fundingRuleGroups.map(group =>
-      group.id === groupId
-        ? { ...group, rules: group.rules.filter(r => r.id !== ruleId) }
+      group.id === deleteRuleGroupId
+        ? { ...group, rules: group.rules.filter(r => r.id !== ruleToDelete.id) }
         : group
     )
 
     setFundingRuleGroups(updatedGroups)
+    setRuleToDelete(null)
+    setDeleteRuleGroupId(null)
     toast.success('Rule deleted successfully')
   }
 
@@ -461,42 +502,13 @@ export function FundingRulesManager({
     setRuleToEdit(ruleToEdit)
     setEditRuleGroupId(groupId)
     setSelectedGroup(group)
-    
-    // Populate edit form with existing values
-    setRuleFormData({
-      name: ruleToEdit.name,
-      type: ruleToEdit.type,
-      condition: ruleToEdit.condition,
-      value: ruleToEdit.type === 'boolean' 
-        ? ruleToEdit.value.toString() 
-        : Array.isArray(ruleToEdit.value) 
-          ? ruleToEdit.value.join(',') 
-          : ruleToEdit.value.toString(),
-      description: ruleToEdit.description
-    })
-    
     setIsEditRuleModalOpen(true)
   }
 
-  const handleUpdateRule = () => {
-    if (!ruleToEdit || !editRuleGroupId || !ruleFormData.name || !ruleFormData.condition || !ruleFormData.value) {
-      toast.error('Please fill in all required fields')
+  const handleUpdateRule = (updatedRule: FundingRule) => {
+    if (!editRuleGroupId) {
+      toast.error('No group selected')
       return
-    }
-
-    const updatedRule: FundingRule = {
-      ...ruleToEdit,
-      name: ruleFormData.name,
-      type: ruleFormData.type,
-      condition: ruleFormData.condition,
-      value: ['number', 'amount', 'percentage'].includes(ruleFormData.type)
-        ? Number(ruleFormData.value) 
-        : ruleFormData.type === 'boolean' 
-          ? ruleFormData.value === 'true' 
-          : ruleFormData.type === 'category'
-            ? ruleFormData.value.split(',').map(v => v.trim())
-            : ruleFormData.value,
-      description: ruleFormData.description
     }
 
     const updatedGroups = fundingRuleGroups.map(group =>
@@ -504,18 +516,14 @@ export function FundingRulesManager({
         ? { 
             ...group, 
             rules: group.rules.map(rule => 
-              rule.id === ruleToEdit.id ? updatedRule : rule
+              rule.id === updatedRule.id ? updatedRule : rule
             ) 
           }
         : group
     )
 
     setFundingRuleGroups(updatedGroups)
-    setIsEditRuleModalOpen(false)
-    setRuleToEdit(null)
     setEditRuleGroupId(null)
-    resetRuleForm()
-    toast.success('Rule updated successfully')
   }
 
   const handleMoveRule = (ruleId: string, fromGroupId: string, toGroupId: string) => {
@@ -553,16 +561,6 @@ export function FundingRulesManager({
     })
   }
 
-  const resetRuleForm = () => {
-    setRuleFormData({
-      name: '',
-      type: 'amount',
-      condition: '',
-      value: '',
-      description: ''
-    })
-  }
-
   const getRuleTypeIcon = (type: string) => {
     switch (type) {
       case 'amount': return DollarSign
@@ -584,20 +582,20 @@ export function FundingRulesManager({
     }
   }
 
-  // Table columns for groups
+  // Table columns for groups - Minimalista e Responsivo com UseTable
   const groupColumns: ColumnDef<FundingRuleGroup>[] = [
     {
       id: "name",
       accessorKey: "name",
       header: "Group Name",
       cell: ({ row }) => (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <div 
-            className="w-4 h-4 rounded-full flex-shrink-0" 
+            className="w-2 h-2 rounded-full flex-shrink-0" 
             style={{ backgroundColor: row.original.color }}
           />
-          <div>
-            <div className="font-medium">{row.original.name}</div>
+          <div className="min-w-0 flex-1">
+            <div className="font-medium text-sm truncate">{row.original.name}</div>
             <div className="text-xs text-muted-foreground">
               {row.original.rules.length} rule{row.original.rules.length !== 1 ? 's' : ''}
             </div>
@@ -609,74 +607,95 @@ export function FundingRulesManager({
       id: "description",
       accessorKey: "description",
       header: "Description",
-    },
-    {
-      id: "status",
-      header: "Status",
       cell: ({ row }) => (
-        <Badge variant={row.original.active ? "default" : "secondary"}>
-          {row.original.active ? "Active" : "Inactive"}
-        </Badge>
+        <div className="text-sm text-muted-foreground max-w-md truncate">
+          {row.original.description || '—'}
+        </div>
       ),
     },
     {
       id: "rules_count",
+      accessorKey: "rules",
       header: "Rules",
       cell: ({ row }) => (
-        <span className="font-medium">{row.original.rules.length}</span>
+        <StatusBadge 
+          label={`${row.original.rules.length}`}
+          variant="neutral"
+          size="sm"
+        />
+      ),
+    },
+    {
+      id: "status",
+      accessorKey: "active",
+      header: "Status",
+      cell: ({ row }) => (
+        <StatusBadge 
+          label={row.original.active ? "Active" : "Inactive"}
+          variant={row.original.active ? "success" : "neutral"}
+          showDot
+          size="sm"
+        />
       ),
     },
     {
       id: "created_at",
+      accessorKey: "created_at",
       header: "Created",
       cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
-          {new Date(row.original.created_at).toLocaleDateString()}
-        </span>
+        <div className="text-xs text-muted-foreground whitespace-nowrap">
+          {new Date(row.original.created_at).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          })}
+        </div>
       ),
     },
     {
       id: "actions",
-      header: "Actions",
+      header: () => <div className="text-right">Actions</div>,
       cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <MoreHorizontal className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => {
-              setSelectedGroup(row.original)
-              setIsCreateRuleModalOpen(true)
-            }}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Rule
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleToggleGroup(row.original.id)}>
-              {row.original.active ? (
-                <ToggleLeft className="w-4 h-4 mr-2" />
-              ) : (
-                <ToggleRight className="w-4 h-4 mr-2" />
-              )}
-              {row.original.active ? 'Deactivate' : 'Activate'}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              setGroupToEdit(row.original)
-              setIsEditGroupModalOpen(true)
-            }}>
-              <Edit className="w-4 h-4 mr-2" />
-              Edit Group
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => handleDeleteGroup(row.original.id)}
-              className="text-red-600"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete Group
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex justify-end" data-action-button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => {
+                setSelectedGroup(row.original)
+                setIsCreateRuleModalOpen(true)
+              }}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Rule
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleToggleGroup(row.original.id)}>
+                {row.original.active ? (
+                  <ToggleLeft className="w-4 h-4 mr-2" />
+                ) : (
+                  <ToggleRight className="w-4 h-4 mr-2" />
+                )}
+                {row.original.active ? 'Deactivate' : 'Activate'}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                setGroupToEdit(row.original)
+                setIsEditGroupModalOpen(true)
+              }}>
+                <Edit className="w-4 h-4 mr-2" />
+                Edit Group
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleDeleteGroup(row.original.id)}
+                className="text-destructive"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Group
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       ),
     },
   ]
@@ -701,7 +720,8 @@ export function FundingRulesManager({
       metadata: {
         type: rule.type,
         condition: rule.condition,
-        value: formatRuleValue(rule)
+        value: formatRuleValue(rule),
+        ruleCategory: rule.ruleCategory
       }
     }))
   )
@@ -796,6 +816,112 @@ export function FundingRulesManager({
     handleMoveRule(itemId, fromGroupId, toGroupId)
   }
 
+  // Custom Kanban Item Renderer with StatusBadge
+  const renderKanbanItem = (item: KanbanItem, group: KanbanGroup, dragHandlers?: any) => {
+    const IconComponent = item.icon
+    const groupActions = kanbanActions.filter(action => action.showInItem)
+    const ruleCategory = item.metadata?.ruleCategory || 'condition'
+    
+    return (
+      <Card 
+        key={item.id}
+        className={`relative w-full p-3 border hover:border-foreground/20 transition-all duration-200 bg-card/50 cursor-grab active:cursor-grabbing hover:shadow-sm ${
+          dragHandlers?.className || ''
+        }`}
+        {...dragHandlers}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-2 flex-1 min-w-0">
+            {IconComponent && (
+              <IconComponent className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+            )}
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <h4 className="font-medium text-sm leading-tight line-clamp-2">{item.title}</h4>
+              
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {/* Rule Type Badge - monocromático */}
+                {item.metadata?.type && (
+                  <StatusBadge 
+                    label={item.metadata.type}
+                    variant="neutral"
+                    size="sm"
+                  />
+                )}
+                
+                {/* Rule Category Badge - monocromático */}
+                <StatusBadge 
+                  label={ruleCategory === 'justification' ? 'Justification' : 'Condition'}
+                  variant="neutral"
+                  size="sm"
+                />
+              </div>
+            </div>
+          </div>
+          
+          {groupActions.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0">
+                  <MoreHorizontal className="w-3.5 h-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {groupActions.map((action) => (
+                  <DropdownMenuItem 
+                    key={action.id}
+                    onClick={() => action.onClick(group, item)}
+                    className={action.variant === 'destructive' ? 'text-destructive' : ''}
+                  >
+                    <action.icon className="w-4 h-4 mr-2" />
+                    {action.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </Card>
+    )
+  }
+
+  // Handler for saving Kanban changes
+  const handleSaveKanbanChanges = async (changes: Array<{
+    itemId: string
+    fromGroupId: string
+    toGroupId: string
+  }>) => {
+    // Simulate API call to save rule movements
+    // In production, this would update the backend
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // Update the state with the changes
+    const updatedGroups = fundingRuleGroups.map(group => {
+      const updatedRules = [...group.rules]
+      
+      changes.forEach(change => {
+        // Remove rule from old group
+        const ruleIndex = updatedRules.findIndex(r => r.id === change.itemId)
+        if (ruleIndex >= 0 && group.id === change.fromGroupId) {
+          updatedRules.splice(ruleIndex, 1)
+        }
+        
+        // Add rule to new group
+        if (group.id === change.toGroupId) {
+          const rule = fundingRuleGroups
+            .flatMap(g => g.rules)
+            .find(r => r.id === change.itemId)
+          if (rule) {
+            updatedRules.push(rule)
+          }
+        }
+      })
+      
+      return { ...group, rules: updatedRules }
+    })
+    
+    setFundingRuleGroups(updatedGroups)
+  }
+
   // View Toggle Component
   const ViewToggle = () => (
     <div className="flex items-center border rounded-md">
@@ -843,19 +969,6 @@ export function FundingRulesManager({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">
-            {title}
-          </h2>
-          <p className="text-muted-foreground text-sm sm:text-base">
-            {description}
-          </p>
-        </div>
-        
-
-      </div>
 
       {/* KPI Cards */}
       {showKPICards && (
@@ -951,7 +1064,7 @@ export function FundingRulesManager({
       {/* Funding Rule Groups - Table or Kanban View */}
       {viewMode === 'table' ? (
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
@@ -966,13 +1079,12 @@ export function FundingRulesManager({
               <ViewToggle />
             </div>
           </CardHeader>
-          <CardContent className="overflow-hidden">
-            <DataTable
+          <CardContent className="p-0">
+            <UseTable
               columns={groupColumns}
               data={fundingRuleGroups}
               searchKey="name"
-              searchPlaceholder="Search rule groups..."
-              filterableColumns={[
+              filters={[
                 {
                   id: "active",
                   title: "Status",
@@ -982,6 +1094,8 @@ export function FundingRulesManager({
                   ]
                 }
               ]}
+              onRowClick={(row) => setSelectedGroup(row)}
+              emptyEntityName="funding rule groups"
             />
           </CardContent>
         </Card>
@@ -1002,15 +1116,19 @@ export function FundingRulesManager({
               <ViewToggle />
             </div>
           </CardHeader>
-          <CardContent className="overflow-hidden">
-            <KanbanBoard
-              groups={kanbanGroups}
-              items={kanbanItems}
-              actions={kanbanActions}
-              onItemMove={handleKanbanItemMove}
-              isLoading={isLoading}
-              maxHeight="calc(100vh - 300px)"
-            />
+          <CardContent className="p-0 overflow-hidden">
+            <div className="w-full overflow-hidden">
+              <KanbanBoard
+                groups={kanbanGroups}
+                items={kanbanItems}
+                actions={kanbanActions}
+                onItemMove={handleKanbanItemMove}
+                onSaveChanges={handleSaveKanbanChanges}
+                renderItem={renderKanbanItem}
+                isLoading={isLoading}
+                maxHeight="calc(100vh - 300px)"
+              />
+            </div>
           </CardContent>
         </Card>
       )}
@@ -1107,192 +1225,89 @@ export function FundingRulesManager({
       </Dialog>
 
       {/* Create Rule Modal */}
-      <Dialog open={isCreateRuleModalOpen} onOpenChange={setIsCreateRuleModalOpen}>
-        <DialogContent className="sm:max-w-[525px]">
-          <DialogHeader>
-            <DialogTitle>Add Rule to "{selectedGroup?.name}"</DialogTitle>
-            <DialogDescription>
-              Add a new funding rule to this group.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="rule-name">Rule Name *</Label>
-              <Input
-                id="rule-name"
-                value={ruleFormData.name}
-                onChange={(e) => setRuleFormData({...ruleFormData, name: e.target.value})}
-                placeholder="e.g., Maximum Budget Percentage"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="rule-type">Rule Type *</Label>
-              <Select 
-                value={ruleFormData.type} 
-                onValueChange={(value: any) => setRuleFormData({...ruleFormData, type: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select rule type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="amount">Amount ($)</SelectItem>
-                  <SelectItem value="percentage">Percentage (%)</SelectItem>
-                  <SelectItem value="number">Number</SelectItem>
-                  <SelectItem value="category">Category</SelectItem>
-                  <SelectItem value="boolean">Yes/No</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="rule-condition">Condition *</Label>
-              <Input
-                id="rule-condition"
-                value={ruleFormData.condition}
-                onChange={(e) => setRuleFormData({...ruleFormData, condition: e.target.value})}
-                placeholder="e.g., max_percentage, min_amount"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="rule-value">Value *</Label>
-              {ruleFormData.type === 'boolean' ? (
-                <Select 
-                  value={ruleFormData.value} 
-                  onValueChange={(value) => setRuleFormData({...ruleFormData, value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select value" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="true">Yes</SelectItem>
-                    <SelectItem value="false">No</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  id="rule-value"
-                  value={ruleFormData.value}
-                  onChange={(e) => setRuleFormData({...ruleFormData, value: e.target.value})}
-                  placeholder={
-                    ruleFormData.type === 'amount' ? "5000" :
-                    ruleFormData.type === 'percentage' ? "65" :
-                    ruleFormData.type === 'number' ? "2" :
-                    "education,recreation"
-                  }
-                />
-              )}
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="rule-description">Description</Label>
-              <Textarea
-                id="rule-description"
-                value={ruleFormData.description}
-                onChange={(e) => setRuleFormData({...ruleFormData, description: e.target.value})}
-                placeholder="Brief description of this rule"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateRuleModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateRule}>Add Rule</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreateFundingRuleModal
+        isOpen={isCreateRuleModalOpen}
+        onOpenChange={setIsCreateRuleModalOpen}
+        onSuccess={handleCreateRule}
+        groupName={selectedGroup?.name}
+      />
 
       {/* Edit Rule Modal */}
-      <Dialog open={isEditRuleModalOpen} onOpenChange={setIsEditRuleModalOpen}>
-        <DialogContent className="sm:max-w-[525px]">
-          <DialogHeader>
-            <DialogTitle>Edit Rule "{ruleToEdit?.name}"</DialogTitle>
-            <DialogDescription>
-              Update the rule details below
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="edit-rule-name">Rule Name *</Label>
-              <Input
-                id="edit-rule-name"
-                value={ruleFormData.name}
-                onChange={(e) => setRuleFormData({...ruleFormData, name: e.target.value})}
-                placeholder="e.g., Maximum Budget Percentage"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-rule-type">Rule Type *</Label>
-              <Select 
-                value={ruleFormData.type} 
-                onValueChange={(value: any) => setRuleFormData({...ruleFormData, type: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select rule type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="amount">Amount ($)</SelectItem>
-                  <SelectItem value="percentage">Percentage (%)</SelectItem>
-                  <SelectItem value="number">Number</SelectItem>
-                  <SelectItem value="category">Category</SelectItem>
-                  <SelectItem value="boolean">Yes/No</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-rule-condition">Condition *</Label>
-              <Input
-                id="edit-rule-condition"
-                value={ruleFormData.condition}
-                onChange={(e) => setRuleFormData({...ruleFormData, condition: e.target.value})}
-                placeholder="e.g., max_percentage, min_amount"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-rule-value">Value *</Label>
-              {ruleFormData.type === 'boolean' ? (
-                <Select 
-                  value={ruleFormData.value} 
-                  onValueChange={(value) => setRuleFormData({...ruleFormData, value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select value" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="true">Yes</SelectItem>
-                    <SelectItem value="false">No</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  id="edit-rule-value"
-                  value={ruleFormData.value}
-                  onChange={(e) => setRuleFormData({...ruleFormData, value: e.target.value})}
-                  placeholder={
-                    ruleFormData.type === 'amount' ? "5000" :
-                    ruleFormData.type === 'percentage' ? "65" :
-                    ruleFormData.type === 'number' ? "2" :
-                    "education,recreation"
-                  }
-                />
-              )}
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-rule-description">Description</Label>
-              <Textarea
-                id="edit-rule-description"
-                value={ruleFormData.description}
-                onChange={(e) => setRuleFormData({...ruleFormData, description: e.target.value})}
-                placeholder="Brief description of this rule"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditRuleModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateRule}>Update Rule</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <EditFundingRuleModal
+        isOpen={isEditRuleModalOpen}
+        onOpenChange={setIsEditRuleModalOpen}
+        onSuccess={handleUpdateRule}
+        rule={ruleToEdit}
+        groupName={selectedGroup?.name}
+      />
+
+      {/* Delete Rule Modal */}
+      <DeleteFundingRuleModal
+        isOpen={isDeleteRuleModalOpen}
+        onOpenChange={setIsDeleteRuleModalOpen}
+        onConfirm={handleConfirmDeleteRule}
+        rule={ruleToDelete}
+        groupName={fundingRuleGroups.find(g => g.id === deleteRuleGroupId)?.name}
+      />
+
+      {/* Delete Group Modal */}
+      <DeleteFundingPolicyGroupModal
+        isOpen={isDeleteGroupModalOpen}
+        onOpenChange={setIsDeleteGroupModalOpen}
+        group={groupToDelete ? {
+          id: groupToDelete.id,
+          name: groupToDelete.name,
+          entity_id: entityId || null,
+          description: groupToDelete.description || null,
+          is_active: groupToDelete.active,
+          created_at: groupToDelete.created_at,
+          updated_at: groupToDelete.created_at,
+          created_by: 'system'
+        } : null}
+        validations={groupToDelete?.rules.map(rule => ({
+          id: rule.id,
+          group_id: groupToDelete.id,
+          field_name: rule.name.toLowerCase().replace(/\s+/g, '_'),
+          field_label: rule.name,
+          field_type: rule.type === 'amount' ? 'NUMBER' : rule.type === 'percentage' ? 'NUMBER' : rule.type === 'boolean' ? 'BOOLEAN' : 'TEXT',
+          is_required: true,
+          options: Array.isArray(rule.value) ? rule.value : null,
+          created_at: groupToDelete.created_at,
+          updated_at: groupToDelete.created_at,
+          created_by: 'system'
+        })) || []}
+        usageCount={0}
+        onSuccess={handleConfirmDeleteGroup}
+      />
+
+      {/* Edit Group Modal */}
+      <EditFundingPolicyGroupModal
+        isOpen={isEditGroupModalOpen}
+        onOpenChange={setIsEditGroupModalOpen}
+        group={groupToEdit ? {
+          id: groupToEdit.id,
+          name: groupToEdit.name,
+          entity_id: entityId || null,
+          description: groupToEdit.description || null,
+          is_active: groupToEdit.active,
+          created_at: groupToEdit.created_at,
+          updated_at: groupToEdit.created_at,
+          created_by: 'system'
+        } : null}
+        validations={groupToEdit?.rules.map(rule => ({
+          id: rule.id,
+          group_id: groupToEdit.id,
+          field_name: rule.name.toLowerCase().replace(/\s+/g, '_'),
+          field_label: rule.name,
+          field_type: rule.type === 'amount' ? 'NUMBER' : rule.type === 'percentage' ? 'NUMBER' : rule.type === 'boolean' ? 'BOOLEAN' : 'TEXT',
+          is_required: true,
+          options: Array.isArray(rule.value) ? rule.value : null,
+          created_at: groupToEdit.created_at,
+          updated_at: groupToEdit.created_at,
+          created_by: 'system'
+        })) || []}
+        onSuccess={handleUpdateGroup}
+      />
     </div>
   )
 }

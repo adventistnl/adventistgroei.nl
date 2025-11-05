@@ -3,51 +3,30 @@
 import React, { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { 
   Home, 
-  Plus, 
   Save, 
-  X, 
-  Globe, 
-  Calendar,
-  Building,
   User,
   Phone,
   Mail,
   MapPin,
   ChevronLeft,
   ChevronRight,
-  Check,
-  FileText,
-  ChevronsUpDown
+  Check
 } from "lucide-react"
 import toast from "react-hot-toast"
-import { churchTranslations } from "@/lib/translations/churches"
 import { useChurches } from "@/hooks/use-churches"
 import { CreateChurch, CreateChurchVariables } from "@/types/CreateChurch"
 import { cn } from "@/lib/utils"
+import { netherlandsProvinces } from "@/lib/netherlands-provinces"
+import { ChurchTypeSelector, getChurchTypeOptions } from "./church-type-selector"
+import { ProvinceSelector } from "./province-selector"
 import { ChurchType } from "@/types/graphql-global-types"
+import { churchTranslations } from "@/lib/translations/churches"
 
 export interface ChurchData {
   id: string
@@ -93,11 +72,16 @@ export interface RegionData {
   institution_id: string
 }
 
+export interface ProvinceData {
+  code: string
+  name: string
+  region: 'north' | 'east' | 'west' | 'south'
+}
+
 export interface AddChurchModalProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   institutionId: string
-  regions: RegionData[]
   onSave?: (church: CreateChurch) => void
 }
 
@@ -105,10 +89,9 @@ export function AddChurchModal({
   isOpen,
   onOpenChange,
   institutionId,
-  regions = [],
   onSave
 }: AddChurchModalProps) {
-  const { t: tCommon } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { createChurch } = useChurches()
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
@@ -120,19 +103,16 @@ export function AddChurchModal({
     phone: '',
     email: '',
     city: '',
-    type: ChurchType.Standard, // Tipo padrão
+    type: null,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [openRegion, setOpenRegion] = useState(false)
-  const [openType, setOpenType] = useState(false)
+  const [isSpecialChurch, setIsSpecialChurch] = useState(false)
 
-  const typeList = [
-    { value: ChurchType.Standard, label: 'Standard' },
-    { value: ChurchType.Company, label: 'Company' },
-    { value: ChurchType.Plant, label: 'Plant' },
-  ]
+  // Get translations for current language
+  const currentLanguage = i18n?.language || 'en'
+  const tChurch = churchTranslations[currentLanguage as keyof typeof churchTranslations] || churchTranslations.en
 
-  const totalSteps = 2
+  const totalSteps = 3 // Basic Info, Contact, Review
 
   useEffect(() => {
     if (isOpen) {
@@ -144,14 +124,15 @@ export function AddChurchModal({
         phone: '',
         email: '',
         city: '',
-        type: ChurchType.Standard, // Tipo padrão
+        type: null,
       })
       setErrors({})
       setCurrentStep(1)
+      setIsSpecialChurch(false)
     }
   }, [isOpen, institutionId])
 
-  const handleInputChange = (field: string, value: string | boolean | number) => {
+  const handleInputChange = (field: string, value: string | boolean | number | null) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -171,33 +152,34 @@ export function AddChurchModal({
 
     if (step === 1) {
       if (!formData.name?.trim()) {
-        newErrors.name = "Church name is required"
+        newErrors.name = tChurch.validation.name_required
       } else if (formData.name.trim().length < 2) {
-        newErrors.name = "Church name must be at least 2 characters"
+        newErrors.name = tChurch.validation.name_min_length
       }
 
       if (!formData.region_id) {
-        newErrors.region_id = "Region is required"
+        newErrors.region_id = tChurch.validation.province_required
+      }
+
+      // Type is only required if it's a special church
+      if (isSpecialChurch && !formData.type) {
+        newErrors.type = tChurch.validation.type_required
       }
     }
 
-    if (step === 2) {
-      if (!formData.email?.trim()) {
-        newErrors.email = "Email is required"
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        newErrors.email = "Please enter a valid email address"
-      }
+    // Step 2 (contact) is optional - no validation needed
 
-      if (!formData.phone?.trim()) {
-        newErrors.phone = "Phone number is required"
+    // Step 3 (review) - final validation before save
+    if (step === 3) {
+      // Re-validate step 1 fields only
+      if (!formData.name?.trim()) {
+        newErrors.name = tChurch.validation.name_required
       }
-
-      if (!formData.contactName?.trim()) {
-        newErrors.contactName = "Contact name is required"
+      if (!formData.region_id) {
+        newErrors.region_id = tChurch.validation.province_required
       }
-
-      if (!formData.city?.trim()) {
-        newErrors.city = "City is required"
+      if (isSpecialChurch && !formData.type) {
+        newErrors.type = tChurch.validation.type_required
       }
     }
 
@@ -212,13 +194,18 @@ export function AddChurchModal({
     }
   }
 
+  const handleSkipContacts = () => {
+    // Skip to review step (step 3)
+    setCurrentStep(3)
+  }
+
   const handlePrevious = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1))
   }
 
   const handleSave = async () => {
-    if (!validateStep(1) || !validateStep(2)) {
-      toast.error("Please fix the errors before continuing")
+    if (!validateStep(1) || !validateStep(3)) {
+      toast.error(tChurch.validation.please_fix_errors)
 
       // Log errors for debugging
       console.error("Validation errors:", errors);
@@ -226,7 +213,7 @@ export function AddChurchModal({
     }
 
     setIsLoading(true)
-    const loadingToast = toast.loading("Creating church...")
+    const loadingToast = toast.loading(tChurch.toasts.creating)
 
     try {
       // Simulate API call
@@ -248,7 +235,7 @@ export function AddChurchModal({
       }
 
       toast.dismiss(loadingToast)
-      toast.success("Church created successfully", {
+      toast.success(tChurch.toasts.created, {
         duration: 3000,
         icon: '⛪'
       })
@@ -261,7 +248,7 @@ export function AddChurchModal({
 
     } catch (error) {
       toast.dismiss(loadingToast)
-      toast.error("Failed to create church")
+      toast.error(tChurch.toasts.create_failed)
     } finally {
       setIsLoading(false)
     }
@@ -288,21 +275,21 @@ export function AddChurchModal({
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">Basic Information</h3>
-              <p className="text-sm text-muted-foreground">Enter the church name, select the region, and type</p>
+              <h3 className="text-lg font-medium text-foreground">{tChurch.steps.step_1_title}</h3>
+              <p className="text-sm text-muted-foreground">{tChurch.steps.step_1_description}</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="name" className="flex items-center gap-2 text-sm">
                   <Home className="w-4 h-4 text-muted-foreground" />
-                  Church Name *
+                  {tChurch.fields.name} *
                 </Label>
                 <Input
                   id="name"
                   value={formData.name || ''}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="Enter church name"
+                  placeholder={tChurch.placeholders.name}
                   disabled={isLoading}
                   className={`h-10 ${errors.name ? 'border-red-500' : ''}`}
                 />
@@ -311,121 +298,21 @@ export function AddChurchModal({
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="region_id" className="flex items-center gap-2 text-sm">
-                  <MapPin className="w-4 h-4 text-muted-foreground" />
-                  Region *
-                </Label>
-                <Popover open={openRegion} onOpenChange={setOpenRegion}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openRegion}
-                      className={cn(
-                        "w-full h-10 justify-between font-normal",
-                        !formData.region_id && "text-muted-foreground",
-                        errors.region_id && "border-red-500"
-                      )}
-                      disabled={isLoading}
-                    >
-                      {formData.region_id
-                        ? regions.find(region => region.id === formData.region_id)?.name
-                        : "Select region"}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search region..." />
-                      <CommandList>
-                        <CommandEmpty>No region found.</CommandEmpty>
-                        <CommandGroup>
-                          {regions.map((region) => (
-                            <CommandItem
-                              key={region.id}
-                              value={region.name}
-                              onSelect={() => {
-                                handleInputChange('region_id', region.id)
-                                setOpenRegion(false)
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  formData.region_id === region.id ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
-                              {region.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {errors.region_id && (
-                  <p className="text-sm text-red-600">{errors.region_id}</p>
-                )}
-              </div>
+              <ProvinceSelector
+                value={formData.region_id || ''}
+                onChange={(value) => handleInputChange('region_id', value)}
+                isLoading={isLoading}
+                error={errors.region_id}
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="type" className="flex items-center gap-2 text-sm">
-                  <Building className="w-4 h-4 text-muted-foreground" />
-                  Church Type *
-                </Label>
-                <Popover open={openType} onOpenChange={setOpenType}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openType}
-                      className={cn(
-                        "w-full h-10 justify-between font-normal",
-                        !formData.type && "text-muted-foreground",
-                        errors.type && "border-red-500"
-                      )}
-                      disabled={isLoading}
-                    >
-                      {formData.type || "Select type"}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search type..." />
-                      <CommandList>
-                        <CommandEmpty>No type found.</CommandEmpty>
-                        <CommandGroup>
-                          {typeList.map((type) => (
-                            <CommandItem
-                              key={type.label}
-                              aria-placeholder={type.label}
-                              value={type.value}
-                              onSelect={() => {
-                                handleInputChange('type', type.value)
-                                setOpenType(false)
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  (formData.type ?? ChurchType.Standard) === type.value ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {type.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {errors.type && (
-                  <p className="text-sm text-red-600">{errors.type}</p>
-                )}
-              </div>
+              <ChurchTypeSelector
+                isSpecialChurch={isSpecialChurch}
+                selectedType={formData.type as any}
+                onSpecialChurchChange={setIsSpecialChurch}
+                onTypeChange={(type) => handleInputChange('type', type as any)}
+                isLoading={isLoading}
+                error={errors.type}
+              />
             </div>
           </div>
         )
@@ -434,21 +321,21 @@ export function AddChurchModal({
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">Contact Details</h3>
-              <p className="text-sm text-muted-foreground">Add contact information for the church</p>
+              <h3 className="text-lg font-medium text-foreground">{tChurch.steps.step_2_title}</h3>
+              <p className="text-sm text-muted-foreground">{tChurch.steps.step_2_description}</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="contact_name" className="flex items-center gap-2 text-sm">
                   <User className="w-4 h-4 text-muted-foreground" />
-                  Contact Name
+                  {tChurch.fields.contact_name}
                 </Label>
                 <Input
                   id="contact_name"
                   value={formData.contactName || ''}
                   onChange={(e) => handleInputChange('contactName', e.target.value)}
-                  placeholder="Enter contact name"
+                  placeholder={tChurch.placeholders.contact_name}
                   disabled={isLoading}
                   className={`h-10 ${errors.contactName ? 'border-red-500' : ''}`}
                 />
@@ -460,14 +347,14 @@ export function AddChurchModal({
               <div className="space-y-2">
                 <Label htmlFor="contact_email" className="flex items-center gap-2 text-sm">
                   <Mail className="w-4 h-4 text-muted-foreground" />
-                  Contact Email
+                  {tChurch.fields.contact_email}
                 </Label>
                 <Input
                   id="contact_email"
                   type="email"
                   value={formData.email || ''}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="Enter email address"
+                  placeholder={tChurch.placeholders.contact_email}
                   disabled={isLoading}
                   className={`h-10 ${errors.email ? 'border-red-500' : ''}`}
                 />
@@ -479,13 +366,13 @@ export function AddChurchModal({
               <div className="space-y-2">
                 <Label htmlFor="contact_phone" className="flex items-center gap-2 text-sm">
                   <Phone className="w-4 h-4 text-muted-foreground" />
-                  Phone
+                  {tChurch.fields.contact_phone}
                 </Label>
                 <Input
                   id="contact_phone"
                   value={formData.phone || ''}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder="Enter phone number"
+                  placeholder={tChurch.placeholders.contact_phone}
                   disabled={isLoading}
                   className={`h-10 ${errors.phone ? 'border-red-500' : ''}`}
                 />
@@ -497,13 +384,13 @@ export function AddChurchModal({
               <div className="space-y-2">
                 <Label htmlFor="contact_city" className="flex items-center gap-2 text-sm">
                   <MapPin className="w-4 h-4 text-muted-foreground" />
-                  City
+                  {tChurch.fields.contact_city}
                 </Label>
                 <Input
                   id="contact_city"
                   value={formData.city || ''}
                   onChange={(e) => handleInputChange('city', e.target.value)}
-                  placeholder="Enter city"
+                  placeholder={tChurch.placeholders.contact_city}
                   disabled={isLoading}
                   className={`h-10 ${errors.city ? 'border-red-500' : ''}`}
 
@@ -512,6 +399,84 @@ export function AddChurchModal({
                   <p className="text-sm text-red-600">{errors.city}</p>
                 )}
               </div>
+            </div>
+          </div>
+        )
+
+      case 3:
+        // Step 3: Review (Minimalist like department modal)
+        const selectedProvince = netherlandsProvinces.find(p => p.code === formData.region_id)
+        const churchTypeOptions = getChurchTypeOptions(currentLanguage)
+        const selectedType = churchTypeOptions.find(t => t.value === (formData.type as any))
+        
+        return (
+          <div className="space-y-6 animate-in fade-in-0 duration-300">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-medium text-foreground">{tChurch.steps.step_3_title}</h3>
+              <p className="text-sm text-muted-foreground">{tChurch.steps.step_3_description} {tChurch.steps.step_3_description_create}</p>
+            </div>
+            
+            <div className="space-y-6 max-w-lg mx-auto">
+              {/* Basic Information */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{tChurch.sections.basic_info}</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between py-2 border-b border-border/50">
+                    <span className="text-sm text-muted-foreground">{tChurch.fields.name}</span>
+                    <span className="text-sm font-medium text-right max-w-[60%]">{formData.name}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-border/50">
+                    <span className="text-sm text-muted-foreground">{tChurch.fields.province}</span>
+                    <span className="text-sm font-medium">{selectedProvince?.name || '-'}</span>
+                  </div>
+                  {isSpecialChurch && selectedType && (
+                    <div className="flex justify-between py-2 border-b border-border/50">
+                      <span className="text-sm text-muted-foreground">{tChurch.fields.church_type}</span>
+                      <div className="flex items-center gap-2">
+                        {selectedType.value === ChurchType.Plant ? (
+                          <div className="w-2 h-2 rounded-full bg-green-500" />
+                        ) : (
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                        )}
+                        <span className="text-sm font-semibold">{selectedType.label}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Contact Information */}
+              {(formData.contactName || formData.email || formData.phone || formData.city) && (
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{tChurch.sections.contact_info}</h4>
+                  <div className="space-y-2">
+                    {formData.contactName && (
+                      <div className="flex justify-between py-2 border-b border-border/50">
+                        <span className="text-sm text-muted-foreground">{tChurch.fields.contact_name}</span>
+                        <span className="text-sm font-medium">{formData.contactName}</span>
+                      </div>
+                    )}
+                    {formData.email && (
+                      <div className="flex justify-between py-2 border-b border-border/50">
+                        <span className="text-sm text-muted-foreground">{tChurch.fields.contact_email}</span>
+                        <span className="text-sm font-medium">{formData.email}</span>
+                      </div>
+                    )}
+                    {formData.phone && (
+                      <div className="flex justify-between py-2 border-b border-border/50">
+                        <span className="text-sm text-muted-foreground">{tChurch.fields.contact_phone}</span>
+                        <span className="text-sm font-medium">{formData.phone}</span>
+                      </div>
+                    )}
+                    {formData.city && (
+                      <div className="flex justify-between py-2 border-b border-border/50">
+                        <span className="text-sm text-muted-foreground">{tChurch.fields.contact_city}</span>
+                        <span className="text-sm font-medium">{formData.city}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )
@@ -527,16 +492,16 @@ export function AddChurchModal({
         <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Home className="w-5 h-5 text-muted-foreground" />
-            Create Church
+            {tChurch.modals.create.title}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Add a new church to your organization
+            {tChurch.modals.create.description}
           </DialogDescription>
           
           {/* Progress Bar */}
           <div className="mt-4 space-y-2">
             <div className="flex justify-between items-center text-xs text-muted-foreground">
-              <span>Step {currentStep} of {totalSteps}</span>
+              <span>{tChurch.steps.step} {currentStep} {tChurch.steps.of} {totalSteps}</span>
               <span>{Math.round((currentStep / totalSteps) * 100)}%</span>
             </div>
             <Progress value={(currentStep / totalSteps) * 100} className="h-1" />
@@ -564,7 +529,7 @@ export function AddChurchModal({
                   className="flex items-center gap-1 text-xs"
                 >
                   <ChevronLeft className="w-3 h-3" />
-                  Previous
+                  {tChurch.buttons.previous}
                 </Button>
               )}
               <Button 
@@ -574,11 +539,22 @@ export function AddChurchModal({
                 size="sm"
                 className="text-xs"
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
             </div>
 
             <div className="flex gap-2">
+              {currentStep === 2 && (
+                <Button 
+                  variant="ghost"
+                  onClick={handleSkipContacts} 
+                  disabled={isLoading}
+                  size="sm"
+                  className="text-muted-foreground"
+                >
+                  {tChurch.buttons.skip_for_now}
+                </Button>
+              )}
               {currentStep < totalSteps ? (
                 <Button 
                   onClick={handleNext} 
@@ -586,7 +562,7 @@ export function AddChurchModal({
                   size="sm"
                   className="flex items-center gap-1 text-xs"
                 >
-                  Next
+                  {tChurch.buttons.next}
                   <ChevronRight className="w-3 h-3" />
                 </Button>
               ) : (
@@ -599,12 +575,12 @@ export function AddChurchModal({
                   {isLoading ? (
                     <>
                       <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1" />
-                      Creating...
+                      {tChurch.buttons.creating}
                     </>
                   ) : (
                     <>
                       <Save className="w-3 h-3 mr-1" />
-                      Save
+                      {tChurch.buttons.create_church}
                     </>
                   )}
                 </Button>

@@ -47,6 +47,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import toast from "react-hot-toast"
 import { UseTable } from "@/components/ui/use-table"
+import { UsageIndicator } from "@/components/ui/usage-indicator"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { useInstitution } from "@/contexts/institution-context"
@@ -1010,16 +1011,12 @@ export default function AnnualBudgetPage() {
         const isDisabled = !row.original.has_budget_record
         
         return (
-          <div className={`flex flex-col items-center space-y-2 ${isDisabled ? 'opacity-50' : ''}`}>
-            <div className="text-xs font-medium text-gray-700">
-              {usagePercentage}%
-            </div>
-            <div className="w-16 bg-gray-200 rounded-full h-2 border border-gray-300">
-              <div 
-                className="bg-gray-600 h-full rounded-full transition-all duration-300" 
-                style={{ width: `${usagePercentage}%` }}
-              />
-            </div>
+          <div className="flex justify-center">
+            <UsageIndicator 
+              percentage={usagePercentage}
+              disabled={isDisabled}
+              size="md"
+            />
           </div>
         )
       },

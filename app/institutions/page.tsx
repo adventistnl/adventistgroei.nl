@@ -39,6 +39,7 @@ import { cn } from "@/lib/utils"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { UseTable } from "@/components/ui/use-table"
+import { StatusBadge } from "@/components/ui/status-badge"
 import { InstitutionProfileHeader } from "@/components/shared"
 import { EntityInfoCard, EntityInfoCardAction } from "@/components/shared/entity-info-card"
 import { ContactViewEditModal } from "@/components/modals/contact"
@@ -298,35 +299,105 @@ export default function InstitutionsPage() {
     {
       id: "churches",
       accessorKey: "churches_count",
-      header: t('institutions.table.churches'),
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Church className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.churches_count}</span>
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('institutions.table.churches')}
         </div>
       ),
+      cell: ({ row }) => {
+        const count = row.original.churches_count || 0
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <Church className="w-4 h-4 text-muted-foreground" />
+            <span className="font-medium">{count}</span>
+          </div>
+        )
+      },
     },
     {
       id: "users",
       accessorKey: "users_count",
-      header: t('institutions.table.users'),
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('institutions.table.users')}
+        </div>
+      ),
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center gap-2">
           <Users className="w-4 h-4 text-muted-foreground" />
           <span className="font-medium">{row.original.users_count}</span>
         </div>
       ),
     },
     {
+      id: "budget",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('institutions.table.budget')}
+        </div>
+      ),
+      cell: ({ row }) => {
+        // Mock: institutions have budget records by default (can be changed based on actual data)
+        const hasBudget = true // TODO: Replace with actual budget check from institution data
+        const budgetAmount = 1500000 // Mock value - replace with actual budget
+        
+        return (
+          <div className="text-center">
+            <div className="text-sm font-semibold text-gray-900">
+              ${budgetAmount.toLocaleString()}
+            </div>
+          </div>
+        )
+      },
+    },
+    {
+      id: "budget_status",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('institutions.table.budget_status')}
+        </div>
+      ),
+      cell: ({ row }) => {
+        // Mock: institutions have budget records by default (can be changed based on actual data)
+        const hasBudget = true // TODO: Replace with actual budget check from institution data
+        
+        return (
+          <div className="flex justify-center">
+            <StatusBadge
+              label={hasBudget ? t('annual_budget.table.budget_status_labels.completed') : t('annual_budget.table.budget_status_labels.missing')}
+              variant={hasBudget ? "success" : "neutral"}
+              showDot
+            />
+          </div>
+        )
+      },
+      filterFn: (row, id, value) => {
+        // For filtering: "completed" = true, "missing" = false
+        if (value === undefined || value === null || value === "") {
+          return true
+        }
+        const hasBudget = true // TODO: Replace with actual budget check
+        return hasBudget === value
+      },
+    },
+    {
       id: "status",
       accessorKey: "is_deleted",
-      header: t('common.status'),
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('common.status')}
+        </div>
+      ),
       cell: ({ row }) => {
         const isActive = !row.original.is_deleted
         return (
-          <Badge variant={isActive ? "default" : "secondary"} className={isActive ? "bg-green-500 hover:bg-green-600" : ""}>
-            {isActive ? t('common.active') : t('common.inactive')}
-          </Badge>
+          <div className="flex justify-center">
+            <StatusBadge
+              label={isActive ? t('common.active') : t('common.inactive')}
+              variant={isActive ? "success" : "neutral"}
+              showDot
+            />
+          </div>
         )
       },
       filterFn: (row, id, value) => {
@@ -411,6 +482,14 @@ export default function InstitutionsPage() {
       options: [
         { label: t('common.active'), value: "true" },
         { label: t('common.inactive'), value: "false" },
+      ]
+    },
+    {
+      id: "budget_status",
+      title: t('institutions.table.budget_status'),
+      options: [
+        { label: t('annual_budget.table.budget_status_labels.completed'), value: "true" },
+        { label: t('annual_budget.table.budget_status_labels.missing'), value: "false" },
       ]
     }
   ]
@@ -505,9 +584,7 @@ export default function InstitutionsPage() {
           <h3 className="text-xl font-semibold">{t('institutions.analytics.title')}</h3>
           <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
             <DepartmentActivityChart loading={isLoading} />
-            
             <UsersByRoleChart loading={isLoading} />
-            
             <ChurchesByRegionChart 
               churches={currentInstitutionData?.churches || undefined}
               loading={isLoading}

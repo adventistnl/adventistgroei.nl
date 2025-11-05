@@ -6,9 +6,9 @@ import { ColumnDef } from "@tanstack/react-table"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   Home, 
   Plus, 
@@ -19,12 +19,13 @@ import {
   Users,
   MapPin,
   DollarSign,
-  Building,
   ContactRound,
   TrendingUp,
-  Calendar,
   Layers,
-  Shield
+  Eye,
+  Building2,
+  Crown,
+  Activity
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -34,31 +35,28 @@ import {
 } from "@/components/ui/dropdown-menu"
 import toast from "react-hot-toast"
 import { structureTranslations } from "@/lib/translations/structure"
-import { DataTable } from "@/components/ui/data-table"
+import { UseTable } from "@/components/ui/use-table"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { ChurchTypeBadge } from "@/components/ui/church-type-badge"
 import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
 import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget"
 import { AddChurchModal, EditChurchModal, DeleteChurchModal, ChurchData, RegionData } from "@/components/modals/church"
-import { ChurchesKPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
-
-// Charts - usando a lib atual do sistema
+import { ChurchesKPICards, KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
+import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
+import { ChurchActivityChart } from "@/components/churches/charts/church-activity-chart"
+import { ProjectsByChurchChart } from "@/components/churches/charts/projects-by-church-chart"
+import { MembersByChurchChart } from "@/components/churches/charts/members-by-church-chart"
+import { EntityInfoCard } from "@/components/shared/entity-info-card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  Legend
-} from "recharts"
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 
 import { useInstitution } from '@/contexts/institution-context'
 import { CreateChurch } from "@/types/CreateChurch"
@@ -116,6 +114,114 @@ const MOCK_SUBSIDY_TIMELINE = [
 ]
 
 /**
+ * MOCK DATA: DEPARTMENT ANALYTICS
+ * 
+ * Estes dados são utilizados como fallback quando uma church não possui departamentos.
+ * Na view de detalhes da church, a função generateChurchDepartmentData() gera dados
+ * dinâmicos baseados nos departamentos reais. Estes mocks garantem que os gráficos
+ * sempre tenham dados para exibir.
+ * 
+ * Estrutura:
+ * - MOCK_DEPARTMENT_ACTIVITIES: Atividades (ações) em projetos ao longo do tempo
+ *   Cada departamento registra projetos, e cada projeto pode ter múltiplas atividades
+ * - MOCK_MEMBERS_BY_DEPARTMENT: Distribuição de membros por departamento
+ * - MOCK_PROJECTS_BY_DEPARTMENT: Projetos ativos e concluídos por departamento
+ */
+
+// Mock data: Atividades em projetos por departamento (para gráfico de timeline)
+const MOCK_DEPARTMENT_ACTIVITIES = [
+  { month: 'Jan', 'Youth Ministry': 12, 'Worship': 8, 'Education': 6, 'Community': 5, 'Evangelism': 7 },
+  { month: 'Feb', 'Youth Ministry': 15, 'Worship': 10, 'Education': 8, 'Community': 6, 'Evangelism': 9 },
+  { month: 'Mar', 'Youth Ministry': 14, 'Worship': 9, 'Education': 7, 'Community': 7, 'Evangelism': 8 },
+  { month: 'Apr', 'Youth Ministry': 16, 'Worship': 11, 'Education': 9, 'Community': 8, 'Evangelism': 10 },
+  { month: 'May', 'Youth Ministry': 18, 'Worship': 12, 'Education': 10, 'Community': 9, 'Evangelism': 11 },
+  { month: 'Jun', 'Youth Ministry': 20, 'Worship': 13, 'Education': 11, 'Community': 10, 'Evangelism': 12 },
+]
+
+// Mock data: Membros por departamento
+const MOCK_MEMBERS_BY_DEPARTMENT = [
+  { 
+    department: 'Youth Ministry', 
+    fullName: 'Youth Ministry',
+    members: 45,
+    activeMembers: 42,
+    fill: '#3b82f6'
+  },
+  { 
+    department: 'Worship', 
+    fullName: 'Worship Department',
+    members: 32,
+    activeMembers: 30,
+    fill: '#8b5cf6'
+  },
+  { 
+    department: 'Education', 
+    fullName: 'Christian Education',
+    members: 28,
+    activeMembers: 26,
+    fill: '#10b981'
+  },
+  { 
+    department: 'Community', 
+    fullName: 'Community Outreach',
+    members: 24,
+    activeMembers: 22,
+    fill: '#f59e0b'
+  },
+  { 
+    department: 'Evangelism', 
+    fullName: 'Evangelism Department',
+    members: 20,
+    activeMembers: 18,
+    fill: '#ef4444'
+  },
+]
+
+// Mock data: Projetos por departamento
+const MOCK_PROJECTS_BY_DEPARTMENT = [
+  { 
+    department: 'Youth Ministry', 
+    fullName: 'Youth Ministry',
+    projects: 8,
+    activeProjects: 6,
+    completedProjects: 2,
+    fill: '#3b82f6'
+  },
+  { 
+    department: 'Worship', 
+    fullName: 'Worship Department',
+    projects: 5,
+    activeProjects: 4,
+    completedProjects: 1,
+    fill: '#8b5cf6'
+  },
+  { 
+    department: 'Education', 
+    fullName: 'Christian Education',
+    projects: 6,
+    activeProjects: 5,
+    completedProjects: 1,
+    fill: '#10b981'
+  },
+  { 
+    department: 'Community', 
+    fullName: 'Community Outreach',
+    projects: 4,
+    activeProjects: 3,
+    completedProjects: 1,
+    fill: '#f59e0b'
+  },
+  { 
+    department: 'Evangelism', 
+    fullName: 'Evangelism Department',
+    projects: 7,
+    activeProjects: 5,
+    completedProjects: 2,
+    fill: '#ef4444'
+  },
+]
+
+/**
  * PÁGINA DE GESTÃO DE IGREJAS
  * Interface dedicada para gerenciar igrejas baseada no ERD do AdventistGroei
  */
@@ -126,6 +232,11 @@ export default function ChurchesPage() {
   
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  
+  // View mode states - controla se está na lista ou em detalhes
+  const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
+  const [selectedChurchDetail, setSelectedChurchDetail] = useState<any | null>(null)
+  
   // Modal states
   const [isViewContactModalOpen, setIsViewContactModalOpen] = useState(false)
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false)
@@ -141,20 +252,16 @@ export default function ChurchesPage() {
   // Obter traduções para o idioma atual
   const currentLanguage = i18n?.language || 'en'
   const t = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
-  const typeListParse: Record<ChurchTypeEnum, string> = {
-    STANDARD: t.standard,
-    PLANT: t.small,
-    COMPANY: t.company,
-       
-  }
-  const breadcrumbs = useMemo(() => [
-    { name: "Structure & Organization" },
-    { name: t.churches }
-  ], [t])
+  
+  const handleBackToList = React.useCallback(() => {
+    setViewMode('list');
+    setSelectedChurchDetail(null);
+  }, []);
 
   usePageTitle({
-    title: t.churchesTitle,
-    breadcrumbs
+    title: viewMode === 'detail' && selectedChurchDetail 
+      ? selectedChurchDetail.name 
+      : t.churchesTitle
   })
 
   // Estatísticas calculadas dos dados
@@ -180,6 +287,17 @@ export default function ChurchesPage() {
     };
   }, [churches]);
 
+  // Mock data for projects
+  const MOCK_PROJECTS_BY_CHURCH = [
+    { church: "Igreja Central de São Paulo", projects: 12 },
+    { church: "Igreja de Vila Madalena", projects: 8 },
+    { church: "Igreja da Mooca", projects: 6 },
+    { church: "Igreja de Campinas", projects: 15 },
+    { church: "Igreja do Rio de Janeiro", projects: 10 },
+  ]
+
+  const totalProjects = MOCK_PROJECTS_BY_CHURCH.reduce((sum, item) => sum + item.projects, 0)
+
   // Dados dos KPIs em formato de array para o componente reutilizável
   const kpiCardsData: KPICardData[] = useMemo(() => [
     {
@@ -192,7 +310,7 @@ export default function ChurchesPage() {
     {
       id: "total-members", 
       title: t.totalMembers,
-      value: `${(kpiData.totalMembers / 1000).toFixed(1)}K`,
+      value: kpiData.totalMembers,
       icon: Users,
       subtitle: "Total members"
     },
@@ -204,41 +322,116 @@ export default function ChurchesPage() {
       subtitle: "Active departments"
     },
     {
-      id: "budget-utilization",
-      title: t.budgetUtilization,
-      value: `${kpiData.budgetUtilization}%`,
+      id: "total-projects",
+      title: "Total Projects",
+      value: totalProjects,
       icon: TrendingUp,
-      subtitle: "Budget efficiency",
+      subtitle: "Active projects",
       trend: {
-        value: 3.8,
+        value: 8.2,
         isPositive: true,
         label: "vs last month"
       }
     }
-  ], [kpiData, t])
+  ], [kpiData, t, totalProjects])
+
+  // Mock data for charts - simplified for easy integration
+  const MOCK_CHURCH_ACTIVITIES = [
+    { month: 'Jan', 'Central SP': 8, 'Vila Madalena': 5, 'Mooca': 4, 'Campinas': 10, 'Rio': 7 },
+    { month: 'Feb', 'Central SP': 10, 'Vila Madalena': 6, 'Mooca': 5, 'Campinas': 12, 'Rio': 8 },
+    { month: 'Mar', 'Central SP': 9, 'Vila Madalena': 7, 'Mooca': 4, 'Campinas': 13, 'Rio': 9 },
+    { month: 'Apr', 'Central SP': 11, 'Vila Madalena': 6, 'Mooca': 5, 'Campinas': 14, 'Rio': 10 },
+    { month: 'May', 'Central SP': 12, 'Vila Madalena': 8, 'Mooca': 6, 'Campinas': 15, 'Rio': 11 },
+    { month: 'Jun', 'Central SP': 13, 'Vila Madalena': 9, 'Mooca': 7, 'Campinas': 16, 'Rio': 12 },
+  ]
+
+  const MOCK_MEMBERS_BY_CHURCH = [
+    { 
+      church: 'Central SP', 
+      fullName: 'Igreja Central de São Paulo',
+      members: 450,
+      activeMembers: 420,
+      fill: '#3b82f6'
+    },
+    { 
+      church: 'Campinas', 
+      fullName: 'Igreja de Campinas',
+      members: 380,
+      activeMembers: 350,
+      fill: '#8b5cf6'
+    },
+    { 
+      church: 'Rio', 
+      fullName: 'Igreja do Rio de Janeiro',
+      members: 320,
+      activeMembers: 295,
+      fill: '#ef4444'
+    },
+    { 
+      church: 'Vila Madalena', 
+      fullName: 'Igreja de Vila Madalena',
+      members: 280,
+      activeMembers: 260,
+      fill: '#10b981'
+    },
+    { 
+      church: 'Mooca', 
+      fullName: 'Igreja da Mooca',
+      members: 220,
+      activeMembers: 200,
+      fill: '#f59e0b'
+    },
+  ]
+
+  const MOCK_PROJECTS_BY_CHURCH_CHART = [
+    { 
+      church: 'Campinas', 
+      fullName: 'Igreja de Campinas',
+      projects: 15,
+      activeProjects: 12,
+      completedProjects: 3,
+      fill: '#8b5cf6'
+    },
+    { 
+      church: 'Central SP', 
+      fullName: 'Igreja Central de São Paulo',
+      projects: 12,
+      activeProjects: 9,
+      completedProjects: 3,
+      fill: '#3b82f6'
+    },
+    { 
+      church: 'Rio', 
+      fullName: 'Igreja do Rio de Janeiro',
+      projects: 10,
+      activeProjects: 7,
+      completedProjects: 3,
+      fill: '#ef4444'
+    },
+    { 
+      church: 'Vila Madalena', 
+      fullName: 'Igreja de Vila Madalena',
+      projects: 8,
+      activeProjects: 6,
+      completedProjects: 2,
+      fill: '#10b981'
+    },
+    { 
+      church: 'Mooca', 
+      fullName: 'Igreja da Mooca',
+      projects: 6,
+      activeProjects: 4,
+      completedProjects: 2,
+      fill: '#f59e0b'
+    },
+  ]
 
   // Dados para gráficos
   const chartData = useMemo(() => ({
-    budgetByChurch: churches.map((c: ChurchType) => {
-      const churchExtended = c as any;
-      return {
-        church: c.name,
-        budget: churchExtended.total_budget || 0,
-        used: churchExtended.used_budget || 0,
-        remaining: (churchExtended.total_budget || 0) - (churchExtended.used_budget || 0)
-      };
-    }),
-    subsidyRequestsByChurch: churches.map((c: ChurchType) => {
-      const churchExtended = c as any;
-      return {
-        church: c.name,
-        requests: churchExtended.subsidy_requests || 0
-      };
-    }),
-    subsidyByDepartment: [], // Não migrado ainda
-    usersByChurch: [], // Não migrado ainda
-    subsidyTimeline: [] // Não migrado ainda
-  }), [churches]);
+    churchActivities: MOCK_CHURCH_ACTIVITIES,
+    membersByChurch: MOCK_MEMBERS_BY_CHURCH,
+    projectsByChurch: MOCK_PROJECTS_BY_CHURCH_CHART
+  }), []);
 
   /**
    * Carregamento inicial dos dados
@@ -287,21 +480,30 @@ export default function ChurchesPage() {
     setIsAddChurchModalOpen(true)
   }
   
+  const handleViewDetails = (id: string) => {
+    const church = churches.find((c: ChurchType) => c.id === id);
+    if (church) {
+      setSelectedChurchDetail(church);
+      setViewMode('detail');
+    }
+  };
+  
   const handleEdit = (id: string) => {
     const church = churches.find((c: ChurchType) => c.id === id);
     if (church) {
-      const churchData: ChurchData = {
+      const churchData = {
         id: church.id,
         institution_id: church.institution_id,
         name: church.name,
         region_id: church.region_id,
         contact_id: null,
+        type: (church as any).type || null,
         created_at: church.created_at,
         updated_at: church.created_at,
         created_by: 'system',
         updated_by: 'system',
         is_deleted: false
-      };
+      } as ChurchData;
       setChurchToEdit(churchData);
       setIsEditChurchModalOpen(true);
     }
@@ -374,7 +576,6 @@ export default function ChurchesPage() {
         balance: (churchWithBudget.total_budget || 0) - (churchWithBudget.used_budget || 0),
         notes: `Budget for ${church.name} church`,
         approved_by: 'admin',
-        status: 'in_progress',
         created_at: church.created_at,
         updated_at: new Date().toISOString(),
         created_by: 'system',
@@ -406,6 +607,96 @@ export default function ChurchesPage() {
     handleRefresh()
   }
 
+  /**
+   * HELPER FUNCTION: generateChurchDepartmentData
+   * 
+   * Gera dados dinâmicos para os gráficos de analytics baseados nos departamentos reais da church.
+   * Esta função garante que os dados exibidos sejam consistentes e fáceis de manter.
+   * 
+   * Fluxo de dados:
+   * 1. Church possui múltiplos Departments
+   * 2. Cada Department possui múltiplos Projects
+   * 3. Cada Project possui múltiplas Activities (ações registradas)
+   * 4. Cada Department possui múltiplos Members (users)
+   * 
+   * @param church - Objeto da church com departments, users, projects
+   * @returns Objeto com dados formatados para os 3 gráficos:
+   *   - activities: Timeline de atividades por departamento ao longo dos meses
+   *   - membersByDept: Distribuição de membros (total e ativos) por departamento
+   *   - projectsByDept: Distribuição de projetos (ativos e concluídos) por departamento
+   * 
+   * Se a church não tiver departamentos, retorna dados mock como fallback.
+   */
+  const generateChurchDepartmentData = (church: any) => {
+    const departments = church?.departments || [];
+    
+    // Fallback: Se não há departamentos, usa dados mock
+    if (departments.length === 0) {
+      return {
+        activities: MOCK_DEPARTMENT_ACTIVITIES,
+        membersByDept: MOCK_MEMBERS_BY_DEPARTMENT,
+        projectsByDept: MOCK_PROJECTS_BY_DEPARTMENT
+      };
+    }
+
+    // Paleta de cores para diferenciar departamentos visualmente
+    const colors = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'];
+    
+    // CHART 1: Gera dados de atividades por mês para cada departamento
+    // Simula atividades (ações) registradas em projetos ao longo do tempo
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const activities = months.map((month, monthIndex) => {
+      const monthData: any = { month };
+      
+      // Limita a 5 departamentos para não sobrecarregar o gráfico
+      departments.slice(0, 5).forEach((dept: any, deptIndex: number) => {
+        // TODO: Substituir por contagem real de activities quando disponível no backend
+        // Atualmente simula crescimento de atividades ao longo dos meses
+        const baseActivities = 5;
+        const monthlyGrowth = monthIndex * 2;
+        const deptOffset = deptIndex * 3;
+        const randomVariation = Math.random() * 5;
+        
+        monthData[dept.name] = Math.floor(baseActivities + monthlyGrowth + deptOffset + randomVariation);
+      });
+      
+      return monthData;
+    });
+
+    // CHART 2: Gera dados de membros por departamento
+    const membersByDept = departments.map((dept: any, index: number) => ({
+      department: dept.name,
+      fullName: dept.name,
+      // Usa contagem real de users se disponível, senão simula
+      members: dept.users?.length || Math.floor(15 + Math.random() * 30),
+      activeMembers: dept.users?.filter((u: any) => !u.is_deleted).length || Math.floor(10 + Math.random() * 25),
+      fill: colors[index % colors.length]
+    }));
+
+    // CHART 3: Gera dados de projetos por departamento
+    const projectsByDept = departments.map((dept: any, index: number) => {
+      // Usa contagem real de projects se disponível, senão simula
+      const totalProjects = dept.projects?.length || Math.floor(3 + Math.random() * 8);
+      // Assume que ~70% dos projetos estão ativos
+      const activeProjects = Math.floor(totalProjects * 0.7);
+      
+      return {
+        department: dept.name,
+        fullName: dept.name,
+        projects: totalProjects,
+        activeProjects: activeProjects,
+        completedProjects: totalProjects - activeProjects,
+        fill: colors[index % colors.length]
+      };
+    });
+
+    return {
+      activities,
+      membersByDept,
+      projectsByDept
+    };
+  };
+
   // Colunas da tabela
   const columns: ColumnDef<any>[] = [
     {
@@ -433,6 +724,10 @@ export default function ChurchesPage() {
           <span className="font-medium">{row.original.region.name}</span>
         </div>
       ),
+      filterFn: (row, id, value) => {
+        if (!value) return true
+        return row.original.region?.name === value
+      },
     },
     {
       id: "members",
@@ -457,65 +752,35 @@ export default function ChurchesPage() {
       ),
     },
     {
-      id: "subsidy_requests",
-      accessorKey: "subsidy_requests",
-      header: t.requests,
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.subsidy_requests || 0}</span>
-        </div>
-      ),
-    },
-    {
-      id: "budget",
-      accessorKey: "total_budget",
-      header: t.budget,
-      cell: ({ row }) => {
-        const annual_budget = row.original.annual_budget
-        const total_expenses = annual_budget ? annual_budget.total_expenses : 0
-        return (
-        <span className="font-medium">$ {total_expenses}</span>
-      )},
-    },
-    {
-      id: "utilization",
-      header: t.utilization,
-      cell: ({ row }) => {
-        const annual_budget = row.original.annual_budget
-        const totalBudget = annual_budget?.planned_budget || 1;
-        const usedBudget = annual_budget?.total_expenses || 0;
-        const utilization = Math.round((usedBudget / totalBudget) * 100)
-        return (
-          <Badge variant="outline" className={
-            utilization > 80 ? 'bg-red-100 text-red-700' : 
-            utilization > 60 ? 'bg-yellow-100 text-yellow-700' : 
-            'bg-green-100 text-green-700'
-          }>
-            {utilization}%
-          </Badge>
-        )
-      },
-    },
-    {
       id: "status",
-      accessorKey: "status",
+      accessorKey: "is_deleted",
       header: "Status",
       cell: ({ row }) => (
-        <Badge variant={row.original.is_deleted === false ? 'default' : 'secondary'}>
-          {row.original.is_deleted === true ? t.inactive : t.active}
-        </Badge>
+        <StatusBadge 
+          label={row.original.is_deleted === true ? t.inactive : t.active}
+          variant={row.original.is_deleted === false ? 'success' : 'neutral'}
+          showDot
+        />
       ),
+      filterFn: (row, id, value) => {
+        if (!value) return true
+        const isDeleted = row.original.is_deleted
+        return value === "true" ? isDeleted === true : isDeleted === false
+      },
     },
     {
       id: "type",
       accessorKey: "type",
       header: "Type",
-      cell: ({ row }) => (
-        <Badge variant={'default'}>
-          {typeListParse[row.original.type as ChurchTypeEnum] || row.original.type}
-        </Badge>
-      ),
+      cell: ({ row }) => {
+        const churchType = row.original.type as ChurchTypeEnum
+        return (
+          <ChurchTypeBadge 
+            type={churchType}
+            showIcon
+          />
+        )
+      },
     },
     {
       id: "actions",
@@ -523,14 +788,14 @@ export default function ChurchesPage() {
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" data-action-button>
               <MoreHorizontal className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => handleViewBudget(row.original.id)}>
-              <DollarSign className="w-4 h-4 mr-2" />
-              View Budget
+            <DropdownMenuItem onClick={() => handleViewDetails(row.original.id)}>
+              <Eye className="w-4 h-4 mr-2" />
+              View Details
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleViewContact(row.original.id)}>
               <ContactRound className="w-4 h-4 mr-2" />
@@ -548,6 +813,288 @@ export default function ChurchesPage() {
         </DropdownMenu>
       ),
     },
+  ]
+
+  // Colunas da tabela de departamentos (para detail view)
+  const departmentColumns: ColumnDef<any>[] = [
+    {
+      id: "name",
+      accessorKey: "name",
+      header: "Department Name",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+            <Layers className="w-4 h-4 text-purple-600" />
+          </div>
+          <div>
+            <div className="font-medium">{row.original.name}</div>
+            <div className="text-xs text-muted-foreground">
+              {row.original.description || 'No description'}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "members",
+      header: "Members",
+      cell: ({ row }) => {
+        const membersCount = row.original.users?.length || 0;
+        return (
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-muted-foreground" />
+            <span className="font-medium">{membersCount}</span>
+          </div>
+        );
+      },
+    },
+    {
+      id: "projects",
+      header: "Projects",
+      cell: ({ row }) => {
+        const projectsCount = row.original.projects?.length || 0;
+        return (
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-muted-foreground" />
+            <span className="font-medium">{projectsCount}</span>
+          </div>
+        );
+      },
+    },
+    {
+      id: "status",
+      accessorKey: "is_deleted",
+      header: "Status",
+      cell: ({ row }) => (
+        <StatusBadge 
+          label={row.original.is_deleted === true ? t.inactive : t.active}
+          variant={row.original.is_deleted === false ? 'success' : 'neutral'}
+          showDot
+        />
+      ),
+    },
+    // TODO: Implementar action buttons para departments
+    // {
+    //   id: "actions",
+    //   header: "Actions",
+    //   cell: ({ row }) => (
+    //     <DropdownMenu>
+    //       <DropdownMenuTrigger asChild>
+    //         <Button variant="ghost" size="sm" data-action-button>
+    //           <MoreHorizontal className="w-4 h-4" />
+    //         </Button>
+    //       </DropdownMenuTrigger>
+    //       <DropdownMenuContent>
+    //         <DropdownMenuItem onClick={() => {
+    //           // Navigate to department details page
+    //           console.log('View department details:', row.original.id);
+    //           toast('Department details - Coming soon!');
+    //         }}>
+    //           <Eye className="w-4 h-4 mr-2" />
+    //           View Details
+    //         </DropdownMenuItem>
+    //         <DropdownMenuItem onClick={() => {
+    //           // Edit department functionality
+    //           console.log('Edit department:', row.original.id);
+    //           toast('Edit department - Coming soon!');
+    //         }}>
+    //           <Edit className="w-4 h-4 mr-2" />
+    //           Edit Department
+    //         </DropdownMenuItem>
+    //         <DropdownMenuItem onClick={() => {
+    //           // View/manage department budget
+    //           console.log('Manage department budget:', row.original.id);
+    //           toast('Manage budget - Coming soon!');
+    //         }}>
+    //           <DollarSign className="w-4 h-4 mr-2" />
+    //           Manage Budget
+    //         </DropdownMenuItem>
+    //         <DropdownMenuItem onClick={() => {
+    //           // Delete department
+    //           console.log('Delete department:', row.original.id);
+    //           toast('Delete department - Coming soon!');
+    //         }}>
+    //           <Trash2 className="w-4 h-4 mr-2" />
+    //           Delete Department
+    //         </DropdownMenuItem>
+    //       </DropdownMenuContent>
+    //     </DropdownMenu>
+    //   ),
+    // },
+  ];
+
+  // Colunas da tabela de membros (para detail view)
+  const memberColumns: ColumnDef<any>[] = [
+    {
+      id: "avatar",
+      header: "Avatar",
+      cell: ({ row }) => {
+        const user = row.original
+        return (
+          <Avatar className="w-8 h-8">
+            <AvatarImage src="/placeholder-user.jpg" />
+            <AvatarFallback>
+              {user.first_name?.[0]}{user.last_name?.[0]}
+            </AvatarFallback>
+          </Avatar>
+        )
+      },
+    },
+    {
+      id: "name",
+      accessorKey: "name",
+      header: "Name",
+      cell: ({ row }) => {
+        const user = row.original
+        return (
+          <div>
+            <div className="font-medium">{user.first_name} {user.last_name}</div>
+            <div className="text-xs text-muted-foreground">
+              {user.email || 'No email'}
+            </div>
+          </div>
+        )
+      },
+    },
+    {
+      id: "language",
+      accessorKey: "language_preference",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          Language
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex justify-center">
+          <Badge variant="outline" className="text-xs font-mono">
+            {row.original.language_preference?.toUpperCase() || 'N/A'}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      id: "roles",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          Roles
+        </div>
+      ),
+      cell: ({ row }) => {
+        const user = row.original
+        return (
+          <div className="flex flex-wrap gap-1 justify-center">
+            {user.user_roles?.map((role: any) => (
+              <Badge 
+                key={role.id} 
+                variant={role.role.key_code === 'ADMIN' ? 'default' : 'secondary'}
+                className="text-xs"
+              >
+                {role.role.key_code === 'ADMIN' && <Crown className="w-3 h-3 mr-1" />}
+                {role.role.name}
+              </Badge>
+            )) || <span className="text-xs text-muted-foreground">No roles</span>}
+          </div>
+        )
+      },
+    },
+    {
+      id: "gender",
+      accessorKey: "gender",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          Gender
+        </div>
+      ),
+      cell: ({ row }) => {
+        const user = row.original;
+        const genderLabel = user.gender || 'N/A';
+        return (
+          <div className="text-center">
+            <Badge variant="outline" className="text-xs">
+              {genderLabel}
+            </Badge>
+          </div>
+        )
+      },
+    },
+    {
+      id: "status",
+      accessorKey: "is_deleted",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          Status
+        </div>
+      ),
+      cell: ({ row }) => {
+        const isActive = !row.original.is_deleted
+        return (
+          <div className="flex justify-center">
+            <StatusBadge
+              label={isActive ? "Active" : "Inactive"}
+              variant={isActive ? "success" : "error"}
+              showDot
+            />
+          </div>
+        )
+      },
+      filterFn: (row, id, value) => {
+        if (value === "all") return true
+        const isActive = !row.original.is_deleted
+        return value === "true" ? isActive : !isActive
+      },
+    },
+    // TODO: Implementar action buttons para members
+    // {
+    //   id: "actions",
+    //   header: () => (
+    //     <div className="text-center font-medium text-gray-900">
+    //       Actions
+    //     </div>
+    //   ),
+    //   cell: ({ row }) => {
+    //     const user = row.original
+    //     return (
+    //       <div className="flex justify-center">
+    //         <DropdownMenu>
+    //           <DropdownMenuTrigger asChild>
+    //             <Button variant="ghost" size="sm" data-action-button>
+    //               <MoreHorizontal className="w-4 h-4" />
+    //             </Button>
+    //           </DropdownMenuTrigger>
+    //           <DropdownMenuContent align="end">
+    //             <DropdownMenuItem onClick={() => {
+    //               // Navigate to user details page
+    //               console.log('View user details:', user.id);
+    //               toast('Navigating to user details - Coming soon!');
+    //             }}>
+    //               <Eye className="mr-2 h-4 w-4" />
+    //               View Details
+    //             </DropdownMenuItem>
+    //             <DropdownMenuItem onClick={() => {
+    //               // Edit user functionality
+    //               console.log('Edit user:', user.id);
+    //               toast('Edit user - Coming soon!');
+    //             }}>
+    //               <Edit className="mr-2 h-4 w-4" />
+    //               Edit User
+    //             </DropdownMenuItem>
+    //             <DropdownMenuItem 
+    //               onClick={() => {
+    //                 // Delete/remove user from church
+    //                 console.log('Remove user from church:', user.id);
+    //                 toast('Remove user - Coming soon!');
+    //               }}
+    //               className="text-red-600"
+    //             >
+    //               <Trash2 className="mr-2 h-4 w-4" />
+    //               Remove from Church
+    //             </DropdownMenuItem>
+    //           </DropdownMenuContent>
+    //         </DropdownMenu>
+    //       </div>
+    //     )
+    //   },
+    // },
   ]
 
   if (isLoading) {
@@ -578,22 +1125,56 @@ export default function ChurchesPage() {
       <WithPermission requiredPermissions={[PermissionResolverName.Churches]} fallback={<AccessDenied />}>
       
       <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">
+        {/* Breadcrumbs Navigation - Only in Detail View */}
+        {viewMode === 'detail' && selectedChurchDetail && (
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleBackToList();
+                  }}
+                  className="cursor-pointer hover:text-foreground"
+                >
+                  See All Churches
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage className="font-semibold">
+                  {selectedChurchDetail.name}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
-              {t.churchesTitle}
+              {viewMode === 'detail' && selectedChurchDetail 
+                ? `${selectedChurchDetail.name} - Details`
+                : t.churchesTitle
+              }
             </h2>
             <p className="text-muted-foreground text-0.875rem sm:text-1rem">
-              {t.churchesSubtitle}
+              {viewMode === 'detail' && selectedChurchDetail
+                ? selectedChurchDetail.contact?.city || "Church details, departments and members"
+                : t.churchesSubtitle
+              }
             </p>
           </div>
           
           <div className="flex items-center gap-3">
-            <Button onClick={handleCreate}>
-              <Plus className="w-4 h-4 mr-2" />
-              {t.createChurch}
-            </Button>
+            {viewMode === 'list' && (
+              <Button onClick={handleCreate}>
+                <Plus className="w-4 h-4 mr-2" />
+                {t.createChurch}
+              </Button>
+            )}
             
             <Button 
               variant="outline" 
@@ -606,153 +1187,26 @@ export default function ChurchesPage() {
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <ChurchesKPICards data={kpiCardsData} />
+        {/* Conditional View: List or Detail */}
+        {viewMode === 'list' ? (
+          <>
+            {/* KPI Cards */}
+            <ChurchesKPICards data={kpiCardsData} />
 
-        <Separator />
+            <Separator />
 
-        {/* Charts Section */}
-        <div className="space-y-6">
-          {/* Main Chart - Church Budget Distribution */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5" />
-                Distribuição de Orçamento por Igreja
-              </CardTitle>
-              <CardDescription>Orçamento vs. Valores utilizados por igreja</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer 
-                config={{
-                  budget: { label: "Orçamento", color: "#10b981" },
-                  used: { label: "Utilizado", color: "#f59e0b" },
-                  remaining: { label: "Restante", color: "#3b82f6" }
-                }} 
-                className="h-[300px] sm:h-[360px] w-full"
-              >
-                <BarChart data={chartData.budgetByChurch}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis dataKey="church" fontSize={11} />
-                  <YAxis fontSize={11} tickFormatter={(value) => `$${(value / 1000)}K`} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Legend />
-                  <Bar dataKey="budget" fill="#10b981" radius={4} />
-                  <Bar dataKey="used" fill="#f59e0b" radius={4} />
-                  <Bar dataKey="remaining" fill="#3b82f6" radius={4} />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
+            {/* Charts Section - 3 New Charts in Carousel */}
+            <div className="space-y-6">
+          <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
+            {/* Chart 1: Church Activities & Projects Timeline - Area Chart with Gradients */}
+            <ChurchActivityChart data={chartData.churchActivities} loading={false} />
 
-          {/* Secondary Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Subsidy Requests by Department */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Layers className="w-5 h-5" />
-                  Solicitações por Departamento
-                </CardTitle>
-                <CardDescription>Qual departamento tem solicitado mais subsídios</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer 
-                  config={{
-                    requests: { label: "Solicitações", color: "#8b5cf6" }
-                  }} 
-                  className="h-[250px] sm:h-[300px] w-full"
-                >
-                  <RechartsPieChart>
-                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                    <Pie
-                      data={chartData.subsidyByDepartment}
-                      dataKey="requests"
-                      nameKey="department"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      paddingAngle={2}
-                    >
-                      {chartData.subsidyByDepartment.map((entry: any, index: number) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"][index % 6]}
-                        />
-                      ))}
-                    </Pie>
-                    <Legend />
-                  </RechartsPieChart>
-                </ChartContainer>
-              </CardContent>
-            </Card>
+            {/* Chart 2: Members by Church - Horizontal Bar Chart */}
+            <MembersByChurchChart data={chartData.membersByChurch} loading={false} />
 
-            {/* Users by Church */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  Usuários por Igreja
-                </CardTitle>
-                <CardDescription>Total de usuários cadastrados por igreja</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer 
-                  config={{
-                    users: { label: "Total", color: "#3b82f6" },
-                    active_users: { label: "Ativos", color: "#10b981" }
-                  }} 
-                  className="h-[250px] sm:h-[300px] w-full"
-                >
-                  <BarChart data={chartData.usersByChurch}>
-                    <CartesianGrid vertical={false} />
-                    <XAxis dataKey="church" fontSize={11} />
-                    <YAxis fontSize={11} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Legend />
-                    <Bar dataKey="users" fill="#3b82f6" radius={4} />
-                    <Bar dataKey="active_users" fill="#10b981" radius={4} />
-                  </BarChart>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Subsidy Requests Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
-                Timeline de Solicitações de Subsídio
-              </CardTitle>
-              <CardDescription>Evolução mensal das solicitações por igreja</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer 
-                config={{
-                  'Central SP': { label: "Central SP", color: "#3b82f6" },
-                  'Vila Madalena': { label: "Vila Madalena", color: "#10b981" },
-                  'Mooca': { label: "Mooca", color: "#f59e0b" },
-                  'Campinas': { label: "Campinas", color: "#ef4444" },
-                  'Rio de Janeiro': { label: "Rio de Janeiro", color: "#8b5cf6" }
-                }} 
-                className="h-[300px] sm:h-[400px] w-full"
-              >
-                <LineChart data={chartData.subsidyTimeline}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis dataKey="month" fontSize={11} />
-                  <YAxis fontSize={11} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Legend />
-                  <Line dataKey="Central SP" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line dataKey="Vila Madalena" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line dataKey="Mooca" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line dataKey="Campinas" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line dataKey="Rio de Janeiro" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} />
-                </LineChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
+            {/* Chart 3: Projects by Church - Interactive Pie Chart */}
+            <ProjectsByChurchChart data={chartData.projectsByChurch} loading={false} />
+          </ResponsiveGridCarousel>
         </div>
 
         {/* Churches Table */}
@@ -764,37 +1218,283 @@ export default function ChurchesPage() {
             </CardTitle>
             <CardDescription>Lista completa de igrejas com ações de gerenciamento</CardDescription>
           </CardHeader>
-          <CardContent className="overflow-hidden">
-            <DataTable
+          <CardContent className="p-0">
+            <UseTable
               columns={columns}
               data={churches}
               searchKey="name"
-              searchPlaceholder={t.searchChurches}
-              filterableColumns={[
+              filters={[
                 {
                   id: "region",
                   title: t.region,
-                  options: Array.from(new Set(churches.map((c: any) => c.region_name))).map(name => ({ label: String(name), value: String(name) }))
+                  options: Array.from(new Set(churches.map((c: any) => c.region?.name).filter(Boolean))).map(name => ({ 
+                    label: String(name), 
+                    value: String(name) 
+                  }))
                 },
                 {
                   id: "status",
                   title: "Status",
                   options: [
-                    { label: t.active, value: "active" },
-                    { label: t.inactive, value: "inactive" },
+                    { label: t.active, value: "false" },
+                    { label: t.inactive, value: "true" },
+                  ]
+                },
+                {
+                  id: "type",
+                  title: "Type",
+                  options: [
+                    { label: "Standard", value: "STANDARD" },
+                    { label: "Church Plant", value: "PLANT" },
+                    { label: "Company", value: "COMPANY" },
                   ]
                 }
               ]}
+              emptyEntityName="churches"
             />
           </CardContent>
         </Card>
+          </>
+        ) : (
+          /* Detail View */
+          <div className="space-y-6">
+            {/* Church Info Card + KPI Cards usando KPICards com customFirstCard */}
+            {selectedChurchDetail && (() => {
+              // Calcular KPIs específicos da church
+              const churchMembers = selectedChurchDetail.users?.length || 0;
+              const churchDepartments = selectedChurchDetail.departments?.length || 0;
+              const churchProjects = MOCK_PROJECTS_BY_CHURCH.find(
+                p => p.church.includes(selectedChurchDetail.name.split(' ')[selectedChurchDetail.name.split(' ').length - 1])
+              )?.projects || 0;
+              const churchActivities = MOCK_SUBSIDY_TIMELINE.reduce((sum, month) => {
+                const churchKey = Object.keys(month).find(key => 
+                  key !== 'month' && selectedChurchDetail.name.includes(key.replace('Central ', '').replace('Vila ', '').replace('Rio de Janeiro', 'Rio'))
+                );
+                return sum + (churchKey ? (month as any)[churchKey] : 0);
+              }, 0);
+
+              const churchKPIData: KPICardData[] = [
+                {
+                  id: "church-members",
+                  title: t.totalMembers,
+                  value: churchMembers,
+                  icon: Users,
+                  subtitle: "Total members"
+                },
+                {
+                  id: "church-departments",
+                  title: t.departments,
+                  value: churchDepartments,
+                  icon: Layers,
+                  subtitle: "Active departments"
+                },
+                {
+                  id: "church-projects",
+                  title: "Total Projects",
+                  value: churchProjects,
+                  icon: TrendingUp,
+                  subtitle: "Active projects"
+                },
+                {
+                  id: "church-activities",
+                  title: "Activities",
+                  value: churchActivities,
+                  icon: Activity,
+                  subtitle: "Total activities (YTD)"
+                }
+              ];
+
+              return (
+                <KPICards
+                  data={churchKPIData}
+                  variant="minimal"
+                  showCarousel={true}
+                  minCardsForCarousel={3}
+                  customFirstCard={
+                    <EntityInfoCard
+                      headerTitle="Church Information"
+                      name={selectedChurchDetail.name}
+                      description={`${selectedChurchDetail.region?.name || 'Unknown Region'} • ${churchMembers} members • ${churchDepartments} departments`}
+                      icon={Home}
+                      badges={[
+                        {
+                          label: selectedChurchDetail.is_deleted ? t.inactive : t.active,
+                          variant: selectedChurchDetail.is_deleted ? "secondary" : "default",
+                          className: selectedChurchDetail.is_deleted 
+                            ? "bg-gray-100 text-gray-700" 
+                            : "bg-green-100 text-green-700"
+                        },
+                        ...(selectedChurchDetail.type ? [{
+                          label: selectedChurchDetail.type === 'PLANT' ? 'Church Plant' : selectedChurchDetail.type === 'COMPANY' ? 'Church Company' : 'Standard',
+                          variant: "outline" as const
+                        }] : [])
+                      ]}
+                      actions={[
+                        {
+                          label: t.editChurch,
+                          icon: Edit,
+                          onClick: () => handleEdit(selectedChurchDetail.id)
+                        },
+                        {
+                          label: t.viewContact,
+                          icon: ContactRound,
+                          onClick: () => handleViewContact(selectedChurchDetail.id)
+                        },
+                        {
+                          label: t.deleteChurch,
+                          icon: Trash2,
+                          onClick: () => handleDelete(selectedChurchDetail.id, selectedChurchDetail.name),
+                          variant: "destructive",
+                          showSeparatorAfter: true
+                        }
+                      ]}
+                    />
+                  }
+                />
+              );
+            })()}
+
+            <Separator />
+
+            {/* Charts Section - Department Analytics */}
+            {selectedChurchDetail && (() => {
+              // Gera dados dinâmicos baseados nos departamentos da church
+              const chartData = generateChurchDepartmentData(selectedChurchDetail);
+              
+              return (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-1">Department Analytics</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Overview of activities, members, and projects across all departments
+                    </p>
+                  </div>
+                  <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
+                    {/* Chart 1: Atividades em Projetos por Departamento - Timeline */}
+                    <ChurchActivityChart 
+                      data={chartData.activities} 
+                      loading={false}
+                      mode="departments"
+                    />
+
+                    {/* Chart 2: Membros por Departamento */}
+                    <MembersByChurchChart 
+                      data={chartData.membersByDept} 
+                      loading={false}
+                      mode="departments"
+                    />
+
+                    {/* Chart 3: Projetos por Departamento */}
+                    <ProjectsByChurchChart 
+                      data={chartData.projectsByDept} 
+                      loading={false}
+                      mode="departments"
+                      onItemClick={(department) => {
+                        console.log('Department clicked:', department)
+                        // Aqui você pode adicionar lógica adicional quando um departamento for clicado
+                        // Por exemplo, abrir um modal com mais detalhes, filtrar tabelas, etc.
+                      }}
+                    />
+                  </ResponsiveGridCarousel>
+                </div>
+              );
+            })()}
+
+            <Separator />
+
+            {/* Tabs for Members and Departments */}
+            <Tabs defaultValue="members" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 max-w-md">
+                <TabsTrigger value="members" className="gap-2">
+                  <Users className="w-4 h-4" />
+                  Members
+                </TabsTrigger>
+                <TabsTrigger value="departments" className="gap-2">
+                  <Layers className="w-4 h-4" />
+                  Departments
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Members Tab */}
+              <TabsContent value="members" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      Church Members
+                    </CardTitle>
+                    <CardDescription>
+                      All members associated with {selectedChurchDetail?.name}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <UseTable
+                      columns={memberColumns}
+                      data={selectedChurchDetail?.users || []}
+                      searchKey="first_name"
+                      filters={[
+                        {
+                          id: "is_deleted",
+                          title: "Status",
+                          options: [
+                            { label: "Active", value: "true" },
+                            { label: "Inactive", value: "false" },
+                          ]
+                        }
+                      ]}
+                      emptyEntityName="members"
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Departments Tab */}
+              <TabsContent value="departments" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Layers className="w-5 h-5" />
+                      Church Departments
+                    </CardTitle>
+                    <CardDescription>
+                      All departments within {selectedChurchDetail?.name}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <UseTable
+                      columns={departmentColumns}
+                      data={selectedChurchDetail?.departments || []}
+                      searchKey="name"
+                      filters={[
+                        {
+                          id: "is_deleted",
+                          title: "Status",
+                          options: [
+                            { label: "Active", value: "false" },
+                            { label: "Inactive", value: "true" },
+                          ]
+                        }
+                      ]}
+                      emptyEntityName="departments"
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        )}
 
         {/* View Contact Modal */}
         {selectedContact && selectedChurch && (
           <ContactViewEditModal
             isOpen={isViewContactModalOpen}
             onOpenChange={setIsViewContactModalOpen}
-            contact={selectedContact}
+            contact={{ 
+              ...selectedContact, 
+              is_deleted: selectedContact.is_deleted ?? false,
+              is_primary: selectedContact.is_primary ?? false,
+              _count: { Department: 0, Church: 0, Event: 0, User: 0 } 
+            } as any}
             entityName={selectedChurch.name}
             entityType="Church"
             entityId={selectedChurch.id}
@@ -828,7 +1528,6 @@ export default function ChurchesPage() {
           isOpen={isAddChurchModalOpen}
           onOpenChange={setIsAddChurchModalOpen}
           institutionId={currentInstitutionData?.id || ''}
-          regions={currentInstitutionData?.regions || []}
           onSave={handleChurchSaved}
         />
         
@@ -838,7 +1537,6 @@ export default function ChurchesPage() {
             isOpen={isEditChurchModalOpen}
             onOpenChange={setIsEditChurchModalOpen}
             church={churchToEdit}
-            regions={currentInstitutionData?.regions || []}
             onSave={handleChurchUpdated}
           />
         )}

@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { StatusBadge } from "@/components/ui/status-badge"
 import { 
   Plus, 
   MoreHorizontal,
+  Save,
+  X
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -16,17 +19,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { CreateFundingPolicyGroupModal } from "@/components/modals/funding-policy-group"
+import toast from "react-hot-toast"
 
 // Generic interfaces for the Kanban board
 export interface KanbanGroup {
@@ -72,9 +66,21 @@ export interface KanbanBoardProps {
    */
   actions?: KanbanAction[]
   /**
-   * Callback when an item is moved between groups
+   * Callback when an item is moved between groups (optimistic update)
    */
   onItemMove?: (itemId: string, fromGroupId: string, toGroupId: string) => void
+  /**
+   * Callback when save changes button is clicked
+   */
+  onSaveChanges?: (changes: Array<{
+    itemId: string
+    fromGroupId: string
+    toGroupId: string
+  }>) => Promise<void>
+  /**
+   * Render function for save changes button (receives hasPendingChanges and onSave callback)
+   */
+  renderSaveButton?: (hasPendingChanges: boolean, onSave: () => void, onDiscard: () => void, isSaving: boolean) => ReactNode
   /**
    * Custom render function for item cards - receives drag handlers as third parameter
    */
@@ -119,6 +125,8 @@ export function KanbanBoard({
   items,
   actions = [],
   onItemMove,
+  onSaveChanges,
+  renderSaveButton,
   renderItem,
   renderGroupHeader,
   renderEmptyGroup,
@@ -132,11 +140,12 @@ export function KanbanBoard({
   const [dragOverGroupId, setDragOverGroupId] = useState<string | null>(null)
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null)
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false)
-  const [groupFormData, setGroupFormData] = useState({
-    name: '',
-    description: '',
-    color: '#3b82f6'
-  })
+  const [pendingChanges, setPendingChanges] = useState<Array<{
+    itemId: string
+    fromGroupId: string
+    toGroupId: string
+  }>>([])
+  const [isSaving, setIsSaving] = useState(false)
 
   // Group items by their groupId
   const itemsByGroup = items.reduce((acc, item) => {
@@ -190,12 +199,59 @@ export function KanbanBoard({
       const data = JSON.parse(e.dataTransfer.getData('text/plain'))
       const { itemId, fromGroupId } = data
       
-      if (fromGroupId !== toGroupId && onItemMove) {
-        onItemMove(itemId, fromGroupId, toGroupId)
+      if (fromGroupId !== toGroupId) {
+        // Add to pending changes instead of saving immediately
+        setPendingChanges(prev => {
+          // Check if this item already has a pending change
+          const existingIndex = prev.findIndex(change => change.itemId === itemId)
+          if (existingIndex >= 0) {
+            // Update existing change
+            const updated = [...prev]
+            updated[existingIndex] = { itemId, fromGroupId: prev[existingIndex].fromGroupId, toGroupId }
+            return updated
+          }
+          // Add new change
+          return [...prev, { itemId, fromGroupId, toGroupId }]
+        })
+        
+        // Apply the change optimistically (visual update only)
+        if (onItemMove) {
+          onItemMove(itemId, fromGroupId, toGroupId)
+        }
       }
     } catch (error) {
       console.error('Error parsing drag data:', error)
     }
+  }
+
+  const handleSaveChanges = async () => {
+    if (pendingChanges.length === 0) return
+    
+    setIsSaving(true)
+    try {
+      if (onSaveChanges) {
+        await onSaveChanges(pendingChanges)
+      } else {
+        // Default behavior - simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
+      
+      toast.success(`${pendingChanges.length} change${pendingChanges.length > 1 ? 's' : ''} saved successfully!`, {
+        duration: 2000,
+        icon: '✅'
+      })
+      
+      setPendingChanges([])
+    } catch (error) {
+      toast.error('Failed to save changes')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleDiscardChanges = () => {
+    // Reload the page or refetch data to revert visual changes
+    window.location.reload()
   }
 
   // Handle create group modal
@@ -203,28 +259,18 @@ export function KanbanBoard({
     setIsCreateGroupModalOpen(true)
   }
 
-  const handleCreateGroup = () => {
-    if (!groupFormData.name.trim()) return
-
+  const handleCreateGroupSuccess = (group: any) => {
     const createGroupAction = actions.find(action => action.label.toLowerCase().includes('group'))
     if (createGroupAction) {
       const newGroup = {
-        id: '',
-        name: groupFormData.name,
-        description: groupFormData.description,
-        color: groupFormData.color,
-        active: true
+        id: group.id,
+        name: group.name,
+        description: group.description || '',
+        color: '#f97316', // orange color for funding policy groups
+        active: group.is_active
       }
       createGroupAction.onClick(newGroup as KanbanGroup)
     }
-
-    // Reset form and close modal
-    setGroupFormData({ name: '', description: '', color: '#3b82f6' })
-    setIsCreateGroupModalOpen(false)
-  }
-
-  const resetGroupForm = () => {
-    setGroupFormData({ name: '', description: '', color: '#3b82f6' })
   }
 
   // Default item renderer
@@ -235,63 +281,52 @@ export function KanbanBoard({
     return (
       <Card 
         key={item.id}
-        className={`relative w-full p-3 border border-border/50 hover:border-border transition-all duration-200 ${
-          enableDragDrop ? 'cursor-grab active:cursor-grabbing hover:shadow-md' : ''
-        } ${draggingItemId === item.id ? 'rotate-2 scale-105 shadow-lg' : ''}`}
+        className={`relative w-full p-3 border hover:border-foreground/20 transition-all duration-200 bg-card/50 ${
+          enableDragDrop ? 'cursor-grab active:cursor-grabbing hover:shadow-sm' : ''
+        } ${draggingItemId === item.id ? 'opacity-50 scale-95' : ''}`}
         draggable={enableDragDrop}
         onDragStart={(e) => handleDragStart(e, item)}
         onDragEnd={handleDragEnd}
       >
-        {/* Group color indicator in top-right corner */}
-        <div 
-          className="absolute top-2 right-2 w-3 h-3 rounded-full flex-shrink-0" 
-          style={{ backgroundColor: group.color }}
-          title={`Belongs to ${group.name}`}
-        />
-        
-        <div className="space-y-2 pr-4">
-          <div className="flex items-start gap-2">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-2 flex-1 min-w-0">
             {IconComponent && (
               <IconComponent className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
             )}
-            <span className="font-medium text-sm line-clamp-2 flex-1">{item.title}</span>
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <h4 className="font-medium text-sm leading-tight line-clamp-2">{item.title}</h4>
+              
+              {item.metadata?.type && (
+                <StatusBadge 
+                  label={item.metadata.type}
+                  variant="neutral"
+                  size="sm"
+                />
+              )}
+            </div>
           </div>
           
-          {item.description && (
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              {item.description}
-            </p>
+          {groupActions.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0">
+                  <MoreHorizontal className="w-3.5 h-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {groupActions.map((action) => (
+                  <DropdownMenuItem 
+                    key={action.id}
+                    onClick={() => action.onClick(group, item)}
+                    className={action.variant === 'destructive' ? 'text-destructive' : ''}
+                  >
+                    <action.icon className="w-4 h-4 mr-2" />
+                    {action.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
-          
-          <div className="flex items-center justify-between">
-            {item.metadata?.type && (
-              <Badge variant="secondary" className="text-xs">
-                {item.metadata.type}
-              </Badge>
-            )}
-            
-            {groupActions.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                    <MoreHorizontal className="w-3 h-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  {groupActions.map((action) => (
-                    <DropdownMenuItem 
-                      key={action.id}
-                      onClick={() => action.onClick(group, item)}
-                      className={action.variant === 'destructive' ? 'text-red-600' : ''}
-                    >
-                      <action.icon className="w-4 h-4 mr-2" />
-                      {action.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
         </div>
       </Card>
     )
@@ -303,33 +338,44 @@ export function KanbanBoard({
     const groupActions = actions.filter(action => action.showInGroup)
     
     return (
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           <div 
-            className="w-3 h-3 rounded-full flex-shrink-0" 
+            className="w-2 h-2 rounded-full flex-shrink-0" 
             style={{ backgroundColor: group.color }}
           />
-          <CardTitle className="text-lg">{group.name}</CardTitle>
+          <CardTitle className="text-base font-semibold truncate">{group.name}</CardTitle>
+          <StatusBadge 
+            label={`${groupItems.length}`}
+            variant="neutral"
+            size="sm"
+            className="flex-shrink-0"
+          />
         </div>
         
-        <div className="flex items-center gap-2">
-          <Badge variant={group.active !== false ? "default" : "secondary"} className="text-xs">
-            {group.active !== false ? t('common.active') : t('common.inactive')}
-          </Badge>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {group.active !== false && (
+            <StatusBadge 
+              label="Active"
+              variant="success"
+              showDot
+              size="sm"
+            />
+          )}
           
           {groupActions.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
                   <MoreHorizontal className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent align="end">
                 {groupActions.map((action) => (
                   <DropdownMenuItem 
                     key={action.id}
                     onClick={() => action.onClick(group)}
-                    className={action.variant === 'destructive' ? 'text-red-600' : ''}
+                    className={action.variant === 'destructive' ? 'text-destructive' : ''}
                   >
                     <action.icon className="w-4 h-4 mr-2" />
                     {action.label}
@@ -348,16 +394,10 @@ export function KanbanBoard({
     const addItemAction = actions.find(action => action.showInGroup && action.label.toLowerCase().includes('add'))
     
     return (
-      <div className={`text-center py-8 text-muted-foreground transition-all duration-200 ${
-        dragOverGroupId === group.id ? 'text-primary border-2 border-dashed border-primary rounded-lg' : ''
+      <div className={`text-center py-6 text-muted-foreground transition-all duration-200 ${
+        dragOverGroupId === group.id ? 'text-foreground border-2 border-dashed rounded-lg' : ''
       }`}>
-        <div 
-          className={`w-8 h-8 mx-auto mb-2 rounded-full transition-all duration-200 ${
-            dragOverGroupId === group.id ? 'opacity-100 scale-110' : 'opacity-50'
-          }`} 
-          style={{ backgroundColor: group.color }} 
-        />
-        <p className="text-sm font-medium">
+        <p className="text-xs">
           {dragOverGroupId === group.id && draggingItemId ? t('kanban.dropItemHere') : t('kanban.noItemsYet')}
         </p>
         
@@ -365,10 +405,10 @@ export function KanbanBoard({
           <Button 
             variant="ghost" 
             size="sm" 
-            className="mt-2"
+            className="mt-2 h-7 text-xs"
             onClick={() => addItemAction.onClick(group)}
           >
-            <Plus className="w-4 h-4 mr-1" />
+            <Plus className="w-3 h-3 mr-1" />
             {t('kanban.addFirstItem')}
           </Button>
         )}
@@ -431,61 +471,101 @@ export function KanbanBoard({
 
   return (
     <div className={`kanban-board ${className}`}>
-      {/* Main container with vertical overflow for responsiveness */}
+      {/* Pending Changes Notification - Fixed Position */}
+      {pendingChanges.length > 0 && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <Card className="shadow-xl border-2 border-primary/20">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
+                  <div className="text-sm">
+                    <span className="font-semibold">{pendingChanges.length}</span>
+                    <span className="text-muted-foreground ml-1">
+                      unsaved change{pendingChanges.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDiscardChanges}
+                    disabled={isSaving}
+                  >
+                    <X className="w-4 h-4 mr-1" />
+                    Discard
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSaveChanges}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-1" />
+                        Save Changes
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      
+      {/* Main container - contained within viewport */}
       <div 
-        className="overflow-y-auto"
+        className="overflow-x-auto overflow-y-hidden w-full px-6 py-4"
         style={{ maxHeight }}
       >
         {/* Horizontal scrolling container for groups */}
-        <div className="flex gap-6 overflow-x-auto pb-4 min-h-fit">
+        <div className="flex gap-6" style={{ minWidth: 'min-content' }}>
           {groups.map((group) => {
             const groupItems = itemsByGroup[group.id] || []
             
             return (
-              <div key={group.id} className="flex-shrink-0 w-80 min-w-[340px]">
+              <div key={group.id} className="flex-shrink-0 w-80">
                 <Card 
                   className={`h-full transition-all duration-200 ${
-                    dragOverGroupId === group.id ? 'ring-2 ring-primary bg-primary/5 shadow-lg scale-[1.02]' : ''
+                    dragOverGroupId === group.id ? 'ring-1 ring-foreground/20 bg-muted/20' : ''
                   } ${draggingItemId ? 'border-dashed' : ''}`}
                   onDragOver={(e) => handleDragOver(e, group.id)}
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, group.id)}
                 >
-                  <CardHeader className="pb-3">
+                  <CardHeader className="p-4 pb-3">
                     {renderGroupHeader ? renderGroupHeader(group) : defaultRenderGroupHeader(group)}
                     
                     {group.description && (
-                      <CardDescription className="text-sm">
+                      <CardDescription className="text-xs mt-2 line-clamp-2">
                         {group.description}
                       </CardDescription>
                     )}
-                    
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>
-                        {groupItems.length} {groupItems.length === 1 ? t('kanban.item') : t('kanban.items')}
-                      </span>
-                    </div>
                   </CardHeader>
                   
-                  {/* Divider between header and content */}
-                  <div className="px-6">
-                    <Separator />
-                  </div>
+                  <Separator />
                   
                   <CardContent 
-                    className={`pt-4 px-6 transition-all duration-200 ${
-                      dragOverGroupId === group.id ? 'bg-primary/5' : ''
+                    className={`p-4 transition-all duration-200 ${
+                      dragOverGroupId === group.id ? 'bg-muted/30' : ''
                     }`}
                   >
                     {/* Drop zone indicator */}
                     {draggingItemId && dragOverGroupId === group.id && (
-                      <div className="mb-3 p-2 border-2 border-dashed border-primary rounded-lg text-center">
-                        <p className="text-sm text-primary font-medium">{t('kanban.dropItemHere')}</p>
+                      <div className="mb-3 p-2 border border-dashed rounded-md text-center bg-muted/50">
+                        <p className="text-xs text-muted-foreground">{t('kanban.dropItemHere')}</p>
                       </div>
                     )}
                     
-                    {/* Container for items - full width cards in vertical layout with more internal spacing */}
-                    <div className="space-y-3 max-h-96 overflow-y-auto px-2">
+                    {/* Container for items */}
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
                       {groupItems.length > 0 ? (
                         groupItems.map((item) => {
                           if (renderItem) {
@@ -493,7 +573,7 @@ export function KanbanBoard({
                               onDragStart: (e: React.DragEvent) => handleDragStart(e, item),
                               onDragEnd: handleDragEnd,
                               draggable: true,
-                              className: draggingItemId === item.id ? 'rotate-2 scale-105 shadow-lg' : ''
+                              className: draggingItemId === item.id ? 'opacity-50 scale-95' : ''
                             } : undefined
                             return renderItem(item, group, dragHandlers)
                           }
@@ -514,70 +594,12 @@ export function KanbanBoard({
         </div>
       </div>
 
-      {/* Create Group Modal */}
-      <Dialog open={isCreateGroupModalOpen} onOpenChange={setIsCreateGroupModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>{t('kanban.createNewGroup')}</DialogTitle>
-            <DialogDescription>
-              {t('kanban.createGroupDescription')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="group-name">{t('kanban.groupName')} *</Label>
-              <Input
-                id="group-name"
-                value={groupFormData.name}
-                onChange={(e) => setGroupFormData({...groupFormData, name: e.target.value})}
-                placeholder={t('kanban.groupNamePlaceholder')}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="group-description">{t('kanban.groupDescription')}</Label>
-              <Textarea
-                id="group-description"
-                value={groupFormData.description}
-                onChange={(e) => setGroupFormData({...groupFormData, description: e.target.value})}
-                placeholder={t('kanban.groupDescriptionPlaceholder')}
-                rows={3}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="group-color">{t('kanban.groupColor')}</Label>
-              <div className="flex items-center gap-2">
-                <input
-                  id="group-color"
-                  type="color"
-                  value={groupFormData.color}
-                  onChange={(e) => setGroupFormData({...groupFormData, color: e.target.value})}
-                  className="w-12 h-10 rounded border border-input cursor-pointer"
-                />
-                <Input
-                  value={groupFormData.color}
-                  onChange={(e) => setGroupFormData({...groupFormData, color: e.target.value})}
-                  placeholder="#3b82f6"
-                  className="flex-1"
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                resetGroupForm()
-                setIsCreateGroupModalOpen(false)
-              }}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button onClick={handleCreateGroup} disabled={!groupFormData.name.trim()}>
-              {t('kanban.createGroup')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Create Funding Policy Group Modal */}
+      <CreateFundingPolicyGroupModal
+        isOpen={isCreateGroupModalOpen}
+        onOpenChange={setIsCreateGroupModalOpen}
+        onSuccess={handleCreateGroupSuccess}
+      />
     </div>
   )
 }

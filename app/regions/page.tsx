@@ -7,6 +7,8 @@ import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { ColorBadge } from "@/components/ui/color-badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -16,10 +18,7 @@ import {
   MoreHorizontal,
   Edit,
   Trash2,
-  Home,
-  DollarSign,
-  TrendingUp,
-  Calendar
+  Home
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -33,27 +32,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { AddRegionModal, EditRegionModal, DeleteRegionModal } from "@/components/modals/region"
 import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
 import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget"
-import { UseKPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
-
-// Charts - usando a lib atual do sistema
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  Legend
-} from "recharts"
+import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 
 import { useRegions } from "@/hooks/use-regions"
 import { WithPermission } from "@/hocs/with-permission"
@@ -66,9 +45,7 @@ import { AccessDenied } from "@/components/access/access-denied"
  */
 export default function RegionsPage() {
   const { i18n } = useTranslation()
-  // const { currentInstitutionData, refetchInstitutionById } = useInstitution();
   const { updateRegionContact, regions, refetchRegions } = useRegions();
-  // Garante que regions venha do dado real da instituição ativa
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   
@@ -95,13 +72,18 @@ export default function RegionsPage() {
   })
 
   // Estatísticas calculadas dos dados
-  type RegionType = any; // Usar any para contornar limitações do tipo GraphQL
+  type RegionType = any;
   const kpiData = useMemo(() => {
     const totalRegions = regions.length;
-    const totalChurches = regions.reduce((sum: number, r: RegionType) => sum + (r.churches_count || 0), 0);
+    const totalChurches = regions.reduce((sum: number, r: RegionType) => sum + (r.churches?.length || 0), 0);
+    
+    // Contar sub-regiões (provinces) - regiões que têm parent_region_id
+    const totalProvinces = regions.filter((r: RegionType) => r.parent_region_id !== null).length;
+    
     return {
       totalRegions,
       totalChurches,
+      totalProvinces,
     };
   }, [regions]);
 
@@ -113,27 +95,22 @@ export default function RegionsPage() {
       value: kpiData.totalRegions,
       icon: MapPin,
       subtitle: "Active regions"
+    },
+    {
+      id: "total-churches",
+      title: t.totalChurches || "Total Churches",
+      value: kpiData.totalChurches,
+      icon: Home,
+      subtitle: "Churches in all regions"
+    },
+    {
+      id: "total-provinces",
+      title: "Total Provinces",
+      value: kpiData.totalProvinces,
+      icon: MapPin,
+      subtitle: "Sub-regions"
     }
   ], [kpiData, t])
-
-  // Dados para gráficos
-  const chartData = useMemo(() => ({
-    budgetByRegion: regions.map((r: RegionType) => ({
-      region: r.name,
-      budget: (r as any).total_budget || 0,
-      used: (r as any).used_budget || 0,
-      remaining: ((r as any).total_budget || 0) - ((r as any).used_budget || 0)
-    })),
-    subsidyRequestsByRegion: regions.map((r: RegionType) => ({
-      region: r.name,
-      requests: (r as any).subsidy_requests || 0
-    })),
-    churchesByRegion: regions.map((r: RegionType) => ({
-      region: r.name,
-      churches: (r as any).churches_count || 0
-    })),
-    subsidyTimeline: [] // Timeline ainda mock, backend não fornece
-  }), [regions]);
 
   /**
    * Carregamento inicial dos dados
@@ -184,6 +161,7 @@ export default function RegionsPage() {
       setIsEditModalOpen(true);
     }
   };
+  
   const handleDelete = (id: string, name: string) => {
     const region = regions.find((r: RegionType) => r.id === id);
     if (region) {
@@ -194,7 +172,6 @@ export default function RegionsPage() {
 
   // Modal handlers
   const handleRegionCreated = (newRegion: any) => {
-    // toast.success(t.itemCreated)
     handleRefresh()
   }
 
@@ -219,16 +196,51 @@ export default function RegionsPage() {
       id: "name",
       accessorKey: "name",
       header: t.name,
-      cell: ({ row }) => (
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-            <MapPin className="w-4 h-4 text-green-600" />
-                </div>
-          <div>
-            <div className="font-medium">{row.original.name}</div>
+      cell: ({ row }) => {
+        const color = row.original.color || '#10b981'; // Default green color
+        return (
+          <div className="flex items-center gap-3">
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: `${color}20` }}
+            >
+              <MapPin 
+                className="w-4 h-4" 
+                style={{ color: color }}
+              />
+            </div>
+            <div>
+              <div className="font-medium">{row.original.name}</div>
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
+    },
+    {
+      id: "color",
+      accessorKey: "color",
+      header: "Color",
+      cell: ({ row }) => {
+        const color = row.original.color || '#10b981';
+        return <ColorBadge color={color} showHex={true} />;
+      },
+    },
+    {
+      id: "provinces",
+      header: "Total Provinces",
+      cell: ({ row }) => {
+        // Count sub-regions (child regions with this region as parent)
+        const provincesCount = regions.filter((r: RegionType) => 
+          r.parent_region_id === row.original.id
+        ).length;
+        
+        return (
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-muted-foreground" />
+            <span className="font-medium">{provincesCount}</span>
+          </div>
+        );
+      },
     },
     {
       id: "churches",
@@ -237,44 +249,59 @@ export default function RegionsPage() {
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Home className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.churches.length}</span>
-                                    </div>
+          <span className="font-medium">{row.original.churches?.length || 0}</span>
+        </div>
       ),
     },
     {
       id: "status",
       accessorKey: "is_deleted",
-      header: "Status",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          Status
+        </div>
+      ),
       cell: ({ row }) => (
-        <Badge variant={row.original.is_deleted ? 'secondary' : 'default'}>
-          {row.original.is_deleted ? t.inactive : t.active}
-        </Badge>
+        <div className="flex justify-center">
+          <StatusBadge
+            label={row.original.is_deleted ? t.inactive : t.active}
+            variant={row.original.is_deleted ? "neutral" : "success"}
+            showDot
+          />
+        </div>
       ),
     },
     {
       id: "actions",
-      header: t.actions,
+      header: () => (
+        <div className="text-right font-medium text-gray-900">
+          {t.actions}
+        </div>
+      ),
       cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <MoreHorizontal className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
-              <Edit className="w-4 h-4 mr-2" />
-              {t.editRegion}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
-              <Trash2 className="w-4 h-4 mr-2" />
-              {t.deleteRegion}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleEdit(row.original)}>
+                <Edit className="w-4 h-4 mr-2" />
+                {t.editRegion}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
+                <Trash2 className="w-4 h-4 mr-2" />
+                {t.deleteRegion}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       ),
     },
   ]
+  
   if (isLoading) {
     return (
       <AppLayout>
@@ -304,7 +331,7 @@ export default function RegionsPage() {
       <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                            <div>
+          <div>
             <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
               {t.regionsTitle}
             </h2>
@@ -334,151 +361,14 @@ export default function RegionsPage() {
         </div>
 
         {/* KPI Cards */}
-        <UseKPICards data={kpiCardsData} />
+        <KPICards 
+          data={kpiCardsData}
+          isLoading={isLoading}
+          showCarousel={true}
+          minCardsForCarousel={2}
+        />
 
         <Separator />
-
-        {/* Charts Section */}
-        <div className="space-y-6">
-          {/* Main Chart - Regional Budget Distribution */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5" />
-                {t.regionalBudgetDistribution}
-              </CardTitle>
-              <CardDescription>Orçamento vs. Valores utilizados por região</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer 
-                config={{
-                  budget: { label: "Orçamento", color: "#10b981" },
-                  used: { label: "Utilizado", color: "#f59e0b" },
-                  remaining: { label: "Restante", color: "#3b82f6" }
-                }} 
-                className="h-[300px] sm:h-[360px] w-full"
-              >
-                <BarChart data={chartData.budgetByRegion}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis dataKey="region" fontSize={11} />
-                  <YAxis fontSize={11} tickFormatter={(value) => `$${(value / 1000)}K`} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Legend />
-                  <Bar dataKey="budget" fill="#10b981" radius={4} />
-                  <Bar dataKey="used" fill="#f59e0b" radius={4} />
-                  <Bar dataKey="remaining" fill="#3b82f6" radius={4} />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          {/* Secondary Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Subsidy Requests by Region */}
-          <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  {t.subsidyRequestsByRegion}
-                </CardTitle>
-                <CardDescription>Qual região tem solicitado mais subsídios</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <ChartContainer 
-                  config={{
-                    requests: { label: "Solicitações", color: "#3b82f6" }
-                  }} 
-                  className="h-[250px] sm:h-[300px] w-full"
-                >
-                  <BarChart data={chartData.subsidyRequestsByRegion}>
-                    <CartesianGrid vertical={false} />
-                    <XAxis dataKey="region" fontSize={11} />
-                    <YAxis fontSize={11} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Legend />
-                    <Bar dataKey="requests" fill="#3b82f6" radius={4} />
-                  </BarChart>
-                </ChartContainer>
-            </CardContent>
-          </Card>
-
-            {/* Churches Distribution by Region */}
-          <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Home className="w-5 h-5" />
-                  {t.churchesByRegion}
-                </CardTitle>
-                <CardDescription>Distribuição de igrejas por região</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <ChartContainer 
-                  config={{
-                    churches: { label: "Igrejas", color: "#10b981" }
-                  }} 
-                  className="h-[250px] sm:h-[300px] w-full"
-                >
-                  <RechartsPieChart>
-                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                    <Pie
-                      data={chartData.churchesByRegion}
-                      dataKey="churches"
-                      nameKey="region"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      paddingAngle={2}
-                    >
-                      {chartData.churchesByRegion.map((entry: any, index: number) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"][index % 5]}
-                        />
-                      ))}
-                    </Pie>
-                    <Legend />
-                  </RechartsPieChart>
-                </ChartContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-          {/* Subsidy Requests Timeline */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
-                {t.subsidyRequestsTimeline}
-            </CardTitle>
-              <CardDescription>Evolução mensal das solicitações de subsídio por região</CardDescription>
-          </CardHeader>
-          <CardContent>
-              <ChartContainer 
-                config={{
-                  'São Paulo Capital': { label: "SP Capital", color: "#3b82f6" },
-                  'São Paulo Interior': { label: "SP Interior", color: "#10b981" },
-                  'Rio de Janeiro': { label: "Rio de Janeiro", color: "#f59e0b" },
-                  'Distrito Federal': { label: "Distrito Federal", color: "#ef4444" },
-                  'Bahia - Salvador': { label: "Bahia - Salvador", color: "#8b5cf6" }
-                }} 
-                className="h-[300px] sm:h-[400px] w-full"
-              >
-                <LineChart data={chartData.subsidyTimeline}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis dataKey="month" fontSize={11} />
-                  <YAxis fontSize={11} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Legend />
-                  <Line dataKey="São Paulo Capital" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line dataKey="São Paulo Interior" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line dataKey="Rio de Janeiro" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line dataKey="Distrito Federal" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line dataKey="Bahia - Salvador" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} />
-                </LineChart>
-              </ChartContainer>
-          </CardContent>
-        </Card>
-        </div>
 
         {/* Regions Table */}
         <Card>
@@ -495,21 +385,7 @@ export default function RegionsPage() {
               data={regions}
               searchKey="name"
               searchPlaceholder={t.searchRegions}
-              filterableColumns={[
-                // {
-                //   id: "institution",
-                //   title: "Instituição",
-                //   options: Array.from(new Set(regions.map((r: any) => r.institution_name))).map(name => ({ label: String(name), value: String(name) }))
-                // },
-                // {
-                //   id: "status",
-                //   title: "Status",
-                //   options: [
-                //     { label: t.active, value: "active" }, // Representa is_deleted: false
-                //     { label: t.inactive, value: "inactive" }, // Representa is_deleted: true
-                //   ]
-                // }
-              ]}
+              filterableColumns={[]}
             />
           </CardContent>
         </Card>

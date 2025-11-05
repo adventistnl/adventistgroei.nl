@@ -194,9 +194,8 @@ export function AddDepartmentModal({
   const [openChurch, setOpenChurch] = useState(false);
   const [openUserSelect, setOpenUserSelect] = useState(false);
 
-  // Adjusted total steps: 2 steps for institutional (info + contact), 3 for church (info + church + contact)
-  // Removed responsible users step
-  const totalSteps = departmentType === 'institutional' ? 2 : 3;
+  // Steps: 1. Basic Info, 2. Contact (optional), 3. Review (both types have same steps)
+  const totalSteps = 3;
 
   useEffect(() => {
     if (isOpen) {
@@ -247,23 +246,28 @@ export function AddDepartmentModal({
       } else if (formData.description.trim().length < 10) {
         newErrors.description = t.validation.description_min_length
       }
-    }
 
-    if (step === 2 && departmentType === 'church') {
-      if (!formData.church) {
+      // Validate church for church departments
+      if (departmentType === 'church' && !formData.church) {
         newErrors.church = t.validation.church_required
       }
     }
 
-    // Contact details step is optional - skip validation
+    // Step 2 (contact) is optional - no validation
     
-    // Responsible users validation removed - feature commented out
-    // const finalStep = departmentType === 'institutional' ? 3 : 4
-    // if (step === finalStep) {
-    //   if (!formData.responsibleUsers || formData.responsibleUsers.length === 0) {
-    //     newErrors.responsibleUsers = 'At least one responsible user is required'
-    //   }
-    // }
+    // Step 3 (review) - final validation before save
+    if (step === 3) {
+      // Re-validate step 1 fields
+      if (!formData.name?.trim()) {
+        newErrors.name = t.validation.name_required
+      }
+      if (!formData.description?.trim()) {
+        newErrors.description = t.validation.description_required
+      }
+      if (departmentType === 'church' && !formData.church) {
+        newErrors.church = t.validation.church_required
+      }
+    }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -273,6 +277,11 @@ export function AddDepartmentModal({
     if (validateStep(currentStep)) {
       setCurrentStep(prev => Math.min(prev + 1, totalSteps))
     }
+  }
+
+  const handleSkipContacts = () => {
+    // Skip to review step (step 3)
+    setCurrentStep(3)
   }
 
   const handlePrevious = () => {
@@ -357,342 +366,250 @@ export function AddDepartmentModal({
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
+        // Step 1: Basic Information (Name, Description, Church if needed)
         return (
-          <div className="space-y-6 animate-in fade-in-0 duration-300">
+          <div className="space-y-8 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">{t.steps.step_1_title}</h3>
-              <p className="text-sm text-muted-foreground">{t.steps.step_1_description}</p>
+              <h3 className="text-lg font-semibold text-foreground">Basic Information</h3>
+              <p className="text-sm text-muted-foreground">Enter the department name and description</p>
             </div>
             
-            <div className="space-y-4 max-w-md mx-auto">
+            <div className="space-y-6 max-w-md mx-auto">
               <div className="space-y-2">
-                <Label htmlFor="name" className="flex items-center gap-2 text-sm">
-                  <Layers className="w-4 h-4 text-muted-foreground" />
-                  {t.fields.name} *
+                <Label htmlFor="name" className="text-sm font-medium">
+                  Department Name *
                 </Label>
                 <Input
                   id="name"
                   value={formData.name || ''}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder={t.placeholders.name}
+                  placeholder="Enter department name"
                   disabled={isLoading}
-                  className={`h-10 ${errors.name ? 'border-red-500' : ''}`}
+                  className={errors.name ? 'border-red-500' : ''}
                 />
                 {errors.name && (
-                  <p className="text-sm text-red-600">{errors.name}</p>
+                  <p className="text-xs text-red-600">{errors.name}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description" className="flex items-center gap-2 text-sm">
-                  <Building className="w-4 h-4 text-muted-foreground" />
-                  {t.fields.description} *
+                <Label htmlFor="description" className="text-sm font-medium">
+                  Description *
                 </Label>
                 <Textarea
                   id="description"
                   value={formData.description || ''}
                   onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder={t.placeholders.description}
+                  placeholder="Describe the department purpose and activities"
                   disabled={isLoading}
-                  className={`min-h-[80px] resize-none ${errors.description ? 'border-red-500' : ''}`}
+                  className={`min-h-[100px] resize-none ${errors.description ? 'border-red-500' : ''}`}
                 />
                 {errors.description && (
-                  <p className="text-sm text-red-600">{errors.description}</p>
+                  <p className="text-xs text-red-600">{errors.description}</p>
                 )}
               </div>
+
+              {/* Church selection for church departments */}
+              {departmentType === 'church' && (
+                <div className="space-y-2">
+                  <Label htmlFor="church" className="text-sm font-medium">
+                    Church *
+                  </Label>
+                  <Popover open={openChurch} onOpenChange={setOpenChurch}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openChurch}
+                        className={cn(
+                          "w-full justify-between font-normal",
+                          !formData.church && "text-muted-foreground",
+                          errors.church && "border-red-500"
+                        )}
+                        disabled={isLoading}
+                      >
+                        {formData.church
+                          ? churches.find(church => church.id === formData.church)?.name
+                          : "Select church"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search church..." />
+                        <CommandList>
+                          <CommandEmpty>No church found</CommandEmpty>
+                          <CommandGroup>
+                            {churches.map((church) => (
+                              <CommandItem
+                                key={church.id}
+                                value={church.name}
+                                onSelect={() => {
+                                  handleInputChange('church', church.id)
+                                  setOpenChurch(false)
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    formData.church === church.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {church.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {errors.church && (
+                    <p className="text-xs text-red-600">{errors.church}</p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )
 
       case 2:
-        // For institutional departments, show contact details + review combined
-        if (departmentType === 'institutional') {
-          return (
-            <div className="space-y-6 animate-in fade-in-0 duration-300">
-              <div className="text-center space-y-2">
-                <h3 className="text-lg font-medium text-foreground">Contact Details & Review</h3>
-                <p className="text-sm text-muted-foreground">Add optional contact information and review department details</p>
-              </div>
-              
-              <div className="space-y-6 max-w-2xl mx-auto">
-                {/* Contact Details Section */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Contact Information (Optional)</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="contact_name" className="flex items-center gap-2 text-sm">
-                        <User className="w-4 h-4 text-muted-foreground" />
-                        {t.fields.contact_name}
-                      </Label>
-                      <Input
-                        id="contact_name"
-                        value={formData.contactName || ''}
-                        onChange={(e) => handleInputChange('contactName', e.target.value)}
-                        placeholder={t.placeholders.contact_name}
-                        disabled={isLoading}
-                        className="h-10"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="contact_email" className="flex items-center gap-2 text-sm">
-                        <Mail className="w-4 h-4 text-muted-foreground" />
-                        {t.fields.contact_email}
-                      </Label>
-                      <Input
-                        id="contact_email"
-                        type="email"
-                        value={formData.email || ''}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
-                        placeholder={t.placeholders.contact_email}
-                        disabled={isLoading}
-                        className="h-10"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="contact_phone" className="flex items-center gap-2 text-sm">
-                        <Phone className="w-4 h-4 text-muted-foreground" />
-                        {t.fields.contact_phone}
-                      </Label>
-                      <Input
-                        id="contact_phone"
-                        value={formData.phone || ''}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                        placeholder={t.placeholders.contact_phone}
-                        disabled={isLoading}
-                        className="h-10"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="contact_city" className="flex items-center gap-2 text-sm">
-                        <MapPin className="w-4 h-4 text-muted-foreground" />
-                        {t.fields.contact_city}
-                      </Label>
-                      <Input
-                        id="contact_city"
-                        value={formData.city || ''}
-                        onChange={(e) => handleInputChange('city', e.target.value)}
-                        placeholder={t.placeholders.contact_city}
-                        disabled={isLoading}
-                        className="h-10"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Review Information */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Department Summary</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Name:</span>
-                      <span className="font-medium">{formData.name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Description:</span>
-                      <span className="font-medium text-right max-w-[200px] line-clamp-2">{formData.description}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Type:</span>
-                      <Badge variant="outline">Institutional Department</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          )
-        }
-        
-        // For church departments, show church selection
+        // Step 2: Contact Information (Optional)
         return (
-          <div className="space-y-6 animate-in fade-in-0 duration-300">
+          <div className="space-y-8 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">{t.steps.step_2_title}</h3>
-              <p className="text-sm text-muted-foreground">{t.steps.step_2_description}</p>
+              <h3 className="text-lg font-semibold text-foreground">Contact Information</h3>
+              <p className="text-sm text-muted-foreground">Add contact details for this department (optional)</p>
             </div>
             
-            <div className="space-y-4 max-w-md mx-auto">
+            <div className="space-y-6 max-w-md mx-auto">
               <div className="space-y-2">
-                <Label htmlFor="church" className="flex items-center gap-2 text-sm">
-                  <Home className="w-4 h-4 text-muted-foreground" />
-                  {t.fields.church} *
+                <Label htmlFor="contact_name" className="text-sm font-medium">
+                  Contact Name
                 </Label>
-                <Popover open={openChurch} onOpenChange={setOpenChurch}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openChurch}
-                      className={cn(
-                        "w-full h-10 justify-between font-normal",
-                        !formData.church && "text-muted-foreground",
-                        errors.church && "border-red-500"
-                      )}
-                      disabled={isLoading}
-                    >
-                      {formData.church
-                        ? churches.find(church => church.id === formData.church)?.name
-                        : t.placeholders.church}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder={t.fields.search_church} />
-                      <CommandList>
-                        <CommandEmpty>{t.fields.no_church_found}</CommandEmpty>
-                        <CommandGroup>
-                          {churches.map((church) => (
-                            <CommandItem
-                              key={church.id}
-                              value={church.name}
-                              onSelect={() => {
-                                handleInputChange('church', church.id)
-                                setOpenChurch(false)
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  formData.church === church.id ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <Home className="mr-2 h-4 w-4 text-muted-foreground" />
-                              {church.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {errors.church && (
-                  <p className="text-sm text-red-600">{errors.church}</p>
-                )}
+                <Input
+                  id="contact_name"
+                  value={formData.contactName || ''}
+                  onChange={(e) => handleInputChange('contactName', e.target.value)}
+                  placeholder="Enter contact name"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contact_email" className="text-sm font-medium">
+                  Email
+                </Label>
+                <Input
+                  id="contact_email"
+                  type="email"
+                  value={formData.email || ''}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  placeholder="contact@example.com"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contact_phone" className="text-sm font-medium">
+                  Phone
+                </Label>
+                <Input
+                  id="contact_phone"
+                  value={formData.phone || ''}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  placeholder="+31 123 456 789"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contact_city" className="text-sm font-medium">
+                  City
+                </Label>
+                <Input
+                  id="contact_city"
+                  value={formData.city || ''}
+                  onChange={(e) => handleInputChange('city', e.target.value)}
+                  placeholder="Enter city"
+                  disabled={isLoading}
+                />
               </div>
             </div>
           </div>
         )
 
       case 3:
-        // For church departments, show contact details + review combined (final step)
-        if (departmentType === 'church') {
-          return (
-            <div className="space-y-6 animate-in fade-in-0 duration-300">
-              <div className="text-center space-y-2">
-                <h3 className="text-lg font-medium text-foreground">Contact Details & Review</h3>
-                <p className="text-sm text-muted-foreground">Add optional contact information and review department details</p>
-              </div>
-              
-              <div className="space-y-6 max-w-2xl mx-auto">
-                {/* Contact Details Section */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Contact Information (Optional)</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="contact_name" className="flex items-center gap-2 text-sm">
-                        <User className="w-4 h-4 text-muted-foreground" />
-                        {t.fields.contact_name}
-                      </Label>
-                      <Input
-                        id="contact_name"
-                        value={formData.contactName || ''}
-                        onChange={(e) => handleInputChange('contactName', e.target.value)}
-                        placeholder={t.placeholders.contact_name}
-                        disabled={isLoading}
-                        className="h-10"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="contact_email" className="flex items-center gap-2 text-sm">
-                        <Mail className="w-4 h-4 text-muted-foreground" />
-                        {t.fields.contact_email}
-                      </Label>
-                      <Input
-                        id="contact_email"
-                        type="email"
-                        value={formData.email || ''}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
-                        placeholder={t.placeholders.contact_email}
-                        disabled={isLoading}
-                        className="h-10"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="contact_phone" className="flex items-center gap-2 text-sm">
-                        <Phone className="w-4 h-4 text-muted-foreground" />
-                        {t.fields.contact_phone}
-                      </Label>
-                      <Input
-                        id="contact_phone"
-                        value={formData.phone || ''}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                        placeholder={t.placeholders.contact_phone}
-                        disabled={isLoading}
-                        className="h-10"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="contact_city" className="flex items-center gap-2 text-sm">
-                        <MapPin className="w-4 h-4 text-muted-foreground" />
-                        {t.fields.contact_city}
-                      </Label>
-                      <Input
-                        id="contact_city"
-                        value={formData.city || ''}
-                        onChange={(e) => handleInputChange('city', e.target.value)}
-                        placeholder={t.placeholders.contact_city}
-                        disabled={isLoading}
-                        className="h-10"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Review Information */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Department Summary</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Name:</span>
-                      <span className="font-medium">{formData.name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Description:</span>
-                      <span className="font-medium text-right max-w-[200px] line-clamp-2">{formData.description}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Church:</span>
-                      <span className="font-medium">
-                        {churches.find(c => c.id === formData.church)?.name || '-'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Type:</span>
-                      <Badge variant="outline">Church Department</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+        // Step 3: Review (Minimalist)
+        return (
+          <div className="space-y-8 animate-in fade-in-0 duration-300">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-semibold text-foreground">Review & Confirm</h3>
+              <p className="text-sm text-muted-foreground">Please review the information before creating the department</p>
             </div>
-          )
-        }
-        
-        // This should not be reached for institutional departments (they only have 2 steps)
-        return null
+            
+            <div className="space-y-6 max-w-lg mx-auto">
+              {/* Basic Information */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Basic Information</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between py-2 border-b border-border/50">
+                    <span className="text-sm text-muted-foreground">Name</span>
+                    <span className="text-sm font-medium text-right max-w-[60%]">{formData.name}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-border/50">
+                    <span className="text-sm text-muted-foreground">Description</span>
+                    <span className="text-sm font-medium text-right max-w-[60%] line-clamp-3">{formData.description}</span>
+                  </div>
+                  {departmentType === 'church' && (
+                    <div className="flex justify-between py-2 border-b border-border/50">
+                      <span className="text-sm text-muted-foreground">Church</span>
+                      <span className="text-sm font-medium">{churches.find(c => c.id === formData.church)?.name || '-'}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between py-2 border-b border-border/50">
+                    <span className="text-sm text-muted-foreground">Type</span>
+                    <Badge variant="outline" className="text-xs">
+                      {departmentType === 'institutional' ? 'Institutional' : 'Church'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Information */}
+              {(formData.contactName || formData.email || formData.phone || formData.city) && (
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Contact Information</h4>
+                  <div className="space-y-2">
+                    {formData.contactName && (
+                      <div className="flex justify-between py-2 border-b border-border/50">
+                        <span className="text-sm text-muted-foreground">Name</span>
+                        <span className="text-sm font-medium">{formData.contactName}</span>
+                      </div>
+                    )}
+                    {formData.email && (
+                      <div className="flex justify-between py-2 border-b border-border/50">
+                        <span className="text-sm text-muted-foreground">Email</span>
+                        <span className="text-sm font-medium">{formData.email}</span>
+                      </div>
+                    )}
+                    {formData.phone && (
+                      <div className="flex justify-between py-2 border-b border-border/50">
+                        <span className="text-sm text-muted-foreground">Phone</span>
+                        <span className="text-sm font-medium">{formData.phone}</span>
+                      </div>
+                    )}
+                    {formData.city && (
+                      <div className="flex justify-between py-2 border-b border-border/50">
+                        <span className="text-sm text-muted-foreground">City</span>
+                        <span className="text-sm font-medium">{formData.city}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )
 
       default:
         return null
@@ -742,50 +659,60 @@ export function AddDepartmentModal({
                   onClick={handlePrevious} 
                   disabled={isLoading}
                   size="sm"
-                  className="flex items-center gap-1 text-xs"
+                  className="flex items-center gap-1"
                 >
-                  <ChevronLeft className="w-3 h-3" />
-                  {t.buttons.previous}
+                  <ChevronLeft className="w-4 h-4" />
+                  Back
                 </Button>
               )}
               <Button 
-                variant="outline" 
+                variant="ghost" 
                 onClick={handleCancel} 
                 disabled={isLoading}
                 size="sm"
-                className="text-xs"
               >
-                {t.buttons.cancel}
+                Cancel
               </Button>
             </div>
 
             <div className="flex gap-2">
+              {currentStep === 2 && (
+                <Button 
+                  variant="ghost"
+                  onClick={handleSkipContacts} 
+                  disabled={isLoading}
+                  size="sm"
+                  className="text-muted-foreground"
+                >
+                  Skip for now
+                </Button>
+              )}
               {currentStep < totalSteps ? (
                 <Button 
                   onClick={handleNext} 
                   disabled={isLoading}
                   size="sm"
-                  className="flex items-center gap-1 text-xs"
+                  className="flex items-center gap-1"
                 >
-                  {t.buttons.next}
-                  <ChevronRight className="w-3 h-3" />
+                  Continue
+                  <ChevronRight className="w-4 h-4" />
                 </Button>
               ) : (
                 <Button 
                   onClick={handleSave} 
                   disabled={isLoading}
                   size="sm"
-                  className="min-w-[100px] text-xs"
+                  className="min-w-[120px]"
                 >
                   {isLoading ? (
                     <>
-                      <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1" />
-                      {t.buttons.creating}
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                      Creating...
                     </>
                   ) : (
                     <>
-                      <Save className="w-3 h-3 mr-1" />
-                      {t.buttons.save}
+                      <Check className="w-4 h-4 mr-2" />
+                      Create Department
                     </>
                   )}
                 </Button>

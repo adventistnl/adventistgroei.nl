@@ -1,28 +1,15 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
-import { LanguageSelector } from "@/components/language-selector"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,63 +18,34 @@ import {
 } from "@/components/ui/dropdown-menu"
 import {
   Users,
-  Plus,
-  Search,
-  Filter,
   MoreHorizontal,
   Edit,
   Trash2,
-  Eye,
+  ContactRound,
   UserCheck,
   UserX,
   Crown,
   Shield,
-  TrendingUp,
   Building,
-  MapPin,
-  Mail,
-  Phone,
-  Calendar,
-  Settings,
+  Building2,
+  Layers,
   RefreshCw
 } from "lucide-react"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
 
-// Charts
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
-  type ChartConfig,
-} from "@/components/ui/chart"
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  AreaChart,
-  Area,
-  ResponsiveContainer
-} from "recharts"
-
 // Hooks
 import { useUserKPI } from "@/hooks/KPI/use-users-kpi"
-import { useLanguagePreferences } from '@/hooks/use-language-preferences';
+import { useLanguagePreferences } from '@/hooks/use-language-preferences'
 
 // User Modals
 import { CreateUserModal, EditUserModal, DeleteUserModal } from "@/components/modals/user"
+import { ContactViewEditModal } from "@/components/modals/contact/contact-view-edit-modal"
 
-// Data Table
-import { DataTable } from "@/components/ui/data-table"
+// Components
+import { UseTable } from "@/components/ui/use-table"
+import { KPICards, type KPICardData } from "@/components/shared/kpi-cards-carousel"
+import { StatusBadge } from "@/components/ui/status-badge"
 import { ColumnDef } from "@tanstack/react-table"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
@@ -103,33 +61,26 @@ export default function UsersPage() {
   const { roles } = useRoles({}); // Obtém os roles através do hook
   const languageOptions = useLanguagePreferences(); // Usando o novo hook
 
-  // Substitui os dados mockados por currentInstitutionData
-  const churches = currentInstitutionData?.churches || [];
-  const regions = currentInstitutionData?.regions || [];
-  const departments = currentInstitutionData?.departments || [];
-  const users = currentInstitutionData?.users || [];
+  // Data from institution context
+  const churches = currentInstitutionData?.churches || []
+  const departments = currentInstitutionData?.departments || []
+  const users = currentInstitutionData?.users || []
   
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isUserDetailsOpen, setIsUserDetailsOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
 
-  // Modal states (for future modal components)
+  // Modal states
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false)
   const [isEditUserOpen, setIsEditUserOpen] = useState(false)
   const [isDeleteUserOpen, setIsDeleteUserOpen] = useState(false)
-
-  const breadcrumbs = useMemo(() => [
-    { name: "Dashboard", href: "/dashboard" },
-    { name: t('users.title') }
-  ], [t])
+  const [isViewContactOpen, setIsViewContactOpen] = useState(false)
 
   usePageTitle({
-    title: t('users.title'),
-    breadcrumbs
+    title: t('users.title')
   })
+  
   // Load data
   useEffect(() => {
     const loadData = async () => {
@@ -177,23 +128,10 @@ export default function UsersPage() {
     }
   }
 
-  // Filter users based on search and status
-  const filteredUsers = useMemo(() => {
-    return users.filter(user => {
-      const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           user.email.toLowerCase().includes(searchTerm.toLowerCase())
-      
-      const matchesStatus = statusFilter === 'all' || 
-                           (statusFilter === 'active' && !user.is_deleted) ||
-                           (statusFilter === 'inactive' && user.is_deleted)
-      
-      return matchesSearch && matchesStatus
-    })
-  }, [searchTerm, statusFilter])
-
   // User action handlers
-  const handleViewUser = (user: User) => {
-    router.push(`/users/${user.id}`)
+  const handleViewContact = (user: User) => {
+    setSelectedUser(user)
+    setIsViewContactOpen(true)
   }
 
   const handleEditUser = (user: User) => {
@@ -210,57 +148,98 @@ export default function UsersPage() {
     setIsCreateUserOpen(true)
   }
 
-  // Substitui os dados mockados por KPIs calculados
+  // KPIs calculados
   const {
     totalUsers,
     activeUsers,
     inactiveUsers,
-    newUsersThisMonth,
-    usersByRole,
-    usersByInstitution,
-    userGrowthOverTime,
   } = useUserKPI()
+
+  // Prepare KPI Cards data
+  const kpiCardsData: KPICardData[] = [
+    {
+      id: "total-users",
+      title: t('users.kpis.total_users'),
+      value: totalUsers,
+      subtitle: t('users.kpis.total_users_description'),
+      icon: Users,
+    },
+    {
+      id: "active-users",
+      title: t('users.kpis.active_users'),
+      value: activeUsers,
+      subtitle: `${Math.round((activeUsers / totalUsers) * 100)}% ${t('users.kpis.of_total')}`,
+      icon: UserCheck,
+    },
+    {
+      id: "inactive-users",
+      title: t('users.kpis.inactive_users'),
+      value: inactiveUsers,
+      subtitle: t('users.kpis.deleted_users_description'),
+      icon: UserX,
+    },
+  ]
+
+  // Helper function to get department info
+  const getDepartmentInfo = (user: User) => {
+    // Check if user has department_id in church context
+    const churchDepartment = churches
+      .flatMap(church => church.departments || [])
+      .find(dept => dept.users?.some(u => u.id === user.id))
+    
+    if (churchDepartment) {
+      return {
+        type: 'Church Departmental',
+        departmentName: churchDepartment.name,
+        departmentId: churchDepartment.id
+      }
+    }
+
+    // Check if user has department_id in institutional context
+    const institutionalDepartment = departments.find(dept => 
+      dept.users?.some(u => u.id === user.id)
+    )
+    
+    if (institutionalDepartment) {
+      return {
+        type: 'Institutional Departmental',
+        departmentName: institutionalDepartment.name,
+        departmentId: institutionalDepartment.id
+      }
+    }
+
+    return {
+      type: 'No Departmental',
+      departmentName: '-',
+      departmentId: null
+    }
+  }
 
   // User table columns
   const userColumns: ColumnDef<User>[] = [
     {
-      id: "avatar",
-      header: t('users.table.avatar'),
-      cell: ({ row }) => {
-        const user = row.original
-        return (
-          <Avatar className="w-8 h-8">
-            <AvatarImage src="/placeholder-user.jpg" />
-            <AvatarFallback>
-              {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-        )
-      },
-    },
-    {
-      id: "name",
+      id: "user",
       accessorKey: "name",
       header: t('users.table.name'),
       cell: ({ row }) => {
         const user = row.original
         return (
-          <div>
-            <div className="font-medium">{user.name}</div>
-            <div className="text-xs text-muted-foreground">
-              ID: {user.id.slice(0, 8)}...
+          <div className="flex items-center gap-3">
+            <Avatar className="w-9 h-9">
+              <AvatarImage src="/placeholder-user.jpg" />
+              <AvatarFallback>
+                {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <div className="font-medium">{user.name}</div>
+              <div className="text-xs text-muted-foreground">
+                {user.email}
+              </div>
             </div>
           </div>
         )
       },
-    },
-    {
-      id: "email",
-      accessorKey: "email",
-      header: t('users.table.email'),
-      cell: ({ row }) => (
-        <div className="font-mono text-sm">{row.original.email}</div>
-      ),
     },
     {
       id: "language",
@@ -268,14 +247,25 @@ export default function UsersPage() {
       header: t('users.table.language'),
       cell: ({ row }) => {
         const user = row.original
-        const language = languageOptions.find(lang => lang.value === user.language_preference);
-        return language ? language.label : user.language_preference;
+        const language = languageOptions.find(lang => lang.value === user.language_preference)
+        const initials = language?.label.substring(0, 2).toUpperCase() || user.language_preference?.substring(0, 2).toUpperCase()
+        
+        return (
+          <Badge variant="outline" className="font-mono text-xs">
+            {initials}
+          </Badge>
+        )
       },
     },
     {
       id: "institution_name",
       accessorKey: "institution.name",
-      header: t('users.table.institution'),
+      header: () => (
+        <div className="flex items-center gap-2">
+          <Building className="w-4 h-4" />
+          <span>{t('users.table.institution')}</span>
+        </div>
+      ),
       cell: ({ row }) => (
         <div className="text-sm max-w-xs truncate">{row.original.institution?.name || 'N/A'}</div>
       ),
@@ -283,28 +273,75 @@ export default function UsersPage() {
     {
       id: "church_name",
       accessorKey: "church.name",
-      header: t('users.table.church'),
+      header: () => (
+        <div className="flex items-center gap-2">
+          <Building2 className="w-4 h-4" />
+          <span>{t('users.table.church')}</span>
+        </div>
+      ),
       cell: ({ row }) => (
         <div className="text-sm max-w-xs truncate">{row.original.church?.name  || 'N/A'}</div>
       ),
+    },
+    {
+      id: "department_type",
+      header: t('users.table.department_type') || "Department Type",
+      cell: ({ row }) => {
+        const user = row.original
+        const deptInfo = getDepartmentInfo(user)
+        
+        if (deptInfo.type === 'No Departmental') {
+          return <StatusBadge label={deptInfo.type} variant="neutral" size="sm" />
+        } else if (deptInfo.type === 'Church Departmental') {
+          return <StatusBadge label={deptInfo.type} variant="info" size="sm" icon={Building2} />
+        } else {
+          return <StatusBadge label={deptInfo.type} variant="default" size="sm" icon={Building} />
+        }
+      },
+    },
+    {
+      id: "department_name",
+      header: () => (
+        <div className="flex items-center gap-2">
+          <Layers className="w-4 h-4" />
+          <span>{t('users.table.department') || "Department"}</span>
+        </div>
+      ),
+      cell: ({ row }) => {
+        const user = row.original
+        const deptInfo = getDepartmentInfo(user)
+        
+        return (
+          <div className="text-sm">
+            {deptInfo.departmentName}
+          </div>
+        )
+      },
     },
     {
       id: "roles",
       header: t('users.table.roles'),
       cell: ({ row }) => {
         const user = row.original
+        
+        if (!user.user_roles || user.user_roles.length === 0) {
+          return <StatusBadge label="No Role" variant="neutral" size="sm" />
+        }
+        
         return (
           <div className="flex flex-wrap gap-1">
-            {user.user_roles?.map((role) => (
-              <Badge 
-                key={role.id} 
-                variant={role.role.key_code === 'ADMIN' ? 'default' : 'secondary'}
-                className="text-xs"
-              >
-                {role.role.key_code === 'ADMIN' && <Crown className="w-3 h-3 mr-1" />}
-                {role.role.name}
-              </Badge>
-            ))}
+            {user.user_roles?.map((userRole) => {
+              const isAdmin = userRole.role.key_code === 'ADMIN'
+              return (
+                <StatusBadge
+                  key={userRole.id}
+                  label={userRole.role.name}
+                  variant="neutral"
+                  icon={isAdmin ? Crown : Shield}
+                  size="sm"
+                />
+              )
+            })}
           </div>
         )
       },
@@ -315,12 +352,12 @@ export default function UsersPage() {
       cell: ({ row }) => {
         const user = row.original
         return (
-          <Badge 
-            variant={user.is_deleted ? 'destructive' : 'default'}
-            className={user.is_deleted ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}
-          >
-            {user.is_deleted ? t('users.table.inactive') : t('users.table.active')}
-          </Badge>
+          <StatusBadge
+            label={user.is_deleted ? t('users.table.inactive') : t('users.table.active')}
+            variant={user.is_deleted ? 'error' : 'success'}
+            showDot
+            size="sm"
+          />
         )
       },
     },
@@ -329,75 +366,62 @@ export default function UsersPage() {
       accessorKey: "gender",
       header: t('users.table.gender'),
       cell: ({ row }) => {
-        const user = row.original;
-        const genderLabel = t(`users.gender.${user.gender}`); // Tradução baseada no valor de gender
-        return <div className="text-sm">{genderLabel}</div>;
+        const user = row.original
+        if (!user.gender) {
+          return <StatusBadge label="-" variant="neutral" size="sm" />
+        }
+        
+        const genderLabel = t(`users.gender.${user.gender}`)
+        
+        return (
+          <StatusBadge
+            label={genderLabel}
+            variant="neutral"
+            size="sm"
+          />
+        )
       },
     },
     {
       id: "actions",
-      header: t('users.table.actions'),
+      header: () => <div className="text-right">{t('users.table.actions')}</div>,
       cell: ({ row }) => {
         const user = row.original
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleViewUser(user)}>
-                <Eye className="mr-2 h-4 w-4" />
-                {t('users.actions.view_details')}
-              </DropdownMenuItem>
-              <WithPermission requiredPermissions={[PermissionResolverName.UpdateUser]} >
-                <DropdownMenuItem onClick={() => handleEditUser(user)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  {t('users.actions.edit_user')}
+          <div className="flex justify-end" data-action-button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleViewContact(user)}>
+                  <ContactRound className="mr-2 h-4 w-4" />
+                  {t('users.actions.view_contact') || "View Contact"}
                 </DropdownMenuItem>
-              </WithPermission>
-              <WithPermission requiredPermissions={[PermissionResolverName.DeleteUser]} >
-                <DropdownMenuItem 
-                  onClick={() => handleDeleteUser(user)}
-                  className="text-red-600"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {t('users.actions.delete_user')}
-                </DropdownMenuItem>
-              </WithPermission>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <WithPermission requiredPermissions={[PermissionResolverName.UpdateUser]} >
+                  <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    {t('users.actions.edit_user')}
+                  </DropdownMenuItem>
+                </WithPermission>
+                <WithPermission requiredPermissions={[PermissionResolverName.DeleteUser]} >
+                  <DropdownMenuItem 
+                    onClick={() => handleDeleteUser(user)}
+                    className="text-red-600"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {t('users.actions.delete_user')}
+                  </DropdownMenuItem>
+                </WithPermission>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         )
       },
     },
   ]
-
-  // Chart configurations
-  const roleChartConfig = {
-    users: {
-      label: "Users",
-      color: "#3b82f6",
-    },
-  } satisfies ChartConfig
-
-  const institutionChartConfig = {
-    users: {
-      label: "Users",
-      color: "#10b981",
-    },
-  } satisfies ChartConfig
-
-  const growthChartConfig = {
-    active: {
-      label: "Active Users",
-      color: "#10b981",
-    },
-    total: {
-      label: "Total Users",
-      color: "#3b82f6",
-    },
-  } satisfies ChartConfig
 
   if (isLoading) {
     return (
@@ -449,206 +473,15 @@ export default function UsersPage() {
             </div>
           </div>
 
-          {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{t('users.kpis.total_users')}</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{totalUsers}</div>
-                <p className="text-xs text-muted-foreground">
-                  {t('users.kpis.total_users_description')}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{t('users.kpis.active_users')}</CardTitle>
-                <UserCheck className="h-4 w-4 text-green-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">{activeUsers}</div>
-                <p className="text-xs text-muted-foreground">
-                  {Math.round((activeUsers / totalUsers) * 100)}% {t('users.kpis.of_total')}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{t('users.kpis.new_users_month')}</CardTitle>
-                <TrendingUp className="h-4 w-4 text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-600">{newUsersThisMonth}</div>
-                <p className="text-xs text-muted-foreground">
-                  {t('users.kpis.new_users_month_description')}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{t('users.kpis.inactive_users')}</CardTitle>
-                <UserX className="h-4 w-4 text-red-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-red-600">{inactiveUsers}</div>
-                <p className="text-xs text-muted-foreground">
-                  {t('users.kpis.deleted_users_description')}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Separator />
-
-          {/* Analytics Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Users by Role */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="w-5 h-5" />
-                  {t('users.charts.users_by_role')}
-                </CardTitle>
-                <CardDescription>
-                  {t('users.charts.users_by_role_description')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer config={roleChartConfig} className="h-[300px] w-full">
-                  <BarChart data={usersByRole}>
-                    <CartesianGrid vertical={false} />
-                    <XAxis 
-                      dataKey="role" 
-                      tickLine={false}
-                      axisLine={false}
-                      fontSize={11}
-                    />
-                    <YAxis 
-                      tickLine={false}
-                      axisLine={false}
-                      fontSize={11}
-                    />
-                    <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent />}
-                    />
-                    <Bar dataKey="users" fill="#3b82f6" radius={4} />
-                  </BarChart>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-
-            {/* Users by Institution */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building className="w-5 h-5" />
-                  {t('users.charts.users_by_institution')}
-                </CardTitle>
-                <CardDescription>
-                  {t('users.charts.users_by_institution_description')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer config={institutionChartConfig} className="h-[300px] w-full">
-                  <PieChart>
-                    <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent hideLabel />}
-                    />
-                    <Pie
-                      data={usersByInstitution}
-                      dataKey="users"
-                      nameKey="institution"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={120}
-                      paddingAngle={2}
-                    >
-                      {usersByInstitution.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={[
-                            "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"
-                          ][index % 5]}
-                        />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-
-            {/* User Growth */}
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5" />
-                  {t('users.charts.user_growth')}
-                </CardTitle>
-                <CardDescription>
-                  {t('users.charts.user_growth_description')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer config={growthChartConfig} className="h-[300px] w-full">
-                  <AreaChart data={userGrowthOverTime}>
-                    <defs>
-                      <linearGradient id="fillActive" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
-                      </linearGradient>
-                      <linearGradient id="fillTotal" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                      dataKey="month"
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      fontSize={11}
-                    />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      fontSize={11}
-                    />
-                    <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent />}
-                    />
-                    <Area
-                      dataKey="active"
-                      type="natural"
-                      fill="url(#fillActive)"
-                      stroke="#10b981"
-                      stackId="a"
-                    />
-                    <Area
-                      dataKey="total"
-                      type="natural"
-                      fill="url(#fillTotal)"
-                      stroke="#3b82f6"
-                      stackId="a"
-                    />
-                  </AreaChart>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Separator />
+          {/* KPI Cards Carousel */}
+          <KPICards
+            data={kpiCardsData}
+            isLoading={isLoading}
+            showCarousel={true}
+            minCardsForCarousel={3}
+            skeletonCount={3}
+            variant="minimal"
+          />
 
           {/* Users Table */}
           <Card>
@@ -665,13 +498,12 @@ export default function UsersPage() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <DataTable
+            <CardContent className="overflow-hidden p-0">
+              <UseTable
                 columns={userColumns}
                 data={users}
                 searchKey="name"
-                searchPlaceholder={t('users.table.search_placeholder')}
-                filterableColumns={[
+                filters={[
                   {
                     id: "institution_name",
                     title: "Institution",
@@ -688,20 +520,76 @@ export default function UsersPage() {
                       value: church.name 
                     }))
                   },
-                  // {
-                  //   id: "language_preference",
-                  //   title: "Language",
-                  //   options: [
-                  //     { label: "English", value: "en" },
-                  //     { label: "Portuguese", value: "pt" },
-                  //     { label: "Spanish", value: "es" },
-                  //     { label: "Dutch", value: "nl" }
-                  //   ]
-                  // }
+                  {
+                    id: "department_type",
+                    title: "Department Type",
+                    options: [
+                      { label: "Church Departmental", value: "Church Departmental" },
+                      { label: "Institutional Departmental", value: "Institutional Departmental" },
+                      { label: "No Departmental", value: "No Departmental" }
+                    ]
+                  },
+                  {
+                    id: "status",
+                    title: "Status",
+                    options: [
+                      { label: "Active", value: "active" },
+                      { label: "Inactive", value: "inactive" }
+                    ]
+                  }
                 ]}
+                // onRowClick={(user) => {
+                //   setSelectedUser(user)
+                //   setIsUserDetailsOpen(true)
+                // }}
+                emptyMessage={t('users.table.no_users') || "No users found"}
+                emptyEntityName="user"
               />
             </CardContent>
           </Card>
+
+          {/* Contact View Modal */}
+          {selectedUser && (
+            <ContactViewEditModal
+              isOpen={isViewContactOpen}
+              onOpenChange={setIsViewContactOpen}
+              contact={{
+                __typename: 'Contact',
+                id: selectedUser.contact_id || '',
+                name: selectedUser.name,
+                email: selectedUser.email,
+                phone: null,
+                mobile: null,
+                country: null,
+                city: null,
+                address: null,
+                full_address: null,
+                postal_code: null,
+                website: null,
+                notes: null,
+                is_primary: true,
+                is_deleted: selectedUser.is_deleted,
+                created_at: selectedUser.created_at,
+                updated_at: selectedUser.updated_at,
+                created_by: selectedUser.created_by,
+                updated_by: selectedUser.updated_by,
+                deleted_at: selectedUser.deleted_at,
+                deleted_by: selectedUser.deleted_by,
+                _count: {
+                  __typename: 'ContactCount',
+                  Church: 0,
+                  Department: 0,
+                  Event: 0,
+                  User: 1
+                }
+              }}
+              entityName={selectedUser.name}
+              entityType="User"
+              readonly={true}
+              updateMutation={async () => ({ data: undefined })}
+              entityId={selectedUser.id}
+            />
+          )}
 
           {/* User Details Sheet */}
           <Sheet open={isUserDetailsOpen} onOpenChange={setIsUserDetailsOpen}>
@@ -846,7 +734,6 @@ export default function UsersPage() {
               onOpenChange={setIsCreateUserOpen}
               institutions={institutions}
               churches={churches}
-              regions={regions}
               departments={departments}
               roles={roles}
               onSuccess={(userData) => {

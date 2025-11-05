@@ -7,6 +7,8 @@ import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { UsageIndicator } from "@/components/ui/usage-indicator"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { 
@@ -41,10 +43,22 @@ import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal } from "
 import { useInstitution } from "@/contexts/institution-context"
 import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
 import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget"
-import { DepartmentsKPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
+import { DepartmentsKPICards, KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
 import { DepartmentActivityChart } from "@/components/institutions/charts/department-activity-chart"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { UseTable } from "@/components/ui/use-table"
+import { EntityInfoCard } from "@/components/shared/entity-info-card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Crown } from "lucide-react"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import { Eye } from "lucide-react"
 
 import { CreateDepartment } from "@/types/CreateDepartment"
 import NotFound from "@/components/shared/not-found"
@@ -68,6 +82,10 @@ export default function DepartmentsPage() {
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  
+  // View mode states - controla se está na lista ou em detalhes
+  const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
+  const [selectedDepartmentDetail, setSelectedDepartmentDetail] = useState<DepartmentData | null>(null)
   
   // Modal states
   const [isAddDepartmentModalOpen, setIsAddDepartmentModalOpen] = useState(false)
@@ -110,7 +128,7 @@ export default function DepartmentsPage() {
       trend: {
         value: 0,
         isPositive: true,
-        label: "vs. mês anterior"
+        label: t('common.trend.vs_previous_month') || "vs. previous month"
       }
     },
     {
@@ -122,7 +140,7 @@ export default function DepartmentsPage() {
       trend: {
         value: 0,
         isPositive: true,
-        label: "vs. ano anterior"
+        label: t('common.trend.vs_previous_year') || "vs. previous year"
       }
     }
   ], [kpiData, t]);
@@ -192,6 +210,19 @@ export default function DepartmentsPage() {
   const handleCreateInstitutional = () => {
     setIsAddDepartmentModalOpen(true)
   }
+  
+  const handleViewDetails = (id: string) => {
+    const department = departments.find(d => d.id === id);
+    if (department) {
+      setSelectedDepartmentDetail(department);
+      setViewMode('detail');
+    }
+  };
+  
+  const handleBackToList = () => {
+    setViewMode('list');
+    setSelectedDepartmentDetail(null);
+  };
   
   const handleEdit = (id: string) => {
     const department = departments.find(d => d.id === id);
@@ -264,17 +295,17 @@ export default function DepartmentsPage() {
   };
   
   const handleDepartmentSaved = (department: CreateDepartment) => {
-    toast.success("Department created successfully")
+    toast.success(t('departments.messages.created_success') || "Department created successfully")
     handleRefresh()
   }
   
   const handleDepartmentUpdated = (department: DepartmentData) => {
-    toast.success("Department updated successfully")
+    toast.success(t('departments.messages.updated_success') || "Department updated successfully")
     handleRefresh()
   }
   
   const handleDepartmentDeleted = (department: DepartmentData) => {
-    toast.success("Department deleted successfully")
+    toast.success(t('departments.messages.deleted_success') || "Department deleted successfully")
     handleRefresh()
   }
   
@@ -295,7 +326,7 @@ export default function DepartmentsPage() {
       setSelectedDepartment(updatedDepartment);
     }
     
-    toast.success("Budget updated successfully", {
+    toast.success(t('annual_budget.messages.updated_success') || "Budget updated successfully", {
       duration: 3000,
       icon: '💰'
     });
@@ -304,12 +335,12 @@ export default function DepartmentsPage() {
 
   if (!currentInstitutionData) return <NotFound />
   
-  // Colunas da tabela
-  const columns: ColumnDef<any>[] = [
+  // Colunas da tabela de departamentos
+  const departmentColumns: ColumnDef<any>[] = [
     {
       id: "name",
       accessorKey: "name",
-      header: t.name,
+      header: t('common.name') || "Name",
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
@@ -325,15 +356,19 @@ export default function DepartmentsPage() {
     {
       id: "church_id",
       accessorKey: "church_id",
-      header: t('churches.church') || "Church",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('churches.church') || "Church"}
+        </div>
+      ),
       cell: ({ row }) => {
         const church = churches.find((c: any) => c.id === row.original.church_id)
-        return church ? (
-          <div className="flex items-center gap-2">
+        return (
+          <div className="flex items-center justify-center gap-2">
             <Building2 className="h-4 w-4 text-muted-foreground" />
-            {church.name}
+            <span className="font-medium">{church ? church.name : '0'}</span>
           </div>
-        ) : 'N/A'
+        )
       },
       filterFn: (row, id, value) => {
         if (!value || value === "all") return true
@@ -343,69 +378,131 @@ export default function DepartmentsPage() {
     {
       id: "members",
       accessorKey: "members_count",
-      header: t('common.members') || "Members",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('common.members') || "Members"}
+        </div>
+      ),
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center gap-2">
           <Users className="w-4 h-4 text-muted-foreground" />
           <span className="font-medium">{row.original.users.length || 0}</span>
         </div>
       ),
     },
     {
-      id: "budget",
-      accessorKey: "total_budget",
-      header: t('common.budget') || "Budget",
+      id: "budget_total",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('annual_budget.table.headers.budget_total') || "Budget Total"}
+        </div>
+      ),
       cell: ({ row }) => {
         const annual_budget = row.original.annual_budget
-        const total_expenses = annual_budget ? annual_budget.total_expenses : 0
+        const hasBudget = annual_budget && annual_budget.planned_budget > 0
         return (
-        <span className="font-medium">$ {total_expenses}</span>
-      )},
-    },
-    {
-      id: "utilization",
-      header: t('departments.utilization') || "Utilization",
-      cell: ({ row }) => {
-        const annual_budget = row.original.annual_budget
-        const totalBudget = annual_budget?.planned_budget || 1;
-        const usedBudget = annual_budget?.total_expenses || 0;
-        const utilization = Math.round((Number(usedBudget) / Number(totalBudget)) * 100)
-        return (
-          <Badge variant="outline" className={
-            utilization > 80 ? 'bg-red-100 text-red-700' : 
-            utilization > 60 ? 'bg-yellow-100 text-yellow-700' : 
-            'bg-green-100 text-green-700'
-          }>
-            {utilization}%
-          </Badge>
+          <div className={`text-center ${!hasBudget ? 'opacity-50' : ''}`}>
+            <div className="text-sm font-semibold text-gray-900">
+              ${annual_budget?.planned_budget?.toLocaleString() || '0'}
+            </div>
+          </div>
         )
       },
     },
     {
-      id: "remaining_budget",
-      header: t('departments.budget_remaining') || "Budget Remaining",
+      id: "spent_amount",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('annual_budget.table.headers.spent_amount') || "Spent Amount"}
+        </div>
+      ),
       cell: ({ row }) => {
-        const annual_budget = row.original.annual_budget;
-        const totalBudget = annual_budget?.planned_budget || 0;
-        const usedBudget = annual_budget?.total_expenses || 0;
-        const remainingBudget = totalBudget - usedBudget;
+        const annual_budget = row.original.annual_budget
+        const spentAmount = annual_budget?.total_expenses || 0
+        const hasBudget = annual_budget && annual_budget.planned_budget > 0
+        
         return (
-          <span className="font-medium text-green-700">
-            $ {remainingBudget.toFixed(2).toLocaleString()}
-          </span>
-        );
+          <div className={`text-center ${!hasBudget ? 'opacity-50' : ''}`}>
+            <div className="text-sm font-semibold text-gray-900">
+              ${spentAmount.toLocaleString()}
+            </div>
+          </div>
+        )
+      },
+    },
+    {
+      id: "usage_percentage",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('annual_budget.table.headers.usage_percentage') || "Usage %"}
+        </div>
+      ),
+      cell: ({ row }) => {
+        const annual_budget = row.original.annual_budget
+        const totalBudget = annual_budget?.planned_budget || 0
+        const usedBudget = annual_budget?.total_expenses || 0
+        const usagePercentage = totalBudget > 0 ? Math.round((usedBudget / totalBudget) * 100) : 0
+        const hasBudget = annual_budget && annual_budget.planned_budget > 0
+        
+        return (
+          <div className="flex justify-center">
+            <UsageIndicator 
+              percentage={usagePercentage}
+              disabled={!hasBudget}
+              size="md"
+            />
+          </div>
+        )
+      },
+    },
+    {
+      id: "budget_status",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('institutions.table.budget_status') || "Budget Status"}
+        </div>
+      ),
+      cell: ({ row }) => {
+        const annual_budget = row.original.annual_budget
+        const hasBudget = annual_budget && annual_budget.planned_budget > 0
+        
+        return (
+          <div className="flex justify-center">
+            <StatusBadge
+              label={hasBudget ? t('annual_budget.table.budget_status_labels.completed') : t('annual_budget.table.budget_status_labels.missing')}
+              variant={hasBudget ? "success" : "neutral"}
+              showDot
+            />
+          </div>
+        )
+      },
+      filterFn: (row, id, value) => {
+        if (value === undefined || value === null || value === "") {
+          return true
+        }
+        const annual_budget = row.original.annual_budget
+        const hasBudget = annual_budget && annual_budget.planned_budget > 0
+        return hasBudget === value
       },
     },
     {
       id: "status",
       accessorKey: "is_deleted",
-      header: t('common.status') || "Status",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('common.status') || "Status"}
+        </div>
+      ),
       cell: ({ row }) => {
         const isActive = !row.original.is_deleted
         return (
-          <Badge variant={isActive ? "default" : "secondary"} className={isActive ? "bg-green-500 hover:bg-green-600" : ""}>
-            {isActive ? (t('common.active') || "Active") : (t('common.inactive') || "Inactive")}
-          </Badge>
+          <div className="flex justify-center">
+            <StatusBadge
+              label={isActive ? (t('common.active') || "Active") : (t('common.inactive') || "Inactive")}
+              variant={isActive ? "success" : "neutral"}
+              showDot
+            />
+          </div>
         )
       },
       filterFn: (row, id, value) => {
@@ -413,13 +510,6 @@ export default function DepartmentsPage() {
         const isActive = !row.original.is_deleted
         return value === "true" ? isActive : !isActive
       },
-    },
-    {
-      id: "subsidy_requests",
-      header: t('departments.requests') || "Requests",
-      cell: () => (
-        <span className="font-medium">0 {/* TODO: subsidy_requests não existe, implementar quando backend fornecer */}</span>
-      ),
     },
     // {
     //   id: "efficiency",
@@ -439,13 +529,17 @@ export default function DepartmentsPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => handleViewDetails(row.original.id)}>
+              <Eye className="w-4 h-4 mr-2" />
+              {t('departments.actions.view_details') || "View Details"}
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
               <Edit className="w-4 h-4 mr-2" />
               {t('departments.edit_department') || "Edit Department"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleViewBudget(row.original.id)}>
               <DollarSign className="w-4 h-4 mr-2" />
-              Manage Budget
+              {t('departments.actions.manage_budget') || "Manage Budget"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
               <Trash2 className="w-4 h-4 mr-2" />
@@ -454,6 +548,128 @@ export default function DepartmentsPage() {
           </DropdownMenuContent>
         </DropdownMenu>
       ),
+    },
+  ]
+
+  // Colunas da tabela de usuários (para detail view)
+  const userColumns: ColumnDef<any>[] = [
+    {
+      id: "avatar",
+      header: t('users.table.avatar') || "Avatar",
+      cell: ({ row }) => {
+        const user = row.original
+        return (
+          <Avatar className="w-8 h-8">
+            <AvatarImage src="/placeholder-user.jpg" />
+            <AvatarFallback>
+              {user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || '??'}
+            </AvatarFallback>
+          </Avatar>
+        )
+      },
+    },
+    {
+      id: "name",
+      accessorKey: "name",
+      header: t('users.table.name') || "Name",
+      cell: ({ row }) => {
+        const user = row.original
+        return (
+          <div>
+            <div className="font-medium">{user.name}</div>
+            <div className="text-xs text-muted-foreground">
+              {user.email || '-'}
+            </div>
+          </div>
+        )
+      },
+    },
+    {
+      id: "language",
+      accessorKey: "language_preference",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('users.table.language') || "Language"}
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex justify-center">
+          <Badge variant="outline" className="text-xs font-mono">
+            {row.original.language_preference?.toUpperCase() || 'N/A'}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      id: "roles",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('users.table.roles') || "Roles"}
+        </div>
+      ),
+      cell: ({ row }) => {
+        const user = row.original
+        return (
+          <div className="flex flex-wrap gap-1 justify-center">
+            {user.user_roles?.map((role: any) => (
+              <Badge 
+                key={role.id} 
+                variant={role.role.key_code === 'ADMIN' ? 'default' : 'secondary'}
+                className="text-xs"
+              >
+                {role.role.key_code === 'ADMIN' && <Crown className="w-3 h-3 mr-1" />}
+                {role.role.name}
+              </Badge>
+            )) || <span className="text-xs text-muted-foreground">{t('users.table.no_roles') || "No roles"}</span>}
+          </div>
+        )
+      },
+    },
+    {
+      id: "gender",
+      accessorKey: "gender",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('users.table.gender') || "Gender"}
+        </div>
+      ),
+      cell: ({ row }) => {
+        const user = row.original;
+        const genderLabel = user.gender ? t(`users.gender.${user.gender}`) : 'N/A';
+        return (
+          <div className="text-center">
+            <Badge variant="outline" className="text-xs">
+              {genderLabel}
+            </Badge>
+          </div>
+        )
+      },
+    },
+    {
+      id: "status",
+      accessorKey: "is_deleted",
+      header: () => (
+        <div className="text-center font-medium text-gray-900">
+          {t('users.table.status') || "Status"}
+        </div>
+      ),
+      cell: ({ row }) => {
+        const isActive = !row.original.is_deleted
+        return (
+          <div className="flex justify-center">
+            <StatusBadge
+              label={isActive ? (t('users.table.active') || "Active") : (t('users.table.inactive') || "Inactive")}
+              variant={isActive ? "success" : "error"}
+              showDot
+            />
+          </div>
+        )
+      },
+      filterFn: (row, id, value) => {
+        if (value === "all") return true
+        const isActive = !row.original.is_deleted
+        return value === "true" ? isActive : !isActive
+      },
     },
   ]
 
@@ -485,22 +701,58 @@ export default function DepartmentsPage() {
       <WithPermission requiredPermissions={[PermissionResolverName.Departments]} fallback={<AccessDenied/>}>
       
       <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">
+        {/* Breadcrumbs Navigation */}
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink 
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleBackToList();
+                }}
+                className={viewMode === 'list' ? 'font-semibold' : 'cursor-pointer hover:text-foreground'}
+              >
+                {t('departments.breadcrumb.all_departments') || "See All Departments"}
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            {viewMode === 'detail' && selectedDepartmentDetail && (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage className="font-semibold">
+                    {selectedDepartmentDetail.name}
+                  </BreadcrumbPage>
+                </BreadcrumbItem>
+              </>
+            )}
+          </BreadcrumbList>
+        </Breadcrumb>
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
-              {t('departments.title') || "Institutional Departments"}
+              {viewMode === 'detail' && selectedDepartmentDetail 
+                ? `${selectedDepartmentDetail.name} - ${t('departments.detail.title_suffix') || "Details"}`
+                : t('departments.title') || "Institutional Departments"
+              }
             </h2>
             <p className="text-muted-foreground text-0.875rem sm:text-1rem">
-              {t('departments.subtitle') || "Manage departments across institutions"}
+              {viewMode === 'detail' && selectedDepartmentDetail
+                ? selectedDepartmentDetail.description || (t('departments.detail.no_description') || "Department details and members")
+                : t('departments.subtitle') || "Manage departments across institutions"
+              }
             </p>
           </div>
           
           <div className="flex items-center gap-3">
-            <Button onClick={handleCreate}>
-              <Plus className="w-4 h-4 mr-2" />
-              {t('departments.create_department') || "Create Department"}
-            </Button>
+            {viewMode === 'list' && (
+              <Button onClick={handleCreate}>
+                <Plus className="w-4 h-4 mr-2" />
+                {t('departments.create_department') || "Create Department"}
+              </Button>
+            )}
             
             <Button 
               variant="outline" 
@@ -513,48 +765,182 @@ export default function DepartmentsPage() {
           </div>
         </div>
 
-        {/* KPI Cards Carrossel */}
-        <DepartmentsKPICards 
-          data={kpiCardsData}
-          isLoading={isLoading}
-        />
+        {/* KPI Cards - Conditional Rendering */}
+        {viewMode === 'detail' && selectedDepartmentDetail ? (
+          <>
+            {/* Detail View KPI Cards usando KPICards component com carrossel */}
+            {(() => {
+              const latestBudget = selectedDepartmentDetail.annual_budgets?.[0];
+              const plannedBudget = latestBudget?.planned_budget || 0;
+              const totalExpenses = latestBudget?.total_expenses || 0;
+              const usagePercentage = plannedBudget > 0 ? Math.round((totalExpenses / plannedBudget) * 100) : 0;
+              
+              const detailKPIData: KPICardData[] = [
+                {
+                  id: "budget_total",
+                  title: t('departments.kpi.budget_total.title') || "Budget Total",
+                  value: `$${plannedBudget.toLocaleString()}`,
+                  icon: DollarSign,
+                  subtitle: t('departments.kpi.budget_total.subtitle') || "Total planned budget",
+                },
+                {
+                  id: "spent_amount",
+                  title: t('departments.kpi.spent_amount.title') || "Spent Amount",
+                  value: `$${totalExpenses.toLocaleString()}`,
+                  icon: TrendingUp,
+                  subtitle: t('departments.kpi.spent_amount.subtitle') || "Total expenses",
+                },
+                {
+                  id: "members",
+                  title: t('departments.kpi.members.title') || "Members",
+                  value: selectedDepartmentDetail.users?.length || 0,
+                  icon: Users,
+                  subtitle: t('departments.kpi.members.subtitle') || "Department members",
+                }
+              ];
+              
+              const customFirstCard = (
+                <EntityInfoCard
+                  headerTitle={t('departments.detail.info_card.header_title') || "Department Info"}
+                  name={selectedDepartmentDetail.name}
+                  description={selectedDepartmentDetail.description || (t('departments.detail.info_card.no_description') || "No description available")}
+                  icon={Layers}
+                  badges={[
+                    {
+                      label: churches.find(c => c.id === selectedDepartmentDetail.church_id)?.name || (t('departments.detail.info_card.institutional') || "Institutional"),
+                      variant: "outline",
+                      className: "text-xs"
+                    },
+                    {
+                      label: !selectedDepartmentDetail.is_deleted ? (t('departments.detail.info_card.active') || "Active") : (t('departments.detail.info_card.inactive') || "Inactive"),
+                      variant: !selectedDepartmentDetail.is_deleted ? "default" : "secondary",
+                      className: !selectedDepartmentDetail.is_deleted 
+                        ? "text-xs bg-green-100 text-green-700" 
+                        : "text-xs bg-gray-100 text-gray-700"
+                    }
+                  ]}
+                  actions={[
+                    {
+                      label: t('departments.actions.edit_department') || "Edit Department",
+                      icon: Edit,
+                      onClick: () => handleEdit(selectedDepartmentDetail.id),
+                      variant: "default"
+                    },
+                    {
+                      label: t('departments.actions.manage_budget') || "Manage Budget",
+                      icon: DollarSign,
+                      onClick: () => handleViewBudget(selectedDepartmentDetail.id),
+                      variant: "default"
+                    },
+                    {
+                      label: t('departments.actions.delete_department') || "Delete Department",
+                      icon: Trash2,
+                      onClick: () => handleDelete(selectedDepartmentDetail.id, selectedDepartmentDetail.name),
+                      variant: "destructive",
+                      showSeparatorAfter: false
+                    }
+                  ]}
+                />
+              );
+              
+              return (
+                <KPICards
+                  data={detailKPIData}
+                  isLoading={false}
+                  minCardsForCarousel={3}
+                  showCarousel={true}
+                  customFirstCard={customFirstCard}
+                />
+              );
+            })()}
+          </>
+        ) : (
+            <KPICards
+              data={kpiCardsData}
+              isLoading={isLoading}
+              minCardsForCarousel={2}
+              showCarousel={true}
+            />
+        )}
 
         <Separator />
 
-        {/* Charts Section */}
-        <div className="space-y-6">
-          <h3 className="text-xl font-semibold">{t('departments.analytics') || "Analytics"}</h3>
-          <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
-            <DepartmentActivityChart loading={isLoading} />
-          </ResponsiveGridCarousel>
-        </div>
+        {/* Charts Section - Visible in both views */}
+        <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
+          <DepartmentActivityChart loading={isLoading} />
+        </ResponsiveGridCarousel>
 
         <Separator />
 
-        {/* Departments Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Layers className="w-5 h-5" />
-              {t('departments.table_title') || "Departments"}
-            </CardTitle>
-            <CardDescription>{t('departments.table_description') || "Complete list of departments with management actions"}</CardDescription>
-          </CardHeader>
-          <CardContent className="overflow-hidden p-0">
-            <UseTable
-              columns={columns}
-              data={departments}
-              searchKey="name"
-              filters={[
+        {/* Conditional Content - Users Table or Departments Table */}
+        {viewMode === 'detail' && selectedDepartmentDetail ? (
+          <>
+            {/* Users Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  {t('departments.detail.members_table.title') || "Department Members"}
+                </CardTitle>
+                <CardDescription>
+                  {t('departments.detail.members_table.description', { name: selectedDepartmentDetail.name }) || `List of all members in ${selectedDepartmentDetail.name}`}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="overflow-hidden p-0">
+                <UseTable
+                  columns={userColumns}
+                  data={selectedDepartmentDetail.users || []}
+                  searchKey="name"
+                  emptyEntityName={selectedDepartmentDetail.name}
+                  filters={[
+                    {
+                      id: "status",
+                      title: t('common.status') || "Status",
+                      options: [
+                        { label: t('common.active') || "Active", value: "true" },
+                        { label: t('common.inactive') || "Inactive", value: "false" }
+                      ]
+                    }
+                  ]}
+                />
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          <>
+            {/* Departments Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Layers className="w-5 h-5" />
+                  {t('departments.table_title') || "Departments"}
+                </CardTitle>
+                <CardDescription>{t('departments.table_description') || "Complete list of departments with management actions"}</CardDescription>
+              </CardHeader>
+              <CardContent className="overflow-hidden p-0">
+                <UseTable
+                  columns={departmentColumns}
+                  data={departments}
+                  searchKey="name"
+                  emptyEntityName={t('departments.entity_name') || "Departments"}
+                  filters={[
                 {
                   id: "church",
                   title: t('churches.church') || "Church",
                   options: [
-                    { label: "Institutional", value: "institutional" },
+                    { label: t('departments.filters.institutional') || "Institutional", value: "institutional" },
                     ...churches.map(church => ({
                       label: church.name,
                       value: church.id
                     }))
+                  ]
+                },
+                {
+                  id: "budget_status",
+                  title: t('institutions.table.budget_status') || "Budget Status",
+                  options: [
+                    { label: t('annual_budget.table.budget_status_labels.completed'), value: "true" },
+                    { label: t('annual_budget.table.budget_status_labels.missing'), value: "false" }
                   ]
                 },
                 {
@@ -569,6 +955,8 @@ export default function DepartmentsPage() {
             />
           </CardContent>
         </Card>
+          </>
+        )}
         
         {/* Add Department Modal - Institutional Department */}
         <AddDepartmentModal
