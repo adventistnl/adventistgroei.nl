@@ -42,8 +42,7 @@ export function DeleteRoleModal({
   onSuccess
 }: DeleteRoleModalProps) {
   const { t } = useTranslation()
-  const { deleteRole, deleteRoleLoading } = useRoles()
-  const [deleteStep, setDeleteStep] = useState<DeleteStep>('confirm')
+  const { deleteRole, deleteRoleLoading } = useRoles({})
   const [reassignmentRole, setReassignmentRole] = useState<string>('')
   const [consequencesOpen, setConsequencesOpen] = useState(false)
   const [understoodConsequences, setUnderstoodConsequences] = useState(false)
