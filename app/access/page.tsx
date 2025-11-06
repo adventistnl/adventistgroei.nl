@@ -26,7 +26,8 @@ import {
   Lock,
   Settings,
   Crown,
-  Activity
+  Activity,
+  Users
 } from "lucide-react"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
@@ -199,18 +200,6 @@ export default function AccessManagementPage() {
             icon={Users}
             size="sm"
           />
-        )
-      },
-    },
-    {
-      id: "is_fixed",
-      header: t('access.roles.table.type'),
-      cell: ({ row }) => {
-        const isFixed = row.original.is_fixed
-        return (
-          <Badge variant="secondary">
-            {userCount} users
-          </Badge>
         )
       },
     },
