@@ -219,7 +219,7 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
 
         toast.dismiss(loadingToast);
         toast.success(t.invitationSent);
-        // setOpen(false);
+        setOpen(false);
         form.reset();
       }
     } catch (error) {
