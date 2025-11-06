@@ -28,7 +28,8 @@ import {
   Crown,
   TrendingUp,
   BarChart3,
-  Activity
+  Activity,
+  Users
 } from "lucide-react"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
@@ -63,15 +64,6 @@ export default function AccessManagementPage() {
   const [isDeleteRoleOpen, setIsDeleteRoleOpen] = useState(false)
   const [selectedRoleForEdit, setSelectedRoleForEdit] = useState<Role | null>(null)
   const [selectedRoleForDelete, setSelectedRoleForDelete] = useState<Role | null>(null)
-
-  // KPIs via hook integrado
-  const {roleDistribution, permissionsByGroup, ...accessKpiData} = useAccessKPI();
-
-  const breadcrumbs = useMemo(() => [
-    { name: "Dashboard", href: "/dashboard" },
-    { name: "Users & Access" },
-    { name: t('access.title') }
-  ], [t])
 
   // KPIs essenciais para overview de roles e permissões
   const kpiCardsData: KPICardData[] = useMemo(() => [
@@ -212,18 +204,6 @@ export default function AccessManagementPage() {
             icon={Users}
             size="sm"
           />
-        )
-      },
-    },
-    {
-      id: "is_fixed",
-      header: t('access.roles.table.type'),
-      cell: ({ row }) => {
-        const isFixed = row.original.is_fixed
-        return (
-          <Badge variant="secondary">
-            {userCount} users
-          </Badge>
         )
       },
     },
