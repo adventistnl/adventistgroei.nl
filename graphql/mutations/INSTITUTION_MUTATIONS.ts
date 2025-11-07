@@ -44,6 +44,7 @@ export const UPDATE_INSTITUTION_MUTATION = gql`
     $phone: String
     $website: String
     $country: String
+    $contactId: String!
   ) {
     updateInstitution(
       data: {
@@ -56,6 +57,7 @@ export const UPDATE_INSTITUTION_MUTATION = gql`
           phone: $phone
           website: $website
           country: $country
+          id: $contactId
         }
       }
       id: $id

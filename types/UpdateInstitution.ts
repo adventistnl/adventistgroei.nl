@@ -26,4 +26,5 @@ export interface UpdateInstitutionVariables {
   phone?: string | null;
   website?: string | null;
   country?: string | null;
+  contactId: string;
 }

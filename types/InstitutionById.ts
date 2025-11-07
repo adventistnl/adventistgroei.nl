@@ -134,7 +134,7 @@ export interface InstitutionById_institution_users {
   contact_id: string | null;
   institution_id: string;
   gender: GenderType | null;
-  church: InstitutionById_institution_users_church;
+  church: InstitutionById_institution_users_church | null;
   institution: InstitutionById_institution_users_institution;
   user_roles: InstitutionById_institution_users_user_roles[] | null;
 }

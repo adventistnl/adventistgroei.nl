@@ -52,7 +52,7 @@ export interface UserFragment {
   contact_id: string | null;
   institution_id: string;
   gender: GenderType | null;
-  church: UserFragment_church;
+  church: UserFragment_church | null;
   institution: UserFragment_institution;
   user_roles: UserFragment_user_roles[] | null;
 }

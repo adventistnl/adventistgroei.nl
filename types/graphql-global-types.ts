@@ -1790,8 +1790,8 @@ export type User = {
   SubsidyStatus?: Maybe<Array<SubsidyStatus>>;
   _count: UserCount;
   approved_annual_budgets?: Maybe<Array<AnnualBudget>>;
-  church: Church;
-  church_id: Scalars['String']['output'];
+  church?: Maybe<Church>;
+  church_id?: Maybe<Scalars['String']['output']>;
   communications?: Maybe<Array<Communication>>;
   contact?: Maybe<Contact>;
   contact_id?: Maybe<Scalars['String']['output']>;
@@ -1799,8 +1799,8 @@ export type User = {
   created_by: Scalars['String']['output'];
   deleted_at?: Maybe<Scalars['DateTime']['output']>;
   deleted_by?: Maybe<Scalars['String']['output']>;
-  department: Department;
-  department_id: Scalars['String']['output'];
+  department?: Maybe<Department>;
+  department_id?: Maybe<Scalars['String']['output']>;
   direct_message_recipients?: Maybe<Array<DirectMessageRecipient>>;
   direct_messages?: Maybe<Array<DirectMessage>>;
   email: Scalars['String']['output'];

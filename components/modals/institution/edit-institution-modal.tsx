@@ -21,14 +21,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Progress } from "@/components/ui/progress"
 import { 
   Building2, 
   Save, 
-  X, 
   Globe, 
-  ChevronLeft, 
-  ChevronRight,
   Mail,
   Phone,
   FileText,
@@ -38,26 +34,28 @@ import {
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
 import { institutionTranslations } from "@/lib/translations/institutions"
+import { UpdateInstitutionVariables } from "@/types/UpdateInstitution"
+import { Institution } from "@/types/graphql-global-types"
 
-export interface Institution {
-  id: string
-  name: string
-  denomination: string
-  language_preference: "en" | "nl"
-  country?: string
-  email?: string
-  phone?: string
-  website?: string
-  description?: string
-  contact_id?: string | null
-  created_at: string
-  updated_at: string
-  created_by: string
-  updated_by: string
-  is_deleted: boolean
-  deleted_at?: string | null
-  deleted_by?: string | null
-}
+// export interface Institution {
+//   id: string
+//   name: string
+//   denomination: string
+//   language_preference: "en" | "nl"
+//   country?: string
+//   email?: string
+//   phone?: string
+//   website?: string
+//   description?: string
+//   contact_id?: string | null
+//   created_at: string
+//   updated_at: string
+//   created_by: string
+//   updated_by: string
+//   is_deleted: boolean
+//   deleted_at?: string | null
+//   deleted_by?: string | null
+// }
 
 export interface EditInstitutionModalProps {
   isOpen: boolean
@@ -75,15 +73,23 @@ export function EditInstitutionModal({
   const { i18n } = useTranslation()
   const { updateInstitution, updateLoading, updateError, refetchInstitutions } = useInstitution()
   const [isLoading, setIsLoading] = useState(false)
-  const [currentStep, setCurrentStep] = useState(1)
-  const [formData, setFormData] = useState<Partial<Institution>>({})
+  const [formData, setFormData] = useState<UpdateInstitutionVariables>({
+    id: institution?.id || "",
+    name: institution?.name || "",
+    denomination: institution?.denomination || "",
+    language_preference: institution?.language_preference || "en",
+    country: institution?.contact?.country || "",
+    email: institution?.contact?.email || "",
+    phone: institution?.contact?.phone || "",
+    website: institution?.contact?.website || "",
+    description: institution?.description || "",
+    contactId: institution?.contact?.id || "",
+  })
   const [errors, setErrors] = useState<Record<string, string>>({})
   
   // States for command popovers
   const [openCountry, setOpenCountry] = useState(false)
   const [openLanguage, setOpenLanguage] = useState(false)
-
-  const totalSteps = 3
   
   // Get translations for current language
   const t_institution = institutionTranslations[i18n.language as keyof typeof institutionTranslations] || institutionTranslations.en
@@ -353,21 +359,22 @@ export function EditInstitutionModal({
   useEffect(() => {
     if (institution) {
       setFormData({
+        id: institution.id,
         name: institution.name,
-        denomination: institution.denomination,
-        country: institution.country || "",
         language_preference: institution.language_preference,
-        email: institution.email || "",
-        phone: institution.phone || "",
-        website: institution.website || "",
-        description: institution.description || ""
+        denomination: institution.denomination,
+        country: institution.contact?.country || "",
+        email: institution.contact?.email || "",
+        phone: institution.contact?.phone || "",
+        website: institution.contact?.website || "",
+        description: institution.description || "",
+        contactId: institution.contact?.id || "",
       })
       setErrors({})
-      setCurrentStep(1)
     }
   }, [institution])
 
-  const handleInputChange = (field: keyof Institution, value: string) => {
+  const handleInputChange = (field: keyof UpdateInstitutionVariables, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -381,57 +388,24 @@ export function EditInstitutionModal({
     }
   }
 
-  const validateStep = (step: number) => {
+  const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
-    if (step === 1) {
-      if (!formData.name?.trim()) {
-        newErrors.name = t_institution.validation.nameRequired
-      } else if (formData.name.trim().length < 2) {
-        newErrors.name = t_institution.validation.nameMinLength
-      }
-
-      if (!formData.denomination?.trim()) {
-        newErrors.denomination = t_institution.validation.denominationRequired
-      } else if (formData.denomination.trim().length < 2) {
-        newErrors.denomination = t_institution.validation.denominationMinLength
-      }
-
-      if (!formData.country?.trim()) {
-        newErrors.country = t_institution.validation.countryRequired
-      }
-
-      if (!formData.language_preference) {
-        newErrors.language_preference = t_institution.validation.languageRequired
-      }
+    // Apenas validações de formato, sem campos obrigatórios
+    if (formData.email && formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = t_institution.validation.emailInvalid
     }
 
-    if (step === 2) {
-      if (formData.email && formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        newErrors.email = t_institution.validation.emailInvalid
-      }
-
-      if (formData.website && formData.website.trim() && !formData.website.match(/^https?:\/\//)) {
-        newErrors.website = t_institution.validation.websiteInvalid
-      }
+    if (formData.website && formData.website.trim() && !formData.website.match(/^https?:\/\//)) {
+      newErrors.website = t_institution.validation.websiteInvalid
     }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleNext = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, totalSteps))
-    }
-  }
-
-  const handlePrevious = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1))
-  }
-
   const handleSave = async () => {
-    if (!institution || !validateStep(1) || !validateStep(2)) {
+    if (!institution || !validateForm()) {
       toast.error(t_institution.validation.fixErrors)
       return
     }
@@ -450,6 +424,7 @@ export function EditInstitutionModal({
         phone: formData.phone?.trim() || null,
         website: formData.website?.trim() || null,
         description: formData.description?.trim() || null,
+        contactId: institution.contact?.id || "",
       }
       const { data } = await updateInstitution({ variables })
       toast.dismiss(loadingToast)
@@ -458,7 +433,16 @@ export function EditInstitutionModal({
       })
       refetchInstitutions()
       if (onSave && data?.updateInstitution) {
-        onSave({ ...institution, ...formData, ...data.updateInstitution })
+        // Merge existing institution, form values and server response.
+        // Ensure non-nullable fields expected by the Institution type are defined.
+        const merged = { ...institution, ...formData, ...data.updateInstitution }
+
+        // Ensure required string fields are not null (adjust defaults as appropriate)
+        if (merged.denomination == null) merged.denomination = ""
+        if (merged.name == null) merged.name = ""
+        if (merged.language_preference == null) merged.language_preference = "en"
+
+        onSave(merged as Institution)
       }
       onOpenChange(false)
     } catch (error) {
@@ -472,291 +456,283 @@ export function EditInstitutionModal({
   const handleCancel = () => {
     if (institution) {
       setFormData({
+        id: institution.id,
         name: institution.name,
         denomination: institution.denomination,
-        country: institution.country || "",
         language_preference: institution.language_preference,
-        email: institution.email || "",
-        phone: institution.phone || "",
-        website: institution.website || "",
-        description: institution.description || ""
+        country: institution.contact?.country || "",
+        email: institution.contact?.email || "",
+        phone: institution.contact?.phone || "",
+        website: institution.contact?.website || "",
+        description: institution.description || "",
+        contactId: institution.contact?.id || "",
       })
     }
     setErrors({})
-    setCurrentStep(1)
     onOpenChange(false)
   }
 
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <div className="space-y-6 animate-in fade-in-0 duration-300">
-            <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">{t_institution.basicInformation}</h3>
-              <p className="text-sm text-muted-foreground">{t_institution.basicInformationDesc}</p>
+  const renderFormContent = () => {
+    return (
+      <div className="space-y-6">
+        {/* Basic Information Section */}
+        <div className="space-y-4">
+          <div className="text-center space-y-2">
+            <h3 className="text-lg font-medium text-foreground">{t_institution.basicInformation}</h3>
+            <p className="text-sm text-muted-foreground">{t_institution.basicInformationDesc}</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="flex items-center gap-2 text-sm">
+                <Building2 className="w-4 h-4 text-muted-foreground" />
+                {t_institution.institutionName}
+              </Label>
+              <Input
+                id="name"
+                value={formData.name || ''}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder={t_institution.institutionNamePlaceholder}
+                disabled={isLoading}
+                className={`h-12 text-base ${errors.name ? 'border-red-500' : ''}`}
+              />
+              {errors.name && (
+                <p className="text-sm text-red-600">{errors.name}</p>
+              )}
             </div>
-            
-            <div className="space-y-4 max-w-md mx-auto">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="flex items-center gap-2 text-sm">
-                  <Building2 className="w-4 h-4 text-muted-foreground" />
-                  {t_institution.institutionName} *
-                </Label>
-                <Input
-                  id="name"
-                  value={formData.name || ''}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder={t_institution.institutionNamePlaceholder}
-                  disabled={isLoading}
-                  className={`h-12 text-base ${errors.name ? 'border-red-500' : ''}`}
-                />
-                {errors.name && (
-                  <p className="text-sm text-red-600">{errors.name}</p>
-                )}
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="denomination" className="flex items-center gap-2 text-sm">
-                  <Building2 className="w-4 h-4 text-muted-foreground" />
-                  {t_institution.denomination} *
-                </Label>
-                <Input
-                  id="denomination"
-                  value={formData.denomination || ''}
-                  onChange={(e) => handleInputChange('denomination', e.target.value)}
-                  placeholder={t_institution.denominationPlaceholder}
-                  disabled={isLoading}
-                  className={`h-12 text-base ${errors.denomination ? 'border-red-500' : ''}`}
-                />
-                {errors.denomination && (
-                  <p className="text-sm text-red-600">{errors.denomination}</p>
-                )}
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="denomination" className="flex items-center gap-2 text-sm">
+                <Building2 className="w-4 h-4 text-muted-foreground" />
+                {t_institution.denomination}
+              </Label>
+              <Input
+                id="denomination"
+                value={formData.denomination || ''}
+                onChange={(e) => handleInputChange('denomination', e.target.value)}
+                placeholder={t_institution.denominationPlaceholder}
+                disabled={isLoading}
+                className={`h-12 text-base ${errors.denomination ? 'border-red-500' : ''}`}
+              />
+              {errors.denomination && (
+                <p className="text-sm text-red-600">{errors.denomination}</p>
+              )}
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="country" className="flex items-center gap-2 text-sm">
-                  <Globe className="w-4 h-4 text-muted-foreground" />
-                  {t_institution.country} *
-                </Label>
-                <Popover open={openCountry} onOpenChange={setOpenCountry}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openCountry}
-                      className={cn(
-                        "w-full h-12 text-base justify-between font-normal",
-                        !formData.country && "text-muted-foreground",
-                        errors.country && "border-red-500"
-                      )}
-                      disabled={isLoading}
-                    >
-                      {formData.country
-                        ? countries.find(country => country.value === formData.country)?.label
-                        : t_institution.countryPlaceholder}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder={t_institution.searchCountry} />
-                      <CommandList>
-                        <CommandEmpty>{t_institution.noCountryFound}</CommandEmpty>
-                        <CommandGroup>
-                          {countries.map((country) => (
-                            <CommandItem
-                              key={country.value}
-                              value={country.value}
-                              onSelect={(currentValue) => {
-                                handleInputChange('country', currentValue === formData.country ? "" : currentValue)
-                                setOpenCountry(false)
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  formData.country === country.value ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
-                              {country.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {errors.country && (
-                  <p className="text-sm text-red-600">{errors.country}</p>
-                )}
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="country" className="flex items-center gap-2 text-sm">
+                <Globe className="w-4 h-4 text-muted-foreground" />
+                {t_institution.country}
+              </Label>
+              <Popover open={openCountry} onOpenChange={setOpenCountry}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openCountry}
+                    className={cn(
+                      "w-full h-12 text-base justify-between font-normal",
+                      !formData.country && "text-muted-foreground",
+                      errors.country && "border-red-500"
+                    )}
+                    disabled={isLoading}
+                  >
+                    {formData.country
+                      ? countries.find(country => country.value === formData.country)?.label
+                      : t_institution.countryPlaceholder}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder={t_institution.searchCountry} />
+                    <CommandList>
+                      <CommandEmpty>{t_institution.noCountryFound}</CommandEmpty>
+                      <CommandGroup>
+                        {countries.map((country) => (
+                          <CommandItem
+                            key={country.value}
+                            value={country.value}
+                            onSelect={(currentValue) => {
+                              handleInputChange('country', currentValue === formData.country ? "" : currentValue)
+                              setOpenCountry(false)
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.country === country.value ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
+                            {country.label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {errors.country && (
+                <p className="text-sm text-red-600">{errors.country}</p>
+              )}
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="language_preference" className="flex items-center gap-2 text-sm">
-                  <Globe className="w-4 h-4 text-muted-foreground" />
-                  {t_institution.languagePreference} *
-                </Label>
-                <Popover open={openLanguage} onOpenChange={setOpenLanguage}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openLanguage}
-                      className={cn(
-                        "w-full h-12 text-base justify-between font-normal",
-                        !formData.language_preference && "text-muted-foreground",
-                        errors.language_preference && "border-red-500"
-                      )}
-                      disabled={isLoading}
-                    >
-                      {formData.language_preference
-                        ? languages.find(lang => lang.value === formData.language_preference)?.label
-                        : t_institution.languagePreferencePlaceholder}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder={t_institution.searchLanguage} />
-                      <CommandList>
-                        <CommandEmpty>{t_institution.noLanguageFound}</CommandEmpty>
-                        <CommandGroup>
-                          {languages.map((language) => (
-                            <CommandItem
-                              key={language.value}
-                              value={language.value}
-                              onSelect={(currentValue) => {
-                                handleInputChange('language_preference', currentValue as "en" | "nl")
-                                setOpenLanguage(false)
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  formData.language_preference === language.value ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
-                              {language.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {errors.language_preference && (
-                  <p className="text-sm text-red-600">{errors.language_preference}</p>
-                )}
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="language_preference" className="flex items-center gap-2 text-sm">
+                <Globe className="w-4 h-4 text-muted-foreground" />
+                {t_institution.languagePreference}
+              </Label>
+              <Popover open={openLanguage} onOpenChange={setOpenLanguage}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openLanguage}
+                    className={cn(
+                      "w-full h-12 text-base justify-between font-normal",
+                      !formData.language_preference && "text-muted-foreground",
+                      errors.language_preference && "border-red-500"
+                    )}
+                    disabled={isLoading}
+                  >
+                    {formData.language_preference
+                      ? languages.find(lang => lang.value === formData.language_preference)?.label
+                      : t_institution.languagePreferencePlaceholder}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder={t_institution.searchLanguage} />
+                    <CommandList>
+                      <CommandEmpty>{t_institution.noLanguageFound}</CommandEmpty>
+                      <CommandGroup>
+                        {languages.map((language) => (
+                          <CommandItem
+                            key={language.value}
+                            value={language.value}
+                            onSelect={(currentValue) => {
+                              setFormData(prev => ({ ...prev, language_preference: currentValue as any }))
+                              setOpenLanguage(false)
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.language_preference === language.value ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
+                            {language.label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {errors.language_preference && (
+                <p className="text-sm text-red-600">{errors.language_preference}</p>
+              )}
             </div>
           </div>
-        )
+        </div>
 
-      case 2:
-        return (
-          <div className="space-y-6 animate-in fade-in-0 duration-300">
-            <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">{t_institution.contactInformation}</h3>
-              <p className="text-sm text-muted-foreground">{t_institution.contactInformationDesc}</p>
+        {/* Contact Information Section */}
+        <div className="space-y-4">
+          <div className="text-center space-y-2">
+            <h3 className="text-lg font-medium text-foreground">{t_institution.contactInformation}</h3>
+            <p className="text-sm text-muted-foreground">{t_institution.contactInformationDesc}</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="flex items-center gap-2 text-sm">
+                <Mail className="w-4 h-4 text-muted-foreground" />
+                {t_institution.contactEmail}
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email || ''}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                placeholder={t_institution.contactEmailPlaceholder}
+                disabled={isLoading}
+                className={`h-12 text-base ${errors.email ? 'border-red-500' : ''}`}
+              />
+              {errors.email && (
+                <p className="text-sm text-red-600">{errors.email}</p>
+              )}
             </div>
-            
-            <div className="space-y-4 max-w-md mx-auto">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="flex items-center gap-2 text-sm">
-                  <Mail className="w-4 h-4 text-muted-foreground" />
-                  {t_institution.contactEmail}
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email || ''}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder={t_institution.contactEmailPlaceholder}
-                  disabled={isLoading}
-                  className={`h-12 text-base ${errors.email ? 'border-red-500' : ''}`}
-                />
-                {errors.email && (
-                  <p className="text-sm text-red-600">{errors.email}</p>
-                )}
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="flex items-center gap-2 text-sm">
-                  <Phone className="w-4 h-4 text-muted-foreground" />
-                  {t_institution.phone}
-                </Label>
-                <Input
-                  id="phone"
-                  value={formData.phone || ''}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder={t_institution.phonePlaceholder}
-                  disabled={isLoading}
-                  className="h-12 text-base"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="flex items-center gap-2 text-sm">
+                <Phone className="w-4 h-4 text-muted-foreground" />
+                {t_institution.phone}
+              </Label>
+              <Input
+                id="phone"
+                value={formData.phone || ''}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+                placeholder={t_institution.phonePlaceholder}
+                disabled={isLoading}
+                className="h-12 text-base"
+              />
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="website" className="flex items-center gap-2 text-sm">
-                  <Globe className="w-4 h-4 text-muted-foreground" />
-                  {t_institution.website}
-                </Label>
-                <Input
-                  id="website"
-                  value={formData.website || ''}
-                  onChange={(e) => handleInputChange('website', e.target.value)}
-                  placeholder={t_institution.websitePlaceholder}
-                  disabled={isLoading}
-                  className={`h-12 text-base ${errors.website ? 'border-red-500' : ''}`}
-                />
-                {errors.website && (
-                  <p className="text-sm text-red-600">{errors.website}</p>
-                )}
-              </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="website" className="flex items-center gap-2 text-sm">
+                <Globe className="w-4 h-4 text-muted-foreground" />
+                {t_institution.website}
+              </Label>
+              <Input
+                id="website"
+                value={formData.website || ''}
+                onChange={(e) => handleInputChange('website', e.target.value)}
+                placeholder={t_institution.websitePlaceholder}
+                disabled={isLoading}
+                className={`h-12 text-base ${errors.website ? 'border-red-500' : ''}`}
+              />
+              {errors.website && (
+                <p className="text-sm text-red-600">{errors.website}</p>
+              )}
             </div>
           </div>
-        )
+        </div>
 
-      case 3:
-        return (
-          <div className="space-y-6 animate-in fade-in-0 duration-300">
-            <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">{t_institution.additionalDetails}</h3>
-              <p className="text-sm text-muted-foreground">{t_institution.additionalDetailsDesc}</p>
-            </div>
-            
-            <div className="space-y-4 max-w-md mx-auto">
-              <div className="space-y-2">
-                <Label htmlFor="description" className="flex items-center gap-2 text-sm">
-                  <FileText className="w-4 h-4 text-muted-foreground" />
-                  {t_institution.description}
-                </Label>
-                <Textarea
-                  id="description"
-                  value={formData.description || ''}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder={t_institution.descriptionPlaceholder}
-                  disabled={isLoading}
-                  className="min-h-[120px] text-base resize-none"
-                  rows={5}
-                />
-              </div>
-            </div>
+        {/* Additional Details Section */}
+        <div className="space-y-4">
+          <div className="text-center space-y-2">
+            <h3 className="text-lg font-medium text-foreground">{t_institution.additionalDetails}</h3>
+            <p className="text-sm text-muted-foreground">{t_institution.additionalDetailsDesc}</p>
           </div>
-        )
-
-      default:
-        return null
-    }
+          
+          <div className="space-y-2">
+            <Label htmlFor="description" className="flex items-center gap-2 text-sm">
+              <FileText className="w-4 h-4 text-muted-foreground" />
+              {t_institution.description}
+            </Label>
+            <Textarea
+              id="description"
+              value={formData.description || ''}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              placeholder={t_institution.descriptionPlaceholder}
+              disabled={isLoading}
+              className="min-h-[120px] text-base resize-none"
+              rows={5}
+            />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (!institution) return null
 
   return (
     <Dialog open={isOpen} onOpenChange={!isLoading ? onOpenChange : undefined}>
-      <DialogContent className="w-[95vw] max-w-2xl max-h-[95vh] overflow-hidden flex flex-col">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Building2 className="w-5 h-5 text-muted-foreground" />
@@ -765,84 +741,45 @@ export function EditInstitutionModal({
           <DialogDescription className="text-sm text-muted-foreground">
             Update institution information and settings
           </DialogDescription>
-          
-          {/* Progress Bar */}
-          <div className="mt-4 space-y-2">
-            <div className="flex justify-between items-center text-xs text-muted-foreground">
-              <span>Step {currentStep} of {totalSteps}</span>
-              <span>{Math.round((currentStep / totalSteps) * 100)}%</span>
-            </div>
-            <Progress value={(currentStep / totalSteps) * 100} className="h-1" />
-          </div>
         </DialogHeader>
 
-        {/* Conteúdo dos Steps - Scrollable */}
+        {/* Form Content - Scrollable */}
         <div className="flex-1 overflow-y-auto min-h-0">
           <div className="space-y-6 p-1">
-            {/* Step Content */}
-            {renderStepContent()}
+            {renderFormContent()}
           </div>
         </div>
 
-        {/* Botões de Navegação - Fixos no rodapé */}
+        {/* Action Buttons - Fixed at bottom */}
         <div className="flex-shrink-0 border-t pt-4 mt-6">
-          <div className="flex justify-between items-center">
-            <div className="flex gap-2">
-              {currentStep > 1 && (
-                <Button 
-                  variant="outline" 
-                  onClick={handlePrevious} 
-                  disabled={isLoading}
-                  size="sm"
-                  className="flex items-center gap-1 text-xs"
-                >
-                  <ChevronLeft className="w-3 h-3" />
-                  {t_institution.previous}
-                </Button>
-              )}
-              <Button 
-                variant="outline" 
-                onClick={handleCancel} 
-                disabled={isLoading}
-                size="sm"
-                className="text-xs"
-              >
-                {t_institution.cancel}
-              </Button>
-            </div>
-
-            <div className="flex gap-2">
-              {currentStep < totalSteps ? (
-                <Button 
-                  onClick={handleNext} 
-                  disabled={isLoading}
-                  size="sm"
-                  className="flex items-center gap-1 text-xs bg-gray-900 hover:bg-gray-800 text-white"
-                >
-                  {t_institution.next}
-                  <ChevronRight className="w-3 h-3" />
-                </Button>
+          <div className="flex justify-end items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleCancel} 
+              disabled={isLoading}
+              size="sm"
+              className="text-xs"
+            >
+              {t_institution.cancel}
+            </Button>
+            <Button 
+              onClick={handleSave} 
+              disabled={isLoading || updateLoading}
+              size="sm"
+              className="min-w-[120px] text-xs bg-gray-900 hover:bg-gray-800 text-white"
+            >
+              {(isLoading || updateLoading) ? (
+                <>
+                  <Save className="w-3 h-3 animate-spin mr-1" />
+                  {t_institution.creating}
+                </>
               ) : (
-                <Button 
-                  onClick={handleSave} 
-                  disabled={isLoading || updateLoading}
-                  size="sm"
-                  className="min-w-[100px] text-xs bg-gray-900 hover:bg-gray-800 text-white"
-                >
-                  {(isLoading || updateLoading) ? (
-                    <>
-                      <Save className="w-3 h-3 animate-spin mr-1" />
-                      {t_institution.creating}
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-3 h-3 mr-1" />
-                      Update Institution
-                    </>
-                  )}
-                </Button>
+                <>
+                  <Save className="w-3 h-3 mr-1" />
+                  Update Institution
+                </>
               )}
-            </div>
+            </Button>
           </div>
         </div>
       </DialogContent>

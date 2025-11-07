@@ -134,7 +134,7 @@ export interface InstitutionFragment_users {
   contact_id: string | null;
   institution_id: string;
   gender: GenderType | null;
-  church: InstitutionFragment_users_church;
+  church: InstitutionFragment_users_church | null;
   institution: InstitutionFragment_users_institution;
   user_roles: InstitutionFragment_users_user_roles[] | null;
 }
