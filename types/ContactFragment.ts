@@ -16,6 +16,7 @@ export interface ContactFragment {
   email: string | null;
   country: string | null;
   city: string | null;
+  state: string | null;
   address: string | null;
   full_address: string | null;
   postal_code: string | null;
