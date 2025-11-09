@@ -330,6 +330,7 @@ export type Contact = {
   notes?: Maybe<Scalars['String']['output']>;
   phone?: Maybe<Scalars['String']['output']>;
   postal_code?: Maybe<Scalars['String']['output']>;
+  state?: Maybe<Scalars['String']['output']>;
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
   website?: Maybe<Scalars['String']['output']>;
@@ -354,6 +355,7 @@ export type ContactCreateDto = {
   notes?: InputMaybe<Scalars['String']['input']>;
   phone?: InputMaybe<Scalars['String']['input']>;
   postal_code?: InputMaybe<Scalars['String']['input']>;
+  state?: InputMaybe<Scalars['String']['input']>;
   website?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -370,6 +372,7 @@ export type ContactUpdateDto = {
   notes?: InputMaybe<Scalars['String']['input']>;
   phone?: InputMaybe<Scalars['String']['input']>;
   postal_code?: InputMaybe<Scalars['String']['input']>;
+  state?: InputMaybe<Scalars['String']['input']>;
   website?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -1790,8 +1793,8 @@ export type User = {
   SubsidyStatus?: Maybe<Array<SubsidyStatus>>;
   _count: UserCount;
   approved_annual_budgets?: Maybe<Array<AnnualBudget>>;
-  church: Church;
-  church_id: Scalars['String']['output'];
+  church?: Maybe<Church>;
+  church_id?: Maybe<Scalars['String']['output']>;
   communications?: Maybe<Array<Communication>>;
   contact?: Maybe<Contact>;
   contact_id?: Maybe<Scalars['String']['output']>;
@@ -1799,8 +1802,8 @@ export type User = {
   created_by: Scalars['String']['output'];
   deleted_at?: Maybe<Scalars['DateTime']['output']>;
   deleted_by?: Maybe<Scalars['String']['output']>;
-  department: Department;
-  department_id: Scalars['String']['output'];
+  department?: Maybe<Department>;
+  department_id?: Maybe<Scalars['String']['output']>;
   direct_message_recipients?: Maybe<Array<DirectMessageRecipient>>;
   direct_messages?: Maybe<Array<DirectMessage>>;
   email: Scalars['String']['output'];

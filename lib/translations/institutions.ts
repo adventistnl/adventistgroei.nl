@@ -27,11 +27,11 @@ export const institutionTranslations = {
     noLanguageFound: "No language found.",
     contactEmail: "Contact Email",
     contactEmailPlaceholder: "contact@institution.org",
-    phone: "Phone (Optional)",
+    phone: "Phone",
     phonePlaceholder: "+1 (555) 123-4567",
-    website: "Website (Optional)",
+    website: "Website",
     websitePlaceholder: "https://www.institution.org",
-    description: "Description (Optional)",
+    description: "Description",
     descriptionPlaceholder: "Brief description about the institution, its mission, and activities...",
     
     // Languages
@@ -110,11 +110,11 @@ export const institutionTranslations = {
     noLanguageFound: "Geen taal gevonden.",
     contactEmail: "Contact E-mail",
     contactEmailPlaceholder: "contact@instelling.org",
-    phone: "Telefoon (Optioneel)",
+    phone: "Telefoon",
     phonePlaceholder: "+31 (20) 123-4567",
-    website: "Website (Optioneel)",
+    website: "Website",
     websitePlaceholder: "https://www.instelling.org",
-    description: "Beschrijving (Optioneel)",
+    description: "Beschrijving",
     descriptionPlaceholder: "Korte beschrijving over de instelling, missie en activiteiten...",
     
     // Languages

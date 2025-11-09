@@ -9,6 +9,7 @@ export const CONTACT_FRAGMENT = gql`
     email
     country
     city
+    state
     address
     full_address
     postal_code

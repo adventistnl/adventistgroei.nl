@@ -18,6 +18,7 @@ export interface Institutions_institutions_contact {
   email: string | null;
   country: string | null;
   city: string | null;
+  state: string | null;
   address: string | null;
   full_address: string | null;
   postal_code: string | null;
@@ -134,7 +135,7 @@ export interface Institutions_institutions_users {
   contact_id: string | null;
   institution_id: string;
   gender: GenderType | null;
-  church: Institutions_institutions_users_church;
+  church: Institutions_institutions_users_church | null;
   institution: Institutions_institutions_users_institution;
   user_roles: Institutions_institutions_users_user_roles[] | null;
 }
@@ -148,6 +149,7 @@ export interface Institutions_institutions_churches_contact {
   email: string | null;
   country: string | null;
   city: string | null;
+  state: string | null;
   address: string | null;
   full_address: string | null;
   postal_code: string | null;
@@ -179,6 +181,7 @@ export interface Institutions_institutions_churches_departments_contact {
   email: string | null;
   country: string | null;
   city: string | null;
+  state: string | null;
   address: string | null;
   full_address: string | null;
   postal_code: string | null;
@@ -275,6 +278,7 @@ export interface Institutions_institutions_departments_contact {
   email: string | null;
   country: string | null;
   city: string | null;
+  state: string | null;
   address: string | null;
   full_address: string | null;
   postal_code: string | null;
