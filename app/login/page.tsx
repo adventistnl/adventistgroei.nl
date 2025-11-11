@@ -342,13 +342,13 @@ function LoginPageContent() {
                 </Button>
               </form>
               
-              {/* Link Esqueceu Senha - Desabilitado por enquanto */}
+              {/* Link Esqueceu Senha */}
               <div className="text-center">
                 <button 
-                  className="text-muted-foreground cursor-not-allowed opacity-50"
+                  onClick={() => router.push('/forgot-password')}
+                  className="text-primary hover:text-primary/80 transition-colors duration-200 font-medium"
                   style={{ fontSize: 'clamp(0.875rem, 2vw, 1rem)' }}
-                  disabled
-                  title="Funcionalidade em desenvolvimento"
+                  type="button"
                 >
                   {t.forgotPassword}
                 </button>
