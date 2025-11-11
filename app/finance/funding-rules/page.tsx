@@ -95,8 +95,6 @@ export default function FundingRulesPage() {
             entityId={currentInstitutionData?.id}
             isLoading={isLoading}
             onRefresh={handleRefresh}
-            title="Institution Funding Rules"
-            description="Manage funding rules and groups for this institution's subsidy requests"
             showCharts={true}
             showKPICards={true}
           />

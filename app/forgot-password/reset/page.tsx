@@ -1,136 +1,242 @@
 "use client"
 
-import type React from "react"
-import { useState, useEffect, Suspense } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Eye, EyeOff, CheckCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import toast from "react-hot-toast"
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Eye, EyeOff, CheckCircle, Lock } from 'lucide-react'
+import { AdventistLogo } from '@/components/ui/adventist-logo'
 
 function ResetPasswordPageContent() {
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [email, setEmail] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState('')
+  
   const router = useRouter()
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    const emailParam = searchParams.get("email")
-    if (emailParam) {
-      // setEmail(emailParam)
+    const emailParam = searchParams.get('email')
+    const codeParam = searchParams.get('code')
+    
+    if (emailParam && codeParam) {
+      setEmail(emailParam)
+    } else {
+      router.push('/forgot-password')
     }
-  }, [searchParams])
+  }, [searchParams, router])
+
+  const passwordValid = password.length >= 8
+  const passwordsMatch = password === confirmPassword && password.length > 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
+    setIsSubmitting(true)
 
-    if (password !== confirmPassword) {
-      alert("Passwords don't match")
+    if (!passwordValid) {
+      setError('Password must be at least 8 characters')
+      setIsSubmitting(false)
       return
     }
 
-    if (password.length < 8) {
-      alert("Password must be at least 8 characters long")
+    if (!passwordsMatch) {
+      setError("Passwords don't match")
+      setIsSubmitting(false)
       return
     }
 
-    setIsLoading(true)
-
-    // Simulate password reset
-    setTimeout(() => {
-      setIsLoading(false)
-      // Show success and redirect to login
-      alert("Password reset successfully!")
-      router.push("/login")
-    }, 1500)
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      toast.success('Password reset successfully!', {
+        duration: 4000
+      })
+      
+      // Navigate to login
+      setTimeout(() => {
+        router.push('/login')
+      }, 1000)
+    } catch (error) {
+      setError('Failed to reset password')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const passwordsMatch = password === confirmPassword && password.length > 0
-  const passwordValid = password.length >= 8
-
   return (
-    <div className="min-h-screen flex">
-      {/* Left side - Reset Form */}
-      <div className="w-full md:w-5/6 flex items-center justify-center bg-background px-8">
-        <div className="w-full max-w-md space-y-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-semibold text-foreground mb-2">Set New Password</h1>
-            <p className="text-sm text-muted-foreground">Create a new password for your account</p>
+    <div className="min-h-screen bg-background">
+      {/* Grid Layout com 7 colunas */}
+      <div className="grid grid-cols-7 min-h-screen">
+        
+        {/* Colunas 1-6: Área do Formulário */}
+        <div className="col-span-6 flex items-center justify-center p-8 sm:p-16">
+          <div className="w-full max-w-xl space-y-8">
+            
+            {/* Header com Logo e Título */}
+            <div className="text-center space-y-8">
+              <div className="space-y-0.5">
+                <p className="text-muted-foreground font-medium mb-0.5" style={{ fontSize: 'clamp(1rem, 2.5vw, 1.25rem)' }}>
+                  Password Recovery
+                </p>
+                <div className="flex justify-center items-center mb-1">
+                  <div className="hidden sm:block text-primary mr-3" style={{ width: 'clamp(2.5rem, 3vw, 3rem)', height: 'clamp(2.5rem, 3vw, 3rem)' }}>
+                    <AdventistLogo className="w-full h-full text-primary" />
+                  </div>
+                  
+                  <h1 className="text-foreground leading-tight tracking-tight" style={{ fontSize: 'clamp(1.5rem, 3vw, 2rem)' }}>
+                    <span className="font-bold">Set New Password</span>
+                  </h1>
+                </div>
+                <p className="text-muted-foreground text-sm mt-2">
+                  Create a new password for your account
+                </p>
+              </div>
+            </div>
+
+            {/* Formulário */}
+            <div className="space-y-6 px-4 sm:px-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {error && (
+                  <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
+                    <AlertDescription className="text-destructive-foreground">
+                      {error}
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                {/* Campo Nova Senha */}
+                <div className="space-y-3">
+                  <Label htmlFor="password" className="font-medium text-foreground" style={{ fontSize: 'clamp(0.875rem, 2vw, 1rem)' }}>
+                    New Password
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter new password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-12 pr-20 bg-background border-border focus:border-primary transition-all duration-200"
+                      style={{ 
+                        height: 'clamp(3rem, 6vh, 4rem)',
+                        fontSize: 'clamp(0.875rem, 2.5vw, 1.125rem)'
+                      }}
+                      disabled={isSubmitting}
+                      autoComplete="new-password"
+                    />
+                    <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                      {passwordValid && (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Password must be at least 8 characters
+                  </p>
+                </div>
+                
+                {/* Campo Confirmar Senha */}
+                <div className="space-y-3">
+                  <Label htmlFor="confirmPassword" className="font-medium text-foreground" style={{ fontSize: 'clamp(0.875rem, 2vw, 1rem)' }}>
+                    Confirm Password
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Confirm new password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="pl-12 pr-20 bg-background border-border focus:border-primary transition-all duration-200"
+                      style={{ 
+                        height: 'clamp(3rem, 6vh, 4rem)',
+                        fontSize: 'clamp(0.875rem, 2.5vw, 1.125rem)'
+                      }}
+                      disabled={isSubmitting}
+                      autoComplete="new-password"
+                    />
+                    <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                      {passwordsMatch && (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  {confirmPassword && (
+                    <p className={`text-xs ${passwordsMatch ? 'text-green-500' : 'text-destructive'}`}>
+                      {passwordsMatch ? 'Passwords match ✓' : "Passwords don't match"}
+                    </p>
+                  )}
+                </div>
+                
+                {/* Botão de Submit */}
+                <Button 
+                  type="submit" 
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200" 
+                  style={{ 
+                    height: 'clamp(3rem, 6vh, 4rem)',
+                    fontSize: 'clamp(1rem, 2.5vw, 1.25rem)'
+                  }}
+                  disabled={isSubmitting || !passwordValid || !passwordsMatch}
+                >
+                  {isSubmitting ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground mr-3"></div>
+                      Resetting Password...
+                    </div>
+                  ) : (
+                    'Reset Password'
+                  )}
+                </Button>
+              </form>
+            </div>
           </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* New Password Field */}
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm text-muted-foreground">
-                New Password
-              </Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="border-0 border-b border-muted-foreground bg-transparent rounded-none px-0 pb-2 pr-10 focus:border-foreground focus:ring-0"
-                  placeholder="Enter new password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-0 top-0 h-full flex items-center text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-                {passwordValid && <CheckCircle className="absolute right-8 top-0 h-full w-4 h-4 text-green-500" />}
-              </div>
-              <p className="text-xs text-muted-foreground">Password must be at least 8 characters long</p>
-            </div>
-
-            {/* Confirm Password Field */}
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-sm text-muted-foreground">
-                Confirm Password
-              </Label>
-              <div className="relative">
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="border-0 border-b border-muted-foreground bg-transparent rounded-none px-0 pb-2 pr-10 focus:border-foreground focus:ring-0"
-                  placeholder="Confirm new password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-0 top-0 h-full flex items-center text-muted-foreground hover:text-foreground"
-                >
-                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-                {passwordsMatch && <CheckCircle className="absolute right-8 top-0 h-full w-4 h-4 text-green-500" />}
-              </div>
-            </div>
-
-            {/* Reset Button */}
-            <Button
-              type="submit"
-              disabled={isLoading || !passwordValid || !passwordsMatch}
-              className="w-full bg-[#1e3a5f] hover:bg-[#152d47] text-white py-3 rounded-md font-medium"
-            >
-              {isLoading ? "Resetting Password..." : "Reset Password"}
-            </Button>
-          </form>
         </div>
-      </div>
-
-      {/* Right side - Dark Panel */}
-      <div className="w-1/6 bg-black flex items-center justify-center">
-        <div className="text-center">{/* Empty for now */}</div>
+        
+        {/* Coluna 7: Sidebar decorativa */}
+        <div className="col-span-1 bg-gray-900 dark:bg-gray-950 relative overflow-hidden">
+          <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-20">
+            <div className="flex items-center justify-center" style={{ width: 'clamp(3rem, 8vw, 5rem)', height: 'clamp(3rem, 8vw, 5rem)' }}>
+              <AdventistLogo className="w-full h-full text-white" />
+            </div>
+          </div>
+          
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute top-32 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-white rounded-full"></div>
+            <div className="absolute top-48 left-1/4 w-8 h-8 bg-white/60 rounded-full"></div>
+            <div className="absolute top-64 right-1/4 w-12 h-12 bg-white/40 rounded-full"></div>
+            <div className="absolute bottom-32 left-1/2 transform -translate-x-1/2 w-20 h-20 bg-white/80 rounded-full"></div>
+          </div>
+          
+          <div className="absolute inset-0">
+            <div className="absolute top-1/3 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+            <div className="absolute top-2/3 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -142,7 +248,7 @@ export default function ResetPasswordPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Carregando...</p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     }>
