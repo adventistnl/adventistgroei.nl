@@ -21,15 +21,28 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Progress } from "@/components/ui/progress"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { 
   Building2, 
   Save, 
   Globe, 
+  ChevronLeft, 
+  ChevronRight,
   Mail,
   Phone,
   FileText,
   Check,
-  ChevronsUpDown
+  ChevronsUpDown,
+  Home,
+  Flag,
+  MapPin
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
@@ -37,26 +50,6 @@ import { institutionTranslations } from "@/lib/translations/institutions"
 import { UpdateInstitutionVariables } from "@/types/UpdateInstitution"
 import { Institution } from "@/types/graphql-global-types"
 import { countries, states, cities } from "@/data/geographicData"
-
-// export interface Institution {
-//   id: string
-//   name: string
-//   denomination: string
-//   language_preference: "en" | "nl"
-//   country?: string
-//   email?: string
-//   phone?: string
-//   website?: string
-//   description?: string
-//   contact_id?: string | null
-//   created_at: string
-//   updated_at: string
-//   created_by: string
-//   updated_by: string
-//   is_deleted: boolean
-//   deleted_at?: string | null
-//   deleted_by?: string | null
-// }
 
 export interface EditInstitutionModalProps {
   isOpen: boolean
@@ -74,6 +67,8 @@ export function EditInstitutionModal({
   const { i18n } = useTranslation()
   const { updateInstitution, updateLoading, updateError, refetchInstitutions } = useInstitution()
   const [isLoading, setIsLoading] = useState(false)
+  const [currentStep, setCurrentStep] = useState(1)
+  const totalSteps = 3
   const [formData, setFormData] = useState<UpdateInstitutionVariables>({
     id: institution?.id || "",
     name: institution?.name || "",
@@ -90,24 +85,12 @@ export function EditInstitutionModal({
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   
-  // States for command popovers
-  const [openCountry, setOpenCountry] = useState(false)
-  const [openLanguage, setOpenLanguage] = useState(false)
-  const [openState, setOpenState] = useState(false)
-  const [openCity, setOpenCity] = useState(false)
-  
   // Additional form data for state and city
   const [selectedState, setSelectedState] = useState("")
   const [selectedCity, setSelectedCity] = useState("")
   
   // Get translations for current language
   const t_institution = institutionTranslations[i18n.language as keyof typeof institutionTranslations] || institutionTranslations.en
-
-  // Define options for comboboxes
-  const countriesOptions = countries.map(country => ({
-    value: country.code,
-    label: country.name
-  }))
 
   // Get states/provinces for selected country
   const statesOptions = formData.country && states[formData.country as keyof typeof states] 
@@ -118,8 +101,8 @@ export function EditInstitutionModal({
     : []
 
   // Get cities for selected state
-  const citiesOptions = selectedState && cities[selectedState as keyof typeof cities]
-    ? cities[selectedState as keyof typeof cities].map(city => ({
+  const citiesOptions = formData.state && cities[formData.state as keyof typeof cities]
+    ? cities[formData.state as keyof typeof cities].map(city => ({
         value: city.code,
         label: city.name
       }))
@@ -132,6 +115,7 @@ export function EditInstitutionModal({
 
   useEffect(() => {
     if (institution) {
+      const institutionCountry = institution.contact?.country || ""
       const institutionState = institution.contact?.state || ""
       const institutionCity = institution.contact?.city || ""
       
@@ -140,7 +124,7 @@ export function EditInstitutionModal({
         name: institution.name,
         language_preference: institution.language_preference,
         denomination: institution.denomination,
-        country: institution.contact?.country || "",
+        country: institutionCountry,
         state: institutionState,
         city: institutionCity,
         email: institution.contact?.email || "",
@@ -151,9 +135,20 @@ export function EditInstitutionModal({
       })
       
       // Set additional geographic fields from existing data
-      setSelectedState(institutionState)
-      setSelectedCity(institutionCity)
+      // Find state name from code
+      const stateFromCode = institutionState && institutionCountry && states[institutionCountry as keyof typeof states]
+        ? states[institutionCountry as keyof typeof states].find(s => s.code === institutionState)?.name || ""
+        : ""
+      
+      // Find city name from code
+      const cityFromCode = institutionCity && institutionState && cities[institutionState as keyof typeof cities]
+        ? cities[institutionState as keyof typeof cities].find(c => c.code === institutionCity)?.name || ""
+        : ""
+        
+      setSelectedState(stateFromCode)
+      setSelectedCity(cityFromCode)
       setErrors({})
+      setCurrentStep(1)
     }
   }, [institution])
 
@@ -179,20 +174,57 @@ export function EditInstitutionModal({
     }
   }
 
-  const validateForm = () => {
+  const validateStep = (step: number) => {
     const newErrors: Record<string, string> = {}
 
-    // Apenas validações de formato, sem campos obrigatórios
-    if (formData.email && formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = t_institution.validation.emailInvalid
+    if (step === 1) {
+      if (!formData.name?.trim()) {
+        newErrors.name = t_institution.validation.nameRequired
+      } else if (formData.name.trim().length < 2) {
+        newErrors.name = t_institution.validation.nameMinLength
+      }
+
+      if (!formData.denomination?.trim()) {
+        newErrors.denomination = t_institution.validation.denominationRequired
+      } else if (formData.denomination.trim().length < 2) {
+        newErrors.denomination = t_institution.validation.denominationMinLength
+      }
+
+      if (!formData.language_preference) {
+        newErrors.language_preference = t_institution.validation.languageRequired
+      }
     }
 
-    if (formData.website && formData.website.trim() && !formData.website.match(/^https?:\/\//)) {
-      newErrors.website = t_institution.validation.websiteInvalid
+    if (step === 2) {
+      if (!formData.country?.trim()) {
+        newErrors.country = t_institution.validation.countryRequired
+      }
+
+      if (formData.email && formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        newErrors.email = t_institution.validation.emailInvalid
+      }
+
+      if (formData.website && formData.website.trim() && !formData.website.match(/^https?:\/\//)) {
+        newErrors.website = t_institution.validation.websiteInvalid
+      }
     }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
+  }
+
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => Math.min(prev + 1, totalSteps))
+    }
+  }
+
+  const handlePrevious = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 1))
+  }
+
+  const validateForm = () => {
+    return validateStep(1) && validateStep(2)
   }
 
   const handleSave = async () => {
@@ -248,6 +280,7 @@ export function EditInstitutionModal({
 
   const handleCancel = () => {
     if (institution) {
+      const institutionCountry = institution.contact?.country || ""
       const institutionState = institution.contact?.state || ""
       const institutionCity = institution.contact?.city || ""
       
@@ -256,7 +289,7 @@ export function EditInstitutionModal({
         name: institution.name,
         denomination: institution.denomination,
         language_preference: institution.language_preference,
-        country: institution.contact?.country || "",
+        country: institutionCountry,
         state: institutionState,
         city: institutionCity,
         email: institution.contact?.email || "",
@@ -267,28 +300,38 @@ export function EditInstitutionModal({
       })
       
       // Reset additional geographic fields to original values
-      setSelectedState(institutionState)
-      setSelectedCity(institutionCity)
+      // Find state name from code
+      const stateFromCode = institutionState && institutionCountry && states[institutionCountry as keyof typeof states]
+        ? states[institutionCountry as keyof typeof states].find(s => s.code === institutionState)?.name || ""
+        : ""
+      
+      // Find city name from code
+      const cityFromCode = institutionCity && institutionState && cities[institutionState as keyof typeof cities]
+        ? cities[institutionState as keyof typeof cities].find(c => c.code === institutionCity)?.name || ""
+        : ""
+        
+      setSelectedState(stateFromCode)
+      setSelectedCity(cityFromCode)
     }
     
+    setCurrentStep(1)
     setErrors({})
     onOpenChange(false)
   }
 
-  const renderFormContent = () => {
-    return (
-      <div className="space-y-6">
-        {/* Basic Information Section */}
-        <div className="space-y-4">
-          <div className="text-center space-y-2">
-            <h3 className="text-lg font-medium text-foreground">{t_institution.basicInformation}</h3>
-            <p className="text-sm text-muted-foreground">{t_institution.basicInformationDesc}</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="space-y-4">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-medium text-foreground">{t_institution.basicInformation}</h3>
+              <p className="text-sm text-muted-foreground">{t_institution.basicInformationDesc}</p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="name" className="flex items-center gap-2 text-sm">
-                <Building2 className="w-4 h-4 text-muted-foreground" />
+                <Home className="w-4 h-4 text-muted-foreground" />
                 {t_institution.institutionName}
               </Label>
               <Input
@@ -323,52 +366,83 @@ export function EditInstitutionModal({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="country" className="flex items-center gap-2 text-sm">
+              <Label htmlFor="language" className="flex items-center gap-2 text-sm">
                 <Globe className="w-4 h-4 text-muted-foreground" />
+                {t_institution.languagePreference}
+              </Label>
+              <Select
+                value={formData.language_preference || ''}
+                onValueChange={(value: string) => handleInputChange('language_preference', value)}
+                disabled={isLoading}
+              >
+                <SelectTrigger className={`h-12 text-base ${errors.language_preference ? 'border-red-500' : ''}`}>
+                  <SelectValue placeholder={t_institution.languagePreferencePlaceholder} />
+                </SelectTrigger>
+                <SelectContent>
+                  {languages.map((language) => (
+                    <SelectItem key={language.value} value={language.value}>
+                      {language.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.language_preference && (
+                <p className="text-sm text-red-600">{errors.language_preference}</p>
+              )}
+            </div>
+          </div>
+        )
+
+      case 2:
+        return (
+          <div className="space-y-4">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-medium text-foreground">{t_institution.contactInformation}</h3>
+              <p className="text-sm text-muted-foreground">{t_institution.contactInformationDesc}</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="country" className="flex items-center gap-2 text-sm">
+                <Flag className="w-4 h-4 text-muted-foreground" />
                 {t_institution.country}
               </Label>
-              <Popover open={openCountry} onOpenChange={setOpenCountry}>
+              <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     role="combobox"
-                    aria-expanded={openCountry}
-                    className={cn(
-                      "w-full h-12 text-base justify-between font-normal",
-                      !formData.country && "text-muted-foreground",
-                      errors.country && "border-red-500"
-                    )}
+                    className={`h-12 w-full justify-between text-base ${errors.country ? 'border-red-500' : ''}`}
                     disabled={isLoading}
                   >
-                    {formData.country
-                      ? countriesOptions.find(country => country.value === formData.country)?.label
-                      : t_institution.countryPlaceholder}
+                    {formData.country ? countries.find(c => c.code === formData.country)?.name : t_institution.countryPlaceholder}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0" align="start">
+                <PopoverContent className="w-[300px] p-0">
                   <Command>
                     <CommandInput placeholder={t_institution.searchCountry} />
                     <CommandList>
                       <CommandEmpty>{t_institution.noCountryFound}</CommandEmpty>
                       <CommandGroup>
-                        {countriesOptions.map((country) => (
+                        {countries.map((country) => (
                           <CommandItem
-                            key={country.value}
-                            value={country.value}
-                            onSelect={(currentValue) => {
-                              handleInputChange('country', currentValue === formData.country ? "" : currentValue)
-                              setOpenCountry(false)
+                            key={country.code}
+                            value={country.name}
+                            onSelect={() => {
+                              handleInputChange('country', country.code)
+                              handleInputChange('state', '')
+                              handleInputChange('city', '')
+                              setSelectedState('')
+                              setSelectedCity('')
                             }}
                           >
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4",
-                                formData.country === country.value ? "opacity-100" : "opacity-0"
+                                formData.country === country.code ? "opacity-100" : "opacity-0"
                               )}
                             />
-                            <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
-                            {country.label}
+                            {country.name}
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -381,174 +455,47 @@ export function EditInstitutionModal({
               )}
             </div>
 
-            {/* State/Province field - only show if country is selected and has states */}
-            {formData.country && statesOptions.length > 0 && (
-              <div className="space-y-2">
-                <Label htmlFor="state" className="flex items-center gap-2 text-sm">
-                  <Globe className="w-4 h-4 text-muted-foreground" />
-                  Province/State
-                </Label>
-                <Popover open={openState} onOpenChange={setOpenState}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openState}
-                      className={cn(
-                        "w-full h-12 text-base justify-between font-normal",
-                        !selectedState && "text-muted-foreground"
-                      )}
-                      disabled={isLoading}
-                    >
-                      {selectedState
-                        ? statesOptions.find(state => state.value === selectedState)?.label
-                        : "Select province..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search province..." />
-                      <CommandList>
-                        <CommandEmpty>No province found.</CommandEmpty>
-                        <CommandGroup>
-                          {statesOptions.map((state) => (
-                            <CommandItem
-                              key={state.value}
-                              value={state.value}
-                              onSelect={(currentValue) => {
-                                const newState = currentValue === selectedState ? "" : currentValue
-                                setSelectedState(newState)
-                                setSelectedCity("") // Reset city when state changes
-                                setFormData(prev => ({ ...prev, state: newState, city: "" }))
-                                setOpenState(false)
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  selectedState === state.value ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
-                              {state.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
-
-            {/* City field - only show if state is selected and has cities */}
-            {selectedState && citiesOptions.length > 0 && (
-              <div className="space-y-2">
-                <Label htmlFor="city" className="flex items-center gap-2 text-sm">
-                  <Globe className="w-4 h-4 text-muted-foreground" />
-                  City
-                </Label>
-                <Popover open={openCity} onOpenChange={setOpenCity}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openCity}
-                      className={cn(
-                        "w-full h-12 text-base justify-between font-normal",
-                        !selectedCity && "text-muted-foreground"
-                      )}
-                      disabled={isLoading}
-                    >
-                      {selectedCity
-                        ? citiesOptions.find(city => city.value === selectedCity)?.label
-                        : "Select city..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search city..." />
-                      <CommandList>
-                        <CommandEmpty>No city found.</CommandEmpty>
-                        <CommandGroup>
-                          {citiesOptions.map((city) => (
-                            <CommandItem
-                              key={city.value}
-                              value={city.value}
-                              onSelect={(currentValue) => {
-                                const newCity = currentValue === selectedCity ? "" : currentValue
-                                setSelectedCity(newCity)
-                                setFormData(prev => ({ ...prev, city: newCity }))
-                                setOpenCity(false)
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  selectedCity === city.value ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
-                              {city.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
-
             <div className="space-y-2">
-              <Label htmlFor="language_preference" className="flex items-center gap-2 text-sm">
-                <Globe className="w-4 h-4 text-muted-foreground" />
-                {t_institution.languagePreference}
+              <Label htmlFor="state" className="flex items-center gap-2 text-sm">
+                <MapPin className="w-4 h-4 text-muted-foreground" />
+                Estado/Província
               </Label>
-              <Popover open={openLanguage} onOpenChange={setOpenLanguage}>
+              <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     role="combobox"
-                    aria-expanded={openLanguage}
-                    className={cn(
-                      "w-full h-12 text-base justify-between font-normal",
-                      !formData.language_preference && "text-muted-foreground",
-                      errors.language_preference && "border-red-500"
-                    )}
-                    disabled={isLoading}
+                    className="h-12 w-full justify-between text-base"
+                    disabled={!formData.country || isLoading}
                   >
-                    {formData.language_preference
-                      ? languages.find(lang => lang.value === formData.language_preference)?.label
-                      : t_institution.languagePreferencePlaceholder}
+                    {selectedState || "Selecionar estado"}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0" align="start">
+                <PopoverContent className="w-[300px] p-0">
                   <Command>
-                    <CommandInput placeholder={t_institution.searchLanguage} />
+                    <CommandInput placeholder="Buscar estados..." />
                     <CommandList>
-                      <CommandEmpty>{t_institution.noLanguageFound}</CommandEmpty>
+                      <CommandEmpty>Nenhum estado encontrado.</CommandEmpty>
                       <CommandGroup>
-                        {languages.map((language) => (
+                        {statesOptions.map((state) => (
                           <CommandItem
-                            key={language.value}
-                            value={language.value}
-                            onSelect={(currentValue) => {
-                              setFormData(prev => ({ ...prev, language_preference: currentValue as any }))
-                              setOpenLanguage(false)
+                            key={state.value}
+                            value={state.label}
+                            onSelect={() => {
+                              setSelectedState(state.label)
+                              handleInputChange('state', state.value)
+                              handleInputChange('city', '')
+                              setSelectedCity('')
                             }}
                           >
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4",
-                                formData.language_preference === language.value ? "opacity-100" : "opacity-0"
+                                selectedState === state.label ? "opacity-100" : "opacity-0"
                               )}
                             />
-                            <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
-                            {language.label}
+                            {state.label}
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -556,21 +503,56 @@ export function EditInstitutionModal({
                   </Command>
                 </PopoverContent>
               </Popover>
-              {errors.language_preference && (
-                <p className="text-sm text-red-600">{errors.language_preference}</p>
-              )}
             </div>
-          </div>
-        </div>
 
-        {/* Contact Information Section */}
-        <div className="space-y-4">
-          <div className="text-center space-y-2">
-            <h3 className="text-lg font-medium text-foreground">{t_institution.contactInformation}</h3>
-            <p className="text-sm text-muted-foreground">{t_institution.contactInformationDesc}</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="city" className="flex items-center gap-2 text-sm">
+                <MapPin className="w-4 h-4 text-muted-foreground" />
+                Cidade
+              </Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="h-12 w-full justify-between text-base"
+                    disabled={!formData.state || isLoading}
+                  >
+                    {selectedCity || "Selecionar cidade"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar cidades..." />
+                    <CommandList>
+                      <CommandEmpty>Nenhuma cidade encontrada.</CommandEmpty>
+                      <CommandGroup>
+                        {citiesOptions.map((city) => (
+                          <CommandItem
+                            key={city.value}
+                            value={city.label}
+                            onSelect={() => {
+                              setSelectedCity(city.label)
+                              handleInputChange('city', city.value)
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedCity === city.label ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {city.label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email" className="flex items-center gap-2 text-sm">
                 <Mail className="w-4 h-4 text-muted-foreground" />
@@ -604,8 +586,18 @@ export function EditInstitutionModal({
                 className="h-12 text-base"
               />
             </div>
+          </div>
+        )
 
-            <div className="space-y-2 md:col-span-2">
+      case 3:
+        return (
+          <div className="space-y-4">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-medium text-foreground">{t_institution.additionalDetails}</h3>
+              <p className="text-sm text-muted-foreground">{t_institution.additionalDetailsDesc}</p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="website" className="flex items-center gap-2 text-sm">
                 <Globe className="w-4 h-4 text-muted-foreground" />
                 {t_institution.website}
@@ -622,34 +614,28 @@ export function EditInstitutionModal({
                 <p className="text-sm text-red-600">{errors.website}</p>
               )}
             </div>
-          </div>
-        </div>
 
-        {/* Additional Details Section */}
-        <div className="space-y-4">
-          <div className="text-center space-y-2">
-            <h3 className="text-lg font-medium text-foreground">{t_institution.additionalDetails}</h3>
-            <p className="text-sm text-muted-foreground">{t_institution.additionalDetailsDesc}</p>
+            <div className="space-y-2">
+              <Label htmlFor="description" className="flex items-center gap-2 text-sm">
+                <FileText className="w-4 h-4 text-muted-foreground" />
+                {t_institution.description}
+              </Label>
+              <Textarea
+                id="description"
+                value={formData.description || ''}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                placeholder={t_institution.descriptionPlaceholder}
+                disabled={isLoading}
+                rows={4}
+                className="text-base resize-none"
+              />
+            </div>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description" className="flex items-center gap-2 text-sm">
-              <FileText className="w-4 h-4 text-muted-foreground" />
-              {t_institution.description}
-            </Label>
-            <Textarea
-              id="description"
-              value={formData.description || ''}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder={t_institution.descriptionPlaceholder}
-              disabled={isLoading}
-              className="min-h-[120px] text-base resize-none"
-              rows={5}
-            />
-          </div>
-        </div>
-      </div>
-    )
+        )
+
+      default:
+        return null
+    }
   }
 
   if (!institution) return null
@@ -665,45 +651,86 @@ export function EditInstitutionModal({
           <DialogDescription className="text-sm text-muted-foreground">
             Update institution information and settings
           </DialogDescription>
+          
+          {/* Progress Bar */}
+          <div className="space-y-2 pt-4">
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>Step {currentStep} of {totalSteps}</span>
+              <span>{Math.round((currentStep / totalSteps) * 100)}%</span>
+            </div>
+            <Progress value={(currentStep / totalSteps) * 100} className="w-full h-2" />
+          </div>
         </DialogHeader>
 
         {/* Form Content - Scrollable */}
         <div className="flex-1 overflow-y-auto min-h-0">
           <div className="space-y-6 p-1">
-            {renderFormContent()}
+            {renderStepContent()}
           </div>
         </div>
 
         {/* Action Buttons - Fixed at bottom */}
         <div className="flex-shrink-0 border-t pt-4 mt-6">
-          <div className="flex justify-end items-center gap-2">
-            <Button 
-              variant="outline" 
-              onClick={handleCancel} 
-              disabled={isLoading}
-              size="sm"
-              className="text-xs"
-            >
-              {t_institution.cancel}
-            </Button>
-            <Button 
-              onClick={handleSave} 
-              disabled={isLoading || updateLoading}
-              size="sm"
-              className="min-w-[120px] text-xs bg-gray-900 hover:bg-gray-800 text-white"
-            >
-              {(isLoading || updateLoading) ? (
-                <>
-                  <Save className="w-3 h-3 animate-spin mr-1" />
-                  {t_institution.creating}
-                </>
-              ) : (
-                <>
-                  <Save className="w-3 h-3 mr-1" />
-                  Update Institution
-                </>
+          <div className="flex justify-between items-center">
+            {/* Left side - Previous button */}
+            <div>
+              {currentStep > 1 && (
+                <Button 
+                  variant="outline" 
+                  onClick={handlePrevious}
+                  disabled={isLoading}
+                  size="sm"
+                  className="text-xs"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  {t_institution.previous}
+                </Button>
               )}
-            </Button>
+            </div>
+
+            {/* Right side - Cancel, Next/Save buttons */}
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                onClick={handleCancel} 
+                disabled={isLoading}
+                size="sm"
+                className="text-xs"
+              >
+                {t_institution.cancel}
+              </Button>
+              
+              {currentStep < totalSteps ? (
+                <Button 
+                  onClick={handleNext}
+                  disabled={isLoading}
+                  size="sm"
+                  className="text-xs bg-gray-900 hover:bg-gray-800 text-white"
+                >
+                  {t_institution.next}
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              ) : (
+                <Button 
+                  onClick={handleSave} 
+                  disabled={isLoading || updateLoading}
+                  size="sm"
+                  className="min-w-[120px] text-xs bg-gray-900 hover:bg-gray-800 text-white"
+                >
+                  {(isLoading || updateLoading) ? (
+                    <>
+                      <Save className="w-3 h-3 animate-spin mr-1" />
+                      {t_institution.creating}
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3 h-3 mr-1" />
+                      Update Institution
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </DialogContent>
