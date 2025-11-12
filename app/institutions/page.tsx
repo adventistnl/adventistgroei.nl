@@ -40,7 +40,6 @@ import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { UseTable } from "@/components/ui/use-table"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { InstitutionProfileHeader } from "@/components/shared"
 import { EntityInfoCard, EntityInfoCardAction } from "@/components/shared/entity-info-card"
 import { ContactViewEditModal } from "@/components/modals/contact"
 import { EditInstitutionModal, DeleteInstitutionModal, RegisterInstitutionModal } from "@/components/modals/institution"
@@ -60,10 +59,10 @@ import { AccessDenied } from "@/components/access/access-denied"
 export default function InstitutionsPage() {
   const { t } = useTranslation()
   const { institutions: institutionsData, currentInstitutionData, loading: isLoading, updateInstitutionContact, refetchInstitutionById} = useInstitution();
-  const institutionKPIs = useInstitutionKPI();
 
   // State
   const [refreshing, setRefreshing] = useState(false)
+  const [selectedInstitutionId, setSelectedInstitutionId] = useState<string | null>(null)
   
   // Modal states
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
@@ -71,7 +70,35 @@ export default function InstitutionsPage() {
   const [editInstitutionId, setEditInstitutionId] = useState<string | null>(null)
   const [isDeleteInstitutionModalOpen, setIsDeleteInstitutionModalOpen] = useState(false)
   const [deleteInstitutionId, setDeleteInstitutionId] = useState<string | null>(null)
-  
+
+  // Computed state - institution being displayed
+  const displayedInstitution = useMemo(() => {
+    if (selectedInstitutionId) {
+      return institutionsData.find(inst => inst.id === selectedInstitutionId) || null
+    }
+    return currentInstitutionData
+  }, [selectedInstitutionId, institutionsData, currentInstitutionData])
+  const institutionKPIs = useInstitutionKPI(displayedInstitution);
+
+  // Initialize selectedInstitutionId with currentInstitutionData.id when available
+  React.useEffect(() => {
+    if (currentInstitutionData && !selectedInstitutionId) {
+      setSelectedInstitutionId(currentInstitutionData.id)
+    }
+  }, [currentInstitutionData, selectedInstitutionId])
+
+  // Function to handle institution selection
+  const handleViewInstitutionDetails = (institutionId: string) => {
+    setSelectedInstitutionId(institutionId)
+    
+    // Scroll to top of the page smoothly
+    window.scrollTo({ 
+      top: 0, 
+      behavior: 'smooth' 
+    })
+    
+    toast.success(t('institutions.toasts.institution_details_loaded'))
+  }
 
 
   const breadcrumbs = useMemo(() => [
@@ -132,19 +159,19 @@ export default function InstitutionsPage() {
   }
 
   const handleEditInstitution = () => {
-    if (currentInstitutionData) {
+    if (displayedInstitution) {
       setIsEditInstitutionModalOpen(true)
     }
   }
 
   const handleDeleteInstitution = () => {
-    if (currentInstitutionData) {
+    if (displayedInstitution) {
       setIsDeleteInstitutionModalOpen(true)
     }
   }
 
   const handleViewInstitutionContact = () => {
-    if (currentInstitutionData) {
+    if (displayedInstitution) {
       // Sempre abrir o modal de contato, mesmo se não houver dados existentes
       // O modal permite criar novos dados de contato se não existirem
       setIsContactModalOpen(true)
@@ -205,15 +232,15 @@ export default function InstitutionsPage() {
 
   // Custom First Card com informações da instituição
   const customFirstCard = useMemo(() => {
-    if (!currentInstitutionData) return null
+    if (!displayedInstitution) return null
     
-    const isActive = !currentInstitutionData.is_deleted
+    const isActive = !displayedInstitution.is_deleted
     
     return (
       <EntityInfoCard
         headerTitle={t('institutions.entity_info.header_title')}
-        name={currentInstitutionData.name}
-        description={currentInstitutionData.denomination}
+        name={displayedInstitution.name}
+        description={displayedInstitution.denomination}
         icon={Building}
         actions={institutionCardActions}
         accentColor="gray"
@@ -229,19 +256,19 @@ export default function InstitutionsPage() {
             )
           },
           {
-            label: `${t('institutions.entity_info.established')} ${new Date(currentInstitutionData.created_at).getFullYear()}`,
+            label: `${t('institutions.entity_info.established')} ${new Date(displayedInstitution.created_at).getFullYear()}`,
             variant: "outline",
             className: "text-xs font-normal"
           },
           {
-            label: currentInstitutionData.language_preference.toUpperCase(),
+            label: displayedInstitution.language_preference.toUpperCase(),
             variant: "outline",
             className: "text-xs font-mono"
           }
         ]}
       />
     )
-  }, [currentInstitutionData, institutionCardActions, t])
+  }, [displayedInstitution, institutionCardActions, t])
 
   // Colunas da tabela
   const columns: ColumnDef<Institutions_institutions>[] = [
@@ -407,16 +434,6 @@ export default function InstitutionsPage() {
         return value === "true" ? isActive : !isActive
       },
     },
-    // {
-    //   id: "members",
-    //   accessorKey: "members_count",
-    //   header: t('institutions.table.members'),
-    //   cell: ({ row }) => (
-    //     <span className="font-medium">
-    //       {row.original.members_count.toLocaleString()} //TODO: add members_count
-    //     </span>
-    //   ),
-    // },
     {
       id: "actions",
       header: t('institutions.table.actions'),
@@ -432,8 +449,7 @@ export default function InstitutionsPage() {
             <DropdownMenuContent align="end">
               <DropdownMenuItem
                 onClick={() => {
-                  // Exemplo: abrir modal de detalhes
-                  toast.success(t('institutions.toasts.institution_details_loaded'));
+                  handleViewInstitutionDetails(institution.id)
                 }}
               >
                 <Eye className="mr-2 h-4 w-4" />
@@ -517,7 +533,7 @@ export default function InstitutionsPage() {
     )
   }
 
-  if (!currentInstitutionData) {
+  if (!displayedInstitution) {
     return <InstitutionsLoading />
   }
 
@@ -556,18 +572,6 @@ export default function InstitutionsPage() {
           </div>
         </div>
 
-        {/* Institution Profile Header */}
-        {/* {currentInstitutionData && (
-          <InstitutionProfileHeader
-            institution={currentInstitutionData}
-            onEdit={handleEditInstitution}
-            onDelete={handleDeleteInstitution}
-            onViewContact={handleViewInstitutionContact}
-            onManageChurches={() => {}}
-            onManageDepartments={() => {}}
-          />
-        )} */}
-
         {/* KPI Cards Carousel */}
         <KPICards 
           data={kpiCardsData}
@@ -586,7 +590,7 @@ export default function InstitutionsPage() {
             <DepartmentActivityChart loading={isLoading} />
             <UsersByRoleChart loading={isLoading} />
             <ChurchesByRegionChart 
-              churches={currentInstitutionData?.churches || undefined}
+              churches={displayedInstitution?.churches || undefined}
               loading={isLoading}
             />
           </ResponsiveGridCarousel>
@@ -614,15 +618,15 @@ export default function InstitutionsPage() {
         </Card>
 
         {/* Contact Modal */}
-        {currentInstitutionData && (
+        {displayedInstitution && (
           <ContactViewEditModal
             isOpen={isContactModalOpen}
             onOpenChange={setIsContactModalOpen}
-            contact={(currentInstitutionData.contact || null) as Contact | null}
-            entityName={currentInstitutionData.name || t('institutions.title')}
+            contact={(displayedInstitution.contact || null) as Contact | null}
+            entityName={displayedInstitution.name || t('institutions.title')}
             entityType={t('institutions.title')}
             onSave={handleContactSaved}
-            entityId={currentInstitutionData.id}
+            entityId={displayedInstitution.id}
             updateMutation={updateInstitutionContact}
           />
         )}
@@ -635,7 +639,7 @@ export default function InstitutionsPage() {
             if (!open) setEditInstitutionId(null);
           }}
           institution={
-            (institutionsData.find(i => i.id === (editInstitutionId || currentInstitutionData?.id)) || null) as any
+            (institutionsData.find(i => i.id === (editInstitutionId || displayedInstitution?.id)) || null) as any
           }
           onSave={handleInstitutionSaved}
         />
@@ -648,7 +652,7 @@ export default function InstitutionsPage() {
             if (!open) setDeleteInstitutionId(null);
           }}
           institution={
-            (institutionsData.find(i => i.id === (deleteInstitutionId || currentInstitutionData?.id)) || null) as any
+            (institutionsData.find(i => i.id === (deleteInstitutionId || displayedInstitution?.id)) || null) as any
           }
           onSuccess={handleInstitutionDeleted}
         />

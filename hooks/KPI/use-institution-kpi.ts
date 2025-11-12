@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useInstitution } from "@/contexts/institution-context";
+import { InstitutionById_institution } from "@/types/InstitutionById";
 
 export interface IInstitutionKPIs {
   totalChurches: number;
@@ -7,9 +7,7 @@ export interface IInstitutionKPIs {
   totalUsers: number;
 }
 
-export function useInstitutionKPI() {
-  const { currentInstitutionData } = useInstitution();
-
+export function useInstitutionKPI(currentInstitutionData: InstitutionById_institution | null) : IInstitutionKPIs {
   return useMemo<IInstitutionKPIs>(() => {
     if (!currentInstitutionData) {
       return {
