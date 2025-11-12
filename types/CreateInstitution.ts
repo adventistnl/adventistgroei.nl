@@ -23,6 +23,7 @@ export interface CreateInstitutionVariables {
   contactEmail?: string | null;
   contactPhone?: string | null;
   contactFullAddress?: string | null;
+  contactWebsite?: string | null;
   contactCountry?: string | null;
   languagePreference: string;
 }

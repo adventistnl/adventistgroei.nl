@@ -8,6 +8,7 @@ export const CREATE_INSTITUTION_MUTATION = gql`
     $contactEmail: String
     $contactPhone: String
     $contactFullAddress: String
+    $contactWebsite: String
     $contactCountry: String
     $languagePreference: String!
   ) {
@@ -16,7 +17,7 @@ export const CREATE_INSTITUTION_MUTATION = gql`
         name: $name
         denomination: $denomination
         description: $description
-        contact: { email: $contactEmail, phone: $contactPhone, full_address: $contactFullAddress, country: $contactCountry }
+        contact: { email: $contactEmail, phone: $contactPhone, full_address: $contactFullAddress, website: $contactWebsite, country: $contactCountry }
         language_preference: $languagePreference
       }
     ) {
