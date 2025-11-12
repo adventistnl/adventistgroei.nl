@@ -36,7 +36,7 @@ import { CalendarIcon, Users, Globe, Target, Clock, Plus, Check, Building, Langu
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
-import { LanguageSelector } from "@/components/language-selector"
+import { LanguageSelector } from "@/components/shared/language-selector"
 
 export interface EventFormData {
   title: string

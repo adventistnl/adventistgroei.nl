@@ -14,7 +14,7 @@ import toast from "react-hot-toast"
 import { InstitutionById_institution_churches, InstitutionById_institution_departments } from "@/types/InstitutionById"
 import { Institutions_institutions } from "@/types/Institutions"
 import { Role_role } from "@/types/Role"
-import { useLanguagePreferences } from '@/hooks/use-language-preferences';
+import { useLanguageOptions } from '@/hooks/use-language-preferences';
 
 export interface CreateUserModalProps {
   isOpen: boolean
@@ -48,7 +48,7 @@ export function CreateUserModal({
   onSuccess
 }: CreateUserModalProps) {
   const { t } = useTranslation()
-  const languageOptions = useLanguagePreferences(); // Usando o novo hook
+  const languageOptions = useLanguageOptions(); // Usando o novo hook
 
   const [isLoading, setIsLoading] = useState(false)
   const [userForm, setUserForm] = useState<UserFormData>({

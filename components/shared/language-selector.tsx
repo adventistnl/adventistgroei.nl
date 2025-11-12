@@ -12,16 +12,19 @@ import {
 } from "@/components/ui/dropdown-menu"
 import toast from "react-hot-toast"
 import { useI18nReady } from "@/hooks/use-i18n-ready"
-
-const languages = [
-  { code: 'pt', name: 'Português', initials: 'PT' },
-  { code: 'en', name: 'English', initials: 'EN' },
-  { code: 'nl', name: 'Nederlands', initials: 'NL' }
-]
+import { useLanguageOptions } from "@/hooks/use-language-preferences"
 
 export function LanguageSelector() {
   const { i18n, t } = useTranslation()
   const { isReady, hasTimedOut, currentLanguage } = useI18nReady()
+  const languageOptions = useLanguageOptions()
+
+  // Criar um mapeamento para incluir as iniciais baseadas nos dados do hook
+  const languagesWithInitials = languageOptions.map(lang => ({
+    code: lang.value,
+    name: lang.label,
+    initials: lang.value.toUpperCase()
+  }))
 
   const changeLanguage = (languageCode: string) => {
     // Verificação simplificada - o hook useI18nReady já garante que está pronto
@@ -31,7 +34,7 @@ export function LanguageSelector() {
       return
     }
     
-    const selectedLang = languages.find(lang => lang.code === languageCode)
+    const selectedLang = languagesWithInitials.find(lang => lang.code === languageCode)
     
     i18n.changeLanguage(languageCode)
       .then(() => {
@@ -63,14 +66,20 @@ export function LanguageSelector() {
     }
   }, [isReady, i18n])
 
-  const displayLanguage = languages.find(lang => lang.code === currentLanguage) || languages[1] // Default to EN
+  const displayLanguage = languagesWithInitials.find(lang => lang.code === currentLanguage) || 
+    languagesWithInitials.find(lang => lang.code === 'en') || 
+    languagesWithInitials[0] // Fallback para o primeiro idioma disponível
 
-  // Show minimal loading state with EN as default display
+  // Show minimal loading state with current language if available
   if (!isReady) {
+    const loadingLanguage = languagesWithInitials.find(lang => lang.code === currentLanguage) ||
+      languagesWithInitials.find(lang => lang.code === 'en') ||
+      { initials: 'EN' }
+    
     return (
       <Button variant="outline" size="sm" className="gap-2 h-9 px-3" disabled>
         <Globe className="h-4 w-4" />
-        <span className="text-sm font-medium">EN</span>
+        <span className="text-sm font-medium">{loadingLanguage.initials}</span>
       </Button>
     )
   }
@@ -86,7 +95,7 @@ export function LanguageSelector() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        {languages.map((language) => (
+        {languagesWithInitials.map((language) => (
           <DropdownMenuItem
             key={language.code}
             onClick={() => changeLanguage(language.code)}

@@ -36,7 +36,7 @@ import "@/lib/i18n"
 
 // Hooks
 import { useUserKPI } from "@/hooks/KPI/use-users-kpi"
-import { useLanguagePreferences } from '@/hooks/use-language-preferences'
+import { useLanguageOptions } from '@/hooks/use-language-preferences'
 
 // User Modals
 import { CreateUserModal, EditUserModal, DeleteUserModal } from "@/components/modals/user"
@@ -59,7 +59,7 @@ export default function UsersPage() {
   const router = useRouter()
   const { currentInstitutionData, institutions} = useInstitution()
   const { roles } = useRoles(); // Obtém os roles através do hook
-  const languageOptions = useLanguagePreferences(); // Usando o novo hook
+  const languageOptions = useLanguageOptions(); // Usando o novo hook
 
   // Data from institution context
   const churches = currentInstitutionData?.churches || []

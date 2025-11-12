@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { GlobalSearch, useGlobalSearch } from "@/components/global-search"
-import { LanguageSelector } from "@/components/language-selector"
+import { LanguageSelector } from "@/components/shared/language-selector"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { NotificationsSidebar } from "@/components/notifications-sidebar"
 import { ChatUsersSelector } from "@/components/chat/chat-users-selector"
@@ -21,7 +21,6 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { usePageContext } from "@/contexts/page-context"
 import { UserPlus, MessageCircle } from "lucide-react"
 import { mockUsers } from "@/data/mockData"
-import toast from "react-hot-toast"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 

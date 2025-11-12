@@ -6,7 +6,7 @@ import { useRouter, useParams } from "next/navigation"
 
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
-import { LanguageSelector } from "@/components/language-selector"
+import { LanguageSelector } from "@/components/shared/language-selector"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { AlertTriangle, ArrowLeft, CheckCircle, X, Shield, Crown, Settings, ChevronDown, ChevronRight, Save, Circle } from "lucide-react"

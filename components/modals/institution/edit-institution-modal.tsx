@@ -50,6 +50,7 @@ import { institutionTranslations } from "@/lib/translations/institutions"
 import { UpdateInstitutionVariables } from "@/types/UpdateInstitution"
 import { Institution } from "@/types/graphql-global-types"
 import { countries, states, cities } from "@/data/geographicData"
+import { LanguageSelectorInput } from "@/components/shared/language-selector-input"
 
 export interface EditInstitutionModalProps {
   isOpen: boolean
@@ -107,11 +108,6 @@ export function EditInstitutionModal({
         label: city.name
       }))
     : []
-
-  const languages = [
-    { value: "en", label: t_institution.languages.en },
-    { value: "nl", label: t_institution.languages.nl },
-  ]
 
   useEffect(() => {
     if (institution) {
@@ -365,31 +361,16 @@ export function EditInstitutionModal({
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="language" className="flex items-center gap-2 text-sm">
-                <Globe className="w-4 h-4 text-muted-foreground" />
-                {t_institution.languagePreference}
-              </Label>
-              <Select
-                value={formData.language_preference || ''}
-                onValueChange={(value: string) => handleInputChange('language_preference', value)}
-                disabled={isLoading}
-              >
-                <SelectTrigger className={`h-12 text-base ${errors.language_preference ? 'border-red-500' : ''}`}>
-                  <SelectValue placeholder={t_institution.languagePreferencePlaceholder} />
-                </SelectTrigger>
-                <SelectContent>
-                  {languages.map((language) => (
-                    <SelectItem key={language.value} value={language.value}>
-                      {language.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.language_preference && (
-                <p className="text-sm text-red-600">{errors.language_preference}</p>
-              )}
-            </div>
+            <LanguageSelectorInput
+              value={formData.language_preference || ''}
+              onValueChange={(value: string) => handleInputChange('language_preference', value)}
+              label={t_institution.languagePreference}
+              placeholder={t_institution.languagePreferencePlaceholder}
+              variant="select"
+              disabled={isLoading}
+              error={errors.language_preference}
+              required
+            />
           </div>
         )
 

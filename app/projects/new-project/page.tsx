@@ -89,7 +89,7 @@ import { cn } from "@/lib/utils"
 import { mockDepartments, mockUsers } from "@/data/mockData"
 import { useInstitution } from "@/contexts/institution-context"
 import { projectRegisterTranslations } from "@/lib/translations/project-register"
-import { LanguageSelector } from "@/components/language-selector"
+import { LanguageSelector } from "@/components/shared/language-selector"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   Carousel,

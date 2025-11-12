@@ -51,8 +51,9 @@ import { InstitutionById_institution_churches, InstitutionById_institution_depar
 import { Institutions_institutions } from "@/types/Institutions"
 import { Role_role } from "@/types/Role"
 import { useUser } from '@/hooks/use-user';
-import { useLanguagePreferences } from '@/hooks/use-language-preferences';
+import { useLanguageOptions } from '@/hooks/use-language-preferences';
 import { useInstitution } from "@/contexts/institution-context"
+import { LanguageSelectorInput } from "@/components/shared/language-selector-input"
 
 export interface EditUserModalProps {
   isOpen: boolean
@@ -93,7 +94,7 @@ export function EditUserModal({
   const { t } = useTranslation()
   const { updateUserById } = useUser({}); // Corrigido para usar o hook useUser
   const { refetchInstitutionById, currentInstitutionData } = useInstitution(); // Hook para refetch
-  const languageOptions = useLanguagePreferences(); // Usando o novo hook
+  const languageOptions = useLanguageOptions(); // Usando o novo hook
 
   // Get all departments from institution data (same as tables)
   const allInstitutionDepartments = currentInstitutionData?.departments || [];
@@ -117,7 +118,6 @@ export function EditUserModal({
 
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [unselectedRoles, setUnselectedRoles] = useState<string[]>([]);
-  const [openLanguage, setOpenLanguage] = useState(false);
   const [openInstitution, setOpenInstitution] = useState(false);
   const [openChurch, setOpenChurch] = useState(false);
   const [openDepartment, setOpenDepartment] = useState(false);
@@ -380,62 +380,16 @@ export function EditUserModal({
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="language" className="text-sm font-medium">
-                  Language Preference *
-                </Label>
-                <Popover open={openLanguage} onOpenChange={setOpenLanguage}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openLanguage}
-                      className={cn(
-                        "w-full justify-between font-normal",
-                        !userForm.language_preference && "text-muted-foreground",
-                        errors.language_preference && "border-red-500"
-                      )}
-                      disabled={isLoading}
-                    >
-                      {userForm.language_preference
-                        ? languageOptions.find(lang => lang.value === userForm.language_preference)?.label
-                        : "Select language"}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search language..." />
-                      <CommandList>
-                        <CommandEmpty>No language found</CommandEmpty>
-                        <CommandGroup>
-                          {languageOptions.map((lang) => (
-                            <CommandItem
-                              key={lang.value}
-                              value={lang.label}
-                              onSelect={() => {
-                                handleInputChange('language_preference', lang.value);
-                                setOpenLanguage(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  userForm.language_preference === lang.value ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {lang.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {errors.language_preference && (
-                  <p className="text-xs text-red-600">{errors.language_preference}</p>
-                )}
-              </div>
+              <LanguageSelectorInput
+                value={userForm.language_preference || ''}
+                onValueChange={(value: string) => handleInputChange('language_preference', value)}
+                label="Language Preference"
+                placeholder="Select language"
+                variant="combobox"
+                disabled={isLoading}
+                error={errors.language_preference}
+                required
+              />
 
               {/* Gender Selection */}
               <div className="space-y-3">

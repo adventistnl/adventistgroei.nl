@@ -34,6 +34,7 @@ import { Editor } from "@/components/blocks/editor-x/editor"
 import { format } from "date-fns"
 import { ptBR, enUS, es, fr, de } from "date-fns/locale"
 import { cn } from "@/lib/utils"
+import { LanguageSelectorInput } from "@/components/shared/language-selector-input"
 
 // Valor inicial padrão para o editor
 const initialEditorValue = {
@@ -143,7 +144,6 @@ export function CommunicationForm({
   regions = [],
   users = []
 }: CommunicationFormProps) {
-  const [openLanguage, setOpenLanguage] = React.useState(false)
   const [openCommunicationType, setOpenCommunicationType] = React.useState(false)
   const [openPriority, setOpenPriority] = React.useState(false)
   const [openTargetType, setOpenTargetType] = React.useState(false)
@@ -387,15 +387,6 @@ export function CommunicationForm({
   }
 
   // Opções de configuração
-  const languageOptions = [
-    { code: "nl", name: "Nederlands", flag: "🇳🇱" },
-    { code: "en", name: "English", flag: "🇬🇧" },
-    { code: "pt", name: "Português", flag: "🇵🇹" },
-    { code: "es", name: "Español", flag: "🇪🇸" },
-    { code: "fr", name: "Français", flag: "🇫🇷" },
-    { code: "de", name: "Deutsch", flag: "🇩🇪" }
-  ]
-
   const communicationTypeOptions = [
     { value: "announcement", name: "Anúncio", icon: Megaphone },
     { value: "invitation", name: "Convite", icon: Send },
@@ -634,60 +625,15 @@ export function CommunicationForm({
 
       {/* Communication Settings - Grid responsivo */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-        <div className="space-y-4">
-          <Label className="flex items-center gap-2 text-base font-medium">
-            <Globe className="w-4 h-4 text-muted-foreground" />
-            {getCurrentText('language')}
-          </Label>
-          <Popover open={openLanguage} onOpenChange={setOpenLanguage}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={openLanguage}
-                className={`h-12 w-full justify-between border-2 ${errors.language_preference ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors`}
-              >
-                {data.language_preference
-                  ? languageOptions.find((lang) => lang.code === data.language_preference)?.name
-                  : getCurrentText('selectLanguage')}
-                <Globe className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-full p-0" align="start">
-              <Command>
-                <CommandInput placeholder="Pesquisar idioma..." />
-                <CommandList>
-                  <CommandEmpty>Nenhum idioma encontrado.</CommandEmpty>
-                  <CommandGroup>
-                    {languageOptions.map((language) => (
-                      <CommandItem
-                        key={language.code}
-                        value={language.name}
-                        onSelect={() => {
-                          handleChange("language_preference", language.code)
-                          setOpenLanguage(false)
-                        }}
-                      >
-                        <div className="flex items-center gap-3 w-full">
-                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                            <span className="text-lg">{language.flag}</span>
-                          </div>
-                          <div className="flex-1">
-                            <span className="font-medium">{language.name}</span>
-                          </div>
-                          {data.language_preference === language.code && (
-                            <Check className="ml-auto h-4 w-4" />
-                          )}
-                        </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-          {errors.language_preference && <p className="text-sm text-red-600">{errors.language_preference}</p>}
-        </div>
+        <LanguageSelectorInput
+          value={data.language_preference || ''}
+          onValueChange={(value: string) => handleChange("language_preference", value)}
+          label={getCurrentText('language')}
+          placeholder={getCurrentText('selectLanguage')}
+          variant="combobox"
+          error={errors.language_preference}
+          required
+        />
 
         <div className="space-y-4">
           <Label className="flex items-center gap-2 text-base font-medium">

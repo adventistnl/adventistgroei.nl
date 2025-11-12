@@ -48,6 +48,7 @@ import {
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
 import { institutionTranslations } from "@/lib/translations/institutions"
+import { LanguageSelectorInput } from "@/components/shared/language-selector-input"
 
 export interface RegisterInstitutionFormData {
   name: string
@@ -86,7 +87,6 @@ export function RegisterInstitutionModal({
   
   // States for command popovers
   const [openCountry, setOpenCountry] = useState(false)
-  const [openLanguage, setOpenLanguage] = useState(false)
 
   const totalSteps = 3
   const { createInstitution, refetchInstitutions } = useInstitutions()
@@ -348,15 +348,6 @@ export function RegisterInstitutionModal({
     { value: "ZW", label: "Zimbabwe" }
   ]
 
-  const languages = [
-    { value: "en", label: t_institution.languages.en },
-    { value: "nl", label: t_institution.languages.nl },
-    { value: "es", label: t_institution.languages.es },
-    { value: "fr", label: t_institution.languages.fr },
-    { value: "de", label: t_institution.languages.de },
-    { value: "pt", label: t_institution.languages.pt }
-  ]
-
   useEffect(() => {
     if (isOpen) {
       setFormData({
@@ -611,64 +602,16 @@ export function RegisterInstitutionModal({
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="language_preference" className="flex items-center gap-2 text-sm">
-                  <Globe className="w-4 h-4 text-muted-foreground" />
-                  {t_institution.languagePreference} *
-                </Label>
-                <Popover open={openLanguage} onOpenChange={setOpenLanguage}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openLanguage}
-                      className={cn(
-                        "w-full h-12 text-base justify-between font-normal",
-                        !formData.language_preference && "text-muted-foreground",
-                        errors.language_preference && "border-red-500"
-                      )}
-                      disabled={isLoading}
-                    >
-                      {formData.language_preference
-                        ? languages.find(lang => lang.value === formData.language_preference)?.label
-                        : t_institution.languagePreferencePlaceholder}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder={t_institution.searchLanguage} />
-                      <CommandList>
-                        <CommandEmpty>{t_institution.noLanguageFound}</CommandEmpty>
-                        <CommandGroup>
-                          {languages.map((language) => (
-                            <CommandItem
-                              key={language.value}
-                              value={language.value}
-                              onSelect={(currentValue) => {
-                                handleInputChange('language_preference', currentValue as "en" | "nl")
-                                setOpenLanguage(false)
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  formData.language_preference === language.value ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
-                              {language.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {errors.language_preference && (
-                  <p className="text-sm text-red-600">{errors.language_preference}</p>
-                )}
-              </div>
+              <LanguageSelectorInput
+                value={formData.language_preference || ''}
+                onValueChange={(value: string) => handleInputChange('language_preference', value as "en" | "nl")}
+                label={t_institution.languagePreference}
+                placeholder={t_institution.languagePreferencePlaceholder}
+                variant="combobox"
+                disabled={isLoading}
+                error={errors.language_preference}
+                required
+              />
             </div>
           </div>
         )
