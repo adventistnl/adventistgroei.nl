@@ -46,13 +46,48 @@ import toast from "react-hot-toast"
 import { useRegions } from "@/hooks/use-regions"
 import { CreateRegion } from "@/types/CreateRegion"
 import { RegionCreateDto } from "@/types/graphql-global-types"
-import { 
-  netherlandsProvinces, 
-  Province, 
-  City,
-  regionColors,
-  Territory
-} from "@/lib/netherlands-provinces"
+import { states, cities } from "@/data/geographicData"
+
+// Types needed for this component
+interface City {
+  code: string
+  name: string
+}
+
+interface Province {
+  code: string
+  name: string
+  cities: City[]
+}
+
+interface Territory {
+  NL: {
+    [provinceCode: string]: string[]
+  }
+}
+
+// Region colors for visualization
+const regionColors = [
+  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+  '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
+]
+
+// Transform geographicData to the format expected by this component
+const transformToProvinces = (): Province[] => {
+  if (!states.NL) return []
+  
+  return states.NL.map(state => ({
+    code: state.code,
+    name: state.name,
+    cities: cities[state.code as keyof typeof cities]?.map(city => ({
+      code: city.code,
+      name: city.name
+    })) || []
+  }))
+}
+
+const netherlandsProvinces = transformToProvinces()
+
 import {
   ColorPicker,
   ColorPickerAlpha,
@@ -548,7 +583,7 @@ export function AddRegionModal({
                 </div>
               )}
 
-              {/* Province Selection List - Ultra Minimalista Monocromático com Grupos */}
+              {/* Province Selection List - Simplified */}
               <div className="border border-slate-200 rounded-lg max-h-[400px] overflow-y-auto">
                 {filteredProvinces.length === 0 ? (
                   <div className="text-center py-12">
@@ -558,82 +593,48 @@ export function AddRegionModal({
                     </p>
                   </div>
                 ) : (
-                  <>
-                    {/* Group by Region */}
-                    {(['north', 'east', 'west', 'south'] as const).map((region) => {
-                      const provincesInRegion = filteredProvinces.filter(p => p.region === region)
-                      if (provincesInRegion.length === 0) return null
-
-                      const regionLabel = {
-                        north: 'Norte',
-                        east: 'Leste',
-                        west: 'Oeste',
-                        south: 'Sul'
-                      }[region]
+                  <div className="divide-y divide-slate-100">
+                    {filteredProvinces.map((province) => {
+                      const isSelected = selectedProvinces.has(province.code)
 
                       return (
-                        <div key={region} className="border-b border-slate-100 last:border-b-0">
-                          {/* Section Header - Ultra Minimalista */}
-                          <div className="sticky top-0 bg-white px-4 py-2.5 border-b border-slate-100">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                {regionLabel}
-                              </span>
-                              <span className="text-xs text-slate-400">
-                                ({provincesInRegion.length})
-                              </span>
+                        <button
+                          key={province.code}
+                          onClick={() => toggleProvinceSimple(province.code)}
+                          className={`w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors ${
+                            isSelected ? 'bg-slate-50' : ''
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-colors ${
+                              isSelected ? 'bg-slate-900' : 'bg-slate-300'
+                            }`} />
+                            
+                            <div className="text-left">
+                              <p className={`text-sm transition-colors ${
+                                isSelected ? 'font-semibold text-slate-900' : 'font-medium text-slate-700'
+                              }`}>
+                                {province.name}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {province.cities.length} cidades
+                              </p>
                             </div>
                           </div>
 
-                          {/* Provinces in this region */}
-                          <div className="divide-y divide-slate-100">
-                            {provincesInRegion.map((province) => {
-                              const isSelected = selectedProvinces.has(province.code)
-
-                              return (
-                                <button
-                                  key={province.code}
-                                  onClick={() => toggleProvinceSimple(province.code)}
-                                  className={`w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors ${
-                                    isSelected ? 'bg-slate-50' : ''
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    {/* Círculo monocromático simples */}
-                                    <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-colors ${
-                                      isSelected ? 'bg-slate-900' : 'bg-slate-300'
-                                    }`} />
-                                    
-                                    <div className="text-left">
-                                      <p className={`text-sm transition-colors ${
-                                        isSelected ? 'font-semibold text-slate-900' : 'font-medium text-slate-700'
-                                      }`}>
-                                        {province.name}
-                                      </p>
-                                      <p className="text-xs text-slate-500">
-                                        {province.cities.length} cidades
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  {/* Checkbox minimalista */}
-                                  <div className={`w-4 h-4 rounded border transition-all ${
-                                    isSelected 
-                                      ? 'bg-slate-900 border-slate-900' 
-                                      : 'border-slate-300'
-                                  } flex items-center justify-center`}>
-                                    {isSelected && (
-                                      <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                                    )}
-                                  </div>
-                                </button>
-                              )
-                            })}
+                          <div className={`w-4 h-4 rounded border transition-all ${
+                            isSelected 
+                              ? 'bg-slate-900 border-slate-900' 
+                              : 'border-slate-300'
+                          } flex items-center justify-center`}>
+                            {isSelected && (
+                              <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                            )}
                           </div>
-                        </div>
+                        </button>
                       )
                     })}
-                  </>
+                  </div>
                 )}
               </div>
 

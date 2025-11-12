@@ -47,6 +47,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AppLayout } from "@/components/layouts/app-layout"
+import { countries } from "@/data/geographicData"
 
 const volunteers = [
   {
@@ -246,7 +247,7 @@ export default function VolunteersPage() {
     newsContent: "",
   })
 
-  const countries = [
+  const countriesForMission = [
     "Brazil",
     "Mexico",
     "India",
@@ -440,7 +441,7 @@ export default function VolunteersPage() {
                     <SelectValue placeholder="Select a country" />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
-                    {countries.map((country) => (
+                    {countriesForMission.map((country) => (
                       <SelectItem key={country} value={country}>
                         {country}
                       </SelectItem>

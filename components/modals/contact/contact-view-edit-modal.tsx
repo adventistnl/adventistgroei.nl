@@ -33,11 +33,27 @@ import {
   ChevronDown,
   FileText,
   Copy,
-  Check
+  Check,
+  ChevronsUpDown
 } from "lucide-react"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
 import { contactTranslations } from "@/lib/translations/contact"
 import { useMutation } from "@apollo/client/react"
+import { countries, states, cities } from "@/data/geographicData"
 
 import type { OperationVariables } from "@apollo/client"
 import { Contact } from "@/types/graphql-global-types"
@@ -80,11 +96,39 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
     system: false
   })
 
+  // States for geographic selectors
+  const [openCountry, setOpenCountry] = useState(false)
+  const [openState, setOpenState] = useState(false)
+  const [openCity, setOpenCity] = useState(false)
+  const [selectedState, setSelectedState] = useState("")
+
   const totalSteps = 3
 
   // Get translations for current language
   const currentLanguage = i18n?.language || 'en'
   const t_contact = contactTranslations[currentLanguage as keyof typeof contactTranslations] || contactTranslations.en
+
+  // Geographic data options
+  const countryOptions = countries.map(country => ({
+    value: country.code,
+    label: country.name
+  }))
+
+  // Get states for selected country
+  const statesOptions = formData.country && states[formData.country as keyof typeof states] 
+    ? states[formData.country as keyof typeof states].map(state => ({
+        value: state.code,
+        label: state.name
+      }))
+    : []
+
+  // Get cities for selected state
+  const citiesOptions = selectedState && cities[selectedState as keyof typeof cities]
+    ? cities[selectedState as keyof typeof cities].map(city => ({
+        value: city.code,
+        label: city.name
+      }))
+    : []
 
   useEffect(() => {
     if (contact) {
@@ -102,6 +146,21 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
         notes: contact.notes || '',
         is_primary: contact.is_primary || false
       })
+
+      // Initialize selectedState based on existing data if available
+      // Find state code from country and city combination
+      if (contact.country && contact.city) {
+        const countryStates = states[contact.country as keyof typeof states]
+        if (countryStates) {
+          for (const state of countryStates) {
+            const stateCities = cities[state.code as keyof typeof cities]
+            if (stateCities && stateCities.some(city => city.name === contact.city)) {
+              setSelectedState(state.code)
+              break
+            }
+          }
+        }
+      }
     } else {
       // Inicializar com dados vazios para criar novo contato
       setFormData({
@@ -118,6 +177,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
         notes: '',
         is_primary: true
       })
+      setSelectedState("")
     }
   }, [contact])
 
@@ -135,6 +195,12 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
       ...prev,
       [field]: value
     }))
+
+    // Reset dependent fields when country changes
+    if (field === 'country') {
+      setSelectedState("")
+      setFormData(prev => ({ ...prev, city: "" }))
+    }
 
     // Clear error when user starts typing
     if (errors[field]) {
@@ -626,29 +692,179 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
                   <Globe className="w-4 h-4 text-gray-500" />
                   {t_contact.country || "Country"}
                 </Label>
-                <Input
-                  id="country"
-                  value={formData.country || ''}
-                  onChange={(e) => handleInputChange('country', e.target.value)}
-                  placeholder={t_contact.countryPlaceholder || "Enter country"}
-                  disabled={isLoading}
-                  className="h-12 text-base border-gray-300 focus:border-gray-500 focus:ring-gray-500"
-                />
+                <Popover open={openCountry} onOpenChange={setOpenCountry}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openCountry}
+                      className={cn(
+                        "w-full h-12 text-base justify-between font-normal",
+                        !formData.country && "text-muted-foreground"
+                      )}
+                      disabled={isLoading}
+                    >
+                      {formData.country
+                        ? countryOptions.find(country => country.value === formData.country)?.label
+                        : (t_contact.countryPlaceholder || "Select country")}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search countries..." />
+                      <CommandList>
+                        <CommandEmpty>No country found.</CommandEmpty>
+                        <CommandGroup>
+                          {countryOptions.map((country) => (
+                            <CommandItem
+                              key={country.value}
+                              value={country.value}
+                              onSelect={(currentValue) => {
+                                handleInputChange('country', currentValue === formData.country ? "" : currentValue)
+                                setOpenCountry(false)
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.country === country.value ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {country.label}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
+
+              {/* State/Province Selector */}
+              {formData.country && statesOptions.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="state" className="flex items-center gap-2 text-sm text-gray-600">
+                    <MapPin className="w-4 h-4 text-gray-500" />
+                    Estado/Província
+                  </Label>
+                  <Popover open={openState} onOpenChange={setOpenState}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openState}
+                        className={cn(
+                          "w-full h-12 text-base justify-between font-normal",
+                          !selectedState && "text-muted-foreground"
+                        )}
+                        disabled={isLoading}
+                      >
+                        {selectedState
+                          ? statesOptions.find(state => state.value === selectedState)?.label
+                          : "Select state/province"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search states..." />
+                        <CommandList>
+                          <CommandEmpty>No state found.</CommandEmpty>
+                          <CommandGroup>
+                            {statesOptions.map((state) => (
+                              <CommandItem
+                                key={state.value}
+                                value={state.value}
+                                onSelect={(currentValue) => {
+                                  setSelectedState(currentValue === selectedState ? "" : currentValue)
+                                  handleInputChange('city', "") // Reset city when state changes
+                                  setOpenState(false)
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    selectedState === state.value ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {state.label}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="city" className="flex items-center gap-2 text-sm text-gray-600">
                   <Building className="w-4 h-4 text-gray-500" />
                   {t_contact.city || "City"}
                 </Label>
-                <Input
-                  id="city"
-                  value={formData.city || ''}
-                  onChange={(e) => handleInputChange('city', e.target.value)}
-                  placeholder={t_contact.cityPlaceholder || "Enter city"}
-                  disabled={isLoading}
-                  className="h-12 text-base border-gray-300 focus:border-gray-500 focus:ring-gray-500"
-                />
+                {citiesOptions.length > 0 ? (
+                  <Popover open={openCity} onOpenChange={setOpenCity}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openCity}
+                        className={cn(
+                          "w-full h-12 text-base justify-between font-normal",
+                          !formData.city && "text-muted-foreground"
+                        )}
+                        disabled={isLoading || !selectedState}
+                      >
+                        {formData.city
+                          ? citiesOptions.find(city => city.value === formData.city)?.label ||
+                            citiesOptions.find(city => city.label === formData.city)?.label ||
+                            formData.city
+                          : (t_contact.cityPlaceholder || "Select city")}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search cities..." />
+                        <CommandList>
+                          <CommandEmpty>No city found.</CommandEmpty>
+                          <CommandGroup>
+                            {citiesOptions.map((city) => (
+                              <CommandItem
+                                key={city.value}
+                                value={city.value}
+                                onSelect={(currentValue) => {
+                                  const selectedCity = citiesOptions.find(c => c.value === currentValue)
+                                  handleInputChange('city', selectedCity?.label || currentValue)
+                                  setOpenCity(false)
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    (formData.city === city.value || formData.city === city.label) ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {city.label}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                ) : (
+                  <Input
+                    id="city"
+                    value={formData.city || ''}
+                    onChange={(e) => handleInputChange('city', e.target.value)}
+                    placeholder={t_contact.cityPlaceholder || "Enter city"}
+                    disabled={isLoading}
+                    className="h-12 text-base border-gray-300 focus:border-gray-500 focus:ring-gray-500"
+                  />
+                )}
               </div>
 
               <div className="space-y-2">

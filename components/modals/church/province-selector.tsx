@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/command"
 import { MapPin, Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { netherlandsProvinces } from "@/lib/netherlands-provinces"
+import { states } from "@/data/geographicData"
 import { churchTranslations } from "@/lib/translations/churches"
 
 interface ProvinceSelectorProps {
@@ -62,7 +62,7 @@ export function ProvinceSelector({
             disabled={isLoading}
           >
             {value
-              ? netherlandsProvinces.find(p => p.code === value)?.name
+              ? states.NL?.find(p => p.code === value)?.name
               : tChurch.placeholders.province}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -76,40 +76,28 @@ export function ProvinceSelector({
             />
             <CommandList>
               <CommandEmpty>{tChurch.province_selector.no_province_found}</CommandEmpty>
-              {(['north', 'east', 'west', 'south'] as const).map((region) => {
-                const provincesInRegion = netherlandsProvinces.filter(p => p.region === region)
-                if (provincesInRegion.length === 0) return null
-
-                const regionLabel = tChurch.regions[region]
-
-                return (
-                  <CommandGroup key={region} heading={regionLabel}>
-                    {provincesInRegion.map((province) => (
-                      <CommandItem
-                        key={province.code}
-                        value={province.name}
-                        onSelect={() => {
-                          onChange(province.code)
-                          setOpen(false)
-                          setSearchQuery("")
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            value === province.code ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        <div className="w-1.5 h-1.5 rounded-full bg-slate-400 mr-2" />
-                        {province.name}
-                        <span className="ml-auto text-xs text-slate-500">
-                          {province.cities.length} {tChurch.province_selector.cities}
-                        </span>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                )
-              })}
+              <CommandGroup heading="Províncias">
+                {states.NL?.map((province) => (
+                  <CommandItem
+                    key={province.code}
+                    value={province.name}
+                    onSelect={() => {
+                      onChange(province.code)
+                      setOpen(false)
+                      setSearchQuery("")
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === province.code ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-400 mr-2" />
+                    {province.name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
             </CommandList>
           </Command>
         </PopoverContent>
