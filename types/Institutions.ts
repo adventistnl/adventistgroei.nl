@@ -333,6 +333,18 @@ export interface Institutions_institutions_departments {
   users: Institutions_institutions_departments_users[] | null;
 }
 
+export interface Institutions_institutions_churchesKpiData {
+  __typename: "ChurchKPIData";
+  totalChurches: number;
+  totalMembers: number;
+  totalDepartments: number;
+  totalSubsidyRequests: number;
+  totalBudget: number;
+  totalUsedBudget: number;
+  budgetUtilization: number;
+  avgMembersPerChurch: number;
+}
+
 export interface Institutions_institutions {
   __typename: "Institution";
   id: string;
@@ -358,6 +370,7 @@ export interface Institutions_institutions {
   users: Institutions_institutions_users[] | null;
   churches: Institutions_institutions_churches[] | null;
   departments: Institutions_institutions_departments[] | null;
+  churchesKpiData: Institutions_institutions_churchesKpiData;
 }
 
 export interface Institutions {

@@ -333,6 +333,18 @@ export interface InstitutionFragment_departments {
   users: InstitutionFragment_departments_users[] | null;
 }
 
+export interface InstitutionFragment_churchesKpiData {
+  __typename: "ChurchKPIData";
+  totalChurches: number;
+  totalMembers: number;
+  totalDepartments: number;
+  totalSubsidyRequests: number;
+  totalBudget: number;
+  totalUsedBudget: number;
+  budgetUtilization: number;
+  avgMembersPerChurch: number;
+}
+
 export interface InstitutionFragment {
   __typename: "Institution";
   id: string;
@@ -358,4 +370,5 @@ export interface InstitutionFragment {
   users: InstitutionFragment_users[] | null;
   churches: InstitutionFragment_churches[] | null;
   departments: InstitutionFragment_departments[] | null;
+  churchesKpiData: InstitutionFragment_churchesKpiData;
 }

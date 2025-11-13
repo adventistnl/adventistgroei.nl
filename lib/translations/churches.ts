@@ -46,10 +46,10 @@ export const churchTranslations = {
       of: "of",
       step_1_title: "Basic Information",
       step_1_description: "Enter the church name, select the province, and type",
-      step_2_title: "Contact Details",
-      step_2_description: "Add contact information for the church (optional)",
-      step_3_title: "Review & Confirm",
-      step_3_description: "Please review the information before",
+      step_2_title: "Geographic Data",
+      step_2_description: "Select province, city, and region (province and city required)",
+      step_3_title: "Contact Details",
+      step_3_description: "Add contact information for the church (optional)",
       step_3_description_create: "creating the church",
       step_3_description_update: "updating the church"
     },
@@ -58,6 +58,7 @@ export const churchTranslations = {
     fields: {
       name: "Church Name",
       province: "Province",
+      city: "City",
       region: "Region",
       contact_name: "Contact Name",
       contact_email: "Contact Email",
@@ -84,6 +85,7 @@ export const churchTranslations = {
     placeholders: {
       name: "Enter church name",
       province: "Select province",
+      city: "Select city",
       region: "Select region",
       contact_name: "Enter contact name",
       contact_email: "Enter email address",
@@ -111,7 +113,8 @@ export const churchTranslations = {
       create_church: "Create Church",
       update_church: "Update Church",
       creating: "Creating...",
-      updating: "Updating..."
+      updating: "Updating...",
+      clear: "Clear"
     },
     
     // Regions
@@ -211,10 +214,10 @@ export const churchTranslations = {
       of: "van",
       step_1_title: "Basis Informatie",
       step_1_description: "Voer de kerknaam in, selecteer de provincie en type",
-      step_2_title: "Contactgegevens",
-      step_2_description: "Voeg contactinformatie toe voor de kerk (optioneel)",
-      step_3_title: "Controleren & Bevestigen",
-      step_3_description: "Controleer de informatie voordat u",
+      step_2_title: "Geografische Gegevens",
+      step_2_description: "Selecteer provincie, stad en regio (provincie en stad verplicht)",
+      step_3_title: "Contactgegevens",
+      step_3_description: "Voeg contactinformatie toe voor de kerk (optioneel)",
       step_3_description_create: "de kerk aanmaakt",
       step_3_description_update: "de kerk bijwerkt"
     },
@@ -223,6 +226,7 @@ export const churchTranslations = {
     fields: {
       name: "Kerknaam",
       province: "Provincie",
+      city: "Stad",
       region: "Regio",
       contact_name: "Contactnaam",
       contact_email: "Contact E-mail",
@@ -249,6 +253,7 @@ export const churchTranslations = {
     placeholders: {
       name: "Voer kerknaam in",
       province: "Selecteer provincie",
+      city: "Selecteer stad",
       region: "Selecteer regio",
       contact_name: "Voer contactnaam in",
       contact_email: "Voer e-mailadres in",
@@ -276,7 +281,8 @@ export const churchTranslations = {
       create_church: "Kerk Aanmaken",
       update_church: "Kerk Bijwerken",
       creating: "Aanmaken...",
-      updating: "Bijwerken..."
+      updating: "Bijwerken...",
+      clear: "Wissen"
     },
     
     // Regions
@@ -388,6 +394,7 @@ export const churchTranslations = {
     fields: {
       name: "Nome da Igreja",
       province: "Província",
+      city: "Cidade",
       region: "Região",
       contact_name: "Nome do Contato",
       contact_email: "E-mail de Contato",
@@ -414,6 +421,7 @@ export const churchTranslations = {
     placeholders: {
       name: "Digite o nome da igreja",
       province: "Selecione a província",
+      city: "Selecione a cidade",
       region: "Selecione a região",
       contact_name: "Digite o nome do contato",
       contact_email: "Digite o endereço de e-mail",
@@ -441,7 +449,8 @@ export const churchTranslations = {
       create_church: "Criar Igreja",
       update_church: "Atualizar Igreja",
       creating: "Criando...",
-      updating: "Atualizando..."
+      updating: "Atualizando...",
+      clear: "Limpar"
     },
     
     // Regions

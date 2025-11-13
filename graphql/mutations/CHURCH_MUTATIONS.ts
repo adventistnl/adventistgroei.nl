@@ -37,14 +37,14 @@ export const CREATE_CHURCH_MUTATION = gql`
 
 export const UPDATE_CHURCH_MUTATION = gql`
   mutation UpdateChurch(
-    $id: ID!
-    $institution_id: String
-    $name: String
+    $id: String!
+    $institution_id: String!
+    $name: String!
     $region_id: String
-    $email: String
-    $phone: String
-    $contactName: String
-    $city: String
+    $email: String!
+    $phone: String!
+    $contactName: String!
+    $city: String!
     $type: ChurchType
   ) {
     updateChurch(

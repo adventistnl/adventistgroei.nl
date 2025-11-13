@@ -215,6 +215,19 @@ export const CHURCH_FRAGMENT = gql`
   ${DEPARTMENT_FRAGMENT}
 `;
 
+export const CHURCH_KPI_DATA_FRAGMENT = gql`
+  fragment ChurchKpiDataFragment on ChurchKPIData {
+    totalChurches
+    totalMembers
+    totalDepartments
+    totalSubsidyRequests
+    totalBudget
+    totalUsedBudget
+    budgetUtilization
+    avgMembersPerChurch
+  }
+`;
+
 export const INSTITUTION_FRAGMENT = gql`
   fragment InstitutionFragment on Institution {
     id
@@ -254,7 +267,11 @@ export const INSTITUTION_FRAGMENT = gql`
     departments {
       ...DepartmentFragment
     }
+    churchesKpiData {
+     ...ChurchKpiDataFragment
+    }
   }
+  ${CHURCH_KPI_DATA_FRAGMENT}
   ${CONTACT_FRAGMENT}
   ${SUBSIDY_REQUEST_FRAGMENT}
   ${DIRECT_MESSAGE_FRAGMENT}

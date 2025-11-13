@@ -16,15 +16,18 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
-  Check
+  Check,
+  AlertCircle
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { useChurches } from "@/hooks/use-churches"
+import { useRegions } from "@/hooks/use-regions"
+import { useInstitution } from "@/contexts/institution-context"
 import { CreateChurch, CreateChurchVariables } from "@/types/CreateChurch"
 import { cn } from "@/lib/utils"
-import { netherlandsProvinces } from "@/lib/netherlands-provinces"
 import { ChurchTypeSelector, getChurchTypeOptions } from "./church-type-selector"
-import { ProvinceSelector } from "./province-selector"
+import { RegionSelector } from "./region-selector"
+import { ProvinceAndCitySelector } from "./province-and-city-selector"
 import { ChurchType } from "@/types/graphql-global-types"
 import { churchTranslations } from "@/lib/translations/churches"
 export interface AddChurchModalProps {
@@ -42,6 +45,8 @@ export function AddChurchModal({
 }: AddChurchModalProps) {
   const { t, i18n } = useTranslation()
   const { createChurch } = useChurches()
+  const { regions, regionsLoading } = useRegions()
+  const { currentInstitutionData } = useInstitution()
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState<CreateChurchVariables>({
@@ -55,12 +60,16 @@ export function AddChurchModal({
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSpecialChurch, setIsSpecialChurch] = useState(false)
+  const [province, setProvince] = useState("")
 
   // Get translations for current language
   const currentLanguage = i18n?.language || 'en'
   const tChurch = churchTranslations[currentLanguage as keyof typeof churchTranslations] || churchTranslations.en
 
-  const totalSteps = 3 // Basic Info, Contact, Review
+  // Get institution country for province/city selector
+  const institutionCountry = currentInstitutionData?.contact?.country || 'NL'
+
+  const totalSteps = 3 // Basic Data, Geographic Data, Contact Data
 
   useEffect(() => {
     if (isOpen) {
@@ -77,6 +86,7 @@ export function AddChurchModal({
       setErrors({})
       setCurrentStep(1)
       setIsSpecialChurch(false)
+      setProvince("")
     }
   }, [isOpen, institutionId])
 
@@ -99,14 +109,11 @@ export function AddChurchModal({
     const newErrors: Record<string, string> = {}
 
     if (step === 1) {
+      // Step 1: Basic data
       if (!formData.name?.trim()) {
         newErrors.name = tChurch.validation.name_required
       } else if (formData.name.trim().length < 2) {
         newErrors.name = tChurch.validation.name_min_length
-      }
-
-      if (!formData.region_id) {
-        newErrors.region_id = tChurch.validation.province_required
       }
 
       // Type is only required if it's a special church
@@ -115,16 +122,26 @@ export function AddChurchModal({
       }
     }
 
-    // Step 2 (contact) is optional - no validation needed
+    if (step === 2) {
+      // Step 2: Geographic data - province and city are required, region is optional
+      if (!province) {
+        newErrors.province = tChurch.validation.province_required
+      }
+      // City validation can be added if needed
+    }
 
-    // Step 3 (review) - final validation before save
     if (step === 3) {
-      // Re-validate step 1 fields only
+      // Step 3: Contact data - all optional
+      // No validations needed
+    }
+
+    // Final validation before save
+    if (step === 99) { // Special value for final validation
       if (!formData.name?.trim()) {
         newErrors.name = tChurch.validation.name_required
       }
-      if (!formData.region_id) {
-        newErrors.region_id = tChurch.validation.province_required
+      if (!province) {
+        newErrors.province = tChurch.validation.province_required
       }
       if (isSpecialChurch && !formData.type) {
         newErrors.type = tChurch.validation.type_required
@@ -132,7 +149,6 @@ export function AddChurchModal({
     }
 
     setErrors(newErrors)
-
     return Object.keys(newErrors).length === 0
   }
 
@@ -152,10 +168,8 @@ export function AddChurchModal({
   }
 
   const handleSave = async () => {
-    if (!validateStep(1) || !validateStep(3)) {
+    if (!validateStep(99)) {
       toast.error(tChurch.validation.please_fix_errors)
-
-      // Log errors for debugging
       console.error("Validation errors:", errors);
       return;
     }
@@ -220,6 +234,7 @@ export function AddChurchModal({
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
+        // Step 1: Basic Data (Name, Church Type)
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
@@ -246,13 +261,6 @@ export function AddChurchModal({
                 )}
               </div>
 
-              <ProvinceSelector
-                value={formData.region_id || ''}
-                onChange={(value) => handleInputChange('region_id', value)}
-                isLoading={isLoading}
-                error={errors.region_id}
-              />
-
               <ChurchTypeSelector
                 isSpecialChurch={isSpecialChurch}
                 selectedType={formData.type as any}
@@ -266,11 +274,45 @@ export function AddChurchModal({
         )
 
       case 2:
+        // Step 2: Geographic Data (Province, City, Region)
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
               <h3 className="text-lg font-medium text-foreground">{tChurch.steps.step_2_title}</h3>
               <p className="text-sm text-muted-foreground">{tChurch.steps.step_2_description}</p>
+            </div>
+            
+            <div className="space-y-4 max-w-md mx-auto">
+              <ProvinceAndCitySelector
+                provinceValue={province}
+                onProvinceChangeAction={(value: string) => setProvince(value)}
+                cityValue={formData.city || ''}
+                onCityChangeAction={(value: string) => handleInputChange('city', value)}
+                countryCode={institutionCountry}
+                isLoading={isLoading || regionsLoading}
+                provinceError={errors.province}
+                cityError={errors.city}
+              />
+
+              <RegionSelector
+                value={formData.region_id || ''}
+                onChange={(value: string) => handleInputChange('region_id', value)}
+                regions={regions}
+                isLoading={regionsLoading}
+                error={errors.region_id}
+                isOptional={true}
+              />
+            </div>
+          </div>
+        )
+
+      case 3:
+        // Step 3: Contact Data (Name, Email, Phone, City)
+        return (
+          <div className="space-y-6 animate-in fade-in-0 duration-300">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-medium text-foreground">{tChurch.steps.step_3_title}</h3>
+              <p className="text-sm text-muted-foreground">{tChurch.steps.step_3_description}</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
@@ -328,103 +370,6 @@ export function AddChurchModal({
                   <p className="text-sm text-red-600">{errors.phone}</p>
                 )}
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="contact_city" className="flex items-center gap-2 text-sm">
-                  <MapPin className="w-4 h-4 text-muted-foreground" />
-                  {tChurch.fields.contact_city}
-                </Label>
-                <Input
-                  id="contact_city"
-                  value={formData.city || ''}
-                  onChange={(e) => handleInputChange('city', e.target.value)}
-                  placeholder={tChurch.placeholders.contact_city}
-                  disabled={isLoading}
-                  className={`h-10 ${errors.city ? 'border-red-500' : ''}`}
-
-                />
-                {errors.city && (
-                  <p className="text-sm text-red-600">{errors.city}</p>
-                )}
-              </div>
-            </div>
-          </div>
-        )
-
-      case 3:
-        // Step 3: Review (Minimalist like department modal)
-        const selectedProvince = netherlandsProvinces.find(p => p.code === formData.region_id)
-        const churchTypeOptions = getChurchTypeOptions(currentLanguage)
-        const selectedType = churchTypeOptions.find(t => t.value === (formData.type as any))
-        
-        return (
-          <div className="space-y-6 animate-in fade-in-0 duration-300">
-            <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">{tChurch.steps.step_3_title}</h3>
-              <p className="text-sm text-muted-foreground">{tChurch.steps.step_3_description} {tChurch.steps.step_3_description_create}</p>
-            </div>
-            
-            <div className="space-y-6 max-w-lg mx-auto">
-              {/* Basic Information */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{tChurch.sections.basic_info}</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between py-2 border-b border-border/50">
-                    <span className="text-sm text-muted-foreground">{tChurch.fields.name}</span>
-                    <span className="text-sm font-medium text-right max-w-[60%]">{formData.name}</span>
-                  </div>
-                  <div className="flex justify-between py-2 border-b border-border/50">
-                    <span className="text-sm text-muted-foreground">{tChurch.fields.province}</span>
-                    <span className="text-sm font-medium">{selectedProvince?.name || '-'}</span>
-                  </div>
-                  {isSpecialChurch && selectedType && (
-                    <div className="flex justify-between py-2 border-b border-border/50">
-                      <span className="text-sm text-muted-foreground">{tChurch.fields.church_type}</span>
-                      <div className="flex items-center gap-2">
-                        {selectedType.value === ChurchType.Plant ? (
-                          <div className="w-2 h-2 rounded-full bg-green-500" />
-                        ) : (
-                          <div className="w-2 h-2 rounded-full bg-orange-500" />
-                        )}
-                        <span className="text-sm font-semibold">{selectedType.label}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Contact Information */}
-              {(formData.contactName || formData.email || formData.phone || formData.city) && (
-                <div className="space-y-3">
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{tChurch.sections.contact_info}</h4>
-                  <div className="space-y-2">
-                    {formData.contactName && (
-                      <div className="flex justify-between py-2 border-b border-border/50">
-                        <span className="text-sm text-muted-foreground">{tChurch.fields.contact_name}</span>
-                        <span className="text-sm font-medium">{formData.contactName}</span>
-                      </div>
-                    )}
-                    {formData.email && (
-                      <div className="flex justify-between py-2 border-b border-border/50">
-                        <span className="text-sm text-muted-foreground">{tChurch.fields.contact_email}</span>
-                        <span className="text-sm font-medium">{formData.email}</span>
-                      </div>
-                    )}
-                    {formData.phone && (
-                      <div className="flex justify-between py-2 border-b border-border/50">
-                        <span className="text-sm text-muted-foreground">{tChurch.fields.contact_phone}</span>
-                        <span className="text-sm font-medium">{formData.phone}</span>
-                      </div>
-                    )}
-                    {formData.city && (
-                      <div className="flex justify-between py-2 border-b border-border/50">
-                        <span className="text-sm text-muted-foreground">{tChurch.fields.contact_city}</span>
-                        <span className="text-sm font-medium">{formData.city}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )
@@ -492,7 +437,7 @@ export function AddChurchModal({
             </div>
 
             <div className="flex gap-2">
-              {currentStep === 2 && (
+              {currentStep === 3 && (
                 <Button 
                   variant="ghost"
                   onClick={handleSkipContacts} 

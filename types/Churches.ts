@@ -3,6 +3,8 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { ChurchType } from "./globalTypes";
+
 // ====================================================
 // GraphQL query operation: Churches
 // ====================================================
@@ -14,6 +16,7 @@ export interface Churches_churches {
   name: string;
   region_id: string | null;
   contact_id: string | null;
+  type: ChurchType | null;
   created_at: any;
   updated_at: any;
   created_by: string;

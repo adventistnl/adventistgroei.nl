@@ -192,7 +192,6 @@ export default function ChurchesPage() {
   const { i18n } = useTranslation()
   const { currentInstitutionData, refetchInstitutionById } = useInstitution();
   const churches = React.useMemo(() => currentInstitutionData?.churches || [], [currentInstitutionData]);
-  
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   
@@ -229,26 +228,7 @@ export default function ChurchesPage() {
 
   // Estatísticas calculadas dos dados
   type ChurchType = typeof churches extends (infer U)[] ? U : any;
-  const kpiData = useMemo(() => {
-    const totalChurches = churches.length;
-    const totalMembers = churches.reduce((sum: number, c: ChurchType) => sum + ((c as any).members_count || 0), 0);
-    const totalDepartments = churches.reduce((sum: number, c: ChurchType) => sum + ((c as any).departments_count || 0), 0);
-    const totalSubsidyRequests = churches.reduce((sum: number, c: ChurchType) => sum + ((c as any).subsidy_requests || 0), 0);
-    const totalBudget = churches.reduce((sum: number, c: ChurchType) => sum + ((c as any).total_budget || 0), 0);
-    const totalUsedBudget = churches.reduce((sum: number, c: ChurchType) => sum + ((c as any).used_budget || 0), 0);
-    const budgetUtilization = totalBudget > 0 ? Math.round((totalUsedBudget / totalBudget) * 100) : 0;
-    const avgMembersPerChurch = totalChurches > 0 ? Math.round(totalMembers / totalChurches) : 0;
-    return {
-      totalChurches,
-      totalMembers,
-      totalDepartments,
-      totalSubsidyRequests,
-      totalBudget,
-      totalUsedBudget,
-      budgetUtilization,
-      avgMembersPerChurch
-    };
-  }, [churches]);
+
 
   // Mock data for projects
   const MOCK_PROJECTS_BY_CHURCH = [
@@ -266,21 +246,21 @@ export default function ChurchesPage() {
     {
       id: "total-churches",
       title: t.totalChurches,
-      value: kpiData.totalChurches,
+      value: currentInstitutionData?.churchesKpiData?.totalChurches || 0,
       icon: Home,
       subtitle: "Active churches"
     },
     {
       id: "total-members", 
       title: t.totalMembers,
-      value: kpiData.totalMembers,
+      value: currentInstitutionData?.churchesKpiData?.totalMembers || 0,
       icon: Users,
       subtitle: "Total members"
     },
     {
       id: "total-departments",
       title: t.departments,
-      value: kpiData.totalDepartments,
+      value: currentInstitutionData?.churchesKpiData?.totalDepartments || 0,
       icon: Layers,
       subtitle: "Active departments"
     },
@@ -296,7 +276,7 @@ export default function ChurchesPage() {
         label: "vs last month"
       }
     }
-  ], [kpiData, t, totalProjects])
+  ], [currentInstitutionData?.churchesKpiData, t, totalProjects])
 
   // Mock data for charts - simplified for easy integration
   const MOCK_CHURCH_ACTIVITIES = [
@@ -666,14 +646,32 @@ export default function ChurchesPage() {
       id: "region",
       accessorKey: "region_name",
       header: t.region,
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.region.name}</span>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const region = row.original.region
+        
+        if (!region) {
+          return (
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-muted-foreground" />
+              <Badge variant="secondary" className="bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800">
+                Orphaned
+              </Badge>
+            </div>
+          )
+        }
+        
+        return (
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-muted-foreground" />
+            <span className="font-medium">{region.name}</span>
+          </div>
+        )
+      },
       filterFn: (row, id, value) => {
         if (!value) return true
+        if (value === "__orphaned__") {
+          return !row.original.region
+        }
         return row.original.region?.name === value
       },
     },
@@ -1175,10 +1173,18 @@ export default function ChurchesPage() {
                 {
                   id: "region",
                   title: t.region,
-                  options: Array.from(new Set(churches.map((c: any) => c.region?.name).filter(Boolean))).map(name => ({ 
-                    label: String(name), 
-                    value: String(name) 
-                  }))
+                  options: [
+                    // Adicionar opção para igrejas órfãs
+                    ...(churches.some((c: any) => !c.region) ? [{
+                      label: "Orphaned (No Region)",
+                      value: "__orphaned__"
+                    }] : []),
+                    // Adicionar opções de regiões
+                    ...Array.from(new Set(churches.map((c: any) => c.region?.name).filter(Boolean))).map(name => ({ 
+                      label: String(name), 
+                      value: String(name) 
+                    }))
+                  ]
                 },
                 {
                   id: "status",
@@ -1262,7 +1268,11 @@ export default function ChurchesPage() {
                     <EntityInfoCard
                       headerTitle="Church Information"
                       name={selectedChurchDetail.name}
-                      description={`${selectedChurchDetail.region?.name || 'Unknown Region'} • ${churchMembers} members • ${churchDepartments} departments`}
+                      description={`${
+                        selectedChurchDetail.region?.name 
+                          ? selectedChurchDetail.region.name
+                          : '🔗 Orphaned (No Region)'
+                      } • ${churchMembers} members • ${churchDepartments} departments`}
                       icon={Home}
                       badges={[
                         {
@@ -1272,6 +1282,14 @@ export default function ChurchesPage() {
                             ? "bg-gray-100 text-gray-700" 
                             : "bg-green-100 text-green-700"
                         },
+                        ...(selectedChurchDetail.region 
+                          ? [] 
+                          : [{
+                              label: 'No Region',
+                              variant: "outline" as const,
+                              className: "bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800"
+                            }]
+                        ),
                         ...(selectedChurchDetail.type ? [{
                           label: selectedChurchDetail.type === 'PLANT' ? 'Church Plant' : selectedChurchDetail.type === 'COMPANY' ? 'Church Company' : 'Standard',
                           variant: "outline" as const

@@ -199,6 +199,18 @@ export type ChurchCreateDto = {
   type?: InputMaybe<ChurchType>;
 };
 
+export type ChurchKpiData = {
+  __typename?: 'ChurchKPIData';
+  avgMembersPerChurch: Scalars['Float']['output'];
+  budgetUtilization: Scalars['Float']['output'];
+  totalBudget: Scalars['Float']['output'];
+  totalChurches: Scalars['Float']['output'];
+  totalDepartments: Scalars['Float']['output'];
+  totalMembers: Scalars['Float']['output'];
+  totalSubsidyRequests: Scalars['Float']['output'];
+  totalUsedBudget: Scalars['Float']['output'];
+};
+
 export type ChurchModel = {
   __typename?: 'ChurchModel';
   contact_id?: Maybe<Scalars['String']['output']>;
@@ -623,6 +635,7 @@ export type Institution = {
   _count: InstitutionCount;
   annual_budgets: Array<AnnualBudget>;
   churches?: Maybe<Array<Church>>;
+  churchesKpiData: ChurchKpiData;
   churches_count: Scalars['Int']['output'];
   communications?: Maybe<Array<Communication>>;
   contact?: Maybe<Contact>;
