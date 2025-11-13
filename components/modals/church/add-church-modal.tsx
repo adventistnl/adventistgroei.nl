@@ -27,57 +27,6 @@ import { ChurchTypeSelector, getChurchTypeOptions } from "./church-type-selector
 import { ProvinceSelector } from "./province-selector"
 import { ChurchType } from "@/types/graphql-global-types"
 import { churchTranslations } from "@/lib/translations/churches"
-
-export interface ChurchData {
-  id: string
-  institution_id: string
-  name: string
-  region_id: string
-  contact_id?: string | null
-  created_at: string
-  updated_at: string
-  created_by: string
-  updated_by: string
-  is_deleted: boolean
-  deleted_at?: string | null
-  deleted_by?: string | null
-}
-
-export interface ContactData {
-  id: string
-  name?: string | null
-  phone?: string | null
-  mobile?: string | null
-  email?: string | null
-  country?: string | null
-  city?: string | null
-  address?: string | null
-  full_address?: string | null
-  postal_code?: string | null
-  website?: string | null
-  notes?: string | null
-  is_primary: boolean
-  created_at: string
-  updated_at: string
-  created_by: string
-  updated_by: string
-  is_deleted: boolean
-  deleted_at?: string | null
-  deleted_by?: string | null
-}
-
-export interface RegionData {
-  id: string
-  name: string
-  institution_id: string
-}
-
-export interface ProvinceData {
-  code: string
-  name: string
-  region: 'north' | 'east' | 'west' | 'south'
-}
-
 export interface AddChurchModalProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
@@ -98,7 +47,6 @@ export function AddChurchModal({
   const [formData, setFormData] = useState<CreateChurchVariables>({
     institution_id: institutionId,
     name: '',
-    region_id: '',
     contactName: '',
     phone: '',
     email: '',

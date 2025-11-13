@@ -1,8 +1,11 @@
-export const countries = [
+import { MixedTerritoryBase, TerritoryBase, TerritoryChildrensBase } from "@/types/Terrytory"
+
+
+export const countries: TerritoryBase[] = [
   { code: "NL", name: "Netherlands" },
 ]
 
-export const states = {
+export const states: TerritoryChildrensBase = {
   NL: [
     { code: "DR", name: "Drenthe" },
     { code: "FL", name: "Flevoland" },
@@ -19,7 +22,7 @@ export const states = {
   ]
 }
 
-export const cities = {
+export const cities: TerritoryChildrensBase = {
   DR: [
     { code: "ASS", name: "Assen" },
     { code: "EMM", name: "Emmen" },
@@ -152,7 +155,7 @@ export const cities = {
   ]
 }
 
-export const mixedGeographicData = {
+export const mixedGeographicData: MixedTerritoryBase = {
   NL: {
     DR: [
       { code: "ASS", name: "Assen" },

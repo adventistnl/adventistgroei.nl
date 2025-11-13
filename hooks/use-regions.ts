@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useCreateRegionMutation, useGetRegionsQuery, useUpdateRegionContactMutation, useUpdateRegionMutation } from "@/hooks/graphql/use-regions";
+import { useCreateRegionMutation, useDeleteRegionMutation, useGetRegionsQuery, useUpdateRegionContactMutation, useUpdateRegionMutation } from "@/hooks/graphql/use-regions";
 import { Regions, Regions_regions } from "@/types/Regions";
 import { ErrorLike } from "@apollo/client";
 import { useMutation } from "@apollo/client/react";
@@ -9,6 +9,7 @@ import { OperationVariables } from "@apollo/client";
 import { ApolloClient } from "@apollo/client";
 import { UpdateRegion, UpdateRegionVariables } from "@/types/UpdateRegion";
 import { UpdateRegionContact, UpdateRegionContactVariables } from "@/types/UpdateRegionContact";
+import { DeleteRegion, DeleteRegionVariables } from "@/types/DeleteRegion";
 
 interface iRegions {
   regions: Regions_regions[];
@@ -18,6 +19,7 @@ interface iRegions {
   createRegion: useMutation.MutationFunction<CreateRegion, CreateRegionVariables, ApolloCache>
   updateRegion: useMutation.MutationFunction<UpdateRegion, UpdateRegionVariables, ApolloCache>
   updateRegionContact: useMutation.MutationFunction<UpdateRegionContact, UpdateRegionContactVariables, ApolloCache>
+  deleteRegion: useMutation.MutationFunction<DeleteRegion, DeleteRegionVariables, ApolloCache>
 }
 
 export function useRegions(): iRegions {
@@ -25,6 +27,7 @@ export function useRegions(): iRegions {
   const [ createRegion ] = useCreateRegionMutation();
   const [ updateRegion ] = useUpdateRegionMutation();
   const [ updateRegionContact ] = useUpdateRegionContactMutation();
+  const [ deleteRegion ] = useDeleteRegionMutation();
 
   const regions = useMemo(() => {
     if (!data || !data.regions) {
@@ -42,6 +45,7 @@ export function useRegions(): iRegions {
     refetchRegions,
     createRegion,
     updateRegion,
-    updateRegionContact
+    updateRegionContact,
+    deleteRegion
   };
 }

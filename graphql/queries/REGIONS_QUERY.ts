@@ -5,6 +5,9 @@ query Regions {
     regions {
         id
         name
+        description
+        territory
+        color
         created_at
         updated_at
         created_by
@@ -12,6 +15,12 @@ query Regions {
         is_deleted
         deleted_at
         deleted_by
+        kpiData {
+          totalRegions
+          totalChurches
+          totalProvinces
+          totalCities
+        }
         churches {
             id
             institution_id

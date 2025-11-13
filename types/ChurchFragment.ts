@@ -121,7 +121,7 @@ export interface ChurchFragment {
   id: string;
   institution_id: string;
   name: string;
-  region_id: string;
+  region_id: string | null;
   contact_id: string | null;
   created_at: any;
   updated_at: any;
@@ -134,6 +134,6 @@ export interface ChurchFragment {
   contact: ChurchFragment_contact | null;
   annual_budgets: ChurchFragment_annual_budgets[] | null;
   departments: ChurchFragment_departments[] | null;
-  region: ChurchFragment_region;
+  region: ChurchFragment_region | null;
   users: ChurchFragment_users[] | null;
 }

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { structureTranslations } from "@/lib/translations/structure"
 import { cn } from "@/lib/utils"
 import { 
   Dialog, 
@@ -20,118 +19,56 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
+import { ColorPicker } from "@/components/ui/color-picker"
 import { 
   MapPin, 
-  Save, 
-  FileText,
   ChevronLeft,
   ChevronRight,
-  Loader2,
   Search,
   Check,
   X,
-  Map,
-  Building2,
-  Eye,
-  Palette
+  ChevronsUpDown,
+  Globe
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { useRegions } from "@/hooks/use-regions"
-import { CreateRegion } from "@/types/CreateRegion"
-import { RegionCreateDto } from "@/types/graphql-global-types"
-import { states, cities } from "@/data/geographicData"
+import { CreateRegionVariables } from "@/types/CreateRegion"
+import { countries, states, cities } from "@/data/geographicData"
+import { TerritoryBase, TerritoryMap } from "@/types/Terrytory"
 
 // Types needed for this component
-interface City {
-  code: string
-  name: string
+interface Province extends TerritoryBase {
+  cities: TerritoryBase[]
 }
-
-interface Province {
-  code: string
-  name: string
-  cities: City[]
-}
-
-interface Territory {
-  NL: {
-    [provinceCode: string]: string[]
-  }
-}
-
-// Region colors for visualization
-const regionColors = [
-  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-  '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
-]
 
 // Transform geographicData to the format expected by this component
-const transformToProvinces = (): Province[] => {
-  if (!states.NL) return []
+const transformToProvinces = (countryCode: string): Province[] => {
+  const provincesForCountry = states[countryCode as keyof typeof states];
+  if (!provincesForCountry) return [];
   
-  return states.NL.map(state => ({
+  return provincesForCountry.map(state => ({
     code: state.code,
     name: state.name,
     cities: cities[state.code as keyof typeof cities]?.map(city => ({
       code: city.code,
       name: city.name
     })) || []
-  }))
-}
-
-const netherlandsProvinces = transformToProvinces()
-
-import {
-  ColorPicker,
-  ColorPickerAlpha,
-  ColorPickerEyeDropper,
-  ColorPickerFormat,
-  ColorPickerHue,
-  ColorPickerOutput,
-  ColorPickerSelection,
-} from '@/components/ui/shadcn-io/color-picker'
-
-export interface AddRegionFormData {
-  name: string
-  description?: string
-  color: string
-  territory: Territory
-}
-
-// Cores pré-definidas para seleção rápida - Dark Tones
-const PRESET_COLORS = [
-  { name: 'Slate', value: '#475569' },
-  { name: 'Gray', value: '#6B7280' },
-  { name: 'Zinc', value: '#52525B' },
-  { name: 'Stone', value: '#57534E' },
-  { name: 'Red', value: '#991B1B' },
-  { name: 'Orange', value: '#9A3412' },
-  { name: 'Amber', value: '#92400E' },
-  { name: 'Yellow', value: '#854D0E' },
-  { name: 'Lime', value: '#3F6212' },
-  { name: 'Green', value: '#14532D' },
-  { name: 'Emerald', value: '#064E3B' },
-  { name: 'Teal', value: '#134E4A' },
-  { name: 'Cyan', value: '#164E63' },
-  { name: 'Sky', value: '#0C4A6E' },
-  { name: 'Blue', value: '#1E3A8A' },
-  { name: 'Indigo', value: '#312E81' },
-  { name: 'Violet', value: '#4C1D95' },
-  { name: 'Purple', value: '#581C87' },
-  { name: 'Fuchsia', value: '#701A75' },
-  { name: 'Pink', value: '#831843' },
-]
+  }));
+};
 
 export interface AddRegionModalProps {
   children: React.ReactNode
-  onSuccess: (data: CreateRegion) => void
+  onSuccess: (data: CreateRegionVariables) => void
 }
 
 export function AddRegionModal({
@@ -143,29 +80,27 @@ export function AddRegionModal({
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
-  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false)
+  const [isCountryPopoverOpen, setIsCountryPopoverOpen] = useState(false)
   
   // Form Data
-  const [formData, setFormData] = useState<AddRegionFormData>({
+  const [formData, setFormData] = useState<CreateRegionVariables>({
     name: "",
     description: "",
     color: "#475569", // Slate dark
     territory: { NL: {} }
   })
   
-  // Province and City Selection State
+  // Country, Province and City Selection State
+  const [selectedCountry, setSelectedCountry] = useState<string>("NL")
   const [selectedProvinces, setSelectedProvinces] = useState<Set<string>>(new Set())
   const [selectedCities, setSelectedCities] = useState<Record<string, Set<string>>>({})
   const [searchQuery, setSearchQuery] = useState("")
   
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const totalSteps = 3 // Nome/Descrição/Cor, Províncias, Review
+  const totalSteps = 4 // País, Nome/Descrição/Cor, Províncias, Review
   const { i18n } = useTranslation()
   
-  // Get translations for current language
-  const t_structure = structureTranslations[i18n.language as keyof typeof structureTranslations] || structureTranslations.en
-
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -175,17 +110,23 @@ export function AddRegionModal({
         color: "#475569",
         territory: { NL: {} }
       })
+      setSelectedCountry("NL")
       setSelectedProvinces(new Set())
       setSelectedCities({})
       setSearchQuery("")
       setErrors({})
       setCurrentStep(1)
-      setIsColorPickerOpen(false)
+      setIsCountryPopoverOpen(false)
     }
   }, [isOpen])
 
+  // Get provinces for selected country
+  const provincesForSelectedCountry = useMemo(() => {
+    return transformToProvinces(selectedCountry);
+  }, [selectedCountry]);
+
   // Input handlers
-  const handleInputChange = (field: keyof AddRegionFormData, value: string) => {
+  const handleInputChange = (field: keyof CreateRegionVariables, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -201,29 +142,10 @@ export function AddRegionModal({
   }
 
   // Province selection handlers
-  const toggleProvince = (provinceCode: string) => {
-    setSelectedProvinces(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(provinceCode)) {
-        newSet.delete(provinceCode)
-        // Remove all cities from this province
-        setSelectedCities(prevCities => {
-          const newCities = { ...prevCities }
-          delete newCities[provinceCode]
-          return newCities
-        })
-      } else {
-        newSet.add(provinceCode)
-      }
-      return newSet
-    })
-  }
-
-  // Quando seleciona província, automaticamente seleciona todas as cidades
   const toggleProvinceSimple = (provinceCode: string) => {
     setSelectedProvinces(prev => {
       const newSet = new Set(prev)
-      const province = netherlandsProvinces.find(p => p.code === provinceCode)
+      const province = provincesForSelectedCountry.find(p => p.code === provinceCode)
       
       if (newSet.has(provinceCode)) {
         // Desselecionar província e remover suas cidades
@@ -247,25 +169,44 @@ export function AddRegionModal({
     })
   }
 
+  // Toggle city selection
+  const toggleCity = (provinceCode: string, cityCode: string) => {
+    setSelectedCities(prev => {
+      const citiesInProvince = prev[provinceCode] || new Set();
+      const newCities = new Set(citiesInProvince);
+      
+      if (newCities.has(cityCode)) {
+        newCities.delete(cityCode);
+      } else {
+        newCities.add(cityCode);
+      }
+      
+      return {
+        ...prev,
+        [provinceCode]: newCities
+      };
+    });
+  }
+
   // Filtered provinces for search
   const filteredProvinces = useMemo(() => {
-    if (!searchQuery.trim()) return netherlandsProvinces
+    if (!searchQuery.trim()) return provincesForSelectedCountry
     
     const query = searchQuery.toLowerCase()
-    return netherlandsProvinces.filter(province => 
+    return provincesForSelectedCountry.filter(province => 
       province.name.toLowerCase().includes(query) ||
       province.cities.some(city => city.name.toLowerCase().includes(query))
     )
-  }, [searchQuery])
+  }, [searchQuery, provincesForSelectedCountry])
 
   // Build territory object
-  const buildTerritoryObject = (): Territory => {
-    const territory: Territory = { NL: {} }
+  const buildTerritoryObject = (): TerritoryMap => {
+    const territory: TerritoryMap = { [selectedCountry]: {} };
     
     selectedProvinces.forEach(provinceCode => {
       const cityCodes = selectedCities[provinceCode]
       if (cityCodes && cityCodes.size > 0) {
-        territory.NL[provinceCode] = Array.from(cityCodes)
+        territory[selectedCountry][provinceCode] = Array.from(cityCodes)
       }
     })
     
@@ -276,6 +217,12 @@ export function AddRegionModal({
     const newErrors: Record<string, string> = {}
 
     if (step === 1) {
+      if (!selectedCountry) {
+        newErrors.country = "Please select a country"
+      }
+    }
+
+    if (step === 2) {
       if (!formData.name?.trim()) {
         newErrors.name = "Region name is required"
       } else if (formData.name.trim().length < 2) {
@@ -283,7 +230,7 @@ export function AddRegionModal({
       }
     }
 
-    if (step === 2) {
+    if (step === 3) {
       if (selectedProvinces.size === 0) {
         newErrors.territory = "Please select at least one province"
       }
@@ -305,7 +252,7 @@ export function AddRegionModal({
 
   const handleSave = async () => {
     // Validate all steps
-    if (!validateStep(1) || !validateStep(2)) {
+    if (!validateStep(1) || !validateStep(2) || !validateStep(3)) {
       toast.error("Por favor, corrija os erros antes de continuar")
       return
     }
@@ -318,29 +265,27 @@ export function AddRegionModal({
       const territory = buildTerritoryObject()
       
       // Update formData with territory
-      const finalData = {
-        ...formData,
+      const finalData: CreateRegionVariables = {
+        name: formData.name,
+        description: formData.description || undefined,
+        color: formData.color || undefined,
         territory
       }
 
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
       const res = await createRegion({
-        variables: {
-          name: finalData.name,
-          description: finalData.description || "",
-        }
+        variables: finalData
       })
       
       if (!res.data) throw new Error("Failed to create region")
 
+      toast.dismiss(loadingToast)
       toast.success(
-        `🎉 Região "${finalData.name}" criada com ${selectedProvinces.size} províncias!`,
+        `🎉 Região "${finalData.name}" criada com sucesso!`,
         { duration: 4000 }
       )
       
       // Call success callback
-      onSuccess(res.data)
+      onSuccess(finalData)
 
       // Close modal
       setIsOpen(false)
@@ -349,7 +294,6 @@ export function AddRegionModal({
       toast.error("❌ Falha ao criar região")
       console.error("Error creating region:", error)
     } finally {
-      toast.dismiss(loadingToast)
       setIsLoading(false)
     }
   }
@@ -361,19 +305,95 @@ export function AddRegionModal({
       color: "#475569",
       territory: { NL: {} }
     })
+    setSelectedCountry("NL")
     setSelectedProvinces(new Set())
     setSelectedCities({})
     setSearchQuery("")
     setErrors({})
     setCurrentStep(1)
-    setIsColorPickerOpen(false)
+    setIsCountryPopoverOpen(false)
     setIsOpen(false)
   }
 
   const renderStepContent = () => {
     switch (currentStep) {
-      // STEP 1: Nome, Descrição e Cor
+      // STEP 1: Seleção de País
       case 1:
+        return (
+          <div className="space-y-8 animate-in fade-in-0 duration-300">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-semibold text-foreground">Select Country</h3>
+              <p className="text-sm text-muted-foreground">Choose the country for this region</p>
+            </div>
+            
+            <div className="space-y-6 max-w-md mx-auto">
+              <div className="space-y-2">
+                <Label htmlFor="country" className="flex items-center gap-2 text-sm">
+                  <Globe className="w-4 h-4 text-muted-foreground" />
+                  Country *
+                </Label>
+                <Popover open={isCountryPopoverOpen} onOpenChange={setIsCountryPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={isCountryPopoverOpen}
+                      className={cn(
+                        "w-full h-12 text-base justify-between font-normal",
+                        !selectedCountry && "text-muted-foreground",
+                        errors.country && "border-red-500"
+                      )}
+                      disabled={isLoading}
+                    >
+                      {selectedCountry
+                        ? countries.find(c => c.code === selectedCountry)?.name
+                        : "Select a country..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search country..." />
+                      <CommandList>
+                        <CommandEmpty>No country found</CommandEmpty>
+                        <CommandGroup>
+                          {countries.map((country) => (
+                            <CommandItem
+                              key={country.code}
+                              value={country.code}
+                              onSelect={(currentValue) => {
+                                setSelectedCountry(currentValue)
+                                // Reset provinces when country changes
+                                setSelectedProvinces(new Set())
+                                setSelectedCities({})
+                                setIsCountryPopoverOpen(false)
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedCountry === country.code ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
+                              {country.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                {errors.country && (
+                  <p className="text-xs text-red-600">{errors.country}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+
+      // STEP 2: Nome, Descrição e Cor
+      case 2:
         return (
           <div className="space-y-8 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
@@ -388,12 +408,16 @@ export function AddRegionModal({
                   Region Name *
                 </Label>
                 <Input
+                  key={`name-${isOpen ? 'open' : 'closed'}`}
                   id="name"
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
+                  onKeyDown={(e) => e.stopPropagation()}
                   placeholder="Enter region name"
                   disabled={isLoading}
                   className={errors.name ? 'border-red-500' : ''}
+                  autoComplete="off"
+                  spellCheck={false}
                 />
                 {errors.name && (
                   <p className="text-xs text-red-600">{errors.name}</p>
@@ -403,126 +427,42 @@ export function AddRegionModal({
               {/* Descrição */}
               <div className="space-y-2">
                 <Label htmlFor="description" className="text-sm font-medium">
-                  Description
+                  Description (Optional)
                 </Label>
                 <Textarea
+                  key={`description-${isOpen ? 'open' : 'closed'}`}
                   id="description"
                   value={formData.description || ""}
                   onChange={(e) => handleInputChange('description', e.target.value)}
+                  onKeyDown={(e) => e.stopPropagation()}
                   placeholder="Describe the region purpose and activities"
                   disabled={isLoading}
                   className="min-h-[100px] resize-none"
+                  autoComplete="off"
+                  spellCheck={false}
                 />
               </div>
 
-              {/* Color Selector - Minimalista */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Region Color</Label>
-                <div className="flex items-center gap-3">
-                  {/* Preview Circle */}
-                  <div 
-                    className="w-10 h-10 rounded-full border-2 border-gray-200 shadow-sm flex-shrink-0"
-                    style={{ backgroundColor: formData.color }}
-                  />
-                  
-                  {/* Color Code */}
-                  <span className="text-xs font-mono text-muted-foreground flex-1">
-                    {formData.color}
-                  </span>
-
-                  {/* Button to open color picker */}
-                  <Dialog open={isColorPickerOpen} onOpenChange={setIsColorPickerOpen}>
-                    <DialogTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        type="button"
-                        disabled={isLoading}
-                      >
-                        <Palette className="w-4 h-4 mr-2" />
-                        Choose Color
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md">
-                      <DialogHeader>
-                        <DialogTitle className="text-base">Choose Region Color</DialogTitle>
-                        <DialogDescription className="text-sm">
-                          Select a color or use the custom picker
-                        </DialogDescription>
-                      </DialogHeader>
-                      
-                      <div className="space-y-4 py-4">
-                        {/* Preset Colors Grid - Compact */}
-                        <div>
-                          <Label className="text-xs font-medium text-muted-foreground mb-3 block">
-                            Preset Colors
-                          </Label>
-                          <div className="grid grid-cols-10 gap-2">
-                            {PRESET_COLORS.map((presetColor) => (
-                              <button
-                                key={presetColor.value}
-                                type="button"
-                                onClick={() => {
-                                  handleInputChange('color', presetColor.value)
-                                  setIsColorPickerOpen(false)
-                                }}
-                                className={cn(
-                                  "w-8 h-8 rounded-md border-2 hover:scale-110 transition-transform relative",
-                                  formData.color === presetColor.value 
-                                    ? "border-slate-900 ring-2 ring-slate-900 ring-offset-1" 
-                                    : "border-gray-200"
-                                )}
-                                style={{ backgroundColor: presetColor.value }}
-                                title={presetColor.name}
-                              >
-                                {formData.color === presetColor.value && (
-                                  <Check className="w-4 h-4 text-white absolute inset-0 m-auto drop-shadow" strokeWidth={3} />
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <Separator />
-
-                        {/* Custom Color Picker - Minimal */}
-                        <div>
-                          <Label className="text-xs font-medium text-muted-foreground mb-3 block">
-                            Custom Color
-                          </Label>
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="color"
-                              value={formData.color}
-                              onChange={(e) => handleInputChange('color', e.target.value)}
-                              className="h-10 w-20 rounded border border-gray-200 cursor-pointer"
-                            />
-                            <Input
-                              type="text"
-                              value={formData.color}
-                              onChange={(e) => handleInputChange('color', e.target.value)}
-                              placeholder="#000000"
-                              className="flex-1 font-mono text-sm"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </div>
+              {/* Color Picker Component */}
+              <ColorPicker
+                value={formData.color || "#475569"}
+                onChange={(color) => handleInputChange('color', color)}
+                disabled={isLoading}
+                label="Region Color"
+                showPreview={true}
+              />
             </div>
           </div>
         )
 
-      // STEP 2: Seleção Minimalista de Províncias
-      case 2:
+      // STEP 3: Seleção de Províncias e Cidades
+      case 3:
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">Selecionar Províncias</h3>
+              <h3 className="text-lg font-medium text-foreground">Select Provinces & Cities</h3>
               <p className="text-sm text-muted-foreground">
-                Escolha as províncias que fazem parte desta região
+                Choose the provinces and cities that are part of this region
               </p>
             </div>
 
@@ -531,26 +471,26 @@ export function AddRegionModal({
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
-                  placeholder="Buscar província..."
+                  placeholder="Search province or city..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 h-10 border-slate-200 focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
                 />
               </div>
 
-              {/* Selected Provinces - Carrossel Horizontal Minimalista */}
+              {/* Selected Provinces - Summary */}
               {selectedProvinces.size > 0 && (
                 <div className="border border-slate-200 rounded-lg p-3 bg-slate-50/50">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xs font-medium text-slate-600">
-                      {selectedProvinces.size} selecionada{selectedProvinces.size !== 1 ? 's' : ''}
+                      {selectedProvinces.size} selecionada{selectedProvinces.size !== 1 ? 's' : ''} ({Array.from(selectedProvinces).reduce((sum, pc) => sum + (selectedCities[pc]?.size || 0), 0)} cities)
                     </span>
                   </div>
                   
-                  {/* Carrossel Horizontal */}
+                  {/* Provinces Horizontal Scroll */}
                   <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
                     {Array.from(selectedProvinces).map(provinceCode => {
-                      const province = netherlandsProvinces.find(p => p.code === provinceCode)
+                      const province = provincesForSelectedCountry.find(p => p.code === provinceCode)
                       if (!province) return null
                       
                       const cityCount = selectedCities[provinceCode]?.size || 0
@@ -568,10 +508,7 @@ export function AddRegionModal({
                             ({cityCount})
                           </span>
                           <button
-                            onClick={(e) => {
-                              e.preventDefault()
-                              toggleProvinceSimple(provinceCode)
-                            }}
+                            onClick={() => toggleProvinceSimple(provinceCode)}
                             className="ml-1 opacity-0 group-hover:opacity-100 hover:bg-slate-100 rounded-full p-0.5 transition-all"
                           >
                             <X className="w-3 h-3 text-slate-600" />
@@ -583,55 +520,78 @@ export function AddRegionModal({
                 </div>
               )}
 
-              {/* Province Selection List - Simplified */}
+              {/* Province Selection List */}
               <div className="border border-slate-200 rounded-lg max-h-[400px] overflow-y-auto">
                 {filteredProvinces.length === 0 ? (
                   <div className="text-center py-12">
                     <Search className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                     <p className="text-sm text-slate-500">
-                      Nenhuma província encontrada
+                      No province found
                     </p>
                   </div>
                 ) : (
                   <div className="divide-y divide-slate-100">
                     {filteredProvinces.map((province) => {
                       const isSelected = selectedProvinces.has(province.code)
+                      const citiesInProvince = selectedCities[province.code] || new Set()
 
                       return (
-                        <button
-                          key={province.code}
-                          onClick={() => toggleProvinceSimple(province.code)}
-                          className={`w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors ${
-                            isSelected ? 'bg-slate-50' : ''
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-colors ${
-                              isSelected ? 'bg-slate-900' : 'bg-slate-300'
-                            }`} />
-                            
-                            <div className="text-left">
-                              <p className={`text-sm transition-colors ${
-                                isSelected ? 'font-semibold text-slate-900' : 'font-medium text-slate-700'
-                              }`}>
-                                {province.name}
-                              </p>
-                              <p className="text-xs text-slate-500">
-                                {province.cities.length} cidades
-                              </p>
+                        <div key={province.code} className="border-b last:border-b-0">
+                          {/* Province Row */}
+                          <button
+                            onClick={() => toggleProvinceSimple(province.code)}
+                            className={`w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors ${
+                              isSelected ? 'bg-slate-50' : ''
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-colors ${
+                                isSelected ? 'bg-slate-900' : 'bg-slate-300'
+                              }`} />
+                              
+                              <div className="text-left">
+                                <p className="font-medium text-sm text-slate-900">{province.name}</p>
+                                <p className="text-xs text-slate-500">{province.cities.length} cities</p>
+                              </div>
                             </div>
-                          </div>
 
-                          <div className={`w-4 h-4 rounded border transition-all ${
-                            isSelected 
-                              ? 'bg-slate-900 border-slate-900' 
-                              : 'border-slate-300'
-                          } flex items-center justify-center`}>
-                            {isSelected && (
-                              <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                            )}
-                          </div>
-                        </button>
+                            <div className={`w-4 h-4 rounded border transition-all ${
+                              isSelected 
+                                ? 'bg-slate-900 border-slate-900' 
+                                : 'border-slate-300'
+                            } flex items-center justify-center`}>
+                              {isSelected && (
+                                <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                              )}
+                            </div>
+                          </button>
+
+                          {/* Cities List - Expandable when province is selected */}
+                          {isSelected && (
+                            <div className="bg-slate-50/50 px-4 py-3 border-t border-slate-100">
+                              <p className="text-xs font-medium text-slate-600 mb-2">Cities:</p>
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                {province.cities.map((city) => {
+                                  const isCitySelected = citiesInProvince.has(city.code)
+                                  return (
+                                    <button
+                                      key={city.code}
+                                      onClick={() => toggleCity(province.code, city.code)}
+                                      className={cn(
+                                        "text-left px-2 py-1.5 rounded text-xs font-medium transition-colors",
+                                        isCitySelected
+                                          ? "bg-slate-900 text-white"
+                                          : "bg-white border border-slate-200 text-slate-700 hover:border-slate-300"
+                                      )}
+                                    >
+                                      {city.name}
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       )
                     })}
                   </div>
@@ -648,10 +608,11 @@ export function AddRegionModal({
           </div>
         )
 
-      // STEP 3: Review - Minimalista e Monocromático
-      case 3:
+      // STEP 4: Review - Minimalista
+      case 4:
         const territory = buildTerritoryObject()
         const totalCities = Object.values(selectedCities).reduce((sum, set) => sum + set.size, 0)
+        const countryName = countries.find(c => c.code === selectedCountry)?.name || selectedCountry
 
         return (
           <div className="space-y-8 animate-in fade-in-0 duration-300">
@@ -663,7 +624,7 @@ export function AddRegionModal({
             </div>
 
             <div className="max-w-lg mx-auto space-y-6">
-              {/* Basic Information - Minimalista */}
+              {/* Basic Information */}
               <div className="space-y-3">
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   Basic Information
@@ -686,20 +647,24 @@ export function AddRegionModal({
                     <div className="flex items-center gap-2">
                       <div 
                         className="w-4 h-4 rounded-full border"
-                        style={{ backgroundColor: formData.color }}
+                        style={{ backgroundColor: formData.color || "#475569" }}
                       />
-                      <span className="text-xs font-mono text-muted-foreground">{formData.color}</span>
+                      <span className="text-xs font-mono text-muted-foreground">{formData.color || "#475569"}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Territory Information - Minimalista */}
+              {/* Territory Information */}
               <div className="space-y-3">
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   Territory
                 </h4>
                 <div className="space-y-2">
+                  <div className="flex justify-between py-2 border-b border-border/50">
+                    <span className="text-sm text-muted-foreground">Country</span>
+                    <span className="text-sm font-medium">{countryName}</span>
+                  </div>
                   <div className="flex justify-between py-2 border-b border-border/50">
                     <span className="text-sm text-muted-foreground">Provinces</span>
                     <span className="text-sm font-medium">{selectedProvinces.size}</span>
@@ -711,7 +676,7 @@ export function AddRegionModal({
                 </div>
               </div>
 
-              {/* Province List - Minimalista */}
+              {/* Province List */}
               {selectedProvinces.size > 0 && (
                 <div className="space-y-3">
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -719,27 +684,38 @@ export function AddRegionModal({
                   </h4>
                   <div className="space-y-2">
                     {Array.from(selectedProvinces).map(provinceCode => {
-                      const province = netherlandsProvinces.find(p => p.code === provinceCode)
+                      const province = provincesForSelectedCountry.find(p => p.code === provinceCode)
                       if (!province) return null
 
-                      const cities = selectedCities[provinceCode]
-                      const cityCount = cities?.size || 0
+                      const citiesSet = selectedCities[provinceCode]
+                      const cityCount = citiesSet?.size || 0
+                      const cityNames = Array.from(citiesSet || [])
+                        .map(cc => province.cities.find(c => c.code === cc)?.name)
+                        .filter(Boolean)
+                        .join(", ")
 
                       return (
                         <div 
                           key={provinceCode}
-                          className="flex justify-between py-2 border-b border-border/50"
+                          className="p-3 border border-slate-200 rounded-lg bg-slate-50/50"
                         >
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-2 h-2 rounded-full"
-                              style={{ backgroundColor: formData.color }}
-                            />
-                            <span className="text-sm font-medium">{province.name}</span>
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-2 h-2 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: formData.color || "#475569" }}
+                              />
+                              <span className="font-medium text-sm">{province.name}</span>
+                            </div>
+                            <span className="text-xs font-medium text-slate-600 bg-white px-2 py-1 rounded">
+                              {cityCount} cities
+                            </span>
                           </div>
-                          <span className="text-xs text-muted-foreground">
-                            {cityCount} {cityCount === 1 ? 'city' : 'cities'}
-                          </span>
+                          {cityNames && (
+                            <p className="text-xs text-slate-600 ml-4 line-clamp-2">
+                              {cityNames}
+                            </p>
+                          )}
                         </div>
                       )
                     })}

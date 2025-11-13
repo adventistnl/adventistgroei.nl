@@ -6,30 +6,31 @@
 import { ChurchType } from "./globalTypes";
 
 // ====================================================
-// GraphQL mutation operation: CreateChurch
+// GraphQL mutation operation: UpdateChurch
 // ====================================================
 
-export interface CreateChurch_createChurch {
+export interface UpdateChurch_updateChurch {
   __typename: "ChurchModel";
   id: string;
   name: string;
   institution_id: string;
   region_id: string | null;
   type: ChurchType | null;
-  created_at: any;
+  updated_at: any;
 }
 
-export interface CreateChurch {
-  createChurch: CreateChurch_createChurch;
+export interface UpdateChurch {
+  updateChurch: UpdateChurch_updateChurch;
 }
 
-export interface CreateChurchVariables {
-  institution_id: string;
-  name: string;
+export interface UpdateChurchVariables {
+  id: string;
+  institution_id?: string | null;
+  name?: string | null;
   region_id?: string | null;
-  email: string;
-  phone: string;
-  contactName: string;
-  city: string;
+  email?: string | null;
+  phone?: string | null;
+  contactName?: string | null;
+  city?: string | null;
   type?: ChurchType | null;
 }

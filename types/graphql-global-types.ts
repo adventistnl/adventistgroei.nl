@@ -15,6 +15,7 @@ export type Scalars = {
   Float: { input: number; output: number; }
   DateTime: { input: any; output: any; }
   Decimal: { input: any; output: any; }
+  JSON: { input: any; output: any; }
 };
 
 export type ActivityDocuments = {
@@ -172,8 +173,8 @@ export type Church = {
   institution_id: Scalars['String']['output'];
   is_deleted: Scalars['Boolean']['output'];
   name: Scalars['String']['output'];
-  region: Region;
-  region_id: Scalars['String']['output'];
+  region?: Maybe<Region>;
+  region_id?: Maybe<Scalars['String']['output']>;
   subsidy_requests?: Maybe<Array<SubsidyRequest>>;
   type: ChurchType;
   updated_at: Scalars['DateTime']['output'];
@@ -194,7 +195,7 @@ export type ChurchCreateDto = {
   contact?: InputMaybe<ContactCreateDto>;
   institution_id: Scalars['String']['input'];
   name: Scalars['String']['input'];
-  region_id: Scalars['String']['input'];
+  region_id?: InputMaybe<Scalars['String']['input']>;
   type?: InputMaybe<ChurchType>;
 };
 
@@ -209,7 +210,8 @@ export type ChurchModel = {
   institution_id: Scalars['String']['output'];
   is_deleted: Scalars['Boolean']['output'];
   name: Scalars['String']['output'];
-  region_id: Scalars['String']['output'];
+  region_id?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<ChurchType>;
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
 };
@@ -1500,6 +1502,7 @@ export type Region = {
   __typename?: 'Region';
   _count: RegionCount;
   churches?: Maybe<Array<Church>>;
+  color?: Maybe<Scalars['String']['output']>;
   created_at: Scalars['DateTime']['output'];
   created_by: Scalars['String']['output'];
   deleted_at?: Maybe<Scalars['DateTime']['output']>;
@@ -1507,7 +1510,9 @@ export type Region = {
   description?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   is_deleted: Scalars['Boolean']['output'];
+  kpiData: RegionKpiData;
   name: Scalars['String']['output'];
+  territory?: Maybe<Scalars['JSON']['output']>;
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
 };
@@ -1518,29 +1523,41 @@ export type RegionCount = {
 };
 
 export type RegionCreateDto = {
+  color?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
+  territory?: InputMaybe<Scalars['JSON']['input']>;
+};
+
+export type RegionKpiData = {
+  __typename?: 'RegionKPIData';
+  totalChurches: Scalars['Float']['output'];
+  totalCities: Scalars['Float']['output'];
+  totalProvinces: Scalars['Float']['output'];
+  totalRegions: Scalars['Float']['output'];
 };
 
 export type RegionModel = {
   __typename?: 'RegionModel';
-  contact_id?: Maybe<Scalars['String']['output']>;
+  color?: Maybe<Scalars['String']['output']>;
   created_at: Scalars['DateTime']['output'];
   created_by: Scalars['String']['output'];
   deleted_at?: Maybe<Scalars['DateTime']['output']>;
   deleted_by?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
   id: Scalars['String']['output'];
-  institution_id: Scalars['String']['output'];
   is_deleted: Scalars['Boolean']['output'];
   name: Scalars['String']['output'];
-  parent_region_id?: Maybe<Scalars['String']['output']>;
+  territory?: Maybe<Scalars['JSON']['output']>;
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
 };
 
 export type RegionUpdateDto = {
+  color?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
+  territory?: InputMaybe<Scalars['JSON']['input']>;
 };
 
 export type RemoveProjectVoluntaryDto = {

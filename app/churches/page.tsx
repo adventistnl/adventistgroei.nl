@@ -66,43 +66,6 @@ import { AccessDenied } from "@/components/access/access-denied"
 import { ChurchType as ChurchTypeEnum } from "@/types/graphql-global-types"
 // Dados reais de igrejas virão do contexto da instituição
 
-// Mock data para departamentos por igreja
-const MOCK_DEPARTMENTS_BY_CHURCH = [
-  { church: "Igreja Central de São Paulo", department: "Ministério Jovem", subsidy_requests: 5 },
-  { church: "Igreja Central de São Paulo", department: "Educação Cristã", subsidy_requests: 4 },
-  { church: "Igreja Central de São Paulo", department: "Diaconia", subsidy_requests: 3 },
-  { church: "Igreja de Vila Madalena", department: "Ministério Jovem", subsidy_requests: 4 },
-  { church: "Igreja de Vila Madalena", department: "Música", subsidy_requests: 2 },
-  { church: "Igreja de Vila Madalena", department: "Evangelismo", subsidy_requests: 2 },
-  { church: "Igreja da Mooca", department: "Ministério Jovem", subsidy_requests: 3 },
-  { church: "Igreja da Mooca", department: "Diaconia", subsidy_requests: 2 },
-  { church: "Igreja da Mooca", department: "Educação Cristã", subsidy_requests: 1 },
-  { church: "Igreja de Campinas", department: "Ministério Jovem", subsidy_requests: 6 },
-  { church: "Igreja de Campinas", department: "Evangelismo", subsidy_requests: 5 },
-  { church: "Igreja de Campinas", department: "Música", subsidy_requests: 4 },
-  { church: "Igreja do Rio de Janeiro", department: "Ministério Jovem", subsidy_requests: 5 },
-  { church: "Igreja do Rio de Janeiro", department: "Diaconia", subsidy_requests: 3 },
-  { church: "Igreja do Rio de Janeiro", department: "Educação Cristã", subsidy_requests: 3 },
-]
-
-// Mock data para usuários por igreja
-const MOCK_USERS_BY_CHURCH = [
-  { church: "Igreja Central de São Paulo", users: 45, active_users: 38 },
-  { church: "Igreja de Vila Madalena", users: 32, active_users: 28 },
-  { church: "Igreja da Mooca", users: 24, active_users: 20 },
-  { church: "Igreja de Campinas", users: 38, active_users: 35 },
-  { church: "Igreja do Rio de Janeiro", users: 30, active_users: 26 },
-]
-
-// Mock data para regiões
-const MOCK_REGIONS: RegionData[] = [
-  { id: "r1", name: "São Paulo Capital", institution_id: "inst1" },
-  { id: "r2", name: "São Paulo Interior", institution_id: "inst1" },
-  { id: "r3", name: "Rio de Janeiro", institution_id: "inst1" },
-  { id: "r4", name: "Distrito Federal", institution_id: "inst1" },
-  { id: "r5", name: "Bahia - Salvador", institution_id: "inst1" },
-]
-
 // Timeline de solicitações de subsídio por igreja
 const MOCK_SUBSIDY_TIMELINE = [
   { month: 'Jan', 'Central SP': 8, 'Vila Madalena': 5, 'Mooca': 4, 'Campinas': 10, 'Rio de Janeiro': 7 },
@@ -437,25 +400,10 @@ export default function ChurchesPage() {
    * Carregamento inicial dos dados
    */
   useEffect(() => {
-    const loadData = async () => {
-      const loadingToast = toast.loading(t.loading)
-      
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        
-        toast.dismiss(loadingToast)
-        toast.success(t.dataRefreshed, { duration: 3000 })
-        setIsLoading(false)
-        
-      } catch (error) {
-        toast.dismiss(loadingToast)
-        toast.error(t.error)
-        setIsLoading(false)
-      }
-    }
-
-    loadData()
-  }, [t])
+    // Apenas mostrar o estado de loading sem toast de sucesso ao carregar a página
+    // O toast de sucesso deve aparecer apenas quando o usuário fizer refresh manual
+    setIsLoading(false)
+  }, [])
 
   /**
    * Handlers para ações

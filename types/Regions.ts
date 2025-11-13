@@ -7,12 +7,20 @@
 // GraphQL query operation: Regions
 // ====================================================
 
+export interface Regions_regions_kpiData {
+  __typename: "RegionKPIData";
+  totalRegions: number;
+  totalChurches: number;
+  totalProvinces: number;
+  totalCities: number;
+}
+
 export interface Regions_regions_churches {
   __typename: "Church";
   id: string;
   institution_id: string;
   name: string;
-  region_id: string;
+  region_id: string | null;
   contact_id: string | null;
   created_at: any;
   updated_at: any;
@@ -27,6 +35,9 @@ export interface Regions_regions {
   __typename: "Region";
   id: string;
   name: string;
+  description: string | null;
+  territory: any | null;
+  color: string | null;
   created_at: any;
   updated_at: any;
   created_by: string;
@@ -34,6 +45,7 @@ export interface Regions_regions {
   is_deleted: boolean;
   deleted_at: any | null;
   deleted_by: string | null;
+  kpiData: Regions_regions_kpiData;
   churches: Regions_regions_churches[] | null;
 }
 

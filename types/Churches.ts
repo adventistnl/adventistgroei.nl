@@ -12,7 +12,7 @@ export interface Churches_churches {
   id: string;
   institution_id: string;
   name: string;
-  region_id: string;
+  region_id: string | null;
   contact_id: string | null;
   created_at: any;
   updated_at: any;

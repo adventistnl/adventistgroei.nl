@@ -1,10 +1,11 @@
 import { useMutation, useQuery } from "@apollo/client/react";
 import { GET_REGIONS_QUERY } from "@/graphql/queries/REGIONS_QUERY";
-import { CREATE_REGION, UPDATE_REGION, UPDATE_REGION_CONTACT } from "@/graphql/mutations/REGION_MUTATIONS";
+import { CREATE_REGION, DELETE_REGION, UPDATE_REGION, UPDATE_REGION_CONTACT } from "@/graphql/mutations/REGION_MUTATIONS";
 import { Regions } from "@/types/Regions";
 import { CreateRegion, CreateRegionVariables } from "@/types/CreateRegion";
 import { UpdateRegion, UpdateRegionVariables } from "@/types/UpdateRegion";
 import { UpdateRegionContact, UpdateRegionContactVariables } from "@/types/UpdateRegionContact";
+import { DeleteRegion, DeleteRegionVariables } from "@/types/DeleteRegion";
 
 export function useGetRegionsQuery(options?: useQuery.Options<Regions>): useQuery.Result<Regions> {
   return useQuery<Regions>(GET_REGIONS_QUERY, options);
@@ -20,4 +21,8 @@ export function useUpdateRegionMutation(options?: useMutation.Options<UpdateRegi
 
 export function useUpdateRegionContactMutation(options?: useMutation.Options<UpdateRegionContact, UpdateRegionContactVariables>): useMutation.ResultTuple<UpdateRegionContact, UpdateRegionContactVariables> {
   return useMutation<UpdateRegionContact, UpdateRegionContactVariables>(UPDATE_REGION_CONTACT, options);
+}
+
+export function useDeleteRegionMutation(options?: useMutation.Options<DeleteRegion, DeleteRegionVariables>): useMutation.ResultTuple<DeleteRegion, DeleteRegionVariables> {
+  return useMutation<DeleteRegion, DeleteRegionVariables>(DELETE_REGION, options);
 }

@@ -10,6 +10,10 @@
 export interface UpdateRegion_updateRegion {
   __typename: "RegionModel";
   id: string;
+  name: string;
+  description: string | null;
+  territory: any | null;
+  color: string | null;
 }
 
 export interface UpdateRegion {
@@ -18,6 +22,8 @@ export interface UpdateRegion {
 
 export interface UpdateRegionVariables {
   id: string;
-  name: string;
+  name?: string | null;
   description?: string | null;
+  territory?: any | null;
+  color?: string | null;
 }

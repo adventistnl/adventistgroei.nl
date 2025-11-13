@@ -4,33 +4,48 @@ export const CREATE_REGION = gql`
   mutation CreateRegion(
     $name: String!
     $description: String
+    $territory: JSON
+    $color: String
   ) {
     createRegion(
       data: {
         name: $name
         description: $description
+        territory: $territory
+        color: $color
       }
     ) {
       id
+      name
+      description
+      territory
+      color
     }
   }
 `;
 
-// Ajustando a mutation `UPDATE_REGION` para seguir o padrão de `CREATE_REGION`
 export const UPDATE_REGION = gql`
   mutation UpdateRegion(
-    $id: ID!
-    $name: String!
+    $id: String!
+    $name: String
     $description: String
+    $territory: JSON
+    $color: String
   ) {
     updateRegion(
       id: $id
       data: {
         name: $name
         description: $description
+        territory: $territory
+        color: $color
       }
     ) {
       id
+      name
+      description
+      territory
+      color
     }
   }
 `;
@@ -49,6 +64,14 @@ export const UPDATE_REGION_CONTACT = gql`
       }
       id: $id
     ) {
+      id
+    }
+  }
+`;
+
+export const DELETE_REGION = gql`
+  mutation DeleteRegion($id: String!) {
+    deleteRegion(id: $id) {
       id
     }
   }

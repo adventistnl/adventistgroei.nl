@@ -10,6 +10,10 @@
 export interface CreateRegion_createRegion {
   __typename: "RegionModel";
   id: string;
+  name: string;
+  description: string | null;
+  territory: any | null;
+  color: string | null;
 }
 
 export interface CreateRegion {
@@ -19,4 +23,6 @@ export interface CreateRegion {
 export interface CreateRegionVariables {
   name: string;
   description?: string | null;
+  territory?: any | null;
+  color?: string | null;
 }

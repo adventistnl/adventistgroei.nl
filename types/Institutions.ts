@@ -252,7 +252,7 @@ export interface Institutions_institutions_churches {
   id: string;
   institution_id: string;
   name: string;
-  region_id: string;
+  region_id: string | null;
   contact_id: string | null;
   created_at: any;
   updated_at: any;
@@ -265,7 +265,7 @@ export interface Institutions_institutions_churches {
   contact: Institutions_institutions_churches_contact | null;
   annual_budgets: Institutions_institutions_churches_annual_budgets[] | null;
   departments: Institutions_institutions_churches_departments[] | null;
-  region: Institutions_institutions_churches_region;
+  region: Institutions_institutions_churches_region | null;
   users: Institutions_institutions_churches_users[] | null;
 }
 

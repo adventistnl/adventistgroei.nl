@@ -6,7 +6,6 @@ import { ColumnDef } from "@tanstack/react-table"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { ColorBadge } from "@/components/ui/color-badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -30,7 +29,6 @@ import toast from "react-hot-toast"
 import { structureTranslations } from "@/lib/translations/structure"
 import { DataTable } from "@/components/ui/data-table"
 import { AddRegionModal, EditRegionModal, DeleteRegionModal } from "@/components/modals/region"
-import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
 import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 
@@ -38,6 +36,7 @@ import { useRegions } from "@/hooks/use-regions"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
+import { Regions_regions } from "@/types/Regions"
 
 /**
  * PÁGINA DE GESTÃO DE REGIÕES
@@ -45,17 +44,14 @@ import { AccessDenied } from "@/components/access/access-denied"
  */
 export default function RegionsPage() {
   const { i18n } = useTranslation()
-  const { updateRegionContact, regions, refetchRegions } = useRegions();
+  const { regions, refetchRegions } = useRegions();
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   
   // Modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [isViewContactModalOpen, setIsViewContactModalOpen] = useState(false)
-  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false)
-  const [selectedRegion, setSelectedRegion] = useState<any>(null)
-  const [selectedBudget, setSelectedBudget] = useState<AnnualBudgetData | null>(null)
+  const [selectedRegion, setSelectedRegion] = useState<Regions_regions | null>(null)
   
   // Obter traduções para o idioma atual
   const currentLanguage = i18n?.language || 'en'
@@ -71,47 +67,37 @@ export default function RegionsPage() {
     breadcrumbs
   })
 
-  // Estatísticas calculadas dos dados
-  type RegionType = any;
-  const kpiData = useMemo(() => {
-    const totalRegions = regions.length;
-    const totalChurches = regions.reduce((sum: number, r: RegionType) => sum + (r.churches?.length || 0), 0);
-    
-    // Contar sub-regiões (provinces) - regiões que têm parent_region_id
-    const totalProvinces = regions.filter((r: RegionType) => r.parent_region_id !== null).length;
-    
-    return {
-      totalRegions,
-      totalChurches,
-      totalProvinces,
-    };
-  }, [regions]);
-
   // Dados dos KPIs em formato de array para o componente reutilizável
   const kpiCardsData: KPICardData[] = useMemo(() => [
     {
       id: "total-regions",
       title: t.totalRegions,
-      value: kpiData.totalRegions,
+      value: regions.reduce((count, region) => count + (region.is_deleted ? 0 : 1), 0),
       icon: MapPin,
       subtitle: "Active regions"
     },
     {
       id: "total-churches",
       title: t.totalChurches || "Total Churches",
-      value: kpiData.totalChurches,
+      value: regions.reduce((count, region) => !region.is_deleted ? count + (region.kpiData?.totalChurches || 0) : count, 0),
       icon: Home,
       subtitle: "Churches in all regions"
     },
     {
       id: "total-provinces",
       title: "Total Provinces",
-      value: kpiData.totalProvinces,
+      value: regions.reduce((count, region) => !region.is_deleted ? count + (region.kpiData?.totalProvinces || 0) : count, 0),
       icon: MapPin,
-      subtitle: "Sub-regions"
+      subtitle: "Provinces in all regions"
+    },
+        {
+      id: "total-cities",
+      title: "Total Cities",
+      value: regions.reduce((count, region) => !region.is_deleted ? count + (region.kpiData?.totalCities || 0) : count, 0),
+      icon: MapPin,
+      subtitle: "Cities in all regions"
     }
-  ], [kpiData, t])
-
+  ], [selectedRegion, t])
   /**
    * Carregamento inicial dos dados
    */
@@ -155,7 +141,7 @@ export default function RegionsPage() {
     }
   }
 
-  const handleEdit = (region: any) => {
+  const handleEdit = (region: Regions_regions) => {
     if (region) {
       setSelectedRegion(region);
       setIsEditModalOpen(true);
@@ -163,7 +149,7 @@ export default function RegionsPage() {
   };
   
   const handleDelete = (id: string, name: string) => {
-    const region = regions.find((r: RegionType) => r.id === id);
+    const region = regions.find((r: Regions_regions) => r.id === id);
     if (region) {
       setSelectedRegion(region);
       setIsDeleteModalOpen(true);
@@ -180,7 +166,7 @@ export default function RegionsPage() {
     handleRefresh()
   }
 
-  const handleRegionDeleted = (deletedRegion: any) => {
+  const handleRegionDeleted = (deletedRegion: string) => {
     toast.success(t.itemDeleted)
     handleRefresh()
   }
@@ -229,15 +215,22 @@ export default function RegionsPage() {
       id: "provinces",
       header: "Total Provinces",
       cell: ({ row }) => {
-        // Count sub-regions (child regions with this region as parent)
-        const provincesCount = regions.filter((r: RegionType) => 
-          r.parent_region_id === row.original.id
-        ).length;
-        
         return (
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">{provincesCount}</span>
+            <span className="font-medium">{row.original.kpiData?.totalProvinces || 0}</span>
+          </div>
+        );
+      },
+    },
+    {
+      id: "cities",
+      header: "Total Cities",
+      cell: ({ row }) => {
+        return (
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-muted-foreground" />
+            <span className="font-medium">{row.original.kpiData?.totalCities || 0}</span>
           </div>
         );
       },
@@ -404,42 +397,8 @@ export default function RegionsPage() {
           <DeleteRegionModal
             isOpen={isDeleteModalOpen}
             onOpenChange={setIsDeleteModalOpen}
-            region={{
-              id: selectedRegion.id,
-              institution_id: selectedRegion.institution_id,
-              name: selectedRegion.name,
-              parent_region_id: null,
-              contact_id: null,
-              created_at: selectedRegion.created_at,
-              updated_at: selectedRegion.created_at,
-              created_by: 'system',
-              updated_by: 'system',
-              is_deleted: false
-            }}
+            region={selectedRegion}
             onSuccess={handleRegionDeleted}
-          />
-        )}
-
-        {/* View Contact Modal */}
-        <ContactViewEditModal
-          isOpen={isViewContactModalOpen}
-          onOpenChange={setIsViewContactModalOpen}
-          contact={selectedRegion?.contact}
-          entityName={selectedRegion?.name}
-          entityType="Region"
-          entityId={selectedRegion?.id}
-          updateMutation={updateRegionContact}
-        />
-        
-        {/* Annual Budget Modal */}
-        {selectedRegion && (
-          <AnnualBudgetViewEditModal
-            isOpen={isBudgetModalOpen}
-            onOpenChange={setIsBudgetModalOpen}
-            budget={selectedBudget}
-            entityType="region"
-            entityName={selectedRegion.name}
-            onSave={handleBudgetSaved}
           />
         )}
       </div>
