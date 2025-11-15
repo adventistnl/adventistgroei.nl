@@ -25,12 +25,13 @@ export interface UpdateChurch {
 
 export interface UpdateChurchVariables {
   id: string;
-  institution_id: string;
-  name: string;
+  name?: string | null;
   region_id?: string | null;
-  email: string;
-  phone: string;
-  contactName: string;
-  city: string;
+  email?: string | null;
+  phone?: string | null;
+  contactName?: string | null;
+  city?: string | null;
+  country?: string | null;
+  state?: string | null;
   type?: ChurchType | null;
 }

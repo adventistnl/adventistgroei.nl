@@ -238,9 +238,9 @@ export type ChurchUpdateDto = {
   annual_budget?: InputMaybe<AnnualBudgetUpdateDto>;
   contact?: InputMaybe<ContactCreateDto>;
   departmens?: InputMaybe<Array<Scalars['String']['input']>>;
-  institution_id: Scalars['String']['input'];
-  name: Scalars['String']['input'];
-  region_id: Scalars['String']['input'];
+  institution_id?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  region_id?: InputMaybe<Scalars['String']['input']>;
   subsidy_requests?: InputMaybe<Array<Scalars['String']['input']>>;
   type?: InputMaybe<ChurchType>;
   users?: InputMaybe<Array<Scalars['String']['input']>>;

@@ -31,7 +31,13 @@ export const churchTranslations = {
           department_impact: "Department Impact",
           department_impact_desc: "All departments under this church will also be deactivated",
           project_impact: "Project Impact",
-          project_impact_desc: "All ongoing projects will be suspended and archived"
+          project_impact_desc: "All ongoing projects will be suspended and archived",
+          direct_relationships: "Departments and Users",
+          direct_relationships_desc: "All departments, users and budgets linked will be deleted in cascade",
+          indirect_relationships: "Related Data",
+          indirect_relationships_desc: "Projects, subsidies, reports and data related to departments will be removed",
+          data_safety: "Data Preservation",
+          data_safety_desc: "All records are marked as deleted (soft delete), allowing recovery if necessary"
         },
         soft_delete: {
           title: "Soft Delete",
@@ -139,6 +145,7 @@ export const churchTranslations = {
       province_required: "Province is required",
       region_required: "Region is required",
       type_required: "Church type is required",
+      country_required: "Country is required",
       email_invalid: "Please enter a valid email address",
       please_fix_errors: "Please fix the errors before continuing"
     },
@@ -164,6 +171,49 @@ export const churchTranslations = {
       activities: "Activities",
       budget: "Budget",
       events: "Events"
+    },
+
+    // Page-level translations
+    page: {
+      title: "Churches",
+      description: "Manage all churches in your institution",
+      totalChurches: "Total Churches",
+      totalMembers: "Total Members",
+      departments: "Departments",
+      totalProjects: "Total Projects",
+      active_churches: "Active churches",
+      total_members: "Total members",
+      active_departments: "Active departments",
+      active_projects: "Active projects",
+      vs_last_month: "vs last month"
+    },
+
+    // Table columns
+    table: {
+      name: "Name",
+      province: "Province",
+      city: "City",
+      region: "Region",
+      contact: "Contact",
+      type: "Type",
+      status: "Status",
+      members: "Members",
+      departments: "Departments",
+      action: "Action",
+      orphaned: "Orphaned",
+      orphaned_label: "Orphaned (No Region)"
+    },
+
+    // Messages
+    messages: {
+      loading: "Loading churches...",
+      empty: "No churches found",
+      error_loading: "Error loading churches",
+      refresh_success: "Churches refreshed successfully",
+      refresh_failed: "Failed to refresh churches",
+      view_details: "View Details",
+      edit_church: "Edit Church",
+      delete_church: "Delete Church"
     }
   },
   
@@ -199,7 +249,13 @@ export const churchTranslations = {
           department_impact: "Afdeling Impact",
           department_impact_desc: "Alle afdelingen onder deze kerk worden ook gedeactiveerd",
           project_impact: "Project Impact",
-          project_impact_desc: "Alle lopende projecten worden opgeschort en gearchiveerd"
+          project_impact_desc: "Alle lopende projecten worden opgeschort en gearchiveerd",
+          direct_relationships: "Afdelingen en Gebruikers",
+          direct_relationships_desc: "Alle gekoppelde afdelingen, gebruikers en budgetten worden in cascade verwijderd",
+          indirect_relationships: "Gerelateerde Gegevens",
+          indirect_relationships_desc: "Projecten, subsidies, rapporten en gerelateerde gegevens van afdelingen worden verwijderd",
+          data_safety: "Gegevens Bewaring",
+          data_safety_desc: "Alle records worden gemarkeerd als verwijderd (zachte verwijdering), wat herstel mogelijk maakt"
         },
         soft_delete: {
           title: "Zachte Verwijdering",
@@ -307,6 +363,7 @@ export const churchTranslations = {
       province_required: "Provincie is verplicht",
       region_required: "Regio is verplicht",
       type_required: "Kerktype is verplicht",
+      country_required: "Land is verplicht",
       email_invalid: "Voer een geldig e-mailadres in",
       please_fix_errors: "Los de fouten op voordat u doorgaat"
     },
@@ -332,6 +389,49 @@ export const churchTranslations = {
       activities: "Activiteiten",
       budget: "Budget",
       events: "Evenementen"
+    },
+
+    // Page-level translations
+    page: {
+      title: "Kerken",
+      description: "Beheer alle kerken in uw instituut",
+      totalChurches: "Totaal Kerken",
+      totalMembers: "Totaal Leden",
+      departments: "Afdelingen",
+      totalProjects: "Totaal Projecten",
+      active_churches: "Actieve kerken",
+      total_members: "Totaal leden",
+      active_departments: "Actieve afdelingen",
+      active_projects: "Actieve projecten",
+      vs_last_month: "versus vorige maand"
+    },
+
+    // Table columns
+    table: {
+      name: "Naam",
+      province: "Provincie",
+      city: "Stad",
+      region: "Regio",
+      contact: "Contact",
+      type: "Type",
+      status: "Status",
+      members: "Leden",
+      departments: "Afdelingen",
+      action: "Actie",
+      orphaned: "Weesgedeeld",
+      orphaned_label: "Weesgedeeld (Geen Regio)"
+    },
+
+    // Messages
+    messages: {
+      loading: "Kerken laden...",
+      empty: "Geen kerken gevonden",
+      error_loading: "Fout bij laden van kerken",
+      refresh_success: "Kerken succesvol vernieuwd",
+      refresh_failed: "Kon kerken niet vernieuwen",
+      view_details: "Details Bekijken",
+      edit_church: "Kerk Bewerken",
+      delete_church: "Kerk Verwijderen"
     }
   },
   
@@ -367,7 +467,13 @@ export const churchTranslations = {
           department_impact: "Impacto nos Departamentos",
           department_impact_desc: "Todos os departamentos sob esta igreja também serão desativados",
           project_impact: "Impacto nos Projetos",
-          project_impact_desc: "Todos os projetos em andamento serão suspensos e arquivados"
+          project_impact_desc: "Todos os projetos em andamento serão suspensos e arquivados",
+          direct_relationships: "Departamentos e Usuários",
+          direct_relationships_desc: "Todos os departamentos, usuários e orçamentos vinculados serão deletados em cascata",
+          indirect_relationships: "Dados Relacionados",
+          indirect_relationships_desc: "Projetos, subsídios, relatórios e dados relacionados aos departamentos serão removidos",
+          data_safety: "Preservação de Dados",
+          data_safety_desc: "Todos os registros são marcados como deletados (soft delete), permitindo recuperação se necessário"
         },
         soft_delete: {
           title: "Exclusão Suave",
@@ -475,6 +581,7 @@ export const churchTranslations = {
       province_required: "Província é obrigatória",
       region_required: "Região é obrigatória",
       type_required: "Tipo de igreja é obrigatório",
+      country_required: "País é obrigatório",
       email_invalid: "Digite um endereço de e-mail válido",
       please_fix_errors: "Corrija os erros antes de continuar"
     },
@@ -500,6 +607,49 @@ export const churchTranslations = {
       activities: "Atividades",
       budget: "Orçamento",
       events: "Eventos"
+    },
+
+    // Page-level translations
+    page: {
+      title: "Igrejas",
+      description: "Gerencie todas as igrejas em sua instituição",
+      totalChurches: "Total de Igrejas",
+      totalMembers: "Total de Membros",
+      departments: "Departamentos",
+      totalProjects: "Total de Projetos",
+      active_churches: "Igrejas ativas",
+      total_members: "Total de membros",
+      active_departments: "Departamentos ativos",
+      active_projects: "Projetos ativos",
+      vs_last_month: "vs mês anterior"
+    },
+
+    // Table columns
+    table: {
+      name: "Nome",
+      province: "Província",
+      city: "Cidade",
+      region: "Região",
+      contact: "Contato",
+      type: "Tipo",
+      status: "Status",
+      members: "Membros",
+      departments: "Departamentos",
+      action: "Ação",
+      orphaned: "Órfã",
+      orphaned_label: "Órfã (Sem Região)"
+    },
+
+    // Messages
+    messages: {
+      loading: "Carregando igrejas...",
+      empty: "Nenhuma igreja encontrada",
+      error_loading: "Erro ao carregar igrejas",
+      refresh_success: "Igrejas atualizadas com sucesso",
+      refresh_failed: "Falha ao atualizar igrejas",
+      view_details: "Ver Detalhes",
+      edit_church: "Editar Igreja",
+      delete_church: "Deletar Igreja"
     }
   }
 }

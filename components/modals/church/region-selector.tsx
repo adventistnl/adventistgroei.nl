@@ -24,7 +24,7 @@ import { Regions_regions } from "@/types/Regions"
 
 interface RegionSelectorProps {
   value: string
-  onChange: (value: string) => void
+  onChangeAction: (value: string) => void
   regions: Regions_regions[]
   isLoading?: boolean
   error?: string
@@ -33,7 +33,7 @@ interface RegionSelectorProps {
 
 export function RegionSelector({
   value,
-  onChange,
+  onChangeAction,
   regions,
   isLoading = false,
   error,
@@ -46,10 +46,14 @@ export function RegionSelector({
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Filter regions by search query
+  // Filter regions by search query and active status
   const filteredRegions = useMemo(() => {
-    if (!searchQuery) return regions
-    return regions.filter(region =>
+    // First filter by active status (is_deleted = false)
+    const activeRegions = regions.filter(region => !region.is_deleted)
+    
+    // Then filter by search query if provided
+    if (!searchQuery) return activeRegions
+    return activeRegions.filter(region =>
       region.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       region.description?.toLowerCase().includes(searchQuery.toLowerCase())
     )
@@ -100,7 +104,7 @@ export function RegionSelector({
                   <CommandItem
                     value="clear"
                     onSelect={() => {
-                      onChange("")
+                      onChangeAction("")
                       setOpen(false)
                       setSearchQuery("")
                     }}
@@ -121,7 +125,7 @@ export function RegionSelector({
                     key={region.id}
                     value={region.name}
                     onSelect={() => {
-                      onChange(region.id)
+                      onChangeAction(region.id)
                       setOpen(false)
                       setSearchQuery("")
                     }}

@@ -9,6 +9,8 @@ export const CREATE_CHURCH_MUTATION = gql`
     $phone: String!
     $contactName: String!
     $city: String!
+    $country: String!
+    $state: String!
     $type: ChurchType
   ) {
     createChurch(
@@ -22,6 +24,8 @@ export const CREATE_CHURCH_MUTATION = gql`
           phone: $phone
           name: $contactName
           city: $city
+          country: $country
+          state: $state
         }
       }
     ) {
@@ -38,19 +42,19 @@ export const CREATE_CHURCH_MUTATION = gql`
 export const UPDATE_CHURCH_MUTATION = gql`
   mutation UpdateChurch(
     $id: String!
-    $institution_id: String!
-    $name: String!
+    $name: String
     $region_id: String
-    $email: String!
-    $phone: String!
-    $contactName: String!
-    $city: String!
+    $email: String
+    $phone: String
+    $contactName: String
+    $city: String
+    $country: String
+    $state: String
     $type: ChurchType
   ) {
     updateChurch(
       id: $id
       data: {
-        institution_id: $institution_id
         name: $name
         region_id: $region_id
         type: $type
@@ -59,6 +63,8 @@ export const UPDATE_CHURCH_MUTATION = gql`
           phone: $phone
           name: $contactName
           city: $city
+          country: $country
+          state: $state
         }
       }
     ) {
@@ -68,6 +74,17 @@ export const UPDATE_CHURCH_MUTATION = gql`
       region_id
       type
       updated_at
+    }
+  }
+`;
+
+export const DELETE_CHURCH_MUTATION = gql`
+  mutation DeleteChurch($id: String!) {
+    deleteChurch(id: $id) {
+      id
+      name
+      is_deleted
+      deleted_at
     }
   }
 `;

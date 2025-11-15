@@ -31,5 +31,7 @@ export interface CreateChurchVariables {
   phone: string;
   contactName: string;
   city: string;
+  country: string;
+  state: string;
   type?: ChurchType | null;
 }

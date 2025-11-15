@@ -5,37 +5,36 @@ import { useTranslation } from "react-i18next"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { 
-  AlertTriangle, 
-  Home, 
-  ChevronDown, 
-  ChevronRight, 
-  Lock, 
-  Database, 
-  Users,
-  MapPin,
-  DollarSign,
-  Calendar,
-  Globe,
-  Building,
-  FileText,
   Trash2,
-  Layers
+  Home,
+  ChevronDown,
+  ChevronRight,
+  Lock,
+  Database,
+  Layers,
 } from "lucide-react"
 import toast from "react-hot-toast"
+import { useChurches } from "@/hooks/use-churches"
 import { churchTranslations } from "@/lib/translations/churches"
 
 export interface ChurchData {
   id: string
   institution_id: string
   name: string
-  region_id: string
+  region_id?: string | null
   contact_id?: string | null
+  contact?: {
+    id?: string
+    name?: string | null
+    phone?: string | null
+    email?: string | null
+    country?: string | null
+    city?: string | null
+  } | null
+  type?: string | null
   created_at: string
   updated_at: string
   created_by: string
@@ -47,18 +46,19 @@ export interface ChurchData {
 
 export interface DeleteChurchModalProps {
   isOpen: boolean
-  onOpenChange: (open: boolean) => void
+  onOpenChangeAction: (open: boolean) => void
   church: ChurchData | null
   onSuccess?: (deletedChurch: ChurchData) => void
 }
 
 export function DeleteChurchModal({
   isOpen,
-  onOpenChange,
+  onOpenChangeAction,
   church,
   onSuccess
 }: DeleteChurchModalProps) {
   const { t, i18n } = useTranslation()
+  const { deleteChurch } = useChurches()
   const [isLoading, setIsLoading] = useState(false)
   const [consequencesOpen, setConsequencesOpen] = useState(false)
   const [understoodConsequences, setUnderstoodConsequences] = useState(false)
@@ -68,30 +68,33 @@ export function DeleteChurchModal({
   const currentLanguage = i18n?.language || 'en'
   const tChurch = churchTranslations[currentLanguage as keyof typeof churchTranslations] || churchTranslations.en
 
-  const handleSubmit = async () => {
+  const handleDelete = async () => {
     if (!church) return
 
     setIsLoading(true)
     const loadingToast = toast.loading(tChurch.toasts.deactivating)
-    
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      const variables = {
+        id: church.id
+      }
+      const res = await deleteChurch({ variables })
+      if (!res || !res.data) {
+        throw new Error("Failed to delete church")
+      }
+
       toast.dismiss(loadingToast)
       toast.success(tChurch.toasts.deactivated, {
         duration: 3000,
         icon: '🏢'
       })
-      
-      // Call success callback if provided
+
       if (onSuccess) {
         onSuccess(church)
       }
-      
-      // Close modal
-      onOpenChange(false)
-      
+
+      onOpenChangeAction(false)
+
     } catch (error) {
       toast.dismiss(loadingToast)
       toast.error(tChurch.toasts.deactivate_failed)
@@ -105,70 +108,45 @@ export function DeleteChurchModal({
       setConsequencesOpen(false)
       setUnderstoodConsequences(false)
       setFinalConfirmation('')
-      onOpenChange(false)
+      onOpenChangeAction(false)
     }
   }
 
-  const isDeleteEnabled = understoodConsequences && finalConfirmation.toLowerCase() === tChurch.modals.delete.confirmation_text.toLowerCase()
+  const isDeleteEnabled = understoodConsequences && finalConfirmation.toLowerCase() === 'delete church' && !isLoading
 
   if (!church) return null
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="w-[95vw] max-w-lg max-h-[95vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0 pb-4">
-          <DialogTitle className="flex items-center gap-2 text-lg">
-            <Trash2 className="w-5 h-5 text-muted-foreground" />
+        <DialogHeader className="flex-shrink-0 pb-4 border-b border-red-200 dark:border-red-900/50">
+          <DialogTitle className="text-lg mb-2 text-red-700 dark:text-red-400">
             {tChurch.modals.delete.deactivate_title}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
             {tChurch.modals.delete.deactivate_description}
           </DialogDescription>
         </DialogHeader>
-        
+
         {/* Conteúdo - Scrollable */}
         <div className="flex-1 overflow-y-auto min-h-0">
           <div className="space-y-6 p-1">
+
             {/* Church Information */}
-            <div className="flex items-start gap-4 p-4 bg-muted/50 rounded-lg border">
+            <div className="flex items-start gap-4 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg">
               {/* Ícone */}
-              <div className="w-12 h-12 bg-background rounded-full flex items-center justify-center flex-shrink-0 border">
-                <Home className="w-6 h-6 text-muted-foreground" />
+              <div className="w-12 h-12 bg-background rounded-full flex items-center justify-center flex-shrink-0 border border-red-200 dark:border-red-900">
+                <Home className="w-6 h-6 text-red-600 dark:text-red-400" />
               </div>
-              
+
               {/* Informações */}
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-foreground mb-1">
+                <h3 className="text-base font-semibold text-red-900 dark:text-red-100 mb-1">
                   {church.name}
                 </h3>
-                <p className="text-sm text-muted-foreground">
-                  Region ID: {church.region_id}
+                <p className="text-sm text-red-700 dark:text-red-200">
+                  {church.id}
                 </p>
-              </div>
-            </div>
-
-            {/* Affected Components */}
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium text-foreground text-center">
-                {tChurch.modals.delete.affected_components}
-              </h4>
-              <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Users className="w-4 h-4" />
-                  <span>{tChurch.stats.members}: <strong className="text-foreground">0</strong></span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Layers className="w-4 h-4" />
-                  <span>{tChurch.stats.departments}: <strong className="text-foreground">0</strong></span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Building className="w-4 h-4" />
-                  <span>{tChurch.stats.projects}: <strong className="text-foreground">0</strong></span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="w-4 h-4" />
-                  <span>{tChurch.stats.activities}: <strong className="text-foreground">0</strong></span>
-                </div>
               </div>
             </div>
 
@@ -177,7 +155,7 @@ export function DeleteChurchModal({
               <CollapsibleTrigger asChild>
                 <Button variant="outline" className="w-full justify-between" size="sm">
                   <span className="flex items-center gap-2 text-xs">
-                    {tChurch.modals.delete.view_consequences}
+                    {tChurch.modals.delete.view_consequences || "Ver consequências da deleção"}
                   </span>
                   {consequencesOpen ? (
                     <ChevronDown className="w-4 h-4" />
@@ -187,54 +165,35 @@ export function DeleteChurchModal({
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-3 mt-4">
-                {/* Member Access Consequence */}
-                <div className="flex items-start gap-3 p-3 border rounded-lg">
-                  <Lock className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                {/* Direct Relationships Consequence */}
+                <div className="flex items-start gap-3 p-3 border border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-950 rounded-lg">
+                  <Layers className="w-4 h-4 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-foreground">
-                      {tChurch.modals.delete.consequences.member_access}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {tChurch.modals.delete.consequences.member_access_desc}
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Data Preservation Consequence */}
-                <div className="flex items-start gap-3 p-3 border rounded-lg">
-                  <Database className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-foreground">
-                      {tChurch.modals.delete.consequences.data_preservation}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {tChurch.modals.delete.consequences.data_preservation_desc}
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Department Impact Consequence */}
-                <div className="flex items-start gap-3 p-3 border rounded-lg">
-                  <Layers className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-foreground">
-                      {tChurch.modals.delete.consequences.department_impact}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {tChurch.modals.delete.consequences.department_impact_desc}
+                    <p className="font-medium text-sm text-orange-900 dark:text-orange-100">{tChurch.modals.delete.consequences.direct_relationships}</p>
+                    <p className="text-xs text-orange-700 dark:text-orange-200">
+                      {tChurch.modals.delete.consequences.direct_relationships_desc}
                     </p>
                   </div>
                 </div>
 
-                {/* Project Impact Consequence */}
-                <div className="flex items-start gap-3 p-3 border rounded-lg">
-                  <Building className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                {/* Indirect Relationships Consequence */}
+                <div className="flex items-start gap-3 p-3 border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950 rounded-lg">
+                  <Database className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-foreground">
-                      {tChurch.modals.delete.consequences.project_impact}
+                    <p className="font-medium text-sm text-red-900 dark:text-red-100">{tChurch.modals.delete.consequences.indirect_relationships}</p>
+                    <p className="text-xs text-red-700 dark:text-red-200">
+                      {tChurch.modals.delete.consequences.indirect_relationships_desc}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {tChurch.modals.delete.consequences.project_impact_desc}
+                  </div>
+                </div>
+
+                {/* Data Preservation Consequence */}
+                <div className="flex items-start gap-3 p-3 border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                  <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm text-blue-900 dark:text-blue-100">{tChurch.modals.delete.consequences.data_safety}</p>
+                    <p className="text-xs text-blue-700 dark:text-blue-200">
+                      {tChurch.modals.delete.consequences.data_safety_desc}
                     </p>
                   </div>
                 </div>
@@ -252,7 +211,7 @@ export function DeleteChurchModal({
                 />
                 <label htmlFor="understand-consequences" className="text-sm cursor-pointer">
                   <span className="font-medium text-foreground">
-                    {tChurch.modals.delete.understand_consequences}
+                    {tChurch.modals.delete.understand_consequences || "Compreendo as consequências desta ação"}
                   </span>
                   <br />
                   <span className="text-muted-foreground">
@@ -263,10 +222,9 @@ export function DeleteChurchModal({
 
               {/* Final Confirmation Input */}
               {understoodConsequences && (
-                <div className="space-y-2 p-4 border rounded-lg">
-                  <label className="text-sm font-semibold text-red-700 dark:text-red-400 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" />
-                    {tChurch.modals.delete.type_confirmation.split("'")[0]}'<span className="font-bold">{tChurch.modals.delete.confirmation_text}</span>'{tChurch.modals.delete.type_confirmation.split("'")[2]}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">
+                    {tChurch.modals.delete.type_confirmation}
                   </label>
                   <Input
                     type="text"
@@ -276,7 +234,7 @@ export function DeleteChurchModal({
                     className="h-10"
                     disabled={isLoading}
                   />
-                  <p className="text-xs text-red-600 dark:text-red-400 font-medium">
+                  <p className="text-xs text-muted-foreground">
                     {tChurch.modals.delete.confirmation_help}
                   </p>
                 </div>
@@ -292,23 +250,23 @@ export function DeleteChurchModal({
               {t('common.cancel')}
             </Button>
             <Button
-              onClick={handleSubmit}
+              onClick={handleDelete}
               disabled={isLoading || !isDeleteEnabled}
               size="sm"
-              className={`min-w-[160px] text-xs ${
-                isDeleteEnabled 
-                  ? 'bg-red-600 hover:bg-red-700 text-white' 
+              className={`min-w-[140px] text-xs ${
+                isDeleteEnabled
+                  ? 'bg-red-600 hover:bg-red-700 text-white'
                   : 'bg-red-600/40 text-white/60 cursor-not-allowed hover:bg-red-600/40'
               }`}
             >
               {isLoading ? (
                 <>
                   <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1" />
-                  {tChurch.modals.delete.deactivating}
+                  {tChurch.toasts.deactivating}
                 </>
               ) : (
                 <>
-                  <AlertTriangle className="w-3 h-3 mr-1" />
+                  <Trash2 className="w-3 h-3 mr-1" />
                   {tChurch.modals.delete.deactivate_church}
                 </>
               )}

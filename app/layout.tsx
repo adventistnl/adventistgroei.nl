@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { GraphQLProvider } from "@/lib/apollo/graphql-provider"
+import { I18nProvider } from "@/lib/i18n/i18n-provider"
 import { AuthProvider } from "@/contexts/auth-context"
 import { PageProvider } from "@/contexts/page-context"
 import { InstitutionProvider } from "@/contexts/institution-context"
@@ -27,22 +28,24 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="antialiased font-sans">
-        <GraphQLProvider>
-          <AuthProvider>
-            <PrivacyProviderWithAuth>
-              <InstitutionProvider>
-                <PageProvider>
-                  <NavigationLoadingProvider>
-                    {children}
-                    <ToastProvider />
-                    <PrivacyDebugPanel />
-                    <PrivacyButtonDebugPanel />
-                  </NavigationLoadingProvider>
-                </PageProvider>
-              </InstitutionProvider>
-            </PrivacyProviderWithAuth>
-          </AuthProvider>
-        </GraphQLProvider>
+        <I18nProvider>
+          <GraphQLProvider>
+            <AuthProvider>
+              <PrivacyProviderWithAuth>
+                <InstitutionProvider>
+                  <PageProvider>
+                    <NavigationLoadingProvider>
+                      {children}
+                      <ToastProvider />
+                      <PrivacyDebugPanel />
+                      <PrivacyButtonDebugPanel />
+                    </NavigationLoadingProvider>
+                  </PageProvider>
+                </InstitutionProvider>
+              </PrivacyProviderWithAuth>
+            </AuthProvider>
+          </GraphQLProvider>
+        </I18nProvider>
       </body>
     </html>
   )

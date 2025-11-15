@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { structureTranslations } from "@/lib/translations/structure"
+import { regionTranslations } from "@/lib/translations/regions"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -105,7 +106,9 @@ export function EditRegionModal({
   const { i18n } = useTranslation()
   
   // Get translations for current language
-  const t_structure = structureTranslations[i18n.language as keyof typeof structureTranslations] || structureTranslations.en
+  const currentLanguage = i18n?.language || 'en'
+  const t_structure = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
+  const tRegion = regionTranslations[currentLanguage as keyof typeof regionTranslations] || regionTranslations.en
 
   // Reset form when modal opens
   useEffect(() => {
@@ -241,7 +244,7 @@ export function EditRegionModal({
 
     if (step === 1) {
       if (!selectedCountry) {
-        newErrors.country = "Please select a country"
+        newErrors.country = tRegion.validation.country_required
       }
     }
 
@@ -275,12 +278,12 @@ export function EditRegionModal({
 
   const handleSave = async () => {
     if (!validateStep(1) || !validateStep(2) || !validateStep(3) || !validateStep(4)) {
-      toast.error("Please fix the errors before continuing")
+      toast.error(tRegion.validation.please_fix_errors)
       return
     }
 
     setIsLoading(true)
-    const loadingToast = toast.loading("🗺️ Updating region...")
+    const loadingToast = toast.loading(tRegion.toasts.updating)
 
     try {
       // Build territory object
@@ -298,10 +301,7 @@ export function EditRegionModal({
       if (!res.data) throw new Error("Failed to update region")
 
       toast.dismiss(loadingToast)
-      toast.success(
-        `🎉 Region "${formData.name}" updated successfully!`,
-        { duration: 4000 }
-      )
+      toast.success(tRegion.toasts.updated, { duration: 4000 })
 
       // Create updated region object for callback
       const updatedRegion: Regions_regions = {
@@ -319,7 +319,7 @@ export function EditRegionModal({
       onOpenChange(false)
     } catch (error) {
       toast.dismiss(loadingToast)
-      toast.error("❌ Failed to update region")
+      toast.error(tRegion.toasts.update_failed)
       console.error("Error updating region:", error)
     } finally {
       setIsLoading(false)
@@ -349,8 +349,8 @@ export function EditRegionModal({
         return (
           <div className="space-y-8 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold text-foreground">Select Country</h3>
-              <p className="text-sm text-muted-foreground">Choose the country for this region</p>
+              <h3 className="text-lg font-semibold text-foreground">{tRegion.steps.step_1_title}</h3>
+              <p className="text-sm text-muted-foreground">{tRegion.steps.step_1_description}</p>
             </div>
 
             <div className="space-y-4 max-w-md mx-auto">
@@ -365,15 +365,15 @@ export function EditRegionModal({
                   >
                     <span className="flex items-center gap-2">
                       <Globe className="w-4 h-4" />
-                      {countries.find(c => c.code === selectedCountry)?.name || "Select country..."}
+                      {countries.find(c => c.code === selectedCountry)?.name || tRegion.placeholders.country_placeholder}
                     </span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0">
                   <Command>
-                    <CommandInput placeholder="Search country..." disabled={isLoading} />
-                    <CommandEmpty>No country found.</CommandEmpty>
+                    <CommandInput placeholder={tRegion.messages.search_country} disabled={isLoading} />
+                    <CommandEmpty>{tRegion.messages.no_country_found}</CommandEmpty>
                     <CommandGroup>
                       <CommandList>
                         {countries.map((country) => (
@@ -415,8 +415,8 @@ export function EditRegionModal({
         return (
           <div className="space-y-8 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">Basic Information</h3>
-              <p className="text-sm text-muted-foreground">Update region name, description and color</p>
+              <h3 className="text-lg font-medium text-foreground">{tRegion.steps.step_2_title}</h3>
+              <p className="text-sm text-muted-foreground">{tRegion.steps.step_2_description}</p>
             </div>
             
             <div className="space-y-6 max-w-md mx-auto">
@@ -424,7 +424,7 @@ export function EditRegionModal({
               <div className="space-y-2">
                 <Label htmlFor="name" className="flex items-center gap-2 text-sm">
                   <MapPin className="w-4 h-4 text-muted-foreground" />
-                  Region Name *
+                  {tRegion.fields.name} *
                 </Label>
                 <Input
                   id="name"
@@ -434,7 +434,7 @@ export function EditRegionModal({
                   onKeyDown={(e) => e.stopPropagation()}
                   autoComplete="off"
                   spellCheck={false}
-                  placeholder="Enter region name"
+                  placeholder={tRegion.placeholders.name}
                   disabled={isLoading}
                   className={`h-12 text-base ${errors.name ? 'border-red-500' : ''}`}
                 />
@@ -447,7 +447,7 @@ export function EditRegionModal({
               <div className="space-y-2">
                 <Label htmlFor="description" className="flex items-center gap-2 text-sm">
                   <FileText className="w-4 h-4 text-muted-foreground" />
-                  Description (Optional)
+                  {tRegion.fields.description}
                 </Label>
                 <Textarea
                   id="description"
@@ -457,7 +457,7 @@ export function EditRegionModal({
                   onKeyDown={(e) => e.stopPropagation()}
                   autoComplete="off"
                   spellCheck={false}
-                  placeholder="Brief description about the region..."
+                  placeholder={tRegion.placeholders.description}
                   disabled={isLoading}
                   className="min-h-[100px] text-base resize-none"
                   rows={4}
@@ -469,7 +469,7 @@ export function EditRegionModal({
                 value={formData.color || "#475569"}
                 onChange={(color) => handleInputChange('color', color)}
                 disabled={isLoading}
-                label="Region Color (Optional)"
+                label={tRegion.fields.color}
                 showPreview={true}
               />
             </div>
@@ -481,9 +481,9 @@ export function EditRegionModal({
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">Select Provinces & Cities</h3>
+              <h3 className="text-lg font-medium text-foreground">{tRegion.steps.step_3_title}</h3>
               <p className="text-sm text-muted-foreground">
-                Choose the provinces and cities that are part of this region
+                {tRegion.steps.step_3_description}
               </p>
             </div>
 
@@ -492,7 +492,7 @@ export function EditRegionModal({
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
-                  placeholder="Search province or city..."
+                  placeholder={tRegion.messages.search_province_city}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.stopPropagation()}
@@ -505,7 +505,7 @@ export function EditRegionModal({
                 <div className="border border-slate-200 rounded-lg p-3 bg-slate-50/50">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xs font-medium text-slate-600">
-                      {selectedProvinces.size} selecionada{selectedProvinces.size !== 1 ? 's' : ''} ({Array.from(selectedProvinces).reduce((sum, pc) => sum + (selectedCities[pc]?.size || 0), 0)} cities)
+                      {selectedProvinces.size} {tRegion.messages.selected}{selectedProvinces.size !== 1 ? 's' : ''} ({Array.from(selectedProvinces).reduce((sum, pc) => sum + (selectedCities[pc]?.size || 0), 0)} {tRegion.messages.cities})
                     </span>
                   </div>
                   
@@ -639,9 +639,9 @@ export function EditRegionModal({
         return (
           <div className="space-y-8 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold text-foreground">Review & Confirm Changes</h3>
+              <h3 className="text-lg font-semibold text-foreground">{tRegion.steps.step_4_title}</h3>
               <p className="text-sm text-muted-foreground">
-                Please review the updated information before saving
+                {tRegion.steps.step_4_description}
               </p>
             </div>
 
@@ -649,23 +649,23 @@ export function EditRegionModal({
               {/* Basic Information */}
               <div className="space-y-3">
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Basic Information
+                  {tRegion.sections.basic_info}
                 </h4>
                 <div className="space-y-2">
                   <div className="flex justify-between py-2 border-b border-border/50">
-                    <span className="text-sm text-muted-foreground">Name</span>
+                    <span className="text-sm text-muted-foreground">{tRegion.fields.name}</span>
                     <span className="text-sm font-medium text-right max-w-[60%]">{formData.name}</span>
                   </div>
                   {formData.description && (
                     <div className="flex justify-between py-2 border-b border-border/50">
-                      <span className="text-sm text-muted-foreground">Description</span>
+                      <span className="text-sm text-muted-foreground">{tRegion.fields.description}</span>
                       <span className="text-sm font-medium text-right max-w-[60%] line-clamp-3">
                         {formData.description}
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between py-2 border-b border-border/50">
-                    <span className="text-sm text-muted-foreground">Color</span>
+                    <span className="text-sm text-muted-foreground">{tRegion.fields.color}</span>
                     <div className="flex items-center gap-2">
                       <div 
                         className="w-4 h-4 rounded-full border"
@@ -680,19 +680,19 @@ export function EditRegionModal({
               {/* Territory Information */}
               <div className="space-y-3">
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Territory
+                  {tRegion.labels.coverage}
                 </h4>
                 <div className="space-y-2">
                   <div className="flex justify-between py-2 border-b border-border/50">
-                    <span className="text-sm text-muted-foreground">Country</span>
+                    <span className="text-sm text-muted-foreground">{tRegion.fields.country}</span>
                     <span className="text-sm font-medium">{countryName}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-border/50">
-                    <span className="text-sm text-muted-foreground">Provinces</span>
+                    <span className="text-sm text-muted-foreground">{tRegion.fields.provinces}</span>
                     <span className="text-sm font-medium">{selectedProvinces.size}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-border/50">
-                    <span className="text-sm text-muted-foreground">Cities</span>
+                    <span className="text-sm text-muted-foreground">{tRegion.table.cities}</span>
                     <span className="text-sm font-medium">{totalCities}</span>
                   </div>
                 </div>
@@ -702,7 +702,7 @@ export function EditRegionModal({
               {selectedProvinces.size > 0 && (
                 <div className="space-y-3">
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    Selected Provinces
+                    {tRegion.fields.provinces}
                   </h4>
                   <div className="space-y-2">
                     {Array.from(selectedProvinces).map(provinceCode => {
@@ -768,7 +768,7 @@ export function EditRegionModal({
           {/* Progress Bar */}
           <div className="mt-4 space-y-2">
             <div className="flex justify-between items-center text-xs text-muted-foreground">
-              <span>Step {currentStep} of {totalSteps}</span>
+              <span>{tRegion.steps.step} {currentStep} {tRegion.steps.of} {totalSteps}</span>
               <span>{Math.round((currentStep / totalSteps) * 100)}%</span>
             </div>
             <Progress value={(currentStep / totalSteps) * 100} className="h-1" />
@@ -796,7 +796,7 @@ export function EditRegionModal({
                   className="flex items-center gap-1 text-xs"
                 >
                   <ChevronLeft className="w-3 h-3" />
-                  Previous
+                  {tRegion.buttons.previous}
                 </Button>
               )}
               <Button 
@@ -806,7 +806,7 @@ export function EditRegionModal({
                 size="sm"
                 className="text-xs"
               >
-                Cancel
+                {tRegion.buttons.cancel}
               </Button>
             </div>
 
@@ -818,7 +818,7 @@ export function EditRegionModal({
                   size="sm"
                   className="flex items-center gap-1 text-xs"
                 >
-                  Next
+                  {tRegion.buttons.next}
                   <ChevronRight className="w-3 h-3" />
                 </Button>
               ) : (
@@ -831,12 +831,12 @@ export function EditRegionModal({
                   {isLoading ? (
                     <>
                       <Loader2 className="w-3 h-3 animate-spin mr-1" />
-                      Updating...
+                      {tRegion.buttons.updating}
                     </>
                   ) : (
                     <>
                       <Save className="w-3 h-3 mr-1" />
-                      Update Region
+                      {tRegion.buttons.update_region}
                     </>
                   )}
                 </Button>

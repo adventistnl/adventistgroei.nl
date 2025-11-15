@@ -13,33 +13,28 @@ import {
   User,
   Phone,
   Mail,
-  MapPin,
   ChevronLeft,
   ChevronRight,
-  Check,
-  AlertCircle
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { useChurches } from "@/hooks/use-churches"
 import { useRegions } from "@/hooks/use-regions"
 import { useInstitution } from "@/contexts/institution-context"
 import { CreateChurch, CreateChurchVariables } from "@/types/CreateChurch"
-import { cn } from "@/lib/utils"
-import { ChurchTypeSelector, getChurchTypeOptions } from "./church-type-selector"
+import { ChurchTypeSelector } from "./church-type-selector"
 import { RegionSelector } from "./region-selector"
 import { ProvinceAndCitySelector } from "./province-and-city-selector"
-import { ChurchType } from "@/types/graphql-global-types"
 import { churchTranslations } from "@/lib/translations/churches"
 export interface AddChurchModalProps {
   isOpen: boolean
-  onOpenChange: (open: boolean) => void
+  onOpenChangeAction: (open: boolean) => void
   institutionId: string
   onSave?: (church: CreateChurch) => void
 }
 
 export function AddChurchModal({
   isOpen,
-  onOpenChange,
+  onOpenChangeAction,
   institutionId,
   onSave
 }: AddChurchModalProps) {
@@ -56,6 +51,9 @@ export function AddChurchModal({
     phone: '',
     email: '',
     city: '',
+    country: '',
+    state: '',
+    region_id: null,
     type: null,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -76,11 +74,13 @@ export function AddChurchModal({
       setFormData({
         institution_id: institutionId,
         name: '',
-        region_id: '',
+        region_id: null,
         contactName: '',
         phone: '',
         email: '',
         city: '',
+        country: institutionCountry,
+        state: '',
         type: null,
       })
       setErrors({})
@@ -123,11 +123,13 @@ export function AddChurchModal({
     }
 
     if (step === 2) {
-      // Step 2: Geographic data - province and city are required, region is optional
-      if (!province) {
-        newErrors.province = tChurch.validation.province_required
+      // Step 2: Geographic data - country and state are required for creation
+      if (!formData.country?.trim()) {
+        newErrors.country = tChurch.validation.country_required
       }
-      // City validation can be added if needed
+      if (!formData.state?.trim()) {
+        newErrors.state = tChurch.validation.province_required
+      }
     }
 
     if (step === 3) {
@@ -140,9 +142,7 @@ export function AddChurchModal({
       if (!formData.name?.trim()) {
         newErrors.name = tChurch.validation.name_required
       }
-      if (!province) {
-        newErrors.province = tChurch.validation.province_required
-      }
+      // Type is required if it's a special church
       if (isSpecialChurch && !formData.type) {
         newErrors.type = tChurch.validation.type_required
       }
@@ -184,11 +184,13 @@ export function AddChurchModal({
       const variables: CreateChurchVariables = {
         institution_id: institutionId,
         name: formData.name!.trim(),
-        region_id: formData.region_id!,
+        region_id: formData.region_id,
         city: formData.city,
         email: formData.email,
         phone: formData.phone,
         contactName: formData.contactName,
+        country: formData.country,
+        state: formData.state,
         type: formData.type,
       }
       const res = await createChurch({ variables })
@@ -206,7 +208,7 @@ export function AddChurchModal({
         onSave(res.data)
       }
 
-      onOpenChange(false)
+      onOpenChangeAction(false)
 
     } catch (error) {
       toast.dismiss(loadingToast)
@@ -220,15 +222,17 @@ export function AddChurchModal({
     setFormData({
       institution_id: institutionId,
       name: '',
-      region_id: '',
+      region_id: null,
       contactName: '',
       phone: '',
       email: '',
       city: '',
+      country: institutionCountry,
+      state: '',
     })
     setErrors({})
     setCurrentStep(1)
-    onOpenChange(false)
+    onOpenChangeAction(false)
   }
 
   const renderStepContent = () => {
@@ -285,18 +289,21 @@ export function AddChurchModal({
             <div className="space-y-4 max-w-md mx-auto">
               <ProvinceAndCitySelector
                 provinceValue={province}
-                onProvinceChangeAction={(value: string) => setProvince(value)}
+                onProvinceChangeAction={(value: string) => {
+                  setProvince(value)
+                  handleInputChange('state', value)
+                }}
                 cityValue={formData.city || ''}
                 onCityChangeAction={(value: string) => handleInputChange('city', value)}
                 countryCode={institutionCountry}
                 isLoading={isLoading || regionsLoading}
-                provinceError={errors.province}
+                provinceError={errors.state}
                 cityError={errors.city}
               />
 
               <RegionSelector
                 value={formData.region_id || ''}
-                onChange={(value: string) => handleInputChange('region_id', value)}
+                onChangeAction={(value: string) => handleInputChange('region_id', value)}
                 regions={regions}
                 isLoading={regionsLoading}
                 error={errors.region_id}
@@ -380,7 +387,7 @@ export function AddChurchModal({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={!isLoading ? onOpenChange : undefined}>
+    <Dialog open={isOpen} onOpenChange={!isLoading ? onOpenChangeAction : undefined}>
       <DialogContent className="w-[95vw] max-w-2xl max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg">

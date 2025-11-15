@@ -18,12 +18,10 @@ import {
   Trash2,
   Users,
   MapPin,
-  DollarSign,
   ContactRound,
   TrendingUp,
   Layers,
   Eye,
-  Building2,
   Crown,
   Activity
 } from "lucide-react"
@@ -35,10 +33,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import toast from "react-hot-toast"
 import { structureTranslations } from "@/lib/translations/structure"
+import { churchTranslations } from "@/lib/translations/churches"
 import { UseTable } from "@/components/ui/use-table"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { ChurchTypeBadge } from "@/components/ui/church-type-badge"
-import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
+// import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
 import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget"
 import { AddChurchModal, EditChurchModal, DeleteChurchModal, ChurchData, RegionData } from "@/components/modals/church"
 import { ChurchesKPICards, KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
@@ -205,7 +204,7 @@ export default function ChurchesPage() {
   const [isAddChurchModalOpen, setIsAddChurchModalOpen] = useState(false)
   const [isEditChurchModalOpen, setIsEditChurchModalOpen] = useState(false)
   const [isDeleteChurchModalOpen, setIsDeleteChurchModalOpen] = useState(false)
-  const [selectedContact, setSelectedContact] = useState<ContactData | null>(null)
+  // const [selectedContact, setSelectedContact] = useState<ContactData | null>(null)
   const [selectedChurch, setSelectedChurch] = useState<any>(null)
   const [selectedBudget, setSelectedBudget] = useState<AnnualBudgetData | null>(null)
   const [churchToEdit, setChurchToEdit] = useState<ChurchData | null>(null)
@@ -214,6 +213,7 @@ export default function ChurchesPage() {
   // Obter traduções para o idioma atual
   const currentLanguage = i18n?.language || 'en'
   const t = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
+  const tChurch = churchTranslations[currentLanguage as keyof typeof churchTranslations] || churchTranslations.en
   
   const handleBackToList = React.useCallback(() => {
     setViewMode('list');
@@ -245,38 +245,38 @@ export default function ChurchesPage() {
   const kpiCardsData: KPICardData[] = useMemo(() => [
     {
       id: "total-churches",
-      title: t.totalChurches,
+      title: tChurch.page.totalChurches,
       value: currentInstitutionData?.churchesKpiData?.totalChurches || 0,
       icon: Home,
-      subtitle: "Active churches"
+      subtitle: tChurch.page.active_churches
     },
     {
       id: "total-members", 
-      title: t.totalMembers,
+      title: tChurch.page.totalMembers,
       value: currentInstitutionData?.churchesKpiData?.totalMembers || 0,
       icon: Users,
-      subtitle: "Total members"
+      subtitle: tChurch.page.total_members
     },
     {
       id: "total-departments",
-      title: t.departments,
+      title: tChurch.page.departments,
       value: currentInstitutionData?.churchesKpiData?.totalDepartments || 0,
       icon: Layers,
-      subtitle: "Active departments"
+      subtitle: tChurch.page.active_departments
     },
     {
       id: "total-projects",
-      title: "Total Projects",
+      title: tChurch.page.totalProjects,
       value: totalProjects,
       icon: TrendingUp,
-      subtitle: "Active projects",
+      subtitle: tChurch.page.active_projects,
       trend: {
         value: 8.2,
         isPositive: true,
-        label: "vs last month"
+        label: tChurch.page.vs_last_month
       }
     }
-  ], [currentInstitutionData?.churchesKpiData, t, totalProjects])
+  ], [currentInstitutionData?.churchesKpiData, tChurch, totalProjects])
 
   // Mock data for charts - simplified for easy integration
   const MOCK_CHURCH_ACTIVITIES = [
@@ -424,7 +424,8 @@ export default function ChurchesPage() {
         institution_id: church.institution_id,
         name: church.name,
         region_id: church.region_id,
-        contact_id: null,
+        contact_id: (church as any).contact_id || null,
+        contact: (church as any).contact || null,
         type: (church as any).type || null,
         created_at: church.created_at,
         updated_at: church.created_at,
@@ -462,30 +463,30 @@ export default function ChurchesPage() {
       const churchWithContact = church as any;
       
       // Create contact data from church information
-      const contactData: ContactData = {
-        id: `church_contact_${church.id}`,
-        name: churchWithContact.contact?.name || church.name || 'Church Contact',
-        phone: churchWithContact.contact?.phone || '',
-        mobile: churchWithContact.contact?.mobile || '',
-        email: churchWithContact.contact?.email || '',
-        country: churchWithContact.contact?.country || '',
-        city: churchWithContact.contact?.city || '',
-        address: churchWithContact.contact?.address || '',
-        full_address: churchWithContact.contact?.full_address || '',
-        postal_code: churchWithContact.contact?.postal_code || '',
-        website: churchWithContact.contact?.website || '',
-        notes: churchWithContact.contact?.notes || `Contact information for ${church.name}`,
-        is_primary: true,
-        created_at: church.created_at,
-        updated_at: church.created_at,
-        created_by: 'system',
-        updated_by: 'system',
-        is_deleted: false,
-        deleted_at: null,
-        deleted_by: null
-      };
+      // const contactData: ContactData = {
+      //   id: `church_contact_${church.id}`,
+      //   name: churchWithContact.contact?.name || church.name || 'Church Contact',
+      //   phone: churchWithContact.contact?.phone || '',
+      //   mobile: churchWithContact.contact?.mobile || '',
+      //   email: churchWithContact.contact?.email || '',
+      //   country: churchWithContact.contact?.country || '',
+      //   city: churchWithContact.contact?.city || '',
+      //   address: churchWithContact.contact?.address || '',
+      //   full_address: churchWithContact.contact?.full_address || '',
+      //   postal_code: churchWithContact.contact?.postal_code || '',
+      //   website: churchWithContact.contact?.website || '',
+      //   notes: churchWithContact.contact?.notes || `Contact information for ${church.name}`,
+      //   is_primary: true,
+      //   created_at: church.created_at,
+      //   updated_at: church.created_at,
+      //   created_by: 'system',
+      //   updated_by: 'system',
+      //   is_deleted: false,
+      //   deleted_at: null,
+      //   deleted_by: null
+      // };
       
-      setSelectedContact(contactData);
+      // setSelectedContact(contactData);
       setSelectedChurch(church);
       setIsViewContactModalOpen(true);
     }
@@ -654,7 +655,7 @@ export default function ChurchesPage() {
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-muted-foreground" />
               <Badge variant="secondary" className="bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800">
-                Orphaned
+                {tChurch.table.orphaned}
               </Badge>
             </div>
           )
@@ -700,7 +701,7 @@ export default function ChurchesPage() {
     {
       id: "status",
       accessorKey: "is_deleted",
-      header: "Status",
+      header: tChurch.table.status,
       cell: ({ row }) => (
         <StatusBadge 
           label={row.original.is_deleted === true ? t.inactive : t.active}
@@ -717,7 +718,7 @@ export default function ChurchesPage() {
     {
       id: "type",
       accessorKey: "type",
-      header: "Type",
+      header: tChurch.table.type,
       cell: ({ row }) => {
         const churchType = row.original.type as ChurchTypeEnum
         return (
@@ -741,12 +742,12 @@ export default function ChurchesPage() {
           <DropdownMenuContent>
             <DropdownMenuItem onClick={() => handleViewDetails(row.original.id)}>
               <Eye className="w-4 h-4 mr-2" />
-              View Details
+              {tChurch.messages.view_details}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleViewContact(row.original.id)}>
+            {/* <DropdownMenuItem onClick={() => handleViewContact(row.original.id)}>
               <ContactRound className="w-4 h-4 mr-2" />
               {t.viewContact}
-            </DropdownMenuItem>
+            </DropdownMenuItem> */}
             <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
               <Edit className="w-4 h-4 mr-2" />
               {t.editChurch}
@@ -1176,7 +1177,7 @@ export default function ChurchesPage() {
                   options: [
                     // Adicionar opção para igrejas órfãs
                     ...(churches.some((c: any) => !c.region) ? [{
-                      label: "Orphaned (No Region)",
+                      label: tChurch.table.orphaned_label,
                       value: "__orphaned__"
                     }] : []),
                     // Adicionar opções de regiões
@@ -1271,7 +1272,7 @@ export default function ChurchesPage() {
                       description={`${
                         selectedChurchDetail.region?.name 
                           ? selectedChurchDetail.region.name
-                          : '🔗 Orphaned (No Region)'
+                          : `🔗 ${tChurch.table.orphaned_label}`
                       } • ${churchMembers} members • ${churchDepartments} departments`}
                       icon={Home}
                       badges={[
@@ -1451,7 +1452,7 @@ export default function ChurchesPage() {
         )}
 
         {/* View Contact Modal */}
-        {selectedContact && selectedChurch && (
+        {/* {selectedContact && selectedChurch && (
           <ContactViewEditModal
             isOpen={isViewContactModalOpen}
             onOpenChange={setIsViewContactModalOpen}
@@ -1476,7 +1477,7 @@ export default function ChurchesPage() {
             }}
           />
         )}
-        
+         */}
         {/* Annual Budget Modal */}
         {selectedChurch && (
           <AnnualBudgetViewEditModal
@@ -1492,7 +1493,7 @@ export default function ChurchesPage() {
         {/* Add Church Modal */}
         <AddChurchModal
           isOpen={isAddChurchModalOpen}
-          onOpenChange={setIsAddChurchModalOpen}
+          onOpenChangeAction={setIsAddChurchModalOpen}
           institutionId={currentInstitutionData?.id || ''}
           onSave={handleChurchSaved}
         />
@@ -1501,7 +1502,7 @@ export default function ChurchesPage() {
         {churchToEdit && (
           <EditChurchModal
             isOpen={isEditChurchModalOpen}
-            onOpenChange={setIsEditChurchModalOpen}
+            onOpenChangeAction={setIsEditChurchModalOpen}
             church={churchToEdit}
             onSave={handleChurchUpdated}
           />
@@ -1511,7 +1512,7 @@ export default function ChurchesPage() {
         {churchToDelete && (
           <DeleteChurchModal
             isOpen={isDeleteChurchModalOpen}
-            onOpenChange={setIsDeleteChurchModalOpen}
+            onOpenChangeAction={setIsDeleteChurchModalOpen}
             church={churchToDelete}
             onSuccess={handleChurchDeleted}
           />

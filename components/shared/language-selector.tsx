@@ -16,7 +16,7 @@ import { useLanguageOptions } from "@/hooks/use-language-preferences"
 
 export function LanguageSelector() {
   const { i18n, t } = useTranslation()
-  const { isReady, hasTimedOut, currentLanguage } = useI18nReady()
+  const { isReady, currentLanguage } = useI18nReady()
   const languageOptions = useLanguageOptions()
 
   // Criar um mapeamento para incluir as iniciais baseadas nos dados do hook
@@ -36,8 +36,8 @@ export function LanguageSelector() {
     
     const selectedLang = languagesWithInitials.find(lang => lang.code === languageCode)
     
-    i18n.changeLanguage(languageCode)
-      .then(() => {
+    try {
+      i18n.changeLanguage(languageCode).then(() => {
         toast.success(
           `🌍 Language changed to ${selectedLang?.name}`,
           {
@@ -47,24 +47,15 @@ export function LanguageSelector() {
         )
         // Salvar preferência no localStorage
         localStorage.setItem('preferred-language', languageCode)
-      })
-      .catch((err) => {
+      }).catch((err) => {
         console.error('Failed to change language:', err)
         toast.error('Failed to change language', { duration: 2000 })
       })
-  }
-
-  // Load saved language preference on mount
-  React.useEffect(() => {
-    if (isReady && i18n.isInitialized) {
-      const savedLanguage = localStorage.getItem('preferred-language')
-      if (savedLanguage && savedLanguage !== i18n.language && i18n.changeLanguage) {
-        i18n.changeLanguage(savedLanguage).catch(err => {
-          console.warn('Failed to load saved language:', err)
-        })
-      }
+    } catch (error) {
+      console.error('Error changing language:', error)
+      toast.error('Unable to change language at this time', { duration: 2000 })
     }
-  }, [isReady, i18n])
+  }
 
   const displayLanguage = languagesWithInitials.find(lang => lang.code === currentLanguage) || 
     languagesWithInitials.find(lang => lang.code === 'en') || 

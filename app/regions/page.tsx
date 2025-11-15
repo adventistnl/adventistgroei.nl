@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import toast from "react-hot-toast"
 import { structureTranslations } from "@/lib/translations/structure"
+import { regionTranslations } from "@/lib/translations/regions"
 import { DataTable } from "@/components/ui/data-table"
 import { AddRegionModal, EditRegionModal, DeleteRegionModal } from "@/components/modals/region"
 import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget"
@@ -56,11 +57,12 @@ export default function RegionsPage() {
   // Obter traduções para o idioma atual
   const currentLanguage = i18n?.language || 'en'
   const t = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
+  const tRegion = regionTranslations[currentLanguage as keyof typeof regionTranslations] || regionTranslations.en
 
   const breadcrumbs = useMemo(() => [
     { name: "Structure & Organization" },
     { name: "Regions" }
-  ], [t])
+  ], [])
 
   usePageTitle({
     title: t.regionsTitle,
@@ -71,71 +73,71 @@ export default function RegionsPage() {
   const kpiCardsData: KPICardData[] = useMemo(() => [
     {
       id: "total-regions",
-      title: t.totalRegions,
+      title: tRegion.page.totalRegions,
       value: regions.reduce((count, region) => count + (region.is_deleted ? 0 : 1), 0),
       icon: MapPin,
-      subtitle: "Active regions"
+      subtitle: tRegion.page.active_regions
     },
     {
       id: "total-churches",
-      title: t.totalChurches || "Total Churches",
+      title: tRegion.page.totalChurches,
       value: regions.reduce((count, region) => !region.is_deleted ? count + (region.kpiData?.totalChurches || 0) : count, 0),
       icon: Home,
-      subtitle: "Churches in all regions"
+      subtitle: tRegion.page.churches_in_regions
     },
     {
       id: "total-provinces",
-      title: "Total Provinces",
+      title: tRegion.page.totalProvinces,
       value: regions.reduce((count, region) => !region.is_deleted ? count + (region.kpiData?.totalProvinces || 0) : count, 0),
       icon: MapPin,
-      subtitle: "Provinces in all regions"
+      subtitle: tRegion.page.provinces_in_regions
     },
         {
       id: "total-cities",
-      title: "Total Cities",
+      title: tRegion.page.totalCities,
       value: regions.reduce((count, region) => !region.is_deleted ? count + (region.kpiData?.totalCities || 0) : count, 0),
       icon: MapPin,
-      subtitle: "Cities in all regions"
+      subtitle: tRegion.page.cities_in_regions
     }
-  ], [selectedRegion, t])
+  ], [regions, tRegion])
   /**
    * Carregamento inicial dos dados
    */
   useEffect(() => {
     const loadData = async () => {
-      const loadingToast = toast.loading(t.loading)
+      const loadingToast = toast.loading(tRegion.messages.loading)
       
       try {
-        await new Promise(resolve => setTimeout(resolve, 1500))
+        await refetchRegions()
         
         toast.dismiss(loadingToast)
-        toast.success(t.dataRefreshed, { duration: 3000 })
+        toast.success(tRegion.messages.refresh_success, { duration: 3000 })
         setIsLoading(false)
         
       } catch (error) {
-      toast.dismiss(loadingToast)
-        toast.error(t.error)
+        toast.dismiss(loadingToast)
+        toast.error(tRegion.messages.error_loading)
         setIsLoading(false)
       }
     }
 
     loadData()
-  }, [t])
+  }, [refetchRegions, tRegion])
 
   /**
    * Handlers para ações
    */
   const handleRefresh = async () => {
     setRefreshing(true)
-    const refreshToast = toast.loading(t.refreshing)
+    const refreshToast = toast.loading(tRegion.messages.loading)
     
     try {
       await refetchRegions()
       toast.dismiss(refreshToast)
-      toast.success(t.dataRefreshed, { duration: 2000 })
+      toast.success(tRegion.messages.refresh_success, { duration: 2000 })
     } catch (error) {
       toast.dismiss(refreshToast)
-      toast.error(t.errorRefreshing)
+      toast.error(tRegion.messages.refresh_failed)
     } finally {
       setRefreshing(false)
     }
@@ -162,17 +164,17 @@ export default function RegionsPage() {
   }
 
   const handleRegionUpdated = (updatedRegion: any) => {
-    toast.success(t.itemUpdated)
+    toast.success(tRegion.toasts.updated)
     handleRefresh()
   }
 
   const handleRegionDeleted = (deletedRegion: string) => {
-    toast.success(t.itemDeleted)
+    toast.success(tRegion.toasts.deactivated)
     handleRefresh()
   }
   
   const handleBudgetSaved = (budget: AnnualBudgetData) => {
-    toast.success("Budget updated successfully")
+    toast.success(tRegion.toasts.updated)
     handleRefresh()
   }
 
@@ -181,7 +183,7 @@ export default function RegionsPage() {
     {
       id: "name",
       accessorKey: "name",
-      header: t.name,
+      header: tRegion.table.name,
       cell: ({ row }) => {
         const color = row.original.color || '#10b981'; // Default green color
         return (
@@ -205,7 +207,7 @@ export default function RegionsPage() {
     {
       id: "color",
       accessorKey: "color",
-      header: "Color",
+      header: tRegion.table.color,
       cell: ({ row }) => {
         const color = row.original.color || '#10b981';
         return <ColorBadge color={color} showHex={true} />;
@@ -213,7 +215,7 @@ export default function RegionsPage() {
     },
     {
       id: "provinces",
-      header: "Total Provinces",
+      header: tRegion.table.provinces,
       cell: ({ row }) => {
         return (
           <div className="flex items-center gap-2">
@@ -225,7 +227,7 @@ export default function RegionsPage() {
     },
     {
       id: "cities",
-      header: "Total Cities",
+      header: tRegion.table.cities,
       cell: ({ row }) => {
         return (
           <div className="flex items-center gap-2">
@@ -238,7 +240,7 @@ export default function RegionsPage() {
     {
       id: "churches",
       accessorKey: "churches_count",
-      header: t.churches,
+      header: tRegion.table.churches,
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Home className="w-4 h-4 text-muted-foreground" />
@@ -251,7 +253,7 @@ export default function RegionsPage() {
       accessorKey: "is_deleted",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          Status
+          {tRegion.table.status}
         </div>
       ),
       cell: ({ row }) => (
@@ -282,11 +284,11 @@ export default function RegionsPage() {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => handleEdit(row.original)}>
                 <Edit className="w-4 h-4 mr-2" />
-                {t.editRegion}
+                {tRegion.messages.edit_region}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
                 <Trash2 className="w-4 h-4 mr-2" />
-                {t.deleteRegion}
+                {tRegion.messages.delete_region}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -368,9 +370,9 @@ export default function RegionsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MapPin className="w-5 h-5" />
-              Regions
+              {tRegion.page.title}
             </CardTitle>
-            <CardDescription>Lista completa de regiões com ações de gerenciamento</CardDescription>
+            <CardDescription>{tRegion.page.description}</CardDescription>
           </CardHeader>
           <CardContent className="overflow-hidden">
             <DataTable
