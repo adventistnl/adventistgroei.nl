@@ -10,42 +10,53 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Mail, ArrowLeft } from 'lucide-react'
 import { AdventistLogo } from '@/components/ui/adventist-logo'
+import { useSendForgotPasswordCodeMutation } from '@/hooks/graphql/use-forgot-password-mutation'
 
 function ForgotPasswordPageContent() {
   const [email, setEmail] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   
   const { i18n } = useTranslation()
   const router = useRouter()
+  const [sendCode, { loading: isSubmitting }] = useSendForgotPasswordCodeMutation()
 
   const currentLanguage = i18n?.language || 'en'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    setIsSubmitting(true)
 
     if (!email) {
       setError('Email is required')
-      setIsSubmitting(false)
       return
     }
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      toast.success('Verification code sent to your email', {
+      const response = await sendCode({
+        variables: { email }
+      })
+
+      const result = response.data?.sendForgotPasswordCode
+
+      if (result?.success) {
+        toast.success(result?.message || 'Verification code sent to your email', {
+          duration: 4000
+        })
+        
+        // Navigate to verify code page
+        router.push(`/forgot-password/verify?email=${encodeURIComponent(email)}`)
+      } else {
+        setError(result?.error || 'Error sending verification code')
+        toast.error(result?.error || 'Error sending verification code', {
+          duration: 4000
+        })
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error sending verification code'
+      setError(errorMessage)
+      toast.error(errorMessage, {
         duration: 4000
       })
-      
-      // Navigate to verify code page
-      router.push(`/forgot-password/verify?email=${encodeURIComponent(email)}`)
-    } catch (error) {
-      setError('Error sending verification code')
-    } finally {
-      setIsSubmitting(false)
     }
   }
 

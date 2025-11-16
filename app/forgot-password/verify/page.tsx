@@ -9,16 +9,18 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ArrowLeft, CheckCircle } from 'lucide-react'
 import { AdventistLogo } from '@/components/ui/adventist-logo'
+import { useVerifyForgotPasswordCodeMutation, useSendForgotPasswordCodeMutation } from '@/hooks/graphql/use-forgot-password-mutation'
 
 function VerifyCodePageContent() {
   const [code, setCode] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [resendCooldown, setResendCooldown] = useState(0)
   
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [verifyCode, { loading: isSubmitting }] = useVerifyForgotPasswordCodeMutation()
+  const [resendCode, { loading: isResending }] = useSendForgotPasswordCodeMutation()
 
   useEffect(() => {
     const emailParam = searchParams.get('email')
@@ -39,28 +41,38 @@ function VerifyCodePageContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    setIsSubmitting(true)
 
     if (code.length !== 6) {
       setError('Please enter the 6-digit code')
-      setIsSubmitting(false)
       return
     }
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      toast.success('Code verified successfully', {
-        duration: 3000
+      const response = await verifyCode({
+        variables: { email, code }
       })
-      
-      // Navigate to reset password page
-      router.push(`/forgot-password/reset?email=${encodeURIComponent(email)}&code=${code}`)
+
+      const result = response.data?.verifyForgotPasswordCode
+
+      if (result?.success && result?.resetToken) {
+        toast.success(result?.message || 'Code verified successfully', {
+          duration: 3000
+        })
+        
+        // Navigate to reset password page with reset token
+        router.push(`/forgot-password/reset?email=${encodeURIComponent(email)}&code=${code}&resetToken=${encodeURIComponent(result.resetToken)}`)
+      } else {
+        setError(result?.error || 'Invalid verification code')
+        toast.error(result?.error || 'Invalid verification code', {
+          duration: 4000
+        })
+      }
     } catch (error) {
-      setError('Invalid verification code')
-    } finally {
-      setIsSubmitting(false)
+      const errorMessage = error instanceof Error ? error.message : 'Invalid verification code'
+      setError(errorMessage)
+      toast.error(errorMessage, {
+        duration: 4000
+      })
     }
   }
 
@@ -68,16 +80,28 @@ function VerifyCodePageContent() {
     if (resendCooldown > 0) return
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      toast.success('New code sent to your email', {
-        duration: 3000
+      const response = await resendCode({
+        variables: { email }
       })
-      
-      setResendCooldown(60) // 60 seconds cooldown
+
+      const result = response.data?.sendForgotPasswordCode
+
+      if (result?.success) {
+        toast.success(result?.message || 'New code sent to your email', {
+          duration: 3000
+        })
+        
+        setResendCooldown(60) // 60 seconds cooldown
+      } else {
+        toast.error(result?.error || 'Failed to resend code', {
+          duration: 4000
+        })
+      }
     } catch (error) {
-      toast.error('Failed to resend code')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to resend code'
+      toast.error(errorMessage, {
+        duration: 4000
+      })
     }
   }
 

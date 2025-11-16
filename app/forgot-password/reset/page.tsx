@@ -9,25 +9,31 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Eye, EyeOff, CheckCircle, Lock } from 'lucide-react'
 import { AdventistLogo } from '@/components/ui/adventist-logo'
+import { useResetPasswordMutation } from '@/hooks/graphql/use-forgot-password-mutation'
 
 function ResetPasswordPageContent() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [email, setEmail] = useState('')
+  const [code, setCode] = useState('')
+  const [resetToken, setResetToken] = useState('')
   const [error, setError] = useState('')
   
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [resetPassword, { loading: isSubmitting }] = useResetPasswordMutation()
 
   useEffect(() => {
     const emailParam = searchParams.get('email')
     const codeParam = searchParams.get('code')
+    const tokenParam = searchParams.get('resetToken')
     
-    if (emailParam && codeParam) {
+    if (emailParam && codeParam && tokenParam) {
       setEmail(emailParam)
+      setCode(codeParam)
+      setResetToken(tokenParam)
     } else {
       router.push('/forgot-password')
     }
@@ -39,36 +45,50 @@ function ResetPasswordPageContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    setIsSubmitting(true)
 
     if (!passwordValid) {
       setError('Password must be at least 8 characters')
-      setIsSubmitting(false)
       return
     }
 
     if (!passwordsMatch) {
       setError("Passwords don't match")
-      setIsSubmitting(false)
       return
     }
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      toast.success('Password reset successfully!', {
+      const response = await resetPassword({
+        variables: {
+          email,
+          code,
+          newPassword: password,
+          resetToken
+        }
+      })
+
+      const result = response.data?.resetPassword
+
+      if (result?.success) {
+        toast.success(result?.message || 'Password reset successfully!', {
+          duration: 4000
+        })
+        
+        // Navigate to login
+        setTimeout(() => {
+          router.push('/login')
+        }, 1000)
+      } else {
+        setError(result?.error || 'Failed to reset password')
+        toast.error(result?.error || 'Failed to reset password', {
+          duration: 4000
+        })
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to reset password'
+      setError(errorMessage)
+      toast.error(errorMessage, {
         duration: 4000
       })
-      
-      // Navigate to login
-      setTimeout(() => {
-        router.push('/login')
-      }, 1000)
-    } catch (error) {
-      setError('Failed to reset password')
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
