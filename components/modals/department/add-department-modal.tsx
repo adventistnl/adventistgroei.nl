@@ -361,20 +361,20 @@ export function AddDepartmentModal({
         return (
           <div className="space-y-8 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold text-foreground">Basic Information</h3>
-              <p className="text-sm text-muted-foreground">Enter the department name and description</p>
+              <h3 className="text-lg font-semibold text-foreground">{t.steps.step_1_title}</h3>
+              <p className="text-sm text-muted-foreground">{t.steps.step_1_description}</p>
             </div>
             
             <div className="space-y-6 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm font-medium">
-                  Department Name *
+                  {t.fields.name} *
                 </Label>
                 <Input
                   id="name"
                   value={formData.name || ''}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="Enter department name"
+                  placeholder={t.placeholders.name}
                   disabled={isLoading}
                   className={errors.name ? 'border-red-500' : ''}
                 />
@@ -385,13 +385,13 @@ export function AddDepartmentModal({
 
               <div className="space-y-2">
                 <Label htmlFor="description" className="text-sm font-medium">
-                  Description *
+                  {t.fields.description} *
                 </Label>
                 <Textarea
                   id="description"
                   value={formData.description || ''}
                   onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder="Describe the department purpose and activities"
+                  placeholder={t.placeholders.description}
                   disabled={isLoading}
                   className={`min-h-[100px] resize-none ${errors.description ? 'border-red-500' : ''}`}
                 />
@@ -404,7 +404,7 @@ export function AddDepartmentModal({
               {departmentType === 'church' && (
                 <div className="space-y-2">
                   <Label htmlFor="church" className="text-sm font-medium">
-                    Church *
+                    {t.fields.church} *
                   </Label>
                   <Popover open={openChurch} onOpenChange={setOpenChurch}>
                     <PopoverTrigger asChild>
@@ -421,15 +421,15 @@ export function AddDepartmentModal({
                       >
                         {formData.church
                           ? churches.find(church => church.id === formData.church)?.name
-                          : "Select church"}
+                          : t.placeholders.church}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                       <Command>
-                        <CommandInput placeholder="Search church..." />
+                        <CommandInput placeholder={t.fields.search_church} />
                         <CommandList>
-                          <CommandEmpty>No church found</CommandEmpty>
+                          <CommandEmpty>{t.fields.no_church_found}</CommandEmpty>
                           <CommandGroup>
                             {churches.map((church) => (
                               <CommandItem
@@ -468,47 +468,47 @@ export function AddDepartmentModal({
         return (
           <div className="space-y-8 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold text-foreground">Contact Information</h3>
-              <p className="text-sm text-muted-foreground">Add contact details for this department (optional)</p>
+              <h3 className="text-lg font-semibold text-foreground">{t.steps.step_2_title}</h3>
+              <p className="text-sm text-muted-foreground">{t.steps.step_2_description}</p>
             </div>
             
             <div className="space-y-6 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="contact_name" className="text-sm font-medium">
-                  Contact Name
+                  {t.fields.contact_name}
                 </Label>
                 <Input
                   id="contact_name"
                   value={formData.contactName || ''}
                   onChange={(e) => handleInputChange('contactName', e.target.value)}
-                  placeholder="Enter contact name"
+                  placeholder={t.placeholders.contact_name}
                   disabled={isLoading}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="contact_email" className="text-sm font-medium">
-                  Email
+                  {t.fields.contact_email}
                 </Label>
                 <Input
                   id="contact_email"
                   type="email"
                   value={formData.email || ''}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="contact@example.com"
+                  placeholder={t.placeholders.contact_email}
                   disabled={isLoading}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="contact_phone" className="text-sm font-medium">
-                  Phone
+                  {t.fields.contact_phone}
                 </Label>
                 <Input
                   id="contact_phone"
                   value={formData.phone || ''}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder="+31 123 456 789"
+                  placeholder={t.placeholders.contact_phone}
                   disabled={isLoading}
                 />
               </div>
@@ -521,33 +521,33 @@ export function AddDepartmentModal({
         return (
           <div className="space-y-8 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold text-foreground">Review & Confirm</h3>
-              <p className="text-sm text-muted-foreground">Please review the information before creating the department</p>
+              <h3 className="text-lg font-semibold text-foreground">{t.steps.step_3_title}</h3>
+              <p className="text-sm text-muted-foreground">{t.steps.step_3_description}</p>
             </div>
             
             <div className="space-y-6 max-w-lg mx-auto">
               {/* Basic Information */}
               <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Basic Information</h4>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t.sections.basic_info}</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between py-2 border-b border-border/50">
-                    <span className="text-sm text-muted-foreground">Name</span>
+                    <span className="text-sm text-muted-foreground">{t.labels.name}</span>
                     <span className="text-sm font-medium text-right max-w-[60%]">{formData.name}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-border/50">
-                    <span className="text-sm text-muted-foreground">Description</span>
+                    <span className="text-sm text-muted-foreground">{t.labels.description}</span>
                     <span className="text-sm font-medium text-right max-w-[60%] line-clamp-3">{formData.description}</span>
                   </div>
                   {departmentType === 'church' && (
                     <div className="flex justify-between py-2 border-b border-border/50">
-                      <span className="text-sm text-muted-foreground">Church</span>
+                      <span className="text-sm text-muted-foreground">{t.labels.church}</span>
                       <span className="text-sm font-medium">{churches.find(c => c.id === formData.church)?.name || '-'}</span>
                     </div>
                   )}
                   <div className="flex justify-between py-2 border-b border-border/50">
-                    <span className="text-sm text-muted-foreground">Type</span>
+                    <span className="text-sm text-muted-foreground">{t.labels.type}</span>
                     <Badge variant="outline" className="text-xs">
-                      {departmentType === 'institutional' ? 'Institutional' : 'Church'}
+                      {departmentType === 'institutional' ? t.labels.institutional : t.labels.church_dept}
                     </Badge>
                   </div>
                 </div>
@@ -556,23 +556,23 @@ export function AddDepartmentModal({
               {/* Contact Information */}
               {(formData.contactName || formData.email || formData.phone) && (
                 <div className="space-y-3">
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Contact Information</h4>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t.sections.contact_info}</h4>
                   <div className="space-y-2">
                     {formData.contactName && (
                       <div className="flex justify-between py-2 border-b border-border/50">
-                        <span className="text-sm text-muted-foreground">Name</span>
+                        <span className="text-sm text-muted-foreground">{t.labels.name}</span>
                         <span className="text-sm font-medium">{formData.contactName}</span>
                       </div>
                     )}
                     {formData.email && (
                       <div className="flex justify-between py-2 border-b border-border/50">
-                        <span className="text-sm text-muted-foreground">Email</span>
+                        <span className="text-sm text-muted-foreground">{t.labels.email}</span>
                         <span className="text-sm font-medium">{formData.email}</span>
                       </div>
                     )}
                     {formData.phone && (
                       <div className="flex justify-between py-2 border-b border-border/50">
-                        <span className="text-sm text-muted-foreground">Phone</span>
+                        <span className="text-sm text-muted-foreground">{t.labels.phone}</span>
                         <span className="text-sm font-medium">{formData.phone}</span>
                       </div>
                     )}
@@ -594,11 +594,11 @@ export function AddDepartmentModal({
         <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Layers className="w-5 h-5 text-muted-foreground" />
-            {departmentType === 'institutional' ? 'Create Institutional Department' : t.modals.create.title}
+            {departmentType === 'institutional' ? t.modals.create.title_institutional : t.modals.create.title}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
             {departmentType === 'institutional' 
-              ? 'Create a department that operates at the institution level, managing resources and activities across all churches.'
+              ? t.modals.create.description_institutional
               : t.modals.create.description
             }
           </DialogDescription>
@@ -634,7 +634,7 @@ export function AddDepartmentModal({
                   className="flex items-center gap-1"
                 >
                   <ChevronLeft className="w-4 h-4" />
-                  Back
+                  {t.buttons.previous}
                 </Button>
               )}
               <Button 
@@ -643,7 +643,7 @@ export function AddDepartmentModal({
                 disabled={isLoading}
                 size="sm"
               >
-                Cancel
+                {t.buttons.cancel}
               </Button>
             </div>
 
@@ -656,7 +656,7 @@ export function AddDepartmentModal({
                   size="sm"
                   className="text-muted-foreground"
                 >
-                  Skip for now
+                  {t.buttons.skip}
                 </Button>
               )}
               {currentStep < totalSteps ? (
@@ -666,7 +666,7 @@ export function AddDepartmentModal({
                   size="sm"
                   className="flex items-center gap-1"
                 >
-                  Continue
+                  {t.buttons.next}
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               ) : (
@@ -679,12 +679,12 @@ export function AddDepartmentModal({
                   {isLoading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                      Creating...
+                      {t.buttons.creating}
                     </>
                   ) : (
                     <>
                       <Check className="w-4 h-4 mr-2" />
-                      Create Department
+                      {t.buttons.create}
                     </>
                   )}
                 </Button>

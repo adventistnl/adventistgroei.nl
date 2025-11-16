@@ -38,7 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import toast from "react-hot-toast"
-import { structureTranslations } from "@/lib/translations/structure"
+import { departmentTranslations } from "@/lib/translations/departments"
 import { DataTable } from "@/components/ui/data-table"
 import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal } from "@/components/modals/department"
 import { useInstitution } from "@/contexts/institution-context"
@@ -81,6 +81,8 @@ export default function ChurchDepartmentsPage() {
   const churches: ChurchData[] = currentInstitutionData?.churches || [];
   const departments: DepartmentData[] = churches.flatMap(church => church.departments?.flatMap(department => ({ ...department, church_name: church.name })) || []);
   const { i18n } = useTranslation()
+  const currentLanguage = i18n?.language || 'en'
+  const t = departmentTranslations[currentLanguage as keyof typeof departmentTranslations] || departmentTranslations.en
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   
@@ -99,7 +101,7 @@ export default function ChurchDepartmentsPage() {
   const [selectedBudget, setSelectedBudget] = useState<AnnualBudgetData | null>(null)
 
   usePageTitle({
-    title: "Church Departments"
+    title: t.church_page?.title || "Church Departments"
   })
 
   // Estatísticas calculadas dos dados
@@ -139,43 +141,47 @@ export default function ChurchDepartmentsPage() {
   }, [departments]);
 
   // Dados para KPI Cards Carrossel
-  const kpiCardsData: KPICardData[] = useMemo(() => [
-    {
-      id: "total_departments",
-      title: "Church Departments",
-      value: kpiData.totalDepartments,
-      icon: Layers,
-      subtitle: "Total church departments"
-    },
-    {
-      id: "total_churches",
-      title: "Total Churches",
-      value: kpiData.totalChurches,
-      icon: Home,
-      subtitle: "Churches with departments"
-    },
-    {
-      id: "total_projects",
-      title: "Total Projects",
-      value: kpiData.totalProjects,
-      icon: TrendingUp,
-      subtitle: "All registered projects"
-    },
-    {
-      id: "open_projects",
-      title: "Open Projects",
-      value: kpiData.openProjects,
-      icon: Calendar,
-      subtitle: "Projects in progress"
-    },
-    {
-      id: "completed_projects",
-      title: "Completed Projects",
-      value: kpiData.completedProjects,
-      icon: Shield,
-      subtitle: "Successfully completed"
-    }
-  ], [kpiData]);
+  const kpiCardsData: KPICardData[] = useMemo(() => {
+    const kpiCardsTranslations = (t.church_page as any)?.kpi_cards || {}
+    
+    return [
+      {
+        id: "total_departments",
+        title: kpiCardsTranslations.total_departments || "Church Departments",
+        value: kpiData.totalDepartments,
+        icon: Layers,
+        subtitle: kpiCardsTranslations.total_departments_subtitle || "Total church departments"
+      },
+      {
+        id: "total_churches",
+        title: kpiCardsTranslations.total_churches || "Total Churches",
+        value: kpiData.totalChurches,
+        icon: Home,
+        subtitle: kpiCardsTranslations.total_churches_subtitle || "Churches with departments"
+      },
+      {
+        id: "total_projects",
+        title: kpiCardsTranslations.total_projects || "Total Projects",
+        value: kpiData.totalProjects,
+        icon: TrendingUp,
+        subtitle: kpiCardsTranslations.total_projects_subtitle || "All registered projects"
+      },
+      {
+        id: "open_projects",
+        title: kpiCardsTranslations.open_projects || "Open Projects",
+        value: kpiData.openProjects,
+        icon: Calendar,
+        subtitle: kpiCardsTranslations.open_projects_subtitle || "Projects in progress"
+      },
+      {
+        id: "completed_projects",
+        title: kpiCardsTranslations.completed_projects || "Completed Projects",
+        value: kpiData.completedProjects,
+        icon: Shield,
+        subtitle: kpiCardsTranslations.completed_projects_subtitle || "Successfully completed"
+      }
+    ]
+  }, [kpiData, t]);
 
   // Dados para gráficos (apenas nome e orçamento)
   const chartData = useMemo(() => {
@@ -198,37 +204,37 @@ export default function ChurchDepartmentsPage() {
    */
   useEffect(() => {
     const loadData = async () => {
-      const loadingToast = toast.loading(t('common.loading') || "Loading...")
+      const loadingToast = toast.loading(t.common?.loading || "Loading...")
       
       try {
         await new Promise(resolve => setTimeout(resolve, 1500))
         
         toast.dismiss(loadingToast)
-        toast.success(t('common.data_loaded') || "Data loaded successfully", { duration: 3000 })
+        toast.success(t.common?.data_loaded || "Data loaded successfully", { duration: 3000 })
         setIsLoading(false)
         
       } catch (error) {
         toast.dismiss(loadingToast)
-        toast.error(t('common.error') || "An error occurred")
+        toast.error(t.common?.error || "An error occurred")
         setIsLoading(false)
       }
     }
 
     loadData()
-  }, [t])
+  }, [])
 
   /**
    * Handlers para ações
    */
   const handleRefresh = async () => {
     setRefreshing(true)
-    const refreshToast = toast.loading(t('common.refreshing') || "Refreshing...")
+    const refreshToast = toast.loading(t.common?.refreshing || "Refreshing...")
     
     try {
       await refetchInstitutionById()
-      toast.success(t('common.data_refreshed') || "Data refreshed", { duration: 2000 })
+      toast.success(t.common?.data_refreshed || "Data refreshed", { duration: 2000 })
     } catch (error) {
-      toast.error(t('common.error_refreshing') || "Error refreshing")
+      toast.error(t.common?.error_refreshing || "Error refreshing")
     } finally {
       toast.dismiss(refreshToast)
       setRefreshing(false)
@@ -327,17 +333,17 @@ export default function ChurchDepartmentsPage() {
   };
   
   const handleDepartmentSaved = (department: CreateDepartment) => {
-    toast.success("Church department created successfully")
+    toast.success(t.toasts?.created || "Church department created successfully")
     handleRefresh()
   }
   
   const handleDepartmentUpdated = (department: DepartmentData) => {
-    toast.success("Church department updated successfully")
+    toast.success(t.toasts?.updated || "Church department updated successfully")
     handleRefresh()
   }
   
   const handleDepartmentDeleted = (department: DepartmentData) => {
-    toast.success("Church department deleted successfully")
+    toast.success(t.toasts?.deleted || "Church department deleted successfully")
     handleRefresh()
   }
   
@@ -358,7 +364,7 @@ export default function ChurchDepartmentsPage() {
       setSelectedDepartment(updatedDepartment);
     }
     
-    toast.success(t('annual_budget.messages.updated_success') || "Budget updated successfully", {
+    toast.success(t.annual_budget?.messages?.updated_success || "Budget updated successfully", {
       duration: 3000,
       icon: '💰'
     });
@@ -372,15 +378,15 @@ export default function ChurchDepartmentsPage() {
     {
       id: "name",
       accessorKey: "name",
-      header: "Name",
+      header: t.labels?.name || "Name",
       cell: ({ row }) => (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 max-w-[300px]">
           <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
             <Layers className="w-4 h-4 text-emerald-600" />
           </div>
           <div>
             <div className="font-medium">{row.original.name}</div>
-            <div className="text-xs text-muted-foreground">{row.original.description || '-'}</div>
+            <div className="text-xs text-muted-foreground max-w-xs truncate line-clamp-2">{row.original.description || '-'}</div>
           </div>
         </div>
       ),
@@ -390,11 +396,11 @@ export default function ChurchDepartmentsPage() {
       accessorKey: "church_id",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          Church
+          {t.labels?.church || "Church"}
         </div>
       ),
       cell: ({ row }) => {
-        const church = churches.find((c: any) => c.id === row.original.church_id)
+        const church = churches.find((c: ChurchData) => c.id === row.original.church_id)
         return (
           <div className="flex items-center justify-center gap-2">
             <Home className="h-4 w-4 text-muted-foreground" />
@@ -412,7 +418,7 @@ export default function ChurchDepartmentsPage() {
       accessorKey: "members_count",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          Members
+          {t.stats?.members || "Members"}
         </div>
       ),
       cell: ({ row }) => (
@@ -426,11 +432,11 @@ export default function ChurchDepartmentsPage() {
       id: "open_projects",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          Open Projects
+          {t.stats?.projects || "Projects"} ({t.common?.status || "Status"})
         </div>
       ),
       cell: ({ row }) => {
-        const projects = (row.original as any).projects || [];
+        const projects = (row.original.projects as any) || [];
         const openCount = projects.filter((p: any) => 
           p.status !== 'COMPLETED' && !p.is_completed
         ).length;
@@ -447,11 +453,11 @@ export default function ChurchDepartmentsPage() {
       id: "completed_projects",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          Completed Projects
+          {t.stats?.projects || "Projects"} ({t.common?.status || "Status"})
         </div>
       ),
       cell: ({ row }) => {
-        const projects = (row.original as any).projects || [];
+        const projects = (row.original.projects as any) || [];
         const completedCount = projects.filter((p: any) => 
           p.status === 'COMPLETED' || p.is_completed
         ).length;
@@ -469,7 +475,7 @@ export default function ChurchDepartmentsPage() {
       accessorKey: "is_deleted",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          {t('common.status') || "Status"}
+          {t.common?.status || "Status"}
         </div>
       ),
       cell: ({ row }) => {
@@ -477,7 +483,7 @@ export default function ChurchDepartmentsPage() {
         return (
           <div className="flex justify-center">
             <StatusBadge
-              label={isActive ? (t('common.active') || "Active") : (t('common.inactive') || "Inactive")}
+              label={isActive ? t.common?.active || "Active" : t.common?.inactive || "Inactive"}
               variant={isActive ? "success" : "neutral"}
               showDot
             />
@@ -499,7 +505,7 @@ export default function ChurchDepartmentsPage() {
     // },
     {
       id: "actions",
-      header: t('common.actions') || "Actions",
+      header: t.common?.actions || "Actions",
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -510,15 +516,15 @@ export default function ChurchDepartmentsPage() {
           <DropdownMenuContent>
             <DropdownMenuItem onClick={() => handleViewDetails(row.original.id)}>
               <Eye className="w-4 h-4 mr-2" />
-              {t('departments.actions.view_details') || "View Details"}
+              {t.actions?.view_details || "View Details"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
               <Edit className="w-4 h-4 mr-2" />
-              {t('departments.edit_department') || "Edit Department"}
+              {t.actions?.edit_department || "Edit Department"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
               <Trash2 className="w-4 h-4 mr-2" />
-              {t('departments.delete_department') || "Delete Department"}
+              {t.actions?.delete_department || "Delete Department"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -530,7 +536,7 @@ export default function ChurchDepartmentsPage() {
   const userColumns: ColumnDef<any>[] = [
     {
       id: "avatar",
-      header: t('users.table.avatar') || "Avatar",
+      header: t.users?.table?.avatar || "Avatar",
       cell: ({ row }) => {
         const user = row.original
         return (
@@ -546,7 +552,7 @@ export default function ChurchDepartmentsPage() {
     {
       id: "name",
       accessorKey: "name",
-      header: t('users.table.name') || "Name",
+      header: t.users?.table?.name || "Name",
       cell: ({ row }) => {
         const user = row.original
         return (
@@ -564,7 +570,7 @@ export default function ChurchDepartmentsPage() {
       accessorKey: "language_preference",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          {t('users.table.language') || "Language"}
+          {t.users?.table?.language || "Language"}
         </div>
       ),
       cell: ({ row }) => (
@@ -579,7 +585,7 @@ export default function ChurchDepartmentsPage() {
       id: "roles",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          {t('users.table.roles') || "Roles"}
+          {t.users?.table?.roles || "Roles"}
         </div>
       ),
       cell: ({ row }) => {
@@ -595,7 +601,7 @@ export default function ChurchDepartmentsPage() {
                 {role.role.key_code === 'ADMIN' && <Crown className="w-3 h-3 mr-1" />}
                 {role.role.name}
               </Badge>
-            )) || <span className="text-xs text-muted-foreground">{t('users.table.no_roles') || "No roles"}</span>}
+            )) || <span className="text-xs text-muted-foreground">{t.users?.table?.no_roles || "No roles"}</span>}
           </div>
         )
       },
@@ -605,12 +611,12 @@ export default function ChurchDepartmentsPage() {
       accessorKey: "gender",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          {t('users.table.gender') || "Gender"}
+          {t.users?.table?.gender || "Gender"}
         </div>
       ),
       cell: ({ row }) => {
         const user = row.original;
-        const genderLabel = user.gender ? t(`users.gender.${user.gender}`) : 'N/A';
+        const genderLabel = user.gender ? `${user.gender.charAt(0).toUpperCase()}${user.gender.slice(1)}` : 'N/A';
         return (
           <div className="text-center">
             <Badge variant="outline" className="text-xs">
@@ -625,7 +631,7 @@ export default function ChurchDepartmentsPage() {
       accessorKey: "is_deleted",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          {t('users.table.status') || "Status"}
+          {t.users?.table?.status || "Status"}
         </div>
       ),
       cell: ({ row }) => {
@@ -633,7 +639,7 @@ export default function ChurchDepartmentsPage() {
         return (
           <div className="flex justify-center">
             <StatusBadge
-              label={isActive ? (t('users.table.active') || "Active") : (t('users.table.inactive') || "Inactive")}
+              label={isActive ? t.users?.table?.active || "Active" : t.users?.table?.inactive || "Inactive"}
               variant={isActive ? "success" : "error"}
               showDot
             />
@@ -689,7 +695,7 @@ export default function ChurchDepartmentsPage() {
                   }}
                   className="cursor-pointer hover:text-foreground"
                 >
-                  See All Church Departments
+                  {t.breadcrumb?.all_departments || "See All Church Departments"}
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
@@ -707,14 +713,14 @@ export default function ChurchDepartmentsPage() {
           <div>
             <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
               {viewMode === 'detail' && selectedDepartmentDetail 
-                ? `${selectedDepartmentDetail.name} - Details`
-                : "Church Departments"
+                ? `${selectedDepartmentDetail.name} - ${t.title || "Details"}`
+                : t.page?.title || "Church Departments"
               }
             </h2>
             <p className="text-muted-foreground text-0.875rem sm:text-1rem">
               {viewMode === 'detail' && selectedDepartmentDetail
-                ? selectedDepartmentDetail.description || "Department details and members"
-                : "Manage church-level departments and ministries"
+                ? selectedDepartmentDetail.description || t.detail?.no_description || "Department details and members"
+                : t.page?.description || "Manage church-level departments and ministries"
               }
             </p>
           </div>
@@ -723,7 +729,7 @@ export default function ChurchDepartmentsPage() {
             {viewMode === 'list' && (
               <Button onClick={handleCreate}>
                 <Plus className="w-4 h-4 mr-2" />
-                Create Church Department
+                {t.create_department || "Create Church Department"}
               </Button>
             )}
             
@@ -751,51 +757,52 @@ export default function ChurchDepartmentsPage() {
                 p.status === 'COMPLETED' || p.is_completed
               ).length;
               
+              const kpiCardsTranslations = ((t as any).church_page?.kpi_cards) || {}
               const detailKPIData: KPICardData[] = [
                 {
                   id: "members",
-                  title: t('departments.kpi.members.title') || "Members",
+                  title: kpiCardsTranslations.members || "Members",
                   value: selectedDepartmentDetail.users?.length || 0,
                   icon: Users,
-                  subtitle: t('departments.kpi.members.subtitle') || "Department members",
+                  subtitle: kpiCardsTranslations.members_subtitle || "Department members",
                 },
                 {
                   id: "total_projects",
-                  title: "Total Projects",
+                  title: kpiCardsTranslations.total_projects || "Total Projects",
                   value: projects.length,
                   icon: TrendingUp,
-                  subtitle: "All registered projects",
+                  subtitle: kpiCardsTranslations.total_projects_subtitle || "All registered projects",
                 },
                 {
                   id: "open_projects",
-                  title: "Open Projects",
+                  title: kpiCardsTranslations.open_projects || "Open Projects",
                   value: openProjectsCount,
                   icon: Calendar,
-                  subtitle: "Projects in progress",
+                  subtitle: kpiCardsTranslations.open_projects_subtitle || "Projects in progress",
                 },
                 {
                   id: "completed_projects",
-                  title: "Completed Projects",
+                  title: kpiCardsTranslations.completed_projects || "Completed Projects",
                   value: completedProjectsCount,
                   icon: Shield,
-                  subtitle: "Successfully completed",
+                  subtitle: kpiCardsTranslations.completed_projects_subtitle || "Successfully completed",
                 }
               ];
               
               const customFirstCard = (
                 <EntityInfoCard
-                  headerTitle={t('departments.detail.info_card.header_title') || "Department Info"}
+                  headerTitle={t.detail?.info_card?.header_title || "Department Info"}
                   name={selectedDepartmentDetail.name}
-                  description={selectedDepartmentDetail.description || (t('departments.detail.info_card.no_description') || "No description available")}
+                  description={selectedDepartmentDetail.description || t.detail?.info_card?.no_description || "No description available"}
                   icon={Layers}
                   badges={[
                     {
-                      label: churches.find(c => c.id === selectedDepartmentDetail.church_id)?.name || (t('departments.detail.info_card.institutional') || "Institutional"),
+                      label: churches.find(c => c.id === selectedDepartmentDetail.church_id)?.name || t.labels?.institutional || "Institutional",
                       variant: "outline",
                       className: "text-xs"
                     },
                     {
-                      label: !selectedDepartmentDetail.is_deleted ? (t('departments.detail.info_card.active') || "Active") : (t('departments.detail.info_card.inactive') || "Inactive"),
+                      label: !selectedDepartmentDetail.is_deleted ? t.common?.active || "Active" : t.common?.inactive || "Inactive",
                       variant: !selectedDepartmentDetail.is_deleted ? "default" : "secondary",
                       className: !selectedDepartmentDetail.is_deleted 
                         ? "text-xs bg-green-100 text-green-700" 
@@ -804,19 +811,19 @@ export default function ChurchDepartmentsPage() {
                   ]}
                   actions={[
                     {
-                      label: t('departments.actions.edit_department') || "Edit Department",
+                      label: t.actions?.edit_department || "Edit Department",
                       icon: Edit,
                       onClick: () => handleEdit(selectedDepartmentDetail.id),
                       variant: "default"
                     },
                     {
-                      label: t('departments.actions.manage_budget') || "Manage Budget",
+                      label: t.actions?.manage_budget || "Manage Budget",
                       icon: DollarSign,
                       onClick: () => handleViewBudget(selectedDepartmentDetail.id),
                       variant: "default"
                     },
                     {
-                      label: t('departments.actions.delete_department') || "Delete Department",
+                      label: t.actions?.delete_department || "Delete Department",
                       icon: Trash2,
                       onClick: () => handleDelete(selectedDepartmentDetail.id, selectedDepartmentDetail.name),
                       variant: "destructive",
@@ -850,7 +857,7 @@ export default function ChurchDepartmentsPage() {
 
         {/* Charts Section - Visible in both views */}
         <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
-          <DepartmentActivityChart loading={isLoading} />
+          <DepartmentActivityChart loading={isLoading} departments={departments} />
         </ResponsiveGridCarousel>
 
         <Separator />
@@ -863,10 +870,10 @@ export default function ChurchDepartmentsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5" />
-                  {t('departments.detail.members_table.title') || "Department Members"}
+                  {t.detail?.members_table?.title || "Department Members"}
                 </CardTitle>
                 <CardDescription>
-                  {t('departments.detail.members_table.description', { name: selectedDepartmentDetail.name }) || `List of all members in ${selectedDepartmentDetail.name}`}
+                  {`${t.detail?.members_table?.description || "List of all members in"} ${selectedDepartmentDetail.name}`}
                 </CardDescription>
               </CardHeader>
               <CardContent className="overflow-hidden p-0">
@@ -878,10 +885,10 @@ export default function ChurchDepartmentsPage() {
                   filters={[
                     {
                       id: "status",
-                      title: t('common.status') || "Status",
+                      title: t.common?.status || "Status",
                       options: [
-                        { label: t('common.active') || "Active", value: "true" },
-                        { label: t('common.inactive') || "Inactive", value: "false" }
+                        { label: t.common?.active || "Active", value: "true" },
+                        { label: t.common?.inactive || "Inactive", value: "false" }
                       ]
                     }
                   ]}
@@ -896,20 +903,20 @@ export default function ChurchDepartmentsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Layers className="w-5 h-5" />
-                  Church Departments
+                  {t.table_title || "Church Departments"}
                 </CardTitle>
-                <CardDescription>Complete list of church departments with management actions</CardDescription>
+                <CardDescription>{t.table_description || "Complete list of church departments with management actions"}</CardDescription>
               </CardHeader>
               <CardContent className="overflow-hidden p-0">
                 <UseTable
                   columns={departmentColumns}
                   data={departments}
                   searchKey="name"
-                  emptyEntityName="Church Departments"
+                  emptyEntityName={t.entity_name || "Church Departments"}
                   filters={[
                 {
                   id: "church_id",
-                  title: "Church",
+                  title: t.labels?.church || "Church",
                   options: churches.map(church => ({
                     label: church.name,
                     value: church.id
@@ -917,10 +924,10 @@ export default function ChurchDepartmentsPage() {
                 },
                 {
                   id: "status",
-                  title: "Status",
+                  title: t.common?.status || "Status",
                   options: [
-                    { label: "Active", value: "true" },
-                    { label: "Inactive", value: "false" }
+                    { label: t.common?.active || "Active", value: "true" },
+                    { label: t.common?.inactive || "Inactive", value: "false" }
                   ]
                 }
               ]}

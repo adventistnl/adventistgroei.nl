@@ -22,12 +22,17 @@ export type ActivityDocuments = {
   __typename?: 'ActivityDocuments';
   activity_id: Scalars['String']['output'];
   created_at: Scalars['DateTime']['output'];
+  deleted_at?: Maybe<Scalars['DateTime']['output']>;
+  deleted_by?: Maybe<Scalars['String']['output']>;
   file_url: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  is_deleted: Scalars['Boolean']['output'];
   is_validated: Scalars['Boolean']['output'];
   project_activity?: Maybe<ProjectActivity>;
   project_activity_id?: Maybe<Scalars['String']['output']>;
   type: Scalars['String']['output'];
+  updated_at: Scalars['DateTime']['output'];
+  updated_by?: Maybe<Scalars['String']['output']>;
   uploaded_by: Scalars['String']['output'];
   validated_at?: Maybe<Scalars['DateTime']['output']>;
 };
@@ -37,12 +42,17 @@ export type ActivityFunding = {
   activity: ProjectActivity;
   activity_id: Scalars['String']['output'];
   created_at: Scalars['DateTime']['output'];
+  created_by?: Maybe<Scalars['String']['output']>;
+  deleted_at?: Maybe<Scalars['DateTime']['output']>;
+  deleted_by?: Maybe<Scalars['String']['output']>;
   entity_contribution_amount: Scalars['Decimal']['output'];
   entity_contribution_percent: Scalars['Float']['output'];
   entity_id: Scalars['String']['output'];
   entity_type: EntityType;
   id: Scalars['ID']['output'];
+  is_deleted: Scalars['Boolean']['output'];
   updated_at: Scalars['DateTime']['output'];
+  updated_by?: Maybe<Scalars['String']['output']>;
   validated: Scalars['Boolean']['output'];
 };
 
@@ -1970,8 +1980,15 @@ export type ValidateOutputModel = {
 
 export type VoluntariesOnProjects = {
   __typename?: 'VoluntariesOnProjects';
+  created_at: Scalars['DateTime']['output'];
+  created_by: Scalars['String']['output'];
+  deleted_at?: Maybe<Scalars['DateTime']['output']>;
+  deleted_by?: Maybe<Scalars['String']['output']>;
+  is_deleted: Scalars['Boolean']['output'];
   project: Project;
   project_id: Scalars['String']['output'];
+  updated_at: Scalars['DateTime']['output'];
+  updated_by: Scalars['String']['output'];
   user: User;
   user_id: Scalars['String']['output'];
 };

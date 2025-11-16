@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 import {
   Card,
@@ -25,28 +26,75 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useChartColors, CHART_PRESETS, createGradient } from "@/lib/chart-colors"
+import { departmentTranslations } from "@/lib/translations/departments"
 
 interface DepartmentActivityChartProps {
   data?: any[]
   loading?: boolean
+  departments?: any[]
 }
 
-// Dados mockados: Atividades por departamento ao longo do tempo
-const generateMockData = () => {
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  return months.map((month, index) => ({
-    month,
-    date: `2024-${String(index + 1).padStart(2, '0')}-01`,
-    finance: Math.floor(Math.random() * 50) + 20,
-    education: Math.floor(Math.random() * 40) + 15,
-    youth: Math.floor(Math.random() * 60) + 30,
-    missions: Math.floor(Math.random() * 35) + 10,
-  }))
-}
-
-export function DepartmentActivityChart({ data, loading }: DepartmentActivityChartProps) {
+export function DepartmentActivityChart({ data, loading, departments = [] }: DepartmentActivityChartProps) {
   const [timeRange, setTimeRange] = React.useState("12m")
-  const chartData = React.useMemo(() => generateMockData(), [])
+  const { i18n } = useTranslation()
+  const currentLanguage = i18n?.language || 'en'
+  const t = departmentTranslations[currentLanguage as keyof typeof departmentTranslations] || departmentTranslations.en
+  
+  // Usar apenas dados reais dos departamentos
+  const chartData = React.useMemo(() => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    
+    if (!departments || departments.length === 0) {
+      // Se não há departamentos, retornar dados zerados
+      return months.map((month, index) => ({
+        month,
+        date: `2024-${String(index + 1).padStart(2, '0')}-01`,
+        finance: 0,
+        education: 0,
+        youth: 0,
+        missions: 0,
+      }))
+    }
+
+    // Agrupar departamentos por categoria baseado em dados reais
+    const departmentCategories: { [key: string]: number } = {
+      finance: 0,
+      education: 0,
+      youth: 0,
+      missions: 0,
+    }
+
+    departments.forEach((dept: any) => {
+      const name = dept.name?.toLowerCase() || ''
+      const budget = dept.annual_budgets?.[0]?.planned_budget || 0
+      const userCount = dept.users?.length || 0
+      
+      // Calcular atividade baseado em orçamento e usuários reais (sem randomização)
+      const activityValue = Math.floor((budget / 1000) + (userCount * 2))
+      
+      // Categorizar departamentos baseado no nome
+      if (name.includes('youth') || name.includes('jovem') || name.includes('juventude')) {
+        departmentCategories.youth += activityValue
+      } else if (name.includes('education') || name.includes('educação') || name.includes('school') || name.includes('escola')) {
+        departmentCategories.education += activityValue
+      } else if (name.includes('finance') || name.includes('financ') || name.includes('tesour')) {
+        departmentCategories.finance += activityValue
+      } else {
+        departmentCategories.missions += activityValue
+      }
+    })
+    
+    // Distribuir os valores pelos meses baseado apenas nos dados reais
+    return months.map((month, index) => ({
+      month,
+      date: `2024-${String(index + 1).padStart(2, '0')}-01`,
+      finance: Math.floor(departmentCategories.finance / 12), // Distribuição uniforme pelos meses
+      education: Math.floor(departmentCategories.education / 12),
+      youth: Math.floor(departmentCategories.youth / 12),
+      missions: Math.floor(departmentCategories.missions / 12),
+    }))
+  }, [departments])
+  
   const { colors, theme } = useChartColors()
 
   // Usar o preset de departamentos
@@ -54,19 +102,19 @@ export function DepartmentActivityChart({ data, loading }: DepartmentActivityCha
 
   const chartConfig = {
     finance: {
-      label: "Finance",
+      label: t.charts?.activity_overview?.categories?.finance || "Finance",
       color: departmentColors.finance,
     },
     education: {
-      label: "Education",
+      label: t.charts?.activity_overview?.categories?.education || "Education",
       color: departmentColors.education,
     },
     youth: {
-      label: "Youth",
+      label: t.charts?.activity_overview?.categories?.youth || "Youth",
       color: departmentColors.youth,
     },
     missions: {
-      label: "Missions",
+      label: t.charts?.activity_overview?.categories?.missions || "Missions",
       color: departmentColors.missions,
     },
   } satisfies ChartConfig
@@ -98,9 +146,9 @@ export function DepartmentActivityChart({ data, loading }: DepartmentActivityCha
     <Card className="h-full flex flex-col">
       <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
         <div className="grid flex-1 gap-1">
-          <CardTitle>Department Activity Overview</CardTitle>
+          <CardTitle>{t.charts?.activity_overview?.title || "Department Activity Overview"}</CardTitle>
           <CardDescription>
-            Total actions per department (Projects, Activities, Subsidy Requests)
+            {t.charts?.activity_overview?.description || "Activity metrics based on real budget allocation and active users data"}
           </CardDescription>
         </div>
         <Select value={timeRange} onValueChange={setTimeRange}>
@@ -108,17 +156,17 @@ export function DepartmentActivityChart({ data, loading }: DepartmentActivityCha
             className="w-[160px] rounded-lg sm:ml-auto"
             aria-label="Select time range"
           >
-            <SelectValue placeholder="Last 12 months" />
+            <SelectValue placeholder={t.charts?.activity_overview?.time_periods?.last_12_months || "Last 12 months"} />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
             <SelectItem value="12m" className="rounded-lg">
-              Last 12 months
+              {t.charts?.activity_overview?.time_periods?.last_12_months || "Last 12 months"}
             </SelectItem>
             <SelectItem value="6m" className="rounded-lg">
-              Last 6 months
+              {t.charts?.activity_overview?.time_periods?.last_6_months || "Last 6 months"}
             </SelectItem>
             <SelectItem value="3m" className="rounded-lg">
-              Last 3 months
+              {t.charts?.activity_overview?.time_periods?.last_3_months || "Last 3 months"}
             </SelectItem>
           </SelectContent>
         </Select>

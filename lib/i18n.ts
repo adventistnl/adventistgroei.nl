@@ -719,6 +719,35 @@ const resources = {
           budget: "Budget",
           projects: "Projects"
         },
+        actions: {
+          view_details: "View Details",
+          edit_department: "Edit Department",
+          manage_budget: "Manage Budget",
+          delete_department: "Delete Department"
+        },
+        kpi: {
+          budget_total: {
+            title: "Budget Total",
+            subtitle: "Total planned budget"
+          },
+          spent_amount: {
+            title: "Spent Amount",
+            subtitle: "Total expenses"
+          },
+          members: {
+            title: "Members",
+            subtitle: "Department members"
+          }
+        },
+        detail: {
+          info_card: {
+            header_title: "Department Info",
+            no_description: "No description available",
+            institutional: "Institutional",
+            active: "Active",
+            inactive: "Inactive"
+          }
+        },
         toasts: {
           creating: "Creating department...",
           created: "Department created successfully",
@@ -2318,6 +2347,35 @@ const resources = {
           budget: "Budget",
           projects: "Projecten"
         },
+        actions: {
+          view_details: "Details Bekijken",
+          edit_department: "Afdeling Bewerken",
+          manage_budget: "Budget Beheren",
+          delete_department: "Afdeling Verwijderen"
+        },
+        kpi: {
+          budget_total: {
+            title: "Budget Totaal",
+            subtitle: "Totaal geplande budget"
+          },
+          spent_amount: {
+            title: "Uitgegeven Bedrag",
+            subtitle: "Totale uitgaven"
+          },
+          members: {
+            title: "Leden",
+            subtitle: "Afdeling leden"
+          }
+        },
+        detail: {
+          info_card: {
+            header_title: "Afdeling Info",
+            no_description: "Geen beschrijving beschikbaar",
+            institutional: "Institutioneel",
+            active: "Actief",
+            inactive: "Inactief"
+          }
+        },
         toasts: {
           creating: "Afdeling aanmaken...",
           created: "Afdeling succesvol aangemaakt",
@@ -3444,6 +3502,142 @@ const resources = {
             deleted: "Regel succesvol verwijderd",
             delete_failed: "Kon regel niet verwijderen"
           }
+        }
+      },
+      departments: {
+        title: "Institutionele Afdelingen",
+        subtitle: "Totaal afdelingen in de instelling",
+        modals: {
+          create: {
+            title: "Afdeling Aanmaken",
+            description: "Voeg een nieuwe afdeling toe aan uw organisatie"
+          },
+          edit: {
+            title: "Afdeling Bewerken",
+            description: "Bijwerken van afdeling informatie en contactgegevens"
+          },
+          delete: {
+            deactivate_title: "Afdeling Deactiveren",
+            deactivate_description: "Deze actie zal de afdeling en alle gerelateerde gegevens deactiveren. Gegevens blijven bewaard en kunnen worden hersteld.",
+            deactivating: "Deactiveren...",
+            deactivate_department: "Afdeling Deactiveren",
+            view_consequences: "Gevolgen Bekijken",
+            affected_components: "Beïnvloede Gegevens",
+            understand_consequences: "Ik begrijp de gevolgen",
+            acknowledge_text: "Ik erken dat deze actie de afdeling en alle gerelateerde gegevens zal deactiveren",
+            type_confirmation: "Typ de bevestigingstekst om door te gaan",
+            confirmation_placeholder: 'Typ: "delete department"',
+            confirmation_help: "Deze actie kan niet gemakkelijk ongedaan worden gemaakt zonder tussenkomst van administrator",
+            consequences: {
+              projects_deleted: "Projecten & Activiteiten Verwijderd",
+              projects_deleted_desc: "Alle projecten, activiteiten en gerelateerde gegevens worden gemarkeerd als verwijderd",
+              users_unlinked: "Gebruikers Ontkoppeld van Afdeling",
+              users_unlinked_desc: "Gebruikers van de afdeling worden uit deze afdeling verwijderd maar blijven in de instelling",
+              data_preservation: "Gegevensbewaring & Herstel",
+              data_preservation_desc: "Alle gegevens blijven in de database en kunnen door beheerders worden hersteld",
+              budget_deleted: "Budget- & Financiële Gegevens Verwijderd",
+              budget_deleted_desc: "Alle budgetten, subsidieverzoeken en financiële verslagen worden gemarkeerd als verwijderd"
+            }
+          }
+        },
+        steps: {
+          step: "Stap",
+          of: "van",
+          step_1_title: "Basis Informatie",
+          step_1_description: "Voer afdeling naam en beschrijving in",
+          step_2_title: "Contact Informatie",
+          step_2_description: "Voeg contactgegevens toe voor deze afdeling (optioneel)",
+          step_3_title: "Controleren & Bevestigen",
+          step_3_description: "Controleer de informatie voordat u de afdeling aanmaakt"
+        },
+        fields: {
+          name: "Afdeling Naam",
+          church: "Kerk",
+          description: "Beschrijving",
+          annual_budget: "Jaarlijks Budget",
+          contact_name: "Contactnaam",
+          contact_email: "Contact E-mail",
+          contact_phone: "Telefoon",
+          city: "Stad",
+          is_institution_department: "Institutionele Afdeling",
+          search_church: "Zoek kerk...",
+          no_church_found: "Geen kerk gevonden."
+        },
+        department_type: {
+          institutional_tooltip: "Afdeling direct gerelateerd aan de instelling",
+          institutional_explanation_on: "Afdeling is direct gekoppeld aan de instelling, niet aan een specifieke kerk",
+          institutional_explanation_off: "Afdeling moet gekoppeld worden aan een specifieke kerk"
+        },
+        placeholders: {
+          name: "Voer afdeling naam in",
+          church: "Selecteer kerk",
+          description: "Beschrijf het doel en de activiteiten van de afdeling",
+          annual_budget: "Voer jaarlijks budget in",
+          contact_name: "Voer contactnaam in",
+          contact_email: "contact@example.com",
+          contact_phone: "+31 123 456 789",
+          city: "Voer stad in"
+        },
+        labels: {
+          department: "Afdeling",
+          contact: "Contact",
+          type: "Type",
+          institutional: "Institutioneel",
+          church_dept: "Kerkafdeling"
+        },
+        sections: {
+          basic_info: "Basis Informatie",
+          contact_info: "Contact Informatie",
+          review: "Controleren & Bevestigen"
+        },
+        buttons: {
+          previous: "Terug",
+          next: "Doorgaan",
+          skip: "Voorlopig overslaan",
+          cancel: "Annuleren",
+          save: "Opslaan",
+          create: "Afdeling Aanmaken",
+          update: "Afdeling Bijwerken",
+          delete: "Afdeling Verwijderen",
+          creating: "Aanmaken...",
+          updating: "Bijwerken...",
+          deleting: "Verwijderen..."
+        },
+        validation: {
+          name_required: "Afdeling naam is verplicht",
+          name_min_length: "Afdeling naam moet minimaal 2 karakters zijn",
+          church_required: "Kerk is verplicht voor kerkafdeling",
+          description_required: "Beschrijving is verplicht",
+          description_min_length: "Beschrijving moet minimaal 10 karakters zijn",
+          contact_name_required: "Contactnaam is verplicht",
+          email_required: "E-mail is verplicht",
+          email_invalid: "Voer een geldig e-mailadres in",
+          phone_required: "Telefoonnummer is verplicht",
+          city_required: "Stad is verplicht",
+          please_fix_errors: "Corrigeer de fouten voordat je doorgaat"
+        },
+        toasts: {
+          creating: "Afdeling aanmaken...",
+          created: "Afdeling succesvol aangemaakt",
+          create_failed: "Kon afdeling niet aanmaken",
+          updating: "Afdeling bijwerken...",
+          updated: "Afdeling succesvol bijgewerkt",
+          update_failed: "Kon afdeling niet bijwerken",
+          deleting: "Afdeling deactiveren...",
+          deleted: "Afdeling succesvol gedeactiveerd",
+          delete_failed: "Kon afdeling niet deactiveren"
+        },
+        stats: {
+          church: "Kerk",
+          volunteers: "Vrijwilligers",
+          budgets: "Budgetten",
+          projects: "Projecten",
+          documents: "Documenten",
+          members: "Leden"
+        },
+        page: {
+          title: "Institutionele Afdelingen",
+          description: "Beheer afdelingen in uw instelling"
         }
       }
     }

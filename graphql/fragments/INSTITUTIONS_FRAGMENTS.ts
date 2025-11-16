@@ -176,6 +176,20 @@ export const DEPARTMENT_FRAGMENT = gql`
     }
     users {
       id
+      name
+      email
+      gender
+      is_deleted
+      language_preference
+      user_roles {
+        id
+        role {
+          id
+          name
+          key_code
+          description
+        }
+      }
     }
   }
 `;

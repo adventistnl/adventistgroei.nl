@@ -120,7 +120,7 @@ export function ProjectsTable({
           </div>
           <div>
             <div className="font-medium text-sm">{row.original.title}</div>
-            <div className="text-xs text-muted-foreground line-clamp-1">
+            <div className="text-xs text-muted-foreground max-w-xs truncate line-clamp-2">
               {row.original.description}
             </div>
           </div>

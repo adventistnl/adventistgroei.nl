@@ -69,6 +69,7 @@ import {
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
 import { WithPermission } from "@/hocs/with-permission"
+import { departmentTranslations } from "@/lib/translations/departments"
 
 
 /**
@@ -79,9 +80,15 @@ export default function DepartmentsPage() {
   const { currentInstitutionData, refetchInstitutionById } = useInstitution();
   const departments: DepartmentData[] = currentInstitutionData?.departments || [];
   const churches: ChurchData[] = currentInstitutionData?.churches || [];
-  const { t } = useTranslation()
+  const { i18n } = useTranslation()
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  
+  // Obter traduções para o idioma atual - EXATAMENTE COMO EM CHURCHES
+  const currentLanguage = i18n?.language || 'en'
+  const t = departmentTranslations[currentLanguage as keyof typeof departmentTranslations] || departmentTranslations.en
+
+
   
   // View mode states - controla se está na lista ou em detalhes
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
@@ -98,7 +105,7 @@ export default function DepartmentsPage() {
   const [selectedBudget, setSelectedBudget] = useState<AnnualBudgetData | null>(null)
 
   usePageTitle({
-    title: t('departments.title')
+    title: t.title
   })
 
   // Estatísticas calculadas dos dados
@@ -121,26 +128,26 @@ export default function DepartmentsPage() {
   const kpiCardsData: KPICardData[] = useMemo(() => [
     {
       id: "total_departments",
-      title: t('departments.title'),
+      title: t.title || "Institutional Departments",
       value: kpiData.totalDepartments,
       icon: Layers,
-      subtitle: t('departments.subtitle'),
+      subtitle: t.subtitle || "Manage departments across institutions",
       trend: {
         value: 0,
         isPositive: true,
-        label: t('common.trend.vs_previous_month') || "vs. previous month"
+        label: t.common?.trend?.vs_previous_month || "vs. previous month"
       }
     },
     {
       id: "annual_budget",
-      title: t('common.annual_budget') || "Annual Budget",
+      title: t.common?.annual_budget || "Annual Budget",
       value: `$${(kpiData.totalAnnualBudget / 1000).toFixed(0)}K`,
       icon: DollarSign,
-      subtitle: t('departments.fields.annual_budget') || "Total annual budget",
+      subtitle: t.fields?.annual_budget || "Total annual budget",
       trend: {
         value: 0,
         isPositive: true,
-        label: t('common.trend.vs_previous_year') || "vs. previous year"
+        label: t.common?.trend?.vs_previous_year || "vs. previous year"
       }
     }
   ], [kpiData, t]);
@@ -166,18 +173,18 @@ export default function DepartmentsPage() {
    */
   useEffect(() => {
     const loadData = async () => {
-      const loadingToast = toast.loading(t('common.loading') || "Loading...")
+      const loadingToast = toast.loading(t.common?.loading || "Loading...")
       
       try {
         await new Promise(resolve => setTimeout(resolve, 1500))
         
         toast.dismiss(loadingToast)
-        toast.success(t('common.data_loaded') || "Data loaded successfully", { duration: 3000 })
+        toast.success(t.common?.data_loaded || "Data loaded successfully", { duration: 3000 })
         setIsLoading(false)
         
       } catch (error) {
         toast.dismiss(loadingToast)
-        toast.error(t('common.error') || "An error occurred")
+        toast.error(t.common?.error || "An error occurred")
         setIsLoading(false)
       }
     }
@@ -190,13 +197,13 @@ export default function DepartmentsPage() {
    */
   const handleRefresh = async () => {
     setRefreshing(true)
-    const refreshToast = toast.loading(t('common.refreshing') || "Refreshing...")
+    const refreshToast = toast.loading(t.common?.refreshing || "Refreshing...")
     
     try {
       await refetchInstitutionById()
-      toast.success(t('common.data_refreshed') || "Data refreshed", { duration: 2000 })
+      toast.success(t.common?.data_refreshed || "Data refreshed", { duration: 2000 })
     } catch (error) {
-      toast.error(t('common.error_refreshing') || "Error refreshing")
+      toast.error(t.common?.error_refreshing || "Error refreshing")
     } finally {
       toast.dismiss(refreshToast)
       setRefreshing(false)
@@ -295,17 +302,17 @@ export default function DepartmentsPage() {
   };
   
   const handleDepartmentSaved = (department: CreateDepartment) => {
-    toast.success(t('departments.messages.created_success') || "Department created successfully")
+    toast.success(t.messages?.created_success || "Department created successfully")
     handleRefresh()
   }
   
   const handleDepartmentUpdated = (department: DepartmentData) => {
-    toast.success(t('departments.messages.updated_success') || "Department updated successfully")
+    toast.success(t.messages?.updated_success || "Department updated successfully")
     handleRefresh()
   }
   
   const handleDepartmentDeleted = (department: DepartmentData) => {
-    toast.success(t('departments.messages.deleted_success') || "Department deleted successfully")
+    toast.success(t.messages?.deleted_success || "Department deleted successfully")
     handleRefresh()
   }
   
@@ -326,7 +333,7 @@ export default function DepartmentsPage() {
       setSelectedDepartment(updatedDepartment);
     }
     
-    toast.success(t('annual_budget.messages.updated_success') || "Budget updated successfully", {
+    toast.success(t.annual_budget?.messages?.updated_success || "Budget updated successfully", {
       duration: 3000,
       icon: '💰'
     });
@@ -340,7 +347,7 @@ export default function DepartmentsPage() {
     {
       id: "name",
       accessorKey: "name",
-      header: t('common.name') || "Name",
+      header: t.common?.name || "Name",
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
@@ -348,7 +355,7 @@ export default function DepartmentsPage() {
           </div>
           <div>
             <div className="font-medium">{row.original.name}</div>
-            <div className="text-xs text-muted-foreground">{row.original.description || '-'}</div>
+            <div className="text-xs text-muted-foreground max-w-xs truncate line-clamp-2">{row.original.description || '-'}</div>
           </div>
         </div>
       ),
@@ -358,7 +365,7 @@ export default function DepartmentsPage() {
       accessorKey: "church_id",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          {t('churches.church') || "Church"}
+          {t.churches?.church || "Church"}
         </div>
       ),
       cell: ({ row }) => {
@@ -380,7 +387,7 @@ export default function DepartmentsPage() {
       accessorKey: "members_count",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          {t('common.members') || "Members"}
+          {t.common?.members || "Members"}
         </div>
       ),
       cell: ({ row }) => (
@@ -394,7 +401,7 @@ export default function DepartmentsPage() {
       id: "budget_total",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          {t('annual_budget.table.headers.budget_total') || "Budget Total"}
+          {t.annual_budget?.table?.headers?.budget_total || "Budget Total"}
         </div>
       ),
       cell: ({ row }) => {
@@ -413,7 +420,7 @@ export default function DepartmentsPage() {
       id: "spent_amount",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          {t('annual_budget.table.headers.spent_amount') || "Spent Amount"}
+          {t.annual_budget?.table?.headers?.spent_amount || "Spent Amount"}
         </div>
       ),
       cell: ({ row }) => {
@@ -434,7 +441,7 @@ export default function DepartmentsPage() {
       id: "usage_percentage",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          {t('annual_budget.table.headers.usage_percentage') || "Usage %"}
+          {t.annual_budget?.table?.headers?.usage_percentage || "Usage %"}
         </div>
       ),
       cell: ({ row }) => {
@@ -459,7 +466,7 @@ export default function DepartmentsPage() {
       id: "budget_status",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          {t('institutions.table.budget_status') || "Budget Status"}
+          {t.institutions?.table?.budget_status || "Budget Status"}
         </div>
       ),
       cell: ({ row }) => {
@@ -469,7 +476,7 @@ export default function DepartmentsPage() {
         return (
           <div className="flex justify-center">
             <StatusBadge
-              label={hasBudget ? t('annual_budget.table.budget_status_labels.completed') : t('annual_budget.table.budget_status_labels.missing')}
+              label={hasBudget ? t.annual_budget?.table?.budget_status_labels?.completed : t.annual_budget?.table?.budget_status_labels?.missing}
               variant={hasBudget ? "success" : "neutral"}
               showDot
             />
@@ -490,7 +497,7 @@ export default function DepartmentsPage() {
       accessorKey: "is_deleted",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          {t('common.status') || "Status"}
+          {t.common?.status || "Status"}
         </div>
       ),
       cell: ({ row }) => {
@@ -498,7 +505,7 @@ export default function DepartmentsPage() {
         return (
           <div className="flex justify-center">
             <StatusBadge
-              label={isActive ? (t('common.active') || "Active") : (t('common.inactive') || "Inactive")}
+              label={isActive ? (t.common?.active || "Active") : (t.common?.inactive || "Inactive")}
               variant={isActive ? "success" : "neutral"}
               showDot
             />
@@ -520,7 +527,7 @@ export default function DepartmentsPage() {
     // },
     {
       id: "actions",
-      header: t('common.actions') || "Actions",
+      header: t.common?.actions || "Actions",
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -531,19 +538,19 @@ export default function DepartmentsPage() {
           <DropdownMenuContent>
             <DropdownMenuItem onClick={() => handleViewDetails(row.original.id)}>
               <Eye className="w-4 h-4 mr-2" />
-              {t('departments.actions.view_details') || "View Details"}
+              {t.actions?.view_details || "View Details"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
               <Edit className="w-4 h-4 mr-2" />
-              {t('departments.edit_department') || "Edit Department"}
+              {t.actions?.edit_department || "Edit Department"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleViewBudget(row.original.id)}>
               <DollarSign className="w-4 h-4 mr-2" />
-              {t('departments.actions.manage_budget') || "Manage Budget"}
+              {t.actions?.manage_budget || "Manage Budget"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
               <Trash2 className="w-4 h-4 mr-2" />
-              {t('departments.delete_department') || "Delete Department"}
+              {t.actions?.delete_department || "Delete Department"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -555,7 +562,7 @@ export default function DepartmentsPage() {
   const userColumns: ColumnDef<any>[] = [
     {
       id: "avatar",
-      header: t('users.table.avatar') || "Avatar",
+      header: t.users?.table?.avatar || "Avatar",
       cell: ({ row }) => {
         const user = row.original
         return (
@@ -571,7 +578,7 @@ export default function DepartmentsPage() {
     {
       id: "name",
       accessorKey: "name",
-      header: t('users.table.name') || "Name",
+      header: t.users?.table?.name || "Name",
       cell: ({ row }) => {
         const user = row.original
         return (
@@ -589,7 +596,7 @@ export default function DepartmentsPage() {
       accessorKey: "language_preference",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          {t('users.table.language') || "Language"}
+          {t.users?.table?.language || "Language"}
         </div>
       ),
       cell: ({ row }) => (
@@ -604,7 +611,7 @@ export default function DepartmentsPage() {
       id: "roles",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          {t('users.table.roles') || "Roles"}
+          {t.users?.table?.roles || "Roles"}
         </div>
       ),
       cell: ({ row }) => {
@@ -620,7 +627,7 @@ export default function DepartmentsPage() {
                 {role.role.key_code === 'ADMIN' && <Crown className="w-3 h-3 mr-1" />}
                 {role.role.name}
               </Badge>
-            )) || <span className="text-xs text-muted-foreground">{t('users.table.no_roles') || "No roles"}</span>}
+            )) || <span className="text-xs text-muted-foreground">{t.users?.table?.no_roles || "No roles"}</span>}
           </div>
         )
       },
@@ -630,12 +637,12 @@ export default function DepartmentsPage() {
       accessorKey: "gender",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          {t('users.table.gender') || "Gender"}
+          {t.users?.table?.gender || "Gender"}
         </div>
       ),
       cell: ({ row }) => {
         const user = row.original;
-        const genderLabel = user.gender ? t(`users.gender.${user.gender}`) : 'N/A';
+        const genderLabel = user.gender ? (t.users?.gender as any)?.[user.gender] : 'N/A';
         return (
           <div className="text-center">
             <Badge variant="outline" className="text-xs">
@@ -650,7 +657,7 @@ export default function DepartmentsPage() {
       accessorKey: "is_deleted",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          {t('users.table.status') || "Status"}
+          {t.users?.table?.status || "Status"}
         </div>
       ),
       cell: ({ row }) => {
@@ -658,7 +665,7 @@ export default function DepartmentsPage() {
         return (
           <div className="flex justify-center">
             <StatusBadge
-              label={isActive ? (t('users.table.active') || "Active") : (t('users.table.inactive') || "Inactive")}
+              label={isActive ? (t.users?.table?.active || "Active") : (t.users?.table?.inactive || "Inactive")}
               variant={isActive ? "success" : "error"}
               showDot
             />
@@ -713,7 +720,7 @@ export default function DepartmentsPage() {
                 }}
                 className={viewMode === 'list' ? 'font-semibold' : 'cursor-pointer hover:text-foreground'}
               >
-                {t('departments.breadcrumb.all_departments') || "See All Departments"}
+                {t.breadcrumb?.all_departments || "See All Departments"}
               </BreadcrumbLink>
             </BreadcrumbItem>
             {viewMode === 'detail' && selectedDepartmentDetail && (
@@ -734,14 +741,14 @@ export default function DepartmentsPage() {
           <div>
             <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
               {viewMode === 'detail' && selectedDepartmentDetail 
-                ? `${selectedDepartmentDetail.name} - ${t('departments.detail.title_suffix') || "Details"}`
-                : t('departments.title') || "Institutional Departments"
+                ? `${selectedDepartmentDetail.name} - ${t.detail?.title_suffix || "Details"}`
+                : t.title || "Institutional Departments"
               }
             </h2>
             <p className="text-muted-foreground text-0.875rem sm:text-1rem">
               {viewMode === 'detail' && selectedDepartmentDetail
-                ? selectedDepartmentDetail.description || (t('departments.detail.no_description') || "Department details and members")
-                : t('departments.subtitle') || "Manage departments across institutions"
+                ? selectedDepartmentDetail.description || (t.detail?.no_description || "Department details and members")
+                : t.subtitle || "Manage departments across institutions"
               }
             </p>
           </div>
@@ -750,7 +757,7 @@ export default function DepartmentsPage() {
             {viewMode === 'list' && (
               <Button onClick={handleCreate}>
                 <Plus className="w-4 h-4 mr-2" />
-                {t('departments.create_department') || "Create Department"}
+                {t.create_department || "Create Department"}
               </Button>
             )}
             
@@ -778,41 +785,41 @@ export default function DepartmentsPage() {
               const detailKPIData: KPICardData[] = [
                 {
                   id: "budget_total",
-                  title: t('departments.kpi.budget_total.title') || "Budget Total",
+                  title: t.kpi?.budget_total?.title || "Budget Total",
                   value: `$${plannedBudget.toLocaleString()}`,
                   icon: DollarSign,
-                  subtitle: t('departments.kpi.budget_total.subtitle') || "Total planned budget",
+                  subtitle: t.kpi?.budget_total?.subtitle || "Total planned budget",
                 },
                 {
                   id: "spent_amount",
-                  title: t('departments.kpi.spent_amount.title') || "Spent Amount",
+                  title: t.kpi?.spent_amount?.title || "Spent Amount",
                   value: `$${totalExpenses.toLocaleString()}`,
                   icon: TrendingUp,
-                  subtitle: t('departments.kpi.spent_amount.subtitle') || "Total expenses",
+                  subtitle: t.kpi?.spent_amount?.subtitle || "Total expenses",
                 },
                 {
                   id: "members",
-                  title: t('departments.kpi.members.title') || "Members",
+                  title: t.kpi?.members?.title || "Members",
                   value: selectedDepartmentDetail.users?.length || 0,
                   icon: Users,
-                  subtitle: t('departments.kpi.members.subtitle') || "Department members",
+                  subtitle: t.kpi?.members?.subtitle || "Department members",
                 }
               ];
               
               const customFirstCard = (
                 <EntityInfoCard
-                  headerTitle={t('departments.detail.info_card.header_title') || "Department Info"}
+                  headerTitle={t.detail?.info_card?.header_title || "Department Info"}
                   name={selectedDepartmentDetail.name}
-                  description={selectedDepartmentDetail.description || (t('departments.detail.info_card.no_description') || "No description available")}
+                  description={selectedDepartmentDetail.description || (t.detail?.info_card?.no_description || "No description available")}
                   icon={Layers}
                   badges={[
                     {
-                      label: churches.find(c => c.id === selectedDepartmentDetail.church_id)?.name || (t('departments.detail.info_card.institutional') || "Institutional"),
+                      label: churches.find(c => c.id === selectedDepartmentDetail.church_id)?.name || (t.detail?.info_card?.institutional || "Institutional"),
                       variant: "outline",
                       className: "text-xs"
                     },
                     {
-                      label: !selectedDepartmentDetail.is_deleted ? (t('departments.detail.info_card.active') || "Active") : (t('departments.detail.info_card.inactive') || "Inactive"),
+                      label: !selectedDepartmentDetail.is_deleted ? (t.detail?.info_card?.active || "Active") : (t.detail?.info_card?.inactive || "Inactive"),
                       variant: !selectedDepartmentDetail.is_deleted ? "default" : "secondary",
                       className: !selectedDepartmentDetail.is_deleted 
                         ? "text-xs bg-green-100 text-green-700" 
@@ -821,19 +828,19 @@ export default function DepartmentsPage() {
                   ]}
                   actions={[
                     {
-                      label: t('departments.actions.edit_department') || "Edit Department",
+                      label: t.actions?.edit_department || "Edit Department",
                       icon: Edit,
                       onClick: () => handleEdit(selectedDepartmentDetail.id),
                       variant: "default"
                     },
                     {
-                      label: t('departments.actions.manage_budget') || "Manage Budget",
+                      label: t.actions?.manage_budget || "Manage Budget",
                       icon: DollarSign,
                       onClick: () => handleViewBudget(selectedDepartmentDetail.id),
                       variant: "default"
                     },
                     {
-                      label: t('departments.actions.delete_department') || "Delete Department",
+                      label: t.actions?.delete_department || "Delete Department",
                       icon: Trash2,
                       onClick: () => handleDelete(selectedDepartmentDetail.id, selectedDepartmentDetail.name),
                       variant: "destructive",
@@ -880,10 +887,10 @@ export default function DepartmentsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5" />
-                  {t('departments.detail.members_table.title') || "Department Members"}
+                  {t.detail?.members_table?.title || "Department Members"}
                 </CardTitle>
                 <CardDescription>
-                  {t('departments.detail.members_table.description', { name: selectedDepartmentDetail.name }) || `List of all members in ${selectedDepartmentDetail.name}`}
+                  {t.detail?.members_table?.description || `List of all members in ${selectedDepartmentDetail.name}`}
                 </CardDescription>
               </CardHeader>
               <CardContent className="overflow-hidden p-0">
@@ -895,10 +902,10 @@ export default function DepartmentsPage() {
                   filters={[
                     {
                       id: "status",
-                      title: t('common.status') || "Status",
+                      title: t.common?.status || "Status",
                       options: [
-                        { label: t('common.active') || "Active", value: "true" },
-                        { label: t('common.inactive') || "Inactive", value: "false" }
+                        { label: t.common?.active || "Active", value: "true" },
+                        { label: t.common?.inactive || "Inactive", value: "false" }
                       ]
                     }
                   ]}
@@ -913,22 +920,22 @@ export default function DepartmentsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Layers className="w-5 h-5" />
-                  {t('departments.table_title') || "Departments"}
+                  {t.table_title || "Departments"}
                 </CardTitle>
-                <CardDescription>{t('departments.table_description') || "Complete list of departments with management actions"}</CardDescription>
+                <CardDescription>{t.table_description || "Complete list of departments with management actions"}</CardDescription>
               </CardHeader>
               <CardContent className="overflow-hidden p-0">
                 <UseTable
                   columns={departmentColumns}
                   data={departments}
                   searchKey="name"
-                  emptyEntityName={t('departments.entity_name') || "Departments"}
+                  emptyEntityName={t.entity_name || "Departments"}
                   filters={[
                 {
                   id: "church",
-                  title: t('churches.church') || "Church",
+                  title: t.churches?.church || "Church",
                   options: [
-                    { label: t('departments.filters.institutional') || "Institutional", value: "institutional" },
+                    { label: t.filters?.institutional || "Institutional", value: "institutional" },
                     ...churches.map(church => ({
                       label: church.name,
                       value: church.id
@@ -937,18 +944,18 @@ export default function DepartmentsPage() {
                 },
                 {
                   id: "budget_status",
-                  title: t('institutions.table.budget_status') || "Budget Status",
+                  title: t.institutions?.table?.budget_status || "Budget Status",
                   options: [
-                    { label: t('annual_budget.table.budget_status_labels.completed'), value: "true" },
-                    { label: t('annual_budget.table.budget_status_labels.missing'), value: "false" }
+                    { label: t.annual_budget?.table?.budget_status_labels?.completed, value: "true" },
+                    { label: t.annual_budget?.table?.budget_status_labels?.missing, value: "false" }
                   ]
                 },
                 {
                   id: "status",
-                  title: t('common.status') || "Status",
+                  title: t.common?.status || "Status",
                   options: [
-                    { label: t('common.active') || "Active", value: "true" },
-                    { label: t('common.inactive') || "Inactive", value: "false" }
+                    { label: t.common?.active || "Active", value: "true" },
+                    { label: t.common?.inactive || "Inactive", value: "false" }
                   ]
                 }
               ]}

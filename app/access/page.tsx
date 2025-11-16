@@ -169,7 +169,7 @@ export default function AccessManagementPage() {
       accessorKey: "description",
       header: t('access.roles.table.description'),
       cell: ({ row }) => (
-        <div className="text-sm max-w-xs truncate">{row.original.description}</div>
+        <div className="text-sm max-w-xs truncate line-clamp-2">{row.original.description}</div>
       ),
     },
     {
@@ -311,7 +311,7 @@ export default function AccessManagementPage() {
       accessorKey: "description",
       header: t('access.permissions.table.description'),
       cell: ({ row }) => (
-        <div className="text-sm">{row.original.description}</div>
+        <div className="text-sm max-w-xs truncate line-clamp-2">{row.original.description}</div>
       ),
     },
     {

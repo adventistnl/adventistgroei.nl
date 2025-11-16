@@ -51,7 +51,7 @@ export function DeleteDepartmentModal({
   const currentLanguage = i18n?.language || 'en'
   const t = departmentTranslations[currentLanguage as keyof typeof departmentTranslations] || departmentTranslations.en
 
-  const confirmationText = 'delete department'
+  const confirmationText = t.modals.delete.confirmation_text
 
   const handleSubmit = async () => {
     if (!department) return
@@ -100,10 +100,10 @@ export function DeleteDepartmentModal({
         <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="text-lg mb-2 flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-amber-600" />
-            <span className="text-red-600">Deactivate Department</span>
+            <span className="text-red-600">{t.modals.delete.deactivate_title}</span>
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            This action will deactivate the department and all related data. Data is preserved and can be recovered.
+            {t.modals.delete.deactivate_description}
           </DialogDescription>
         </DialogHeader>
 
@@ -120,36 +120,44 @@ export function DeleteDepartmentModal({
 
               {/* Informações */}
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-foreground mb-1">
-                  {department.name}
-                </h3>
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {department.description}
-                </p>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">{t.fields.name}</p>
+                    <h3 className="text-base font-semibold text-foreground">
+                      {department.name}
+                    </h3>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">{t.fields.description}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {department.description}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Affected Components */}
             <div className="space-y-4">
               <h4 className="text-sm font-medium text-foreground text-center">
-                📊 Affected Data
+                📊 {t.modals.delete.affected_components}
               </h4>
               <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
                 <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                   <Briefcase className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  <span><span className="text-muted-foreground">Projects:</span> <strong className="text-foreground">0</strong></span>
+                  <span><span className="text-muted-foreground">{t.modals.delete.affected_data.projects}:</span> <strong className="text-foreground">0</strong></span>
                 </div>
                 <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                   <Users className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  <span><span className="text-muted-foreground">Volunteers:</span> <strong className="text-foreground">0</strong></span>
+                  <span><span className="text-muted-foreground">{t.modals.delete.affected_data.volunteers}:</span> <strong className="text-foreground">0</strong></span>
                 </div>
                 <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                   <DollarSign className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  <span><span className="text-muted-foreground">Budgets:</span> <strong className="text-foreground">0</strong></span>
+                  <span><span className="text-muted-foreground">{t.modals.delete.affected_data.budgets}:</span> <strong className="text-foreground">0</strong></span>
                 </div>
                 <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                   <FileText className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  <span><span className="text-muted-foreground">Documents:</span> <strong className="text-foreground">0</strong></span>
+                  <span><span className="text-muted-foreground">{t.modals.delete.affected_data.documents}:</span> <strong className="text-foreground">0</strong></span>
                 </div>
               </div>
             </div>
@@ -159,7 +167,7 @@ export function DeleteDepartmentModal({
               <CollapsibleTrigger asChild>
                 <Button variant="outline" className="w-full justify-between" size="sm">
                   <span className="flex items-center gap-2 text-xs">
-                    View Consequences
+                    {t.modals.delete.view_consequences}
                   </span>
                   {consequencesOpen ? (
                     <ChevronDown className="w-4 h-4" />
@@ -174,10 +182,10 @@ export function DeleteDepartmentModal({
                   <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-sm text-red-900 dark:text-red-100">
-                      Projects & Activities Deleted
+                      {t.modals.delete.consequences.projects_deleted}
                     </p>
                     <p className="text-xs text-red-700 dark:text-red-300">
-                      All projects, activities, and related data will be marked as deleted
+                      {t.modals.delete.consequences.projects_deleted_desc}
                     </p>
                   </div>
                 </div>
@@ -187,10 +195,10 @@ export function DeleteDepartmentModal({
                   <Users className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-sm text-amber-900 dark:text-amber-100">
-                      Users Unlinked from Department
+                      {t.modals.delete.consequences.users_unlinked}
                     </p>
                     <p className="text-xs text-amber-700 dark:text-amber-300">
-                      Department users will be removed from this department but remain in the institution
+                      {t.modals.delete.consequences.users_unlinked_desc}
                     </p>
                   </div>
                 </div>
@@ -200,10 +208,10 @@ export function DeleteDepartmentModal({
                   <Database className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-sm text-blue-900 dark:text-blue-100">
-                      Data Preservation & Recovery
+                      {t.modals.delete.consequences.data_preservation}
                     </p>
                     <p className="text-xs text-blue-700 dark:text-blue-300">
-                      All data remains in the database and can be recovered by administrators
+                      {t.modals.delete.consequences.data_preservation_desc}
                     </p>
                   </div>
                 </div>
@@ -213,10 +221,10 @@ export function DeleteDepartmentModal({
                   <DollarSign className="w-4 h-4 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-sm text-orange-900 dark:text-orange-100">
-                      Budget & Financial Data Deleted
+                      {t.modals.delete.consequences.budget_deleted}
                     </p>
                     <p className="text-xs text-orange-700 dark:text-orange-300">
-                      All budgets, subsidy requests, and financial records will be marked as deleted
+                      {t.modals.delete.consequences.budget_deleted_desc}
                     </p>
                   </div>
                 </div>
@@ -234,11 +242,11 @@ export function DeleteDepartmentModal({
                 />
                 <label htmlFor="understand-consequences" className="text-sm cursor-pointer">
                   <span className="font-medium text-foreground">
-                    I understand the consequences
+                    {t.modals.delete.understand_consequences}
                   </span>
                   <br />
                   <span className="text-muted-foreground">
-                    I acknowledge that this action will deactivate the department and all related data
+                    {t.modals.delete.acknowledge_text}
                   </span>
                 </label>
               </div>
@@ -248,18 +256,18 @@ export function DeleteDepartmentModal({
                 <div className="space-y-2 p-4 border rounded-lg">
                   <label className="text-sm font-semibold text-red-700 dark:text-red-400 flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4" />
-                    Type the confirmation text to proceed
+                    {t.modals.delete.type_confirmation}
                   </label>
                   <Input
                     type="text"
                     value={finalConfirmation}
                     onChange={(e) => setFinalConfirmation(e.target.value)}
-                    placeholder='Type: "delete department"'
+                    placeholder={t.modals.delete.confirmation_placeholder}
                     className="h-10"
                     disabled={isLoading}
                   />
                   <p className="text-xs text-red-600 dark:text-red-400 font-medium">
-                    This action cannot be easily undone without administrator intervention
+                    {t.modals.delete.confirmation_help}
                   </p>
                 </div>
               )}
@@ -277,7 +285,7 @@ export function DeleteDepartmentModal({
               size="sm" 
               className="text-xs"
             >
-              Cancel
+              {t.buttons.cancel}
             </Button>
             <Button
               onClick={handleSubmit}
@@ -292,12 +300,12 @@ export function DeleteDepartmentModal({
               {isLoading ? (
                 <>
                   <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1" />
-                  Deactivating...
+                  {t.modals.delete.deactivating}
                 </>
               ) : (
                 <>
                   <AlertTriangle className="w-3 h-3 mr-1" />
-                  Deactivate Department
+                  {t.modals.delete.deactivate_department}
                 </>
               )}
             </Button>

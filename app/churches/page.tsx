@@ -601,7 +601,7 @@ export default function ChurchesPage() {
           </div>
           <div>
             <div className="font-medium">{row.original.name}</div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-muted-foreground max-w-xs truncate line-clamp-2">
               {row.original.description || 'No description'}
             </div>
           </div>

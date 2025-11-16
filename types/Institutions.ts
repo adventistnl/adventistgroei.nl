@@ -210,9 +210,29 @@ export interface Institutions_institutions_churches_departments_annual_budgets {
   total_expenses: any;
 }
 
+export interface Institutions_institutions_churches_departments_users_user_roles_role {
+  __typename: "Role";
+  id: string;
+  name: string;
+  key_code: string;
+  description: string;
+}
+
+export interface Institutions_institutions_churches_departments_users_user_roles {
+  __typename: "UserRole";
+  id: string;
+  role: Institutions_institutions_churches_departments_users_user_roles_role;
+}
+
 export interface Institutions_institutions_churches_departments_users {
   __typename: "User";
   id: string;
+  name: string;
+  email: string;
+  gender: GenderType | null;
+  is_deleted: boolean;
+  language_preference: LanguagePreference;
+  user_roles: Institutions_institutions_churches_departments_users_user_roles[] | null;
 }
 
 export interface Institutions_institutions_churches_departments {
@@ -327,9 +347,29 @@ export interface Institutions_institutions_departments_annual_budgets {
   total_expenses: any;
 }
 
+export interface Institutions_institutions_departments_users_user_roles_role {
+  __typename: "Role";
+  id: string;
+  name: string;
+  key_code: string;
+  description: string;
+}
+
+export interface Institutions_institutions_departments_users_user_roles {
+  __typename: "UserRole";
+  id: string;
+  role: Institutions_institutions_departments_users_user_roles_role;
+}
+
 export interface Institutions_institutions_departments_users {
   __typename: "User";
   id: string;
+  name: string;
+  email: string;
+  gender: GenderType | null;
+  is_deleted: boolean;
+  language_preference: LanguagePreference;
+  user_roles: Institutions_institutions_departments_users_user_roles[] | null;
 }
 
 export interface Institutions_institutions_departments {
