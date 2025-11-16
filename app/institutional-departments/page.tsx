@@ -976,6 +976,7 @@ export default function DepartmentsPage() {
             department={selectedDepartment as any}
             churches={churches as any}
             onSave={handleDepartmentUpdated as any}
+            departmentType="institutional"
           />
         )}
         

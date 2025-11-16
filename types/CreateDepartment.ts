@@ -24,5 +24,4 @@ export interface CreateDepartmentVariables {
   contactName?: string | null;
   email?: string | null;
   phone?: string | null;
-  city?: string | null;
 }

@@ -5,9 +5,6 @@ import { useTranslation } from "react-i18next"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { 
@@ -17,32 +14,18 @@ import {
   ChevronRight, 
   Lock, 
   Database, 
+  Briefcase,
   Users,
-  Home,
   DollarSign,
-  Calendar,
-  Globe,
-  Building
+  FileText,
+  Trash2
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { departmentTranslations } from "@/lib/translations/departments"
-
-export interface DepartmentData {
-  id: string
-  institution_id: string
-  church_id: string
-  name: string
-  description: string
-  annual_budget: number
-  contact_id?: string | null
-  created_at: string
-  updated_at: string
-  created_by: string
-  updated_by: string
-  is_deleted: boolean
-  deleted_at?: string | null
-  deleted_by?: string | null
-}
+import { useDeleteDepartmentMutation } from "@/hooks/graphql/use-departments"
+import {
+  InstitutionById_institution_departments as DepartmentData,
+} from "@/types/InstitutionById"
 
 export interface DeleteDepartmentModalProps {
   isOpen: boolean
@@ -57,7 +40,8 @@ export function DeleteDepartmentModal({
   department,
   onSuccess
 }: DeleteDepartmentModalProps) {
-  const { t, i18n } = useTranslation()
+  const { t: tCommon, i18n } = useTranslation()
+  const [deleteDepartment] = useDeleteDepartmentMutation()
   const [isLoading, setIsLoading] = useState(false)
   const [consequencesOpen, setConsequencesOpen] = useState(false)
   const [understoodConsequences, setUnderstoodConsequences] = useState(false)
@@ -65,35 +49,33 @@ export function DeleteDepartmentModal({
 
   // Get translations for current language
   const currentLanguage = i18n?.language || 'en'
-  const tDept = departmentTranslations[currentLanguage as keyof typeof departmentTranslations] || departmentTranslations.en
+  const t = departmentTranslations[currentLanguage as keyof typeof departmentTranslations] || departmentTranslations.en
+
+  const confirmationText = 'delete department'
 
   const handleSubmit = async () => {
     if (!department) return
 
     setIsLoading(true)
-    const loadingToast = toast.loading(t('departments.toasts.deactivating'))
-    
+    const loadingToast = toast.loading(t.toasts.deleting)
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await deleteDepartment({ variables: { id: department.id } })
       
       toast.dismiss(loadingToast)
-      toast.success(t('departments.toasts.deactivated'), {
+      toast.success(t.toasts.deleted, {
         duration: 3000,
-        icon: '🏢'
+        icon: '🗑️'
       })
-      
-      // Call success callback if provided
+
       if (onSuccess) {
         onSuccess(department)
       }
-      
-      // Close modal
+
       onOpenChange(false)
-      
     } catch (error) {
       toast.dismiss(loadingToast)
-      toast.error(t('departments.toasts.deactivate_failed'))
+      toast.error(t.toasts.delete_failed)
     } finally {
       setIsLoading(false)
     }
@@ -108,7 +90,7 @@ export function DeleteDepartmentModal({
     }
   }
 
-  const isDeleteEnabled = understoodConsequences && finalConfirmation.toLowerCase() === t('departments.modals.delete.confirmation_text').toLowerCase()
+  const isDeleteEnabled = understoodConsequences && finalConfirmation.toLowerCase() === confirmationText.toLowerCase()
 
   if (!department) return null
 
@@ -116,24 +98,26 @@ export function DeleteDepartmentModal({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="w-[95vw] max-w-lg max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0 pb-4">
-          <DialogTitle className="text-lg mb-2">
-            {t('departments.modals.delete.deactivate_title')}
+          <DialogTitle className="text-lg mb-2 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-amber-600" />
+            <span className="text-red-600">Deactivate Department</span>
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            {t('departments.modals.delete.deactivate_description')}
+            This action will deactivate the department and all related data. Data is preserved and can be recovered.
           </DialogDescription>
         </DialogHeader>
-        
+
         {/* Conteúdo - Scrollable */}
         <div className="flex-1 overflow-y-auto min-h-0">
           <div className="space-y-6 p-1">
+
             {/* Department Information */}
-            <div className="flex items-start gap-4 p-4 bg-muted/50 rounded-lg border">
+            <div className="flex items-start gap-4 p-4 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-900">
               {/* Ícone */}
-              <div className="w-12 h-12 bg-background rounded-full flex items-center justify-center flex-shrink-0 border">
-                <Layers className="w-6 h-6 text-muted-foreground" />
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center flex-shrink-0 border border-red-200 dark:border-red-800">
+                <Layers className="w-6 h-6 text-red-600 dark:text-red-400" />
               </div>
-              
+
               {/* Informações */}
               <div className="flex-1 min-w-0">
                 <h3 className="text-base font-semibold text-foreground mb-1">
@@ -148,24 +132,24 @@ export function DeleteDepartmentModal({
             {/* Affected Components */}
             <div className="space-y-4">
               <h4 className="text-sm font-medium text-foreground text-center">
-                {t('departments.modals.delete.affected_components')}
+                📊 Affected Data
               </h4>
               <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Home className="w-4 h-4" />
-                  <span>{t('departments.stats.church')}: <strong className="text-foreground">1</strong></span>
+                <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <Briefcase className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                  <span><span className="text-muted-foreground">Projects:</span> <strong className="text-foreground">0</strong></span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Users className="w-4 h-4" />
-                  <span>{t('departments.stats.members')}: <strong className="text-foreground">0</strong></span>
+                <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <Users className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                  <span><span className="text-muted-foreground">Volunteers:</span> <strong className="text-foreground">0</strong></span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <DollarSign className="w-4 h-4" />
-                  <span>{t('departments.stats.budget')}: <strong className="text-foreground">${department.annual_budget?.toLocaleString() ?? 'N/A'}</strong></span>
+                <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <DollarSign className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                  <span><span className="text-muted-foreground">Budgets:</span> <strong className="text-foreground">0</strong></span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Building className="w-4 h-4" />
-                  <span>{t('departments.stats.projects')}: <strong className="text-foreground">0</strong></span>
+                <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <FileText className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                  <span><span className="text-muted-foreground">Documents:</span> <strong className="text-foreground">0</strong></span>
                 </div>
               </div>
             </div>
@@ -175,7 +159,7 @@ export function DeleteDepartmentModal({
               <CollapsibleTrigger asChild>
                 <Button variant="outline" className="w-full justify-between" size="sm">
                   <span className="flex items-center gap-2 text-xs">
-                    {t('departments.modals.delete.view_consequences')}
+                    View Consequences
                   </span>
                   {consequencesOpen ? (
                     <ChevronDown className="w-4 h-4" />
@@ -185,54 +169,54 @@ export function DeleteDepartmentModal({
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-3 mt-4">
-                {/* Member Access Consequence */}
-                <div className="flex items-start gap-3 p-3 border rounded-lg">
-                  <Lock className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                {/* Data Deletion Consequence */}
+                <div className="flex items-start gap-3 p-3 border rounded-lg bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900">
+                  <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-foreground">
-                      {t('departments.modals.delete.consequences.member_access')}
+                    <p className="font-medium text-sm text-red-900 dark:text-red-100">
+                      Projects & Activities Deleted
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {t('departments.modals.delete.consequences.member_access_desc')}
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Data Preservation Consequence */}
-                <div className="flex items-start gap-3 p-3 border rounded-lg">
-                  <Database className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-foreground">
-                      {t('departments.modals.delete.consequences.data_preservation')}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {t('departments.modals.delete.consequences.data_preservation_desc')}
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Budget Impact Consequence */}
-                <div className="flex items-start gap-3 p-3 border rounded-lg">
-                  <DollarSign className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-foreground">
-                      {t('departments.modals.delete.consequences.budget_impact')}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {t('departments.modals.delete.consequences.budget_impact_desc')}
+                    <p className="text-xs text-red-700 dark:text-red-300">
+                      All projects, activities, and related data will be marked as deleted
                     </p>
                   </div>
                 </div>
 
-                {/* Project Impact Consequence */}
-                <div className="flex items-start gap-3 p-3 border rounded-lg">
-                  <Building className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                {/* User Unlinking Consequence */}
+                <div className="flex items-start gap-3 p-3 border rounded-lg bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900">
+                  <Users className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-foreground">
-                      {t('departments.modals.delete.consequences.project_impact')}
+                    <p className="font-medium text-sm text-amber-900 dark:text-amber-100">
+                      Users Unlinked from Department
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {t('departments.modals.delete.consequences.project_impact_desc')}
+                    <p className="text-xs text-amber-700 dark:text-amber-300">
+                      Department users will be removed from this department but remain in the institution
+                    </p>
+                  </div>
+                </div>
+
+                {/* Data Preservation Consequence */}
+                <div className="flex items-start gap-3 p-3 border rounded-lg bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
+                  <Database className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm text-blue-900 dark:text-blue-100">
+                      Data Preservation & Recovery
+                    </p>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      All data remains in the database and can be recovered by administrators
+                    </p>
+                  </div>
+                </div>
+
+                {/* Financial Impact Consequence */}
+                <div className="flex items-start gap-3 p-3 border rounded-lg bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900">
+                  <DollarSign className="w-4 h-4 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm text-orange-900 dark:text-orange-100">
+                      Budget & Financial Data Deleted
+                    </p>
+                    <p className="text-xs text-orange-700 dark:text-orange-300">
+                      All budgets, subsidy requests, and financial records will be marked as deleted
                     </p>
                   </div>
                 </div>
@@ -250,11 +234,11 @@ export function DeleteDepartmentModal({
                 />
                 <label htmlFor="understand-consequences" className="text-sm cursor-pointer">
                   <span className="font-medium text-foreground">
-                    {t('departments.modals.delete.understand_consequences')}
+                    I understand the consequences
                   </span>
                   <br />
                   <span className="text-muted-foreground">
-                    {t('departments.modals.delete.acknowledge_text')}
+                    I acknowledge that this action will deactivate the department and all related data
                   </span>
                 </label>
               </div>
@@ -264,18 +248,18 @@ export function DeleteDepartmentModal({
                 <div className="space-y-2 p-4 border rounded-lg">
                   <label className="text-sm font-semibold text-red-700 dark:text-red-400 flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4" />
-                    {t('departments.modals.delete.type_confirmation')}
+                    Type the confirmation text to proceed
                   </label>
                   <Input
                     type="text"
                     value={finalConfirmation}
                     onChange={(e) => setFinalConfirmation(e.target.value)}
-                    placeholder={t('departments.modals.delete.confirmation_placeholder')}
+                    placeholder='Type: "delete department"'
                     className="h-10"
                     disabled={isLoading}
                   />
                   <p className="text-xs text-red-600 dark:text-red-400 font-medium">
-                    {t('departments.modals.delete.confirmation_help')}
+                    This action cannot be easily undone without administrator intervention
                   </p>
                 </div>
               )}
@@ -286,8 +270,14 @@ export function DeleteDepartmentModal({
         {/* Botões de Ação - Fixos no rodapé */}
         <div className="flex-shrink-0 border-t pt-4 mt-6">
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={handleClose} disabled={isLoading} size="sm" className="text-xs">
-              {t('common.cancel')}
+            <Button 
+              variant="outline" 
+              onClick={handleClose} 
+              disabled={isLoading} 
+              size="sm" 
+              className="text-xs"
+            >
+              Cancel
             </Button>
             <Button
               onClick={handleSubmit}
@@ -302,12 +292,12 @@ export function DeleteDepartmentModal({
               {isLoading ? (
                 <>
                   <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1" />
-                  {t('departments.modals.delete.deactivating')}
+                  Deactivating...
                 </>
               ) : (
                 <>
                   <AlertTriangle className="w-3 h-3 mr-1" />
-                  {t('departments.modals.delete.deactivate_department')}
+                  Deactivate Department
                 </>
               )}
             </Button>

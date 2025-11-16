@@ -9,7 +9,6 @@ export const CREATE_DEPARTMENT_MUTATION = gql`
     $contactName: String,
     $email: String,
     $phone: String,
-    $city: String
   ) {
     createDepartment(
       data: {
@@ -21,11 +20,58 @@ export const CREATE_DEPARTMENT_MUTATION = gql`
           name: $contactName,
           email: $email,
           phone: $phone,
-          city: $city
         }
       }
     ) {
       id
+    }
+  }
+`;
+
+export const UPDATE_DEPARTMENT_MUTATION = gql`
+  mutation UpdateDepartment(
+    $id: String!,
+    $name: String!,
+    $description: String!,
+    $church: String,
+    $contactName: String,
+    $email: String,
+    $phone: String
+  ) {
+    updateDepartment(
+      id: $id,
+      data: {
+        name: $name,
+        description: $description,
+        church_id: $church,
+        contact: {
+          name: $contactName,
+          email: $email,
+          phone: $phone
+        }
+      }
+    ) {
+      id
+      name
+      description
+      church_id
+      contact {
+        id
+        name
+        phone
+        email
+      }
+    }
+  }
+`;
+
+export const DELETE_DEPARTMENT_MUTATION = gql`
+  mutation DeleteDepartment($id: String!) {
+    deleteDepartment(id: $id) {
+      id
+      name
+      is_deleted
+      deleted_at
     }
   }
 `;

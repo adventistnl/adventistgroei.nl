@@ -261,6 +261,9 @@ export interface Institutions_institutions_churches_users {
   id: string;
   name: string;
   email: string;
+  gender: GenderType | null;
+  is_deleted: boolean;
+  language_preference: LanguagePreference;
   user_roles: Institutions_institutions_churches_users_user_roles[] | null;
 }
 

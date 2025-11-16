@@ -56,59 +56,17 @@ import {
 import toast from "react-hot-toast"
 import { departmentTranslations } from "@/lib/translations/departments"
 import { CreateDepartment, CreateDepartmentVariables } from "@/types/CreateDepartment"
-import { useDepartments } from "@/hooks/use-departments"
+import { useUpdateDepartmentMutation } from "@/hooks/graphql/use-departments"
 import { cn } from "@/lib/utils"
+import {
+  InstitutionById_institution_departments as DepartmentData,
+  InstitutionById_institution_departments_contact as ContactData,
+  InstitutionById_institution_churches as ChurchData
+} from "@/types/InstitutionById"
 
 // Extended interface to include new field locally
 interface ExtendedDepartmentVariables extends CreateDepartmentVariables {
   is_institution_department: boolean
-}
-
-export interface DepartmentData {
-  id: string
-  institution: string
-  church: string
-  name: string
-  description: string
-  annual_budget: number
-  is_institution_department: boolean
-  contact_id?: string | null
-  created_at: string
-  updated_at: string
-  created_by: string
-  updated_by: string
-  is_deleted: boolean
-  deleted_at?: string | null
-  deleted_by?: string | null
-}
-
-export interface ContactData {
-  id: string
-  name?: string | null
-  phone?: string | null
-  mobile?: string | null
-  email?: string | null
-  country?: string | null
-  city?: string | null
-  address?: string | null
-  full_address?: string | null
-  postal_code?: string | null
-  website?: string | null
-  notes?: string | null
-  is_primary: boolean
-  created_at: string
-  updated_at: string
-  created_by: string
-  updated_by: string
-  is_deleted: boolean
-  deleted_at?: string | null
-  deleted_by?: string | null
-}
-
-export interface ChurchData {
-  id: string
-  name: string
-  institution: string
 }
 
 export interface EditDepartmentModalProps {
@@ -117,6 +75,7 @@ export interface EditDepartmentModalProps {
   department: DepartmentData | null
   churches: ChurchData[]
   onSave?: (department: DepartmentData) => void
+  departmentType?: 'church' | 'institutional'
 }
 
 export function EditDepartmentModal({
@@ -124,9 +83,11 @@ export function EditDepartmentModal({
   onOpenChange,
   department,
   churches = [],
-  onSave
+  onSave,
+  departmentType = 'church'
 }: EditDepartmentModalProps) {
   const { t: tCommon, i18n } = useTranslation();
+  const [updateDepartment] = useUpdateDepartmentMutation();
 
   // Get translations for current language
   const currentLanguage = i18n?.language || 'en'
@@ -143,33 +104,29 @@ export function EditDepartmentModal({
     contactName: '',
     phone: '',
     email: '',
-    city: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [openChurch, setOpenChurch] = useState(false);
-
-  const totalSteps = 3;
+  const [openChurch, setOpenChurch] = useState(false);  const totalSteps = 2;
 
   useEffect(() => {
     if (isOpen && department) {
-      // Determine if it's institutional department
-      const isInstitutional = department.church === department.institution
+      // Determine if it's institutional department based on prop or data logic
+      const isInstitutional = departmentType === 'institutional' || !department.church_id
       
       setFormData({
-        institution: department.institution,
-        church: isInstitutional ? '' : department.church,
+        institution: department.institution_id,
+        church: isInstitutional ? '' : (department.church_id || ''),
         name: department.name,
         description: department.description,
         is_institution_department: isInstitutional,
-        contactName: '',
-        phone: '',
-        email: '',
-        city: ''
+        contactName: department.contact?.name || '',
+        phone: department.contact?.phone || '',
+        email: department.contact?.email || '',
       });
       setErrors({});
       setCurrentStep(1);
     }
-  }, [isOpen, department]);
+  }, [isOpen, department, departmentType]);
 
   const handleInputChange = (field: string, value: string | number | boolean) => {
     setFormData(prev => ({
@@ -201,32 +158,15 @@ export function EditDepartmentModal({
       } else if (formData.description.trim().length < 10) {
         newErrors.description = t.validation.description_min_length
       }
-    }
 
-    if (step === 2) {
+      // Validate church if it's not an institutional department
       if (!formData.is_institution_department && !formData.church) {
         newErrors.church = t.validation.church_required
       }
     }
 
-    if (step === 3) {
-      if (!formData.contactName?.trim()) {
-        newErrors.contactName = t.validation.contact_name_required
-      }
-
-      if (!formData.email?.trim()) {
-        newErrors.email = t.validation.email_required
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        newErrors.email = t.validation.email_invalid
-      }
-
-      if (!formData.phone?.trim()) {
-        newErrors.phone = t.validation.phone_required
-      }
-
-      if (!formData.city?.trim()) {
-        newErrors.city = t.validation.city_required
-      }
+    if (step === 2) {
+      // Contato é opcional na edição - sem validação obrigatória
     }
 
     setErrors(newErrors)
@@ -253,27 +193,40 @@ export function EditDepartmentModal({
     const loadingToast = toast.loading(t.toasts.updating)
 
     try {
+      if (!department) return
+
       // Prepare payload excluding local fields
       const { is_institution_department, ...departmentData } = formData
       
-      // If it's an institutional department, use institution ID as church
-      const finalPayload: CreateDepartmentVariables = {
-        ...departmentData,
-        church: is_institution_department ? formData.institution : formData.church
-      }
+      // If it's an institutional department, don't send church
+      // Otherwise, use the selected church
+      const churchValue = is_institution_department ? null : (formData.church || null)
 
-      // Simulate API call for now
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Call the updateDepartment mutation
+      const result = await updateDepartment({
+        variables: {
+          id: department.id,
+          name: formData.name!.trim(),
+          description: formData.description!.trim(),
+          church: churchValue,
+          contactName: formData.contactName || null,
+          email: formData.email || null,
+          phone: formData.phone || null
+        }
+      })
+
+      const updatedDepartmentData = result.data?.updateDepartment
 
       const updatedDepartment: DepartmentData = {
         ...department,
-        church: finalPayload.church,
+        church_id: churchValue,
+        church: null,
         name: formData.name!.trim(),
         description: formData.description!.trim(),
-        is_institution_department: is_institution_department,
+        contact: updatedDepartmentData?.contact || department.contact,
         updated_at: new Date().toISOString(),
         updated_by: 'current_user'
-      }
+      } as DepartmentData
 
       toast.dismiss(loadingToast)
       toast.success(t.toasts.updated, {
@@ -297,18 +250,18 @@ export function EditDepartmentModal({
 
   const handleCancel = () => {
     if (department) {
-      const isInstitutional = department.church === department.institution
+      // Determine if it's institutional department based on prop or data logic
+      const isInstitutional = departmentType === 'institutional' || !department.church_id
       
       setFormData({
-        institution: department.institution,
-        church: isInstitutional ? '' : department.church,
+        institution: department.institution_id,
+        church: isInstitutional ? '' : (department.church_id || ''),
         name: department.name,
         description: department.description,
         is_institution_department: isInstitutional,
-        contactName: '',
-        phone: '',
-        email: '',
-        city: ''
+        contactName: department.contact?.name || '',
+        phone: department.contact?.phone || '',
+        email: department.contact?.email || '',
       })
     }
     setErrors({})
@@ -361,55 +314,6 @@ export function EditDepartmentModal({
                 {errors.description && (
                   <p className="text-sm text-red-600">{errors.description}</p>
                 )}
-              </div>
-            </div>
-          </div>
-        )
-
-      case 2:
-        return (
-          <div className="space-y-6 animate-in fade-in-0 duration-300">
-            <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">{t.steps.step_2_title}</h3>
-              <p className="text-sm text-muted-foreground">{t.steps.step_2_description}</p>
-            </div>
-            
-            <div className="space-y-4 max-w-md mx-auto">
-              {/* Institution Department Switch */}
-              <div className="flex items-center justify-between p-3 border border-border rounded-lg hover:border-primary/30 transition-colors">
-                <div className="space-y-1 flex-1">
-                  <div className="flex items-center gap-2">
-                    <Label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
-                      <Building className="w-4 h-4 text-muted-foreground" />
-                      {t.fields.is_institution_department}
-                    </Label>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="w-3 h-3 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="text-xs">{t.department_type.institutional_tooltip}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {formData.is_institution_department 
-                      ? t.department_type.institutional_explanation_on
-                      : t.department_type.institutional_explanation_off}
-                  </p>
-                </div>
-                <Switch
-                  checked={formData.is_institution_department}
-                  onCheckedChange={(checked) => {
-                    handleInputChange('is_institution_department', checked)
-                    if (checked) {
-                      // Clear church selection when switching to institutional
-                      handleInputChange('church', '')
-                    }
-                  }}
-                  className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-gray-300"
-                  disabled={isLoading}
-                />
               </div>
 
               {/* Church Selection - Only show if not institutional department */}
@@ -477,7 +381,7 @@ export function EditDepartmentModal({
           </div>
         )
 
-      case 3:
+      case 2:
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
@@ -489,7 +393,7 @@ export function EditDepartmentModal({
               <div className="space-y-2">
                 <Label htmlFor="contact_name" className="flex items-center gap-2 text-sm">
                   <User className="w-4 h-4 text-muted-foreground" />
-                  {t.fields.contact_name} *
+                  {t.fields.contact_name}
                 </Label>
                 <Input
                   id="contact_name"
@@ -507,7 +411,7 @@ export function EditDepartmentModal({
               <div className="space-y-2">
                 <Label htmlFor="contact_email" className="flex items-center gap-2 text-sm">
                   <Mail className="w-4 h-4 text-muted-foreground" />
-                  {t.fields.contact_email} *
+                  {t.fields.contact_email}
                 </Label>
                 <Input
                   id="contact_email"
@@ -526,7 +430,7 @@ export function EditDepartmentModal({
               <div className="space-y-2">
                 <Label htmlFor="contact_phone" className="flex items-center gap-2 text-sm">
                   <Phone className="w-4 h-4 text-muted-foreground" />
-                  {t.fields.contact_phone} *
+                  {t.fields.contact_phone}
                 </Label>
                 <Input
                   id="contact_phone"
@@ -538,24 +442,6 @@ export function EditDepartmentModal({
                 />
                 {errors.phone && (
                   <p className="text-sm text-red-600">{errors.phone}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="contact_city" className="flex items-center gap-2 text-sm">
-                  <MapPin className="w-4 h-4 text-muted-foreground" />
-                  {t.fields.contact_city} *
-                </Label>
-                <Input
-                  id="contact_city"
-                  value={formData.city || ''}
-                  onChange={(e) => handleInputChange('city', e.target.value)}
-                  placeholder={t.placeholders.contact_city}
-                  disabled={isLoading}
-                  className={`h-10 ${errors.city ? 'border-red-500' : ''}`}
-                />
-                {errors.city && (
-                  <p className="text-sm text-red-600">{errors.city}</p>
                 )}
               </div>
             </div>

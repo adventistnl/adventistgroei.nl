@@ -62,7 +62,6 @@ import { cn } from "@/lib/utils"
 
 // Extended interface to include new field locally
 interface ExtendedDepartmentVariables extends CreateDepartmentVariables {
-  is_institution_department: boolean
   responsibleUsers?: string[]
 }
 
@@ -183,11 +182,9 @@ export function AddDepartmentModal({
     church: '',
     name: '',
     description: '',
-    is_institution_department: departmentType === 'institutional',
     contactName: '',
     phone: '',
     email: '',
-    city: '',
     responsibleUsers: []
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -204,11 +201,9 @@ export function AddDepartmentModal({
         church: '',
         name: '',
         description: '',
-        is_institution_department: departmentType === 'institutional',
         contactName: '',
         phone: '',
         email: '',
-        city: '',
         responsibleUsers: []
       });
       setErrors({});
@@ -298,12 +293,10 @@ export function AddDepartmentModal({
     const loadingToast = toast.loading(t.toasts.creating)
 
     try {
-      // Prepare payload excluding local fields
-      const { is_institution_department, ...departmentData } = formData
-      
-      // If it's an institutional department, use institution ID as church
+      // Prepare payload
       const finalPayload: CreateDepartmentVariables = {
-        ...departmentData,
+        ...formData,
+        church: departmentType === 'institutional' ? '' : formData.church
       }
 
       const res = await createDepartment({ variables: finalPayload })
@@ -335,11 +328,9 @@ export function AddDepartmentModal({
       church: '',
       name: '',
       description: '',
-      is_institution_department: departmentType === 'institutional',
       contactName: '',
       phone: '',
       email: '',
-      city: '',
       responsibleUsers: []
     })
     setErrors({})
@@ -521,19 +512,6 @@ export function AddDepartmentModal({
                   disabled={isLoading}
                 />
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="contact_city" className="text-sm font-medium">
-                  City
-                </Label>
-                <Input
-                  id="contact_city"
-                  value={formData.city || ''}
-                  onChange={(e) => handleInputChange('city', e.target.value)}
-                  placeholder="Enter city"
-                  disabled={isLoading}
-                />
-              </div>
             </div>
           </div>
         )
@@ -576,7 +554,7 @@ export function AddDepartmentModal({
               </div>
 
               {/* Contact Information */}
-              {(formData.contactName || formData.email || formData.phone || formData.city) && (
+              {(formData.contactName || formData.email || formData.phone) && (
                 <div className="space-y-3">
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Contact Information</h4>
                   <div className="space-y-2">
@@ -596,12 +574,6 @@ export function AddDepartmentModal({
                       <div className="flex justify-between py-2 border-b border-border/50">
                         <span className="text-sm text-muted-foreground">Phone</span>
                         <span className="text-sm font-medium">{formData.phone}</span>
-                      </div>
-                    )}
-                    {formData.city && (
-                      <div className="flex justify-between py-2 border-b border-border/50">
-                        <span className="text-sm text-muted-foreground">City</span>
-                        <span className="text-sm font-medium">{formData.city}</span>
                       </div>
                     )}
                   </div>
