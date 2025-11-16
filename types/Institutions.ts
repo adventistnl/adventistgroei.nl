@@ -242,9 +242,26 @@ export interface Institutions_institutions_churches_region {
   name: string;
 }
 
+export interface Institutions_institutions_churches_users_user_roles_role {
+  __typename: "Role";
+  id: string;
+  name: string;
+  key_code: string;
+  description: string;
+}
+
+export interface Institutions_institutions_churches_users_user_roles {
+  __typename: "UserRole";
+  id: string;
+  role: Institutions_institutions_churches_users_user_roles_role;
+}
+
 export interface Institutions_institutions_churches_users {
   __typename: "User";
   id: string;
+  name: string;
+  email: string;
+  user_roles: Institutions_institutions_churches_users_user_roles[] | null;
 }
 
 export interface Institutions_institutions_churches {

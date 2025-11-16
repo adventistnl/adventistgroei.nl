@@ -34,16 +34,6 @@ interface ChurchActivityChartProps {
   mode?: 'churches' | 'departments' // Determina se mostra igrejas ou departamentos
 }
 
-// Mock data: Activities & Projects by church over time
-const MOCK_CHURCH_ACTIVITIES = [
-  { month: 'Jan', 'Central SP': 8, 'Vila Madalena': 5, 'Mooca': 4, 'Campinas': 10, 'Rio': 7 },
-  { month: 'Feb', 'Central SP': 10, 'Vila Madalena': 6, 'Mooca': 5, 'Campinas': 12, 'Rio': 8 },
-  { month: 'Mar', 'Central SP': 9, 'Vila Madalena': 7, 'Mooca': 4, 'Campinas': 13, 'Rio': 9 },
-  { month: 'Apr', 'Central SP': 11, 'Vila Madalena': 6, 'Mooca': 5, 'Campinas': 14, 'Rio': 10 },
-  { month: 'May', 'Central SP': 12, 'Vila Madalena': 8, 'Mooca': 6, 'Campinas': 15, 'Rio': 11 },
-  { month: 'Jun', 'Central SP': 13, 'Vila Madalena': 9, 'Mooca': 7, 'Campinas': 16, 'Rio': 12 },
-]
-
 export function ChurchActivityChart({ 
   data, 
   loading,
@@ -52,7 +42,8 @@ export function ChurchActivityChart({
   mode = 'churches'
 }: ChurchActivityChartProps) {
   const [timeRange, setTimeRange] = React.useState("6m")
-  const chartData = React.useMemo(() => data || MOCK_CHURCH_ACTIVITIES, [data])
+  // Use only real data; if none provided, show empty dataset (no mocks)
+  const chartData = React.useMemo(() => data || [], [data])
 
   // Paleta de cores para as séries (igrejas ou departamentos)
   const colorPalette = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899']

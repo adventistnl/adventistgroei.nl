@@ -66,122 +66,7 @@ import { ChurchType as ChurchTypeEnum } from "@/types/graphql-global-types"
 // Dados reais de igrejas virão do contexto da instituição
 
 // Timeline de solicitações de subsídio por igreja
-const MOCK_SUBSIDY_TIMELINE = [
-  { month: 'Jan', 'Central SP': 8, 'Vila Madalena': 5, 'Mooca': 4, 'Campinas': 10, 'Rio de Janeiro': 7 },
-  { month: 'Feb', 'Central SP': 10, 'Vila Madalena': 6, 'Mooca': 5, 'Campinas': 12, 'Rio de Janeiro': 8 },
-  { month: 'Mar', 'Central SP': 9, 'Vila Madalena': 7, 'Mooca': 4, 'Campinas': 13, 'Rio de Janeiro': 9 },
-  { month: 'Apr', 'Central SP': 11, 'Vila Madalena': 6, 'Mooca': 5, 'Campinas': 14, 'Rio de Janeiro': 10 },
-  { month: 'May', 'Central SP': 12, 'Vila Madalena': 8, 'Mooca': 6, 'Campinas': 15, 'Rio de Janeiro': 11 },
-  { month: 'Jun', 'Central SP': 12, 'Vila Madalena': 8, 'Mooca': 6, 'Campinas': 15, 'Rio de Janeiro': 11 },
-]
-
-/**
- * MOCK DATA: DEPARTMENT ANALYTICS
- * 
- * Estes dados são utilizados como fallback quando uma church não possui departamentos.
- * Na view de detalhes da church, a função generateChurchDepartmentData() gera dados
- * dinâmicos baseados nos departamentos reais. Estes mocks garantem que os gráficos
- * sempre tenham dados para exibir.
- * 
- * Estrutura:
- * - MOCK_DEPARTMENT_ACTIVITIES: Atividades (ações) em projetos ao longo do tempo
- *   Cada departamento registra projetos, e cada projeto pode ter múltiplas atividades
- * - MOCK_MEMBERS_BY_DEPARTMENT: Distribuição de membros por departamento
- * - MOCK_PROJECTS_BY_DEPARTMENT: Projetos ativos e concluídos por departamento
- */
-
-// Mock data: Atividades em projetos por departamento (para gráfico de timeline)
-const MOCK_DEPARTMENT_ACTIVITIES = [
-  { month: 'Jan', 'Youth Ministry': 12, 'Worship': 8, 'Education': 6, 'Community': 5, 'Evangelism': 7 },
-  { month: 'Feb', 'Youth Ministry': 15, 'Worship': 10, 'Education': 8, 'Community': 6, 'Evangelism': 9 },
-  { month: 'Mar', 'Youth Ministry': 14, 'Worship': 9, 'Education': 7, 'Community': 7, 'Evangelism': 8 },
-  { month: 'Apr', 'Youth Ministry': 16, 'Worship': 11, 'Education': 9, 'Community': 8, 'Evangelism': 10 },
-  { month: 'May', 'Youth Ministry': 18, 'Worship': 12, 'Education': 10, 'Community': 9, 'Evangelism': 11 },
-  { month: 'Jun', 'Youth Ministry': 20, 'Worship': 13, 'Education': 11, 'Community': 10, 'Evangelism': 12 },
-]
-
-// Mock data: Membros por departamento
-const MOCK_MEMBERS_BY_DEPARTMENT = [
-  { 
-    department: 'Youth Ministry', 
-    fullName: 'Youth Ministry',
-    members: 45,
-    activeMembers: 42,
-    fill: '#3b82f6'
-  },
-  { 
-    department: 'Worship', 
-    fullName: 'Worship Department',
-    members: 32,
-    activeMembers: 30,
-    fill: '#8b5cf6'
-  },
-  { 
-    department: 'Education', 
-    fullName: 'Christian Education',
-    members: 28,
-    activeMembers: 26,
-    fill: '#10b981'
-  },
-  { 
-    department: 'Community', 
-    fullName: 'Community Outreach',
-    members: 24,
-    activeMembers: 22,
-    fill: '#f59e0b'
-  },
-  { 
-    department: 'Evangelism', 
-    fullName: 'Evangelism Department',
-    members: 20,
-    activeMembers: 18,
-    fill: '#ef4444'
-  },
-]
-
-// Mock data: Projetos por departamento
-const MOCK_PROJECTS_BY_DEPARTMENT = [
-  { 
-    department: 'Youth Ministry', 
-    fullName: 'Youth Ministry',
-    projects: 8,
-    activeProjects: 6,
-    completedProjects: 2,
-    fill: '#3b82f6'
-  },
-  { 
-    department: 'Worship', 
-    fullName: 'Worship Department',
-    projects: 5,
-    activeProjects: 4,
-    completedProjects: 1,
-    fill: '#8b5cf6'
-  },
-  { 
-    department: 'Education', 
-    fullName: 'Christian Education',
-    projects: 6,
-    activeProjects: 5,
-    completedProjects: 1,
-    fill: '#10b981'
-  },
-  { 
-    department: 'Community', 
-    fullName: 'Community Outreach',
-    projects: 4,
-    activeProjects: 3,
-    completedProjects: 1,
-    fill: '#f59e0b'
-  },
-  { 
-    department: 'Evangelism', 
-    fullName: 'Evangelism Department',
-    projects: 7,
-    activeProjects: 5,
-    completedProjects: 2,
-    fill: '#ef4444'
-  },
-]
+// OBS: removido fallback com dados mock — agora utilizamos apenas dados reais (ou 0 / arrays vazios quando não houver)
 
 /**
  * PÁGINA DE GESTÃO DE IGREJAS
@@ -230,16 +115,11 @@ export default function ChurchesPage() {
   type ChurchType = typeof churches extends (infer U)[] ? U : any;
 
 
-  // Mock data for projects
-  const MOCK_PROJECTS_BY_CHURCH = [
-    { church: "Igreja Central de São Paulo", projects: 12 },
-    { church: "Igreja de Vila Madalena", projects: 8 },
-    { church: "Igreja da Mooca", projects: 6 },
-    { church: "Igreja de Campinas", projects: 15 },
-    { church: "Igreja do Rio de Janeiro", projects: 10 },
-  ]
-
-  const totalProjects = MOCK_PROJECTS_BY_CHURCH.reduce((sum, item) => sum + item.projects, 0)
+  // Calcula total de projetos a partir dos dados reais das churches
+  const totalProjects = churches.reduce((sum, c: any) => {
+    const churchProjects = c.departments?.reduce((s: number, d: any) => s + (d.projects?.length || 0), 0) || 0;
+    return sum + churchProjects;
+  }, 0)
 
   // Dados dos KPIs em formato de array para o componente reutilizável
   const kpiCardsData: KPICardData[] = useMemo(() => [
@@ -277,104 +157,69 @@ export default function ChurchesPage() {
       }
     }
   ], [currentInstitutionData?.churchesKpiData, tChurch, totalProjects])
+  /**
+   * HELPER FUNCTION: generateChurchListChartData
+   * 
+   * Gera dados dinâmicos para os gráficos da listagem de igrejas baseados nas churches reais.
+   * Retorna apenas dados reais, sem simulações ou valores aleatórios.
+   * 
+   * @param churchesList - Array de todas as churches
+   * @returns Objeto com dados para os 3 gráficos da lista
+   */
+  const generateChurchListChartData = (churchesList: any[]) => {
+    if (!churchesList || churchesList.length === 0) {
+      return {
+        churchActivities: [],
+        membersByChurch: [],
+        projectsByChurch: []
+      };
+    }
 
-  // Mock data for charts - simplified for easy integration
-  const MOCK_CHURCH_ACTIVITIES = [
-    { month: 'Jan', 'Central SP': 8, 'Vila Madalena': 5, 'Mooca': 4, 'Campinas': 10, 'Rio': 7 },
-    { month: 'Feb', 'Central SP': 10, 'Vila Madalena': 6, 'Mooca': 5, 'Campinas': 12, 'Rio': 8 },
-    { month: 'Mar', 'Central SP': 9, 'Vila Madalena': 7, 'Mooca': 4, 'Campinas': 13, 'Rio': 9 },
-    { month: 'Apr', 'Central SP': 11, 'Vila Madalena': 6, 'Mooca': 5, 'Campinas': 14, 'Rio': 10 },
-    { month: 'May', 'Central SP': 12, 'Vila Madalena': 8, 'Mooca': 6, 'Campinas': 15, 'Rio': 11 },
-    { month: 'Jun', 'Central SP': 13, 'Vila Madalena': 9, 'Mooca': 7, 'Campinas': 16, 'Rio': 12 },
-  ]
+    // Paleta de cores para diferenciar igrejas
+    const colors = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'];
 
-  const MOCK_MEMBERS_BY_CHURCH = [
-    { 
-      church: 'Central SP', 
-      fullName: 'Igreja Central de São Paulo',
-      members: 450,
-      activeMembers: 420,
-      fill: '#3b82f6'
-    },
-    { 
-      church: 'Campinas', 
-      fullName: 'Igreja de Campinas',
-      members: 380,
-      activeMembers: 350,
-      fill: '#8b5cf6'
-    },
-    { 
-      church: 'Rio', 
-      fullName: 'Igreja do Rio de Janeiro',
-      members: 320,
-      activeMembers: 295,
-      fill: '#ef4444'
-    },
-    { 
-      church: 'Vila Madalena', 
-      fullName: 'Igreja de Vila Madalena',
-      members: 280,
-      activeMembers: 260,
-      fill: '#10b981'
-    },
-    { 
-      church: 'Mooca', 
-      fullName: 'Igreja da Mooca',
-      members: 220,
-      activeMembers: 200,
-      fill: '#f59e0b'
-    },
-  ]
+    // CHART 1: Atividades (vazio por enquanto - não há dados de atividades por church no schema)
+    const churchActivities: any[] = [];
 
-  const MOCK_PROJECTS_BY_CHURCH_CHART = [
-    { 
-      church: 'Campinas', 
-      fullName: 'Igreja de Campinas',
-      projects: 15,
-      activeProjects: 12,
-      completedProjects: 3,
-      fill: '#8b5cf6'
-    },
-    { 
-      church: 'Central SP', 
-      fullName: 'Igreja Central de São Paulo',
-      projects: 12,
-      activeProjects: 9,
-      completedProjects: 3,
-      fill: '#3b82f6'
-    },
-    { 
-      church: 'Rio', 
-      fullName: 'Igreja do Rio de Janeiro',
-      projects: 10,
-      activeProjects: 7,
-      completedProjects: 3,
-      fill: '#ef4444'
-    },
-    { 
-      church: 'Vila Madalena', 
-      fullName: 'Igreja de Vila Madalena',
-      projects: 8,
-      activeProjects: 6,
-      completedProjects: 2,
-      fill: '#10b981'
-    },
-    { 
-      church: 'Mooca', 
-      fullName: 'Igreja da Mooca',
-      projects: 6,
-      activeProjects: 4,
-      completedProjects: 2,
-      fill: '#f59e0b'
-    },
-  ]
+    // CHART 2: Membros por Igreja (dados REAIS)
+    const membersByChurch = churchesList.map((church: any, index: number) => ({
+      church: church.name.replace('Igreja ', '').replace(' de ', ' '),
+      fullName: church.name,
+      members: church.users?.length || 0,           // Contagem REAL
+      activeMembers: church.users?.filter((u: any) => !u.is_deleted).length || 0,  // Contagem REAL
+      fill: colors[index % colors.length]
+    }));
 
-  // Dados para gráficos
-  const chartData = useMemo(() => ({
-    churchActivities: MOCK_CHURCH_ACTIVITIES,
-    membersByChurch: MOCK_MEMBERS_BY_CHURCH,
-    projectsByChurch: MOCK_PROJECTS_BY_CHURCH_CHART
-  }), []);
+    // CHART 3: Projetos por Igreja (dados REAIS)
+    const projectsByChurch = churchesList.map((church: any, index: number) => {
+      // Calcula projetos dos departamentos da church (dados REAIS)
+      const allProjects = church.departments?.reduce((sum: number, dept: any) => {
+        return sum + (dept.projects?.length || 0);
+      }, 0) || 0;
+
+      const allActiveProjects = church.departments?.reduce((sum: number, dept: any) => {
+        return sum + (dept.projects?.filter((p: any) => !p.is_deleted).length || 0);
+      }, 0) || 0;
+
+      return {
+        church: church.name.replace('Igreja ', '').replace(' de ', ' '),
+        fullName: church.name,
+        projects: allProjects,
+        activeProjects: allActiveProjects,
+        completedProjects: allProjects - allActiveProjects,
+        fill: colors[index % colors.length]
+      };
+    });
+
+    return {
+      churchActivities,
+      membersByChurch,
+      projectsByChurch
+    };
+  };
+
+  // Dados para gráficos - gerados dinamicamente a partir dos dados reais
+  const chartData = useMemo(() => generateChurchListChartData(churches), [churches]);
 
   /**
    * Carregamento inicial dos dados
@@ -540,31 +385,30 @@ export default function ChurchesPage() {
    * HELPER FUNCTION: generateChurchDepartmentData
    * 
    * Gera dados dinâmicos para os gráficos de analytics baseados nos departamentos reais da church.
-   * Esta função garante que os dados exibidos sejam consistentes e fáceis de manter.
+   * Esta função retorna apenas dados reais - sem mocks ou simulações.
+   * 
+   * Se a church não possuir departamentos, retorna arrays vazios (vazio = sem dados).
    * 
    * Fluxo de dados:
    * 1. Church possui múltiplos Departments
-   * 2. Cada Department possui múltiplos Projects
-   * 3. Cada Project possui múltiplas Activities (ações registradas)
-   * 4. Cada Department possui múltiplos Members (users)
+   * 2. Cada Department possui múltiplos Members (users)
+   * 3. Cada Department pode possuir múltiplos Projects
    * 
    * @param church - Objeto da church com departments, users, projects
-   * @returns Objeto com dados formatados para os 3 gráficos:
-   *   - activities: Timeline de atividades por departamento ao longo dos meses
-   *   - membersByDept: Distribuição de membros (total e ativos) por departamento
-   *   - projectsByDept: Distribuição de projetos (ativos e concluídos) por departamento
-   * 
-   * Se a church não tiver departamentos, retorna dados mock como fallback.
+   * @returns Objeto com dados reais para os 3 gráficos:
+   *   - activities: Timeline vazia se não houver departamentos
+   *   - membersByDept: Dados reais de membros por departamento
+   *   - projectsByDept: Dados reais de projetos por departamento
    */
   const generateChurchDepartmentData = (church: any) => {
     const departments = church?.departments || [];
     
-    // Fallback: Se não há departamentos, usa dados mock
+    // Se não há departamentos, retorna dados vazios (sem mock)
     if (departments.length === 0) {
       return {
-        activities: MOCK_DEPARTMENT_ACTIVITIES,
-        membersByDept: MOCK_MEMBERS_BY_DEPARTMENT,
-        projectsByDept: MOCK_PROJECTS_BY_DEPARTMENT
+        activities: [],
+        membersByDept: [],
+        projectsByDept: []
       };
     }
 
@@ -572,42 +416,24 @@ export default function ChurchesPage() {
     const colors = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'];
     
     // CHART 1: Gera dados de atividades por mês para cada departamento
-    // Simula atividades (ações) registradas em projetos ao longo do tempo
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    const activities = months.map((month, monthIndex) => {
-      const monthData: any = { month };
-      
-      // Limita a 5 departamentos para não sobrecarregar o gráfico
-      departments.slice(0, 5).forEach((dept: any, deptIndex: number) => {
-        // TODO: Substituir por contagem real de activities quando disponível no backend
-        // Atualmente simula crescimento de atividades ao longo dos meses
-        const baseActivities = 5;
-        const monthlyGrowth = monthIndex * 2;
-        const deptOffset = deptIndex * 3;
-        const randomVariation = Math.random() * 5;
-        
-        monthData[dept.name] = Math.floor(baseActivities + monthlyGrowth + deptOffset + randomVariation);
-      });
-      
-      return monthData;
-    });
+    // NOTA: Atualmente não há dados de atividades no schema, retorna vazio
+    const activities: any[] = [];
 
-    // CHART 2: Gera dados de membros por departamento
+    // CHART 2: Gera dados de membros por departamento (dados REAIS apenas)
     const membersByDept = departments.map((dept: any, index: number) => ({
       department: dept.name,
       fullName: dept.name,
-      // Usa contagem real de users se disponível, senão simula
-      members: dept.users?.length || Math.floor(15 + Math.random() * 30),
-      activeMembers: dept.users?.filter((u: any) => !u.is_deleted).length || Math.floor(10 + Math.random() * 25),
+      // Usa contagem REAL de users - sem simulação
+      members: dept.users?.length || 0,
+      activeMembers: dept.users?.filter((u: any) => !u.is_deleted).length || 0,
       fill: colors[index % colors.length]
     }));
 
-    // CHART 3: Gera dados de projetos por departamento
+    // CHART 3: Gera dados de projetos por departamento (dados REAIS apenas)
     const projectsByDept = departments.map((dept: any, index: number) => {
-      // Usa contagem real de projects se disponível, senão simula
-      const totalProjects = dept.projects?.length || Math.floor(3 + Math.random() * 8);
-      // Assume que ~70% dos projetos estão ativos
-      const activeProjects = Math.floor(totalProjects * 0.7);
+      // Usa contagem REAL de projects - sem simulação
+      const totalProjects = dept.projects?.length || 0;
+      const activeProjects = dept.projects?.filter((p: any) => !p.is_deleted).length || 0;
       
       return {
         department: dept.name,
@@ -879,9 +705,15 @@ export default function ChurchesPage() {
         const user = row.original
         return (
           <Avatar className="w-8 h-8">
-            <AvatarImage src="/placeholder-user.jpg" />
+            <AvatarImage src={user?.avatar || '/placeholder-user.jpg'} />
             <AvatarFallback>
-              {user.first_name?.[0]}{user.last_name?.[0]}
+              {user?.name
+                ? user.name
+                    .split(' ')
+                    .map((n: string) => n[0])
+                    .slice(0, 2)
+                    .join('')
+                : ''}
             </AvatarFallback>
           </Avatar>
         )
@@ -895,7 +727,7 @@ export default function ChurchesPage() {
         const user = row.original
         return (
           <div>
-            <div className="font-medium">{user.first_name} {user.last_name}</div>
+            <div className="font-medium">{user.name}</div>
             <div className="text-xs text-muted-foreground">
               {user.email || 'No email'}
             </div>
@@ -928,6 +760,7 @@ export default function ChurchesPage() {
       ),
       cell: ({ row }) => {
         const user = row.original
+        console.log('User roles:', user);
         return (
           <div className="flex flex-wrap gap-1 justify-center">
             {user.user_roles?.map((role: any) => (
@@ -1218,15 +1051,10 @@ export default function ChurchesPage() {
               // Calcular KPIs específicos da church
               const churchMembers = selectedChurchDetail.users?.length || 0;
               const churchDepartments = selectedChurchDetail.departments?.length || 0;
-              const churchProjects = MOCK_PROJECTS_BY_CHURCH.find(
-                p => p.church.includes(selectedChurchDetail.name.split(' ')[selectedChurchDetail.name.split(' ').length - 1])
-              )?.projects || 0;
-              const churchActivities = MOCK_SUBSIDY_TIMELINE.reduce((sum, month) => {
-                const churchKey = Object.keys(month).find(key => 
-                  key !== 'month' && selectedChurchDetail.name.includes(key.replace('Central ', '').replace('Vila ', '').replace('Rio de Janeiro', 'Rio'))
-                );
-                return sum + (churchKey ? (month as any)[churchKey] : 0);
-              }, 0);
+              // Calcula projetos reais a partir dos departamentos da church
+              const churchProjects = selectedChurchDetail.departments?.reduce((s: number, d: any) => s + (d.projects?.length || 0), 0) || 0;
+              // Atualmente não há dados de atividades por church no schema -> mostrar 0
+              const churchActivities = 0;
 
               const churchKPIData: KPICardData[] = [
                 {

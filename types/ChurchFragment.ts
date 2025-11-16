@@ -111,9 +111,26 @@ export interface ChurchFragment_region {
   name: string;
 }
 
+export interface ChurchFragment_users_user_roles_role {
+  __typename: "Role";
+  id: string;
+  name: string;
+  key_code: string;
+  description: string;
+}
+
+export interface ChurchFragment_users_user_roles {
+  __typename: "UserRole";
+  id: string;
+  role: ChurchFragment_users_user_roles_role;
+}
+
 export interface ChurchFragment_users {
   __typename: "User";
   id: string;
+  name: string;
+  email: string;
+  user_roles: ChurchFragment_users_user_roles[] | null;
 }
 
 export interface ChurchFragment {
