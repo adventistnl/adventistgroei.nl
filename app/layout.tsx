@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/auth-context"
 import { PageProvider } from "@/contexts/page-context"
 import { InstitutionProvider } from "@/contexts/institution-context"
 import { NavigationLoadingProvider } from "@/contexts/navigation-loading-context"
+import { LanguageSettingsProvider } from "@/contexts/language-settings-context"
 import { PrivacyProviderWithAuth } from "@/components/shared/privacy-provider-with-auth"
 import { PrivacyDebugPanel } from "@/components/shared/privacy-debug-panel"
 import { PrivacyButtonDebugPanel } from "@/components/shared/privacy-button-debug"
@@ -29,18 +30,20 @@ export default function RootLayout({
       <body className="antialiased font-sans">
         <GraphQLProvider>
           <AuthProvider>
-            <PrivacyProviderWithAuth>
-              <InstitutionProvider>
-                <PageProvider>
-                  <NavigationLoadingProvider>
-                    {children}
-                    <ToastProvider />
-                    <PrivacyDebugPanel />
-                    <PrivacyButtonDebugPanel />
-                  </NavigationLoadingProvider>
-                </PageProvider>
-              </InstitutionProvider>
-            </PrivacyProviderWithAuth>
+            <LanguageSettingsProvider>
+              <PrivacyProviderWithAuth>
+                <InstitutionProvider>
+                  <PageProvider>
+                    <NavigationLoadingProvider>
+                      {children}
+                      <ToastProvider />
+                      <PrivacyDebugPanel />
+                      <PrivacyButtonDebugPanel />
+                    </NavigationLoadingProvider>
+                  </PageProvider>
+                </InstitutionProvider>
+              </PrivacyProviderWithAuth>
+            </LanguageSettingsProvider>
           </AuthProvider>
         </GraphQLProvider>
       </body>
