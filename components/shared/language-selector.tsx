@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useI18nReady } from "@/hooks/use-i18n-ready"
 import { useLanguageOptions } from "@/hooks/use-language-preferences"
+import { useTranslation } from "react-i18next"
+import toast from "react-hot-toast"
 
 export function LanguageSelector() {
   const { i18n, t } = useTranslation()
@@ -85,14 +87,14 @@ export function LanguageSelector() {
         {languagesWithInitials.map((language) => (
           <DropdownMenuItem
             key={language.code}
-            onClick={() => setPreferredLanguage(language.code)}
+            onClick={() => changeLanguage(language.code)}
             className="flex items-center justify-between"
           >
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium">{language.initials}</span>
               <span className="text-sm text-muted-foreground">{language.name}</span>
             </div>
-            {preferredLanguage === language.code && <Check className="h-4 w-4 text-primary" />}
+            {currentLanguage === language.code && <Check className="h-4 w-4 text-primary" />}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
