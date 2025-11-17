@@ -156,10 +156,48 @@ function LoginPageContent() {
   // Mostrar loading enquanto verifica autenticação
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">{t.loading}</p>
+      <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
+        <div className="text-center space-y-8 max-w-md mx-auto px-8">
+          
+          {/* Logo centralizada sem background */}
+          <div className="flex justify-center">
+            <div className="relative">
+              {/* Animação de loading sutil ao redor do logo */}
+              <div className="absolute inset-0 w-24 h-24 border-2 border-transparent border-t-primary/30 border-r-primary/20 rounded-full animate-spin"></div>
+              
+              {/* Logo da Igreja Adventista */}
+              <div className="w-24 h-24 flex items-center justify-center">
+                <AdventistLogo className="w-16 h-16 text-primary" />
+              </div>
+            </div>
+          </div>
+
+          {/* Textos modernos e funcionais */}
+          <div className="space-y-4">
+            {/* Título principal */}
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground leading-tight tracking-tight">
+              {currentLanguage === 'en' && 'Adventist Church'}
+              {currentLanguage === 'nl' && 'Adventistenkerk'}
+              {currentLanguage === 'pt' && 'Igreja Adventista'}
+            </h1>
+            
+            {/* Subtítulo */}
+            <p className="text-lg text-muted-foreground font-medium">
+              {t.subtitle}
+            </p>
+            
+            {/* Indicador de carregamento moderno */}
+            <div className="flex items-center justify-center space-x-1 pt-6">
+              <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-primary rounded-full animate-pulse [animation-delay:0.2s]"></div>
+              <div className="w-2 h-2 bg-primary rounded-full animate-pulse [animation-delay:0.4s]"></div>
+            </div>
+            
+            {/* Texto de carregamento */}
+            <p className="text-sm text-muted-foreground font-medium pt-2">
+              {t.loading}
+            </p>
+          </div>
         </div>
       </div>
     )

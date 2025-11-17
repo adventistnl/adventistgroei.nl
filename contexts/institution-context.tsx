@@ -106,7 +106,7 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (institution && institution.id !== activeInstitutionId) {
       setActiveInstitutionId(institution.id);
       toast.success(
-        `🏢 Switched to ${institution.name}\n📊 Loading institution data...`,
+        `Switched to ${institution.name}\n📊 Loading institution data...`,
         {
           duration: 4000,
           style: { minWidth: '300px' }
