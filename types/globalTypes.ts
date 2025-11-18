@@ -7,6 +7,36 @@
 // START Enums and Input Objects
 //==============================================================
 
+export enum AnnualBudgetCategory {
+  EMERGENCY = "EMERGENCY",
+  EXPANSION = "EXPANSION",
+  MAINTENANCE = "MAINTENANCE",
+  OPERATIONAL = "OPERATIONAL",
+  PROJECT = "PROJECT",
+}
+
+export enum AnnualBudgetEntityType {
+  CHURCH = "CHURCH",
+  CHURCH_DEPARTMENT = "CHURCH_DEPARTMENT",
+  INSTITUTION = "INSTITUTION",
+  INSTITUTION_DEPARTMENT = "INSTITUTION_DEPARTMENT",
+}
+
+export enum AnnualBudgetPriority {
+  HIGH = "HIGH",
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  URGENT = "URGENT",
+}
+
+export enum AnnualBudgetStatus {
+  APPROVED = "APPROVED",
+  PENDING = "PENDING",
+  REJECTED = "REJECTED",
+  REQUIRES_REVISION = "REQUIRES_REVISION",
+  UNDER_REVIEW = "UNDER_REVIEW",
+}
+
 export enum ChurchType {
   COMPANY = "COMPANY",
   PLANT = "PLANT",
@@ -32,6 +62,17 @@ export enum ProjectType {
   MISSION = "MISSION",
   OTHER = "OTHER",
   SOCIAL = "SOCIAL",
+}
+
+export interface AnnualBudgetUpdateDto {
+  planned_budget?: number | null;
+  description?: string | null;
+  justification?: string | null;
+  priority?: AnnualBudgetPriority | null;
+  category?: AnnualBudgetCategory | null;
+  notes?: string | null;
+  documents?: string[] | null;
+  total_expenses?: number | null;
 }
 
 //==============================================================

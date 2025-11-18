@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { LanguagePreference, ProjectType, GenderType, ChurchType } from "./globalTypes";
+import { LanguagePreference, AnnualBudgetStatus, AnnualBudgetPriority, AnnualBudgetCategory, AnnualBudgetEntityType, ProjectType, GenderType, ChurchType } from "./globalTypes";
 
 // ====================================================
 // GraphQL query operation: InstitutionById
@@ -32,6 +32,42 @@ export interface InstitutionById_institution_contact {
   is_deleted: boolean;
   deleted_at: any | null;
   deleted_by: string | null;
+}
+
+export interface InstitutionById_institution_annual_budgets {
+  __typename: "AnnualBudget";
+  id: string;
+  year: number;
+  planned_budget: any;
+  total_expenses: any;
+  balance: any;
+  status: AnnualBudgetStatus;
+  priority: AnnualBudgetPriority;
+  category: AnnualBudgetCategory;
+  requested_by: string;
+  submitted_date: any;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
+  institution_id: string | null;
+  church_id: string | null;
+  department_id: string | null;
+  requested_amount: any;
+  approved_amount: any | null;
+  reviewed_by: string | null;
+  review_date: any | null;
+  approval_date: any | null;
+  notes: string | null;
+  description: string | null;
+  justification: string | null;
+  documents: any | null;
+  is_locked: boolean;
+  has_budget_record: boolean;
+  entity_type: AnnualBudgetEntityType;
 }
 
 export interface InstitutionById_institution_subsidy_requests {
@@ -167,9 +203,38 @@ export interface InstitutionById_institution_churches_contact {
 
 export interface InstitutionById_institution_churches_annual_budgets {
   __typename: "AnnualBudget";
+  id: string;
   year: number;
   planned_budget: any;
   total_expenses: any;
+  balance: any;
+  status: AnnualBudgetStatus;
+  priority: AnnualBudgetPriority;
+  category: AnnualBudgetCategory;
+  requested_by: string;
+  submitted_date: any;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
+  institution_id: string | null;
+  church_id: string | null;
+  department_id: string | null;
+  requested_amount: any;
+  approved_amount: any | null;
+  reviewed_by: string | null;
+  review_date: any | null;
+  approval_date: any | null;
+  notes: string | null;
+  description: string | null;
+  justification: string | null;
+  documents: any | null;
+  is_locked: boolean;
+  has_budget_record: boolean;
+  entity_type: AnnualBudgetEntityType;
 }
 
 export interface InstitutionById_institution_churches_departments_contact {
@@ -205,9 +270,38 @@ export interface InstitutionById_institution_churches_departments_church {
 
 export interface InstitutionById_institution_churches_departments_annual_budgets {
   __typename: "AnnualBudget";
+  id: string;
   year: number;
   planned_budget: any;
   total_expenses: any;
+  balance: any;
+  status: AnnualBudgetStatus;
+  priority: AnnualBudgetPriority;
+  category: AnnualBudgetCategory;
+  requested_by: string;
+  submitted_date: any;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
+  institution_id: string | null;
+  church_id: string | null;
+  department_id: string | null;
+  requested_amount: any;
+  approved_amount: any | null;
+  reviewed_by: string | null;
+  review_date: any | null;
+  approval_date: any | null;
+  notes: string | null;
+  description: string | null;
+  justification: string | null;
+  documents: any | null;
+  is_locked: boolean;
+  has_budget_record: boolean;
+  entity_type: AnnualBudgetEntityType;
 }
 
 export interface InstitutionById_institution_churches_departments_users_user_roles_role {
@@ -342,9 +436,38 @@ export interface InstitutionById_institution_departments_church {
 
 export interface InstitutionById_institution_departments_annual_budgets {
   __typename: "AnnualBudget";
+  id: string;
   year: number;
   planned_budget: any;
   total_expenses: any;
+  balance: any;
+  status: AnnualBudgetStatus;
+  priority: AnnualBudgetPriority;
+  category: AnnualBudgetCategory;
+  requested_by: string;
+  submitted_date: any;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
+  institution_id: string | null;
+  church_id: string | null;
+  department_id: string | null;
+  requested_amount: any;
+  approved_amount: any | null;
+  reviewed_by: string | null;
+  review_date: any | null;
+  approval_date: any | null;
+  notes: string | null;
+  description: string | null;
+  justification: string | null;
+  documents: any | null;
+  is_locked: boolean;
+  has_budget_record: boolean;
+  entity_type: AnnualBudgetEntityType;
 }
 
 export interface InstitutionById_institution_departments_users_user_roles_role {
@@ -424,6 +547,7 @@ export interface InstitutionById_institution {
   departments_count: number;
   users_count: number;
   contact: InstitutionById_institution_contact | null;
+  annual_budgets: InstitutionById_institution_annual_budgets[];
   subsidy_requests: InstitutionById_institution_subsidy_requests[];
   direct_messages: InstitutionById_institution_direct_messages[];
   projects: InstitutionById_institution_projects[] | null;

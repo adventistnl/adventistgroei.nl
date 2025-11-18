@@ -1,5 +1,6 @@
 "use client"
 
+// 🔴 MOCK_DATA: spendingOverTime - Valores fixos + variação aleatória
 import * as React from "react"
 import { TrendingUp, BarChart3, Activity } from "lucide-react"
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis } from "recharts"
@@ -28,6 +29,7 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { MockDataIndicator, useShowMockIndicators } from "@/components/shared/mock-data-indicator"
 
 interface SpendingDataPoint {
   date: string
@@ -71,6 +73,7 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
   const { t } = useTranslation()
   const [timeRange, setTimeRange] = React.useState("12m")
   const [chartType, setChartType] = React.useState<"area" | "bar">("area")
+  const showMockIndicators = useShowMockIndicators()
 
   const filteredData = React.useMemo(() => {
     // Se não houver dados, retornar array vazio
@@ -93,10 +96,18 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
     <Card className="h-full">
       <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
         <div className="grid flex-1 gap-1">
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5" />
-            {t("annual_budget.charts.spending_over_time.title")}
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              {t("annual_budget.charts.spending_over_time.title")}
+            </CardTitle>
+            {showMockIndicators && (
+              <MockDataIndicator
+                queryName="spendingOverTime"
+                description="Valores fixos + variação aleatória"
+              />
+            )}
+          </div>
           <CardDescription>
             {t("annual_budget.charts.spending_over_time.subtitle", { year })}
           </CardDescription>

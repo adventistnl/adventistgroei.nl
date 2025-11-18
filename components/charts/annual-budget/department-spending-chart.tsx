@@ -1,5 +1,6 @@
 "use client"
 
+// 🔴 MOCK_DATA: departmentSpending - Departments fixos + cálculos simulados
 import React, { useMemo } from "react"
 import { Building, TrendingUp } from "lucide-react"
 import { 
@@ -30,6 +31,7 @@ import { InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
 import { PrivacyOverlay } from "@/components/shared/privacy-overlay"
 import { useComponentPrivacy } from "@/contexts/privacy-context"
 import { createPrivacyConfig } from "@/config/privacy-roles.config"
+import { MockDataIndicator, useShowMockIndicators } from "@/components/shared/mock-data-indicator"
 
 interface DepartmentData {
   name: string
@@ -75,6 +77,7 @@ const PRIVACY_CONFIG = createPrivacyConfig(
 export function DepartmentSpendingChart({ data }: DepartmentSpendingChartProps) {
   // Use privacy hook
   const { isHidden } = useComponentPrivacy(PRIVACY_CONFIG)
+  const showMockIndicators = useShowMockIndicators()
 
   // Transform data to stacked format
   const chartData = useMemo(() => {
@@ -113,10 +116,18 @@ export function DepartmentSpendingChart({ data }: DepartmentSpendingChartProps) 
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <Building className="w-4 h-4" />
-              Institution Department Spending
-            </CardTitle>
+            <div className="flex items-center gap-2 mb-1">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <Building className="w-4 h-4" />
+                Institution Department Spending
+              </CardTitle>
+              {showMockIndicators && (
+                <MockDataIndicator
+                  queryName="departmentSpending"
+                  description="Departments fixos + cálculos simulados"
+                />
+              )}
+            </div>
             <CardDescription className="text-xs">
               Budget allocation: Spent, Reserved, and Available per department
             </CardDescription>

@@ -126,9 +126,38 @@ export const USER_FRAGMENT = gql`
 
 export const ANNUAL_BUDGET_FRAGMENT = gql`
   fragment AnnualBudgetFragment on AnnualBudget {
+    id
     year
     planned_budget
     total_expenses
+    balance
+    status
+    priority
+    category
+    requested_by
+    submitted_date
+    created_at
+    updated_at
+    created_by
+    updated_by
+    is_deleted
+    deleted_at
+    deleted_by
+    institution_id
+    church_id
+    department_id
+    requested_amount
+    approved_amount
+    reviewed_by
+    review_date
+    approval_date
+    notes
+    description
+    justification
+    documents
+    is_locked
+    has_budget_record
+    entity_type
   }
 `;
 
@@ -277,6 +306,9 @@ export const INSTITUTION_FRAGMENT = gql`
     contact {
       ...ContactFragment
     }
+    annual_budgets {
+      ...AnnualBudgetFragment
+    }
     subsidy_requests {
       ...SubsidyRequestFragment
     }
@@ -301,11 +333,11 @@ export const INSTITUTION_FRAGMENT = gql`
   }
   ${CHURCH_KPI_DATA_FRAGMENT}
   ${CONTACT_FRAGMENT}
+  ${ANNUAL_BUDGET_FRAGMENT}
   ${SUBSIDY_REQUEST_FRAGMENT}
   ${DIRECT_MESSAGE_FRAGMENT}
   ${PROJECT_FRAGMENT}
   ${USER_FRAGMENT}
   ${CHURCH_FRAGMENT}
   ${DEPARTMENT_FRAGMENT}
-  ${ANNUAL_BUDGET_FRAGMENT}
 `;

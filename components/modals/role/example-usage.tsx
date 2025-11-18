@@ -112,25 +112,8 @@ export function ExampleRoleModalUsage() {
 }
 
 /**
- * Usage in other components:
- * 
- * 1. Import the modals you need:
- *    import { CreateRoleModal, EditRoleModal, DeleteRoleModal } from "@/components/modals/role"
- * 
- * 2. Add state for modal visibility and selected role:
- *    const [isCreateOpen, setIsCreateOpen] = useState(false)
- *    const [selectedRole, setSelectedRole] = useState<Role | null>(null)
- * 
- * 3. Add success handlers:
- *    const handleSuccess = (data) => { /* your logic */ }
- * 
- * 4. Use the modals in your JSX:
- *    <CreateRoleModal 
- *      isOpen={isCreateOpen} 
- *      onOpenChange={setIsCreateOpen}
- *      onSuccess={handleSuccess}
- *    />
- * 
- * 5. Trigger modals with buttons or actions:
- *    <Button onClick={() => setIsCreateOpen(true)}>Create Role</Button>
+ * Example usage of Role Modals
+ *
+ * This file demonstrates how to use the role modal components
+ * in any page or component throughout the application.
  */

@@ -62,42 +62,28 @@ import { SpendingOverTimeChart } from "@/components/charts/annual-budget/spendin
 
 // Modal Components
 import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget/annual-budget-view-edit-modal"
+import { MockDataIndicator, useShowMockIndicators } from "@/components/shared/mock-data-indicator"
 import { DeleteBudgetModal } from "@/components/modals/annual-budget/delete-budget-modal"
 
-// Interfaces for Budget Management
-interface BudgetRequest {
-  id: string
-  entity_type: 'institution' | 'region' | 'church' | 'department'
-  entity_id: string
-  entity_name: string
-  year: number
-  requested_amount: number
-  approved_amount?: number
-  status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'requires_revision'
-  priority: 'low' | 'medium' | 'high' | 'urgent'
-  category: 'operational' | 'project' | 'maintenance' | 'emergency' | 'expansion'
-  description: string
-  justification: string
-  requested_by: string
-  reviewed_by?: string
-  submitted_date: string
-  review_date?: string
-  approval_date?: string
-  notes?: string
-  documents?: string[]
-  created_at: string
-  updated_at: string
-  is_locked?: boolean
-  has_budget_record?: boolean
-}
+// GraphQL Hooks
+import { useCreateAnnualBudgetMutation } from "@/hooks/graphql/use-annual-budget"
+import { useUpdateAnnualBudgetMutation } from "@/hooks/graphql/use-annual-budget"
+import {
+  useAvailableYears,
+  useAnnualBudgetKPIs,
+  useBudgetDashboardData
+} from "@/hooks/graphql/use-annual-budget-queries"
+import { GetBudgetDashboardData_annualBudgets } from "@/types/GetBudgetDashboardData"
+import { AnnualBudgetEntityType, AnnualBudgetPriority, AnnualBudgetCategory } from "@/types/globalTypes"
 
+// Interfaces for Budget Management
 interface BudgetRequestGroup {
   id: string
   name: string
   description: string
   color: string
   status: string
-  requests: BudgetRequest[]
+  requests: GetBudgetDashboardData_annualBudgets[]
 }
 
 /**
@@ -107,6 +93,11 @@ interface BudgetRequestGroup {
 export default function AnnualBudgetPage() {
   const { t } = useTranslation()
   const { currentInstitutionData } = useInstitution()
+  
+  // GraphQL mutations
+  const [createAnnualBudgetMutation, { loading: creatingBudget }] = useCreateAnnualBudgetMutation()
+  const [updateAnnualBudgetMutation, { loading: updatingBudget }] = useUpdateAnnualBudgetMutation()
+  
   const [isLoading, setIsLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -115,29 +106,68 @@ export default function AnnualBudgetPage() {
   // Modal states
   const [isViewEditModalOpen, setIsViewEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [selectedRequest, setSelectedRequest] = useState<BudgetRequest | null>(null)
+  const [selectedRequest, setSelectedRequest] = useState<GetBudgetDashboardData_annualBudgets | null>(null)
   const [isInstitutionBudgetModalOpen, setIsInstitutionBudgetModalOpen] = useState(false)
   const [institutionBudgetData, setInstitutionBudgetData] = useState<AnnualBudgetData | null>(null)
+
+  // GraphQL Queries
+  const { data: dashboardData, loading: loadingDashboard, refetch: refetchDashboard } = useBudgetDashboardData(selectedYear)
+  const { data: availableYearsData, loading: loadingYears } = useAvailableYears()
+  const { data: kpisData, loading: loadingKPIs } = useAnnualBudgetKPIs(selectedYear)
+  console.log(kpisData)
+  // Mock data indicators
+  const showMockIndicators = useShowMockIndicators()
+
+  // State for managing available years (frontend-managed)
+  const [availableYears, setAvailableYears] = useState<number[]>(() => {
+    const currentYear = new Date().getFullYear()
+    return [currentYear]
+  })
+
+  // Update available years when GraphQL data changes
+  useMemo(() => {
+    if (availableYearsData?.annualBudgets) {
+      const backendYears = availableYearsData.annualBudgets
+        .map(budget => budget.year)
+        .filter((year, index, arr) => arr.indexOf(year) === index) // Remove duplicates
+        .sort((a, b) => b - a) // Sort descending
+      
+      // Merge backend years with frontend years, keeping frontend additions
+      const mergedYears = [...new Set([...backendYears, ...availableYears])].sort((a, b) => b - a).reverse()
+      setAvailableYears(mergedYears)
+    }
+  }, [availableYearsData])
 
   usePageTitle({
     title: t('annual_budget.title')
   })
 
-  // State to track if institution has budget for selected year
-  const [institutionBudgets, setInstitutionBudgets] = useState<Record<number, AnnualBudgetData | null>>({
-    2024: {
-      id: 'inst-budget-2024',
-      year: 2024,
-      planned_budget: 1500000,
-      total_expenses: 877500,
-      balance: 622500,
-      notes: 'Institution budget for 2024',
-      approved_by: 'Finance Committee',
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z'
-    }
-    // 2025 and 2026 will not have budget initially
-  })
+  // Transform institution annual budgets to component format
+  const institutionAnnualBudgets = useMemo(() => {
+    const institution = currentInstitutionData as any
+    if (!institution?.annual_budgets) return {}
+    
+    const budgets: Record<number, AnnualBudgetData> = {}
+    institution.annual_budgets.forEach((budget: any) => {
+      budgets[budget.year] = {
+        id: budget.id,
+        year: budget.year,
+        planned_budget: parseFloat(budget.planned_budget) || 0,
+        total_expenses: parseFloat(budget.total_expenses) || 0,
+        balance: parseFloat(budget.balance) || 0,
+        notes: budget.notes || undefined,
+        approved_by: budget.reviewed_by || undefined,
+        created_at: budget.created_at,
+        updated_at: budget.updated_at,
+        created_by: budget.created_by,
+        updated_by: budget.updated_by,
+        is_deleted: budget.is_deleted,
+        deleted_at: budget.deleted_at,
+        deleted_by: budget.deleted_by,
+      }
+    })
+    return budgets
+  }, [currentInstitutionData])
 
   // State to track if institution budget is locked for selected year
   const [institutionBudgetLocks, setInstitutionBudgetLocks] = useState<Record<number, boolean>>({
@@ -146,262 +176,51 @@ export default function AnnualBudgetPage() {
     2026: false
   })
 
-  // Mock data para solicitações de orçamento
-  const [budgetRequests, setBudgetRequests] = useState<BudgetRequest[]>([
-    {
-      id: '1',
-      entity_type: 'church',
-      entity_id: 'church-1',
-      entity_name: 'Central Church São Paulo',
-      year: 2024,
-      requested_amount: 125000,
-      approved_amount: 100000,
-      status: 'approved',
-      priority: 'high',
-      category: 'operational',
-      description: 'Annual operational budget for church activities and ministries',
-      justification: 'Essential funding for maintaining regular church operations, youth programs, and community outreach initiatives.',
-      requested_by: 'Pastor João Silva',
-      reviewed_by: 'Finance Committee',
-      submitted_date: '2024-01-15',
-      review_date: '2024-02-01',
-      approval_date: '2024-02-10',
-      notes: 'Approved with minor adjustments to equipment budget',
-      created_at: '2024-01-15T10:30:00Z',
-      updated_at: '2024-02-10T14:15:00Z',
-      is_locked: true,
-      has_budget_record: true
-    },
-    {
-      id: '2',
-      entity_type: 'department',
-      entity_id: 'dept-youth',
-      entity_name: 'Youth Ministry Department',
-      year: 2024,
-      requested_amount: 45000,
-      status: 'under_review',
-      priority: 'medium',
-      category: 'project',
-      description: 'Youth camp and evangelistic activities budget',
-      justification: 'Special funding for youth summer camp, evangelistic programs, and leadership training initiatives.',
-      requested_by: 'Maria Santos',
-      reviewed_by: 'Budget Review Committee',
-      submitted_date: '2024-02-20',
-      review_date: '2024-03-01',
-      notes: 'Under review - awaiting additional documentation',
-      created_at: '2024-02-20T09:15:00Z',
-      updated_at: '2024-03-01T11:30:00Z',
-      is_locked: false,
-      has_budget_record: true
-    },
-    {
-      id: '3',
-      entity_type: 'region',
-      entity_id: 'region-sp',
-      entity_name: 'São Paulo Region',
-      year: 2024,
-      requested_amount: 350000,
-      status: 'pending',
-      priority: 'urgent',
-      category: 'expansion',
-      description: 'Regional expansion and new church plant initiatives',
-      justification: 'Strategic investment in church planting, regional coordination, and infrastructure development.',
-      requested_by: 'Pastor Carlos Mendes',
-      submitted_date: '2024-03-10',
-      created_at: '2024-03-10T16:20:00Z',
-      updated_at: '2024-03-10T16:20:00Z',
-      is_locked: false,
-      has_budget_record: true
-    },
-    {
-      id: '4',
-      entity_type: 'department',
-      entity_id: 'dept-education',
-      entity_name: 'Christian Education Department',
-      year: 2024,
-      requested_amount: 28000,
-      status: 'requires_revision',
-      priority: 'medium',
-      category: 'operational',
-      description: 'Educational materials and training programs',
-      justification: 'Investment in curriculum development, teacher training, and educational resources.',
-      requested_by: 'Ana Costa',
-      reviewed_by: 'Education Committee',
-      submitted_date: '2024-02-28',
-      review_date: '2024-03-15',
-      notes: 'Requires revision - need detailed breakdown of material costs',
-      created_at: '2024-02-28T13:45:00Z',
-      updated_at: '2024-03-15T10:00:00Z',
-      is_locked: false,
-      has_budget_record: true
-    },
-    {
-      id: '5',
-      entity_type: 'church',
-      entity_id: 'church-2',
-      entity_name: 'Vila Madalena Church',
-      year: 2024,
-      requested_amount: 18000,
-      status: 'rejected',
-      priority: 'low',
-      category: 'maintenance',
-      description: 'Building maintenance and repairs',
-      justification: 'Necessary repairs to church building and facilities.',
-      requested_by: 'Elder Roberto Lima',
-      reviewed_by: 'Facilities Committee',
-      submitted_date: '2024-01-30',
-      review_date: '2024-02-20',
-      notes: 'Rejected - insufficient budget allocation for maintenance category',
-      created_at: '2024-01-30T11:00:00Z',
-      updated_at: '2024-02-20T15:30:00Z',
-      is_locked: false,
-      has_budget_record: true
-    },
-    // Previous year requests (2023)
-    {
-      id: '6',
-      entity_type: 'church',
-      entity_id: 'church-3',
-      entity_name: 'Liberdade Church',
-      year: 2023,
-      requested_amount: 95000,
-      approved_amount: 85000,
-      status: 'approved',
-      priority: 'high',
-      category: 'operational',
-      description: '2023 Annual operational budget',
-      justification: 'Funding for church operations and ministry activities for 2023.',
-      requested_by: 'Pastor Maria Silva',
-      reviewed_by: 'Finance Committee',
-      submitted_date: '2023-01-10',
-      review_date: '2023-01-25',
-      approval_date: '2023-02-01',
-      notes: 'Approved with conditions',
-      created_at: '2023-01-10T10:30:00Z',
-      updated_at: '2023-02-01T14:15:00Z',
-      is_locked: true,
-      has_budget_record: true
-    },
-    {
-      id: '7',
-      entity_type: 'department',
-      entity_id: 'dept-music',
-      entity_name: 'Music Ministry Department',
-      year: 2023,
-      requested_amount: 22000,
-      approved_amount: 20000,
-      status: 'approved',
-      priority: 'medium',
-      category: 'project',
-      description: 'Music equipment and training budget 2023',
-      justification: 'Investment in new audio equipment and training for music ministry.',
-      requested_by: 'Director Carlos Santos',
-      reviewed_by: 'Ministry Committee',
-      submitted_date: '2023-02-15',
-      review_date: '2023-03-01',
-      approval_date: '2023-03-10',
-      created_at: '2023-02-15T09:15:00Z',
-      updated_at: '2023-03-10T11:30:00Z',
-      is_locked: true,
-      has_budget_record: true
-    },
-    // Future year requests (2025)
-    {
-      id: '8',
-      entity_type: 'region',
-      entity_id: 'region-rj',
-      entity_name: 'Rio de Janeiro Region',
-      year: 2025,
-      requested_amount: 420000,
-      status: 'pending',
-      priority: 'urgent',
-      category: 'expansion',
-      description: 'Strategic expansion plan for Rio de Janeiro region 2025',
-      justification: 'Major investment in church planting and regional development for 2025.',
-      requested_by: 'Pastor Fernando Costa',
-      submitted_date: '2024-12-01',
-      created_at: '2024-12-01T16:20:00Z',
-      updated_at: '2024-12-01T16:20:00Z',
-      is_locked: false,
-      has_budget_record: true
-    },
-    // Missing budget record example
-    {
-      id: '9',
-      entity_type: 'department',
-      entity_id: 'dept-finance',
-      entity_name: 'Finance Department',
-      year: 2024,
-      requested_amount: 0,
-      status: 'pending',
-      priority: 'medium',
-      category: 'operational',
-      description: 'Budget record missing',
-      justification: 'No budget request submitted yet',
-      requested_by: 'System',
-      submitted_date: '2024-01-01',
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
-      is_locked: false,
-      has_budget_record: false
-    },
-    // Placeholder for 2025
-    {
-      id: '10',
-      entity_type: 'institution',
-      entity_id: 'institution-2025',
-      entity_name: 'System Placeholder 2025',
-      year: 2025,
-      requested_amount: 0,
-      status: 'pending',
-      priority: 'low',
-      category: 'operational',
-      description: 'Placeholder for year 2025',
-      justification: 'System generated placeholder',
-      requested_by: 'System',
-      submitted_date: '2024-01-01',
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
-      is_locked: false,
-      has_budget_record: false
-    },
-    // Placeholder for 2026
-    {
-      id: '11',
-      entity_type: 'institution',
-      entity_id: 'institution-2026',
-      entity_name: 'System Placeholder 2026',
-      year: 2026,
-      requested_amount: 0,
-      status: 'pending',
-      priority: 'low',
-      category: 'operational',
-      description: 'Placeholder for year 2026',
-      justification: 'System generated placeholder',
-      requested_by: 'System',
-      submitted_date: '2024-01-01',
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
-      is_locked: false,
-      has_budget_record: false
+  // Helper function to get entity name from GraphQL data
+  const getEntityName = (budget: GetBudgetDashboardData_annualBudgets): string => {
+    switch (budget.entity_type) {
+      case 'INSTITUTION':
+        return budget.institution?.name || 'Unknown Institution'
+      case 'CHURCH':
+        return budget.church?.name || 'Unknown Church'
+      case 'INSTITUTION_DEPARTMENT':
+        return budget.department?.name || 'Unknown Department'
+      case 'CHURCH_DEPARTMENT':
+        return budget.department?.name || 'Unknown Department'
+      default:
+        return 'Unknown Entity'
     }
-  ])
+  }
 
-  // Available years for filtering
-  const availableYears = useMemo(() => {
-    const years = Array.from(new Set(budgetRequests.map(req => req.year))).sort((a, b) => b - a)
-    return years.length > 0 ? years : [new Date().getFullYear()]
-  }, [budgetRequests])
+  // Helper function to get entity ID from GraphQL data
+  const getEntityId = (budget: GetBudgetDashboardData_annualBudgets): string => {
+    switch (budget.entity_type) {
+      case 'INSTITUTION':
+        return budget.institution_id || ''
+      case 'CHURCH':
+        return budget.church_id || ''
+      case 'INSTITUTION_DEPARTMENT':
+        return budget.department_id || ''
+      case 'CHURCH_DEPARTMENT':
+        return budget.department_id || ''
+      default:
+        return ''
+    }
+  }
+
+  // Use GraphQL data directly without manual transformations
+  const budgetRequests = dashboardData?.annualBudgets ?? []
 
   // Filtered budget requests based on selected year
   const filteredBudgetRequests = useMemo(() => {
-    return budgetRequests.filter(req => req.year === selectedYear)
+    return budgetRequests.filter((req: GetBudgetDashboardData_annualBudgets) => req.year === selectedYear)
   }, [budgetRequests, selectedYear])
 
-  // Check if institution has budget for selected year
+  // Check if institution has budget for selected year (use real data)
   const hasInstitutionBudget = useMemo(() => {
-    return !!institutionBudgets[selectedYear]
-  }, [institutionBudgets, selectedYear])
+    // Check real data from API
+    return !!institutionAnnualBudgets[selectedYear]
+  }, [institutionAnnualBudgets, selectedYear])
 
   // Handler for creating institution budget (declared before useMemo)
   const handleCreateInstitutionBudget = () => {
@@ -450,17 +269,16 @@ export default function AnnualBudgetPage() {
       return
     }
     
-    const currentBudget = institutionBudgets[selectedYear]
+    const currentBudget = institutionAnnualBudgets[selectedYear]
     if (currentBudget) {
       setInstitutionBudgetData(currentBudget)
       setIsInstitutionBudgetModalOpen(true)
     }
   }
 
-  // KPI Data
+  // KPI Data from GraphQL
   const kpiData = useMemo(() => {
-    // If no institution budget is set, return zeros
-    if (!hasInstitutionBudget) {
+    if (!kpisData?.budgetKPIs) {
       return {
         totalInstitutionBudget: 0,
         totalAllocated: 0,
@@ -471,41 +289,15 @@ export default function AnnualBudgetPage() {
       }
     }
 
-    // Total Institution Budget (from institution departments)
-    const totalInstitutionBudget = institutionBudgets[selectedYear]?.planned_budget || 0
-    
-    // Calculate total allocated from institution departments
-    const institutionDepts = [
-      { approved: 220000 }, // Finance
-      { approved: 165000 }, // Operations
-      { approved: 140000 }, // HR
-      { approved: 185000 }, // IT
-      { approved: 110000 }, // Marketing
-      { approved: 150000 }, // Education
-    ]
-    const totalAllocated = institutionDepts.reduce((sum, dept) => sum + dept.approved, 0)
-    
-    // Calculate total spent (75% average spending rate)
-    const totalSpent = Math.round(totalAllocated * 0.75)
-    
-    // Budget remaining
-    const budgetRemaining = totalInstitutionBudget - totalAllocated
-    
-    // Budget utilization percentage
-    const budgetUtilization = totalInstitutionBudget > 0 ? Math.round((totalAllocated / totalInstitutionBudget) * 100) : 0
-    
-    // Number of active departments
-    const activeDepartments = institutionDepts.length
-
     return {
-      totalInstitutionBudget,
-      totalAllocated,
-      totalSpent,
-      budgetRemaining,
-      budgetUtilization,
-      activeDepartments
+      totalInstitutionBudget: kpisData.budgetKPIs.totalInstitutionBudget || 0,
+      totalAllocated: kpisData.budgetKPIs.totalAllocated || 0,
+      totalSpent: kpisData.budgetKPIs.totalSpent || 0,
+      budgetRemaining: kpisData.budgetKPIs.budgetRemaining || 0,
+      budgetUtilization: kpisData.budgetKPIs.budgetUtilization || 0,
+      activeDepartments: kpisData.budgetKPIs.activeDepartments || 0
     }
-  }, [selectedYear, hasInstitutionBudget, institutionBudgets])
+  }, [kpisData])
 
   const kpiCardsData: KPICardData[] = useMemo(() => {
     const isLocked = institutionBudgetLocks[selectedYear] || false
@@ -621,7 +413,8 @@ export default function AnnualBudgetPage() {
     }
   ]}, [kpiData, selectedYear, hasInstitutionBudget, institutionBudgetLocks, handleCreateInstitutionBudget, handleEditInstitutionBudget, handleToggleInstitutionBudgetLock])
 
-  // Mock data for Institution Departments
+  // Mock data for Institution Departments (TODO: replace with real GraphQL data)
+  // 🔴 MOCK_DATA: departmentSpending - Departments fixos + cálculos simulados
   const institutionDepartments = useMemo(() => [
     {
       name: 'Finance Dept',
@@ -667,11 +460,9 @@ export default function AnnualBudgetPage() {
     }
   ], [])
 
-  // Chart data
+  // Chart data from GraphQL
   const chartData = useMemo(() => {
-    // If no institution budget is set, return zeros
-    if (!hasInstitutionBudget) {
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    if (!kpisData) {
       return {
         budgetDistribution: {
           total: 0,
@@ -679,66 +470,22 @@ export default function AnnualBudgetPage() {
           remaining: 0,
           percentageUsed: 0
         },
-        departmentSpending: institutionDepartments.map(dept => ({
-          ...dept,
-          planned: 0,
-          approved: 0,
-          reserved: 0
-        })),
-        spendingOverTime: months.map((month, index) => ({
-          date: `${selectedYear}-${String(index + 1).padStart(2, '0')}-01`,
-          month: month,
-          finance: 0,
-          operations: 0,
-          hr: 0,
-          it: 0,
-          marketing: 0,
-        }))
+        departmentSpending: [],
+        spendingOverTime: []
       }
     }
 
-    // Total institution budget
-    const totalInstitutionBudget = institutionBudgets[selectedYear]?.planned_budget || 0
-    
-    // Calculate total allocated to departments
-    const totalAllocated = institutionDepartments.reduce((sum, dept) => sum + dept.approved, 0)
-    const remaining = totalInstitutionBudget - totalAllocated
-
-    // Generate mock spending data over time for area chart
-    const generateSpendingData = () => {
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-      return months.map((month, index) => {
-        // Generate individual monthly spending (not cumulative)
-        // Each month has its own spending amount with some variation
-        const baseFinance = 15000 + Math.random() * 5000 // 15K-20K per month
-        const baseOperations = 12000 + Math.random() * 4000 // 12K-16K per month
-        const baseHr = 10000 + Math.random() * 3000 // 10K-13K per month
-        const baseIt = 13000 + Math.random() * 4000 // 13K-17K per month
-        const baseMarketing = 8000 + Math.random() * 3000 // 8K-11K per month
-        
-        return {
-          date: `${selectedYear}-${String(index + 1).padStart(2, '0')}-01`,
-          month: month,
-          finance: Math.round(baseFinance),
-          operations: Math.round(baseOperations),
-          hr: Math.round(baseHr),
-          it: Math.round(baseIt),
-          marketing: Math.round(baseMarketing),
-        }
-      })
-    }
-
     return {
-      budgetDistribution: {
-        total: totalInstitutionBudget,
-        allocated: totalAllocated,
-        remaining: remaining > 0 ? remaining : 0,
-        percentageUsed: totalInstitutionBudget > 0 ? Math.round((totalAllocated / totalInstitutionBudget) * 100) : 0
+      budgetDistribution: kpisData.budgetDistribution || {
+        total: 0,
+        allocated: 0,
+        remaining: 0,
+        percentageUsed: 0
       },
-      departmentSpending: institutionDepartments,
-      spendingOverTime: generateSpendingData()
+      departmentSpending: kpisData.departmentSpending || [],
+      spendingOverTime: kpisData.spendingOverTime || []
     }
-  }, [selectedYear, institutionDepartments, hasInstitutionBudget, institutionBudgets])
+  }, [kpisData, institutionDepartments])
 
   // Handlers
   const handleRefresh = async () => {
@@ -772,109 +519,101 @@ export default function AnnualBudgetPage() {
       return
     }
 
-    // Add a placeholder budget request for the new year to make it available
-    const placeholderRequest: BudgetRequest = {
-      id: `placeholder-${nextYear}`,
-      entity_type: 'institution',
-      entity_id: `institution-${nextYear}`,
-      entity_name: `System Placeholder ${nextYear}`,
-      year: nextYear,
-      requested_amount: 0,
-      status: 'pending',
-      priority: 'low',
-      category: 'operational',
-      description: `Placeholder for year ${nextYear}`,
-      justification: 'System generated placeholder',
-      requested_by: 'System',
-      submitted_date: new Date().toISOString().split('T')[0],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-
-    setBudgetRequests([...budgetRequests, placeholderRequest])
-    setSelectedYear(nextYear)
-    toast.success(`Year ${nextYear} added successfully`)
+    // Add year locally to frontend state
+    setAvailableYears(prev => [...prev, nextYear].sort((a, b) => b - a))
+    toast.success(`Year ${nextYear} added successfully! You can now select it and create budgets.`)
   }
 
   const handleApproveRequest = (requestId: string, approvedAmount?: number) => {
-    const updatedRequests = budgetRequests.map(req =>
-      req.id === requestId
-        ? {
-            ...req,
-            status: 'approved' as const,
-            approved_amount: approvedAmount || req.requested_amount,
-            approval_date: new Date().toISOString().split('T')[0],
-            reviewed_by: 'Finance Committee',
-            updated_at: new Date().toISOString()
-          }
-        : req
-    )
-    setBudgetRequests(updatedRequests)
+    // TODO: Implement approve mutation
     toast.success('Budget request approved successfully')
   }
 
   const handleRejectRequest = (requestId: string, reason: string) => {
-    const updatedRequests = budgetRequests.map(req =>
-      req.id === requestId
-        ? {
-            ...req,
-            status: 'rejected' as const,
-            review_date: new Date().toISOString().split('T')[0],
-            reviewed_by: 'Finance Committee',
-            notes: reason,
-            updated_at: new Date().toISOString()
-          }
-        : req
-    )
-    setBudgetRequests(updatedRequests)
+    // TODO: Implement reject mutation
     toast.success('Budget request rejected')
   }
 
   const handleRequestRevision = (requestId: string, revisionNotes: string) => {
-    const updatedRequests = budgetRequests.map(req =>
-      req.id === requestId
-        ? {
-            ...req,
-            status: 'requires_revision' as const,
-            review_date: new Date().toISOString().split('T')[0],
-            reviewed_by: 'Finance Committee',
-            notes: revisionNotes,
-            updated_at: new Date().toISOString()
-          }
-        : req
-    )
-    setBudgetRequests(updatedRequests)
+    // TODO: Implement revision mutation
     toast.success('Revision requested successfully')
   }
 
   const handleToggleLock = (requestId: string) => {
-    const updatedRequests = budgetRequests.map(req =>
-      req.id === requestId
-        ? {
-            ...req,
-            is_locked: !req.is_locked,
-            updated_at: new Date().toISOString()
-          }
-        : req
-    )
-    setBudgetRequests(updatedRequests)
-    const request = budgetRequests.find(req => req.id === requestId)
+    // TODO: Implement toggle lock mutation
+    const request = budgetRequests.find((req: GetBudgetDashboardData_annualBudgets) => req.id === requestId)
     const isNowLocked = !request?.is_locked
     toast.success(isNowLocked ? 'Budget locked successfully' : 'Budget unlocked successfully')
   }
 
   const handleDeleteBudget = (requestId: string) => {
-    const updatedRequests = budgetRequests.filter(req => req.id !== requestId)
-    setBudgetRequests(updatedRequests)
+    // TODO: Implement delete mutation
     toast.success('Budget deleted successfully')
   }
 
-  const handleSaveInstitutionBudget = (budget: AnnualBudgetData) => {
-    setInstitutionBudgets(prev => ({
-      ...prev,
-      [budget.year]: budget
-    }))
-    toast.success(`Institution budget for ${budget.year} saved successfully!`)
+  const handleSaveInstitutionBudget = async (budget: AnnualBudgetData) => {
+    try {
+      const result = await createAnnualBudgetMutation({
+        variables: {
+          year: budget.year,
+          planned_budget: budget.planned_budget,
+          total_expenses: budget.total_expenses || 0, // Novo campo - permite enviar gastos iniciais
+          description: `Institution budget for ${budget.year}`,
+          justification: budget.notes || `Annual budget allocation for institution operations in ${budget.year}`,
+          requested_amount: budget.planned_budget,
+          entity_type: AnnualBudgetEntityType.INSTITUTION,
+          entity_id: currentInstitutionData?.id || '',
+          notes: budget.notes,
+        }
+      })
+
+      if (result.data?.createAnnualBudget) {
+        // Refresh the data
+        refetchDashboard()
+        toast.success(`Institution budget for ${budget.year} created successfully!`)
+      }
+    } catch (error) {
+      console.error('Error creating institution budget:', error)
+      toast.error('Failed to create institution budget. Please try again.')
+    }
+  }
+
+  const handleUpdateBudget = async (budget: AnnualBudgetData) => {
+    if (!budget.id) {
+      toast.error('Budget ID is required for updates')
+      return
+    }
+
+    if (!selectedRequest) {
+      toast.error('No budget selected for update')
+      return
+    }
+
+    try {
+      const result = await updateAnnualBudgetMutation({
+        variables: {
+          id: budget.id,
+          data: {
+            planned_budget: budget.planned_budget,
+            total_expenses: budget.total_expenses,
+            description: `Updated budget for ${budget.year}`,
+            justification: budget.notes || `Updated budget allocation`,
+            priority: selectedRequest.priority as any, // Mantém prioridade existente
+            category: selectedRequest.category as any, // Mantém categoria existente
+            notes: budget.notes,
+          }
+        }
+      })
+
+      if (result.data?.updateAnnualBudget) {
+        // Refresh the data
+        refetchDashboard()
+        toast.success('Budget updated successfully!')
+      }
+    } catch (error) {
+      console.error('Error updating budget:', error)
+      toast.error('Failed to update budget. Please try again.')
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -910,25 +649,26 @@ export default function AnnualBudgetPage() {
   }
 
   // Table columns
-  const columns: ColumnDef<BudgetRequest>[] = useMemo(() => [
+  const columns: ColumnDef<any>[] = useMemo(() => [
     {
       id: "entity",
-      accessorKey: "entity_name",
+      accessorKey: "id",
       header: () => (
         <div className="text-left font-medium text-gray-900">
           {t('annual_budget.table.headers.entity_name')}
         </div>
       ),
       cell: ({ row }) => {
-        const isDisabled = !row.original.has_budget_record
+        const budget = row.original as GetBudgetDashboardData_annualBudgets
+        const isDisabled = !budget.has_budget_record
         return (
           <div className={`flex items-center gap-3 ${isDisabled ? 'opacity-50' : ''}`}>
             <div className="w-8 h-8 bg-gray-100 border border-gray-200 rounded-lg flex items-center justify-center">
               <Building className="w-4 h-4 text-gray-600" />
             </div>
             <div>
-              <div className="font-medium text-gray-900">{row.original.entity_name}</div>
-              <div className="text-xs text-gray-500 capitalize">{row.original.entity_type}</div>
+              <div className="font-medium text-gray-900">{getEntityName(budget)}</div>
+              <div className="text-xs text-gray-500 capitalize">{budget.entity_type.toLowerCase()}</div>
             </div>
           </div>
         )
@@ -943,11 +683,12 @@ export default function AnnualBudgetPage() {
         </div>
       ),
       cell: ({ row }) => {
-        const isDisabled = !row.original.has_budget_record
+        const budget = row.original as GetBudgetDashboardData_annualBudgets
+        const isDisabled = !budget.has_budget_record
         return (
           <div className={`text-center ${isDisabled ? 'opacity-50' : ''}`}>
             <div className="text-sm font-medium text-gray-900 capitalize">
-              {row.original.entity_type}
+              {budget.entity_type.toLowerCase()}
             </div>
           </div>
         )
@@ -961,17 +702,13 @@ export default function AnnualBudgetPage() {
         </div>
       ),
       cell: ({ row }) => {
-        const isDisabled = !row.original.has_budget_record
+        const budget = row.original as GetBudgetDashboardData_annualBudgets
+        const isDisabled = !budget.has_budget_record
         return (
           <div className={`text-center ${isDisabled ? 'opacity-50' : ''}`}>
             <div className="text-sm font-semibold text-gray-900">
-              ${row.original.requested_amount.toLocaleString()}
+              ${parseFloat(budget.requested_amount as string).toLocaleString()}
             </div>
-            {/* {row.original.approved_amount && (
-              <div className="text-xs text-gray-500 mt-1">
-                Approved: ${row.original.approved_amount.toLocaleString()}
-              </div>
-            )} */}
           </div>
         )
       },
@@ -984,14 +721,13 @@ export default function AnnualBudgetPage() {
         </div>
       ),
       cell: ({ row }) => {
-        const approvedAmount = row.original.approved_amount || 0
-        const spentAmount = approvedAmount * 0.75 // Mock 75% spent
-        const isDisabled = !row.original.has_budget_record
+        const budget = row.original as GetBudgetDashboardData_annualBudgets
+        const isDisabled = !budget.has_budget_record
         
         return (
           <div className={`text-center ${isDisabled ? 'opacity-50' : ''}`}>
-            <div className="text-sm font-semibold text-gray-900 opacity-50">
-              ${spentAmount.toLocaleString()}
+            <div className="text-sm font-semibold text-gray-900">
+              ${budget.spentAmount.toLocaleString()}
             </div>
           </div>
         )
@@ -1005,15 +741,13 @@ export default function AnnualBudgetPage() {
         </div>
       ),
       cell: ({ row }) => {
-        const approvedAmount = row.original.approved_amount || 0
-        const spentAmount = approvedAmount * 0.75 // Mock 75% spent
-        const usagePercentage = approvedAmount > 0 ? Math.round((spentAmount / approvedAmount) * 100) : 0
-        const isDisabled = !row.original.has_budget_record
+        const budget = row.original as GetBudgetDashboardData_annualBudgets
+        const isDisabled = !budget.has_budget_record
         
         return (
           <div className="flex justify-center">
             <UsageIndicator 
-              percentage={usagePercentage}
+              percentage={budget.usagePercentage}
               disabled={isDisabled}
               size="md"
             />
@@ -1029,8 +763,9 @@ export default function AnnualBudgetPage() {
         </div>
       ),
       cell: ({ row }) => {
-        const isLocked = row.original.is_locked
-        const isDisabled = !row.original.has_budget_record
+        const budget = row.original as GetBudgetDashboardData_annualBudgets
+        const isLocked = budget.is_locked
+        const isDisabled = !budget.has_budget_record
         
         return (
           <div className="flex justify-center">
@@ -1038,7 +773,7 @@ export default function AnnualBudgetPage() {
               onClick={(e) => {
                 e.stopPropagation()
                 if (!isDisabled) {
-                  handleToggleLock(row.original.id)
+                  handleToggleLock(budget.id)
                 }
               }}
               disabled={isDisabled}
@@ -1070,7 +805,8 @@ export default function AnnualBudgetPage() {
         </div>
       ),
       cell: ({ row }) => {
-        const hasBudget = row.original.has_budget_record
+        const budget = row.original as GetBudgetDashboardData_annualBudgets
+        const hasBudget = budget.has_budget_record
         
         return (
           <div className="flex justify-center">
@@ -1094,7 +830,8 @@ export default function AnnualBudgetPage() {
           return true
         }
         // value será boolean após conversão no UseTable
-        return row.original.has_budget_record === value
+        const budget = row.original as GetBudgetDashboardData_annualBudgets
+        return budget.has_budget_record === value
       },
     },
     {
@@ -1104,49 +841,52 @@ export default function AnnualBudgetPage() {
           {t('annual_budget.table.headers.actions')}
         </div>
       ),
-      cell: ({ row }) => (
-        <div className="flex justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 border border-gray-200">
-                <MoreHorizontal className="w-4 h-4 text-gray-600" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => {
-                setSelectedRequest(row.original)
-                setIsViewEditModalOpen(true)
-              }}>
-                <Settings className="w-4 h-4 mr-2" />
-                {t('annual_budget.table.actions_menu.manage')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleToggleLock(row.original.id)}>
-                {row.original.is_locked ? (
-                  <>
-                    <Unlock className="w-4 h-4 mr-2" />
-                    {t('annual_budget.table.actions_menu.unlock')}
-                  </>
-                ) : (
-                  <>
-                    <Lock className="w-4 h-4 mr-2" />
-                    {t('annual_budget.table.actions_menu.lock')}
-                  </>
-                )}
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => {
-                  setSelectedRequest(row.original)
-                  setIsDeleteModalOpen(true)
-                }}
-                className="text-red-600 focus:text-red-600"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                {t('annual_budget.table.actions_menu.delete')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const budget = row.original as GetBudgetDashboardData_annualBudgets
+        return (
+          <div className="flex justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 border border-gray-200">
+                  <MoreHorizontal className="w-4 h-4 text-gray-600" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => {
+                  setSelectedRequest(budget)
+                  setIsViewEditModalOpen(true)
+                }}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  {t('annual_budget.table.actions_menu.manage')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleToggleLock(budget.id)}>
+                  {budget.is_locked ? (
+                    <>
+                      <Unlock className="w-4 h-4 mr-2" />
+                      {t('annual_budget.table.actions_menu.unlock')}
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-4 h-4 mr-2" />
+                      {t('annual_budget.table.actions_menu.lock')}
+                    </>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => {
+                    setSelectedRequest(budget)
+                    setIsDeleteModalOpen(true)
+                  }}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {t('annual_budget.table.actions_menu.delete')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )
+      },
     },
   ], [filteredBudgetRequests, t])
 
@@ -1280,7 +1020,21 @@ export default function AnnualBudgetPage() {
 
           {/* Charts Section */}
           <div className={`space-y-6 transition-opacity duration-300 ${!hasInstitutionBudget ? 'opacity-40 pointer-events-none' : ''}`}>
-            <h3 className="text-xl font-semibold">{t('annual_budget.charts.budget_analytics.title')}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xl font-semibold">{t('annual_budget.charts.budget_analytics.title')}</h3>
+              {showMockIndicators && (
+                <div className="flex gap-2">
+                  <MockDataIndicator
+                    queryName="departmentSpending"
+                    description="Departments fixos + cálculos simulados"
+                  />
+                  <MockDataIndicator
+                    queryName="spendingOverTime"
+                    description="Valores fixos + variação aleatória"
+                  />
+                </div>
+              )}
+            </div>
             <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
               <SpendingOverTimeChart 
                 data={chartData.spendingOverTime}
@@ -1291,6 +1045,7 @@ export default function AnnualBudgetPage() {
               <BudgetDistributionChart 
                 data={chartData.budgetDistribution} 
                 year={selectedYear}
+                entityDistribution={dashboardData?.entityDistribution || []}
               />
               
 
@@ -1354,31 +1109,19 @@ export default function AnnualBudgetPage() {
               budget={{
                 id: selectedRequest.id,
                 year: selectedRequest.year,
-                planned_budget: selectedRequest.requested_amount,
-                total_expenses: selectedRequest.approved_amount ? selectedRequest.approved_amount * 0.75 : 0,
-                balance: selectedRequest.approved_amount ? selectedRequest.approved_amount * 0.25 : selectedRequest.requested_amount,
-                notes: selectedRequest.notes || '',
-                approved_by: selectedRequest.reviewed_by,
-                created_at: selectedRequest.created_at,
-                updated_at: selectedRequest.updated_at
+                planned_budget: parseFloat(selectedRequest.requested_amount as string) || 0,
+                total_expenses: selectedRequest.spentAmount || 0,
+                balance: selectedRequest.remainingAmount || 0,
+                notes: selectedRequest.notes || undefined,
+                approved_by: selectedRequest.approved_by || undefined,
+                created_at: selectedRequest.created_at as string,
+                updated_at: selectedRequest.updated_at as string
               }}
-              entityName={selectedRequest.entity_name}
-              entityType={selectedRequest.entity_type}
+              entityName={getEntityName(selectedRequest)}
+              entityType={selectedRequest.entity_type.toLowerCase() as 'institution' | 'region' | 'church' | 'department'}
               isLocked={selectedRequest.is_locked}
               onSave={(budget) => {
-                const updatedRequests = budgetRequests.map(req =>
-                  req.id === selectedRequest.id
-                    ? {
-                        ...req,
-                        requested_amount: budget.planned_budget,
-                        approved_amount: budget.total_expenses + budget.balance,
-                        notes: budget.notes || undefined,
-                        updated_at: new Date().toISOString()
-                      }
-                    : req
-                )
-                setBudgetRequests(updatedRequests)
-                toast.success('Budget updated successfully')
+                handleUpdateBudget(budget)
               }}
             />
           )}
@@ -1388,7 +1131,29 @@ export default function AnnualBudgetPage() {
             <DeleteBudgetModal
               isOpen={isDeleteModalOpen}
               onOpenChange={setIsDeleteModalOpen}
-              budget={selectedRequest}
+              budget={{
+                id: selectedRequest.id,
+                entity_type: selectedRequest.entity_type.toLowerCase() as 'institution' | 'region' | 'church' | 'department',
+                entity_id: getEntityId(selectedRequest),
+                entity_name: getEntityName(selectedRequest),
+                year: selectedRequest.year,
+                requested_amount: parseFloat(selectedRequest.requested_amount as string),
+                approved_amount: selectedRequest.approvedAmount,
+                status: selectedRequest.status.toLowerCase() as 'pending' | 'under_review' | 'approved' | 'rejected' | 'requires_revision',
+                priority: selectedRequest.priority.toLowerCase() as 'low' | 'medium' | 'high' | 'urgent',
+                category: selectedRequest.category.toLowerCase() as 'operational' | 'project' | 'maintenance' | 'emergency' | 'expansion',
+                description: selectedRequest.description || '',
+                justification: selectedRequest.justification || '',
+                requested_by: selectedRequest.requested_by,
+                reviewed_by: selectedRequest.reviewed_by || undefined,
+                submitted_date: selectedRequest.submitted_date as string,
+                review_date: selectedRequest.review_date as string,
+                approval_date: selectedRequest.approval_date as string,
+                notes: selectedRequest.notes || undefined,
+                created_at: selectedRequest.created_at as string,
+                updated_at: selectedRequest.updated_at as string,
+                is_locked: selectedRequest.is_locked
+              }}
               onSuccess={(deletedBudget) => {
                 handleDeleteBudget(deletedBudget.id)
               }}

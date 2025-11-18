@@ -39,6 +39,12 @@ interface BudgetDistributionData {
 interface BudgetDistributionChartProps {
   data: BudgetDistributionData
   year: number
+  entityDistribution?: Array<{
+    name: string
+    amount: number
+    percentage: number
+    count: number
+  }>
 }
 
 // Department/Entity data for Pie Chart
@@ -78,35 +84,44 @@ const generateRedGradient = (count: number): string[] => {
   return colors
 }
 
-export function BudgetDistributionChart({ data, year }: BudgetDistributionChartProps) {
+export function BudgetDistributionChart({ data, year, entityDistribution = [] }: BudgetDistributionChartProps) {
+  console.log("Entity Distribution Data:", data, entityDistribution)
   const { t } = useTranslation()
   const [chartType, setChartType] = useState<"radial" | "pie">("radial")
   
-  // Mock department/entity budget data for Pie Chart
+  // Use entity distribution data directly from backend (no calculations needed)
   const entityBudgetData: EntityBudgetData[] = useMemo(() => {
-    const total = data.allocated
-    if (total === 0) return []
-    
-    // Mock distribution across departments (can be replaced with real data)
-    // This simulates dynamic departments - replace with actual data from API/props
-    const departments = [
-      { name: "Finance", amount: total * 0.28 },
-      { name: "Operations", amount: total * 0.24 },
-      { name: "Human Resources", amount: total * 0.20 },
-      { name: "IT", amount: total * 0.18 },
-      { name: "Marketing", amount: total * 0.10 },
-    ]
-    
-    // Generate dynamic red gradient based on number of departments
-    const redGradient = generateRedGradient(departments.length)
-    
-    return departments.map((dept, index) => ({
-      name: dept.name,
-      amount: Math.round(dept.amount),
-      percentage: Math.round((dept.amount / total) * 100),
-      fill: redGradient[index], // Dynamic color assignment
+    if (!entityDistribution || entityDistribution.length === 0) {
+      // Fallback to remaining budget if no distribution data
+      if (data.remaining > 0) {
+        return [{
+          name: "Available",
+          amount: data.remaining,
+          percentage: 100,
+          fill: "hsl(142, 71%, 45%)", // Green for available
+        }]
+      }
+      return []
+    }
+
+    // Convert backend data to chart format
+    const entities = entityDistribution.map((entity) => ({
+      name: entity.name.charAt(0).toUpperCase() + entity.name.slice(1), // Capitalize
+      amount: entity.amount,
+      percentage: entity.percentage,
     }))
-  }, [data.allocated])
+
+    // Sort by amount descending
+    entities.sort((a, b) => b.amount - a.amount)
+    
+    // Generate colors for entities
+    const redGradient = generateRedGradient(entities.length)
+    
+    return entities.map((entity, index) => ({
+      ...entity,
+      fill: redGradient[index] || "hsl(0, 75%, 50%)",
+    }))
+  }, [entityDistribution, data.remaining])
 
   // Add remaining budget as first item in pie chart
   const pieChartData = useMemo(() => {

@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ChurchType, GenderType, LanguagePreference } from "./globalTypes";
+import { ChurchType, AnnualBudgetStatus, AnnualBudgetPriority, AnnualBudgetCategory, AnnualBudgetEntityType, GenderType, LanguagePreference } from "./globalTypes";
 
 // ====================================================
 // GraphQL fragment: ChurchFragment
@@ -36,9 +36,38 @@ export interface ChurchFragment_contact {
 
 export interface ChurchFragment_annual_budgets {
   __typename: "AnnualBudget";
+  id: string;
   year: number;
   planned_budget: any;
   total_expenses: any;
+  balance: any;
+  status: AnnualBudgetStatus;
+  priority: AnnualBudgetPriority;
+  category: AnnualBudgetCategory;
+  requested_by: string;
+  submitted_date: any;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
+  institution_id: string | null;
+  church_id: string | null;
+  department_id: string | null;
+  requested_amount: any;
+  approved_amount: any | null;
+  reviewed_by: string | null;
+  review_date: any | null;
+  approval_date: any | null;
+  notes: string | null;
+  description: string | null;
+  justification: string | null;
+  documents: any | null;
+  is_locked: boolean;
+  has_budget_record: boolean;
+  entity_type: AnnualBudgetEntityType;
 }
 
 export interface ChurchFragment_departments_contact {
@@ -74,9 +103,38 @@ export interface ChurchFragment_departments_church {
 
 export interface ChurchFragment_departments_annual_budgets {
   __typename: "AnnualBudget";
+  id: string;
   year: number;
   planned_budget: any;
   total_expenses: any;
+  balance: any;
+  status: AnnualBudgetStatus;
+  priority: AnnualBudgetPriority;
+  category: AnnualBudgetCategory;
+  requested_by: string;
+  submitted_date: any;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
+  institution_id: string | null;
+  church_id: string | null;
+  department_id: string | null;
+  requested_amount: any;
+  approved_amount: any | null;
+  reviewed_by: string | null;
+  review_date: any | null;
+  approval_date: any | null;
+  notes: string | null;
+  description: string | null;
+  justification: string | null;
+  documents: any | null;
+  is_locked: boolean;
+  has_budget_record: boolean;
+  entity_type: AnnualBudgetEntityType;
 }
 
 export interface ChurchFragment_departments_users_user_roles_role {
