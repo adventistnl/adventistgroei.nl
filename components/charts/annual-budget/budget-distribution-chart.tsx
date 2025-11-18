@@ -28,6 +28,11 @@ import {
   Sector,
 } from "recharts"
 import { PieSectorDataItem } from "recharts/types/polar/Pie"
+import { InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
+import { createPrivacyConfig } from "@/config/privacy-roles.config"
+import { useComponentPrivacy } from "@/contexts/privacy-context"
+import { PrivacyOverlay } from "@/components/shared/privacy-overlay"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface BudgetDistributionData {
   total: number
@@ -66,6 +71,11 @@ const chartConfig = {
   },
 }
 
+const PRIVACY_CONFIG = createPrivacyConfig(
+  'budget-distribution-chart',
+  'FINANCIAL_DATA' // Uses DEV, ADMIN, FINANCE_MANAGER automatically
+)
+
 // Dynamic red gradient generator
 const generateRedGradient = (count: number): string[] => {
   if (count === 0) return []
@@ -88,6 +98,7 @@ export function BudgetDistributionChart({ data, year, entityDistribution = [] }:
   console.log("Entity Distribution Data:", data, entityDistribution)
   const { t } = useTranslation()
   const [chartType, setChartType] = useState<"radial" | "pie">("radial")
+  const { isHidden } = useComponentPrivacy(PRIVACY_CONFIG)
   
   // Use entity distribution data directly from backend (no calculations needed)
   const entityBudgetData: EntityBudgetData[] = useMemo(() => {
@@ -153,37 +164,44 @@ export function BudgetDistributionChart({ data, year, entityDistribution = [] }:
             <CardDescription className="text-xs">{t("annual_budget.charts.budget_distribution.subtitle")}</CardDescription>
           </div>
           
+          <div className="flex items-center gap-2">
           {/* Toggle Button */}
-          <div className="flex items-center border border-gray-200 rounded-lg p-1 bg-gray-50">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setChartType("radial")}
-              className={cn(
-                "h-7 px-2 rounded-md transition-all text-xs",
-                chartType === "radial"
-                  ? "bg-white shadow-sm text-gray-900"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-              )}
-            >
-              <Target className="w-3.5 h-3.5 mr-1" />
-              Radial
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setChartType("pie")}
-              className={cn(
-                "h-7 px-2 rounded-md transition-all text-xs",
-                chartType === "pie"
-                  ? "bg-white shadow-sm text-gray-900"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-              )}
-            >
-              <PieChartIcon className="w-3.5 h-3.5 mr-1" />
-              Pie
-            </Button>
+            <div className="flex items-center border border-gray-200 rounded-lg p-1 bg-gray-50">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setChartType("radial")}
+                className={cn(
+                  "h-7 px-2 rounded-md transition-all text-xs",
+                  chartType === "radial"
+                    ? "bg-white shadow-sm text-gray-900"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                )}
+              >
+                <Target className="w-3.5 h-3.5 mr-1" />
+                Radial
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setChartType("pie")}
+                className={cn(
+                  "h-7 px-2 rounded-md transition-all text-xs",
+                  chartType === "pie"
+                    ? "bg-white shadow-sm text-gray-900"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                )}
+              >
+                <PieChartIcon className="w-3.5 h-3.5 mr-1" />
+                Pie
+              </Button>
+            </div>
+            <InlinePrivacyToggle 
+              config={PRIVACY_CONFIG} 
+              className="privacy-toggle-button-header flex-shrink-0" 
+            />
           </div>
+
         </div>
         
         {/* Entity Selector for Pie Chart */}
@@ -220,216 +238,237 @@ export function BudgetDistributionChart({ data, year, entityDistribution = [] }:
           </div>
         )}
       </CardHeader>
-      <CardContent className="flex flex-1 items-center pb-2">
-        {chartType === "radial" ? (
-          // Radial Bar Chart
-          <ChartContainer
-            config={chartConfig}
-            className="mx-auto aspect-square w-full max-w-[350px]"
-          >
-            <RadialBarChart
-              data={[
-                {
-                  name: 'Budget',
-                  allocated: data.allocated,
-                  remaining: data.remaining
-                }
-              ]}
-              endAngle={180}
-              innerRadius={90}
-              outerRadius={140}
+      { isHidden ? (
+        <PrivacyOverlay height="300px" blurIntensity="medium">
+          {/* Skeleton Customizado */}
+          <div className="space-y-4 p-4">
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-64 w-full" />
+            <div className="flex gap-2 justify-center">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+            <div className="flex gap-2 justify-between">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+          </div>
+        </PrivacyOverlay>
+      ) : (
+        <>
+        <CardContent className="flex flex-1 items-center pb-2">
+          {chartType === "radial" ? (
+            // Radial Bar Chart
+            <ChartContainer
+              config={chartConfig}
+              className="mx-auto aspect-square w-full max-w-[350px]"
             >
-              <ChartTooltip
-                cursor={false}
-                content={
-                  <ChartTooltipContent
-                    hideLabel
-                    formatter={(value: any) => [`$${(typeof value === 'number' ? value : 0).toLocaleString()}`, '']}
+              <RadialBarChart
+                data={[
+                  {
+                    name: 'Budget',
+                    allocated: data.allocated,
+                    remaining: data.remaining
+                  }
+                ]}
+                endAngle={180}
+                innerRadius={90}
+                outerRadius={140}
+              >
+                <ChartTooltip
+                  cursor={false}
+                  content={
+                    <ChartTooltipContent
+                      hideLabel
+                      formatter={(value: any) => [`$${(typeof value === 'number' ? value : 0).toLocaleString()}`, '']}
+                    />
+                  }
+                />
+                <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
+                  <RechartsLabel
+                    content={({ viewBox }) => {
+                      if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                        const percentage = data.percentageUsed
+                        
+                        return (
+                          <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle">
+                            <tspan
+                              x={viewBox.cx}
+                              y={(viewBox.cy || 0) - 16}
+                              className="fill-foreground text-2xl font-bold"
+                            >
+                              {percentage}%
+                            </tspan>
+                            <tspan
+                              x={viewBox.cx}
+                              y={(viewBox.cy || 0) + 4}
+                              className="fill-muted-foreground text-xs"
+                            >
+                              {t("annual_budget.charts.budget_distribution.label.percentage_text")}
+                            </tspan>
+                            <tspan
+                              x={viewBox.cx}
+                              y={(viewBox.cy || 0) + 20}
+                              className="fill-muted-foreground text-xs font-medium"
+                            >
+                              ${(data.allocated / 1000).toFixed(0)}K / ${(data.total / 1000).toFixed(0)}K
+                            </tspan>
+                          </text>
+                        )
+                      }
+                    }}
                   />
-                }
-              />
-              <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
-                <RechartsLabel
-                  content={({ viewBox }) => {
-                    if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                      const percentage = data.percentageUsed
-                      
-                      return (
-                        <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle">
-                          <tspan
-                            x={viewBox.cx}
-                            y={(viewBox.cy || 0) - 16}
-                            className="fill-foreground text-2xl font-bold"
-                          >
-                            {percentage}%
-                          </tspan>
-                          <tspan
-                            x={viewBox.cx}
-                            y={(viewBox.cy || 0) + 4}
-                            className="fill-muted-foreground text-xs"
-                          >
-                            {t("annual_budget.charts.budget_distribution.label.percentage_text")}
-                          </tspan>
-                          <tspan
-                            x={viewBox.cx}
-                            y={(viewBox.cy || 0) + 20}
-                            className="fill-muted-foreground text-xs font-medium"
-                          >
-                            ${(data.allocated / 1000).toFixed(0)}K / ${(data.total / 1000).toFixed(0)}K
-                          </tspan>
-                        </text>
-                      )
+                </PolarRadiusAxis>
+                <RadialBar
+                  dataKey="allocated"
+                  stackId="a"
+                  cornerRadius={5}
+                  fill="var(--color-allocated)"
+                  className="stroke-transparent stroke-2"
+                />
+                <RadialBar
+                  dataKey="remaining"
+                  fill="var(--color-remaining)"
+                  stackId="a"
+                  cornerRadius={5}
+                  className="stroke-transparent stroke-2"
+                />
+              </RadialBarChart>
+            </ChartContainer>
+          ) : (
+            // Pie Chart
+            <ChartContainer
+              config={chartConfig}
+              className="mx-auto aspect-square w-full max-w-[350px]"
+            >
+              <PieChart>
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
+                <Pie
+                  data={pieChartData}
+                  dataKey="amount"
+                  nameKey="name"
+                  innerRadius={70}
+                  outerRadius={120}
+                  strokeWidth={5}
+                  activeIndex={activeIndex}
+                  onClick={(data, index) => {
+                    // Allow clicking on pie sectors to select them
+                    if (data && data.name) {
+                      setActiveEntity(data.name)
                     }
                   }}
-                />
-              </PolarRadiusAxis>
-              <RadialBar
-                dataKey="allocated"
-                stackId="a"
-                cornerRadius={5}
-                fill="var(--color-allocated)"
-                className="stroke-transparent stroke-2"
-              />
-              <RadialBar
-                dataKey="remaining"
-                fill="var(--color-remaining)"
-                stackId="a"
-                cornerRadius={5}
-                className="stroke-transparent stroke-2"
-              />
-            </RadialBarChart>
-          </ChartContainer>
-        ) : (
-          // Pie Chart
-          <ChartContainer
-            config={chartConfig}
-            className="mx-auto aspect-square w-full max-w-[350px]"
-          >
-            <PieChart>
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent hideLabel />}
-              />
-              <Pie
-                data={pieChartData}
-                dataKey="amount"
-                nameKey="name"
-                innerRadius={70}
-                outerRadius={120}
-                strokeWidth={5}
-                activeIndex={activeIndex}
-                onClick={(data, index) => {
-                  // Allow clicking on pie sectors to select them
-                  if (data && data.name) {
-                    setActiveEntity(data.name)
-                  }
-                }}
-                activeShape={({
-                  outerRadius = 0,
-                  ...props
-                }: PieSectorDataItem) => (
-                  <g>
-                    <Sector {...props} outerRadius={outerRadius + 10} />
-                    <Sector
-                      {...props}
-                      outerRadius={outerRadius + 25}
-                      innerRadius={outerRadius + 12}
-                    />
-                  </g>
-                )}
-              >
-                <RechartsLabel
-                  content={({ viewBox }) => {
-                    if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                      const activeData = pieChartData[activeIndex]
-                      if (!activeData) return null
-                      
-                      return (
-                        <text
-                          x={viewBox.cx}
-                          y={viewBox.cy}
-                          textAnchor="middle"
-                          dominantBaseline="middle"
-                        >
-                          <tspan
+                  activeShape={({
+                    outerRadius = 0,
+                    ...props
+                  }: PieSectorDataItem) => (
+                    <g>
+                      <Sector {...props} outerRadius={outerRadius + 10} />
+                      <Sector
+                        {...props}
+                        outerRadius={outerRadius + 25}
+                        innerRadius={outerRadius + 12}
+                      />
+                    </g>
+                  )}
+                >
+                  <RechartsLabel
+                    content={({ viewBox }) => {
+                      if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                        const activeData = pieChartData[activeIndex]
+                        if (!activeData) return null
+                        
+                        return (
+                          <text
                             x={viewBox.cx}
                             y={viewBox.cy}
-                            className="fill-foreground text-2xl font-bold"
+                            textAnchor="middle"
+                            dominantBaseline="middle"
                           >
-                            ${(activeData.amount / 1000).toFixed(0)}K
-                          </tspan>
-                          <tspan
-                            x={viewBox.cx}
-                            y={(viewBox.cy || 0) + 20}
-                            className="fill-muted-foreground text-xs"
-                          >
-                            {activeData.name}
-                          </tspan>
-                          <tspan
-                            x={viewBox.cx}
-                            y={(viewBox.cy || 0) + 36}
-                            className="fill-muted-foreground text-xs font-medium"
-                          >
-                            {activeData.percentage}% of total
-                          </tspan>
-                        </text>
-                      )
-                    }
-                  }}
-                />
-              </Pie>
-            </PieChart>
-          </ChartContainer>
-        )}
-      </CardContent>
-      <CardFooter className="flex-col gap-2 text-xs pt-2">
-        {/* Minimalist footer - only show total values */}
-        <div className="w-full flex items-center justify-between text-xs border-t border-gray-100 pt-3">
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Total Budget</span>
-          </div>
-          <span className="font-semibold text-gray-900">
-            ${data.total.toLocaleString()}
-          </span>
-        </div>
-        
-        {chartType === "radial" && (
-          <>
-            <div className="w-full flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[hsl(0,84%,60%)]"></div>
-                <span className="text-muted-foreground">Allocated</span>
-              </div>
-              <span className="font-medium text-red-600">
-                ${data.allocated.toLocaleString()}
-              </span>
-            </div>
-            <div className="w-full flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[hsl(142,71%,45%)]"></div>
-                <span className="text-muted-foreground">Available</span>
-              </div>
-              <span className="font-medium text-green-600">
-                ${data.remaining.toLocaleString()}
-              </span>
-            </div>
-          </>
-        )}
-        
-        {chartType === "pie" && (
-          <div className="w-full flex items-center justify-between text-xs">
+                            <tspan
+                              x={viewBox.cx}
+                              y={viewBox.cy}
+                              className="fill-foreground text-2xl font-bold"
+                            >
+                              ${(activeData.amount / 1000).toFixed(0)}K
+                            </tspan>
+                            <tspan
+                              x={viewBox.cx}
+                              y={(viewBox.cy || 0) + 20}
+                              className="fill-muted-foreground text-xs"
+                            >
+                              {activeData.name}
+                            </tspan>
+                            <tspan
+                              x={viewBox.cx}
+                              y={(viewBox.cy || 0) + 36}
+                              className="fill-muted-foreground text-xs font-medium"
+                            >
+                              {activeData.percentage}% of total
+                            </tspan>
+                          </text>
+                        )
+                      }
+                    }}
+                  />
+                </Pie>
+              </PieChart>
+            </ChartContainer>
+          )}
+        </CardContent>
+        <CardFooter className="flex-col gap-2 text-xs pt-2">
+          {/* Minimalist footer - only show total values */}
+          <div className="w-full flex items-center justify-between text-xs border-t border-gray-100 pt-3">
             <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">Selected: {activeEntity}</span>
+              <span className="text-muted-foreground">Total Budget</span>
             </div>
-            <span className="font-medium">
-              ${pieChartData.find(e => e.name === activeEntity)?.amount.toLocaleString()} 
-              <span className="text-muted-foreground ml-1">
-                ({pieChartData.find(e => e.name === activeEntity)?.percentage}%)
-              </span>
+            <span className="font-semibold text-gray-900">
+              ${data.total.toLocaleString()}
             </span>
           </div>
-        )}
-      </CardFooter>
+          
+          {chartType === "radial" && (
+            <>
+              <div className="w-full flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[hsl(0,84%,60%)]"></div>
+                  <span className="text-muted-foreground">Allocated</span>
+                </div>
+                <span className="font-medium text-red-600">
+                  ${data.allocated.toLocaleString()}
+                </span>
+              </div>
+              <div className="w-full flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[hsl(142,71%,45%)]"></div>
+                  <span className="text-muted-foreground">Available</span>
+                </div>
+                <span className="font-medium text-green-600">
+                  ${data.remaining.toLocaleString()}
+                </span>
+              </div>
+            </>
+          )}
+          
+          {chartType === "pie" && (
+            <div className="w-full flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Selected: {activeEntity}</span>
+              </div>
+              <span className="font-medium">
+                ${pieChartData.find(e => e.name === activeEntity)?.amount.toLocaleString()} 
+                <span className="text-muted-foreground ml-1">
+                  ({pieChartData.find(e => e.name === activeEntity)?.percentage}%)
+                </span>
+              </span>
+            </div>
+          )}
+        </CardFooter>
+      </>
+      )}
     </Card>
   )
 }

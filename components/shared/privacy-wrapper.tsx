@@ -276,6 +276,7 @@ export function InlinePrivacyToggle({ config, className }: InlinePrivacyTogglePr
       onClick={togglePrivacy}
       className={cn(
         "relative group flex-shrink-0 transition-all duration-300",
+        "cursor-pointer",
         "w-10 h-10 rounded-full", // 🎯 Círculo
         "border-2 border-dashed", // 🎯 Border dashed
         "flex items-center justify-center",
