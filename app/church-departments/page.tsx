@@ -44,6 +44,7 @@ import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal } from "
 import { useInstitution } from "@/contexts/institution-context"
 import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
 import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget"
+import { useCreateAnnualBudgetMutation } from "@/hooks/graphql/use-annual-budget"
 import { DepartmentsKPICards, KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
 import { DepartmentActivityChart } from "@/components/institutions/charts/department-activity-chart"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
@@ -67,7 +68,7 @@ import {
    InstitutionById_institution_departments as DepartmentData,
    InstitutionById_institution_churches as ChurchData
 } from "@/types/InstitutionById"
-import { PermissionResolverName } from "@/types/graphql-global-types"
+import { PermissionResolverName, AnnualBudgetEntityType } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
 import { WithPermission } from "@/hocs/with-permission"
 
@@ -99,6 +100,9 @@ export default function ChurchDepartmentsPage() {
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentData | null>(null)
   const [selectedContact, setSelectedContact] = useState<ContactData | null>(null)
   const [selectedBudget, setSelectedBudget] = useState<AnnualBudgetData | null>(null)
+
+  // GraphQL mutations
+  const [createAnnualBudget] = useCreateAnnualBudgetMutation()
 
   usePageTitle({
     title: t.church_page?.title || "Church Departments"
@@ -331,7 +335,31 @@ export default function ChurchDepartmentsPage() {
       setIsBudgetModalOpen(true);
     }
   };
-  
+
+  const handleCreateBudget = (id: string) => {
+    const department = departments.find(d => d.id === id);
+    if (department) {
+      setSelectedDepartment(department);
+      // Create new budget data for creation
+      const budgetData: AnnualBudgetData = {
+        id: '',
+        year: new Date().getFullYear(),
+        planned_budget: 0,
+        total_expenses: 0,
+        balance: 0,
+        notes: `New budget for ${department.name}`,
+        approved_by: undefined,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: 'system',
+        updated_by: 'system',
+        is_deleted: false
+      };
+      setSelectedBudget(budgetData);
+      setIsBudgetModalOpen(true);
+    }
+  };
+
   const handleDepartmentSaved = (department: CreateDepartment) => {
     toast.success(t.toasts?.created || "Church department created successfully")
     handleRefresh()
@@ -347,28 +375,64 @@ export default function ChurchDepartmentsPage() {
     handleRefresh()
   }
   
-  const handleBudgetSaved = (budget: AnnualBudgetData) => {
-    // Update the selected department's annual_budgets if it was changed
-    const latestBudget = selectedDepartment?.annual_budgets?.[0];
-    if (selectedDepartment && budget.planned_budget !== latestBudget?.planned_budget) {
-      const updatedBudget = {
-        __typename: "AnnualBudget" as const,
-        year: budget.year,
-        planned_budget: budget.planned_budget,
-        total_expenses: budget.total_expenses
-      };
-      const updatedDepartment = {
-        ...selectedDepartment,
-        annual_budgets: [updatedBudget, ...(selectedDepartment.annual_budgets?.slice(1) || [])]
-      };
-      setSelectedDepartment(updatedDepartment);
+  const handleBudgetSaved = async (budget: AnnualBudgetData) => {
+    if (!selectedDepartment) return;
+
+    try {
+      if (!budget.id) {
+        // Create new budget
+        await createAnnualBudget({
+          variables: {
+            entity_type: AnnualBudgetEntityType.ChurchDepartment,
+            entity_id: selectedDepartment.id,
+            year: budget.year,
+            planned_budget: budget.planned_budget,
+            total_expenses: budget.total_expenses,
+            description: `Budget for ${selectedDepartment.name}`,
+            requested_amount: budget.planned_budget,
+            notes: budget.notes
+          }
+        });
+
+        toast.success(t.annual_budget?.messages?.updated_success || "Budget created successfully", {
+          duration: 3000,
+          icon: '💰'
+        });
+
+        // Close modal after successful creation
+        setIsBudgetModalOpen(false);
+        setSelectedBudget(null);
+      } else {
+        // Update existing budget - logic remains the same
+        const latestBudget = selectedDepartment?.annual_budgets?.[0];
+        if (selectedDepartment && budget.planned_budget !== latestBudget?.planned_budget) {
+          const updatedBudget = {
+            __typename: "AnnualBudget" as const,
+            year: budget.year,
+            planned_budget: budget.planned_budget,
+            total_expenses: budget.total_expenses
+          };
+          const updatedDepartment = {
+            ...selectedDepartment,
+            annual_budgets: [updatedBudget, ...(selectedDepartment.annual_budgets?.slice(1) || [])]
+          };
+          setSelectedDepartment(updatedDepartment);
+        }
+
+        toast.success(t.annual_budget?.messages?.updated_success || "Budget updated successfully", {
+          duration: 3000,
+          icon: '💰'
+        });
+      }
+
+      handleRefresh();
+    } catch (error) {
+      console.error('Error saving budget:', error);
+      toast.error("Error saving budget", {
+        duration: 3000,
+        icon: '❌'
+      });
     }
-    
-    toast.success(t.annual_budget?.messages?.updated_success || "Budget updated successfully", {
-      duration: 3000,
-      icon: '💰'
-    });
-    handleRefresh();
   }
 
   if (!currentInstitutionData) return <NotFound />
@@ -521,6 +585,16 @@ export default function ChurchDepartmentsPage() {
             <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
               <Edit className="w-4 h-4 mr-2" />
               {t.actions?.edit_department || "Edit Department"}
+            </DropdownMenuItem>
+            <WithPermission requiredPermissions={[PermissionResolverName.CreateAnnualBudget]}>
+              <DropdownMenuItem onClick={() => handleCreateBudget(row.original.id)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Budget
+              </DropdownMenuItem>
+            </WithPermission>
+            <DropdownMenuItem onClick={() => handleViewBudget(row.original.id)}>
+              <DollarSign className="w-4 h-4 mr-2" />
+              {t.actions?.manage_budget || "Manage Budget"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
               <Trash2 className="w-4 h-4 mr-2" />
