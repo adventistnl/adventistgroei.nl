@@ -3,18 +3,20 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { ApproveAnnualBudgetDto } from "./globalTypes";
+
 // ====================================================
 // GraphQL mutation operation: ApproveAnnualBudget
 // ====================================================
 
 export interface ApproveAnnualBudget_approveAnnualBudget {
-  __typename: "AnnualBudget";
+  __typename: "ApproveBudgetResponse";
   id: string;
   status: string;
-  approved_amount: any;
-  approval_date: any;
-  approved_by: string;
-  notes: string;
+  approved_amount: number | null;
+  approval_date: any | null;
+  approved_by: string | null;
+  notes: string | null;
   updated_at: any;
 }
 
@@ -24,6 +26,5 @@ export interface ApproveAnnualBudget {
 
 export interface ApproveAnnualBudgetVariables {
   id: string;
-  approvedAmount?: number | null;
-  notes?: string | null;
+  data: ApproveAnnualBudgetDto;
 }

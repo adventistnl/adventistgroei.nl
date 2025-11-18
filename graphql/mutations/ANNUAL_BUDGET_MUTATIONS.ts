@@ -62,7 +62,6 @@ export const UPDATE_ANNUAL_BUDGET_MUTATION = gql`
   }
 `;
 
-// TODO: Implement these mutations in the backend
 // export const DELETE_ANNUAL_BUDGET_MUTATION = gql`
 //   mutation DeleteAnnualBudget($id: String!) {
 //     deleteAnnualBudget(id: $id) {
@@ -71,6 +70,15 @@ export const UPDATE_ANNUAL_BUDGET_MUTATION = gql`
 //     }
 //   }
 // `;
+
+export const DELETE_ANNUAL_BUDGET_MUTATION = gql`
+  mutation DeleteAnnualBudget($id: String!) {
+    deleteAnnualBudget(id: $id) {
+      success
+      message
+    }
+  }
+`;
 
 // export const APPROVE_ANNUAL_BUDGET_MUTATION = gql`
 //   mutation ApproveAnnualBudget($id: String!, $approvedAmount: Float, $notes: String) {
@@ -86,6 +94,20 @@ export const UPDATE_ANNUAL_BUDGET_MUTATION = gql`
 //   }
 // `;
 
+export const APPROVE_ANNUAL_BUDGET_MUTATION = gql`
+  mutation ApproveAnnualBudget($id: String!, $data: ApproveAnnualBudgetDto!) {
+    approveAnnualBudget(id: $id, data: $data) {
+      id
+      status
+      approved_amount
+      approval_date
+      approved_by
+      notes
+      updated_at
+    }
+  }
+`;
+
 // export const REJECT_ANNUAL_BUDGET_MUTATION = gql`
 //   mutation RejectAnnualBudget($id: String!, $reason: String) {
 //     rejectAnnualBudget(id: $id, reason: $reason) {
@@ -98,6 +120,19 @@ export const UPDATE_ANNUAL_BUDGET_MUTATION = gql`
 //     }
 //   }
 // `;
+
+export const REJECT_ANNUAL_BUDGET_MUTATION = gql`
+  mutation RejectAnnualBudget($id: String!, $data: RejectAnnualBudgetDto!) {
+    rejectAnnualBudget(id: $id, data: $data) {
+      id
+      status
+      review_date
+      reviewed_by
+      notes
+      updated_at
+    }
+  }
+`;
 
 // export const REQUEST_REVISION_ANNUAL_BUDGET_MUTATION = gql`
 //   mutation RequestRevision($id: String!, $revisionNotes: String) {
@@ -112,6 +147,19 @@ export const UPDATE_ANNUAL_BUDGET_MUTATION = gql`
 //   }
 // `;
 
+export const REQUEST_REVISION_ANNUAL_BUDGET_MUTATION = gql`
+  mutation RequestRevisionAnnualBudget($id: String!, $data: RequestRevisionAnnualBudgetDto!) {
+    requestRevisionAnnualBudget(id: $id, data: $data) {
+      id
+      status
+      review_date
+      reviewed_by
+      notes
+      updated_at
+    }
+  }
+`;
+
 // export const TOGGLE_BUDGET_LOCK_MUTATION = gql`
 //   mutation ToggleBudgetLock($id: String!) {
 //     toggleBudgetLock(id: $id) {
@@ -121,3 +169,13 @@ export const UPDATE_ANNUAL_BUDGET_MUTATION = gql`
 //     }
 //   }
 // `;
+
+export const TOGGLE_BUDGET_LOCK_MUTATION = gql`
+  mutation ToggleBudgetLock($id: String!) {
+    toggleBudgetLock(id: $id) {
+      id
+      is_locked
+      updated_at
+    }
+  }
+`;

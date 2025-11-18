@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface DeleteAnnualBudget_deleteAnnualBudget {
-  __typename: "DeleteResult";
+  __typename: "DeleteBudgetResponse";
   success: boolean;
   message: string;
 }

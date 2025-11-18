@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface ToggleBudgetLock_toggleBudgetLock {
-  __typename: "AnnualBudget";
+  __typename: "ToggleLockBudgetResponse";
   id: string;
   is_locked: boolean;
   updated_at: any;

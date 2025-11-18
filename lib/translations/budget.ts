@@ -91,7 +91,35 @@ export const budgetTranslations = {
       update_failed: "Failed to update budget",
       delete_failed: "Failed to delete budget"
     },
-    
+
+    // Table
+    table: {
+      actions_menu: {
+        manage: "Manage",
+        lock: "Lock",
+        unlock: "Unlock",
+        approve: "Approve",
+        reject: "Reject",
+        request_revision: "Request Revision",
+        delete: "Delete"
+      }
+    },
+
+    // Messages
+    messages: {
+      lock_success: "Budget locked successfully",
+      unlock_success: "Budget unlocked successfully",
+      approve_success: "Budget approved successfully",
+      reject_success: "Budget rejected successfully",
+      revision_success: "Revision requested successfully",
+      delete_success: "Budget deleted successfully",
+      lock_error: "Failed to toggle budget lock",
+      approve_error: "Failed to approve budget",
+      reject_error: "Failed to reject budget",
+      revision_error: "Failed to request revision",
+      delete_error: "Failed to delete budget"
+    },
+
     // Validation
     validation: {
       year_required: "Year is required",
@@ -197,7 +225,35 @@ export const budgetTranslations = {
       update_failed: "Budget bijwerken mislukt",
       delete_failed: "Budget verwijderen mislukt"
     },
-    
+
+    // Table
+    table: {
+      actions_menu: {
+        manage: "Beheren",
+        lock: "Vergrendelen",
+        unlock: "Ontgrendelen",
+        approve: "Goedkeuren",
+        reject: "Afwijzen",
+        request_revision: "Revisie Aanvragen",
+        delete: "Verwijderen"
+      }
+    },
+
+    // Messages
+    messages: {
+      lock_success: "Budget succesvol vergrendeld",
+      unlock_success: "Budget succesvol ontgrendeld",
+      approve_success: "Budget succesvol goedgekeurd",
+      reject_success: "Budget succesvol afgewezen",
+      revision_success: "Revisie succesvol aangevraagd",
+      delete_success: "Budget succesvol verwijderd",
+      lock_error: "Budget vergrendeling wijzigen mislukt",
+      approve_error: "Budget goedkeuren mislukt",
+      reject_error: "Budget afwijzen mislukt",
+      revision_error: "Revisie aanvragen mislukt",
+      delete_error: "Budget verwijderen mislukt"
+    },
+
     // Validation
     validation: {
       year_required: "Jaar is verplicht",
@@ -303,7 +359,35 @@ export const budgetTranslations = {
       update_failed: "Falha ao atualizar orçamento",
       delete_failed: "Falha ao excluir orçamento"
     },
-    
+
+    // Table
+    table: {
+      actions_menu: {
+        manage: "Gerenciar",
+        lock: "Bloquear",
+        unlock: "Desbloquear",
+        approve: "Aprovar",
+        reject: "Rejeitar",
+        request_revision: "Solicitar Revisão",
+        delete: "Excluir"
+      }
+    },
+
+    // Messages
+    messages: {
+      lock_success: "Orçamento bloqueado com sucesso",
+      unlock_success: "Orçamento desbloqueado com sucesso",
+      approve_success: "Orçamento aprovado com sucesso",
+      reject_success: "Orçamento rejeitado com sucesso",
+      revision_success: "Revisão solicitada com sucesso",
+      delete_success: "Orçamento excluído com sucesso",
+      lock_error: "Falha ao alterar bloqueio do orçamento",
+      approve_error: "Falha ao aprovar orçamento",
+      reject_error: "Falha ao rejeitar orçamento",
+      revision_error: "Falha ao solicitar revisão",
+      delete_error: "Falha ao excluir orçamento"
+    },
+
     // Validation
     validation: {
       year_required: "Ano é obrigatório",

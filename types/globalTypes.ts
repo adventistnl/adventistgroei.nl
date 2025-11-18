@@ -31,10 +31,12 @@ export enum AnnualBudgetPriority {
 
 export enum AnnualBudgetStatus {
   APPROVED = "APPROVED",
-  PENDING = "PENDING",
+  CLOSED = "CLOSED",
+  DRAFT = "DRAFT",
+  IN_PROGRESS = "IN_PROGRESS",
   REJECTED = "REJECTED",
-  REQUIRES_REVISION = "REQUIRES_REVISION",
-  UNDER_REVIEW = "UNDER_REVIEW",
+  REVISION_REQUESTED = "REVISION_REQUESTED",
+  SUBMITTED = "SUBMITTED",
 }
 
 export enum ChurchType {
@@ -73,6 +75,19 @@ export interface AnnualBudgetUpdateDto {
   notes?: string | null;
   documents?: string[] | null;
   total_expenses?: number | null;
+}
+
+export interface ApproveAnnualBudgetDto {
+  approved_amount?: number | null;
+  notes?: string | null;
+}
+
+export interface RejectAnnualBudgetDto {
+  reason: string;
+}
+
+export interface RequestRevisionAnnualBudgetDto {
+  revision_notes: string;
 }
 
 //==============================================================

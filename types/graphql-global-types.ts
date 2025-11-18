@@ -311,10 +311,12 @@ export enum AnnualBudgetScalarFieldEnum {
 
 export enum AnnualBudgetStatus {
   Approved = 'APPROVED',
-  Pending = 'PENDING',
+  Closed = 'CLOSED',
+  Draft = 'DRAFT',
+  InProgress = 'IN_PROGRESS',
   Rejected = 'REJECTED',
-  RequiresRevision = 'REQUIRES_REVISION',
-  UnderReview = 'UNDER_REVIEW'
+  RevisionRequested = 'REVISION_REQUESTED',
+  Submitted = 'SUBMITTED'
 }
 
 export type AnnualBudgetUpdateDto = {
@@ -458,6 +460,22 @@ export type AnnualReportWhereInput = {
   text?: InputMaybe<StringFilter>;
   updated_at?: InputMaybe<DateTimeFilter>;
   updated_by?: InputMaybe<StringFilter>;
+};
+
+export type ApproveAnnualBudgetDto = {
+  approved_amount?: InputMaybe<Scalars['Float']['input']>;
+  notes?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ApproveBudgetResponse = {
+  __typename?: 'ApproveBudgetResponse';
+  approval_date?: Maybe<Scalars['DateTime']['output']>;
+  approved_amount?: Maybe<Scalars['Float']['output']>;
+  approved_by?: Maybe<Scalars['String']['output']>;
+  id: Scalars['String']['output'];
+  notes?: Maybe<Scalars['String']['output']>;
+  status: Scalars['String']['output'];
+  updated_at: Scalars['DateTime']['output'];
 };
 
 export type AuthModel = {
@@ -986,6 +1004,12 @@ export type DecimalNullableFilter = {
   lte?: InputMaybe<Scalars['Decimal']['input']>;
   not?: InputMaybe<NestedDecimalNullableFilter>;
   notIn?: InputMaybe<Array<Scalars['Decimal']['input']>>;
+};
+
+export type DeleteBudgetResponse = {
+  __typename?: 'DeleteBudgetResponse';
+  message: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
 };
 
 export type Department = {
@@ -1822,6 +1846,7 @@ export type Mutation = {
   __typename?: 'Mutation';
   addProjectVoluntary: VoluntariesOnProjects;
   addRoleToUser: UserModel;
+  approveAnnualBudget: ApproveBudgetResponse;
   createAnnualBudget: AnnualBudget;
   createChurch: ChurchModel;
   createCommunication: Communication;
@@ -1837,6 +1862,7 @@ export type Mutation = {
   createSubsidyRequest: SubsidyRequest;
   createSubsidyStatus: SubsidyStatus;
   createUser: UserModel;
+  deleteAnnualBudget: DeleteBudgetResponse;
   deleteChurch: ChurchModel;
   deleteCommunication: Communication;
   deleteContact: Contact;
@@ -1855,12 +1881,15 @@ export type Mutation = {
   inviteUser: InviteModel;
   linkContact: LinkContactResult;
   login: AuthModel;
+  rejectAnnualBudget: RejectBudgetResponse;
   removeProjectVoluntary: VoluntariesOnProjects;
   removeRoleFromUser: UserModel;
+  requestRevisionAnnualBudget: RequestRevisionBudgetResponse;
   resetPassword: ForgotPasswordResponse;
   sendForgotPasswordCode: ForgotPasswordResponse;
   /** Send an invitation email */
   sendInviteEmail: Scalars['Boolean']['output'];
+  toggleBudgetLock: ToggleLockBudgetResponse;
   updateAnnualBudget: AnnualBudget;
   updateChurch: ChurchModel;
   updateCommunication: Communication;
@@ -1889,6 +1918,12 @@ export type MutationAddProjectVoluntaryArgs = {
 export type MutationAddRoleToUserArgs = {
   roleId: Scalars['String']['input'];
   userId: Scalars['String']['input'];
+};
+
+
+export type MutationApproveAnnualBudgetArgs = {
+  data: ApproveAnnualBudgetDto;
+  id: Scalars['String']['input'];
 };
 
 
@@ -1965,6 +2000,11 @@ export type MutationCreateSubsidyStatusArgs = {
 
 export type MutationCreateUserArgs = {
   data: UserCreateDto;
+};
+
+
+export type MutationDeleteAnnualBudgetArgs = {
+  id: Scalars['String']['input'];
 };
 
 
@@ -2059,6 +2099,12 @@ export type MutationLoginArgs = {
 };
 
 
+export type MutationRejectAnnualBudgetArgs = {
+  data: RejectAnnualBudgetDto;
+  id: Scalars['String']['input'];
+};
+
+
 export type MutationRemoveProjectVoluntaryArgs = {
   data: RemoveProjectVoluntaryDto;
 };
@@ -2067,6 +2113,12 @@ export type MutationRemoveProjectVoluntaryArgs = {
 export type MutationRemoveRoleFromUserArgs = {
   roleId: Scalars['String']['input'];
   userId: Scalars['String']['input'];
+};
+
+
+export type MutationRequestRevisionAnnualBudgetArgs = {
+  data: RequestRevisionAnnualBudgetDto;
+  id: Scalars['String']['input'];
 };
 
 
@@ -2082,6 +2134,11 @@ export type MutationSendForgotPasswordCodeArgs = {
 
 export type MutationSendInviteEmailArgs = {
   data: InviteEmailDto;
+};
+
+
+export type MutationToggleBudgetLockArgs = {
+  id: Scalars['String']['input'];
 };
 
 
@@ -2517,7 +2574,12 @@ export type PermissionModel = {
 export enum PermissionResolverName {
   AddProjectVoluntary = 'addProjectVoluntary',
   AddRoleToUser = 'addRoleToUser',
+  AnnualBudget = 'annualBudget',
+  AnnualBudgets = 'annualBudgets',
+  ApproveAnnualBudget = 'approveAnnualBudget',
   Auth = 'auth',
+  BudgetDistribution = 'budgetDistribution',
+  BudgetKpIs = 'budgetKPIs',
   Church = 'church',
   Churches = 'churches',
   Communication = 'communication',
@@ -2537,6 +2599,7 @@ export enum PermissionResolverName {
   CreateSubsidyRequest = 'createSubsidyRequest',
   CreateSubsidyStatus = 'createSubsidyStatus',
   CreateUser = 'createUser',
+  DeleteAnnualBudget = 'deleteAnnualBudget',
   DeleteChurch = 'deleteChurch',
   DeleteCommunication = 'deleteCommunication',
   DeleteDepartment = 'deleteDepartment',
@@ -2552,9 +2615,11 @@ export enum PermissionResolverName {
   DeleteSubsidyStatus = 'deleteSubsidyStatus',
   DeleteUser = 'deleteUser',
   Department = 'department',
+  DepartmentSpending = 'departmentSpending',
   Departments = 'departments',
   DirectMessage = 'directMessage',
   DirectMessages = 'directMessages',
+  EntityDistribution = 'entityDistribution',
   Institution = 'institution',
   Institutions = 'institutions',
   InviteUser = 'inviteUser',
@@ -2567,17 +2632,22 @@ export enum PermissionResolverName {
   Projects = 'projects',
   Region = 'region',
   Regions = 'regions',
+  RejectAnnualBudget = 'rejectAnnualBudget',
   RemoveProjectVoluntary = 'removeProjectVoluntary',
   RemoveRoleFromUser = 'removeRoleFromUser',
+  RequestRevisionAnnualBudget = 'requestRevisionAnnualBudget',
   Role = 'role',
   Roles = 'roles',
   SendInviteEmail = 'sendInviteEmail',
   Setting = 'setting',
   Settings = 'settings',
+  SpendingOverTime = 'spendingOverTime',
   SubsidyRequest = 'subsidyRequest',
   SubsidyRequests = 'subsidyRequests',
   SubsidyStatus = 'subsidyStatus',
   SubsidyStatuses = 'subsidyStatuses',
+  ToggleBudgetLock = 'toggleBudgetLock',
+  UpdateAnnualBudget = 'updateAnnualBudget',
   UpdateChurch = 'updateChurch',
   UpdateCommunication = 'updateCommunication',
   UpdateDepartment = 'updateDepartment',
@@ -3123,9 +3193,37 @@ export type RegionWhereInput = {
   updated_by?: InputMaybe<StringFilter>;
 };
 
+export type RejectAnnualBudgetDto = {
+  reason: Scalars['String']['input'];
+};
+
+export type RejectBudgetResponse = {
+  __typename?: 'RejectBudgetResponse';
+  id: Scalars['String']['output'];
+  notes?: Maybe<Scalars['String']['output']>;
+  review_date: Scalars['DateTime']['output'];
+  reviewed_by: Scalars['String']['output'];
+  status: Scalars['String']['output'];
+  updated_at: Scalars['DateTime']['output'];
+};
+
 export type RemoveProjectVoluntaryDto = {
   project_id: Scalars['String']['input'];
   user_id: Scalars['String']['input'];
+};
+
+export type RequestRevisionAnnualBudgetDto = {
+  revision_notes: Scalars['String']['input'];
+};
+
+export type RequestRevisionBudgetResponse = {
+  __typename?: 'RequestRevisionBudgetResponse';
+  id: Scalars['String']['output'];
+  notes?: Maybe<Scalars['String']['output']>;
+  review_date: Scalars['DateTime']['output'];
+  reviewed_by: Scalars['String']['output'];
+  status: Scalars['String']['output'];
+  updated_at: Scalars['DateTime']['output'];
 };
 
 export type ResetPasswordInput = {
@@ -3634,6 +3732,13 @@ export type SubsidyStatusWhereInput = {
   subsidy_requests?: InputMaybe<SubsidyRequestListRelationFilter>;
   updated_at?: InputMaybe<DateTimeFilter>;
   updated_by?: InputMaybe<StringFilter>;
+};
+
+export type ToggleLockBudgetResponse = {
+  __typename?: 'ToggleLockBudgetResponse';
+  id: Scalars['String']['output'];
+  is_locked: Scalars['Boolean']['output'];
+  updated_at: Scalars['DateTime']['output'];
 };
 
 export type UpdateRoleInput = {

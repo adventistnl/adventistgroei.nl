@@ -1322,6 +1322,9 @@ const resources = {
             manage: "Manage Budget",
             lock: "Lock Budget",
             unlock: "Unlock Budget",
+            approve: "Approve Budget",
+            reject: "Reject Budget",
+            request_revision: "Request Revision",
             delete: "Delete Budget"
           }
         },
@@ -1420,7 +1423,18 @@ const resources = {
             saved: "Annual budget saved successfully!",
             updated: "Annual budget updated successfully!",
             save_failed: "Failed to save annual budget",
-            update_failed: "Failed to update annual budget"
+            update_failed: "Failed to update annual budget",
+            lock_success: "Budget locked successfully",
+            unlock_success: "Budget unlocked successfully",
+            approve_success: "Budget approved successfully",
+            reject_success: "Budget rejected successfully",
+            revision_success: "Revision requested successfully",
+            delete_success: "Budget deleted successfully",
+            lock_error: "Failed to toggle budget lock",
+            approve_error: "Failed to approve budget",
+            reject_error: "Failed to reject budget",
+            revision_error: "Failed to request revision",
+            delete_error: "Failed to delete budget"
           },
           delete: {
             title: "Delete Budget",
@@ -2950,6 +2964,9 @@ const resources = {
             manage: "Budget Beheren",
             lock: "Budget Vergrendelen",
             unlock: "Budget Ontgrendelen",
+            approve: "Budget Goedkeuren",
+            reject: "Budget Afwijzen",
+            request_revision: "Revisie Aanvragen",
             delete: "Budget Verwijderen"
           }
         },
@@ -3048,7 +3065,18 @@ const resources = {
             saved: "Jaarbegroting succesvol opgeslagen!",
             updated: "Jaarbegroting succesvol bijgewerkt!",
             save_failed: "Opslaan van jaarbegroting mislukt",
-            update_failed: "Bijwerken van jaarbegroting mislukt"
+            update_failed: "Bijwerken van jaarbegroting mislukt",
+            lock_success: "Begroting succesvol vergrendeld",
+            unlock_success: "Begroting succesvol ontgrendeld",
+            approve_success: "Begroting succesvol goedgekeurd",
+            reject_success: "Begroting succesvol afgewezen",
+            revision_success: "Revisie succesvol aangevraagd",
+            delete_success: "Begroting succesvol verwijderd",
+            lock_error: "Begroting vergrendeling wijzigen mislukt",
+            approve_error: "Begroting goedkeuren mislukt",
+            reject_error: "Begroting afwijzen mislukt",
+            revision_error: "Revisie aanvragen mislukt",
+            delete_error: "Begroting verwijderen mislukt"
           },
           delete: {
             title: "Begroting Verwijderen",
@@ -3197,6 +3225,9 @@ const resources = {
             manage: "Gerenciar Orçamento",
             lock: "Bloquear Orçamento",
             unlock: "Desbloquear Orçamento",
+            approve: "Aprovar Orçamento",
+            reject: "Rejeitar Orçamento",
+            request_revision: "Solicitar Revisão",
             delete: "Excluir Orçamento"
           }
         },
@@ -3295,7 +3326,18 @@ const resources = {
             saved: "Orçamento anual salvo com sucesso!",
             updated: "Orçamento anual atualizado com sucesso!",
             save_failed: "Falha ao salvar orçamento anual",
-            update_failed: "Falha ao atualizar orçamento anual"
+            update_failed: "Falha ao atualizar orçamento anual",
+            lock_success: "Orçamento bloqueado com sucesso",
+            unlock_success: "Orçamento desbloqueado com sucesso",
+            approve_success: "Orçamento aprovado com sucesso",
+            reject_success: "Orçamento rejeitado com sucesso",
+            revision_success: "Revisão solicitada com sucesso",
+            delete_success: "Orçamento excluído com sucesso",
+            lock_error: "Falha ao alterar bloqueio do orçamento",
+            approve_error: "Falha ao aprovar orçamento",
+            reject_error: "Falha ao rejeitar orçamento",
+            revision_error: "Falha ao solicitar revisão",
+            delete_error: "Falha ao excluir orçamento"
           },
           delete: {
             title: "Excluir Orçamento",

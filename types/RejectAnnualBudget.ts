@@ -3,17 +3,19 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { RejectAnnualBudgetDto } from "./globalTypes";
+
 // ====================================================
 // GraphQL mutation operation: RejectAnnualBudget
 // ====================================================
 
 export interface RejectAnnualBudget_rejectAnnualBudget {
-  __typename: "AnnualBudget";
+  __typename: "RejectBudgetResponse";
   id: string;
   status: string;
   review_date: any;
   reviewed_by: string;
-  notes: string;
+  notes: string | null;
   updated_at: any;
 }
 
@@ -23,5 +25,5 @@ export interface RejectAnnualBudget {
 
 export interface RejectAnnualBudgetVariables {
   id: string;
-  reason: string;
+  data: RejectAnnualBudgetDto;
 }

@@ -15,6 +15,7 @@ import {
   RefreshCw, 
   MoreHorizontal,
   CheckCircle,
+  CheckCircle2,
   XCircle,
   Clock,
   Building,
@@ -26,6 +27,7 @@ import {
   Trash2,
   TrendingUp,
   Eye,
+  MessageSquare,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -66,8 +68,15 @@ import { MockDataIndicator, useShowMockIndicators } from "@/components/shared/mo
 import { DeleteBudgetModal } from "@/components/modals/annual-budget/delete-budget-modal"
 
 // GraphQL Hooks
-import { useCreateAnnualBudgetMutation } from "@/hooks/graphql/use-annual-budget"
-import { useUpdateAnnualBudgetMutation } from "@/hooks/graphql/use-annual-budget"
+import { 
+  useCreateAnnualBudgetMutation,
+  useUpdateAnnualBudgetMutation,
+  useDeleteAnnualBudgetMutation,
+  useApproveAnnualBudgetMutation,
+  useRejectAnnualBudgetMutation,
+  useRequestRevisionAnnualBudgetMutation,
+  useToggleBudgetLockMutation
+} from "@/hooks/graphql/use-annual-budget"
 import {
   useAvailableYears,
   useAnnualBudgetKPIs,
@@ -97,6 +106,11 @@ export default function AnnualBudgetPage() {
   // GraphQL mutations
   const [createAnnualBudgetMutation, { loading: creatingBudget }] = useCreateAnnualBudgetMutation()
   const [updateAnnualBudgetMutation, { loading: updatingBudget }] = useUpdateAnnualBudgetMutation()
+  const [deleteAnnualBudgetMutation, { loading: deletingBudget }] = useDeleteAnnualBudgetMutation()
+  const [approveAnnualBudgetMutation, { loading: approvingBudget }] = useApproveAnnualBudgetMutation()
+  const [rejectAnnualBudgetMutation, { loading: rejectingBudget }] = useRejectAnnualBudgetMutation()
+  const [requestRevisionAnnualBudgetMutation, { loading: requestingRevision }] = useRequestRevisionAnnualBudgetMutation()
+  const [toggleBudgetLockMutation, { loading: togglingLock }] = useToggleBudgetLockMutation()
   
   const [isLoading, setIsLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
@@ -524,31 +538,110 @@ export default function AnnualBudgetPage() {
     toast.success(`Year ${nextYear} added successfully! You can now select it and create budgets.`)
   }
 
-  const handleApproveRequest = (requestId: string, approvedAmount?: number) => {
-    // TODO: Implement approve mutation
-    toast.success('Budget request approved successfully')
+  const handleApproveRequest = async (requestId: string, approvedAmount?: number) => {
+    try {
+      const result = await approveAnnualBudgetMutation({
+        variables: {
+          id: requestId,
+          data: {
+            approved_amount: approvedAmount
+          }
+        }
+      })
+
+      if (result.data?.approveAnnualBudget) {
+        // Refresh the data
+        refetchDashboard()
+        toast.success(t('annual_budget.messages.approve_success'))
+      }
+    } catch (error) {
+      console.error('Error approving budget:', error)
+      toast.error(t('annual_budget.messages.approve_error'))
+    }
   }
 
-  const handleRejectRequest = (requestId: string, reason: string) => {
-    // TODO: Implement reject mutation
-    toast.success('Budget request rejected')
+  const handleRejectRequest = async (requestId: string, reason: string) => {
+    try {
+      const result = await rejectAnnualBudgetMutation({
+        variables: {
+          id: requestId,
+          data: {
+            reason: reason
+          }
+        }
+      })
+
+      if (result.data?.rejectAnnualBudget) {
+        // Refresh the data
+        refetchDashboard()
+        toast.success(t('annual_budget.messages.reject_success'))
+      }
+    } catch (error) {
+      console.error('Error rejecting budget:', error)
+      toast.error(t('annual_budget.messages.reject_error'))
+    }
   }
 
-  const handleRequestRevision = (requestId: string, revisionNotes: string) => {
-    // TODO: Implement revision mutation
-    toast.success('Revision requested successfully')
+  const handleRequestRevision = async (requestId: string, revisionNotes: string) => {
+    try {
+      const result = await requestRevisionAnnualBudgetMutation({
+        variables: {
+          id: requestId,
+          data: {
+            revision_notes: revisionNotes
+          }
+        }
+      })
+
+      if (result.data?.requestRevisionAnnualBudget) {
+        // Refresh the data
+        refetchDashboard()
+        toast.success(t('annual_budget.messages.revision_success'))
+      }
+    } catch (error) {
+      console.error('Error requesting revision:', error)
+      toast.error(t('annual_budget.messages.revision_error'))
+    }
   }
 
-  const handleToggleLock = (requestId: string) => {
-    // TODO: Implement toggle lock mutation
-    const request = budgetRequests.find((req: GetBudgetDashboardData_annualBudgets) => req.id === requestId)
-    const isNowLocked = !request?.is_locked
-    toast.success(isNowLocked ? 'Budget locked successfully' : 'Budget unlocked successfully')
+  const handleToggleLock = async (requestId: string) => {
+    try {
+      const result = await toggleBudgetLockMutation({
+        variables: {
+          id: requestId
+        }
+      })
+
+      if (result.data?.toggleBudgetLock) {
+        // Refresh the data
+        refetchDashboard()
+        const request = budgetRequests.find((req: GetBudgetDashboardData_annualBudgets) => req.id === requestId)
+        const isNowLocked = result.data.toggleBudgetLock.is_locked
+        toast.success(isNowLocked ? t('annual_budget.messages.lock_success') : t('annual_budget.messages.unlock_success'))
+      }
+    } catch (error) {
+      console.error('Error toggling budget lock:', error)
+      toast.error(t('annual_budget.messages.lock_error'))
+    }
   }
 
-  const handleDeleteBudget = (requestId: string) => {
-    // TODO: Implement delete mutation
-    toast.success('Budget deleted successfully')
+  const handleDeleteBudget = async (requestId: string) => {
+    try {
+      const result = await deleteAnnualBudgetMutation({
+        variables: {
+          id: requestId
+        }
+      })
+
+      if (result.data?.deleteAnnualBudget) {
+        // Refresh the data
+        refetchDashboard()
+        toast.success(t('annual_budget.messages.delete_success'))
+      }
+    } catch (error) {
+      console.error('Error deleting budget:', error)
+      toast.error(t('annual_budget.messages.delete_error'))
+    }
   }
 
   const handleSaveInstitutionBudget = async (budget: AnnualBudgetData) => {
@@ -871,6 +964,27 @@ export default function AnnualBudgetPage() {
                       {t('annual_budget.table.actions_menu.lock')}
                     </>
                   )}
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => handleApproveRequest(budget.id)}
+                  className="text-green-600 focus:text-green-600"
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  {t('annual_budget.table.actions_menu.approve')}
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => handleRejectRequest(budget.id, 'Rejected by administrator')}
+                  className="text-orange-600 focus:text-orange-600"
+                >
+                  <XCircle className="w-4 h-4 mr-2" />
+                  {t('annual_budget.table.actions_menu.reject')}
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => handleRequestRevision(budget.id, 'Please review and resubmit')}
+                  className="text-blue-600 focus:text-blue-600"
+                >
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  {t('annual_budget.table.actions_menu.request_revision')}
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={() => {
