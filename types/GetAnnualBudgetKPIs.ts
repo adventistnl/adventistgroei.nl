@@ -14,6 +14,9 @@ export interface GetAnnualBudgetKPIs_budgetKPIs {
   totalSpent: number;
   budgetRemaining: number;
   budgetUtilization: number;
+  /**
+   * Número de departments ativos (sempre 0 para budgets da instituição)
+   */
   activeDepartments: number;
 }
 
@@ -54,4 +57,5 @@ export interface GetAnnualBudgetKPIs {
 
 export interface GetAnnualBudgetKPIsVariables {
   year: number;
+  institutionId: string;
 }

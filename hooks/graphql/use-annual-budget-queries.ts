@@ -38,11 +38,10 @@ export function useAvailableYears(options?: useQuery.Options<GetAvailableYears>)
   );
 }
 
-export function useAnnualBudgetKPIs(year: number, options?: useQuery.Options<GetAnnualBudgetKPIs, GetAnnualBudgetKPIsVariables>) {
+export function useAnnualBudgetKPIs(options: useQuery.Options<GetAnnualBudgetKPIs, GetAnnualBudgetKPIsVariables>) {
   return useQuery<GetAnnualBudgetKPIs, GetAnnualBudgetKPIsVariables>(
     GET_ANNUAL_BUDGET_KPIS,
     {
-      variables: { year },
       ...options
     }
   );

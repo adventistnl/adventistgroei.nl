@@ -142,8 +142,8 @@ export const GET_AVAILABLE_YEARS = gql`
 `;
 
 export const GET_ANNUAL_BUDGET_KPIS = gql`
-  query GetAnnualBudgetKPIs($year: Int!) {
-    budgetKPIs(year: $year) {
+  query GetAnnualBudgetKPIs($year: Int!, $institutionId: String!) {
+    budgetKPIs(year: $year, institutionId: $institutionId) {
       totalInstitutionBudget
       totalAllocated
       totalSpent
@@ -152,7 +152,7 @@ export const GET_ANNUAL_BUDGET_KPIS = gql`
       activeDepartments
     }
 
-    departmentSpending(year: $year) {
+    departmentSpending(year: $year, institutionId: $institutionId) {
       name
       planned
       approved
@@ -160,7 +160,7 @@ export const GET_ANNUAL_BUDGET_KPIS = gql`
       institution
     }
 
-    spendingOverTime(year: $year) {
+    spendingOverTime(year: $year, institutionId: $institutionId) {
       date
       month
       finance
@@ -170,7 +170,7 @@ export const GET_ANNUAL_BUDGET_KPIS = gql`
       marketing
     }
 
-    budgetDistribution(year: $year) {
+    budgetDistribution(year: $year, institutionId: $institutionId) {
       total
       allocated
       remaining

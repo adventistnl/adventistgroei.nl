@@ -127,7 +127,13 @@ export default function AnnualBudgetPage() {
   // GraphQL Queries
   const { data: dashboardData, loading: loadingDashboard, refetch: refetchDashboard } = useBudgetDashboardData(selectedYear)
   const { data: availableYearsData, loading: loadingYears } = useAvailableYears()
-  const { data: kpisData, loading: loadingKPIs } = useAnnualBudgetKPIs(selectedYear)
+  const { data: kpisData, loading: loadingKPIs } = useAnnualBudgetKPIs({
+    skip: !currentInstitutionData?.id,
+    variables:{
+      institutionId: currentInstitutionData?.id!,
+      year: selectedYear
+    }
+  })
   console.log(kpisData)
   // Mock data indicators
   const showMockIndicators = useShowMockIndicators()
@@ -965,7 +971,7 @@ export default function AnnualBudgetPage() {
                     </>
                   )}
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                {/* <DropdownMenuItem 
                   onClick={() => handleApproveRequest(budget.id)}
                   className="text-green-600 focus:text-green-600"
                 >
@@ -995,7 +1001,7 @@ export default function AnnualBudgetPage() {
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   {t('annual_budget.table.actions_menu.delete')}
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

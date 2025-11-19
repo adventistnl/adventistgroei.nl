@@ -500,6 +500,7 @@ export type BudgetDistribution = {
 
 export type BudgetKpIs = {
   __typename?: 'BudgetKPIs';
+  /** Número de departments ativos (sempre 0 para budgets da instituição) */
   activeDepartments: Scalars['Int']['output'];
   budgetRemaining: Scalars['Float']['output'];
   budgetUtilization: Scalars['Float']['output'];
@@ -2978,11 +2979,13 @@ export type QueryAnnualBudgetsArgs = {
 
 
 export type QueryBudgetDistributionArgs = {
+  institutionId: Scalars['String']['input'];
   year: Scalars['Int']['input'];
 };
 
 
 export type QueryBudgetKpIsArgs = {
+  institutionId: Scalars['String']['input'];
   year: Scalars['Int']['input'];
 };
 
@@ -3008,6 +3011,7 @@ export type QueryDepartmentArgs = {
 
 
 export type QueryDepartmentSpendingArgs = {
+  institutionId: Scalars['String']['input'];
   year: Scalars['Int']['input'];
 };
 
@@ -3063,6 +3067,7 @@ export type QuerySettingArgs = {
 
 
 export type QuerySpendingOverTimeArgs = {
+  institutionId: Scalars['String']['input'];
   year: Scalars['Int']['input'];
 };
 
