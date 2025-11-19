@@ -369,6 +369,9 @@ export default function DepartmentsPage() {
           icon: '💰'
         });
 
+        // Refresh institution data after budget creation
+        await refetchInstitutionById();
+
         // Close modal after successful creation
         setIsBudgetModalOpen(false);
         setSelectedBudget(null);

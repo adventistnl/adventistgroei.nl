@@ -1295,8 +1295,11 @@ const resources = {
         table: {
           title: "Budget Management Table",
           subtitle: "Manage budget requests, lock/unlock budgets, and track spending across all entities",
+          title_departments: "Department Budgets",
+          subtitle_departments: "Manage annual budgets for all institutional departments",
           headers: {
             entity_name: "Entity Name",
+            department_name: "Department Name",
             entity_type: "Type",
             budget_total: "Total Budget",
             spent_amount: "Total Spent",
@@ -2937,8 +2940,11 @@ const resources = {
         table: {
           title: "Budget Beheertabel",
           subtitle: "Beheer begrotingsaanvragen, vergrendel/ontgrendel budgetten en volg uitgaven voor alle entiteiten",
+          title_departments: "Afdelingsbudgetten",
+          subtitle_departments: "Beheer jaarlijkse budgetten voor alle institutionele afdelingen",
           headers: {
             entity_name: "Naam Entiteit",
+            department_name: "Afdelingsnaam",
             entity_type: "Type",
             budget_total: "Totaal Budget",
             spent_amount: "Totaal Uitgegeven",
@@ -3198,8 +3204,11 @@ const resources = {
         table: {
           title: "Tabela de Gestão de Orçamento",
           subtitle: "Gerencie solicitações de orçamento, bloqueie/desbloqueie orçamentos e acompanhe gastos em todas as entidades",
+          title_departments: "Orçamentos por Departamento",
+          subtitle_departments: "Gerencie orçamentos anuais para todos os departamentos institucionais",
           headers: {
             entity_name: "Nome da Entidade",
+            department_name: "Nome do Departamento",
             entity_type: "Tipo",
             budget_total: "Orçamento Total",
             spent_amount: "Total Gasto",

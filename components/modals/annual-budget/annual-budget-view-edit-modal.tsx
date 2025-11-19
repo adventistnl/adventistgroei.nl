@@ -54,6 +54,7 @@ export interface AnnualBudgetData {
   is_deleted?: boolean
   deleted_at?: string | null
   deleted_by?: string | null
+  is_locked?: boolean
 }
 
 export interface AnnualBudgetFormData {
@@ -154,8 +155,8 @@ export function AnnualBudgetViewEditModal({
     if (isOpen) {
       setCurrentStep(1)
       setIsEditingYear(false)
-      // If it's a new budget (no planned_budget set), open in edit mode
-      const isNewBudget = !budget?.planned_budget || budget.planned_budget === 0
+      // If it's a new budget (no budget at all or no planned_budget set), open in edit mode
+      const isNewBudget = !budget || !budget.planned_budget || budget.planned_budget === 0
       setIsEditing(isNewBudget)
       setErrors({})
     }
@@ -237,7 +238,8 @@ export function AnnualBudgetViewEditModal({
   }
 
   const handleSave = async () => {
-    if (!budget) return
+    // Allow saving even when budget is null (for creation)
+    // if (!budget) return
 
     if (!validateStep(1) || !validateStep(2) || !validateStep(3)) {
       toast.error(t("annual_budget.modals.validation.fix_errors"))
@@ -844,7 +846,8 @@ export function AnnualBudgetViewEditModal({
     }
   }
 
-  if (!budget) return null
+  // Allow modal to render even when budget is null (for creation)
+  // if (!budget) return null
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -856,7 +859,7 @@ export function AnnualBudgetViewEditModal({
           </DialogTitle>
           <DialogDescription className="text-sm text-gray-600">
             {entityName ? (
-              `${entityType}: ${entityName} - ${budget.year}`
+              budget ? `${entityType}: ${entityName} - ${budget.year}` : `${entityType}: ${entityName} - New Budget`
             ) : (
               t("annual_budget.modals.edit.description")
             )}
@@ -866,9 +869,9 @@ export function AnnualBudgetViewEditModal({
           <div className="flex items-center justify-between mt-4">
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="text-xs">
-                {t("annual_budget.modals.fields.year") || "Year"} {budget.year}
+                {t("annual_budget.modals.fields.year") || "Year"} {budget ? budget.year : formData.year || 'New'}
               </Badge>
-              {budget.is_deleted && (
+              {budget?.is_deleted && (
                 <Badge variant="destructive" className="bg-gray-800 text-white">{t("annual_budget.modals.status.deleted") || "Deleted"}</Badge>
               )}
             </div>
