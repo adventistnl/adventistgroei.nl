@@ -76,6 +76,7 @@ export default function ChurchesPage() {
   const { i18n } = useTranslation()
   const { currentInstitutionData, refetchInstitutionById } = useInstitution();
   const churches = React.useMemo(() => currentInstitutionData?.churches || [], [currentInstitutionData]);
+  const activeChurches = React.useMemo(() => churches.filter((church: any) => !church.is_deleted), [churches]);
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   
@@ -113,8 +114,8 @@ export default function ChurchesPage() {
   type ChurchType = typeof churches extends (infer U)[] ? U : any;
 
 
-  // Calcula total de projetos a partir dos dados reais das churches
-  const totalProjects = churches.reduce((sum, c: any) => {
+  // Calcula total de projetos a partir dos dados reais das churches (apenas ativas)
+  const totalProjects = activeChurches.reduce((sum, c: any) => {
     const churchProjects = c.departments?.reduce((s: number, d: any) => s + (d.projects?.length || 0), 0) || 0;
     return sum + churchProjects;
   }, 0)
@@ -216,8 +217,8 @@ export default function ChurchesPage() {
     };
   };
 
-  // Dados para gráficos - gerados dinamicamente a partir dos dados reais
-  const chartData = useMemo(() => generateChurchListChartData(churches), [churches]);
+  // Dados para gráficos - gerados dinamicamente a partir dos dados reais (apenas igrejas ativas)
+  const chartData = useMemo(() => generateChurchListChartData(activeChurches), [activeChurches]);
 
   /**
    * Carregamento inicial dos dados
