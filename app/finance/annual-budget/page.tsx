@@ -124,6 +124,7 @@ export default function AnnualBudgetPage() {
   const [selectedDepartmentData, setSelectedDepartmentData] = useState<any>(null)
   const [isInstitutionBudgetModalOpen, setIsInstitutionBudgetModalOpen] = useState(false)
   const [institutionBudgetData, setInstitutionBudgetData] = useState<AnnualBudgetData | null>(null)
+  const [isInstitutionLockConfirmModalOpen, setIsInstitutionLockConfirmModalOpen] = useState(false)
 
   // GraphQL Queries
   const { data: dashboardData, loading: loadingDashboard, refetch: refetchDashboard } = useBudgetDashboardData(selectedYear)
@@ -313,13 +314,25 @@ export default function AnnualBudgetPage() {
   }
 
   // Handler for toggling institution budget lock
-  const handleToggleInstitutionBudgetLock = async (e: React.MouseEvent) => {
+  const handleToggleInstitutionBudgetLock = async (e: React.MouseEvent, forceLock: boolean = false) => {
     e.stopPropagation() // Prevent card onClick from firing
 
     const institutionBudget = institutionAnnualBudgets[selectedYear]
     if (!institutionBudget?.id) {
       toast.error('Institution budget not found for the selected year')
       return
+    }
+
+    // Check if trying to lock and there are departments without budget
+    const isCurrentlyLocked = institutionBudget.is_locked
+    const tryingToLock = !isCurrentlyLocked
+
+    if (tryingToLock && !forceLock) {
+      const departmentsWithoutBudget = departmentBudgetData.filter(dept => !dept.hasBudgetRecord)
+      if (departmentsWithoutBudget.length > 0) {
+        setIsInstitutionLockConfirmModalOpen(true)
+        return
+      }
     }
 
     try {
@@ -409,8 +422,8 @@ export default function AnnualBudgetPage() {
         headerAction: hasInstitutionBudget ? (
           <button
             onClick={handleToggleInstitutionBudgetLock}
-            className="relative group z-10"
-            title={isLocked ? t('annual_budget.table.lock_tooltips.locked') : t('annual_budget.table.lock_tooltips.unlocked')}
+            className="relative group z-10 cursor-pointer"
+            title={isLocked ? t('annual_budget.table.lock_actions.unlock') : t('annual_budget.table.lock_actions.lock')}
           >
             <div className={`w-6 h-6 border-2 border-dashed rounded-full flex items-center justify-center transition-all ${
               isLocked 
@@ -422,10 +435,6 @@ export default function AnnualBudgetPage() {
               ) : (
                 <Unlock className="w-3 h-3 text-gray-600" />
               )}
-            </div>
-            {/* Tooltip */}
-            <div className="absolute bottom-full right-0 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-              {isLocked ? t('annual_budget.table.lock_actions.unlock') : t('annual_budget.table.lock_actions.lock')}
             </div>
           </button>
         ) : undefined
@@ -1389,6 +1398,38 @@ export default function AnnualBudgetPage() {
               defaultYear={selectedYear}
             />
           )}
+
+          {/* Institution Lock Confirmation Modal */}
+          <Dialog open={isInstitutionLockConfirmModalOpen} onOpenChange={setIsInstitutionLockConfirmModalOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-amber-500" />
+                  {t('annual_budget.modals.lock_institution.title', 'Confirm Institution Lock')}
+                </DialogTitle>
+                <DialogDescription>
+                  {t('annual_budget.modals.lock_institution.description', 
+                    'Some departments do not have budgets yet. Locking the institution budget will also lock all existing department budgets. Are you sure you want to continue?')}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsInstitutionLockConfirmModalOpen(false)}
+                >
+                  {t('annual_budget.modals.buttons.cancel', 'Cancel')}
+                </Button>
+                <Button
+                  onClick={(e) => {
+                    setIsInstitutionLockConfirmModalOpen(false)
+                    handleToggleInstitutionBudgetLock(e, true)
+                  }}
+                >
+                  {t('annual_budget.modals.buttons.continue', 'Continue')}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
 
         </div>

@@ -1439,6 +1439,10 @@ const resources = {
             revision_error: "Failed to request revision",
             delete_error: "Failed to delete budget"
           },
+          lock_institution: {
+            title: "Confirm Institution Lock",
+            description: "Some departments do not have budgets yet. Locking the institution budget will also lock all existing department budgets. Are you sure you want to continue?"
+          },
           delete: {
             title: "Delete Budget",
             description: "This action will permanently delete the budget and all related data.",
@@ -3084,6 +3088,10 @@ const resources = {
             revision_error: "Revisie aanvragen mislukt",
             delete_error: "Begroting verwijderen mislukt"
           },
+          lock_institution: {
+            title: "Bevestig Instelling Vergrendeling",
+            description: "Sommige afdelingen hebben nog geen budgetten. Het vergrendelen van het instellingsbudget zal ook alle bestaande afdelingsbudgetten vergrendelen. Weet je zeker dat je wilt doorgaan?"
+          },
           delete: {
             title: "Begroting Verwijderen",
             description: "Deze actie zal de begroting en alle gerelateerde gegevens permanent verwijderen.",
@@ -3347,6 +3355,10 @@ const resources = {
             reject_error: "Falha ao rejeitar orçamento",
             revision_error: "Falha ao solicitar revisão",
             delete_error: "Falha ao excluir orçamento"
+          },
+          lock_institution: {
+            title: "Confirmar Bloqueio da Instituição",
+            description: "Alguns departamentos ainda não possuem orçamentos. Bloquear o orçamento da instituição também bloqueará todos os orçamentos existentes dos departamentos. Tem certeza de que deseja continuar?"
           },
           delete: {
             title: "Excluir Orçamento",
