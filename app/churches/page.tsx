@@ -39,8 +39,6 @@ import { UseTable } from "@/components/ui/use-table"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { ChurchTypeBadge } from "@/components/ui/church-type-badge"
 // import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
-import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget"
-import { useCreateAnnualBudgetMutation } from "@/hooks/graphql/use-annual-budget"
 import { AddChurchModal, EditChurchModal, DeleteChurchModal, ChurchData, RegionData } from "@/components/modals/church"
 import { ChurchesKPICards, KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
@@ -87,18 +85,13 @@ export default function ChurchesPage() {
   
   // Modal states
   const [isViewContactModalOpen, setIsViewContactModalOpen] = useState(false)
-  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false)
   const [isAddChurchModalOpen, setIsAddChurchModalOpen] = useState(false)
   const [isEditChurchModalOpen, setIsEditChurchModalOpen] = useState(false)
   const [isDeleteChurchModalOpen, setIsDeleteChurchModalOpen] = useState(false)
   // const [selectedContact, setSelectedContact] = useState<ContactData | null>(null)
   const [selectedChurch, setSelectedChurch] = useState<any>(null)
-  const [selectedBudget, setSelectedBudget] = useState<AnnualBudgetData | null>(null)
   const [churchToEdit, setChurchToEdit] = useState<ChurchData | null>(null)
   const [churchToDelete, setChurchToDelete] = useState<ChurchData | null>(null)
-
-  // GraphQL mutations
-  const [createAnnualBudget] = useCreateAnnualBudgetMutation()
 
   // Obter traduções para o idioma atual
   const currentLanguage = i18n?.language || 'en'
@@ -341,101 +334,7 @@ export default function ChurchesPage() {
       setIsViewContactModalOpen(true);
     }
   };
-  const handleViewBudget = (id: string) => {
-    const church = churches.find((c: ChurchType) => c.id === id);
-    if (church) {
-      // Use type assertion for budget properties
-      const churchWithBudget = church as any;
-      
-      const budgetData: AnnualBudgetData = {
-        id: `budget_${church.id}`,
-        year: new Date().getFullYear(),
-        planned_budget: churchWithBudget.total_budget || 0,
-        total_expenses: churchWithBudget.used_budget || 0,
-        balance: (churchWithBudget.total_budget || 0) - (churchWithBudget.used_budget || 0),
-        notes: `Budget for ${church.name} church`,
-        approved_by: 'admin',
-        created_at: church.created_at,
-        updated_at: new Date().toISOString(),
-        created_by: 'system',
-        updated_by: 'system',
-        is_deleted: false
-      };
-      setSelectedChurch(church);
-      setSelectedBudget(budgetData);
-      setIsBudgetModalOpen(true);
-    }
-  };
 
-  const handleCreateBudget = (id: string) => {
-    const church = churches.find((c: ChurchType) => c.id === id);
-    if (church) {
-      setSelectedChurch(church);
-      // Create new budget data for creation
-      const budgetData: AnnualBudgetData = {
-        id: '',
-        year: new Date().getFullYear(),
-        planned_budget: 0,
-        total_expenses: 0,
-        balance: 0,
-        notes: `New budget for ${church.name} church`,
-        approved_by: undefined,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        created_by: 'system',
-        updated_by: 'system',
-        is_deleted: false
-      };
-      setSelectedBudget(budgetData);
-      setIsBudgetModalOpen(true);
-    }
-  };
-
-  const handleBudgetSaved = async (budget: AnnualBudgetData) => {
-    if (!selectedChurch) return;
-
-    try {
-      if (!budget.id) {
-        // Create new budget
-        await createAnnualBudget({
-          variables: {
-            entity_type: AnnualBudgetEntityType.Church,
-            entity_id: selectedChurch.id,
-            year: budget.year,
-            planned_budget: budget.planned_budget,
-            total_expenses: budget.total_expenses,
-            description: `Budget for ${selectedChurch.name}`,
-            requested_amount: budget.planned_budget,
-            notes: budget.notes
-          }
-        });
-
-        toast.success("Budget created successfully", {
-          duration: 3000,
-          icon: '💰'
-        });
-
-        // Close modal after successful creation
-        setIsBudgetModalOpen(false);
-        setSelectedBudget(null);
-      } else {
-        // Update existing budget - logic remains the same
-        toast.success("Budget updated successfully", {
-          duration: 3000,
-          icon: '💰'
-        });
-      }
-
-      handleRefresh();
-    } catch (error) {
-      console.error('Error saving budget:', error);
-      toast.error("Error saving budget", {
-        duration: 3000,
-        icon: '❌'
-      });
-    }
-  }
-  
   const handleChurchSaved = (church: CreateChurch) => {
     handleRefresh()
   }
@@ -646,16 +545,6 @@ export default function ChurchesPage() {
             <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
               <Edit className="w-4 h-4 mr-2" />
               {t.editChurch}
-            </DropdownMenuItem>
-            <WithPermission requiredPermissions={[PermissionResolverName.CreateAnnualBudget]}>
-              <DropdownMenuItem onClick={() => handleCreateBudget(row.original.id)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Budget
-              </DropdownMenuItem>
-            </WithPermission>
-            <DropdownMenuItem onClick={() => handleViewBudget(row.original.id)}>
-              <DollarSign className="w-4 h-4 mr-2" />
-              Manage Budget
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
               <Trash2 className="w-4 h-4 mr-2" />
@@ -1385,17 +1274,6 @@ export default function ChurchesPage() {
           />
         )}
          */}
-        {/* Annual Budget Modal */}
-        {selectedChurch && (
-          <AnnualBudgetViewEditModal
-            isOpen={isBudgetModalOpen}
-            onOpenChange={setIsBudgetModalOpen}
-            budget={selectedBudget}
-            entityType="church"
-            entityName={selectedChurch.name}
-            onSave={handleBudgetSaved}
-          />
-        )}
         
         {/* Add Church Modal */}
         <AddChurchModal

@@ -30,7 +30,6 @@ import { structureTranslations } from "@/lib/translations/structure"
 import { regionTranslations } from "@/lib/translations/regions"
 import { DataTable } from "@/components/ui/data-table"
 import { AddRegionModal, EditRegionModal, DeleteRegionModal } from "@/components/modals/region"
-import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 
 import { useRegions } from "@/hooks/use-regions"
@@ -170,11 +169,6 @@ export default function RegionsPage() {
 
   const handleRegionDeleted = (deletedRegion: string) => {
     toast.success(tRegion.toasts.deactivated)
-    handleRefresh()
-  }
-  
-  const handleBudgetSaved = (budget: AnnualBudgetData) => {
-    toast.success(tRegion.toasts.updated)
     handleRefresh()
   }
 

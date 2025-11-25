@@ -32,7 +32,6 @@ import { structureTranslations } from "@/lib/translations/structure"
 import { DataTable } from "@/components/ui/data-table"
 import { AddRegionModal, EditRegionModal, DeleteRegionModal } from "@/components/modals/region"
 import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
-import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget"
 import { UseKPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { EuropeRegionsMap, RegionData as MapRegionData } from "@/components/maps/europe-regions-map-mapbox"
 import MapLibre, { 
@@ -84,9 +83,7 @@ export default function RegionsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isViewContactModalOpen, setIsViewContactModalOpen] = useState(false)
-  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false)
   const [selectedRegion, setSelectedRegion] = useState<any>(null)
-  const [selectedBudget, setSelectedBudget] = useState<AnnualBudgetData | null>(null)
   
   // Obter traduções para o idioma atual
   const currentLanguage = i18n?.language || 'en'
@@ -326,11 +323,6 @@ export default function RegionsPage() {
 
   const handleRegionDeleted = (deletedRegion: any) => {
     toast.success(t.itemDeleted)
-    handleRefresh()
-  }
-  
-  const handleBudgetSaved = (budget: AnnualBudgetData) => {
-    toast.success("Budget updated successfully")
     handleRefresh()
   }
 
@@ -738,17 +730,6 @@ export default function RegionsPage() {
           updateMutation={updateRegionContact}
         />
         
-        {/* Annual Budget Modal */}
-        {selectedRegion && (
-          <AnnualBudgetViewEditModal
-            isOpen={isBudgetModalOpen}
-            onOpenChange={setIsBudgetModalOpen}
-            budget={selectedBudget}
-            entityType="region"
-            entityName={selectedRegion.name}
-            onSave={handleBudgetSaved}
-          />
-        )}
       </div>
       </WithPermission>
     </AppLayout>
