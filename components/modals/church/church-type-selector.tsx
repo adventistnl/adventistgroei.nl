@@ -87,6 +87,8 @@ export function ChurchTypeSelector({
               const newValue = !isSpecialChurch
               onSpecialChurchChange(newValue)
               if (!newValue) {
+                onTypeChange(ChurchType.Standard)
+              } else {
                 onTypeChange(null)
               }
             }}
