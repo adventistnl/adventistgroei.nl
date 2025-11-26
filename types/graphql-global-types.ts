@@ -534,6 +534,17 @@ export type Church = {
   users?: Maybe<Array<User>>;
 };
 
+export type ChurchChartData = {
+  __typename?: 'ChurchChartData';
+  activeMembers: Scalars['Float']['output'];
+  activeProjects: Scalars['Float']['output'];
+  church: Scalars['String']['output'];
+  fill: Scalars['String']['output'];
+  fullName: Scalars['String']['output'];
+  members: Scalars['Float']['output'];
+  projects: Scalars['Float']['output'];
+};
+
 export type ChurchCount = {
   __typename?: 'ChurchCount';
   annual_budgets: Scalars['Int']['output'];
@@ -1638,6 +1649,7 @@ export enum GenderType {
 export type Institution = {
   __typename?: 'Institution';
   _count: InstitutionCount;
+  activeChurchesChartData: Array<ChurchChartData>;
   annual_budgets: Array<AnnualBudget>;
   churches?: Maybe<Array<Church>>;
   churchesKpiData: ChurchKpiData;
