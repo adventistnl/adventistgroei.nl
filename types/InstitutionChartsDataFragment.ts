@@ -14,8 +14,18 @@ export interface InstitutionChartsDataFragment_usersByRole {
   fill: string;
 }
 
+export interface InstitutionChartsDataFragment_churchesByRegion {
+  __typename: "ChurchesByRegionData";
+  region: string;
+  name: string;
+  churches: number;
+  color: string | null;
+  fill: string;
+}
+
 export interface InstitutionChartsDataFragment {
   __typename: "InstitutionChartsData";
   usersByRole: InstitutionChartsDataFragment_usersByRole[];
   monthlyUserGrowth: number | null;
+  churchesByRegion: InstitutionChartsDataFragment_churchesByRegion[];
 }

@@ -678,6 +678,15 @@ export type ChurchWhereInput = {
   users?: InputMaybe<UserListRelationFilter>;
 };
 
+export type ChurchesByRegionData = {
+  __typename?: 'ChurchesByRegionData';
+  churches: Scalars['Float']['output'];
+  color?: Maybe<Scalars['String']['output']>;
+  fill: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  region: Scalars['String']['output'];
+};
+
 export type Communication = {
   __typename?: 'Communication';
   _count: CommunicationCount;
@@ -1683,6 +1692,7 @@ export type Institution = {
 
 export type InstitutionChartsData = {
   __typename?: 'InstitutionChartsData';
+  churchesByRegion: Array<ChurchesByRegionData>;
   monthlyUserGrowth?: Maybe<Scalars['Float']['output']>;
   usersByRole: Array<UsersByRoleData>;
 };

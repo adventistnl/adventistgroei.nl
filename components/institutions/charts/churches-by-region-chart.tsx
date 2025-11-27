@@ -26,96 +26,57 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useChartColors, CHART_PRESETS } from "@/lib/chart-colors"
+import { useTranslation } from "react-i18next"
+
+import { InstitutionById_institution_institutionChartsData_churchesByRegion } from "@/types/InstitutionById"
 
 interface ChurchesByRegionChartProps {
-  regions?: any[]
-  churches?: any[]
+  data?: InstitutionById_institution_institutionChartsData_churchesByRegion[]
   loading?: boolean
 }
 
-export function ChurchesByRegionChart({ regions, churches, loading }: ChurchesByRegionChartProps) {
+export function ChurchesByRegionChart({ data, loading }: ChurchesByRegionChartProps) {
+  const { t } = useTranslation()
   const { theme } = useChartColors()
   const regionColors = CHART_PRESETS.regions(theme as 'light' | 'dark')
 
-  // Dados mockados: Igrejas por região
-  const mockRegionsData = [
-    { 
-      region: "north", 
-      name: "North Region",
-      churches: 24, 
-      provinces: ["Friesland", "Groningen", "Drenthe"],
-      fill: regionColors.north
-    },
-    { 
-      region: "south", 
-      name: "South Region",
-      churches: 18, 
-      provinces: ["Limburg", "Noord-Brabant"],
-      fill: regionColors.south
-    },
-    { 
-      region: "west", 
-      name: "West Region",
-      churches: 35, 
-      provinces: ["Noord-Holland", "Zuid-Holland", "Utrecht"],
-      fill: regionColors.west
-    },
-    { 
-      region: "east", 
-      name: "East Region",
-      churches: 21, 
-      provinces: ["Gelderland", "Overijssel"],
-      fill: regionColors.east
-    },
-    { 
-      region: "central", 
-      name: "Central Region",
-      churches: 16, 
-      provinces: ["Flevoland", "Utrecht"],
-      fill: regionColors.central
-    },
-  ]
-
-  const chartConfig = {
-    churches: {
-      label: "Churches",
-    },
-    north: {
-      label: "North Region",
-      color: regionColors.north,
-    },
-    south: {
-      label: "South Region",
-      color: regionColors.south,
-    },
-    west: {
-      label: "West Region",
-      color: regionColors.west,
-    },
-    east: {
-      label: "East Region",
-      color: regionColors.east,
-    },
-    central: {
-      label: "Central Region",
-      color: regionColors.central,
-    },
-  } satisfies ChartConfig
-
   const id = "churches-by-region"
-  const chartData = React.useMemo(() => mockRegionsData, [mockRegionsData])
-  
-  const [activeRegion, setActiveRegion] = React.useState(chartData[0].region)
+
+  // Check if we have data
+  const hasData = data && data.length > 0
+
+  // Generate chart config dynamically based on data
+  const chartConfig = React.useMemo(() => {
+    const config: Record<string, { label: string; color: string }> = {
+      churches: {
+        label: "Churches",
+        color: "#000000"
+      }
+    };
+
+    if (hasData) {
+      data.forEach((item) => {
+        config[item.region] = {
+          label: item.name,
+          color: item.fill
+        };
+      });
+    }
+
+    return config;
+  }, [data, hasData]);
+
+  const [activeRegion, setActiveRegion] = React.useState(hasData ? data[0].region : "")
 
   const activeIndex = React.useMemo(
-    () => chartData.findIndex((item) => item.region === activeRegion),
-    [activeRegion, chartData]
+    () => hasData ? data.findIndex((item) => item.region === activeRegion) : 0,
+    [activeRegion, data, hasData]
   )
   
-  const regionKeys = React.useMemo(() => chartData.map((item) => item.region), [chartData])
+  const regionKeys = React.useMemo(() => hasData ? data.map((item) => item.region) : [], [data, hasData])
   const totalChurches = React.useMemo(
-    () => chartData.reduce((sum, item) => sum + item.churches, 0),
-    [chartData]
+    () => hasData ? data.reduce((sum, item) => sum + item.churches, 0) : 0,
+    [data, hasData]
   )
 
   if (loading) {
@@ -134,14 +95,33 @@ export function ChurchesByRegionChart({ regions, churches, loading }: ChurchesBy
     )
   }
 
+  if (!hasData) {
+    return (
+      <Card data-chart={id} className="h-full flex flex-col">
+        <CardHeader>
+          <CardTitle>{t('institutions.analytics.churchesByRegion.title')}</CardTitle>
+          <CardDescription>
+            {t('institutions.analytics.churchesByRegion.description')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-1 justify-center items-center">
+          <div className="text-center text-muted-foreground">
+            <p className="text-lg font-medium mb-2">{t('institutions.analytics.noData')}</p>
+            <p className="text-sm">{t('institutions.analytics.churchesByRegion.noData')}</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card data-chart={id} className="h-full flex flex-col">
       <ChartStyle id={id} config={chartConfig} />
       <CardHeader className="flex-row items-start space-y-0 pb-0">
         <div className="grid gap-1 flex-1">
-          <CardTitle>Churches by Region</CardTitle>
+          <CardTitle>{t('institutions.analytics.churchesByRegion.title')}</CardTitle>
           <CardDescription>
-            Distribution across {chartData.length} regions
+            {t('institutions.analytics.churchesByRegion.description')}
           </CardDescription>
         </div>
         <Select value={activeRegion} onValueChange={setActiveRegion}>
@@ -189,7 +169,7 @@ export function ChurchesByRegionChart({ regions, churches, loading }: ChurchesBy
               content={<ChartTooltipContent hideLabel />}
             />
             <Pie
-              data={chartData}
+              data={data}
               dataKey="churches"
               nameKey="region"
               innerRadius={60}
@@ -218,7 +198,7 @@ export function ChurchesByRegionChart({ regions, churches, loading }: ChurchesBy
               <Label
                 content={({ viewBox }) => {
                   if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                    const activeData = chartData[activeIndex]
+                    const activeData = data?.[activeIndex]
                     return (
                       <text
                         x={viewBox.cx}
@@ -231,7 +211,7 @@ export function ChurchesByRegionChart({ regions, churches, loading }: ChurchesBy
                           y={viewBox.cy}
                           className="fill-foreground text-3xl font-bold"
                         >
-                          {activeData.churches.toLocaleString()}
+                          {activeData?.churches.toLocaleString() || 0}
                         </tspan>
                         <tspan
                           x={viewBox.cx}
@@ -239,13 +219,6 @@ export function ChurchesByRegionChart({ regions, churches, loading }: ChurchesBy
                           className="fill-muted-foreground"
                         >
                           Churches
-                        </tspan>
-                        <tspan
-                          x={viewBox.cx}
-                          y={(viewBox.cy || 0) + 44}
-                          className="fill-muted-foreground text-xs"
-                        >
-                          {activeData.provinces.length} provinces
                         </tspan>
                       </text>
                     )
@@ -271,25 +244,16 @@ export function ChurchesByRegionChart({ regions, churches, loading }: ChurchesBy
           <div className="flex items-center gap-2">
             <div 
               className="w-2 h-2 rounded-full" 
-              style={{ backgroundColor: chartData[activeIndex]?.fill }}
+              style={{ backgroundColor: data?.[activeIndex]?.fill }}
             ></div>
-            <span className="text-muted-foreground">Selected: {chartData[activeIndex]?.name}</span>
+            <span className="text-muted-foreground">Selected: {data?.[activeIndex]?.name}</span>
           </div>
           <span className="font-medium">
-            {chartData[activeIndex]?.churches.toLocaleString()} churches
+            {data?.[activeIndex]?.churches.toLocaleString()} churches
             <span className="text-muted-foreground ml-1">
-              ({Math.round((chartData[activeIndex]?.churches / totalChurches) * 100)}%)
+              ({Math.round(((data?.[activeIndex]?.churches || 0) / totalChurches) * 100)}%)
             </span>
           </span>
-        </div>
-        
-        <div className="w-full flex items-center justify-start text-xs">
-          <div className="flex items-center gap-1 flex-wrap">
-            <span className="text-muted-foreground">Provinces:</span>
-            <span className="font-medium text-gray-700">
-              {chartData[activeIndex]?.provinces.join(", ")}
-            </span>
-          </div>
         </div>
       </CardFooter>
     </Card>

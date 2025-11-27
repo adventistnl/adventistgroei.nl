@@ -536,10 +536,20 @@ export interface Institutions_institutions_institutionChartsData_usersByRole {
   fill: string;
 }
 
+export interface Institutions_institutions_institutionChartsData_churchesByRegion {
+  __typename: "ChurchesByRegionData";
+  region: string;
+  name: string;
+  churches: number;
+  color: string | null;
+  fill: string;
+}
+
 export interface Institutions_institutions_institutionChartsData {
   __typename: "InstitutionChartsData";
   usersByRole: Institutions_institutions_institutionChartsData_usersByRole[];
   monthlyUserGrowth: number | null;
+  churchesByRegion: Institutions_institutions_institutionChartsData_churchesByRegion[];
 }
 
 export interface Institutions_institutions {

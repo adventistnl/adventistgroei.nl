@@ -594,7 +594,7 @@ export default function InstitutionsPage() {
               loading={isLoading} 
             />
             <ChurchesByRegionChart 
-              churches={displayedInstitution?.churches || undefined}
+              data={displayedInstitution?.institutionChartsData?.churchesByRegion}
               loading={isLoading}
             />
           </ResponsiveGridCarousel>

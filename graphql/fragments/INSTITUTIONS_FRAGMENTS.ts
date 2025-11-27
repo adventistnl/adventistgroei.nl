@@ -294,6 +294,13 @@ export const INSTITUTION_CHARTS_DATA_FRAGMENT = gql`
       fill
     }
     monthlyUserGrowth
+    churchesByRegion {
+      region
+      name
+      churches
+      color
+      fill
+    }
   }
 `;
 

@@ -151,18 +151,109 @@ export const institutionTranslations = {
     registerInstitutionBtn: "Instelling Registreren",
     creating: "Maken...",
     
+    // Analytics
+    analytics: {
+      title: "Analytics",
+      noData: "No data available",
+      churchesByRegion: {
+        title: "Churches by Region",
+        description: "Distribution across regions",
+        noData: "No church data available for this institution"
+      }
+    },
+  },
+  pt: {
+    // Modal titles and descriptions
+    registerInstitution: "Registrar Nova Instituição",
+    modalDescription: "Crie uma nova instituição religiosa em sua organização",
+    
+    // Steps
+    basicInformation: "Informações Básicas",
+    basicInformationDesc: "Digite o nome da instituição, denominação e localização",
+    contactInformation: "Informações de Contato", 
+    contactInformationDesc: "Adicione detalhes de contato para a instituição",
+    additionalDetails: "Detalhes Adicionais",
+    additionalDetailsDesc: "Adicione uma descrição sobre a instituição",
+    
+    // Form fields
+    institutionName: "Nome da Instituição",
+    institutionNamePlaceholder: "Digite o nome da instituição",
+    denomination: "Denominação",
+    denominationPlaceholder: "ex.: SDA, Batista, Metodista",
+    country: "País",
+    countryPlaceholder: "Selecione o país",
+    searchCountry: "Buscar países...",
+    noCountryFound: "Nenhum país encontrado.",
+    languagePreference: "Preferência de Idioma",
+    languagePreferencePlaceholder: "Selecione o idioma",
+    searchLanguage: "Buscar idiomas...",
+    noLanguageFound: "Nenhum idioma encontrado.",
+    contactEmail: "E-mail de Contato",
+    contactEmailPlaceholder: "contato@instituicao.org",
+    phone: "Telefone",
+    phonePlaceholder: "+55 (11) 1234-5678",
+    website: "Website",
+    websitePlaceholder: "https://www.instituicao.org",
+    description: "Descrição",
+    descriptionPlaceholder: "Breve descrição sobre a instituição, sua missão e atividades...",
+    
+    // Languages
+    languages: {
+      en: "Inglês",
+      nl: "Holandês",
+      es: "Espanhol",
+      fr: "Francês", 
+      de: "Alemão",
+      pt: "Português"
+    },
+    
+    // Countries
+    countries: {
+      us: "Estados Unidos",
+      ca: "Canadá",
+      gb: "Reino Unido",
+      nl: "Países Baixos",
+      de: "Alemanha",
+      fr: "França",
+      br: "Brasil",
+      pt: "Portugal",
+      es: "Espanha",
+      it: "Itália",
+      au: "Austrália",
+      nz: "Nova Zelândia",
+      za: "África do Sul"
+    },
+    
+    // Buttons
+    previous: "Anterior",
+    next: "Próximo", 
+    cancel: "Cancelar",
+    registerInstitutionBtn: "Registrar Instituição",
+    creating: "Criando...",
+    
     // Validation messages
     validation: {
-      nameRequired: "Naam van instelling is vereist",
-      nameMinLength: "Naam van instelling moet minimaal 2 tekens zijn",
-      denominationRequired: "Denominatie is vereist",
-      denominationMinLength: "Denominatie moet minimaal 2 tekens zijn",
-      countryRequired: "Land is vereist",
-      languageRequired: "Taalvoorkeur is vereist",
-      emailRequired: "E-mail is vereist",
-      emailInvalid: "Voer een geldig e-mailadres in",
-      websiteInvalid: "Website moet beginnen met http:// of https://",
-      fixErrors: "Los de fouten op voordat u doorgaat"
+      nameRequired: "Nome da instituição é obrigatório",
+      nameMinLength: "Nome da instituição deve ter pelo menos 2 caracteres",
+      denominationRequired: "Denominação é obrigatória",
+      denominationMinLength: "Denominação deve ter pelo menos 2 caracteres",
+      countryRequired: "País é obrigatório",
+      languageRequired: "Preferência de idioma é obrigatória",
+      emailRequired: "E-mail é obrigatório",
+      emailInvalid: "Digite um endereço de e-mail válido",
+      websiteInvalid: "Website deve começar com http:// ou https://",
+      fixErrors: "Corrija os erros antes de continuar"
+    },
+
+    // Analytics
+    analytics: {
+      title: "Análises",
+      noData: "Nenhum dado disponível",
+      churchesByRegion: {
+        title: "Igrejas por Região",
+        description: "Distribuição por regiões",
+        noData: "Nenhum dado de igreja disponível para esta instituição"
+      }
     }
   }
 }
