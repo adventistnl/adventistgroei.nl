@@ -178,7 +178,15 @@ const resources = {
         data_refreshed: "Data refreshed",
         error_refreshing: "Error refreshing data",
         annual_budget: "Annual Budget",
-        data_loaded: "Data loaded successfully"
+        data_loaded: "Data loaded successfully",
+        coming_soon: "Coming Soon",
+        coming_soon_description: "This feature is under development and will be available soon.",
+        theme: "Theme",
+        light_mode: "Light",
+        dark_mode: "Dark",
+        theme_light_activated: "Light mode activated",
+        theme_dark_activated: "Dark mode activated",
+        invite: "Invite"
       },
       kanban: {
         dropItemHere: "Drop item here",
@@ -1323,6 +1331,7 @@ const resources = {
           },
           actions_menu: {
             manage: "Manage Budget",
+            register: "Register Budget",
             lock: "Lock Budget",
             unlock: "Unlock Budget",
             approve: "Approve Budget",
@@ -1827,7 +1836,15 @@ const resources = {
         data_refreshed: "Gegevens vernieuwd",
         error_refreshing: "Fout bij vernieuwen van gegevens",
         annual_budget: "Jaarbudget",
-        data_loaded: "Gegevens succesvol geladen"
+        data_loaded: "Gegevens succesvol geladen",
+        coming_soon: "Binnenkort Beschikbaar",
+        coming_soon_description: "Deze functie is in ontwikkeling en zal binnenkort beschikbaar zijn.",
+        theme: "Thema",
+        light_mode: "Licht",
+        dark_mode: "Donker",
+        theme_light_activated: "Lichte modus geactiveerd",
+        theme_dark_activated: "Donkere modus geactiveerd",
+        invite: "Uitnodigen"
       },
       kanban: {
         dropItemHere: "Item hier neerzetten",
@@ -2972,6 +2989,7 @@ const resources = {
           },
           actions_menu: {
             manage: "Budget Beheren",
+            register: "Budget Registreren",
             lock: "Budget Vergrendelen",
             unlock: "Budget Ontgrendelen",
             approve: "Budget Goedkeuren",
@@ -3128,6 +3146,34 @@ const resources = {
   },
   pt: {
     translation: {
+      common: {
+        language: "Idioma",
+        loading: "Carregando...",
+        error: "Erro",
+        success: "Sucesso",
+        cancel: "Cancelar",
+        save: "Salvar",
+        edit: "Editar",
+        delete: "Excluir",
+        view: "Visualizar",
+        active: "Ativo",
+        inactive: "Inativo",
+        status: "Status",
+        actions: "Ações",
+        members: "Membros",
+        budget: "Orçamento",
+        coming_soon: "Em Breve",
+        coming_soon_description: "Este recurso está em desenvolvimento e estará disponível em breve.",
+        theme: "Tema",
+        light_mode: "Claro",
+        dark_mode: "Escuro",
+        theme_light_activated: "Modo claro ativado",
+        theme_dark_activated: "Modo escuro ativado",
+        invite: "Convidar",
+        structure_organization: "Estrutura Organizacional",
+        annual_budget: "Orçamento Anual",
+        data_loaded: "Dados carregados com sucesso"
+      },
       privacy: {
         protected_content: "Conteúdo Protegido",
         contact_admin: "Entre em contato com o administrador para acesso"
@@ -3240,6 +3286,7 @@ const resources = {
           },
           actions_menu: {
             manage: "Gerenciar Orçamento",
+            register: "Registrar Orçamento",
             lock: "Bloquear Orçamento",
             unlock: "Desbloquear Orçamento",
             approve: "Aprovar Orçamento",

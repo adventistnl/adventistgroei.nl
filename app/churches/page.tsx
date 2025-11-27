@@ -24,7 +24,8 @@ import {
   Eye,
   Crown,
   Activity,
-  DollarSign
+  DollarSign,
+  ChevronRight
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -73,7 +74,7 @@ import { ChurchType as ChurchTypeEnum } from "@/types/graphql-global-types"
  * Interface dedicada para gerenciar igrejas baseada no ERD do AdventistGroei
  */
 export default function ChurchesPage() {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { currentInstitutionData, refetchInstitutionById } = useInstitution();
   const churches = React.useMemo(() => currentInstitutionData?.churches || [], [currentInstitutionData]);
   const activeChurches = React.useMemo(() => churches.filter((church: any) => !church.is_deleted), [churches]);
@@ -96,7 +97,7 @@ export default function ChurchesPage() {
 
   // Obter traduções para o idioma atual
   const currentLanguage = i18n?.language || 'en'
-  const t = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
+  const tStructure = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
   const tChurch = churchTranslations[currentLanguage as keyof typeof churchTranslations] || churchTranslations.en
   
   const handleBackToList = React.useCallback(() => {
@@ -104,10 +105,17 @@ export default function ChurchesPage() {
     setSelectedChurchDetail(null);
   }, []);
 
+  const pageTitle = useMemo(() => (
+    <span className="flex items-center gap-2">
+      {t('common.structure_organization')}
+      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+      {t('churches.title')}
+    </span>
+  ), [t])
+
   usePageTitle({
-    title: viewMode === 'detail' && selectedChurchDetail 
-      ? selectedChurchDetail.name 
-      : t.churchesTitle
+    title: pageTitle,
+    showBreadcrumbsInHeader: true
   })
 
   // Estatísticas calculadas dos dados
@@ -234,15 +242,15 @@ export default function ChurchesPage() {
    */
   const handleRefresh = async () => {
     setRefreshing(true)
-    const refreshToast = toast.loading(t.refreshing)
+    const refreshToast = toast.loading(tStructure.refreshing)
     
     try {
       await refetchInstitutionById()
       toast.dismiss(refreshToast)
-      toast.success(t.dataRefreshed, { duration: 2000 })
+      toast.success(tStructure.dataRefreshed, { duration: 2000 })
     } catch (error) {
       toast.dismiss(refreshToast)
-      toast.error(t.errorRefreshing)
+      toast.error(tStructure.errorRefreshing)
     } finally {
       setRefreshing(false)
     }
@@ -426,7 +434,7 @@ export default function ChurchesPage() {
     {
       id: "name",
       accessorKey: "name",
-      header: t.name,
+      header: tStructure.name,
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -441,7 +449,7 @@ export default function ChurchesPage() {
     {
       id: "region",
       accessorKey: "region_name",
-      header: t.region,
+      header: tStructure.region,
       cell: ({ row }) => {
         const region = row.original.region
         
@@ -474,7 +482,7 @@ export default function ChurchesPage() {
     {
       id: "members",
       accessorKey: "members_count",
-      header: t.members,
+      header: tStructure.members,
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-muted-foreground" />
@@ -485,7 +493,7 @@ export default function ChurchesPage() {
     {
       id: "departments",
       accessorKey: "departments_count",
-      header: t.departments,
+      header: tStructure.departments,
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-muted-foreground" />
@@ -499,7 +507,7 @@ export default function ChurchesPage() {
       header: tChurch.table.status,
       cell: ({ row }) => (
         <StatusBadge 
-          label={row.original.is_deleted === true ? t.inactive : t.active}
+          label={row.original.is_deleted === true ? t('common.inactive') : t('common.active')}
           variant={row.original.is_deleted === false ? 'success' : 'neutral'}
           showDot
         />
@@ -526,7 +534,7 @@ export default function ChurchesPage() {
     },
     {
       id: "actions",
-      header: t.actions,
+      header: t('common.actions'),
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -541,15 +549,15 @@ export default function ChurchesPage() {
             </DropdownMenuItem>
             {/* <DropdownMenuItem onClick={() => handleViewContact(row.original.id)}>
               <ContactRound className="w-4 h-4 mr-2" />
-              {t.viewContact}
+              {tStructure.viewContact}
             </DropdownMenuItem> */}
             <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
               <Edit className="w-4 h-4 mr-2" />
-              {t.editChurch}
+              {tStructure.editChurch}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
               <Trash2 className="w-4 h-4 mr-2" />
-              {t.deleteChurch}
+              {tStructure.deleteChurch}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -609,7 +617,7 @@ export default function ChurchesPage() {
       header: "Status",
       cell: ({ row }) => (
         <StatusBadge 
-          label={row.original.is_deleted === true ? t.inactive : t.active}
+          label={row.original.is_deleted === true ? t('common.inactive') : t('common.active')}
           variant={row.original.is_deleted === false ? 'success' : 'neutral'}
           showDot
         />
@@ -906,13 +914,13 @@ export default function ChurchesPage() {
             <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
               {viewMode === 'detail' && selectedChurchDetail 
                 ? `${selectedChurchDetail.name} - Details`
-                : t.churchesTitle
+                : tStructure.churchesTitle
               }
             </h2>
             <p className="text-muted-foreground text-0.875rem sm:text-1rem">
               {viewMode === 'detail' && selectedChurchDetail
                 ? selectedChurchDetail.contact?.city || "Church details, departments and members"
-                : t.churchesSubtitle
+                : tStructure.churchesSubtitle
               }
             </p>
           </div>
@@ -921,7 +929,7 @@ export default function ChurchesPage() {
             {viewMode === 'list' && (
               <Button onClick={handleCreate}>
                 <Plus className="w-4 h-4 mr-2" />
-                {t.createChurch}
+                {tStructure.createChurch}
               </Button>
             )}
             
@@ -963,7 +971,7 @@ export default function ChurchesPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Home className="w-5 h-5" />
-              {t.churches}
+              {tStructure.churches}
             </CardTitle>
             <CardDescription>Lista completa de igrejas com ações de gerenciamento</CardDescription>
           </CardHeader>
@@ -975,7 +983,7 @@ export default function ChurchesPage() {
               filters={[
                 {
                   id: "region",
-                  title: t.region,
+                  title: tStructure.region,
                   options: [
                     // Adicionar opção para igrejas órfãs
                     ...(churches.some((c: any) => !c.region) ? [{
@@ -993,8 +1001,8 @@ export default function ChurchesPage() {
                   id: "status",
                   title: "Status",
                   options: [
-                    { label: t.active, value: "false" },
-                    { label: t.inactive, value: "true" },
+                    { label: t('common.active'), value: "false" },
+                    { label: t('common.inactive'), value: "true" },
                   ]
                 },
                 {
@@ -1028,14 +1036,14 @@ export default function ChurchesPage() {
               const churchKPIData: KPICardData[] = [
                 {
                   id: "church-members",
-                  title: t.totalMembers,
+                  title: tStructure.totalMembers,
                   value: churchMembers,
                   icon: Users,
                   subtitle: "Total members"
                 },
                 {
                   id: "church-departments",
-                  title: t.departments,
+                  title: tStructure.departments,
                   value: churchDepartments,
                   icon: Layers,
                   subtitle: "Active departments"
@@ -1074,7 +1082,7 @@ export default function ChurchesPage() {
                       icon={Home}
                       badges={[
                         {
-                          label: selectedChurchDetail.is_deleted ? t.inactive : t.active,
+                          label: selectedChurchDetail.is_deleted ? t('common.inactive') : t('common.active'),
                           variant: selectedChurchDetail.is_deleted ? "secondary" : "default",
                           className: selectedChurchDetail.is_deleted 
                             ? "bg-gray-100 text-gray-700" 
@@ -1095,17 +1103,17 @@ export default function ChurchesPage() {
                       ]}
                       actions={[
                         {
-                          label: t.editChurch,
+                          label: tStructure.editChurch,
                           icon: Edit,
                           onClick: () => handleEdit(selectedChurchDetail.id)
                         },
                         {
-                          label: t.viewContact,
+                          label: tStructure.viewContact,
                           icon: ContactRound,
                           onClick: () => handleViewContact(selectedChurchDetail.id)
                         },
                         {
-                          label: t.deleteChurch,
+                          label: tStructure.deleteChurch,
                           icon: Trash2,
                           onClick: () => handleDelete(selectedChurchDetail.id, selectedChurchDetail.name),
                           variant: "destructive",

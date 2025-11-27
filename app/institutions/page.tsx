@@ -23,7 +23,8 @@ import {
   RefreshCw,
   Home,
   Layers,
-  DollarSign
+  DollarSign,
+  ChevronRight
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -52,6 +53,14 @@ import InstitutionsLoading from "./loading"
 import { Contact, PermissionResolverName } from "@/types/graphql-global-types"
 import { WithPermission } from "@/hocs/with-permission"
 import { AccessDenied } from "@/components/access/access-denied"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 
 // Additional imports for tabs
 
@@ -63,6 +72,7 @@ export default function InstitutionsPage() {
   // State
   const [refreshing, setRefreshing] = useState(false)
   const [selectedInstitutionId, setSelectedInstitutionId] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'overview' | 'detail'>('overview')
   
   // Modal states
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
@@ -97,6 +107,7 @@ export default function InstitutionsPage() {
   // Function to handle institution selection
   const handleViewInstitutionDetails = (institutionId: string) => {
     setSelectedInstitutionId(institutionId)
+    setViewMode('detail')
     
     // Scroll to top of the page smoothly
     window.scrollTo({ 
@@ -107,11 +118,15 @@ export default function InstitutionsPage() {
     toast.success(t('institutions.toasts.institution_details_loaded'))
   }
 
+  // Function to go back to overview
+  const handleBackToOverview = () => {
+    setViewMode('overview')
+    window.scrollTo({ 
+      top: 0, 
+      behavior: 'smooth' 
+    })
+  }
 
-  const breadcrumbs = useMemo(() => [
-    { name: t('common.structure_organization') },
-    { name: t('institutions.title') }
-  ], [t])
 
   // Dados para KPI Cards Carrossel
   const kpiCardsData: KPICardData[] = useMemo(() => [
@@ -141,8 +156,17 @@ export default function InstitutionsPage() {
     },
   ], [institutionKPIs, t])
 
+  const pageTitle = useMemo(() => (
+    <span className="flex items-center gap-2">
+      {t('common.structure_organization')}
+      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+      {t('institutions.title')}
+    </span>
+  ), [t])
+
   usePageTitle({
-    title: t('institutions.title')
+    title: pageTitle,
+    showBreadcrumbsInHeader: true
   })
 
   // Refresh handler
@@ -550,6 +574,32 @@ export default function InstitutionsPage() {
       <WithPermission requiredPermissions={[PermissionResolverName.Institutions]} fallback={<AccessDenied/>}>
       
       <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">
+        {/* Breadcrumbs Navigation - Only show in detail view */}
+        {viewMode === 'detail' && displayedInstitution && (
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleBackToOverview();
+                  }}
+                  className="cursor-pointer hover:text-foreground"
+                >
+                  {t('institutions.breadcrumb.see_all') || "See All Institutions"}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage className="font-semibold">
+                  {displayedInstitution.name}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -592,8 +642,6 @@ export default function InstitutionsPage() {
         <Separator />
 
         {/* Charts Section */}
-        <div className="space-y-6">
-          <h3 className="text-xl font-semibold">{t('institutions.analytics.title')}</h3>
           <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
             <DepartmentActivityChart loading={isLoading} />
             <UsersByRoleChart 
@@ -606,7 +654,6 @@ export default function InstitutionsPage() {
               loading={isLoading}
             />
           </ResponsiveGridCarousel>
-        </div>
 
         <Separator />
 

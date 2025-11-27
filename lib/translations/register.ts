@@ -48,6 +48,10 @@ export const registerTranslations = {
     selectChurch: "Select your church",
     selectDepartmentFirst: "Select a department first",
     personalInfoSubtitle: "Affiliation Information",
+    affiliationInfoDesc: "Your institutional and church associations from the invitation",
+    showAffiliationInfo: "Show Affiliation Information",
+    hideAffiliationInfo: "Hide Affiliation Information",
+    noGenderSelected: "No gender found",
     // Gender selection
     genderSelection: "Gender Selection",
     genderSelectionDesc: "Please select your gender.",
@@ -139,6 +143,10 @@ export const registerTranslations = {
     selectChurch: "Selecteer je kerk",
     selectDepartmentFirst: "Selecteer eerst een afdeling",
     personalInfoSubtitle: "Affiliatie Informatie",
+    affiliationInfoDesc: "Uw institutionele en kerkelijke associaties uit de uitnodiging",
+    showAffiliationInfo: "Toon Affiliatie Informatie",
+    hideAffiliationInfo: "Verberg Affiliatie Informatie",
+    noGenderSelected: "Geen geslacht gevonden",
     // Gender selection
     genderSelection: "Geslachtsselectie",
     genderSelectionDesc: "Selecteer uw geslacht.",
@@ -230,6 +238,10 @@ export const registerTranslations = {
     selectChurch: "Selecione sua igreja",
     selectDepartmentFirst: "Selecione um departamento primeiro",
     personalInfoSubtitle: "Informações de vínculo",
+    affiliationInfoDesc: "Suas associações institucionais e eclesiásticas do convite",
+    showAffiliationInfo: "Mostrar Informações de Vínculo",
+    hideAffiliationInfo: "Ocultar Informações de Vínculo",
+    noGenderSelected: "Nenhum gênero encontrado",
     // Gender selection
     genderSelection: "Seleção de Gênero",
     genderSelectionDesc: "Por favor, selecione seu gênero.",

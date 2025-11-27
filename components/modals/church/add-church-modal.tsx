@@ -200,8 +200,7 @@ export function AddChurchModal({
 
       toast.dismiss(loadingToast)
       toast.success(tChurch.toasts.created, {
-        duration: 3000,
-        icon: '⛪'
+        duration: 3000
       })
 
       if (onSave) {

@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Plus, Building2, RefreshCw } from "lucide-react"
 import { useInstitution } from "@/contexts/institution-context"
+import { LoadingSpinner } from "@/components/shared/loading-spinner"
 import {
   Select,
   SelectContent,
@@ -92,7 +93,12 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
   }, [institutions, currentInstitutionData, fetchInstitutionData]);
   
   if (!institutions || !currentInstitutionData) {
-    return <div>Loading institutions...</div>;
+    return (
+      <LoadingSpinner 
+        icon={Building2}
+        size="sm"
+      />
+    );
   }
 
   return (

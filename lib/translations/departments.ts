@@ -1,5 +1,8 @@
 export const departmentTranslations = {
   en: {
+    // Page Header
+    institution_department: "Institution Department",
+    
     // Modal Titles
     modals: {
       create: {
@@ -358,6 +361,9 @@ export const departmentTranslations = {
   },
   
   nl: {
+    // Page Header
+    institution_department: "Instituut Afdeling",
+    
     // Modal Titles
     modals: {
       create: {
@@ -716,6 +722,9 @@ export const departmentTranslations = {
   },
   
   pt: {
+    // Page Header
+    institution_department: "Departamento Institucional",
+    
     // Modal Titles
     modals: {
       create: {

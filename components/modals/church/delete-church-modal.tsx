@@ -85,8 +85,7 @@ export function DeleteChurchModal({
 
       toast.dismiss(loadingToast)
       toast.success(tChurch.toasts.deactivated, {
-        duration: 3000,
-        icon: '🏢'
+        duration: 3000
       })
 
       if (onSuccess) {

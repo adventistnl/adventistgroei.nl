@@ -103,7 +103,7 @@ export function LanguageSettingsProvider({ children }: { children: React.ReactNo
     setPreferredLanguageState(code)
     
     const selectedLang = SYSTEM_LANGUAGES.find((lang) => lang.code === code)
-    toast.success(`🌍 Language changed to ${selectedLang?.name}`, {
+    toast.success(`Language changed to ${selectedLang?.name}`, {
       duration: 2000,
       style: { minWidth: "250px" },
     })

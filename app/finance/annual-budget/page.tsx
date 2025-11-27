@@ -748,6 +748,10 @@ export default function AnnualBudgetPage() {
           refetchDashboard()
           refetchInstitutionById()
           toast.success('Department budget updated successfully!')
+          
+          // Close modal and reset state
+          setIsViewEditModalOpen(false)
+          setSelectedDepartmentData(null)
         }
       } else {
         // Create new budget
@@ -770,6 +774,10 @@ export default function AnnualBudgetPage() {
           refetchDashboard()
           refetchInstitutionById()
           toast.success(`Budget for ${departmentData.departmentName} created successfully!`)
+          
+          // Close modal and reset state
+          setIsViewEditModalOpen(false)
+          setSelectedDepartmentData(null)
         }
       }
     } catch (error) {
@@ -799,6 +807,10 @@ export default function AnnualBudgetPage() {
         refetchDashboard()
         refetchInstitutionById()
         toast.success(`Institution budget for ${budget.year} created successfully!`)
+        
+        // Close modal and reset state
+        setIsInstitutionBudgetModalOpen(false)
+        setInstitutionBudgetData(null)
       }
     } catch (error) {
       console.error('Error creating institution budget:', error)
@@ -838,6 +850,11 @@ export default function AnnualBudgetPage() {
         refetchDashboard()
         refetchInstitutionById()
         toast.success('Budget updated successfully!')
+        
+        // Close modal and reset state
+        setIsInstitutionBudgetModalOpen(false)
+        setInstitutionBudgetData(null)
+        setSelectedRequest(null)
       }
     } catch (error) {
       console.error('Error updating budget:', error)
@@ -1073,6 +1090,9 @@ export default function AnnualBudgetPage() {
       ),
       cell: ({ row }) => {
         const departmentData = row.original
+        const hasBudget = departmentData.hasBudgetRecord
+        const isLocked = departmentData.isLocked
+        
         return (
           <div className="flex justify-end">
             <DropdownMenu>
@@ -1082,20 +1102,29 @@ export default function AnnualBudgetPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                {/* Manage/Register Budget Action - Dynamic label based on budget status */}
                 <DropdownMenuItem onClick={() => {
-                  // Always open modal - for creation or editing
                   setSelectedDepartmentData(departmentData)
                   setIsViewEditModalOpen(true)
                 }}>
                   <Settings className="w-4 h-4 mr-2" />
-                  {t('annual_budget.table.actions_menu.manage')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {
-                  if (departmentData.annualBudget) {
-                    handleToggleLock(departmentData.annualBudget.id)
+                  {hasBudget 
+                    ? t('annual_budget.table.actions_menu.manage')
+                    : t('annual_budget.table.actions_menu.register', 'Register Budget')
                   }
-                }}>
-                  {departmentData.isLocked ? (
+                </DropdownMenuItem>
+                
+                {/* Lock/Unlock Action - Disabled if no budget */}
+                <DropdownMenuItem 
+                  onClick={() => {
+                    if (hasBudget && departmentData.annualBudget) {
+                      handleToggleLock(departmentData.annualBudget.id)
+                    }
+                  }}
+                  disabled={!hasBudget}
+                  className={!hasBudget ? 'opacity-50 cursor-not-allowed' : ''}
+                >
+                  {isLocked ? (
                     <>
                       <Unlock className="w-4 h-4 mr-2" />
                       {t('annual_budget.table.actions_menu.unlock')}
@@ -1125,16 +1154,6 @@ export default function AnnualBudgetPage() {
 
     return (
       <div className="mb-6">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-foreground">{t('annual_budget.year_filter.title')}</h3>
-          <p className="text-sm text-muted-foreground">
-            {filteredBudgetRequests.length === 1 
-              ? t('annual_budget.year_filter.subtitle_single', { count: filteredBudgetRequests.length, year: selectedYear })
-              : t('annual_budget.year_filter.subtitle_plural', { count: filteredBudgetRequests.length, year: selectedYear })
-            }
-          </p>
-        </div>
-        
         <div className="flex items-center gap-3 overflow-x-auto pb-2 scroll-smooth" style={{ scrollbarWidth: 'thin' }}>
           {availableYears.map((year) => (
             <Button
@@ -1208,7 +1227,7 @@ export default function AnnualBudgetPage() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">
+              <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold text-foreground">
                 {t('annual_budget.title')}
               </h2>
               <p className="text-muted-foreground text-sm sm:text-base">
@@ -1246,7 +1265,7 @@ export default function AnnualBudgetPage() {
           {/* Charts Section */}
           <div className={`space-y-6 transition-opacity duration-300 ${!hasInstitutionBudget ? 'opacity-40 pointer-events-none' : ''}`}>
             <div className="flex items-center gap-2">
-              <h3 className="text-xl font-semibold">{t('annual_budget.charts.budget_analytics.title')}</h3>
+              {/* <h3 className="text-xl font-semibold">{t('annual_budget.charts.budget_analytics.title')}</h3>
               {showMockIndicators && (
                 <div className="flex gap-2">
                   <MockDataIndicator
@@ -1258,7 +1277,7 @@ export default function AnnualBudgetPage() {
                     description="Valores fixos + variação aleatória"
                   />
                 </div>
-              )}
+              )} */}
             </div>
             <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
               <SpendingOverTimeChart 

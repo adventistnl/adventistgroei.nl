@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { UserPlus, Mail, Link as LinkIcon, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -42,6 +42,23 @@ import { PermissionResolverName } from "@/types/graphql-global-types"
 import { InviteUserVariables } from "@/types/InviteUser"
 import { useInstitutions } from "@/hooks/use-institutions"
 import { RoleExtraFields } from "./RoleExtraFields"
+import { FilterTags, FilterTag } from "@/components/shared/filter-tags"
+
+// Role categories based on key_code patterns
+type RoleCategory = "all" | "administration" | "church" | "institutional" | "leadership" | "member"
+
+const getRoleCategory = (keyCode: string): RoleCategory[] => {
+  const code = keyCode.toUpperCase()
+  const categories: RoleCategory[] = []
+  
+  if (code.includes("ADMIN") || code.includes("SYSTEM")) categories.push("administration")
+  if (code.includes("CHURCH")) categories.push("church")
+  if (code.includes("INSTITUTIONAL") || code.includes("INSTITUTION")) categories.push("institutional")
+  if (code.includes("LEADER") || code.includes("DIRECTOR") || code.includes("COORDINATOR")) categories.push("leadership")
+  if (code.includes("MEMBER") || code.includes("VOLUNTEER")) categories.push("member")
+  
+  return categories.length > 0 ? categories : ["member"]
+}
 
 const inviteSchema = z.object({
   type: z.enum(["email", "link"]),
@@ -106,8 +123,28 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
   const [selectedChurch, setSelectedChurch] = useState<string | undefined>(undefined);
   const [selectedChurchDepartment, setSelectedChurchDepartment] = useState<string | undefined>(undefined);
   const [selectedInstitutionDepartment, setSelectedInstitutionDepartment] = useState<string | undefined>(undefined);
+  const [selectedCategory, setSelectedCategory] = useState<RoleCategory>("all");
   const currentLanguage = i18n?.language || "en";
   const t = inviteTranslations[currentLanguage as keyof typeof inviteTranslations] || inviteTranslations.en;
+
+  // Filter roles by selected category
+  const filteredRoles = useMemo(() => {
+    if (selectedCategory === "all") return roles;
+    return roles.filter(role => {
+      const categories = getRoleCategory(role.key_code);
+      return categories.includes(selectedCategory);
+    });
+  }, [roles, selectedCategory]);
+
+  // Category filters configuration
+  const categoryFilters: FilterTag[] = [
+    { key: "all", label: t.filterAll },
+    { key: "administration", label: t.filterAdministration },
+    { key: "church", label: t.filterChurch },
+    { key: "institutional", label: t.filterInstitutional },
+    { key: "leadership", label: t.filterLeadership },
+    { key: "member", label: t.filterMember },
+  ];
 
   const form = useForm<InviteForm>({
     resolver: zodResolver(inviteSchema),
@@ -307,12 +344,23 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
                   </div>
 
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    {/* Category Filter - FilterTags Component */}
+                    <FilterTags
+                      tags={categoryFilters}
+                      selectedTag={selectedCategory}
+                      onTagSelect={(tag) => setSelectedCategory(tag as RoleCategory)}
+                      title={t.filterByCategory}
+                      showTitle={false}
+                      size="sm"
+                      variant="default"
+                    />
+
                     {/* Role Selection - Clickable Tags */}
                     <RoleSelector
                       control={form.control}
                       name="role"
                       label={t.memberRole}
-                      roles={roles}
+                      roles={filteredRoles}
                     />
 
                     {/* Email Input */}
@@ -409,12 +457,23 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
                   </div>
 
                   <div className="space-y-4">
+                    {/* Category Filter - FilterTags Component */}
+                    <FilterTags
+                      tags={categoryFilters}
+                      selectedTag={selectedCategory}
+                      onTagSelect={(tag) => setSelectedCategory(tag as RoleCategory)}
+                      title={t.filterByCategory}
+                      showTitle={true}
+                      size="sm"
+                      variant="default"
+                    />
+
                     {/* Role Selection - Clickable Tags */}
                     <RoleSelector
                       control={form.control}
                       name="role"
                       label={t.memberRole}
-                      roles={roles}
+                      roles={filteredRoles}
                     />
 
                     {/* Campos extras dinâmicos agrupados e visíveis */}

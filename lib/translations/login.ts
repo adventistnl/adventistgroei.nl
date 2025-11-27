@@ -22,7 +22,7 @@ export const loginTranslations = {
     demoDescription: "Use any valid email and password to sign in",
     
     // Success messages
-    welcomeBack: "Welcome back!",
+    welcomeBack: "Welcome back",
     loginSuccess: "Login successful",
     registrationCompleted: "Registration completed successfully!",
     rolePrefix: "Role:",
@@ -71,7 +71,7 @@ export const loginTranslations = {
     demoDescription: "Gebruik een geldig e-mailadres en wachtwoord om in te loggen",
     
     // Success messages
-    welcomeBack: "Welkom terug!",
+    welcomeBack: "Welkom terug",
     loginSuccess: "Inloggen succesvol",
     registrationCompleted: "Registratie succesvol voltooid!",
     rolePrefix: "Rol:",
@@ -120,7 +120,7 @@ export const loginTranslations = {
     demoDescription: "Use qualquer email e senha válidos para entrar",
     
     // Success messages
-    welcomeBack: "Bem-vindo de volta!",
+    welcomeBack: "Bem-vindo de volta",
     loginSuccess: "Login realizado com sucesso",
     registrationCompleted: "Registro concluído com sucesso!",
     rolePrefix: "Role:",

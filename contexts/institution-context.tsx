@@ -53,10 +53,8 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
   // Estado para instituição ativa
   const { user: authUser } = useAuth();
   const { user  } = useUser({});
-  const [activeInstitutionId, setActiveInstitutionId] = useState<string | undefined>(
-    authUser?.institution_id || user?.institution_id // Fallback para evitar undefined
-  );
-
+  
+  // Calcular institutions ANTES de tudo
   const {
     institutions: rawInstitutions,
     currentInstitutionData,
@@ -80,18 +78,9 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     updateContactLoading,
     updateInstitutionContact,
     updatedInstitutionContact
-  } = useInstitutions(activeInstitutionId);
-
-    useEffect(() => {
-    if (authUser && authUser.institution_id) {
-      setActiveInstitutionId(authUser.institution_id);
-    } else if (user && user.institution_id) {
-      setActiveInstitutionId(user.institution_id);
-    } else if (institutions.length > 0) {
-      setActiveInstitutionId(institutions[0].id);
-    }
-  }, [user, authUser]);
-  // Mover o cálculo de institutions para antes do useEffect
+  } = useInstitutions(undefined); // Passar undefined inicialmente para carregar lista
+  
+  // Mapear institutions com logo
   const institutions = React.useMemo(() => {
     return (rawInstitutions || []).map(inst => ({
       ...inst,
@@ -99,18 +88,54 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }));
   }, [rawInstitutions]);
 
+  // Definir activeInstitutionId com fallback inteligente
+  const [activeInstitutionId, setActiveInstitutionId] = useState<string | undefined>(() => {
+    // Priorizar authUser.institution_id, depois user.institution_id, depois primeiro da lista
+    if (authUser?.institution_id) return authUser.institution_id;
+    if (user?.institution_id) return user.institution_id;
+    return undefined; // Será definido pelo useEffect quando institutions carregar
+  });
+  
+  // Agora buscar dados da instituição específica
+  const {
+    currentInstitutionData: specificInstitutionData,
+    loading: specificLoading,
+    refetchInstitutionById: refetchSpecificInstitution
+  } = useInstitutions(activeInstitutionId);
+
+  // Atualizar activeInstitutionId quando necessário
+  useEffect(() => {
+    if (!activeInstitutionId) {
+      if (authUser?.institution_id) {
+        console.log('[InstitutionContext] Setting activeInstitutionId from authUser:', authUser.institution_id);
+        setActiveInstitutionId(authUser.institution_id);
+      } else if (user?.institution_id) {
+        console.log('[InstitutionContext] Setting activeInstitutionId from user:', user.institution_id);
+        setActiveInstitutionId(user.institution_id);
+      } else if (institutions.length > 0) {
+        console.log('[InstitutionContext] Setting activeInstitutionId from first institution:', institutions[0].id);
+        setActiveInstitutionId(institutions[0].id);
+      }
+    }
+  }, [authUser, user, institutions, activeInstitutionId]);
+  
+  // Log de debug para monitorar estados
+  useEffect(() => {
+    console.log('[InstitutionContext] State:', {
+      activeInstitutionId,
+      institutionsCount: institutions.length,
+      hasCurrentData: !!specificInstitutionData,
+      loading,
+      specificLoading
+    });
+  }, [activeInstitutionId, institutions, specificInstitutionData, loading, specificLoading]);
+
 
   // Troca de instituição
   const switchInstitution = useCallback(async (institutionId: string) => {
     const institution = institutions.find(inst => inst.id === institutionId);
     if (institution && institution.id !== activeInstitutionId) {
       setActiveInstitutionId(institution.id);
-
-      // Aguardar um tick para garantir que o estado foi atualizado
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      // Forçar refetch dos dados da nova instituição
-      refetchInstitutionById();
 
       toast.success(
         `Switched to ${institution.name}\n📊 Loading institution data...`,
@@ -120,7 +145,7 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
         }
       );
     }
-  }, [activeInstitutionId, institutions, refetchInstitutionById]);
+  }, [activeInstitutionId, institutions]);
 
   // Adiciona instituição (apenas local, para efeito imediato; persistência via createInstitution)
   const addInstitution = useCallback((institutionData: any) => {
@@ -134,7 +159,7 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     institutions,
     switchInstitution,
     addInstitution,
-    loading,
+    loading: loading || specificLoading,
     error,
     createInstitution,
     createLoading,
@@ -149,8 +174,8 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     updateError,
     updatedInstitution,
     refetchInstitutions,
-    refetchInstitutionById,
-    currentInstitutionData,
+    refetchInstitutionById: refetchSpecificInstitution,
+    currentInstitutionData: specificInstitutionData || currentInstitutionData,
     updateInstitutionContact,
     updatedInstitutionContact,
     updateContactLoading,
@@ -160,6 +185,7 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     switchInstitution,
     addInstitution,
     loading,
+    specificLoading,
     error,
     createInstitution,
     createLoading,
@@ -174,7 +200,8 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     updateError,
     updatedInstitution,
     refetchInstitutions,
-    refetchInstitutionById,
+    refetchSpecificInstitution,
+    specificInstitutionData,
     currentInstitutionData,
     updateInstitutionContact,
     updatedInstitutionContact,

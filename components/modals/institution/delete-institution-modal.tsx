@@ -53,8 +53,7 @@ export function DeleteInstitutionModal({
       await refetchInstitutions();
       toast.dismiss(loadingToast);
       toast.success(t('institutions.toasts.deactivated'), {
-        duration: 3000,
-        icon: '🏢'
+        duration: 3000
       });
       if (onSuccess) {
         onSuccess(institution);

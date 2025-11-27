@@ -1,30 +1,38 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, ReactNode } from 'react'
 import { usePageContext } from '@/contexts/page-context'
 
 interface UsePageTitleOptions {
-  title: string
-  breadcrumbs?: { name: string; href?: string; onClick?: () => void }[]
+  title: ReactNode
+  breadcrumbs?: { name: ReactNode; href?: string; onClick?: () => void }[]
+  showBreadcrumbsInHeader?: boolean // Nova prop para controlar se breadcrumbs aparecem no header
 }
 
-export function usePageTitle({ title, breadcrumbs }: UsePageTitleOptions) {
+export function usePageTitle({ title, breadcrumbs, showBreadcrumbsInHeader = true }: UsePageTitleOptions) {
   const { setPageTitle, setBreadcrumbs, pageTitle, breadcrumbs: currentBreadcrumbs } = usePageContext()
+
+  // ✅ Memoizar title para evitar re-renders desnecessários
+  const memoizedTitle = useMemo(() => title, [title])
 
   // ✅ Memoizar breadcrumbs para evitar re-renders desnecessários
   const memoizedBreadcrumbs = useMemo(() => {
-    return breadcrumbs || [{ name: title }]
-  }, [breadcrumbs, title])
+    // Se showBreadcrumbsInHeader for false, retorna array vazio para não mostrar no header
+    if (!showBreadcrumbsInHeader) {
+      return []
+    }
+    return breadcrumbs || [{ name: memoizedTitle }]
+  }, [breadcrumbs, memoizedTitle, showBreadcrumbsInHeader])
 
   // ✅ Remover setters das dependências - React garante que são estáveis
   useEffect(() => {
-    setPageTitle(title)
+    setPageTitle(memoizedTitle)
     setBreadcrumbs(memoizedBreadcrumbs)
-  }, [title, memoizedBreadcrumbs])
+  }, [memoizedTitle, memoizedBreadcrumbs])
 
   // ✅ Memoizar o retorno para estabilidade
   return useMemo(() => ({
-    title: pageTitle || title,
+    title: pageTitle || memoizedTitle,
     breadcrumbs: currentBreadcrumbs || memoizedBreadcrumbs
-  }), [pageTitle, title, currentBreadcrumbs, memoizedBreadcrumbs])
+  }), [pageTitle, memoizedTitle, currentBreadcrumbs, memoizedBreadcrumbs])
 }
 
 export default usePageTitle

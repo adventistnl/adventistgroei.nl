@@ -111,14 +111,10 @@ export const NavUser = React.memo(function NavUser({ user }: NavUserProps) {
                 <BadgeCheck className="sidebar-icon" />
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleSettingsClick}>
-                <Settings className="sidebar-icon" />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleNotificationsClick}>
+              {/* <DropdownMenuItem onClick={handleNotificationsClick}>
                 <Bell className="sidebar-icon" />
                 Notifications
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>

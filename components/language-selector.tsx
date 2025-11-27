@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { Globe, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -9,22 +10,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useI18nReady } from "@/hooks/use-i18n-ready"
-import { useLanguageOptions } from "@/hooks/use-language-preferences"
-import { useTranslation } from "react-i18next"
 import toast from "react-hot-toast"
+import { useI18nReady } from "@/hooks/use-i18n-ready"
+
+const languages = [
+  { code: 'pt', name: 'Português', initials: 'PT' },
+  { code: 'en', name: 'English', initials: 'EN' },
+  { code: 'nl', name: 'Nederlands', initials: 'NL' }
+]
 
 export function LanguageSelector() {
   const { i18n, t } = useTranslation()
-  const { isReady, currentLanguage } = useI18nReady()
-  const languageOptions = useLanguageOptions()
-
-  // Criar um mapeamento para incluir as iniciais baseadas nos dados do hook
-  const languagesWithInitials = languageOptions.map(lang => ({
-    code: lang.value,
-    name: lang.label,
-    initials: lang.value.toUpperCase()
-  }))
+  const { isReady, hasTimedOut, currentLanguage } = useI18nReady()
 
   const changeLanguage = (languageCode: string) => {
     // Verificação simplificada - o hook useI18nReady já garante que está pronto
@@ -34,10 +31,10 @@ export function LanguageSelector() {
       return
     }
     
-    const selectedLang = languagesWithInitials.find(lang => lang.code === languageCode)
+    const selectedLang = languages.find(lang => lang.code === languageCode)
     
-    try {
-      i18n.changeLanguage(languageCode).then(() => {
+    i18n.changeLanguage(languageCode)
+      .then(() => {
         toast.success(
           `Language changed to ${selectedLang?.name}`,
           {
@@ -47,30 +44,33 @@ export function LanguageSelector() {
         )
         // Salvar preferência no localStorage
         localStorage.setItem('preferred-language', languageCode)
-      }).catch((err) => {
+      })
+      .catch((err) => {
         console.error('Failed to change language:', err)
         toast.error('Failed to change language', { duration: 2000 })
       })
-    } catch (error) {
-      console.error('Error changing language:', error)
-      toast.error('Unable to change language at this time', { duration: 2000 })
-    }
   }
 
-  const displayLanguage = languagesWithInitials.find(lang => lang.code === currentLanguage) || 
-    languagesWithInitials.find(lang => lang.code === 'en') || 
-    languagesWithInitials[0] // Fallback para o primeiro idioma disponível
+  // Load saved language preference on mount
+  React.useEffect(() => {
+    if (isReady && i18n.isInitialized) {
+      const savedLanguage = localStorage.getItem('preferred-language')
+      if (savedLanguage && savedLanguage !== i18n.language && i18n.changeLanguage) {
+        i18n.changeLanguage(savedLanguage).catch(err => {
+          console.warn('Failed to load saved language:', err)
+        })
+      }
+    }
+  }, [isReady, i18n])
 
-  // Show minimal loading state with current language if available
+  const displayLanguage = languages.find(lang => lang.code === currentLanguage) || languages[1] // Default to EN
+
+  // Show minimal loading state with EN as default display
   if (!isReady) {
-    const loadingLanguage = languagesWithInitials.find(lang => lang.code === currentLanguage) ||
-      languagesWithInitials.find(lang => lang.code === 'en') ||
-      { initials: 'EN' }
-    
     return (
       <Button variant="outline" size="sm" className="gap-2 h-9 px-3" disabled>
         <Globe className="h-4 w-4" />
-        <span className="text-sm font-medium">{loadingLanguage.initials}</span>
+        <span className="text-sm font-medium">EN</span>
       </Button>
     )
   }
@@ -80,11 +80,13 @@ export function LanguageSelector() {
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2 h-9 px-3">
           <Globe className="h-4 w-4" />
-          <span className="text-sm font-medium">{displayLanguage.initials}</span>
+          <span className="text-sm font-medium">
+            {displayLanguage.initials}
+          </span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        {languagesWithInitials.map((language) => (
+        {languages.map((language) => (
           <DropdownMenuItem
             key={language.code}
             onClick={() => changeLanguage(language.code)}
@@ -94,7 +96,9 @@ export function LanguageSelector() {
               <span className="text-sm font-medium">{language.initials}</span>
               <span className="text-sm text-muted-foreground">{language.name}</span>
             </div>
-            {currentLanguage === language.code && <Check className="h-4 w-4 text-primary" />}
+            {currentLanguage === language.code && (
+              <Check className="h-4 w-4 text-primary" />
+            )}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

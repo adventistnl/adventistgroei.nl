@@ -51,7 +51,7 @@ export function DeleteDepartmentModal({
   const currentLanguage = i18n?.language || 'en'
   const t = departmentTranslations[currentLanguage as keyof typeof departmentTranslations] || departmentTranslations.en
 
-  const confirmationText = t.modals.delete.confirmation_text
+  const confirmationText = 'delete department'
 
   const handleSubmit = async () => {
     if (!department) return
@@ -98,9 +98,8 @@ export function DeleteDepartmentModal({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="w-[95vw] max-w-lg max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0 pb-4">
-          <DialogTitle className="text-lg mb-2 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-amber-600" />
-            <span className="text-red-600">{t.modals.delete.deactivate_title}</span>
+          <DialogTitle className="text-lg mb-2">
+            {t.modals.delete.deactivate_title}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
             {t.modals.delete.deactivate_description}
@@ -112,52 +111,44 @@ export function DeleteDepartmentModal({
           <div className="space-y-6 p-1">
 
             {/* Department Information */}
-            <div className="flex items-start gap-4 p-4 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-900">
+            <div className="flex items-start gap-4 p-4 bg-muted/50 rounded-lg border">
               {/* Ícone */}
-              <div className="w-12 h-12 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center flex-shrink-0 border border-red-200 dark:border-red-800">
-                <Layers className="w-6 h-6 text-red-600 dark:text-red-400" />
+              <div className="w-12 h-12 bg-background rounded-full flex items-center justify-center flex-shrink-0 border">
+                <Layers className="w-6 h-6 text-muted-foreground" />
               </div>
-
+              
               {/* Informações */}
               <div className="flex-1 min-w-0">
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">{t.fields.name}</p>
-                    <h3 className="text-base font-semibold text-foreground">
-                      {department.name}
-                    </h3>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">{t.fields.description}</p>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {department.description}
-                    </p>
-                  </div>
-                </div>
+                <h3 className="text-base font-semibold text-foreground mb-1">
+                  {department.name}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {department.description}
+                </p>
               </div>
             </div>
 
             {/* Affected Components */}
             <div className="space-y-4">
               <h4 className="text-sm font-medium text-foreground text-center">
-                📊 {t.modals.delete.affected_components}
+                {t.modals.delete.affected_components}
               </h4>
               <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
-                <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <Briefcase className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  <span><span className="text-muted-foreground">{t.modals.delete.affected_data.projects}:</span> <strong className="text-foreground">0</strong></span>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Briefcase className="w-4 h-4" />
+                  <span>{t.modals.delete.affected_data.projects}: <strong className="text-foreground">0</strong></span>
                 </div>
-                <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <Users className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  <span><span className="text-muted-foreground">{t.modals.delete.affected_data.volunteers}:</span> <strong className="text-foreground">0</strong></span>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Users className="w-4 h-4" />
+                  <span>{t.modals.delete.affected_data.volunteers}: <strong className="text-foreground">0</strong></span>
                 </div>
-                <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <DollarSign className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  <span><span className="text-muted-foreground">{t.modals.delete.affected_data.budgets}:</span> <strong className="text-foreground">0</strong></span>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <DollarSign className="w-4 h-4" />
+                  <span>{t.modals.delete.affected_data.budgets}: <strong className="text-foreground">0</strong></span>
                 </div>
-                <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <FileText className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  <span><span className="text-muted-foreground">{t.modals.delete.affected_data.documents}:</span> <strong className="text-foreground">0</strong></span>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <FileText className="w-4 h-4" />
+                  <span>{t.modals.delete.affected_data.documents}: <strong className="text-foreground">0</strong></span>
                 </div>
               </div>
             </div>
@@ -178,52 +169,52 @@ export function DeleteDepartmentModal({
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-3 mt-4">
                 {/* Data Deletion Consequence */}
-                <div className="flex items-start gap-3 p-3 border rounded-lg bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900">
-                  <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                <div className="flex items-start gap-3 p-3 border rounded-lg">
+                  <Trash2 className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-red-900 dark:text-red-100">
+                    <p className="font-medium text-sm text-foreground">
                       {t.modals.delete.consequences.projects_deleted}
                     </p>
-                    <p className="text-xs text-red-700 dark:text-red-300">
+                    <p className="text-xs text-muted-foreground">
                       {t.modals.delete.consequences.projects_deleted_desc}
                     </p>
                   </div>
                 </div>
 
                 {/* User Unlinking Consequence */}
-                <div className="flex items-start gap-3 p-3 border rounded-lg bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900">
-                  <Users className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                <div className="flex items-start gap-3 p-3 border rounded-lg">
+                  <Users className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-amber-900 dark:text-amber-100">
+                    <p className="font-medium text-sm text-foreground">
                       {t.modals.delete.consequences.users_unlinked}
                     </p>
-                    <p className="text-xs text-amber-700 dark:text-amber-300">
+                    <p className="text-xs text-muted-foreground">
                       {t.modals.delete.consequences.users_unlinked_desc}
                     </p>
                   </div>
                 </div>
 
                 {/* Data Preservation Consequence */}
-                <div className="flex items-start gap-3 p-3 border rounded-lg bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
-                  <Database className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="flex items-start gap-3 p-3 border rounded-lg">
+                  <Database className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-blue-900 dark:text-blue-100">
+                    <p className="font-medium text-sm text-foreground">
                       {t.modals.delete.consequences.data_preservation}
                     </p>
-                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                    <p className="text-xs text-muted-foreground">
                       {t.modals.delete.consequences.data_preservation_desc}
                     </p>
                   </div>
                 </div>
 
                 {/* Financial Impact Consequence */}
-                <div className="flex items-start gap-3 p-3 border rounded-lg bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900">
-                  <DollarSign className="w-4 h-4 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
+                <div className="flex items-start gap-3 p-3 border rounded-lg">
+                  <DollarSign className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-orange-900 dark:text-orange-100">
+                    <p className="font-medium text-sm text-foreground">
                       {t.modals.delete.consequences.budget_deleted}
                     </p>
-                    <p className="text-xs text-orange-700 dark:text-orange-300">
+                    <p className="text-xs text-muted-foreground">
                       {t.modals.delete.consequences.budget_deleted_desc}
                     </p>
                   </div>
@@ -253,22 +244,21 @@ export function DeleteDepartmentModal({
 
               {/* Final Confirmation Input */}
               {understoodConsequences && (
-                <div className="space-y-2 p-4 border rounded-lg">
-                  <label className="text-sm font-semibold text-red-700 dark:text-red-400 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" />
-                    {t.modals.delete.type_confirmation}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">
+                    {t.modals.delete.type_confirmation || "Type the confirmation text to proceed"}
                   </label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    {t.modals.delete.confirmation_help || `Type "delete department" to confirm`}
+                  </p>
                   <Input
                     type="text"
                     value={finalConfirmation}
                     onChange={(e) => setFinalConfirmation(e.target.value)}
-                    placeholder={t.modals.delete.confirmation_placeholder}
+                    placeholder={t.modals.delete.confirmation_placeholder || "delete department"}
                     className="h-10"
                     disabled={isLoading}
                   />
-                  <p className="text-xs text-red-600 dark:text-red-400 font-medium">
-                    {t.modals.delete.confirmation_help}
-                  </p>
                 </div>
               )}
             </div>
@@ -278,20 +268,14 @@ export function DeleteDepartmentModal({
         {/* Botões de Ação - Fixos no rodapé */}
         <div className="flex-shrink-0 border-t pt-4 mt-6">
           <div className="flex justify-end gap-2">
-            <Button 
-              variant="outline" 
-              onClick={handleClose} 
-              disabled={isLoading} 
-              size="sm" 
-              className="text-xs"
-            >
+            <Button variant="outline" onClick={handleClose} disabled={isLoading} size="sm" className="text-xs">
               {t.buttons.cancel}
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={isLoading || !isDeleteEnabled}
               size="sm"
-              className={`min-w-[160px] text-xs ${
+              className={`min-w-[140px] text-xs ${
                 isDeleteEnabled 
                   ? 'bg-red-600 hover:bg-red-700 text-white' 
                   : 'bg-red-600/40 text-white/60 cursor-not-allowed hover:bg-red-600/40'
@@ -304,7 +288,7 @@ export function DeleteDepartmentModal({
                 </>
               ) : (
                 <>
-                  <AlertTriangle className="w-3 h-3 mr-1" />
+                  <Trash2 className="w-3 h-3 mr-1" />
                   {t.modals.delete.deactivate_department}
                 </>
               )}

@@ -302,8 +302,7 @@ export function AddDepartmentModal({
       const res = await createDepartment({ variables: finalPayload })
       toast.dismiss(loadingToast)
       toast.success(t.toasts.created, {
-        duration: 3000,
-        icon: '🏢'
+        duration: 3000
       })
 
       if (!res || !res.data) throw new Error("Failed to create department")

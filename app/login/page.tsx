@@ -10,11 +10,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
+import { Building2, Eye, EyeOff, Lock, Mail } from 'lucide-react'
 import { LoginSplash } from '@/components/auth/login-splash'
 import { LoginHeader } from '@/components/auth/login-header'
 import { AdventistLogo } from '@/components/ui/adventist-logo'
 import { loginTranslations } from '@/lib/translations/login'
+import { LoadingSpinner } from '@/components/shared/loading-spinner'
 
 // Idiomas suportados pelo sistema
 const LANGUAGES = [
@@ -105,7 +106,7 @@ function LoginPageContent() {
     try {
       await login(email, password, rememberMe)
       
-      toast.success(`🎉 ${t.welcomeBack}`, {
+      toast.success(`${t.welcomeBack}`, {
         duration: 3000
       })
       // Redirecionar para dashboard após login bem-sucedido
@@ -157,48 +158,11 @@ function LoginPageContent() {
   if (isLoading) {
     return (
       <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
-        <div className="text-center space-y-8 max-w-md mx-auto px-8">
-          
-          {/* Logo centralizada sem background */}
-          <div className="flex justify-center">
-            <div className="relative">
-              {/* Animação de loading sutil ao redor do logo */}
-              <div className="absolute inset-0 w-24 h-24 border-2 border-transparent border-t-primary/30 border-r-primary/20 rounded-full animate-spin"></div>
-              
-              {/* Logo da Igreja Adventista */}
-              <div className="w-24 h-24 flex items-center justify-center">
-                <AdventistLogo className="w-16 h-16 text-primary" />
-              </div>
-            </div>
-          </div>
-
-          {/* Textos modernos e funcionais */}
-          <div className="space-y-4">
-            {/* Título principal */}
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground leading-tight tracking-tight">
-              {currentLanguage === 'en' && 'Adventist Church'}
-              {currentLanguage === 'nl' && 'Adventistenkerk'}
-              {currentLanguage === 'pt' && 'Igreja Adventista'}
-            </h1>
-            
-            {/* Subtítulo */}
-            <p className="text-lg text-muted-foreground font-medium">
-              {t.subtitle}
-            </p>
-            
-            {/* Indicador de carregamento moderno */}
-            <div className="flex items-center justify-center space-x-1 pt-6">
-              <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-              <div className="w-2 h-2 bg-primary rounded-full animate-pulse [animation-delay:0.2s]"></div>
-              <div className="w-2 h-2 bg-primary rounded-full animate-pulse [animation-delay:0.4s]"></div>
-            </div>
-            
-            {/* Texto de carregamento */}
-            <p className="text-sm text-muted-foreground font-medium pt-2">
-              {t.loading}
-            </p>
-          </div>
-        </div>
+    <LoadingSpinner 
+        text="Loading institutions..." 
+        icon={Building2}
+        size="md"
+      />
       </div>
     )
   }
@@ -427,12 +391,11 @@ function LoginPageContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
+      <LoadingSpinner
+        text="Loading..."
+        size="lg"
+        fullScreen
+      />
     }>
       <LoginPageContent />
     </Suspense>

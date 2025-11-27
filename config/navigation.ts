@@ -123,12 +123,12 @@ const navMainBase: NavItem[] = [
       icon: MessageSquare,
       permissions: [PermissionResolverName.Communications]
     },
-    {
-      title: "Settings",
-      url: "/settings",
-      icon: Settings,
-      permissions: [PermissionResolverName.Settings]
-    }
+    // {
+    //   title: "Settings",
+    //   url: "/settings",
+    //   icon: Settings,
+    //   permissions: [PermissionResolverName.Settings]
+    // }
 ]
 
 // Função estável para obter navegação com estado ativo

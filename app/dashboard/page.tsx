@@ -573,7 +573,7 @@ export default function DashboardPage() {
         await new Promise(resolve => setTimeout(resolve, 2000))
         
         toast.dismiss(loadingToast)
-        toast.success("📊 Dashboard loaded successfully!", {
+        toast.success("Dashboard loaded successfully", {
           duration: 3000
         })
         

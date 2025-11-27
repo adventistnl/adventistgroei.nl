@@ -17,7 +17,8 @@ import {
   MoreHorizontal,
   Edit,
   Trash2,
-  Home
+  Home,
+  ChevronRight
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -43,7 +44,7 @@ import { Regions_regions } from "@/types/Regions"
  * Interface dedicada para gerenciar regiões baseada no ERD do AdventistGroei
  */
 export default function RegionsPage() {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { regions, refetchRegions } = useRegions();
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -55,17 +56,20 @@ export default function RegionsPage() {
   
   // Obter traduções para o idioma atual
   const currentLanguage = i18n?.language || 'en'
-  const t = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
+  const tStructure = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
   const tRegion = regionTranslations[currentLanguage as keyof typeof regionTranslations] || regionTranslations.en
 
-  const breadcrumbs = useMemo(() => [
-    { name: "Structure & Organization" },
-    { name: "Regions" }
-  ], [])
+  const pageTitle = useMemo(() => (
+    <span className="flex items-center gap-2">
+      {t('common.structure_organization')}
+      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+      {t('regions.title')}
+    </span>
+  ), [t])
 
   usePageTitle({
-    title: t.regionsTitle,
-    breadcrumbs
+    title: pageTitle,
+    showBreadcrumbsInHeader: true
   })
 
   // Dados dos KPIs em formato de array para o componente reutilizável
@@ -149,8 +153,16 @@ export default function RegionsPage() {
     }
   };
   
-  const handleDelete = (id: string, name: string) => {
-    const region = regions.find((r: Regions_regions) => r.id === id);
+  const handleDelete = (region: Regions_regions) => {
+    // Check if region is already inactive
+    if (region.is_deleted) {
+      toast.error("Cannot delete an inactive region. Only active regions can be deleted.", {
+        duration: 4000,
+        icon: '⚠️'
+      });
+      return;
+    }
+    
     if (region) {
       setSelectedRegion(region);
       setIsDeleteModalOpen(true);
@@ -253,7 +265,7 @@ export default function RegionsPage() {
       cell: ({ row }) => (
         <div className="flex justify-center">
           <StatusBadge
-            label={row.original.is_deleted ? t.inactive : t.active}
+            label={row.original.is_deleted ? t('common.inactive') : t('common.active')}
             variant={row.original.is_deleted ? "neutral" : "success"}
             showDot
           />
@@ -264,7 +276,7 @@ export default function RegionsPage() {
       id: "actions",
       header: () => (
         <div className="text-right font-medium text-gray-900">
-          {t.actions}
+          {t('common.actions')}
         </div>
       ),
       cell: ({ row }) => (
@@ -280,7 +292,11 @@ export default function RegionsPage() {
                 <Edit className="w-4 h-4 mr-2" />
                 {tRegion.messages.edit_region}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
+              <DropdownMenuItem 
+                onClick={() => handleDelete(row.original)}
+                disabled={row.original.is_deleted}
+                className={row.original.is_deleted ? "opacity-50 cursor-not-allowed" : ""}
+              >
                 <Trash2 className="w-4 h-4 mr-2" />
                 {tRegion.messages.delete_region}
               </DropdownMenuItem>
@@ -322,10 +338,10 @@ export default function RegionsPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
-              {t.regionsTitle}
+              {tStructure.regionsTitle}
             </h2>
             <p className="text-muted-foreground text-0.875rem sm:text-1rem">
-              {t.regionsSubtitle}
+              {tStructure.regionsSubtitle}
           </p>
         </div>
           
@@ -335,7 +351,7 @@ export default function RegionsPage() {
             >
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
-                {t.createRegion}
+                {tStructure.createRegion}
               </Button>
             </AddRegionModal>
             <Button
@@ -373,7 +389,7 @@ export default function RegionsPage() {
               columns={columns}
               data={regions}
               searchKey="name"
-              searchPlaceholder={t.searchRegions}
+              searchPlaceholder={tStructure.searchRegions}
               filterableColumns={[]}
             />
           </CardContent>

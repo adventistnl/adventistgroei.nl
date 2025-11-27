@@ -266,8 +266,8 @@ export function AnnualBudgetViewEditModal({
 
       toast.dismiss(loadingToast)
       toast.success(t("annual_budget.modals.messages.updated"), {
-        duration: 3000,
-        icon: '✅'
+        duration: 3000
+
       })
 
       if (onSave) {
@@ -275,6 +275,9 @@ export function AnnualBudgetViewEditModal({
       }
 
       setIsEditing(false)
+      
+      // Close modal after successful save
+      onOpenChange(false)
     } catch (error) {
       toast.dismiss(loadingToast)
       toast.error(t("annual_budget.modals.messages.update_failed"))
@@ -301,6 +304,9 @@ export function AnnualBudgetViewEditModal({
   const handleClose = () => {
     if (!isLoading) {
       handleCancel()
+      setCurrentStep(1)
+      setIsEditingYear(false)
+      setErrors({})
       onOpenChange(false)
     }
   }
@@ -487,15 +493,15 @@ export function AnnualBudgetViewEditModal({
               <h4 className="text-sm font-medium text-gray-900">{t("annual_budget.modals.summary.title") || "Budget Summary"}</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t("annual_budget.modals.summary.planned") || "Planned"}:</span>
-                  <span className="font-medium text-gray-900">{formatCurrency(budget.planned_budget)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">{t("annual_budget.modals.summary.expenses") || "Expenses"}:</span>
+                  <span className="text-gray-600">{t("annual_budget.modals.summary.spent") || "Spent"}:</span>
                   <span className="font-medium text-gray-900">{formatCurrency(budget.total_expenses)}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">{t("annual_budget.modals.summary.reserved") || "Reserved"}:</span>
+                  <span className="font-medium text-gray-900">{formatCurrency(0)}</span>
+                </div>
                 <div className="flex justify-between border-t border-gray-200 pt-2">
-                  <span className="text-gray-600">{t("annual_budget.modals.summary.balance") || "Balance"}:</span>
+                  <span className="text-gray-600">{t("annual_budget.modals.summary.available") || "Available"}:</span>
                   <span className={`font-semibold ${budget.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {formatCurrency(budget.balance)}
                   </span>
@@ -760,19 +766,19 @@ export function AnnualBudgetViewEditModal({
                 <h4 className="text-sm font-medium text-gray-900">{t("annual_budget.modals.summary.title") || "Budget Summary"}</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">{t("annual_budget.modals.fields.planned_budget") || "Planned Budget"}:</span>
-                    <span className="font-medium text-gray-900">
-                      {formatCurrency(parseFloat(formData.planned_budget || "0"))}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">{t("annual_budget.modals.fields.total_expenses") || "Total Expenses"}:</span>
+                    <span className="text-gray-600">{t("annual_budget.modals.summary.spent") || "Spent"}:</span>
                     <span className="font-medium text-gray-900">
                       {formatCurrency(parseFloat(formData.total_expenses || "0"))}
                     </span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">{t("annual_budget.modals.summary.reserved") || "Reserved"}:</span>
+                    <span className="font-medium text-gray-900">
+                      {formatCurrency(0)}
+                    </span>
+                  </div>
                   <div className="flex justify-between border-t border-gray-200 pt-2">
-                    <span className="text-gray-600">{t("annual_budget.modals.fields.balance") || "Balance"}:</span>
+                    <span className="text-gray-600">{t("annual_budget.modals.summary.available") || "Available"}:</span>
                     <span className={`font-semibold ${calculateBalance(formData.planned_budget, formData.total_expenses) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {formatCurrency(calculateBalance(formData.planned_budget, formData.total_expenses))}
                     </span>
@@ -824,13 +830,19 @@ export function AnnualBudgetViewEditModal({
                   </div>
 
                   <div className="flex justify-between">
-                    <span className="text-gray-600">{t("annual_budget.modals.fields.planned_budget") || "Planned Budget"}:</span>
+                    <span className="text-gray-600">{t("annual_budget.modals.summary.spent") || "Spent"}:</span>
                     <span className="font-medium text-gray-900">
-                      {formatCurrency(parseFloat(formData.planned_budget || "0"))}
+                      {formatCurrency(parseFloat(formData.total_expenses || "0"))}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">{t("annual_budget.modals.fields.balance") || "Balance"}:</span>
+                    <span className="text-gray-600">{t("annual_budget.modals.summary.reserved") || "Reserved"}:</span>
+                    <span className="font-medium text-gray-900">
+                      {formatCurrency(0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">{t("annual_budget.modals.summary.available") || "Available"}:</span>
                     <span className={`font-semibold ${calculateBalance(formData.planned_budget, formData.total_expenses) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {formatCurrency(calculateBalance(formData.planned_budget, formData.total_expenses))}
                     </span>

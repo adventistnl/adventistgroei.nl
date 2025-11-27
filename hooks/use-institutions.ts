@@ -53,9 +53,10 @@ export function useInstitutions(id?: string): iInstitutions & {
     error: institutionError,
     refetch: refetchInstitutionByIdRaw
   } = useGetInstitutionByIdQuery(
-    { id },
+    { id: id || '' },
     {
-      skip: !id, // Garante que a query não será chamada se o id for inválido
+      skip: !id, // Só buscar se tiver ID válido
+      fetchPolicy: 'cache-and-network', // Usar cache enquanto busca dados atualizados
     }
   );
 

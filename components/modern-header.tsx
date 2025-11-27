@@ -1,11 +1,13 @@
 "use client"
 
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { GlobalSearch, useGlobalSearch } from "@/components/global-search"
 import { LanguageSelector } from "@/components/shared/language-selector"
 import { ThemeSwitcher } from "@/components/theme-switcher"
-import { NotificationsSidebar } from "@/components/notifications-sidebar"
-import { ChatUsersSelector } from "@/components/chat/chat-users-selector"
+// TODO: Implementar no final
+// import { NotificationsSidebar } from "@/components/notifications-sidebar"
+// import { ChatUsersSelector } from "@/components/chat/chat-users-selector"
 import { InviteModal } from "@/components/modals/invite-modal"
 import { Button } from "@/components/ui/button"
 import {
@@ -19,28 +21,33 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { usePageContext } from "@/contexts/page-context"
-import { UserPlus, MessageCircle } from "lucide-react"
-import { mockUsers } from "@/data/mockData"
+import { UserPlus } from "lucide-react"
+// TODO: Implementar no final
+// import { MessageCircle } from "lucide-react"
+// import { mockUsers } from "@/data/mockData"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 
 export function ModernHeader() {
+  const { t } = useTranslation()
+  
   // Ativar comando de teclado global para busca
   useGlobalSearch()
   
   // Acessar dados de breadcrumb do contexto
   const { pageTitle, breadcrumbs } = usePageContext()
   
+  // TODO: Implementar no final
   // Estado para o chat
-  const [isChatSelectorOpen, setIsChatSelectorOpen] = React.useState(false)
+  // const [isChatSelectorOpen, setIsChatSelectorOpen] = React.useState(false)
   
   // Mock current user
-  const currentUser = {
-    ...mockUsers[0],
-    role: "admin",
-    is_deleted: false,
-    institution_id: "inst-1"
-  }
+  // const currentUser = {
+  //   ...mockUsers[0],
+  //   role: "admin",
+  //   is_deleted: false,
+  //   institution_id: "inst-1"
+  // }
 
   const handleInviteSent = (inviteData: any) => {
     // Aqui você pode atualizar estado global ou fazer outras ações
@@ -61,7 +68,7 @@ export function ModernHeader() {
             <Breadcrumb className="hidden sm:flex">
               <BreadcrumbList>
                 {breadcrumbs && breadcrumbs.length > 0 ? (
-                  breadcrumbs.map((crumb: { name: string; href?: string }, index: number) => (
+                  breadcrumbs.map((crumb, index: number) => (
                     <div key={index} className="flex items-center">
                       {index > 0 && <BreadcrumbSeparator />}
                       <BreadcrumbItem>
@@ -102,18 +109,18 @@ export function ModernHeader() {
           {/* Right Section - Action Buttons */}
           <div className="flex items-center gap-3 flex-1 justify-end">
             
-            {/* Chat */}
-            <Button 
+            {/* TODO: Implementar Chat no final */}
+            {/* <Button 
               variant="outline" 
               size="icon" 
               className="h-9 w-9"
               onClick={() => setIsChatSelectorOpen(true)}
             >
               <MessageCircle className="h-4 w-4" />
-            </Button>
+            </Button> */}
             
-            {/* Notifications */}
-            <NotificationsSidebar />
+            {/* TODO: Implementar Notifications no final */}
+            {/* <NotificationsSidebar /> */}
 
             {/* Theme Switcher */}
             <ThemeSwitcher />
@@ -130,7 +137,7 @@ export function ModernHeader() {
                   className="flex items-center gap-2 h-9 px-4 ml-2"
                 >
                   <UserPlus className="w-4 h-4" />
-                  <span className="hidden sm:inline">Invite</span>
+                  <span className="hidden sm:inline">{t('common.invite')}</span>
                 </Button>
               </InviteModal>
             </WithPermission>
@@ -138,12 +145,12 @@ export function ModernHeader() {
         </div>
       </div>
       
-      {/* Chat Users Selector */}
-      <ChatUsersSelector
+      {/* TODO: Implementar Chat Users Selector no final */}
+      {/* <ChatUsersSelector
         isOpen={isChatSelectorOpen}
         onOpenChange={setIsChatSelectorOpen}
         currentUser={currentUser}
-      />
+      /> */}
     </header>
   )
 }
