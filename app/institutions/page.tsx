@@ -87,6 +87,13 @@ export default function InstitutionsPage() {
     }
   }, [currentInstitutionData, selectedInstitutionId])
 
+  // Sync selectedInstitutionId with currentInstitutionData changes (from global switcher)
+  React.useEffect(() => {
+    if (currentInstitutionData && currentInstitutionData.id !== selectedInstitutionId) {
+      setSelectedInstitutionId(currentInstitutionData.id)
+    }
+  }, [currentInstitutionData?.id, selectedInstitutionId])
+
   // Function to handle institution selection
   const handleViewInstitutionDetails = (institutionId: string) => {
     setSelectedInstitutionId(institutionId)
@@ -364,14 +371,14 @@ export default function InstitutionsPage() {
         </div>
       ),
       cell: ({ row }) => {
-        // Mock: institutions have budget records by default (can be changed based on actual data)
-        const hasBudget = true // TODO: Replace with actual budget check from institution data
-        const budgetAmount = 1500000 // Mock value - replace with actual budget
-        
+        const institution = row.original;
+        const hasBudget = institution.has_budget_record;
+        const budgetAmount = institution.total_budget || 0;
+
         return (
           <div className="text-center">
             <div className="text-sm font-semibold text-gray-900">
-              ${budgetAmount.toLocaleString()}
+              {hasBudget ? `$${budgetAmount.toLocaleString()}` : '-'}
             </div>
           </div>
         )
@@ -385,9 +392,9 @@ export default function InstitutionsPage() {
         </div>
       ),
       cell: ({ row }) => {
-        // Mock: institutions have budget records by default (can be changed based on actual data)
-        const hasBudget = true // TODO: Replace with actual budget check from institution data
-        
+        const institution = row.original;
+        const hasBudget = institution.has_budget_record;
+
         return (
           <div className="flex justify-center">
             <StatusBadge
@@ -403,7 +410,8 @@ export default function InstitutionsPage() {
         if (value === undefined || value === null || value === "") {
           return true
         }
-        const hasBudget = true // TODO: Replace with actual budget check
+        const institution = row.original;
+        const hasBudget = institution.has_budget_record;
         return hasBudget === value
       },
     },

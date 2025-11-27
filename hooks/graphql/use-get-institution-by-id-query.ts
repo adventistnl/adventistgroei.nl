@@ -13,6 +13,7 @@ export function useGetInstitutionByIdQuery(
   return useQuery<InstitutionById, Variables>(GET_INSTITUTION_BY_ID_FULL_DATA_QUERY, {
     variables,
     skip: !variables.id,
+    fetchPolicy: 'network-only', // Sempre faz requisição de rede, ignora cache
     ...options,
   });
 }

@@ -1675,6 +1675,7 @@ export type Institution = {
   departments_count: Scalars['Int']['output'];
   description?: Maybe<Scalars['String']['output']>;
   direct_messages: Array<DirectMessage>;
+  has_budget_record: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   institutionChartsData: InstitutionChartsData;
   is_deleted: Scalars['Boolean']['output'];
@@ -1684,6 +1685,7 @@ export type Institution = {
   projects?: Maybe<Array<Project>>;
   settings?: Maybe<Array<Setting>>;
   subsidy_requests: Array<SubsidyRequest>;
+  total_budget: Scalars['Float']['output'];
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
   users?: Maybe<Array<User>>;

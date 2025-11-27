@@ -570,6 +570,8 @@ export interface Institutions_institutions {
   churches_count: number;
   departments_count: number;
   users_count: number;
+  total_budget: number;
+  has_budget_record: boolean;
   contact: Institutions_institutions_contact | null;
   annual_budgets: Institutions_institutions_annual_budgets[];
   subsidy_requests: Institutions_institutions_subsidy_requests[];

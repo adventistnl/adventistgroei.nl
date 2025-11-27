@@ -322,6 +322,8 @@ export const INSTITUTION_FRAGMENT = gql`
     churches_count
     departments_count
     users_count
+    total_budget
+    has_budget_record
     contact {
       ...ContactFragment
     }

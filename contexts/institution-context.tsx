@@ -101,10 +101,17 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
 
   // Troca de instituição
-  const switchInstitution = useCallback((institutionId: string) => {
+  const switchInstitution = useCallback(async (institutionId: string) => {
     const institution = institutions.find(inst => inst.id === institutionId);
     if (institution && institution.id !== activeInstitutionId) {
       setActiveInstitutionId(institution.id);
+
+      // Aguardar um tick para garantir que o estado foi atualizado
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // Forçar refetch dos dados da nova instituição
+      refetchInstitutionById();
+
       toast.success(
         `Switched to ${institution.name}\n📊 Loading institution data...`,
         {
@@ -113,7 +120,7 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
         }
       );
     }
-  }, [activeInstitutionId, institutions]);
+  }, [activeInstitutionId, institutions, refetchInstitutionById]);
 
   // Adiciona instituição (apenas local, para efeito imediato; persistência via createInstitution)
   const addInstitution = useCallback((institutionData: any) => {
@@ -122,13 +129,6 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     createInstitution({ variables: institutionData });
     // O hook já irá atualizar a lista ao receber o novo dado
   }, [createInstitution]);
-
-
-  useEffect(() => {
-    if (activeInstitutionId) {
-      refetchInstitutionById();
-    }
-  }, [activeInstitutionId]);
 
   const value: InstitutionContextType = useMemo(() => ({
     institutions,
