@@ -15,6 +15,7 @@ interface AuthContextType {
   roles: RoleModel['key_code'][]; // Novo campo para armazenar roles
   login: (email: string, password: string, rememberMe: boolean) => Promise<boolean | undefined>;
   logout: () => void;
+  updateAuthUser: (updatedUser: AuthModel['user']) => void; // Nova função para atualizar dados do usuário
   isLoading: boolean;
   isAuthenticated: boolean;
   error: boolean;
@@ -112,6 +113,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Função para atualizar dados do usuário logado
+  const updateAuthUser = React.useCallback((updatedUser: AuthModel['user']) => {
+    try {
+      // Atualizar estado
+      setUser(updatedUser);
+      
+      // Atualizar localStorage
+      localStorage.setItem('auth-user', JSON.stringify(updatedUser));
+      
+      // Atualizar roles se necessário
+      const userRoles = updatedUser?.user_roles?.map((role) => role.key_code) || [];
+      setRoles(userRoles);
+      
+    } catch (error) {
+      console.error('Error updating auth user:', error);
+    }
+  }, []);
+
   const value: AuthContextType = {
     user,
     token,
@@ -128,6 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setPermissions([]);
       setRoles([]); // Limpa os roles ao fazer logout
     },
+    updateAuthUser, // Adicionar função ao contexto
     isLoading,
     isAuthenticated: !!token && !!user,
     error,

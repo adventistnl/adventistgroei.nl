@@ -3874,7 +3874,9 @@ export type UserListRelationFilter = {
 
 export type UserModel = {
   __typename?: 'UserModel';
+  church?: Maybe<Church>;
   church_id?: Maybe<Scalars['String']['output']>;
+  contact?: Maybe<Contact>;
   contact_id?: Maybe<Scalars['String']['output']>;
   created_at: Scalars['DateTime']['output'];
   created_by: Scalars['String']['output'];
@@ -3882,6 +3884,7 @@ export type UserModel = {
   deleted_by?: Maybe<Scalars['String']['output']>;
   email: Scalars['String']['output'];
   id: Scalars['String']['output'];
+  institution?: Maybe<Institution>;
   institution_id: Scalars['String']['output'];
   is_deleted: Scalars['Boolean']['output'];
   language_preference: Scalars['String']['output'];
@@ -3987,8 +3990,9 @@ export type UserScalarRelationFilter = {
 };
 
 export type UserUpdateDto = {
+  address?: InputMaybe<Scalars['String']['input']>;
   church_id?: InputMaybe<Scalars['String']['input']>;
-  contact?: InputMaybe<ContactCreateDto>;
+  contact?: InputMaybe<ContactUpdateDto>;
   contact_id?: InputMaybe<Scalars['String']['input']>;
   department_id?: InputMaybe<Scalars['String']['input']>;
   email?: InputMaybe<Scalars['String']['input']>;
@@ -3997,6 +4001,7 @@ export type UserUpdateDto = {
   is_deleted?: InputMaybe<Scalars['Boolean']['input']>;
   language_preference?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
+  phone?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UserWhereInput = {
@@ -4041,7 +4046,9 @@ export type UserWhereInput = {
 
 export type UserWithRoles = {
   __typename?: 'UserWithRoles';
+  church?: Maybe<Church>;
   church_id?: Maybe<Scalars['String']['output']>;
+  contact?: Maybe<Contact>;
   contact_id?: Maybe<Scalars['String']['output']>;
   created_at: Scalars['DateTime']['output'];
   created_by: Scalars['String']['output'];
@@ -4049,6 +4056,7 @@ export type UserWithRoles = {
   deleted_by?: Maybe<Scalars['String']['output']>;
   email: Scalars['String']['output'];
   id: Scalars['String']['output'];
+  institution?: Maybe<Institution>;
   institution_id: Scalars['String']['output'];
   is_deleted: Scalars['Boolean']['output'];
   language_preference: Scalars['String']['output'];

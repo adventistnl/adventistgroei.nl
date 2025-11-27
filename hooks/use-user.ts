@@ -27,7 +27,7 @@ export function useUser({token, id}:{token?: string, id?: string}) {
     return decoded?.sub || null;
   }, [jwt]);
 
-  const { data, error, loading } = useGetUserQuery({ id: id ? id : loggedUserId },);
+  const { data, error, loading, refetch } = useGetUserQuery({ id: id ? id : loggedUserId },);
 
   const [ createUser ] = useCreateUserMutation();
   const [ updateUser ] = useUpdateUserMutation();
@@ -81,6 +81,7 @@ export function useUser({token, id}:{token?: string, id?: string}) {
     loggedUserId,
     loading,
     error,
+    refetch,
     createUser,
     updateUser,
     addRoleToUser,

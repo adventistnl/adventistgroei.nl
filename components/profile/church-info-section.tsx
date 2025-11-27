@@ -9,7 +9,6 @@ interface ChurchInfoSectionProps {
   role: string
   institution: string
   church: string
-  language: string
   isEditing: boolean
   onEdit: () => void
   onSave: () => void
@@ -23,7 +22,6 @@ export function ChurchInfoSection({
   role,
   institution,
   church,
-  language,
   isEditing,
   onEdit,
   onSave,
@@ -34,8 +32,8 @@ export function ChurchInfoSection({
 }: ChurchInfoSectionProps) {
   // Debug: Log when props change
   useEffect(() => {
-    console.log("⛪ ChurchInfoSection received props:", { role, institution, church, language, isEditing })
-  }, [role, institution, church, language, isEditing])
+    console.log("⛪ ChurchInfoSection received props:", { role, institution, church, isEditing })
+  }, [role, institution, church, isEditing])
 
   const getLanguageName = (code: string) => {
     const languages: { [key: string]: string } = {
@@ -75,12 +73,6 @@ export function ChurchInfoSection({
           value={church}
           isEditing={isEditing}
           onChange={onChurchChange}
-        />
-        <ProfileField
-          label="Idioma Preferido"
-          value={getLanguageName(language)}
-          icon={Globe}
-          isEditing={false}
         />
       </div>
     </ProfileSection>

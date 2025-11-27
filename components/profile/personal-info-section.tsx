@@ -1,15 +1,15 @@
-"use client"
-
-import { useEffect } from "react"
-import { User, Mail, Phone, MapPin } from "lucide-react"
+import { User, Mail, Phone, MapPin, Globe } from "lucide-react"
 import { ProfileSection } from "./profile-section"
 import { ProfileField } from "./profile-field"
+import { LanguageSelectorInput } from "@/components/shared/language-selector-input"
+import { LanguagePreference } from "@/types/globalTypes"
 
 interface PersonalInfoSectionProps {
   name: string
   email: string
   phone: string
   address: string
+  language: string
   isEditing: boolean
   onEdit: () => void
   onSave: () => void
@@ -18,6 +18,7 @@ interface PersonalInfoSectionProps {
   onEmailChange: (value: string) => void
   onPhoneChange: (value: string) => void
   onAddressChange: (value: string) => void
+  onLanguageChange: (value: string) => void
 }
 
 export function PersonalInfoSection({
@@ -25,6 +26,7 @@ export function PersonalInfoSection({
   email,
   phone,
   address,
+  language,
   isEditing,
   onEdit,
   onSave,
@@ -33,11 +35,8 @@ export function PersonalInfoSection({
   onEmailChange,
   onPhoneChange,
   onAddressChange,
+  onLanguageChange,
 }: PersonalInfoSectionProps) {
-  // Debug: Log when props change
-  useEffect(() => {
-    console.log("📝 PersonalInfoSection received props:", { name, email, phone, address, isEditing })
-  }, [name, email, phone, address, isEditing])
 
   return (
     <ProfileSection
@@ -77,7 +76,32 @@ export function PersonalInfoSection({
           isEditing={isEditing}
           onChange={onAddressChange}
         />
+        {isEditing ? (
+          <LanguageSelectorInput
+            label="Idioma Preferido"
+            value={language}
+            onValueChange={onLanguageChange}
+            variant="select"
+            required
+          />
+        ) : (
+          <div className="space-y-2">
+            <div className="text-sm text-muted-foreground">Idioma Preferido</div>
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-muted-foreground" />
+              <p className="text-foreground">{getLanguageName(language as LanguagePreference)}</p>
+            </div>
+          </div>
+        )}
       </div>
     </ProfileSection>
   )
+}
+
+const getLanguageName = (code: LanguagePreference) => {
+  const languages: Record<LanguagePreference, string> = {
+    [LanguagePreference.en]: "English",
+    [LanguagePreference.nl]: "Nederlands",
+  }
+  return languages[code] || code
 }

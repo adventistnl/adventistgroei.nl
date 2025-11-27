@@ -6,14 +6,18 @@ import { ProfileHeader } from "@/components/profile/profile-header"
 import { PersonalInfoSection } from "@/components/profile/personal-info-section"
 import { ChurchInfoSection } from "@/components/profile/church-info-section"
 import { ProfileStatusAlert } from "@/components/profile/profile-status-alert"
-import { useProfileEditor } from "@/hooks/use-profile-editor"
+import { useProfileEditor, ExtendedProfile } from "@/hooks/use-profile-editor"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo } from "react"
 import { AdventistLogo } from "@/components/ui/adventist-logo"
+import { useUser } from "@/hooks/use-user"
+import { UpdateUserVariables } from "@/types/UpdateUser"
 
 export default function ProfilePage() {
-  const { user, isAuthenticated, isLoading } = useAuth()
+  const { user: authUser, isAuthenticated, isLoading } = useAuth()
+  const { user, loading: userLoading, refetch: refetchUser } = useUser({id: authUser?.id})
   const router = useRouter()
+
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -22,52 +26,29 @@ export default function ProfilePage() {
     }
   }, [isAuthenticated, isLoading, router])
 
-  // Debug: Log user data
-  useEffect(() => {
-    console.group("🔍 Profile Page - User Data Debug")
-    console.log("User object:", user)
-    console.log("Is Authenticated:", isAuthenticated)
-    console.log("Is Loading:", isLoading)
-    console.log("User ID:", user?.id)
-    console.log("User Name:", user?.name)
-    console.log("User Email:", user?.email)
-    console.log("User Roles:", user?.user_roles)
-    console.log("User Institution ID:", user?.institution_id)
-    console.log("User Church ID:", user?.church_id)
-    console.log("User Language Preference:", user?.language_preference)
-    console.log("User Contact ID:", user?.contact_id)
-    console.groupEnd()
-  }, [user, isAuthenticated, isLoading])
-
   // Create profile from auth user data
-  const userProfile = useMemo(() => {
-    if (!user) {
-      console.log("⚠️ userProfile: No user data yet (still loading or not authenticated)")
-      return null
-    }
+  const userProfile: ExtendedProfile = useMemo(() => {
+    
+    // For now, we'll use a mock role until the backend user_roles is properly configured
+    const mockRoles = "Administrador, Pastor"; // This should come from user.user_roles when available
     
     const profile = {
-      id: user.id || "",
-      name: user.name || "",
-      email: user.email || "",
-      phone: "", // TODO: Get from contact data when available
-      address: "", // TODO: Get from contact data when available
-      role: user.user_roles?.[0]?.name || "Member",
-      institution: user.institution_id || "",
-      church: user.church_id || "",
-      language: user.language_preference || "PT",
+      id: user?.id || "",
+      name: user?.name || "",
+      email: user?.email || "",
+      phone: user?.contact?.phone || "",
+      address: user?.contact?.address || "",
+      institution_id: user?.institution_id || "",
+      church_id: user?.church_id || "",
+      language_preference: user?.language_preference || "PT",
+      // Additional fields for display
+      institution_name: user?.institution?.name || "",
+      church_name: user?.church?.name || "",
+      role: mockRoles, // Lista de roles do usuário (mockado por enquanto)
     }
 
-    console.log("✅ Profile constructed with user data:", profile)
     return profile
   }, [user])
-
-  // Debug when userProfile changes
-  useEffect(() => {
-    if (userProfile) {
-      console.log("🎯 userProfile updated, passing to useProfileEditor:", userProfile)
-    }
-  }, [userProfile])
 
   const {
     editingSection,
@@ -77,17 +58,15 @@ export default function ProfilePage() {
     handleSave,
     handleCancel,
     handleFieldChange,
-  } = useProfileEditor(userProfile || {
-    id: "",
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-    role: "",
-    institution: "",
-    church: "",
-    language: "PT",
-  })
+  } = useProfileEditor(userProfile, refetchUser)
+  // Debug when userProfile changes
+  useEffect(() => {
+    if (userProfile) {
+      console.log("🎯 userProfile updated, passing to useProfileEditor:", userProfile)
+    }
+  }, [userProfile])
+
+
 
   // Show loading state
   if (isLoading) {
@@ -130,6 +109,7 @@ export default function ProfilePage() {
     return null
   }
 
+
   // Check for incomplete profile data
   const incompleteFields = []
   
@@ -150,11 +130,11 @@ export default function ProfilePage() {
     }
     
     // Church fields
-    if (!userProfile.institution) {
-      incompleteFields.push({ key: "institution", label: "Instituição", section: "church" as const })
+    if (!userProfile.institution_id) {
+      incompleteFields.push({ key: "institution_id", label: "Instituição", section: "church" as const })
     }
-    if (!userProfile.church) {
-      incompleteFields.push({ key: "church", label: "Igreja", section: "church" as const })
+    if (!userProfile.church_id) {
+      incompleteFields.push({ key: "church_id", label: "Igreja", section: "church" as const })
     }
     
     console.log("📊 Incomplete fields detected:", incompleteFields)
@@ -173,8 +153,8 @@ export default function ProfilePage() {
           
           {/* Page Header */}
           <ProfileHeader
-            name={profile.name}
-            email={profile.email}
+            name={profile.name || ""}
+            email={profile.email || ""}
           />
 
           {/* Profile Status Alert */}
@@ -188,10 +168,11 @@ export default function ProfilePage() {
             
             {/* 1. Dados Pessoais */}
             <PersonalInfoSection
-              name={editData.name || profile.name}
-              email={editData.email || profile.email}
-              phone={editData.phone || profile.phone}
-              address={editData.address || profile.address}
+              name={editData.name || profile.name || ""}
+              email={editData.email || profile.email || ""}
+              phone={editData.phone || profile.phone || ""}
+              address={editData.address || profile.address || ""}
+              language={editData.language_preference || profile.language_preference || "en"}
               isEditing={editingSection === "personal"}
               onEdit={() => handleEdit("personal")}
               onSave={() => handleSave("personal")}
@@ -200,21 +181,21 @@ export default function ProfilePage() {
               onEmailChange={(value) => handleFieldChange("email", value)}
               onPhoneChange={(value) => handleFieldChange("phone", value)}
               onAddressChange={(value) => handleFieldChange("address", value)}
+              onLanguageChange={(value) => handleFieldChange("language_preference", value)}
             />
 
             {/* 2. Informações da Igreja */}
             <ChurchInfoSection
-              role={editData.role || profile.role}
-              institution={editData.institution || profile.institution}
-              church={editData.church || profile.church}
-              language={profile.language}
-              isEditing={editingSection === "church"}
-              onEdit={() => handleEdit("church")}
-              onSave={() => handleSave("church")}
-              onCancel={handleCancel}
-              onRoleChange={(value) => handleFieldChange("role", value)}
-              onInstitutionChange={(value) => handleFieldChange("institution", value)}
-              onChurchChange={(value) => handleFieldChange("church", value)}
+              role={profile.role || ""}
+              institution={profile.institution_name || ""}
+              church={profile.church_name || ""}
+              isEditing={false}
+              onEdit={() => {}} // Bloqueado
+              onSave={() => {}} // Bloqueado
+              onCancel={() => {}} // Bloqueado
+              onRoleChange={() => {}} // Bloqueado
+              onInstitutionChange={() => {}} // Bloqueado
+              onChurchChange={() => {}} // Bloqueado
             />
 
           </div>

@@ -26,4 +26,6 @@ export interface UpdateUserVariables {
   church_id?: string | null;
   department_id?: string | null;
   is_deleted?: boolean | null;
+  phone?: string | null;
+  address?: string | null;
 }

@@ -5,6 +5,13 @@ import { LucideIcon } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+interface Option {
+  value: string
+  label: string
+}
+
 interface ProfileFieldProps {
   label: string
   value: string
@@ -12,6 +19,7 @@ interface ProfileFieldProps {
   isEditing: boolean
   onChange?: (value: string) => void
   type?: string
+  options?: Option[]
 }
 
 export function ProfileField({
@@ -21,6 +29,7 @@ export function ProfileField({
   isEditing,
   onChange,
   type = "text",
+  options,
 }: ProfileFieldProps) {
   return (
     <div className="space-y-2">

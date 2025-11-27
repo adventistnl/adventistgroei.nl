@@ -570,6 +570,8 @@ export interface InstitutionFragment {
   churches_count: number;
   departments_count: number;
   users_count: number;
+  total_budget: number;
+  has_budget_record: boolean;
   contact: InstitutionFragment_contact | null;
   annual_budgets: InstitutionFragment_annual_budgets[];
   subsidy_requests: InstitutionFragment_subsidy_requests[];
