@@ -51,7 +51,7 @@ export enum GenderType {
 }
 
 /**
- * Idioma preferencial do usuário
+ * Idioma preferencial da instituição
  */
 export enum LanguagePreference {
   en = "en",

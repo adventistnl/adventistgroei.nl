@@ -146,6 +146,7 @@ export interface InstitutionFragment_users_user_roles_role {
   name: string;
   key_code: string;
   description: string;
+  color: string | null;
 }
 
 export interface InstitutionFragment_users_user_roles {
@@ -528,6 +529,19 @@ export interface InstitutionFragment_churchesKpiData {
   avgMembersPerChurch: number;
 }
 
+export interface InstitutionFragment_institutionChartsData_usersByRole {
+  __typename: "UsersByRoleData";
+  role: string;
+  count: number;
+  fill: string;
+}
+
+export interface InstitutionFragment_institutionChartsData {
+  __typename: "InstitutionChartsData";
+  usersByRole: InstitutionFragment_institutionChartsData_usersByRole[];
+  monthlyUserGrowth: number | null;
+}
+
 export interface InstitutionFragment {
   __typename: "Institution";
   id: string;
@@ -555,4 +569,5 @@ export interface InstitutionFragment {
   churches: InstitutionFragment_churches[] | null;
   departments: InstitutionFragment_departments[] | null;
   churchesKpiData: InstitutionFragment_churchesKpiData;
+  institutionChartsData: InstitutionFragment_institutionChartsData;
 }

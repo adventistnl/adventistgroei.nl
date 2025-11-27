@@ -27,6 +27,7 @@ export interface UserFragment_user_roles_role {
   name: string;
   key_code: string;
   description: string;
+  color: string | null;
 }
 
 export interface UserFragment_user_roles {

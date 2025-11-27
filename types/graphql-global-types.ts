@@ -1667,6 +1667,7 @@ export type Institution = {
   description?: Maybe<Scalars['String']['output']>;
   direct_messages: Array<DirectMessage>;
   id: Scalars['ID']['output'];
+  institutionChartsData: InstitutionChartsData;
   is_deleted: Scalars['Boolean']['output'];
   language_preference: LanguagePreference;
   name: Scalars['String']['output'];
@@ -1678,6 +1679,12 @@ export type Institution = {
   updated_by: Scalars['String']['output'];
   users?: Maybe<Array<User>>;
   users_count: Scalars['Int']['output'];
+};
+
+export type InstitutionChartsData = {
+  __typename?: 'InstitutionChartsData';
+  monthlyUserGrowth?: Maybe<Scalars['Float']['output']>;
+  usersByRole: Array<UsersByRoleData>;
 };
 
 export type InstitutionCount = {
@@ -1832,7 +1839,7 @@ export type JsonNullableFilter = {
   string_starts_with?: InputMaybe<Scalars['String']['input']>;
 };
 
-/** Idioma preferencial do usuário */
+/** Idioma preferencial da instituição */
 export enum LanguagePreference {
   En = 'en',
   Nl = 'nl'
@@ -4038,6 +4045,13 @@ export type UserWithRoles = {
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
   user_roles: Array<RoleModel>;
+};
+
+export type UsersByRoleData = {
+  __typename?: 'UsersByRoleData';
+  count: Scalars['Float']['output'];
+  fill: Scalars['String']['output'];
+  role: Scalars['String']['output'];
 };
 
 export type ValidateOutputModel = {

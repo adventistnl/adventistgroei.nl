@@ -588,7 +588,11 @@ export default function InstitutionsPage() {
           <h3 className="text-xl font-semibold">{t('institutions.analytics.title')}</h3>
           <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
             <DepartmentActivityChart loading={isLoading} />
-            <UsersByRoleChart loading={isLoading} />
+            <UsersByRoleChart 
+              data={displayedInstitution?.institutionChartsData?.usersByRole}
+              monthlyUserGrowth={displayedInstitution?.institutionChartsData?.monthlyUserGrowth}
+              loading={isLoading} 
+            />
             <ChurchesByRegionChart 
               churches={displayedInstitution?.churches || undefined}
               loading={isLoading}

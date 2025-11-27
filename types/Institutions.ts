@@ -146,6 +146,7 @@ export interface Institutions_institutions_users_user_roles_role {
   name: string;
   key_code: string;
   description: string;
+  color: string | null;
 }
 
 export interface Institutions_institutions_users_user_roles {
@@ -528,6 +529,19 @@ export interface Institutions_institutions_churchesKpiData {
   avgMembersPerChurch: number;
 }
 
+export interface Institutions_institutions_institutionChartsData_usersByRole {
+  __typename: "UsersByRoleData";
+  role: string;
+  count: number;
+  fill: string;
+}
+
+export interface Institutions_institutions_institutionChartsData {
+  __typename: "InstitutionChartsData";
+  usersByRole: Institutions_institutions_institutionChartsData_usersByRole[];
+  monthlyUserGrowth: number | null;
+}
+
 export interface Institutions_institutions {
   __typename: "Institution";
   id: string;
@@ -555,6 +569,7 @@ export interface Institutions_institutions {
   churches: Institutions_institutions_churches[] | null;
   departments: Institutions_institutions_departments[] | null;
   churchesKpiData: Institutions_institutions_churchesKpiData;
+  institutionChartsData: Institutions_institutions_institutionChartsData;
 }
 
 export interface Institutions {

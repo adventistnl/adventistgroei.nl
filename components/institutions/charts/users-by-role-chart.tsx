@@ -17,27 +17,29 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { useChartColors, CHART_PRESETS } from "@/lib/chart-colors"
+import { InstitutionById_institution_institutionChartsData_usersByRole } from "@/types/InstitutionById"
 
 interface UsersByRoleChartProps {
-  data?: any[]
+  data?: InstitutionById_institution_institutionChartsData_usersByRole[]
+  monthlyUserGrowth?: number | null
   loading?: boolean
 }
 
-export function UsersByRoleChart({ data, loading }: UsersByRoleChartProps) {
+export function UsersByRoleChart({ data, monthlyUserGrowth, loading }: UsersByRoleChartProps) {
   const { theme } = useChartColors()
   const roleColors = CHART_PRESETS.roles(theme as 'light' | 'dark')
 
   // Dados mockados: Usuários por role
   const mockData = [
-    { role: "admin", users: 12, fill: roleColors.admin },
-    { role: "finance_manager", users: 28, fill: roleColors.finance_manager },
-    { role: "department_head", users: 45, fill: roleColors.department_head },
-    { role: "church_leader", users: 89, fill: roleColors.church_leader },
-    { role: "volunteer", users: 156, fill: roleColors.volunteer },
+    { role: "admin", count: 12, fill: roleColors.admin },
+    { role: "finance_manager", count: 28, fill: roleColors.finance_manager },
+    { role: "department_head", count: 45, fill: roleColors.department_head },
+    { role: "church_leader", count: 89, fill: roleColors.church_leader },
+    { role: "volunteer", count: 156, fill: roleColors.volunteer },
   ]
 
   const chartConfig = {
-    users: {
+    count: {
       label: "Users",
     },
     admin: {
@@ -78,8 +80,8 @@ export function UsersByRoleChart({ data, loading }: UsersByRoleChartProps) {
     )
   }
 
-  const totalUsers = chartData.reduce((sum, item) => sum + item.users, 0)
-  const growthPercentage = 8.4 // Mock growth
+  const totalUsers = chartData.reduce((sum, item) => sum + item.count, 0)
+  const growthPercentage = monthlyUserGrowth ?? 8.4 // Fallback to mock value if not provided
 
   return (
     <Card className="h-full flex flex-col">
@@ -107,19 +109,25 @@ export function UsersByRoleChart({ data, loading }: UsersByRoleChartProps) {
                 chartConfig[value as keyof typeof chartConfig]?.label || value
               }
             />
-            <XAxis dataKey="users" type="number" hide />
+            <XAxis dataKey="count" type="number" hide />
             <ChartTooltip
               cursor={false}
               content={<ChartTooltipContent hideLabel />}
             />
-            <Bar dataKey="users" layout="vertical" radius={5} />
+            <Bar dataKey="count" layout="vertical" radius={5} />
           </BarChart>
         </ChartContainer>
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 text-sm">
-        <div className="flex gap-2 leading-none font-medium">
-          Trending up by {growthPercentage}% this month <TrendingUp className="h-4 w-4" />
-        </div>
+        {monthlyUserGrowth !== null && monthlyUserGrowth !== undefined ? (
+          <div className="flex gap-2 leading-none font-medium">
+            Trending up by {growthPercentage}% this month <TrendingUp className="h-4 w-4" />
+          </div>
+        ) : (
+          <div className="flex gap-2 leading-none font-medium text-muted-foreground">
+            Growth data not available
+          </div>
+        )}
         <div className="text-muted-foreground leading-none">
           Total users: {totalUsers.toLocaleString()}
         </div>

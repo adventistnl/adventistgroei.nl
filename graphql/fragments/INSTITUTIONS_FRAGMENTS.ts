@@ -119,6 +119,7 @@ export const USER_FRAGMENT = gql`
         name
         key_code
         description
+        color
       }
     }
   }
@@ -285,6 +286,17 @@ export const CHURCH_KPI_DATA_FRAGMENT = gql`
   }
 `;
 
+export const INSTITUTION_CHARTS_DATA_FRAGMENT = gql`
+  fragment InstitutionChartsDataFragment on InstitutionChartsData {
+    usersByRole {
+      role
+      count
+      fill
+    }
+    monthlyUserGrowth
+  }
+`;
+
 export const INSTITUTION_FRAGMENT = gql`
   fragment InstitutionFragment on Institution {
     id
@@ -330,8 +342,12 @@ export const INSTITUTION_FRAGMENT = gql`
     churchesKpiData {
      ...ChurchKpiDataFragment
     }
+    institutionChartsData {
+      ...InstitutionChartsDataFragment
+    }
   }
   ${CHURCH_KPI_DATA_FRAGMENT}
+  ${INSTITUTION_CHARTS_DATA_FRAGMENT}
   ${CONTACT_FRAGMENT}
   ${ANNUAL_BUDGET_FRAGMENT}
   ${SUBSIDY_REQUEST_FRAGMENT}
