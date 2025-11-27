@@ -2,6 +2,7 @@
 
 import { useEffect } from "react"
 import { Building, Globe } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { ProfileSection } from "./profile-section"
 import { ProfileField } from "./profile-field"
 
@@ -30,26 +31,17 @@ export function ChurchInfoSection({
   onInstitutionChange,
   onChurchChange,
 }: ChurchInfoSectionProps) {
+  const { t } = useTranslation()
+  
   // Debug: Log when props change
   useEffect(() => {
     console.log("⛪ ChurchInfoSection received props:", { role, institution, church, isEditing })
   }, [role, institution, church, isEditing])
 
-  const getLanguageName = (code: string) => {
-    const languages: { [key: string]: string } = {
-      EN: "English",
-      PT: "Português",
-      ES: "Español",
-      FR: "Français",
-      DE: "Deutsch",
-    }
-    return languages[code] || code
-  }
-
   return (
     <ProfileSection
       icon={Building}
-      title="Informações da Igreja"
+      title={t('profile.sections.church_information')}
       isEditing={isEditing}
       onEdit={onEdit}
       onSave={onSave}
@@ -57,19 +49,19 @@ export function ChurchInfoSection({
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ProfileField
-          label="Função/Cargo"
+          label={t('profile.church.role')}
           value={role}
           isEditing={isEditing}
           onChange={onRoleChange}
         />
         <ProfileField
-          label="Instituição"
+          label={t('profile.church.institution')}
           value={institution}
           isEditing={isEditing}
           onChange={onInstitutionChange}
         />
         <ProfileField
-          label="Igreja"
+          label={t('profile.church.church')}
           value={church}
           isEditing={isEditing}
           onChange={onChurchChange}

@@ -2,6 +2,7 @@
 
 import { ReactNode } from "react"
 import { LucideIcon } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Edit2, Check, X } from "lucide-react"
@@ -25,6 +26,8 @@ export function ProfileSection({
   onCancel,
   children,
 }: ProfileSectionProps) {
+  const { t } = useTranslation()
+  
   return (
     <Card className="bg-card border-border">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
@@ -55,7 +58,7 @@ export function ProfileSection({
               className="text-muted-foreground hover:text-foreground"
             >
               <X className="w-4 h-4 mr-1" />
-              Cancelar
+              {t('profile.actions.cancel')}
             </Button>
           </div>
         )}

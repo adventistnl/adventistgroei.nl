@@ -2,6 +2,8 @@
 
 import { AppLayout } from "@/components/layouts/app-layout"
 import { useAuth } from "@/contexts/auth-context"
+import { useTranslation } from "react-i18next"
+import { profileTranslations } from "@/lib/translations/profile"
 import { ProfileHeader } from "@/components/profile/profile-header"
 import { PersonalInfoSection } from "@/components/profile/personal-info-section"
 import { ChurchInfoSection } from "@/components/profile/church-info-section"
@@ -12,11 +14,21 @@ import { useEffect, useMemo } from "react"
 import { AdventistLogo } from "@/components/ui/adventist-logo"
 import { useUser } from "@/hooks/use-user"
 import { UpdateUserVariables } from "@/types/UpdateUser"
+import "@/lib/i18n"
 
 export default function ProfilePage() {
+  const { t, i18n } = useTranslation()
   const { user: authUser, isAuthenticated, isLoading } = useAuth()
   const { user, loading: userLoading, refetch: refetchUser } = useUser({id: authUser?.id})
   const router = useRouter()
+
+  // Configurar traduções do perfil
+  useEffect(() => {
+    i18n.addResourceBundle('en', 'translation', { profile: profileTranslations.en }, true, true)
+    i18n.addResourceBundle('pt', 'translation', { profile: profileTranslations.pt }, true, true)
+    i18n.addResourceBundle('es', 'translation', { profile: profileTranslations.es }, true, true)
+    i18n.addResourceBundle('nl', 'translation', { profile: profileTranslations.nl }, true, true)
+  }, [i18n])
 
 
   // Redirect to login if not authenticated
@@ -89,7 +101,7 @@ export default function ProfilePage() {
 
             {/* Texto */}
             <div className="space-y-4">
-              <p className="text-lg text-muted-foreground font-medium">Carregando perfil...</p>
+              <p className="text-lg text-muted-foreground font-medium">{t('profile.loading')}</p>
               
               {/* Indicador de carregamento */}
               <div className="flex items-center justify-center space-x-1 pt-6">
@@ -113,31 +125,29 @@ export default function ProfilePage() {
   // Check for incomplete profile data
   const incompleteFields = []
   
-  // Only check if we have valid profile data
-  if (userProfile) {
-    // Personal fields
-    if (!userProfile.name) {
-      incompleteFields.push({ key: "name", label: "Nome", section: "personal" as const })
-    }
-    if (!userProfile.email) {
-      incompleteFields.push({ key: "email", label: "Email", section: "personal" as const })
-    }
-    if (!userProfile.phone) {
-      incompleteFields.push({ key: "phone", label: "Telefone", section: "personal" as const })
-    }
-    if (!userProfile.address) {
-      incompleteFields.push({ key: "address", label: "Endereço", section: "personal" as const })
-    }
-    
-    // Church fields
-    if (!userProfile.institution_id) {
-      incompleteFields.push({ key: "institution_id", label: "Instituição", section: "church" as const })
-    }
-    if (!userProfile.church_id) {
-      incompleteFields.push({ key: "church_id", label: "Igreja", section: "church" as const })
-    }
-    
-    console.log("📊 Incomplete fields detected:", incompleteFields)
+    // Only check if we have valid profile data
+    if (userProfile) {
+      // Personal fields
+      if (!userProfile.name) {
+        incompleteFields.push({ key: "name", label: t('profile.personal.full_name'), section: "personal" as const })
+      }
+      if (!userProfile.email) {
+        incompleteFields.push({ key: "email", label: t('profile.personal.email'), section: "personal" as const })
+      }
+      if (!userProfile.phone) {
+        incompleteFields.push({ key: "phone", label: t('profile.personal.phone'), section: "personal" as const })
+      }
+      if (!userProfile.address) {
+        incompleteFields.push({ key: "address", label: t('profile.personal.address'), section: "personal" as const })
+      }
+      
+      // Church fields
+      if (!userProfile.institution_id) {
+        incompleteFields.push({ key: "institution_id", label: t('profile.church.institution'), section: "church" as const })
+      }
+      if (!userProfile.church_id) {
+        incompleteFields.push({ key: "church_id", label: t('profile.church.church'), section: "church" as const })
+      }    console.log("📊 Incomplete fields detected:", incompleteFields)
   }
 
   // Handle field click to edit section
@@ -166,7 +176,7 @@ export default function ProfilePage() {
           {/* Profile Sections Stack */}
           <div className="space-y-6">
             
-            {/* 1. Dados Pessoais */}
+            {/* Personal Data Section */}
             <PersonalInfoSection
               name={editData.name || profile.name || ""}
               email={editData.email || profile.email || ""}
@@ -184,7 +194,7 @@ export default function ProfilePage() {
               onLanguageChange={(value) => handleFieldChange("language_preference", value)}
             />
 
-            {/* 2. Informações da Igreja */}
+            {/* Church Information Section */}
             <ChurchInfoSection
               role={profile.role || ""}
               institution={profile.institution_name || ""}
