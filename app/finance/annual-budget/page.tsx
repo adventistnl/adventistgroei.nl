@@ -1029,9 +1029,10 @@ export default function AnnualBudgetPage() {
         if (value === undefined || value === null || value === "") {
           return true
         }
-        // value será boolean após conversão no UseTable
+        // Converter string para boolean
+        const filterValue = value === "true" || value === true
         const departmentData = row.original
-        return departmentData.hasBudgetRecord === value
+        return departmentData.hasBudgetRecord === filterValue
       },
     },
     {
