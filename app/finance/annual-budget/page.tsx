@@ -280,8 +280,8 @@ export default function AnnualBudgetPage() {
         spentAmount: annualBudget ? parseFloat(annualBudget.total_expenses) || 0 : 0,
         remainingAmount: annualBudget ? parseFloat(annualBudget.balance) || 0 : 0,
         usagePercentage: annualBudget ? 
-          (parseFloat(annualBudget.requested_amount) > 0 ? 
-            ((parseFloat(annualBudget.total_expenses) || 0) / parseFloat(annualBudget.requested_amount)) * 100 
+          (parseFloat(annualBudget.planned_budget) > 0 ? 
+            Math.round(((parseFloat(annualBudget.total_expenses) || 0) / parseFloat(annualBudget.planned_budget)) * 100) 
             : 0) 
           : 0
       }
@@ -427,13 +427,13 @@ export default function AnnualBudgetPage() {
           >
             <div className={`w-6 h-6 border-2 border-dashed rounded-full flex items-center justify-center transition-all ${
               isLocked 
-                ? 'border-gray-900 bg-gray-900 hover:bg-gray-800' 
-                : 'border-gray-400 bg-gray-50 opacity-60 hover:opacity-100 hover:border-gray-600'
+                ? 'border-foreground bg-foreground hover:bg-foreground/90' 
+                : 'border-border bg-muted opacity-60 hover:opacity-100 hover:border-foreground/60'
             }`}>
               {isLocked ? (
-                <Lock className="w-3 h-3 text-white" />
+                <Lock className="w-3 h-3 text-background" />
               ) : (
-                <Unlock className="w-3 h-3 text-gray-600" />
+                <Unlock className="w-3 h-3 text-muted-foreground" />
               )}
             </div>
           </button>
@@ -501,56 +501,9 @@ export default function AnnualBudgetPage() {
         ? "opacity-40 pointer-events-none" 
         : utilizationRate > 90
           ? "hover:bg-yellow-50 transition-all border-l-4 border-l-yellow-500"
-          : "hover:bg-gray-50 transition-all border-l-4 border-l-gray-400"
+          : "hover:bg-muted/50 transition-all border-l-4 border-l-muted-foreground"
     }
   ]}, [kpiData, selectedYear, hasInstitutionBudget, institutionAnnualBudgets, handleCreateInstitutionBudget, handleEditInstitutionBudget, handleToggleInstitutionBudgetLock])
-
-  // Mock data for Institution Departments (TODO: replace with real GraphQL data)
-  // 🔴 MOCK_DATA: departmentSpending - Departments fixos + cálculos simulados
-  const institutionDepartments = useMemo(() => [
-    {
-      name: 'Finance Dept',
-      planned: 250000,
-      approved: 220000,
-      reserved: 180000,
-      institution: 'Main Institution'
-    },
-    {
-      name: 'Operations Dept',
-      planned: 180000,
-      approved: 165000,
-      reserved: 140000,
-      institution: 'Main Institution'
-    },
-    {
-      name: 'HR Dept',
-      planned: 150000,
-      approved: 140000,
-      reserved: 120000,
-      institution: 'Main Institution'
-    },
-    {
-      name: 'IT Dept',
-      planned: 200000,
-      approved: 185000,
-      reserved: 160000,
-      institution: 'Main Institution'
-    },
-    {
-      name: 'Marketing Dept',
-      planned: 120000,
-      approved: 110000,
-      reserved: 95000,
-      institution: 'Main Institution'
-    },
-    {
-      name: 'Education Dept',
-      planned: 160000,
-      approved: 150000,
-      reserved: 130000,
-      institution: 'Regional Office'
-    }
-  ], [])
 
   // Chart data from GraphQL
   const chartData = useMemo(() => {
@@ -577,7 +530,7 @@ export default function AnnualBudgetPage() {
       departmentSpending: kpisData.departmentSpending || [],
       spendingOverTime: kpisData.spendingOverTime || []
     }
-  }, [kpisData, institutionDepartments])
+  }, [kpisData])
 
   // Handlers
   const handleRefresh = async () => {
@@ -869,7 +822,7 @@ export default function AnnualBudgetPage() {
       case 'under_review': return 'bg-yellow-100 text-yellow-700 border-yellow-200'
       case 'requires_revision': return 'bg-purple-100 text-purple-700 border-purple-200'
       case 'pending': return 'bg-blue-100 text-blue-700 border-blue-200'
-      default: return 'bg-gray-100 text-gray-700 border-gray-200'
+      default: return 'bg-muted text-muted-foreground border-border'
     }
   }
 
@@ -879,7 +832,7 @@ export default function AnnualBudgetPage() {
       case 'high': return 'bg-orange-100 text-orange-700'
       case 'medium': return 'bg-yellow-100 text-yellow-700'
       case 'low': return 'bg-green-100 text-green-700'
-      default: return 'bg-gray-100 text-gray-700'
+      default: return 'bg-muted text-muted-foreground'
     }
   }
 
@@ -900,7 +853,7 @@ export default function AnnualBudgetPage() {
       id: "department",
       accessorKey: "departmentId",
       header: () => (
-        <div className="text-left font-medium text-gray-900">
+        <div className="text-left font-medium text-foreground">
           {t('annual_budget.table.headers.department_name')}
         </div>
       ),
@@ -909,12 +862,12 @@ export default function AnnualBudgetPage() {
         const isDisabled = !departmentData.hasBudgetRecord
         return (
           <div className={`flex items-center gap-3 ${isDisabled ? 'opacity-50' : ''}`}>
-            <div className="w-8 h-8 bg-gray-100 border border-gray-200 rounded-lg flex items-center justify-center">
-              <Building className="w-4 h-4 text-gray-600" />
+            <div className="w-8 h-8 bg-muted border border-border rounded-lg flex items-center justify-center">
+              <Building className="w-4 h-4 text-muted-foreground" />
             </div>
             <div>
-              <div className="font-medium text-gray-900">{departmentData.departmentName}</div>
-              <div className="text-xs text-gray-500">{departmentData.departmentDescription}</div>
+              <div className="font-medium text-foreground">{departmentData.departmentName}</div>
+              <div className="text-xs text-muted-foreground">{departmentData.departmentDescription}</div>
             </div>
           </div>
         )
@@ -923,7 +876,7 @@ export default function AnnualBudgetPage() {
     {
       id: "entity_type",
       header: () => (
-        <div className="text-center font-medium text-gray-900">
+        <div className="text-center font-medium text-foreground">
           {t('annual_budget.table.headers.entity_type')}
         </div>
       ),
@@ -932,7 +885,7 @@ export default function AnnualBudgetPage() {
         const isDisabled = !departmentData.hasBudgetRecord
         return (
           <div className={`text-center ${isDisabled ? 'opacity-50' : ''}`}>
-            <div className="text-sm font-medium text-gray-900">
+            <div className="text-sm font-medium text-foreground">
               Department
             </div>
           </div>
@@ -942,7 +895,7 @@ export default function AnnualBudgetPage() {
     {
       id: "budget_total",
       header: () => (
-        <div className="text-center font-medium text-gray-900">
+        <div className="text-center font-medium text-foreground">
           {t('annual_budget.table.headers.budget_total')}
         </div>
       ),
@@ -953,7 +906,7 @@ export default function AnnualBudgetPage() {
         
         return (
           <div className={`text-center ${isDisabled ? 'opacity-50' : ''}`}>
-            <div className="text-sm font-semibold text-gray-900">
+            <div className="text-sm font-semibold text-foreground">
               {isDisabled ? '-' : `$${budgetAmount.toLocaleString()}`}
             </div>
           </div>
@@ -963,7 +916,7 @@ export default function AnnualBudgetPage() {
     {
       id: "spent_amount",
       header: () => (
-        <div className="text-center font-medium text-gray-900">
+        <div className="text-center font-medium text-foreground">
           {t('annual_budget.table.headers.spent_amount')}
         </div>
       ),
@@ -973,7 +926,7 @@ export default function AnnualBudgetPage() {
         
         return (
           <div className={`text-center ${isDisabled ? 'opacity-50' : ''}`}>
-            <div className="text-sm font-semibold text-gray-900">
+            <div className="text-sm font-semibold text-foreground">
               {isDisabled ? '-' : `$${departmentData.spentAmount.toLocaleString()}`}
             </div>
           </div>
@@ -983,7 +936,7 @@ export default function AnnualBudgetPage() {
     {
       id: "usage_percentage",
       header: () => (
-        <div className="text-center font-medium text-gray-900">
+        <div className="text-center font-medium text-foreground">
           {t('annual_budget.table.headers.usage_percentage')}
         </div>
       ),
@@ -1005,7 +958,7 @@ export default function AnnualBudgetPage() {
     {
       id: "lock_status",
       header: () => (
-        <div className="text-center font-medium text-gray-900">
+        <div className="text-center font-medium text-foreground">
           {t('annual_budget.table.headers.lock_status')}
         </div>
       ),
@@ -1026,17 +979,17 @@ export default function AnnualBudgetPage() {
               disabled={isDisabled}
               className={`w-8 h-8 border-2 border-dashed rounded-full flex items-center justify-center transition-all ${
                 isDisabled 
-                  ? 'border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed'
+                  ? 'border-border bg-muted opacity-50 cursor-not-allowed'
                   : isLocked 
-                    ? 'border-gray-900 bg-gray-900 hover:bg-gray-800 cursor-pointer' 
-                    : 'border-gray-300 bg-gray-50 opacity-60 hover:opacity-100 hover:border-gray-600 cursor-pointer'
+                    ? 'border-foreground bg-foreground hover:bg-foreground/90 cursor-pointer' 
+                    : 'border-border bg-muted opacity-60 hover:opacity-100 hover:border-foreground/60 cursor-pointer'
               }`}
               title={isDisabled ? t('annual_budget.table.lock_tooltips.disabled') : isLocked ? t('annual_budget.table.lock_tooltips.locked') : t('annual_budget.table.lock_tooltips.unlocked')}
             >
               {isLocked ? (
-                <Lock className={`w-3 h-3 ${isDisabled ? 'text-gray-400' : 'text-white'}`} />
+                <Lock className={`w-3 h-3 ${isDisabled ? 'text-muted-foreground' : 'text-background'}`} />
               ) : (
-                <Unlock className={`w-3 h-3 ${isDisabled ? 'text-gray-400' : 'text-gray-600'}`} />
+                <Unlock className={`w-3 h-3 ${isDisabled ? 'text-muted-foreground' : 'text-muted-foreground'}`} />
               )}
             </button>
           </div>
@@ -1047,7 +1000,7 @@ export default function AnnualBudgetPage() {
       id: "budget_status",
       accessorKey: "hasBudgetRecord",
       header: () => (
-        <div className="text-center font-medium text-gray-900">
+        <div className="text-center font-medium text-foreground">
           {t('annual_budget.table.headers.budget_status')}
         </div>
       ),
@@ -1063,8 +1016,8 @@ export default function AnnualBudgetPage() {
                 {t('annual_budget.table.budget_status_labels.completed')}
               </Badge>
             ) : (
-              <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-300 text-xs flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-gray-400" />
+              <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-xs flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-muted-foreground" />
                 {t('annual_budget.table.budget_status_labels.missing')}
               </Badge>
             )}
@@ -1084,7 +1037,7 @@ export default function AnnualBudgetPage() {
     {
       id: "actions",
       header: () => (
-        <div className="text-right font-medium text-gray-900">
+        <div className="text-right font-medium text-foreground">
           {t('annual_budget.table.headers.actions')}
         </div>
       ),
@@ -1097,8 +1050,8 @@ export default function AnnualBudgetPage() {
           <div className="flex justify-end">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 border border-gray-200">
-                  <MoreHorizontal className="w-4 h-4 text-gray-600" />
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 border border-border">
+                  <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
@@ -1300,22 +1253,22 @@ export default function AnnualBudgetPage() {
 
           {/* Budget Requests - Table View */}
           <div className={`transition-opacity duration-300 ${!hasInstitutionBudget ? 'opacity-40 pointer-events-none' : ''}`}>
-            <Card className="border-gray-200 bg-white">
-              <CardHeader className="border-b border-gray-200">
+            <Card className="border-border bg-card">
+              <CardHeader className="border-b border-border">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2 text-gray-900">
-                      <DollarSign className="w-5 h-5 text-gray-700" />
+                    <CardTitle className="flex items-center gap-2 text-foreground">
+                      <DollarSign className="w-5 h-5 text-muted-foreground" />
                       {t('annual_budget.table.title_departments')}
                     </CardTitle>
-                    <CardDescription className="text-gray-600">
+                    <CardDescription className="text-muted-foreground">
                       {t('annual_budget.table.subtitle_departments')}
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="overflow-hidden p-4">
-                <div className="bg-white">
+                <div>
                   <UseTable
                     columns={columns}
                     data={departmentBudgetData}

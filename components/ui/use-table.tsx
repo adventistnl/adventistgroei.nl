@@ -217,7 +217,7 @@ export function UseTable<TData, TValue>({
   )
 
   return (
-    <div className={`w-full h-full max-w-screen space-y-4 ${className}`}>
+    <div className={`w-full h-full max-w-screen space-y-4 bg-transparent ${className}`}>
       {/* Top Bar - Always Visible */}
       <div className="flex flex-col gap-4">
         {/* Search Bar - Always on top */}

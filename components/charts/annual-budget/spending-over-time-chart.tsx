@@ -197,7 +197,7 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
         </div>
         <div className="flex items-center gap-2">
           {/* Chart Type Toggle */}
-          <div className="flex items-center border border-gray-200 rounded-lg p-1 bg-gray-50">
+          <div className="flex items-center border border-border rounded-lg p-1 bg-muted">
             <Button
               variant="ghost"
               size="sm"
@@ -205,8 +205,8 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
               className={cn(
                 "h-8 px-3 rounded-md transition-all",
                 chartType === "area"
-                  ? "bg-white shadow-sm text-gray-900"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  ? "bg-background shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
               )}
             >
               <Activity className="w-4 h-4 mr-1" />
@@ -219,8 +219,8 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
               className={cn(
                 "h-8 px-3 rounded-md transition-all",
                 chartType === "bar"
-                  ? "bg-white shadow-sm text-gray-900"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  ? "bg-background shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
               )}
             >
               <BarChart3 className="w-4 h-4 mr-1" />

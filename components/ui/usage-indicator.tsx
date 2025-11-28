@@ -94,7 +94,7 @@ export const UsageIndicator: React.FC<UsageIndicatorProps> = ({
       <div 
         className={cn(
           sizeStyle.bar,
-          "bg-gray-200 rounded-full border border-gray-300",
+          "bg-muted rounded-full border border-border",
           disabled && "opacity-50",
           className
         )}
@@ -119,13 +119,13 @@ export const UsageIndicator: React.FC<UsageIndicatorProps> = ({
         className
       )}
     >
-      <div className={cn(sizeStyle.text, "font-medium text-gray-700")}>
+      <div className={cn(sizeStyle.text, "font-medium text-foreground")}>
         {clampedPercentage}%
       </div>
       <div 
         className={cn(
           sizeStyle.bar,
-          "bg-gray-200 rounded-full border border-gray-300"
+          "bg-muted rounded-full border border-border"
         )}
       >
         <div 
