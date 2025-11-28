@@ -15,19 +15,15 @@ import {
   RefreshCw, 
   MoreHorizontal,
   CheckCircle,
-  CheckCircle2,
   XCircle,
   Clock,
   Building,
   AlertTriangle,
-  FileText,
   Lock,
   Unlock,
   Settings,
-  Trash2,
   TrendingUp,
   Eye,
-  MessageSquare,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -64,7 +60,7 @@ import { SpendingOverTimeChart } from "@/components/charts/annual-budget/spendin
 
 // Modal Components
 import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget/annual-budget-view-edit-modal"
-import { MockDataIndicator, useShowMockIndicators } from "@/components/shared/mock-data-indicator"
+
 import { DeleteBudgetModal } from "@/components/modals/annual-budget/delete-budget-modal"
 
 // GraphQL Hooks
@@ -84,16 +80,6 @@ import {
 } from "@/hooks/graphql/use-annual-budget-queries"
 import { GetBudgetDashboardData_annualBudgets } from "@/types/GetBudgetDashboardData"
 import { AnnualBudgetEntityType, AnnualBudgetPriority, AnnualBudgetCategory } from "@/types/globalTypes"
-
-// Interfaces for Budget Management
-interface BudgetRequestGroup {
-  id: string
-  name: string
-  description: string
-  color: string
-  status: string
-  requests: GetBudgetDashboardData_annualBudgets[]
-}
 
 /**
  * PÁGINA DE GESTÃO DE ORÇAMENTO ANUAL
@@ -137,8 +123,6 @@ export default function AnnualBudgetPage() {
     }
   })
   console.log(kpisData)
-  // Mock data indicators
-  const showMockIndicators = useShowMockIndicators()
 
   // State for managing available years (frontend-managed)
   const [availableYears, setAvailableYears] = useState<number[]>(() => {
@@ -328,7 +312,7 @@ export default function AnnualBudgetPage() {
     const tryingToLock = !isCurrentlyLocked
 
     if (tryingToLock && !forceLock) {
-      const departmentsWithoutBudget = departmentBudgetData.filter(dept => !dept.hasBudgetRecord)
+      const departmentsWithoutBudget = departmentBudgetData.filter((dept: any) => !dept.hasBudgetRecord)
       if (departmentsWithoutBudget.length > 0) {
         setIsInstitutionLockConfirmModalOpen(true)
         return
@@ -473,7 +457,7 @@ export default function AnnualBudgetPage() {
       id: "budget_remaining",
       title: t('annual_budget.kpi_cards.budget_remaining.title'),
       value: `$${Math.abs(budgetRemainingValue / 1000).toFixed(0)}K`,
-      icon: FileText,
+      icon: AlertTriangle,
       subtitle: isDeficit ? t('annual_budget.kpi_cards.budget_remaining.subtitle_deficit') : t('annual_budget.kpi_cards.budget_remaining.subtitle_available'),
       trend: {
         value: 10,
