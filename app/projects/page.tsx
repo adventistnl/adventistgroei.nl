@@ -400,6 +400,11 @@ export default function ProjectsPage() {
   // Colunas para a tabela de projetos
   const projectColumns: ColumnDef<ProjectTableData>[] = [
     {
+      id: "mobile-expand",
+      header: "",
+      cell: () => null, // Renderizado pelo UseTable
+    },
+    {
       accessorKey: "title",
       header: "Project Title",
       cell: ({ row }) => (
@@ -451,37 +456,48 @@ export default function ProjectsPage() {
         const project = row.original
         
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => handleViewProject(project)}
-                className="cursor-pointer"
-              >
-                <Eye className="mr-2 h-4 w-4" />
-                View Project
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleEditProject(project)}
-                className="cursor-pointer"
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                Edit Project
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleDeleteProject(project)}
-                className="cursor-pointer text-destructive focus:text-destructive"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Project
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div data-action-button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleViewProject(project)
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  View Project
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleEditProject(project)
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Project
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDeleteProject(project)
+                  }}
+                  className="cursor-pointer text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Project
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         )
       },
     },
@@ -499,7 +515,7 @@ export default function ProjectsPage() {
         setProjects(transformProjectsData(mockProjects))
         
         toast.dismiss(loadingToast)
-        toast.success("📊 Projects data loaded successfully!", {
+        toast.success("Projects data loaded successfully!", {
           duration: 3000
         })
         

@@ -2,9 +2,13 @@ export const institutionTranslations = {
   en: {
     // Modal titles and descriptions
     registerInstitution: "Register New Institution",
+    editInstitution: "Edit Institution",
     modalDescription: "Create a new religious institution in your organization",
+    editInstitutionDesc: "Update institution information and settings",
     
     // Steps
+    step: "Step",
+    of: "of",
     basicInformation: "Basic Information",
     basicInformationDesc: "Enter the institution name, denomination and location",
     contactInformation: "Contact Information", 
@@ -21,6 +25,14 @@ export const institutionTranslations = {
     countryPlaceholder: "Select country",
     searchCountry: "Search countries...",
     noCountryFound: "No country found.",
+    state: "State/Province",
+    selectState: "Select state",
+    searchStates: "Search states...",
+    noStateFound: "No state found.",
+    city: "City",
+    selectCity: "Select city",
+    searchCities: "Search cities...",
+    noCityFound: "No city found.",
     languagePreference: "Language Preference",
     languagePreferencePlaceholder: "Select language",
     searchLanguage: "Search languages...",
@@ -66,7 +78,9 @@ export const institutionTranslations = {
     next: "Next", 
     cancel: "Cancel",
     registerInstitutionBtn: "Register Institution",
+    updateInstitution: "Update Institution",
     creating: "Creating...",
+    updating: "Updating...",
     
     // Validation messages
     validation: {
@@ -80,14 +94,26 @@ export const institutionTranslations = {
       emailInvalid: "Please enter a valid email address",
       websiteInvalid: "Website must start with http:// or https://",
       fixErrors: "Please fix the errors before continuing"
+    },
+    
+    // Toast messages
+    toasts: {
+      created: "created successfully!",
+      updated: "updated successfully!",
+      createError: "Failed to create institution",
+      updateError: "Failed to update institution"
     }
   },
   nl: {
     // Modal titles and descriptions
     registerInstitution: "Nieuwe Instelling Registreren",
+    editInstitution: "Instelling Bewerken",
     modalDescription: "Maak een nieuwe religieuze instelling in uw organisatie",
+    editInstitutionDesc: "Werk instellingsinformatie en instellingen bij",
     
     // Steps
+    step: "Stap",
+    of: "van",
     basicInformation: "Basisinformatie",
     basicInformationDesc: "Voer de naam van de instelling, denominatie en locatie in",
     contactInformation: "Contactinformatie",
@@ -104,6 +130,14 @@ export const institutionTranslations = {
     countryPlaceholder: "Selecteer land",
     searchCountry: "Zoek landen...",
     noCountryFound: "Geen land gevonden.",
+    state: "Provincie",
+    selectState: "Selecteer provincie",
+    searchStates: "Zoek provincies...",
+    noStateFound: "Geen provincie gevonden.",
+    city: "Stad",
+    selectCity: "Selecteer stad",
+    searchCities: "Zoek steden...",
+    noCityFound: "Geen stad gevonden.",
     languagePreference: "Taalvoorkeur",
     languagePreferencePlaceholder: "Selecteer taal",
     searchLanguage: "Zoek talen...",
@@ -149,7 +183,31 @@ export const institutionTranslations = {
     next: "Volgende",
     cancel: "Annuleren", 
     registerInstitutionBtn: "Instelling Registreren",
+    updateInstitution: "Instelling Bijwerken",
     creating: "Maken...",
+    updating: "Bijwerken...",
+    
+    // Validation messages
+    validation: {
+      nameRequired: "Naam van instelling is verplicht",
+      nameMinLength: "Naam van instelling moet minimaal 2 tekens lang zijn",
+      denominationRequired: "Denominatie is verplicht",
+      denominationMinLength: "Denominatie moet minimaal 2 tekens lang zijn",
+      countryRequired: "Land is verplicht",
+      languageRequired: "Taalvoorkeur is verplicht",
+      emailRequired: "E-mail is verplicht",
+      emailInvalid: "Voer een geldig e-mailadres in",
+      websiteInvalid: "Website moet beginnen met http:// of https://",
+      fixErrors: "Corrigeer de fouten voordat u doorgaat"
+    },
+    
+    // Toast messages
+    toasts: {
+      created: "succesvol aangemaakt!",
+      updated: "succesvol bijgewerkt!",
+      createError: "Instelling aanmaken mislukt",
+      updateError: "Instelling bijwerken mislukt"
+    },
     
     // Analytics
     analytics: {
@@ -165,9 +223,13 @@ export const institutionTranslations = {
   pt: {
     // Modal titles and descriptions
     registerInstitution: "Registrar Nova Instituição",
+    editInstitution: "Editar Instituição",
     modalDescription: "Crie uma nova instituição religiosa em sua organização",
+    editInstitutionDesc: "Atualizar informações e configurações da instituição",
     
     // Steps
+    step: "Etapa",
+    of: "de",
     basicInformation: "Informações Básicas",
     basicInformationDesc: "Digite o nome da instituição, denominação e localização",
     contactInformation: "Informações de Contato", 
@@ -184,6 +246,14 @@ export const institutionTranslations = {
     countryPlaceholder: "Selecione o país",
     searchCountry: "Buscar países...",
     noCountryFound: "Nenhum país encontrado.",
+    state: "Estado/Província",
+    selectState: "Selecionar estado",
+    searchStates: "Buscar estados...",
+    noStateFound: "Nenhum estado encontrado.",
+    city: "Cidade",
+    selectCity: "Selecionar cidade",
+    searchCities: "Buscar cidades...",
+    noCityFound: "Nenhuma cidade encontrada.",
     languagePreference: "Preferência de Idioma",
     languagePreferencePlaceholder: "Selecione o idioma",
     searchLanguage: "Buscar idiomas...",
@@ -229,7 +299,9 @@ export const institutionTranslations = {
     next: "Próximo", 
     cancel: "Cancelar",
     registerInstitutionBtn: "Registrar Instituição",
+    updateInstitution: "Atualizar Instituição",
     creating: "Criando...",
+    updating: "Atualizando...",
     
     // Validation messages
     validation: {
@@ -243,6 +315,14 @@ export const institutionTranslations = {
       emailInvalid: "Digite um endereço de e-mail válido",
       websiteInvalid: "Website deve começar com http:// ou https://",
       fixErrors: "Corrija os erros antes de continuar"
+    },
+
+    // Toast messages
+    toasts: {
+      created: "criada com sucesso!",
+      updated: "atualizada com sucesso!",
+      createError: "Falha ao criar instituição",
+      updateError: "Falha ao atualizar instituição"
     },
 
     // Analytics

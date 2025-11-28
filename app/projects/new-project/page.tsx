@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, Suspense } from "react"
+import React, { useState, useEffect, useMemo, Suspense, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AppLayout } from "@/components/layouts/app-layout"
@@ -54,7 +54,7 @@ import {
   CheckCircle,
   Calendar as CalendarIcon,
   Users,
-  Activity,
+  Activity as ActivityIcon,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -98,6 +98,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
+import ActivityGroup from '@/components/projects/activity-group'
 import {
   Command,
   CommandEmpty,
@@ -109,6 +110,10 @@ import {
 import { EventRegistrationForm, EventFormData } from "@/components/shared/event-registration-form"
 import { CommunicationForm, CommunicationFormData } from "@/components/shared/communication-form"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
+import { ProjectDataStep } from "@/components/projects/steps/project-data-step"
+import type { ProjectFormData, ProjectActivity } from "@/components/projects/types"
+type FormData = ProjectFormData
+type Activity = ProjectActivity
 import toast from "react-hot-toast"
 import "@/lib/i18n"
 
@@ -163,7 +168,7 @@ const TAG_ICONS: { [key: string]: typeof Home } = {
   "Viagens": Target,
   "Eventos": CalendarIcon,
   "Treinamento": Users,
-  "Marketing": Activity,
+  "Marketing": ActivityIcon,
   "Alimentação": DollarSign,
   "Tecnologia": Calculator,
   "Manutenção": AlertTriangle,
@@ -181,74 +186,8 @@ const renderTagWithIcon = (tag: string, className?: string) => {
   )
 }
 
-// Types
-export interface ProjectActivity {
-  id: string
-  name: string
-  description: string
-  budget_amount: number
-  request_subsidy: boolean
-  is_subsidized: boolean
-  tags: string[]
-}
-
-export interface ProjectFormData {
-  // Step 1: Project Data
-  title: string
-  description: string
-  department_id: string
-  responsible_id: string // Single responsible instead of array
-  project_responsible_type: "personal" | "institutional" | "church" | "region" | "department"
-  register_as_event: boolean
-  is_private: boolean
-  
-  // Step 2: Activities
-  activities: ProjectActivity[]
-  
-  // Step 3: Funding Distribution (calculated from activities)
-  total_budget: number
-  church_contribution: number
-  institution_contribution: number
-  subsidy_percentage: number
-  is_special_case: boolean
-  special_case_reason?: string
-  
-  // Special Projects fields
-  location_church_plant?: string
-  special_budget?: number
-  
-  // Step 4: Event Registration (optional)
-  event?: {
-    title: string
-    description: string
-    contact_id: string
-    type: string // Changed to allow custom types
-    language_preference: "en" | "nl" | "pt" | "es" | "fr" | "de"
-    max_participants?: number
-    is_paid_event: boolean
-    ticket_amount?: number
-    payment_description?: string
-    required_volunteers: boolean
-    start_at?: Date
-    end_at?: Date
-    subscription_expires_at?: Date
-    target_type: "institution" | "region" | "department" | "church" | "user"
-    target_id?: string
-  }
-  
-  // Step 5: Communication (optional)
-  communication?: {
-    title: string
-    content: import('lexical').SerializedEditorState
-    communication_type: "announcement" | "invitation" | "newsletter" | "update" | "reminder"
-    priority: "low" | "medium" | "high" | "urgent"
-    language_preference: "en" | "nl" | "pt" | "es" | "fr" | "de"
-    post_now: boolean
-    publish_date?: string
-    target_type?: "institution" | "region" | "department" | "church" | "user"
-    target_id?: string
-  }
-}
+// Types imported from components/projects/types
+export type { ProjectActivity, ProjectFormData } from '@/components/projects/types'
 
 // Predefined activity tags
 const ACTIVITY_TAGS = [
@@ -299,259 +238,16 @@ function ProjectRegisterContent() {
   const translations = projectRegisterTranslations[i18n.language as keyof typeof projectRegisterTranslations] || projectRegisterTranslations.en
   
   // Helper para renderizar tipo de responsabilidade como badge selecionável
-  const renderResponsibilityType = (type: string, isSelected: boolean, onClick: () => void) => {
-    const typeIcons = {
-      personal: Users,
-      institutional: Building,
-      church: Home,
-      region: MapPin,
-      department: Settings
-    }
-    
-    const IconComponent = typeIcons[type as keyof typeof typeIcons] || Users
-    const typeLabel = (translations as any).responsibilityTypes?.[type] || type
-    
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all duration-200 text-sm font-medium",
-          "hover:border-primary/50 hover:shadow-sm",
-          isSelected 
-            ? "border-primary bg-primary/5 text-primary shadow-sm" 
-            : "border-border bg-background text-muted-foreground hover:text-foreground"
-        )}
-      >
-        <IconComponent className="w-4 h-4" />
-        {typeLabel}
-      </button>
-    )
-  }
+  // renderResponsibilityType moved to ProjectDataStep component
 
-  // Component for activity groups with drag & drop
-  const ActivityGroup = ({ 
-    title, 
-    activities, 
-    groupType = 'subsidized', // Add explicit groupType prop
-    onMove, 
-    onRestore, 
-    onDelete, 
-    onEdit, 
-    onClearAll, // Add clear all function
-    isTrash = false,
-    allowDrop = true,
-    defaultCollapsed = false // Add collapsible functionality
-  }: {
-    title: string
-    activities: ProjectActivity[]
-    groupType?: 'subsidized' | 'nonSubsidized' | 'trash'
-    onMove?: (activityId: string, toGroup: 'subsidized' | 'nonSubsidized' | 'trash') => void
-    onRestore?: (activityId: string) => void
-    onDelete?: (activityId: string) => void
-    onEdit?: (activityId: string) => void
-    onClearAll?: () => void
-    isTrash?: boolean
-    allowDrop?: boolean
-    defaultCollapsed?: boolean
-  }) => {
-    const [draggedOver, setDraggedOver] = useState(false)
-    const [draggingActivityId, setDraggingActivityId] = useState<string | null>(null)
-    const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed)
-    const totalBudget = activities.reduce((sum, act) => sum + act.budget_amount, 0)
-
-    const handleDragStart = (e: React.DragEvent, activityId: string) => {
-      e.dataTransfer.setData('text/plain', activityId)
-      setDraggingActivityId(activityId)
-    }
-
-    const handleDragEnd = () => {
-      setDraggingActivityId(null)
-    }
-
-    const handleDragOver = (e: React.DragEvent) => {
-      if (allowDrop) {
-        e.preventDefault()
-        setDraggedOver(true)
-      }
-    }
-
-    const handleDragLeave = (e: React.DragEvent) => {
-      // Only set draggedOver to false if we're leaving the drop zone entirely
-      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-        setDraggedOver(false)
-      }
-    }
-
-    const handleDrop = (e: React.DragEvent) => {
-      e.preventDefault()
-      setDraggedOver(false)
-      
-      if (!allowDrop || !onMove) return
-      
-      const activityId = e.dataTransfer.getData('text/plain')
-      // Use explicit groupType prop instead of title matching
-      const targetGroup = isTrash ? 'trash' : groupType
-      onMove(activityId, targetGroup)
-    }
-
-    return (
-      <div 
-        className={cn(
-          "border-2 rounded-lg bg-card rounded-xl  shadow-sm transition-all duration-200",
-          draggedOver && allowDrop 
-            ? "border-primary border-dashed bg-primary/10 shadow-lg transform scale-[1.02]" 
-            : "border-border",
-          isTrash && "border-red-200 bg-red-50",
-          allowDrop && "hover:border-primary/50"
-        )}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <div className="p-4 border-b border-border">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="font-medium flex items-center gap-2 hover:text-primary transition-colors"
-            >
-              {isTrash ? (
-                <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center">
-                  <X className="w-3 h-3 text-red-600" />
-                </div>
-              ) : (
-                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
-                  <DollarSign className="w-3 h-3 text-primary" />
-                </div>
-              )}
-              {title}
-              <ChevronRight 
-                className={cn(
-                  "w-4 h-4 transition-transform duration-200",
-                  !isCollapsed && "rotate-90"
-                )}
-              />
-            </button>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <span>{(translations as any).activityGroups?.totalItems?.replace('{{count}}', activities.length) || `${activities.length} atividades`}</span>
-                <Badge variant="outline" className="font-mono">
-                  {(translations as any).activityGroups?.budgetSummary?.replace('{{amount}}', totalBudget.toLocaleString()) || `R$ ${totalBudget.toLocaleString()}`}
-                </Badge>
-              </div>
-              {isTrash && activities.length > 0 && onClearAll && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={onClearAll}
-                  className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                >
-                  <X className="w-3 h-3 mr-1" />
-                  {(translations as any).activityGroups?.clearAll || "Limpar Tudo"}
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {!isCollapsed && (
-          <div className="p-4">
-            {activities.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-muted flex items-center justify-center">
-                  {isTrash ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
-                </div>
-                <p className="text-sm">
-                  {isTrash 
-                    ? ((translations as any).activityGroups?.emptyTrash || "Lixeira vazia")
-                    : ((translations as any).activityGroups?.emptyGroup || "Nenhuma atividade neste grupo")}
-                </p>
-                {!isTrash && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {(translations as any).activityGroups?.dragAndDrop || "Arraste atividades entre grupos"}
-                  </p>
-                )}
-              </div>
-            ) : (
-            <div className="space-y-3">
-              {activities.map((activity) => (
-                <div
-                  key={activity.id}
-                  draggable={!isTrash}
-                  onDragStart={(e) => handleDragStart(e, activity.id)}
-                  onDragEnd={handleDragEnd}
-                  className={cn(
-                    "p-3 border-2 rounded-lg transition-all duration-200",
-                    "hover:shadow-sm cursor-move",
-                    isTrash ? "border-red-200 bg-red-50/50" : "border-border",
-                    draggingActivityId === activity.id && "opacity-50 transform scale-95"
-                  )}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h5 className="font-medium text-sm truncate">{activity.name}</h5>
-                        <Badge variant="outline" className="text-xs font-mono shrink-0">
-                          R$ {activity.budget_amount.toLocaleString()}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                        {activity.description}
-                      </p>
-                      {activity.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {activity.tags.map((tag) => renderTagWithIcon(tag, "h-5"))}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center gap-1 ml-3 shrink-0">
-                      {isTrash ? (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => onRestore?.(activity.id)}
-                          className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </Button>
-                      ) : (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => onEdit?.(activity.id)}
-                            className="h-7 w-7 p-0"
-                          >
-                            <Settings className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => onDelete?.(activity.id)}
-                            className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    )
-  }  // Check if editing existing project
+  // ActivityGroup extracted to components/projects/activity-group.tsx
+  // Check if editing existing project
   const projectId = searchParams.get('edit')
   const isEditing = !!projectId
   
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
-  const [formData, setFormData] = useState<ProjectFormData>({
+  const [formData, setFormData] = useState<FormData>({
     title: "",
     description: "",
     department_id: "",
@@ -569,7 +265,7 @@ function ProjectRegisterContent() {
   
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null)
-  const [currentActivity, setCurrentActivity] = useState<Partial<ProjectActivity>>({
+  const [currentActivity, setCurrentActivity] = useState<Partial<Activity>>({
     name: "",
     description: "",
     budget_amount: 0,
@@ -598,7 +294,74 @@ function ProjectRegisterContent() {
   const [isSpecialRulesOpen, setIsSpecialRulesOpen] = useState(true)
   
   // State for trash (deleted activities)
-  const [deletedActivities, setDeletedActivities] = useState<ProjectActivity[]>([])
+  const [deletedActivities, setDeletedActivities] = useState<Activity[]>([])
+  
+  // Ref for activity form to scroll into view
+  const activityFormRef = useRef<HTMLDivElement>(null)
+
+  // Draft persistence (sessionStorage)
+  const DRAFT_KEY = `project_register_draft:${projectId || 'new'}`
+  const saveTimer = useRef<number | null>(null)
+
+  // Load draft on mount
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(DRAFT_KEY)
+      if (!raw) return
+      const draft = JSON.parse(raw)
+
+      if (draft?.formData) setFormData(prev => ({ ...prev, ...draft.formData }))
+      if (typeof draft?.manualAmount === 'number') setManualAmount(draft.manualAmount)
+      if (typeof draft?.manualPercentage === 'number') setManualPercentage(draft.manualPercentage)
+      if (typeof draft?.isManualEntry === 'boolean') setIsManualEntry(draft.isManualEntry)
+      if (typeof draft?.isSpecialProject === 'boolean') setIsSpecialProject(draft.isSpecialProject)
+      if (typeof draft?.isChurchPlanting === 'boolean') setIsChurchPlanting(draft.isChurchPlanting)
+      if (typeof draft?.currentStep === 'number') setCurrentStep(draft.currentStep)
+      if (draft?.currentActivity) setCurrentActivity(prev => ({ ...prev, ...draft.currentActivity }))
+      if (draft?.editingActivityId) setEditingActivityId(draft.editingActivityId)
+      toast.success((translations as any).toast?.draftLoaded || 'Rascunho carregado')
+    } catch (err) {
+      // ignore parse errors
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Autosave draft on changes (debounced)
+  useEffect(() => {
+    try {
+      if (saveTimer.current) window.clearTimeout(saveTimer.current)
+      saveTimer.current = window.setTimeout(() => {
+        const draft = {
+          formData,
+          manualAmount,
+          manualPercentage,
+          isManualEntry,
+          isSpecialProject,
+          isChurchPlanting,
+          currentStep,
+          currentActivity,
+          editingActivityId
+        }
+        sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+      }, 500)
+    } catch (err) {
+      // ignore storage errors
+    }
+
+    return () => {
+      if (saveTimer.current) window.clearTimeout(saveTimer.current)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData, manualAmount, manualPercentage, isManualEntry, isSpecialProject, isChurchPlanting, currentStep, currentActivity, editingActivityId])
+
+  const clearDraft = () => {
+    try {
+      sessionStorage.removeItem(DRAFT_KEY)
+      toast.success((translations as any).toast?.draftCleared || 'Rascunho limpo')
+    } catch {
+      // ignore
+    }
+  }
   
   // Auto-add special project tags based on selection
   useEffect(() => {
@@ -699,6 +462,8 @@ function ProjectRegisterContent() {
       }
     })
   }
+
+  const handleMoveToTrash = (id: string) => moveActivityBetweenGroups(id, 'trash')
 
   const restoreActivityFromTrash = (activityId: string) => {
     const deletedActivity = deletedActivities.find(a => a.id === activityId)
@@ -949,7 +714,31 @@ function ProjectRegisterContent() {
       request_subsidy: predefinedActivity.request_subsidy,
       tags: predefinedActivity.tags
     })
-    toast.success(translations.toast.activitySelected.replace('{{name}}', predefinedActivity.name))
+    
+    // Scroll to activity form to show filled data
+    setTimeout(() => {
+      activityFormRef.current?.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      })
+      
+      // Optional: Focus on the first input to highlight the form
+      const firstInput = activityFormRef.current?.querySelector('input')
+      if (firstInput) {
+        setTimeout(() => {
+          firstInput.focus()
+          firstInput.select()
+        }, 500)
+      }
+    }, 150)
+    
+    // Show enhanced toast with activity details
+    toast.success(
+      `Quick Activity selecionada: "${predefinedActivity.name}"`,
+      {
+        duration: 4000
+      }
+    )
   }
 
   const handleRemoveActivity = (activityId: string) => {
@@ -996,7 +785,15 @@ function ProjectRegisterContent() {
     // Check by step title since IDs are dynamic
     switch (currentStepConfig.title) {
       case "Dados do Projeto":
-        return renderProjectDataStep()
+        return (
+          <ProjectDataStep
+            formData={formData}
+            errors={errors}
+            departments={mockDepartments}
+            users={mockUsers}
+            onChange={(updates) => setFormData({ ...formData, ...updates })}
+          />
+        )
       case "Atividades":
         return renderActivitiesStep()
       case "Distribuição de Fundos":
@@ -1140,292 +937,8 @@ function ProjectRegisterContent() {
     </div>
   )
 
-  const renderProjectDataStep = () => (
-    <div className="animate-in fade-in-0 duration-300">
-      <div className="flex flex-col lg:flex-row gap-8 w-full">
-        {/* Left Column - Info (1/4 da tela) */}
-        <div className="w-full lg:w-1/4 space-y-4">
-          <div className="p-6 rounded-lg border border-muted">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-                  <Globe className="w-4 h-4 text-muted-foreground" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-foreground">{translations.steps.projectInfo.title}</h3>
-                  <p className="text-xs text-muted-foreground">{translations.steps.projectInfo.description}</p>
-                </div>
-              </div>
-              
-              <div className="text-xs text-muted-foreground leading-relaxed">
-                <p>{translations.steps.projectInfo.content}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column - Form (3/4 da tela) */}
-        <div className="w-full lg:w-3/4">
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <Label htmlFor="title" className="flex items-center gap-2 text-base font-medium">
-                <Target className="w-4 h-4 text-muted-foreground" />
-                Título do Projeto *
-              </Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Digite o título do projeto"
-                className={`h-12 text-base border-2 ${errors.title ? 'border-red-500' : 'border-border'}`}
-              />
-              {errors.title && <p className="text-sm text-red-600">{errors.title}</p>}
-            </div>
-
-            <div className="space-y-4">
-              <Label htmlFor="description" className="flex items-center gap-2 text-base font-medium">
-                <Globe className="w-4 h-4 text-muted-foreground" />
-                Descrição do Projeto *
-              </Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descreva o projeto detalhadamente"
-                className={`min-h-[120px] text-base border-2 ${errors.description ? 'border-red-500' : 'border-border'}`}
-              />
-              {errors.description && <p className="text-sm text-red-600">{errors.description}</p>}
-            </div>
-
-            {/* Department and Responsible in Row */}
-            <div className="flex flex-col sm:flex-row gap-6">
-              <div className="flex-1 space-y-4">
-                <Label htmlFor="department" className="flex items-center gap-2 text-base font-medium">
-                  <Building className="w-4 h-4 text-muted-foreground" />
-                  {translations.fields.department} *
-                </Label>
-                <Popover open={openDepartment} onOpenChange={setOpenDepartment}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openDepartment}
-                      className={`h-12 w-full justify-between border-2 ${errors.department_id ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors`}
-                    >
-                      {formData.department_id
-                        ? mockDepartments.find((dept) => dept.id === formData.department_id)?.name
-                        : translations.placeholders.selectDepartment}
-                      <Building className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Pesquisar departamento..." />
-                      <CommandList>
-                        <CommandEmpty>Nenhum departamento encontrado.</CommandEmpty>
-                        <CommandGroup>
-                          {mockDepartments.map((dept) => (
-                            <CommandItem
-                              key={dept.id}
-                              value={dept.name}
-                              onSelect={() => {
-                                setFormData({ ...formData, department_id: dept.id })
-                                setOpenDepartment(false)
-                              }}
-                            >
-                              <div className="flex items-center gap-3 w-full">
-                                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                                  <Building className="w-4 h-4 text-primary" />
-                                </div>
-                                <div className="flex-1">
-                                  <span className="font-medium">{dept.name}</span>
-                                  <Badge variant="outline" className="ml-2 text-xs">
-                                    R$ {dept.annual_budget.toLocaleString()}
-                                  </Badge>
-                                </div>
-                                {formData.department_id === dept.id && (
-                                  <Check className="ml-auto h-4 w-4" />
-                                )}
-                              </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {errors.department_id && <p className="text-sm text-red-600">{errors.department_id}</p>}
-              </div>
-
-              <div className="flex-1 space-y-4">
-                <Label htmlFor="responsible" className="flex items-center gap-2 text-base font-medium">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                  {translations.fields.responsiblePeople} *
-                </Label>
-                <Popover open={openResponsible} onOpenChange={setOpenResponsible}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openResponsible}
-                      className={`h-12 w-full justify-between border-2 ${errors.responsible_id ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors`}
-                    >
-                      {formData.responsible_id
-                        ? mockUsers.find((user) => user.id === formData.responsible_id)?.name
-                        : translations.placeholders.selectResponsible}
-                      <Users className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Pesquisar usuário..." />
-                      <CommandList>
-                        <CommandEmpty>Nenhum usuário encontrado.</CommandEmpty>
-                        <CommandGroup>
-                          {mockUsers.map((user) => (
-                            <CommandItem
-                              key={user.id}
-                              value={user.name}
-                              onSelect={() => {
-                                setFormData({ ...formData, responsible_id: user.id })
-                                setOpenResponsible(false)
-                              }}
-                            >
-                              <div className="flex items-center gap-3 w-full">
-                                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                                  <Users className="w-4 h-4 text-primary" />
-                                </div>
-                                <div className="flex-1">
-                                  <span className="font-medium">{user.name}</span>
-                                  <div className="text-xs text-muted-foreground">{user.email}</div>
-                                </div>
-                                {formData.responsible_id === user.id && (
-                                  <Check className="ml-auto h-4 w-4" />
-                                )}
-                              </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {errors.responsible_id && <p className="text-sm text-red-600">{errors.responsible_id}</p>}
-              </div>
-            </div>
-
-            {/* Project Responsible Type */}
-            <div className="space-y-4">
-              <Label className="flex items-center gap-2 text-base font-medium">
-                <Home className="w-4 h-4 text-muted-foreground" />
-                {(translations as any).fields?.projectResponsibleType || "Tipo de Responsabilidade do Projeto"}
-              </Label>
-              <Carousel
-                opts={{
-                  align: "start",
-                  loop: false,
-                  skipSnaps: false,
-                  dragFree: true,
-                }}
-                className="w-full"
-              >
-                <CarouselContent className="-ml-2">
-                  {["personal", "institutional", "church", "region", "department"].map((type) => (
-                    <CarouselItem key={type} className="pl-2 basis-1/2 sm:basis-1/3 lg:basis-1/5">
-                      {renderResponsibilityType(
-                        type,
-                        formData.project_responsible_type === type,
-                        () => setFormData({ 
-                          ...formData, 
-                          project_responsible_type: type as "personal" | "institutional" | "church" | "region" | "department" 
-                        })
-                      )}
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious className="left-2 h-8 w-8 bg-background/80 backdrop-blur-sm border hover:bg-background/90" />
-                <CarouselNext className="right-2 h-8 w-8 bg-background/80 backdrop-blur-sm border hover:bg-background/90" />
-              </Carousel>
-            </div>
-
-            {/* Register as Event Switch */}
-            <div className="flex items-center justify-between p-3 border border-border rounded-lg hover:border-primary/30 transition-colors">
-              <div className="space-y-1 flex-1">
-                <div className="flex items-center gap-2">
-                  <Label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
-                    <CalendarIcon className="w-4 h-4 text-muted-foreground" />
-                    Registrar como Evento
-                  </Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="w-3 h-3 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-xs">Cria um evento público associado a este projeto</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {formData.is_private 
-                    ? "Projetos privados não podem ser registrados como eventos públicos" 
-                    : "Cria um evento público associado a este projeto"}
-                </p>
-              </div>
-              <Switch
-                checked={formData.register_as_event}
-                disabled={formData.is_private}
-                onCheckedChange={(checked) => {
-                  if (!formData.is_private) {
-                    setFormData({ ...formData, register_as_event: checked })
-                  }
-                }}
-                className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-gray-300 disabled:bg-gray-500 disabled:opacity-70"
-              />
-            </div>
-
-            {/* Private Project Switch */}
-            <div className="flex items-center justify-between p-3 border border-border rounded-lg hover:border-primary/30 transition-colors">
-              <div className="space-y-1 flex-1">
-                <div className="flex items-center gap-2">
-                  <Label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
-                    <Settings className="w-4 h-4 text-muted-foreground" />
-                    Projeto Privado
-                  </Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="w-3 h-3 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-xs">Projeto será visível apenas para membros autorizados</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Projeto será visível apenas para membros autorizados
-                </p>
-              </div>
-              <Switch
-                checked={formData.is_private}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    // Se marcar como privado, desmarcar evento automaticamente
-                    setFormData({ 
-                      ...formData, 
-                      is_private: checked, 
-                      register_as_event: false 
-                    })
-                  } else {
-                    setFormData({ ...formData, is_private: checked })
-                  }
-                }}
-                className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-gray-300 disabled:bg-gray-500 disabled:opacity-70"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+  // renderProjectDataStep moved to component
+  // See: components/projects/steps/project-data-step.tsx
 
   const renderActivitiesStep = () => (
     <div className="animate-in fade-in-0 duration-300">
@@ -1436,7 +949,7 @@ function ProjectRegisterContent() {
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-                  <Activity className="w-4 h-4 text-muted-foreground" />
+                  <ActivityIcon className="w-4 h-4 text-muted-foreground" />
                 </div>
                 <div>
                   <h3 className="font-medium text-foreground">{translations.steps.activities.title}</h3>
@@ -1481,7 +994,7 @@ function ProjectRegisterContent() {
                           <div className="flex items-center justify-between gap-2">
                             <h5 className="font-medium text-sm truncate">{activity.name}</h5>
                             <Badge variant="default" className="text-xs shrink-0 bg-primary/10 text-primary border-primary/20">
-                              R$ {activity.budget_amount.toLocaleString()}
+                              € {activity.budget_amount.toLocaleString()}
                             </Badge>
                           </div>
                           <p className="text-xs text-muted-foreground line-clamp-2">
@@ -1505,7 +1018,7 @@ function ProjectRegisterContent() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h4 className="font-medium flex items-center gap-2">
-                <Activity className="w-4 h-4 text-muted-foreground" />
+                <ActivityIcon className="w-4 h-4 text-muted-foreground" />
                 {(translations as any).activityGroups?.title || "Grupos de Atividades"}
               </h4>
               <div className="text-sm text-muted-foreground">
@@ -1520,10 +1033,12 @@ function ProjectRegisterContent() {
                 activities={subsidizedActivities}
                 groupType="subsidized"
                 onMove={moveActivityBetweenGroups}
-                onDelete={(id) => moveActivityBetweenGroups(id, 'trash')}
+                onDelete={handleMoveToTrash}
                 onEdit={editActivity}
                 allowDrop={true}
                 defaultCollapsed={false}
+                translations={translations}
+                renderTagWithIcon={renderTagWithIcon}
               />
 
               {/* Non-Subsidized Activities Group */}
@@ -1532,10 +1047,12 @@ function ProjectRegisterContent() {
                 activities={nonSubsidizedActivities}
                 groupType="nonSubsidized"
                 onMove={moveActivityBetweenGroups}
-                onDelete={(id) => moveActivityBetweenGroups(id, 'trash')}
+                onDelete={handleMoveToTrash}
                 onEdit={editActivity}
                 allowDrop={true}
                 defaultCollapsed={false}
+                translations={translations}
+                renderTagWithIcon={renderTagWithIcon}
               />
             </div>
 
@@ -1557,7 +1074,7 @@ function ProjectRegisterContent() {
           </div>
 
           {/* Add/Edit Activity Form */}
-          <div className="p-4 lg:p-6 border-2 rounded-lg bg-card rounded-xl shadow-sm border-border">
+          <div ref={activityFormRef} className="p-4 lg:p-6 border-2 rounded-lg bg-card rounded-xl shadow-sm border-border scroll-mt-20">
             <div className="space-y-4 lg:space-y-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <h4 className="font-medium flex items-center gap-2">
@@ -1717,14 +1234,18 @@ function ProjectRegisterContent() {
     
     // Handle manual entry calculations - baseado apenas no total das atividades subsidiadas
     const handleManualAmountChange = (value: number) => {
-      setManualAmount(value)
+      // Limit value to subsidyTotal
+      const limitedValue = Math.min(value, subsidyTotal)
+      setManualAmount(limitedValue)
+      
       if (subsidyTotal > 0) {
-        const percentage = Math.min(100, (value / subsidyTotal) * 100)
+        const percentage = (limitedValue / subsidyTotal) * 100
         const isSpecialCase = isSpecialProject || isChurchPlanting
+        const maxPercent = isSpecialCase ? 100 : FUNDING_POLICIES.max_institution_percent
         
         // Validate percentage limits
-        if (percentage > FUNDING_POLICIES.max_institution_percent && !isSpecialCase) {
-          toast.error(`Máximo permitido: ${FUNDING_POLICIES.max_institution_percent}%. Use Projeto Especial ou Church Planting para valores maiores.`)
+        if (percentage > maxPercent) {
+          toast.error(`Máximo permitido: ${maxPercent}%. Use Projeto Especial ou Church Planting para valores maiores.`)
           return
         }
         
@@ -1735,17 +1256,21 @@ function ProjectRegisterContent() {
     
     const handleManualPercentageChange = (value: number) => {
       const isSpecialCase = isSpecialProject || isChurchPlanting
+      const maxPercent = isSpecialCase ? 100 : FUNDING_POLICIES.max_institution_percent
+      
+      // Limit percentage to max allowed
+      const limitedPercentage = Math.min(value, maxPercent)
       
       // Validate percentage limits
-      if (value > FUNDING_POLICIES.max_institution_percent && !isSpecialCase) {
-        toast.error(`Máximo permitido: ${FUNDING_POLICIES.max_institution_percent}%. Use Projeto Especial ou Church Planting para valores maiores.`)
+      if (value > maxPercent) {
+        toast.error(`Máximo permitido: ${maxPercent}%. Use Projeto Especial ou Church Planting para valores maiores.`)
         return
       }
       
-      setManualPercentage(value)
-      const amount = (subsidyTotal * value) / 100
+      setManualPercentage(limitedPercentage)
+      const amount = (subsidyTotal * limitedPercentage) / 100
       setManualAmount(amount)
-      setFormData({ ...formData, subsidy_percentage: value })
+      setFormData({ ...formData, subsidy_percentage: limitedPercentage })
     }
 
     // Preparar dados para os KPI Cards
@@ -1753,21 +1278,21 @@ function ProjectRegisterContent() {
       {
         id: "available-amount",
         title: (translations as any).fundingCalculator?.availableAmount || "Valor Disponível",
-        value: `R$ ${mockDepartmentBudget.total_available.toLocaleString()}`,
+        value: `€ ${mockDepartmentBudget.total_available.toLocaleString()}`,
         icon: TrendingUp,
         subtitle: mockDepartmentBudget.department_name
       },
       {
         id: "used-this-year",
         title: (translations as any).fundingCalculator?.usedThisYear || "Usado Este Ano",
-        value: `R$ ${mockDepartmentBudget.used_this_year.toLocaleString()}`,
+        value: `€ ${mockDepartmentBudget.used_this_year.toLocaleString()}`,
         icon: TrendingDown,
         subtitle: `${Math.round((mockDepartmentBudget.used_this_year / mockDepartmentBudget.total_available) * 100)}% do orçamento`
       },
       {
         id: "remaining-amount",
         title: (translations as any).fundingCalculator?.remainingAmount || "Valor Restante",
-        value: `R$ ${mockDepartmentBudget.remaining.toLocaleString()}`,
+        value: `€ ${mockDepartmentBudget.remaining.toLocaleString()}`,
         icon: Banknote,
         subtitle: "Disponível para novos projetos"
       }
@@ -1801,7 +1326,7 @@ function ProjectRegisterContent() {
                       <span className="text-sm font-medium text-foreground">
                         Custo Total do Projeto
                       </span>
-                      <span className="text-lg font-bold text-foreground">R$ {totalBudget.toLocaleString()}</span>
+                      <span className="text-lg font-bold text-foreground">€ {totalBudget.toLocaleString()}</span>
                     </div>
                   </div>
                   
@@ -1812,14 +1337,14 @@ function ProjectRegisterContent() {
                         <div className="w-3 h-3 rounded bg-green-500"></div>
                         <span className="text-muted-foreground">Atividades Subsidiadas</span>
                       </div>
-                      <span className="font-medium">R$ {subsidyTotal.toLocaleString()}</span>
+                      <span className="font-medium">€ {subsidyTotal.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded bg-blue-500"></div>
                         <span className="text-muted-foreground">Atividades Não Subsidiadas</span>
                       </div>
-                      <span className="font-medium">R$ {(totalBudget - subsidyTotal).toLocaleString()}</span>
+                      <span className="font-medium">€ {(totalBudget - subsidyTotal).toLocaleString()}</span>
                     </div>
                   </div>
                   
@@ -1832,22 +1357,22 @@ function ProjectRegisterContent() {
                           <Home className="w-3 h-3 text-blue-600" />
                           <span className="text-muted-foreground">Igreja</span>
                         </div>
-                        <span className="font-medium text-blue-600">R$ {churchContribution.toLocaleString()}</span>
+                        <span className="font-medium text-blue-600">€ {churchContribution.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                           <Building className="w-3 h-3 text-green-600" />
                           <span className="text-muted-foreground">Instituição</span>
                         </div>
-                        <span className="font-medium text-green-600">R$ {institutionContribution.toLocaleString()}</span>
+                        <span className="font-medium text-green-600">€ {institutionContribution.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
                 </div>
                 
                 <div className="pt-3 border-t text-xs text-muted-foreground leading-relaxed">
-                  <p>💡 {(translations as any).fundingCalculator?.recalculateAutomatically || "Valores recalculam automaticamente"}</p>
-                  <p className="mt-1">📋 {(translations as any).fundingCalculator?.dragToCalculate || "Arraste atividades para calcular financiamento"}</p>
+                  <p>{(translations as any).fundingCalculator?.recalculateAutomatically || "Valores recalculam automaticamente"}</p>
+                  <p className="mt-1">{(translations as any).fundingCalculator?.dragToCalculate || "Arraste atividades para calcular financiamento"}</p>
                 </div>
               </div>
             </div>
@@ -1856,8 +1381,8 @@ function ProjectRegisterContent() {
           {/* Right Column - Funding Calculator (3/4) */}
           <div className="w-full lg:w-3/4">
             <div className="space-y-6">
-              {/* Budget Highlights KPI Cards */}
-              <div className="space-y-4">
+              {/* Budget Highlights KPI Cards - Temporarily Commented */}
+              {/* <div className="space-y-4">
                 <h4 className="font-medium flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-muted-foreground" />
                   {(translations as any).fundingCalculator?.budgetHighlights || "Destaques do Orçamento"}
@@ -1906,7 +1431,7 @@ function ProjectRegisterContent() {
                   <CarouselPrevious className="left-2 h-8 w-8 bg-background/80 backdrop-blur-sm border hover:bg-background/90" />
                   <CarouselNext className="right-2 h-8 w-8 bg-background/80 backdrop-blur-sm border hover:bg-background/90" />
                 </Carousel>
-              </div>
+              </div> */}
 
               {/* Special Project Information or Validation Rules */}
               {(isSpecialProject || isChurchPlanting) ? (
@@ -2029,7 +1554,7 @@ function ProjectRegisterContent() {
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
                       <Badge variant="outline" className="text-xs">
-                        {(translations as any).fundingCalculator?.maxAmountRule?.replace('{{amount}}', `R$ ${FUNDING_POLICIES.max_institution_amount.toLocaleString()}`) || `Máximo R$ ${FUNDING_POLICIES.max_institution_amount.toLocaleString()} por projeto`}
+                        {(translations as any).fundingCalculator?.maxAmountRule?.replace('{{amount}}', `€ ${FUNDING_POLICIES.max_institution_amount.toLocaleString()}`) || `Máximo € ${FUNDING_POLICIES.max_institution_amount.toLocaleString()} por projeto`}
                       </Badge>
                       <Badge variant="outline" className="text-xs">
                         {(translations as any).fundingCalculator?.maxPercentageRule?.replace('{{percent}}', FUNDING_POLICIES.max_institution_percent.toString()) || `Máximo ${FUNDING_POLICIES.max_institution_percent}% de contribuição`}
@@ -2207,7 +1732,15 @@ function ProjectRegisterContent() {
                       <Button
                         variant={isManualEntry ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setIsManualEntry(!isManualEntry)}
+                        onClick={() => {
+                          const newIsManual = !isManualEntry
+                          setIsManualEntry(newIsManual)
+                          // When switching to manual, populate with current slider values
+                          if (newIsManual) {
+                            setManualAmount(institutionContribution)
+                            setManualPercentage(currentSubsidyPercentage)
+                          }
+                        }}
                       >
                         {isManualEntry ? "Manual" : "Auto"}
                       </Button>
@@ -2220,19 +1753,38 @@ function ProjectRegisterContent() {
                           <Label className="text-sm font-medium">
                             Valor de Contribuição da Instituição
                           </Label>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">R$</span>
-                            <Input
-                              type="number"
-                              value={manualAmount}
-                              onChange={(e) => handleManualAmountChange(Number(e.target.value))}
-                              className="pl-8"
-                              min={0}
-                              max={subsidyTotal}
-                            />
+                          <div className="flex gap-2">
+                            <div className="relative flex-1">
+                              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">€</span>
+                              <Input
+                                type="number"
+                                value={manualAmount || institutionContribution}
+                                placeholder={institutionContribution.toFixed(2)}
+                                onChange={(e) => handleManualAmountChange(Number(e.target.value))}
+                                className="pl-8"
+                                min={0}
+                                max={subsidyTotal}
+                              />
+                            </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="default"
+                              onClick={() => {
+                                const isSpecialCase = isSpecialProject || isChurchPlanting
+                                const maxPercent = isSpecialCase ? 100 : FUNDING_POLICIES.max_institution_percent
+                                const maxAmount = (subsidyTotal * maxPercent) / 100
+                                setManualAmount(maxAmount)
+                                handleManualAmountChange(maxAmount)
+                              }}
+                              className="shrink-0 font-mono"
+                              title={`Máximo permitido: ${isSpecialProject || isChurchPlanting ? '100' : FUNDING_POLICIES.max_institution_percent}%`}
+                            >
+                              MAX
+                            </Button>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Máximo: R$ {subsidyTotal.toLocaleString()} (valor das atividades subsidiadas)
+                            Máximo: € {subsidyTotal.toLocaleString()} (valor das atividades subsidiadas)
                           </p>
                         </div>
                         
@@ -2241,23 +1793,45 @@ function ProjectRegisterContent() {
                           <Label className="text-sm font-medium">
                             Porcentagem de Contribuição
                           </Label>
-                          <div className="relative">
-                            <Input
-                              type="number"
-                              value={Math.round(manualPercentage)}
-                              onChange={(e) => handleManualPercentageChange(Number(e.target.value))}
-                              className="pr-8"
-                              min={0}
-                              max={(isSpecialProject || isChurchPlanting) ? 100 : FUNDING_POLICIES.max_institution_percent}
-                            />
-                            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">%</span>
+                          <div className="flex gap-2">
+                            <div className="relative flex-1">
+                              <Input
+                                type="number"
+                                value={manualPercentage || Math.round(currentSubsidyPercentage)}
+                                placeholder={Math.round(currentSubsidyPercentage).toString()}
+                                onChange={(e) => handleManualPercentageChange(Number(e.target.value))}
+                                className="pr-8"
+                                min={0}
+                                max={(isSpecialProject || isChurchPlanting) ? 100 : FUNDING_POLICIES.max_institution_percent}
+                              />
+                              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">%</span>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="default"
+                              onClick={() => {
+                                const isSpecialCase = isSpecialProject || isChurchPlanting
+                                const maxPercent = isSpecialCase ? 100 : FUNDING_POLICIES.max_institution_percent
+                                setManualPercentage(maxPercent)
+                                handleManualPercentageChange(maxPercent)
+                              }}
+                              className="shrink-0 font-mono"
+                              title={`Máximo: ${isSpecialProject || isChurchPlanting ? '100' : FUNDING_POLICIES.max_institution_percent}%`}
+                            >
+                              MAX
+                            </Button>
                           </div>
-                          <p className="text-xs text-muted-foreground">
-                            Aplicado sobre R$ {subsidyTotal.toLocaleString()}
-                            {(isSpecialProject || isChurchPlanting) && (
-                              <span className="text-green-600 font-medium"> • Modo especial: até 100%</span>
-                            )}
-                          </p>
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <div>Aplicado sobre € {subsidyTotal.toLocaleString()}</div>
+                            <div className="text-right">
+                              <span>Máximo: </span>
+                              <span className="font-medium">{(isSpecialProject || isChurchPlanting) ? '100' : FUNDING_POLICIES.max_institution_percent}%</span>
+                              {(isSpecialProject || isChurchPlanting) && (
+                                <span className="text-green-600 font-medium"> • Modo especial ativo</span>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ) : (
@@ -2323,7 +1897,7 @@ function ProjectRegisterContent() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-blue-600">
-                      R$ {churchContribution.toLocaleString()}
+                      € {churchContribution.toLocaleString()}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {Math.round(totalBudget > 0 ? (churchContribution / totalBudget) * 100 : 0)}% do orçamento total
@@ -2346,19 +1920,19 @@ function ProjectRegisterContent() {
                         <Info className="w-3 h-3 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Subsídio calculado sobre R$ {subsidyTotal.toLocaleString()} das atividades subsidiadas</p>
+                        <p>Subsídio calculado sobre € {subsidyTotal.toLocaleString()} das atividades subsidiadas</p>
                       </TooltipContent>
                     </Tooltip>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-green-600">
-                      R$ {institutionContribution.toLocaleString()}
+                      € {institutionContribution.toLocaleString()}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {Math.round(currentSubsidyPercentage)}% sobre atividades subsidiadas
                     </p>
                     <div className="text-xs text-muted-foreground mt-2">
-                      Base de cálculo: R$ {subsidyTotal.toLocaleString()} em atividades subsidiadas
+                      Base de cálculo: € {subsidyTotal.toLocaleString()} em atividades subsidiadas
                     </div>
                   </CardContent>
                 </Card>
@@ -2386,6 +1960,8 @@ function ProjectRegisterContent() {
                   onEdit={editActivity}
                   groupType="subsidized"
                   defaultCollapsed={false}
+                  translations={translations}
+                  renderTagWithIcon={renderTagWithIcon}
                 />
 
                 {/* Non-Subsidized Activities Group */}
@@ -2396,6 +1972,8 @@ function ProjectRegisterContent() {
                   onEdit={editActivity}
                   groupType="nonSubsidized"
                   defaultCollapsed={false}
+                  translations={translations}
+                  renderTagWithIcon={renderTagWithIcon}
                 />
 
                 {/* Deleted Activities Group */}
@@ -2409,6 +1987,8 @@ function ProjectRegisterContent() {
                     groupType="trash"
                     isTrash={true}
                     defaultCollapsed={false}
+                    translations={translations}
+                    renderTagWithIcon={renderTagWithIcon}
                   />
                 )}
               </div>
@@ -2431,381 +2011,391 @@ function ProjectRegisterContent() {
     const totalActivities = formData.activities.length
     const averageActivityCost = totalActivities > 0 ? totalBudget / totalActivities : 0
 
-    // Dados para o carousel de KPIs com i18n
-    const highlightKPIs = [
-      {
-        id: "total-budget",
-        title: getCurrentTranslation('projects.summary.totalBudget') || translations.summary.totalBudget,
-        value: `R$ ${totalBudget.toLocaleString()}`,
-        icon: DollarSign,
-        subtitle: `${totalActivities} ${getCurrentTranslation('projects.summary.activities') || translations.summary.activities.toLowerCase()}`,
-        color: "text-blue-600"
-      },
-      {
-        id: "church-contribution", 
-        title: `${getCurrentTranslation('projects.summary.church') || translations.summary.church} - ${getCurrentTranslation('projects.fields.churchContribution') || translations.fields.churchContribution}`,
-        value: `R$ ${churchContribution.toLocaleString()}`,
-        icon: Home,
-        subtitle: `${Math.round((churchContribution / totalBudget) * 100)}% ${getCurrentTranslation('projects.summary.total') || 'do total'}`,
-        color: "text-green-600"
-      },
-      {
-        id: "institution-contribution",
-        title: `${getCurrentTranslation('projects.summary.institution') || translations.summary.institution} - ${getCurrentTranslation('projects.common.contribution') || 'Contribuição'}`,
-        value: `R$ ${institutionContribution.toLocaleString()}`,
-        icon: Building,
-        subtitle: `${Math.round((institutionContribution / totalBudget) * 100)}% ${getCurrentTranslation('projects.summary.total') || 'do total'}`,
-        color: "text-purple-600"
-      },
-      {
-        id: "subsidized-activities",
-        title: getCurrentTranslation('projects.highlights.subsidizedActivities') || "Atividades Subsidiadas",
-        value: subsidizedActivities.length.toString(),
-        icon: Star,
-        subtitle: `R$ ${subsidizedActivities.reduce((sum, a) => sum + a.budget_amount, 0).toLocaleString()}`,
-        color: "text-amber-600"
-      },
-      {
-        id: "non-subsidized-activities",
-        title: getCurrentTranslation('projects.highlights.nonSubsidizedActivities') || "Atividades Não Subsidiadas", 
-        value: nonSubsidizedActivities.length.toString(),
-        icon: Sprout,
-        subtitle: `R$ ${nonSubsidizedActivities.reduce((sum, a) => sum + a.budget_amount, 0).toLocaleString()}`,
-        color: "text-indigo-600"
-      },
-      {
-        id: "average-cost",
-        title: getCurrentTranslation('projects.highlights.averageActivityCost') || "Custo Médio por Atividade",
-        value: `R$ ${averageActivityCost.toLocaleString()}`,
-        icon: Calculator,
-        subtitle: getCurrentTranslation('projects.common.perActivity') || "por atividade",
-        color: "text-teal-600"
-      }
-    ]
-
     // Detectar se é projeto especial
     const isProjectSpecial = isSpecialProject || isChurchPlanting
 
     return (
       <div className="animate-in fade-in-0 duration-300">
-
-        <div className="flex flex-col lg:flex-row gap-8 w-full">
-          {/* Left Column - Info (1/4 da tela) */}
+        <div className="flex flex-col lg:flex-row gap-6 w-full">
+          {/* Left Column - Project Summary (1/4) */}
           <div className="w-full lg:w-1/4 space-y-4">
-            <Card className="bg-card">
-              <CardContent className="p-6">
+            <div className="p-4 rounded-lg border border-muted">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <CheckCircle className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground text-base">
+                      {translations.steps.review.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {translations.steps.review.description}
+                    </p>
+                  </div>
+                </div>
+                
                 <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-                      <CheckCircle className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-foreground">{translations.steps.review.title}</h3>
-                      <p className="text-xs text-muted-foreground">{translations.steps.review.description}</p>
+                  {/* Total do Projeto */}
+                  <div className="p-3 rounded-lg bg-muted/30">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Orçamento Total
+                      </span>
+                      <span className="text-lg font-bold text-foreground">€ {totalBudget.toLocaleString()}</span>
                     </div>
                   </div>
                   
-                  <div className="text-xs text-muted-foreground leading-relaxed">
-                    <p>{translations.steps.review.content}</p>
+                  {/* Breakdown Financeiro */}
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <Home className="w-3 h-3 text-muted-foreground" />
+                        <span className="text-muted-foreground">Igreja</span>
+                      </div>
+                      <span className="font-medium text-foreground">€ {churchContribution.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <Building className="w-3 h-3 text-muted-foreground" />
+                        <span className="text-muted-foreground">Instituição</span>
+                      </div>
+                      <span className="font-medium text-foreground">€ {institutionContribution.toLocaleString()}</span>
+                    </div>
                   </div>
-
+                  
+                  {/* Estatísticas de Atividades */}
+                  <div className="space-y-3 pt-3 border-t">
+                    <h4 className="text-sm font-medium text-foreground">Atividades</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Total de Atividades</span>
+                        <span className="font-medium text-foreground">{totalActivities}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Subsidiadas</span>
+                        <span className="font-medium text-foreground">{subsidizedActivities.length}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Não Subsidiadas</span>
+                        <span className="font-medium text-foreground">{nonSubsidizedActivities.length}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
                   {/* Special Project Badge */}
                   {isProjectSpecial && (
-                    <div className="pt-4 border-t border-border">
-                      <div className={`p-3 rounded-lg border-2 ${
+                    <div className="pt-3 border-t">
+                      <Badge className={cn(
+                        "w-full justify-center",
                         isChurchPlanting 
-                          ? 'bg-green-50 border-green-200 text-green-700' 
-                          : 'bg-orange-50 border-orange-200 text-orange-700'
-                      }`}>
-                        <div className="flex items-center gap-2 mb-2">
-                          {isChurchPlanting ? (
-                            <Sprout className="w-4 h-4" />
-                          ) : (
-                            <Star className="w-4 h-4" />
-                          )}
-                          <span className="font-medium text-sm">
-                            {isChurchPlanting ? 'Church Planting' : 'Projeto Especial'}
-                          </span>
-                        </div>
-                        <p className="text-xs">
-                          {isChurchPlanting 
-                            ? 'Projeto de plantação de igreja com financiamento especial até 100%'
-                            : 'Projeto especial com políticas de financiamento diferenciadas'
-                          }
-                        </p>
-                      </div>
+                          ? 'bg-muted text-foreground border-border' 
+                          : 'bg-muted text-foreground border-border'
+                      )}>
+                        {isChurchPlanting ? (
+                          <><Sprout className="w-3 h-3 mr-1" /> Church Planting</>
+                        ) : (
+                          <><Star className="w-3 h-3 mr-1" /> Projeto Especial</>
+                        )}
+                      </Badge>
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+                
+                <div className="pt-3 border-t text-xs text-muted-foreground leading-relaxed">
+                  <p>{translations.steps.review.content}</p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Right Column - Review Summary (3/4 da tela) */}
-          <div className="w-full lg:w-3/4">
-            <div className="space-y-6">
-              {/* Project Basic Info - Collapsible */}
-              <Collapsible defaultOpen>
-                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 border border-muted rounded-lg hover:bg-muted/50 transition-colors bg-card">
-                  <div className="flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-muted-foreground" />
-                    <h5 className="font-semibold text-foreground">{translations.summary.projectInfo}</h5>
+          {/* Right Column - Review Details (3/4) */}
+          <div className="w-full lg:w-3/4 space-y-6">
+            {/* Resumo Financeiro - Cards principais */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                      <DollarSign className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">{translations.summary.totalBudget}</p>
+                      <p className="text-2xl font-bold text-foreground">€ {totalBudget.toLocaleString()}</p>
+                    </div>
                   </div>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-4">
-                  <Card className="bg-card">
-                    <CardContent className="p-4 space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">{translations.fields.projectTitle}:</span>
-                        <p className="font-medium">{formData.title}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">{translations.fields.department}:</span>
-                        <p className="font-medium">
-                          {mockDepartments.find(d => d.id === formData.department_id)?.name}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Responsável:</span>
-                        <p className="font-medium">
-                          {mockUsers.find(u => u.id === formData.responsible_id)?.name || "Não selecionado"}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Tipo de Responsabilidade:</span>
-                        <p className="font-medium">{formData.project_responsible_type}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Projeto Privado:</span>
-                        <p className="font-medium">{formData.is_private ? "Sim" : "Não"}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Registrar como Evento:</span>
-                        <p className="font-medium">{formData.register_as_event ? "Sim" : "Não"}</p>
-                      </div>
-                    </div>
-                    
-                      <div className="col-span-2">
-                        <span className="text-muted-foreground">{translations.fields.projectDescription}:</span>
-                        <p className="font-medium mt-1 text-sm">{formData.description}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </CollapsibleContent>
-              </Collapsible>
+                  <p className="text-xs text-muted-foreground">{totalActivities} atividades registradas</p>
+                </CardContent>
+              </Card>
 
-              {/* Financial Calculations - Collapsible */}
-              <Collapsible defaultOpen>
-                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 border border-muted rounded-lg hover:bg-muted/50 transition-colors bg-card">
-                  <div className="flex items-center gap-2">
-                    <Calculator className="w-4 h-4 text-muted-foreground" />
-                    <h5 className="font-semibold text-foreground">{translations.summary.budgetDistribution}</h5>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                      <Home className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">{translations.summary.church}</p>
+                      <p className="text-2xl font-bold text-foreground">€ {churchContribution.toLocaleString()}</p>
+                    </div>
                   </div>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-4">
-                  <Card className="bg-card">
-                    <CardContent className="p-4 space-y-6">
-                      {/* Distribution Cards */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                        <Card className="">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-center gap-2 mb-2">
-                              <DollarSign className="w-5 h-5 text-muted-foreground" />
-                              <div className="text-lg font-bold text-foreground">
-                                R$ {totalBudget.toLocaleString()}
-                              </div>
-                            </div>
-                            <div className="text-xs text-muted-foreground font-medium">{translations.summary.totalBudget}</div>
-                          </CardContent>
-                        </Card>
-                        <Card className="">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-center gap-2 mb-2">
-                              <Home className="w-5 h-5 text-muted-foreground" />
-                              <div className="text-lg font-bold text-foreground">
-                                R$ {churchContribution.toLocaleString()}
-                              </div>
-                            </div>
-                            <div className="text-xs text-muted-foreground font-medium">
-                              {translations.summary.church} ({Math.round((churchContribution / totalBudget) * 100)}%)
-                            </div>
-                          </CardContent>
-                        </Card>
-                        <Card className="">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-center gap-2 mb-2">
-                              <Building className="w-5 h-5 text-muted-foreground" />
-                              <div className="text-lg font-bold text-foreground">
-                                R$ {institutionContribution.toLocaleString()}
-                              </div>
-                            </div>
-                            <div className="text-xs text-muted-foreground font-medium">
-                              {translations.summary.institution} ({Math.round((institutionContribution / totalBudget) * 100)}%)
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
+                  <p className="text-xs text-muted-foreground">{Math.round((churchContribution / totalBudget) * 100)}% do total</p>
+                </CardContent>
+              </Card>
 
-                      {/* Detailed Calculations */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        
-                          <CardContent className="p-4">
-                            <h6 className="font-medium text-foreground mb-3 flex items-center gap-2">
-                              <PieChart className="w-4 h-4 text-muted-foreground" />
-                              Detalhamento dos Cálculos
-                            </h6>
-                            <div className="space-y-2 text-sm">
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Valor máximo instituição (65%):</span>
-                                <span className="font-medium">R$ {(totalBudget * 0.65).toLocaleString()}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Valor máximo por projeto:</span>
-                                <span className="font-medium">R$ 5.000</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Valor solicitado instituição:</span>
-                                <span className="font-medium text-foreground">R$ {institutionContribution.toLocaleString()}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Capacidade restante:</span>
-                                <span className="font-medium">R$ {Math.max(0, Math.min(5000, totalBudget * 0.65) - institutionContribution).toLocaleString()}</span>
-                              </div>
-                            </div>
-                          </CardContent>
-                        
-
-               
-                          <CardContent className="p-4">
-                            <h6 className="font-medium text-foreground mb-3 flex items-center gap-2">
-                              <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                              Conformidade com Políticas
-                            </h6>
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Percentual máximo (65%):</span>
-                                <Badge variant={institutionContribution <= totalBudget * 0.65 ? "default" : "destructive"}>
-                                  {institutionContribution <= totalBudget * 0.65 ? "✓ Conforme" : "✗ Excedido"}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Valor máximo (R$ 5.000):</span>
-                                <Badge variant={institutionContribution <= 5000 ? "default" : "destructive"}>
-                                  {institutionContribution <= 5000 ? "✓ Conforme" : "✗ Excedido"}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Igreja mínima (35%):</span>
-                                <Badge variant={churchContribution >= totalBudget * 0.35 ? "default" : "destructive"}>
-                                  {churchContribution >= totalBudget * 0.35 ? "✓ Conforme" : "✗ Insuficiente"}
-                                </Badge>
-                              </div>
-                            </div>
-                          </CardContent>
-           
-                      </div>
-                    </CardContent>
-                  </Card>
-                </CollapsibleContent>
-              </Collapsible>
-
-              {/* Subsidized Activities - Collapsible */}
-              {subsidizedActivities.length > 0 && (
-                <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="flex items-center justify-between w-full p-4 border border-muted rounded-lg hover:bg-muted/50 transition-colors bg-card">
-                    <div className="flex items-center gap-2">
-                      <Star className="w-4 h-4 text-muted-foreground" />
-                      <h5 className="font-semibold text-foreground">
-                        Atividades Subsidiadas ({subsidizedActivities.length})
-                      </h5>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                      <Building className="w-5 h-5 text-muted-foreground" />
                     </div>
-                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="mt-4">
-                    <Card className="bg-card">
-                      <CardContent className="p-4 space-y-3">
-                        {subsidizedActivities.map((activity) => (
-                          <Card key={activity.id} className="bg-muted/50">
-                            <CardContent className="p-3">
-                              <div className="flex items-center justify-between mb-2">
-                                <h6 className="font-medium text-sm text-foreground">{activity.name}</h6>
-                                <Badge variant="outline" className="text-xs">
-                                  R$ {activity.budget_amount.toLocaleString()}
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-muted-foreground mb-2">{activity.description}</p>
-                              {activity.tags.length > 0 && (
-                                <div className="flex flex-wrap gap-1">
-                                  {activity.tags.map((tag) => renderTagWithIcon(tag))}
-                                </div>
-                              )}
-                            </CardContent>
-                          </Card>
-                        ))}
-                        <div className="pt-2 border-t border-border">
-                          <div className="flex justify-between items-center text-sm font-medium">
-                            <span className="text-foreground">Subtotal Atividades Subsidiadas:</span>
-                            <span className="text-foreground font-bold">
-                              R$ {subsidizedActivities.reduce((sum, a) => sum + a.budget_amount, 0).toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
-
-              {/* Non-Subsidized Activities - Collapsible */}
-              {nonSubsidizedActivities.length > 0 && (
-                <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="flex items-center justify-between w-full p-4 border border-muted rounded-lg hover:bg-muted/50 transition-colors bg-card">
-                    <div className="flex items-center gap-2">
-                      <Sprout className="w-4 h-4 text-muted-foreground" />
-                      <h5 className="font-semibold text-foreground">
-                        Atividades Não Subsidiadas ({nonSubsidizedActivities.length})
-                      </h5>
+                    <div>
+                      <p className="text-sm text-muted-foreground">{translations.summary.institution}</p>
+                      <p className="text-2xl font-bold text-foreground">€ {institutionContribution.toLocaleString()}</p>
                     </div>
-                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="mt-4">
-                    <Card className="bg-card">
-                      <CardContent className="p-4 space-y-3">
-                        {nonSubsidizedActivities.map((activity) => (
-                          <Card key={activity.id} className="bg-muted/50">
-                            <CardContent className="p-3">
-                              <div className="flex items-center justify-between mb-2">
-                                <h6 className="font-medium text-sm text-foreground">{activity.name}</h6>
-                                <Badge variant="outline" className="text-xs">
-                                  R$ {activity.budget_amount.toLocaleString()}
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-muted-foreground mb-2">{activity.description}</p>
-                              {activity.tags.length > 0 && (
-                                <div className="flex flex-wrap gap-1">
-                                  {activity.tags.map((tag) => renderTagWithIcon(tag))}
-                                </div>
-                              )}
-                            </CardContent>
-                          </Card>
-                        ))}
-                        <div className="pt-2 border-t border-border">
-                          <div className="flex justify-between items-center text-sm font-medium">
-                            <span className="text-foreground">Subtotal Atividades Igreja:</span>
-                            <span className="text-foreground font-bold">
-                              R$ {nonSubsidizedActivities.reduce((sum, a) => sum + a.budget_amount, 0).toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{Math.round((institutionContribution / totalBudget) * 100)}% do total</p>
+                </CardContent>
+              </Card>
             </div>
+
+            {/* Informações do Projeto */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-muted-foreground" />
+                  {translations.summary.projectInfo}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <Target className="w-5 h-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">{translations.fields.projectTitle}</p>
+                      <p className="text-base text-foreground">{formData.title}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <Building className="w-5 h-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">{translations.fields.department}</p>
+                      <p className="text-base text-foreground">
+                        {mockDepartments.find(d => d.id === formData.department_id)?.name}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Users className="w-5 h-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Responsável</p>
+                      <p className="text-base text-foreground">
+                        {mockUsers.find(u => u.id === formData.responsible_id)?.name || "Não selecionado"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <Home className="w-5 h-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Tipo de Responsabilidade</p>
+                      <p className="text-base text-foreground capitalize">{formData.project_responsible_type}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Settings className="w-5 h-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Configurações</p>
+                      <div className="flex gap-2 mt-1">
+                        {formData.is_private && (
+                          <Badge variant="secondary" className="text-xs">Privado</Badge>
+                        )}
+                        {formData.register_as_event && (
+                          <Badge variant="secondary" className="text-xs">Evento Público</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <FileText className="w-5 h-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">{translations.fields.projectDescription}</p>
+                      <p className="text-sm text-foreground">{formData.description}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+            {/* Conformidade com Políticas */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calculator className="w-5 h-5 text-muted-foreground" />
+                  {translations.summary.budgetDistribution}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Percentual máximo</span>
+                    </div>
+                    <Badge variant={institutionContribution <= totalBudget * (FUNDING_POLICIES.max_institution_percent / 100) ? "default" : "destructive"}>
+                      {institutionContribution <= totalBudget * (FUNDING_POLICIES.max_institution_percent / 100) ? "✓ Conforme" : "✗ Excedido"}
+                    </Badge>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      <Banknote className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Valor máximo</span>
+                    </div>
+                    <Badge variant={institutionContribution <= FUNDING_POLICIES.max_institution_amount ? "default" : "destructive"}>
+                      {institutionContribution <= FUNDING_POLICIES.max_institution_amount ? "✓ Conforme" : "✗ Excedido"}
+                    </Badge>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      <Home className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Igreja mínima</span>
+                    </div>
+                    <Badge variant={churchContribution >= totalBudget * (FUNDING_POLICIES.min_church_percent / 100) ? "default" : "destructive"}>
+                      {churchContribution >= totalBudget * (FUNDING_POLICIES.min_church_percent / 100) ? "✓ Conforme" : "✗ Insuficiente"}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Capacidade máxima instituição ({FUNDING_POLICIES.max_institution_percent}%):</span>
+                      <span className="font-medium">€ {(totalBudget * (FUNDING_POLICIES.max_institution_percent / 100)).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Limite por projeto:</span>
+                      <span className="font-medium">€ {FUNDING_POLICIES.max_institution_amount.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Subsídio solicitado:</span>
+                      <span className="font-medium text-foreground">€ {institutionContribution.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Capacidade restante:</span>
+                      <span className="font-medium">€ {Math.max(0, Math.min(FUNDING_POLICIES.max_institution_amount, totalBudget * (FUNDING_POLICIES.max_institution_percent / 100)) - institutionContribution).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+            </Card>
+
+            {/* Atividades Subsidiadas */}
+            {subsidizedActivities.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Star className="w-5 h-5 text-muted-foreground" />
+                      Atividades Subsidiadas
+                    </div>
+                    <Badge variant="secondary">{subsidizedActivities.length} atividades</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                <div className="space-y-3">
+                  {subsidizedActivities.map((activity) => (
+                    <div key={activity.id} className="p-4 rounded-lg bg-muted/30 border border-muted">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-start gap-3 flex-1">
+                          <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Star className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                          <div className="flex-1">
+                            <h6 className="font-medium text-foreground">{activity.name}</h6>
+                            <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="ml-2">
+                          € {activity.budget_amount.toLocaleString()}
+                        </Badge>
+                      </div>
+                      {activity.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-3">
+                          {activity.tags.map((tag) => renderTagWithIcon(tag))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <div className="pt-3 border-t border-border flex justify-between items-center">
+                    <span className="font-medium text-foreground">Subtotal Subsidiadas:</span>
+                    <span className="text-lg font-bold text-foreground">
+                      € {subsidizedActivities.reduce((sum, a) => sum + a.budget_amount, 0).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+              </Card>
+            )}
+
+            {/* Atividades Não Subsidiadas */}
+            {nonSubsidizedActivities.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Sprout className="w-5 h-5 text-muted-foreground" />
+                      Atividades Não Subsidiadas
+                    </div>
+                    <Badge variant="secondary">{nonSubsidizedActivities.length} atividades</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                <div className="space-y-3">
+                  {nonSubsidizedActivities.map((activity) => (
+                    <div key={activity.id} className="p-4 rounded-lg bg-muted/30 border border-muted">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-start gap-3 flex-1">
+                          <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Sprout className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                          <div className="flex-1">
+                            <h6 className="font-medium text-foreground">{activity.name}</h6>
+                            <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="ml-2">
+                          € {activity.budget_amount.toLocaleString()}
+                        </Badge>
+                      </div>
+                      {activity.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-3">
+                          {activity.tags.map((tag) => renderTagWithIcon(tag))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <div className="pt-3 border-t border-border flex justify-between items-center">
+                    <span className="font-medium text-foreground">Subtotal Igreja:</span>
+                    <span className="text-lg font-bold text-foreground">
+                      € {nonSubsidizedActivities.reduce((sum, a) => sum + a.budget_amount, 0).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
@@ -2842,7 +2432,7 @@ function ProjectRegisterContent() {
           <div className="flex items-center justify-center mb-4 w-full">
             <div className="flex items-center w-full max-w-2xl">
               {getStepConfig().map((step, index) => {
-                const icons = [FileText, Activity, DollarSign, CalendarIcon, Settings, CheckCircle]
+                const icons = [FileText, ActivityIcon, DollarSign, CalendarIcon, Settings, CheckCircle]
                 const Icon = icons[index] || FileText
                 const isActive = index + 1 === currentStep
                 const isCompleted = index + 1 < currentStep

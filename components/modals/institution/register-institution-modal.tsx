@@ -138,33 +138,33 @@ export function RegisterInstitutionModal({
 
     if (step === 1) {
       if (!formData.name?.trim()) {
-        newErrors.name = "Institution name is required"
+        newErrors.name = t_institution.validation.nameRequired
       } else if (formData.name.trim().length < 2) {
-        newErrors.name = "Institution name must be at least 2 characters"
+        newErrors.name = t_institution.validation.nameMinLength
       }
 
       if (!formData.denomination?.trim()) {
-        newErrors.denomination = "Denomination is required"
+        newErrors.denomination = t_institution.validation.denominationRequired
       } else if (formData.denomination.trim().length < 2) {
-        newErrors.denomination = "Denomination must be at least 2 characters"
+        newErrors.denomination = t_institution.validation.denominationMinLength
       }
 
       if (!formData.contactCountry?.trim()) {
-        newErrors.contactCountry = "Country is required"
+        newErrors.contactCountry = t_institution.validation.countryRequired
       } else if (formData.contactCountry.trim().length < 2) {
-        newErrors.contactCountry = "Country must be at least 2 characters"
+        newErrors.contactCountry = t_institution.validation.countryRequired
       }
 
       if (!formData.languagePreference) {
-        newErrors.languagePreference = "Language preference is required"
+        newErrors.languagePreference = t_institution.validation.languageRequired
       }
     }
 
     if (step === 2) {
       if (!formData.contactEmail?.trim()) {
-        newErrors.contactEmail = "Email is required"
+        newErrors.contactEmail = t_institution.validation.emailRequired
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) {
-        newErrors.contactEmail = "Please enter a valid email address"
+        newErrors.contactEmail = t_institution.validation.emailInvalid
       }
 
       if (formData.contactWebsite && formData.contactWebsite.trim()) {
@@ -172,7 +172,7 @@ export function RegisterInstitutionModal({
         // Basic domain validation: must contain at least one dot and valid characters
         if (!/^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/.test(website) && 
             !/^https?:\/\/[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}/.test(website)) {
-          newErrors.contactWebsite = "Please enter a valid domain (e.g., example.com) or URL (e.g., https://example.com)"
+          newErrors.contactWebsite = t_institution.validation.websiteInvalid
         }
       }
     }
@@ -193,12 +193,12 @@ export function RegisterInstitutionModal({
 
   const handleSave = async () => {
     if (!validateStep(1) || !validateStep(2)) {
-      toast.error("Please fix the errors before continuing")
+      toast.error(t_institution.validation.fixErrors)
       return
     }
 
     setIsLoading(true)
-    const loadingToast = toast.loading("🏢 Creating new institution...")
+    const loadingToast = toast.loading(`🏢 ${t_institution.creating}`)
 
     try {
       const result = await createInstitution({ variables: formData })
@@ -208,7 +208,7 @@ export function RegisterInstitutionModal({
 
       toast.dismiss(loadingToast)
       toast.success(
-        `🎉 Institution "${formData.name}" created successfully!`,
+        `🎉 ${t_institution.institutionName} "${formData.name}" ${t_institution.toasts.created}`,
         { duration: 4000 }
       )
 
@@ -219,7 +219,7 @@ export function RegisterInstitutionModal({
       setIsOpen(false)
     } catch (error) {
       toast.dismiss(loadingToast)
-      toast.error("❌ Failed to create institution")
+      toast.error(`${t_institution.toasts.createError}`)
       console.error("Error creating institution:", error)
     } finally {
       setIsLoading(false)
@@ -249,15 +249,15 @@ export function RegisterInstitutionModal({
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">Basic Information</h3>
-              <p className="text-sm text-muted-foreground">Enter the institution name, denomination and location</p>
+              <h3 className="text-lg font-medium text-foreground">{t_institution.basicInformation}</h3>
+              <p className="text-sm text-muted-foreground">{t_institution.basicInformationDesc}</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="name" className="flex items-center gap-2 text-sm">
                   <Building className="w-4 h-4 text-muted-foreground" />
-                  Institution Name *
+                  {t_institution.institutionName} *
                 </Label>
                 <Input
                   key={`name-${isOpen ? 'open' : 'closed'}`}
@@ -265,7 +265,7 @@ export function RegisterInstitutionModal({
                   value={formData.name || ""}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   onKeyDown={(e) => e.stopPropagation()}
-                  placeholder="Enter institution name"
+                  placeholder={t_institution.institutionNamePlaceholder}
                   disabled={isLoading}
                   className={`h-12 text-base ${errors.name ? 'border-red-500' : ''}`}
                   autoComplete="off"
@@ -279,7 +279,7 @@ export function RegisterInstitutionModal({
               <div className="space-y-2">
                 <Label htmlFor="denomination" className="flex items-center gap-2 text-sm">
                   <Building2 className="w-4 h-4 text-muted-foreground" />
-                  Denomination *
+                  {t_institution.denomination} *
                 </Label>
                 <Input
                   key={`denomination-${isOpen ? 'open' : 'closed'}`}
@@ -287,7 +287,7 @@ export function RegisterInstitutionModal({
                   value={formData.denomination || ""}
                   onChange={(e) => handleInputChange('denomination', e.target.value)}
                   onKeyDown={(e) => e.stopPropagation()}
-                  placeholder="e.g., SDA, Baptist, Methodist"
+                  placeholder={t_institution.denominationPlaceholder}
                   disabled={isLoading}
                   className={`h-12 text-base ${errors.denomination ? 'border-red-500' : ''}`}
                   autoComplete="off"
@@ -375,15 +375,15 @@ export function RegisterInstitutionModal({
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">Contact Information</h3>
-              <p className="text-sm text-muted-foreground">Add contact details for the institution</p>
+              <h3 className="text-lg font-medium text-foreground">{t_institution.contactInformation}</h3>
+              <p className="text-sm text-muted-foreground">{t_institution.contactInformationDesc}</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="email" className="flex items-center gap-2 text-sm">
                   <Mail className="w-4 h-4 text-muted-foreground" />
-                  Contact Email *
+                  {t_institution.contactEmail} *
                 </Label>
                 <Input
                   key={`email-${isOpen ? 'open' : 'closed'}`}
@@ -392,7 +392,7 @@ export function RegisterInstitutionModal({
                   value={formData.contactEmail || ""}
                   onChange={(e) => handleInputChange('contactEmail', e.target.value)}
                   onKeyDown={(e) => e.stopPropagation()}
-                  placeholder="contact@institution.org"
+                  placeholder={t_institution.contactEmailPlaceholder}
                   disabled={isLoading}
                   className={`h-12 text-base ${errors.contactEmail ? 'border-red-500' : ''}`}
                   autoComplete="off"
@@ -406,7 +406,7 @@ export function RegisterInstitutionModal({
               <div className="space-y-2">
                 <Label htmlFor="phone" className="flex items-center gap-2 text-sm">
                   <Phone className="w-4 h-4 text-muted-foreground" />
-                  Phone (Optional)
+                  {t_institution.phone}
                 </Label>
                 <Input
                   key={`phone-${isOpen ? 'open' : 'closed'}`}
@@ -414,7 +414,7 @@ export function RegisterInstitutionModal({
                   value={formData.contactPhone || ""}
                   onChange={(e) => handleInputChange('contactPhone', e.target.value)}
                   onKeyDown={(e) => e.stopPropagation()}
-                  placeholder="+1 (555) 123-4567"
+                  placeholder={t_institution.phonePlaceholder}
                   disabled={isLoading}
                   className="h-12 text-base"
                   autoComplete="off"
@@ -425,7 +425,7 @@ export function RegisterInstitutionModal({
               <div className="space-y-2">
                 <Label htmlFor="website" className="flex items-center gap-2 text-sm">
                   <Globe className="w-4 h-4 text-muted-foreground" />
-                  Website (Optional)
+                  {t_institution.website}
                 </Label>
                 <Input
                   key={`website-${isOpen ? 'open' : 'closed'}`}
@@ -433,7 +433,7 @@ export function RegisterInstitutionModal({
                   value={formData.contactWebsite || ""}
                   onChange={(e) => handleInputChange('contactWebsite', e.target.value)}
                   onKeyDown={(e) => e.stopPropagation()}
-                  placeholder="example.com or https://www.institution.org"
+                  placeholder={t_institution.websitePlaceholder}
                   disabled={isLoading}
                   className={`h-12 text-base ${errors.contactWebsite ? 'border-red-500' : ''}`}
                   autoComplete="off"
@@ -451,15 +451,15 @@ export function RegisterInstitutionModal({
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">Additional Details</h3>
-              <p className="text-sm text-muted-foreground">Add a description about the institution</p>
+              <h3 className="text-lg font-medium text-foreground">{t_institution.additionalDetails}</h3>
+              <p className="text-sm text-muted-foreground">{t_institution.additionalDetailsDesc}</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="description" className="flex items-center gap-2 text-sm">
                   <FileText className="w-4 h-4 text-muted-foreground" />
-                  Description (Optional)
+                  {t_institution.description}
                 </Label>
                 <Textarea
                   key={`description-${isOpen ? 'open' : 'closed'}`}
@@ -467,7 +467,7 @@ export function RegisterInstitutionModal({
                   value={formData.description || ""}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   onKeyDown={(e) => e.stopPropagation()}
-                  placeholder="Brief description about the institution, its mission, and activities..."
+                  placeholder={t_institution.descriptionPlaceholder}
                   disabled={isLoading}
                   className="min-h-[120px] text-base resize-none"
                   rows={5}
@@ -493,16 +493,16 @@ export function RegisterInstitutionModal({
         <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Building2 className="w-5 h-5 text-muted-foreground" />
-            Register New Institution
+            {t_institution.registerInstitution}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Create a new religious institution in your organization
+            {t_institution.modalDescription}
           </DialogDescription>
           
           {/* Progress Bar */}
           <div className="mt-4 space-y-2">
             <div className="flex justify-between items-center text-xs text-muted-foreground">
-              <span>Step {currentStep} of {totalSteps}</span>
+              <span>{t_institution.step} {currentStep} {t_institution.of} {totalSteps}</span>
               <span>{Math.round((currentStep / totalSteps) * 100)}%</span>
             </div>
             <Progress value={(currentStep / totalSteps) * 100} className="h-1" />
@@ -530,7 +530,7 @@ export function RegisterInstitutionModal({
                   className="flex items-center gap-1 text-xs"
                 >
                   <ChevronLeft className="w-3 h-3" />
-                  Previous
+                  {t_institution.previous}
                 </Button>
               )}
               <Button 
@@ -540,7 +540,7 @@ export function RegisterInstitutionModal({
                 size="sm"
                 className="text-xs"
               >
-                Cancel
+                {t_institution.cancel}
               </Button>
             </div>
 
@@ -552,7 +552,7 @@ export function RegisterInstitutionModal({
                   size="sm"
                   className="flex items-center gap-1 text-xs bg-gray-900 hover:bg-gray-800 text-white"
                 >
-                  Next
+                  {t_institution.next}
                   <ChevronRight className="w-3 h-3" />
                 </Button>
               ) : (
@@ -565,12 +565,12 @@ export function RegisterInstitutionModal({
                   {isLoading ? (
                     <>
                       <Loader2 className="w-3 h-3 animate-spin mr-1" />
-                      Creating...
+                      {t_institution.creating}
                     </>
                   ) : (
                     <>
                       <Save className="w-3 h-3 mr-1" />
-                      Register Institution
+                      {t_institution.registerInstitutionBtn}
                     </>
                   )}
                 </Button>

@@ -24,7 +24,7 @@ export function RegionModalExample() {
 
   const handleRegionSuccess = (data: AddRegionFormData) => {
     // Show success feedback
-    toast.success(`🗺️ Region "${data.name}" created successfully!`)
+    toast.success(`Region "${data.name}" created successfully!`)
     
     // Refetch regions list, update cache, etc.
     // refetchRegions()

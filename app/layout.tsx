@@ -26,8 +26,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <body className="antialiased font-sans">
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} h-full`}>
+      <body className="antialiased font-sans h-full overflow-hidden">
         <I18nProvider>
           <GraphQLProvider>
             <AuthProvider>

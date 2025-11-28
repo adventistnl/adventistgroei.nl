@@ -83,7 +83,7 @@ export function PersonalInfoSection({
             label={t('profile.personal.preferred_language')}
             value={language}
             onValueChange={onLanguageChange}
-            variant="select"
+            variant="combobox"
             required
           />
         ) : (

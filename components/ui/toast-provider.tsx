@@ -16,46 +16,46 @@ export function ToastProvider() {
       toastOptions={{
         duration: 4000,
         style: {
-          background: '#ffffff', // Branco vibrante
-          color: '#1a202c', // Texto preto vibrante
-          border: '1px solid #cbd5e0', // Borda cinza médio
-          borderRadius: 'calc(var(--radius, 4px) - 2px)',
+          background: '#ffffff', // Background branco
+          color: '#1a202c', // Texto escuro
+          border: '1px solid #e2e8f0', // Borda sutil
+          borderRadius: 'calc(var(--radius) - 2px)',
           fontSize: '14px',
           padding: '0',
-          boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
           maxWidth: '420px',
         },
         success: {
           style: {
-            background: '#caffe3', // Verde vibrante para sucesso
-            color: '#065f46',
-            border: '1px solid #10b981',
+            background: '#ffffff', // Background branco
+            color: '#1a202c', // Texto escuro
+            border: '1px solid #e2e8f0', // Borda sutil
           },
           iconTheme: {
-            primary: '#059669',
-            secondary: '#d1fae5',
+            primary: '#10b981', // Ícone verde vibrante
+            secondary: '#ffffff', // Background do ícone branco
           },
         },
         error: {
           style: {
-            background: '#fee2e2', // Vermelho vibrante para erro
-            color: '#991b1b',
-            border: '1px solid #ef4444',
+            background: '#ffffff', // Background branco
+            color: '#1a202c', // Texto escuro
+            border: '1px solid #e2e8f0', // Borda sutil
           },
           iconTheme: {
-            primary: '#dc2626',
-            secondary: '#fee2e2',
+            primary: '#ef4444', // Ícone vermelho vibrante
+            secondary: '#ffffff', // Background do ícone branco
           },
         },
         loading: {
           style: {
-            background: '#ffffff', // Mesmo estilo padrão
-            color: '#1a202c',
-            border: '1px solid #cbd5e0',
+            background: '#ffffff', // Background branco
+            color: '#1a202c', // Texto escuro
+            border: '1px solid #e2e8f0', // Borda sutil
           },
           iconTheme: {
-            primary: '#4a5568',
-            secondary: '#ffffff',
+            primary: '#3b82f6', // Ícone azul vibrante
+            secondary: '#ffffff', // Background do ícone branco
           },
         },
       }}

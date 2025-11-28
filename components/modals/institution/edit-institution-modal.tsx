@@ -95,7 +95,7 @@ export function EditInstitutionModal({
 
   // Get states/provinces for selected country
   const statesOptions = formData.country && states[formData.country as keyof typeof states] 
-    ? states[formData.country as keyof typeof states].map(state => ({
+    ? states[formData.country as keyof typeof states].map((state: { code: string; name: string }) => ({
         value: state.code,
         label: state.name
       }))
@@ -103,7 +103,7 @@ export function EditInstitutionModal({
 
   // Get cities for selected state
   const citiesOptions = formData.state && cities[formData.state as keyof typeof cities]
-    ? cities[formData.state as keyof typeof cities].map(city => ({
+    ? cities[formData.state as keyof typeof cities].map((city: { code: string; name: string }) => ({
         value: city.code,
         label: city.name
       }))
@@ -133,12 +133,12 @@ export function EditInstitutionModal({
       // Set additional geographic fields from existing data
       // Find state name from code
       const stateFromCode = institutionState && institutionCountry && states[institutionCountry as keyof typeof states]
-        ? states[institutionCountry as keyof typeof states].find(s => s.code === institutionState)?.name || ""
+        ? states[institutionCountry as keyof typeof states].find((s: { code: string; name: string }) => s.code === institutionState)?.name || ""
         : ""
       
       // Find city name from code
       const cityFromCode = institutionCity && institutionState && cities[institutionState as keyof typeof cities]
-        ? cities[institutionState as keyof typeof cities].find(c => c.code === institutionCity)?.name || ""
+        ? cities[institutionState as keyof typeof cities].find((c: { code: string; name: string }) => c.code === institutionCity)?.name || ""
         : ""
         
       setSelectedState(stateFromCode)
@@ -230,7 +230,7 @@ export function EditInstitutionModal({
     }
 
     setIsLoading(true)
-    const loadingToast = toast.loading("🏢 Updating institution...")
+    const loadingToast = toast.loading(`🏢 ${t_institution.updating}`)
 
     try {
       const variables = {
@@ -249,8 +249,8 @@ export function EditInstitutionModal({
       }
       const { data } = await updateInstitution({ variables })
       toast.dismiss(loadingToast)
-      toast.success(`✅ Institution "${formData.name}" updated successfully!`, {
-        duration: 3000
+      toast.success(`🎉 ${t_institution.institutionName} "${formData.name}" ${t_institution.toasts.updated}`, {
+        duration: 4000
       })
       refetchInstitutions()
       if (onSave && data?.updateInstitution) {
@@ -268,7 +268,7 @@ export function EditInstitutionModal({
       onOpenChange(false)
     } catch (error) {
       toast.dismiss(loadingToast)
-      toast.error("❌ Failed to update institution")
+      toast.error(`❌ ${t_institution.toasts.updateError}`)
     } finally {
       setIsLoading(false)
     }
@@ -298,12 +298,12 @@ export function EditInstitutionModal({
       // Reset additional geographic fields to original values
       // Find state name from code
       const stateFromCode = institutionState && institutionCountry && states[institutionCountry as keyof typeof states]
-        ? states[institutionCountry as keyof typeof states].find(s => s.code === institutionState)?.name || ""
+        ? states[institutionCountry as keyof typeof states].find((s: { code: string; name: string }) => s.code === institutionState)?.name || ""
         : ""
       
       // Find city name from code
       const cityFromCode = institutionCity && institutionState && cities[institutionState as keyof typeof cities]
-        ? cities[institutionState as keyof typeof cities].find(c => c.code === institutionCity)?.name || ""
+        ? cities[institutionState as keyof typeof cities].find((c: { code: string; name: string }) => c.code === institutionCity)?.name || ""
         : ""
         
       setSelectedState(stateFromCode)
@@ -366,7 +366,7 @@ export function EditInstitutionModal({
               onValueChange={(value: string) => handleInputChange('language_preference', value)}
               label={t_institution.languagePreference}
               placeholder={t_institution.languagePreferencePlaceholder}
-              variant="select"
+              variant="combobox"
               disabled={isLoading}
               error={errors.language_preference}
               required
@@ -439,7 +439,7 @@ export function EditInstitutionModal({
             <div className="space-y-2">
               <Label htmlFor="state" className="flex items-center gap-2 text-sm">
                 <MapPin className="w-4 h-4 text-muted-foreground" />
-                Estado/Província
+                {t_institution.state}
               </Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -449,17 +449,17 @@ export function EditInstitutionModal({
                     className="h-12 w-full justify-between text-base"
                     disabled={!formData.country || isLoading}
                   >
-                    {selectedState || "Selecionar estado"}
+                    {selectedState || t_institution.selectState}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[300px] p-0">
                   <Command>
-                    <CommandInput placeholder="Buscar estados..." />
+                    <CommandInput placeholder={t_institution.searchStates} />
                     <CommandList>
-                      <CommandEmpty>Nenhum estado encontrado.</CommandEmpty>
+                      <CommandEmpty>{t_institution.noStateFound}</CommandEmpty>
                       <CommandGroup>
-                        {statesOptions.map((state) => (
+                        {statesOptions.map((state: { value: string; label: string }) => (
                           <CommandItem
                             key={state.value}
                             value={state.label}
@@ -489,7 +489,7 @@ export function EditInstitutionModal({
             <div className="space-y-2">
               <Label htmlFor="city" className="flex items-center gap-2 text-sm">
                 <MapPin className="w-4 h-4 text-muted-foreground" />
-                Cidade
+                {t_institution.city}
               </Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -499,17 +499,17 @@ export function EditInstitutionModal({
                     className="h-12 w-full justify-between text-base"
                     disabled={!formData.state || isLoading}
                   >
-                    {selectedCity || "Selecionar cidade"}
+                    {selectedCity || t_institution.selectCity}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[300px] p-0">
                   <Command>
-                    <CommandInput placeholder="Buscar cidades..." />
+                    <CommandInput placeholder={t_institution.searchCities} />
                     <CommandList>
-                      <CommandEmpty>Nenhuma cidade encontrada.</CommandEmpty>
+                      <CommandEmpty>{t_institution.noCityFound}</CommandEmpty>
                       <CommandGroup>
-                        {citiesOptions.map((city) => (
+                        {citiesOptions.map((city: { value: string; label: string }) => (
                           <CommandItem
                             key={city.value}
                             value={city.label}
@@ -627,16 +627,16 @@ export function EditInstitutionModal({
         <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Building2 className="w-5 h-5 text-muted-foreground" />
-            Edit Institution
+            {t_institution.editInstitution}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Update institution information and settings
+            {t_institution.editInstitutionDesc}
           </DialogDescription>
           
           {/* Progress Bar */}
           <div className="space-y-2 pt-4">
             <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>Step {currentStep} of {totalSteps}</span>
+              <span>{t_institution.step} {currentStep} {t_institution.of} {totalSteps}</span>
               <span>{Math.round((currentStep / totalSteps) * 100)}%</span>
             </div>
             <Progress value={(currentStep / totalSteps) * 100} className="w-full h-2" />
@@ -701,12 +701,12 @@ export function EditInstitutionModal({
                   {(isLoading || updateLoading) ? (
                     <>
                       <Save className="w-3 h-3 animate-spin mr-1" />
-                      {t_institution.creating}
+                      {t_institution.updating}
                     </>
                   ) : (
                     <>
                       <Save className="w-3 h-3 mr-1" />
-                      Update Institution
+                      {t_institution.updateInstitution}
                     </>
                   )}
                 </Button>

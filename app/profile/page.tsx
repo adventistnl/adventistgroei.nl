@@ -14,13 +14,21 @@ import { useEffect, useMemo } from "react"
 import { AdventistLogo } from "@/components/ui/adventist-logo"
 import { useUser } from "@/hooks/use-user"
 import { UpdateUserVariables } from "@/types/UpdateUser"
+import { usePageTitle } from "@/hooks/use-page-title"
 import "@/lib/i18n"
+import { ChevronRight } from "lucide-react"
 
 export default function ProfilePage() {
   const { t, i18n } = useTranslation()
   const { user: authUser, isAuthenticated, isLoading } = useAuth()
   const { user, loading: userLoading, refetch: refetchUser } = useUser({id: authUser?.id})
   const router = useRouter()
+
+  // Set page title (must be before any conditional returns)
+  usePageTitle({
+    title: t('common.profile'),
+    showBreadcrumbsInHeader: false
+  })
 
   // Configurar traduções do perfil
   useEffect(() => {
@@ -165,13 +173,16 @@ export default function ProfilePage() {
           <ProfileHeader
             name={profile.name || ""}
             email={profile.email || ""}
+            isComplete={incompleteFields.length === 0}
           />
 
           {/* Profile Status Alert */}
-          <ProfileStatusAlert
-            incompleteFields={incompleteFields}
-            onFieldClick={handleFieldClick}
-          />
+          {incompleteFields.length > 0 && (
+            <ProfileStatusAlert
+              incompleteFields={incompleteFields}
+              onFieldClick={handleFieldClick}
+            />
+          )}
 
           {/* Profile Sections Stack */}
           <div className="space-y-6">

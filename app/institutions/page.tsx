@@ -186,7 +186,7 @@ export default function InstitutionsPage() {
   }
 
   const handleInstitutionCreated = (data: any) => {
-    toast.success(t('institutions.toasts.created'))
+    // Toast já exibido no modal
   }
 
   const handleEditInstitution = () => {
@@ -217,7 +217,7 @@ export default function InstitutionsPage() {
   }
 
   const handleInstitutionSaved = (institutionData: any) => {
-    toast.success(t('institutions.toasts.updated'))
+    // Toast já exibido no modal
   }
 
   const handleInstitutionDeleted = (institutionData: any) => {

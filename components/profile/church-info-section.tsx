@@ -46,6 +46,7 @@ export function ChurchInfoSection({
       onEdit={onEdit}
       onSave={onSave}
       onCancel={onCancel}
+      showEditButton={false}
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ProfileField

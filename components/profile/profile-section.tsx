@@ -15,6 +15,7 @@ interface ProfileSectionProps {
   onSave: () => void
   onCancel: () => void
   children: ReactNode
+  showEditButton?: boolean // Novo: controla visibilidade do botão
 }
 
 export function ProfileSection({
@@ -25,6 +26,7 @@ export function ProfileSection({
   onSave,
   onCancel,
   children,
+  showEditButton = true, // Padrão: mostrar botão
 }: ProfileSectionProps) {
   const { t } = useTranslation()
   
@@ -35,33 +37,43 @@ export function ProfileSection({
           <Icon className="w-5 h-5 text-muted-foreground" />
           <h2 className="text-lg font-semibold text-foreground">{title}</h2>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={isEditing ? onSave : onEdit}
-          className="h-8 w-8 text-muted-foreground hover:text-foreground"
-        >
-          {isEditing ? (
-            <Check className="w-4 h-4" />
-          ) : (
-            <Edit2 className="w-4 h-4" />
-          )}
-        </Button>
-      </CardHeader>
-      <CardContent className="space-y-4 pt-2">
-        {isEditing && (
-          <div className="flex justify-end mb-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onCancel}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <X className="w-4 h-4 mr-1" />
-              {t('profile.actions.cancel')}
-            </Button>
+        {showEditButton && (
+          <div className="flex items-center gap-2">
+            {isEditing ? (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onCancel}
+                  className="h-8 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  {t('profile.actions.cancel')}
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={onSave}
+                  className="h-8"
+                >
+                  <Check className="w-4 h-4 mr-1" />
+                  {t('profile.actions.save')}
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onEdit}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              >
+                <Edit2 className="w-4 h-4" />
+              </Button>
+            )}
           </div>
         )}
+      </CardHeader>
+      <CardContent className="space-y-4 pt-2">
         {children}
       </CardContent>
     </Card>

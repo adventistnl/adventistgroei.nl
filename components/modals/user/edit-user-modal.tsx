@@ -19,31 +19,20 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { 
   Edit, 
-  Save, 
   User as UserIcon,
-  Mail,
-  Globe,
-  Building2,
-  Home,
-  Layers,
   ChevronLeft,
   ChevronRight,
   Check,
   ChevronsUpDown,
-  Shield,
-  Lock,
-  DollarSign
+  Layers,
+  Building2,
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { cn } from "@/lib/utils"
@@ -54,6 +43,8 @@ import { useUser } from '@/hooks/use-user';
 import { useLanguageOptions } from '@/hooks/use-language-preferences';
 import { useInstitution } from "@/contexts/institution-context"
 import { LanguageSelectorInput } from "@/components/shared/language-selector-input"
+import { FilterTags, FilterTag } from "@/components/shared/filter-tags"
+import { RoleSelector } from "@/components/shared/role-selector"
 
 export interface EditUserModalProps {
   isOpen: boolean
@@ -79,6 +70,22 @@ export interface EditUserFormData {
   has_department: boolean
   is_institutional_department: boolean
   gender?: 'male' | 'female' | null
+}
+
+// Role categories based on key_code patterns
+type RoleCategory = "all" | "administration" | "church" | "institutional" | "leadership" | "member"
+
+const getRoleCategory = (keyCode: string): RoleCategory[] => {
+  const code = keyCode.toUpperCase()
+  const categories: RoleCategory[] = []
+  
+  if (code.includes("ADMIN") || code.includes("SYSTEM")) categories.push("administration")
+  if (code.includes("CHURCH")) categories.push("church")
+  if (code.includes("INSTITUTIONAL") || code.includes("INSTITUTION")) categories.push("institutional")
+  if (code.includes("LEADER") || code.includes("DIRECTOR") || code.includes("COORDINATOR")) categories.push("leadership")
+  if (code.includes("MEMBER") || code.includes("VOLUNTEER")) categories.push("member")
+  
+  return categories.length > 0 ? categories : ["member"]
 }
 
 export function EditUserModal({
@@ -123,6 +130,26 @@ export function EditUserModal({
   const [openDepartment, setOpenDepartment] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [departmentTab, setDepartmentTab] = useState<'church' | 'institutional'>('church');
+  const [selectedCategory, setSelectedCategory] = useState<RoleCategory>("all");
+
+  // Filter roles by selected category
+  const filteredRoles = useMemo(() => {
+    if (selectedCategory === "all") return roles;
+    return roles.filter(role => {
+      const categories = getRoleCategory(role.key_code);
+      return categories.includes(selectedCategory);
+    });
+  }, [roles, selectedCategory]);
+
+  // Category filters configuration
+  const categoryFilters: FilterTag[] = [
+    { key: "all", label: "All Roles" },
+    { key: "administration", label: "Administration" },
+    { key: "church", label: "Church" },
+    { key: "institutional", label: "Institutional" },
+    { key: "leadership", label: "Leadership" },
+    { key: "member", label: "Member" },
+  ];
 
   const totalSteps = 4; // Basic Info, Organizational Info, Roles, Review
 
@@ -135,7 +162,7 @@ export function EditUserModal({
         email: user.email,
         language_preference: user.language_preference,
         institution_id: user.institution_id,
-        church_id: user.church.id,
+        church_id: user.church?.id || '',
         department_id: '',
         role_ids: user.user_roles?.map((role) => role.role.id) || [],
         is_active: !user.is_deleted,
@@ -263,8 +290,7 @@ export function EditUserModal({
 
       toast.dismiss(loadingToast);
       toast.success(t('users.toasts.user_updated'), {
-        duration: 3000,
-        icon: '✅'
+        duration: 3000
       });
 
       if (onSuccess) {
@@ -798,65 +824,79 @@ export function EditUserModal({
               <p className="text-sm text-muted-foreground">Select one role for this user</p>
             </div>
             
-            <div className="max-w-lg mx-auto space-y-4">
-              <RadioGroup value={selectedRoles[0] || ''} onValueChange={handleRoleSelect}>
-                <div className="space-y-2 max-h-[400px] overflow-y-auto border border-border rounded-lg p-3">
-                  {roles.map((role) => {
-                    // Get role data (same as access page table)
-                    const permissionCount = role.permissions?.reduce((sum, group) => sum + group.data.length, 0) || 0;
-                    const userCount = role.users?.length || 0;
-                    const isSelected = selectedRoles.includes(role.id);
+            <div className="max-w-4xl mx-auto space-y-4">
+              {/* Category Filter */}
+              <FilterTags
+                tags={categoryFilters}
+                selectedTag={selectedCategory}
+                onTagSelect={(tag) => setSelectedCategory(tag as RoleCategory)}
+                title="Filter by Category"
+                showTitle={false}
+                size="sm"
+                variant="default"
+              />
 
-                    return (
-                      <div
-                        key={role.id}
-                        className={cn(
-                          "flex items-start space-x-3 p-3 rounded-lg cursor-pointer transition-colors border",
-                          isSelected
-                            ? "bg-primary/10 border-primary"
-                            : "hover:bg-muted/50 border-border"
-                        )}
-                        onClick={() => handleRoleSelect(role.id)}
-                      >
-                        <RadioGroupItem 
-                          value={role.id} 
-                          id={`role-${role.id}`} 
-                          className="mt-0.5 flex-shrink-0"
-                        />
-                        <Label htmlFor={`role-${role.id}`} className="flex-1 cursor-pointer min-w-0">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <Shield className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-                              <span className="font-medium text-sm">{role.name}</span>
-                              <Badge 
-                                variant={role.key_code === 'ADMIN' ? 'default' : 'secondary'}
-                                className="text-xs font-mono h-5"
-                              >
-                                {role.key_code}
-                              </Badge>
+              {/* Role Selection with Cards - Custom Implementation without FormField */}
+              <div className="space-y-2">
+                <div className="space-y-3">
+                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+                    {filteredRoles.map((role) => {
+                      const isSelected = selectedRoles.includes(role.id);
+                      const permissionCount = role.permissions?.reduce((sum, group) => sum + group.data.length, 0) || 0;
+                      
+                      return (
+                        <div
+                          key={role.id}
+                          onClick={() => handleRoleSelect(role.id)}
+                          className={cn(
+                            "relative flex-shrink-0 w-72 cursor-pointer transition-all duration-300 p-4 rounded-xl border-2 group min-h-[100px]",
+                            isSelected 
+                              ? "border-foreground bg-foreground text-background shadow-lg scale-[1.02]" 
+                              : "border-muted-foreground/20 bg-muted/5 hover:border-foreground/50 hover:bg-muted/20 hover:shadow-md"
+                          )}
+                        >
+                          {/* Selection Indicator */}
+                          {isSelected && (
+                            <div className="absolute -top-2 -right-2 w-6 h-6 bg-background border-2 border-foreground rounded-full flex items-center justify-center z-10">
+                              <Check className="w-3 h-3 text-foreground" />
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {role.description}
-                            </p>
-                            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Lock className="w-3 h-3" />
-                                {permissionCount} permissions
-                              </span>
-                              {userCount > 0 && (
-                                <span className="flex items-center gap-1">
-                                  <UserIcon className="w-3 h-3" />
-                                  {userCount} users
-                                </span>
-                              )}
+                          )}
+                          
+                          {/* Content */}
+                          <div className="text-left h-full flex flex-col justify-center relative">
+                            <div className={cn(
+                              "font-semibold text-sm leading-tight mb-2",
+                              isSelected ? "text-background" : "text-foreground"
+                            )}>
+                              {role.name}
+                            </div>
+                            {role.description && (
+                              <div className={cn(
+                                "text-xs leading-relaxed mb-3 line-clamp-2",
+                                isSelected ? "text-background/80" : "text-muted-foreground"
+                              )}>
+                                {role.description}
+                              </div>
+                            )}
+                            <div className={cn(
+                              "flex items-center gap-2 text-xs",
+                              isSelected ? "text-background/70" : "text-muted-foreground"
+                            )}>
+                              <span>{permissionCount} permissions</span>
                             </div>
                           </div>
-                        </Label>
-                      </div>
-                    );
-                  })}
+                          
+                          {/* Hover Effect */}
+                          <div className={cn(
+                            "absolute inset-0 rounded-xl transition-all duration-300 opacity-0 group-hover:opacity-100",
+                            !isSelected && "bg-gradient-to-br from-foreground/5 to-foreground/10"
+                          )} />
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </RadioGroup>
+              </div>
               {errors.roles && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                   <p className="text-sm text-red-700">{errors.roles}</p>

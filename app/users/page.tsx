@@ -84,13 +84,13 @@ export default function UsersPage() {
   // Load data
   useEffect(() => {
     const loadData = async () => {
-      const loadingToast = toast.loading("Loading users data...")
+      const loadingToast = toast.loading(t('users.loading'))
       
       try {
         await new Promise(resolve => setTimeout(resolve, 1500))
         
         toast.dismiss(loadingToast)
-        toast.success("👥 Users data loaded successfully!", {
+        toast.success(t('users.loaded'), {
           duration: 3000
         })
         
@@ -98,7 +98,7 @@ export default function UsersPage() {
         
       } catch (error) {
         toast.dismiss(loadingToast)
-        toast.error("❌ Failed to load users data")
+        toast.error(t('users.load_error'))
         setIsLoading(false)
       }
     }
@@ -110,19 +110,19 @@ export default function UsersPage() {
   const handleRefresh = async () => {
     setRefreshing(true)
     
-    const refreshToast = toast.loading("🔄 Refreshing data...")
+    const refreshToast = toast.loading(`🔄 ${t('users.refreshing')}`)
     
     try {
       await new Promise(resolve => setTimeout(resolve, 1000))
       
       toast.dismiss(refreshToast)
-      toast.success("✅ Data refreshed successfully!", {
+      toast.success(`✅ ${t('users.refreshed')}`, {
         duration: 2000
       })
       
     } catch (error) {
       toast.dismiss(refreshToast)
-      toast.error("❌ Failed to refresh data")
+      toast.error(`❌ ${t('users.refresh_error')}`)
     } finally {
       setRefreshing(false)
     }
@@ -242,35 +242,6 @@ export default function UsersPage() {
       },
     },
     {
-      id: "language",
-      accessorKey: "language_preference",
-      header: t('users.table.language'),
-      cell: ({ row }) => {
-        const user = row.original
-        const language = languageOptions.find(lang => lang.value === user.language_preference)
-        const initials = language?.label.substring(0, 2).toUpperCase() || user.language_preference?.substring(0, 2).toUpperCase()
-        
-        return (
-          <Badge variant="outline" className="font-mono text-xs">
-            {initials}
-          </Badge>
-        )
-      },
-    },
-    {
-      id: "institution_name",
-      accessorKey: "institution.name",
-      header: () => (
-        <div className="flex items-center gap-2">
-          <Building className="w-4 h-4" />
-          <span>{t('users.table.institution')}</span>
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div className="text-sm max-w-xs truncate">{row.original.institution?.name || 'N/A'}</div>
-      ),
-    },
-    {
       id: "church_name",
       accessorKey: "church.name",
       header: () => (
@@ -291,11 +262,11 @@ export default function UsersPage() {
         const deptInfo = getDepartmentInfo(user)
         
         if (deptInfo.type === 'No Departmental') {
-          return <StatusBadge label={deptInfo.type} variant="neutral" size="sm" />
+          return <StatusBadge label={t('users.filters.no_departmental')} variant="neutral" size="sm" />
         } else if (deptInfo.type === 'Church Departmental') {
-          return <StatusBadge label={deptInfo.type} variant="info" size="sm" icon={Building2} />
+          return <StatusBadge label={t('users.filters.church_departmental')} variant="info" size="sm" icon={Building2} />
         } else {
-          return <StatusBadge label={deptInfo.type} variant="default" size="sm" icon={Building} />
+          return <StatusBadge label={t('users.filters.institutional_departmental')} variant="default" size="sm" icon={Building} />
         }
       },
     },
@@ -325,7 +296,7 @@ export default function UsersPage() {
         const user = row.original
         
         if (!user.user_roles || user.user_roles.length === 0) {
-          return <StatusBadge label="No Role" variant="neutral" size="sm" />
+          return <StatusBadge label={t('users.table.no_role')} variant="neutral" size="sm" />
         }
         
         return (
@@ -356,27 +327,6 @@ export default function UsersPage() {
             label={user.is_deleted ? t('users.table.inactive') : t('users.table.active')}
             variant={user.is_deleted ? 'error' : 'success'}
             showDot
-            size="sm"
-          />
-        )
-      },
-    },
-    {
-      id: "gender",
-      accessorKey: "gender",
-      header: t('users.table.gender'),
-      cell: ({ row }) => {
-        const user = row.original
-        if (!user.gender) {
-          return <StatusBadge label="-" variant="neutral" size="sm" />
-        }
-        
-        const genderLabel = t(`users.gender.${user.gender}`)
-        
-        return (
-          <StatusBadge
-            label={genderLabel}
-            variant="neutral"
             size="sm"
           />
         )
@@ -505,16 +455,8 @@ export default function UsersPage() {
                 searchKey="name"
                 filters={[
                   {
-                    id: "institution_name",
-                    title: "Institution",
-                    options: institutions.map(inst => ({ 
-                      label: inst.name.length > 30 ? inst.name.substring(0, 30) + '...' : inst.name, 
-                      value: inst.name 
-                    }))
-                  },
-                  {
                     id: "church_name",
-                    title: "Church",
+                    title: t('users.filters.church'),
                     options: churches.map(church => ({ 
                       label: church.name, 
                       value: church.name 
@@ -522,19 +464,19 @@ export default function UsersPage() {
                   },
                   {
                     id: "department_type",
-                    title: "Department Type",
+                    title: t('users.filters.department_type'),
                     options: [
-                      { label: "Church Departmental", value: "Church Departmental" },
-                      { label: "Institutional Departmental", value: "Institutional Departmental" },
-                      { label: "No Departmental", value: "No Departmental" }
+                      { label: t('users.filters.church_departmental'), value: "Church Departmental" },
+                      { label: t('users.filters.institutional_departmental'), value: "Institutional Departmental" },
+                      { label: t('users.filters.no_departmental'), value: "No Departmental" }
                     ]
                   },
                   {
                     id: "status",
-                    title: "Status",
+                    title: t('users.filters.status'),
                     options: [
-                      { label: "Active", value: "active" },
-                      { label: "Inactive", value: "inactive" }
+                      { label: t('users.table.active'), value: "active" },
+                      { label: t('users.table.inactive'), value: "inactive" }
                     ]
                   }
                 ]}
@@ -626,18 +568,18 @@ export default function UsersPage() {
                             variant={selectedUser.is_deleted ? 'destructive' : 'default'}
                             className="mt-1"
                           >
-                            {selectedUser.is_deleted ? 'Inactive' : 'Active'}
+                            {selectedUser.is_deleted ? t('users.table.inactive') : t('users.table.active')}
                           </Badge>
                         </div>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span className="font-medium">Language:</span>
+                          <span className="font-medium">{t('users.details.language')}:</span>
                           <p className="text-muted-foreground">{selectedUser.language_preference}</p>
                         </div>
                         <div>
-                          <span className="font-medium">User ID:</span>
+                          <span className="font-medium">{t('users.details.user_id')}:</span>
                           <p className="text-muted-foreground font-mono">{selectedUser.id}</p>
                         </div>
                       </div>
@@ -655,19 +597,19 @@ export default function UsersPage() {
                     <CardContent className="space-y-3">
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Institution:</span>
+                          <span className="text-sm font-medium">{t('users.details.institution')}:</span>
                           <span className="text-sm">{selectedUser.institution.name}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Church:</span>
-                          <span className="text-sm">{selectedUser.church.name}</span>
+                          <span className="text-sm font-medium">{t('users.details.church')}:</span>
+                          <span className="text-sm">{selectedUser.church?.name || 'N/A'}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Created:</span>
+                          <span className="text-sm font-medium">{t('users.details.created')}:</span>
                           <span className="text-sm">{new Date(selectedUser.created_at).toLocaleDateString()}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Updated:</span>
+                          <span className="text-sm font-medium">{t('users.details.updated')}:</span>
                           <span className="text-sm">{new Date(selectedUser.updated_at).toLocaleDateString()}</span>
                         </div>
                       </div>

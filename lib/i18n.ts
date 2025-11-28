@@ -151,6 +151,7 @@ const resources = {
         language: "Language",
         english: "English",
         dutch: "Dutch",
+        profile: "Profile",
         loading: "Loading...",
         error: "An error occurred",
         success: "Success",
@@ -956,6 +957,12 @@ const resources = {
         subtitle: "Manage system users, roles, and permissions",
         overview: "Users Overview",
         registered_users: "Registered users",
+        loading: "Loading users data...",
+        loaded: "Users data loaded successfully!",
+        load_error: "Failed to load users data",
+        refreshing: "Refreshing data...",
+        refreshed: "Data refreshed successfully!",
+        refresh_error: "Failed to refresh data",
         kpis: {
           total_users: "Total Users",
           active_users: "Active Users",
@@ -1000,6 +1007,24 @@ const resources = {
           active: "Active",
           inactive: "Inactive",
           gender: "Gender",
+          no_role: "No Role",
+        },
+        filters: {
+          institution: "Institution",
+          church: "Church",
+          department_type: "Department Type",
+          status: "Status",
+          church_departmental: "Church Departmental",
+          institutional_departmental: "Institutional Departmental",
+          no_departmental: "No Departmental"
+        },
+        details: {
+          language: "Language",
+          user_id: "User ID",
+          institution: "Institution",
+          church: "Church",
+          created: "Created",
+          updated: "Updated"
         },
         gender: {
           MALE: "Male",
@@ -1809,6 +1834,7 @@ const resources = {
         language: "Taal",
         english: "Engels",
         dutch: "Nederlands",
+        profile: "Profiel",
         loading: "Laden...",
         error: "Er is een fout opgetreden",
         success: "Succes",
@@ -2614,6 +2640,12 @@ const resources = {
         subtitle: "Beheer systeemgebruikers, rollen en machtigingen",
         overview: "Gebruikersoverzicht",
         registered_users: "Geregistreerde gebruikers",
+        loading: "Gebruikersgegevens laden...",
+        loaded: "Gebruikersgegevens succesvol geladen!",
+        load_error: "Kon gebruikersgegevens niet laden",
+        refreshing: "Gegevens vernieuwen...",
+        refreshed: "Gegevens succesvol vernieuwd!",
+        refresh_error: "Kon gegevens niet vernieuwen",
         kpis: {
           total_users: "Totaal Gebruikers",
           active_users: "Actieve Gebruikers",
@@ -2657,7 +2689,25 @@ const resources = {
           no_users: "Geen gebruikers gevonden",
           active: "Actief",
           inactive: "Inactief",
-          gender: "Geslacht"
+          gender: "Geslacht",
+          no_role: "Geen Rol",
+        },
+        filters: {
+          institution: "Instelling",
+          church: "Kerk",
+          department_type: "Afdelingstype",
+          status: "Status",
+          church_departmental: "Kerk Afdelings",
+          institutional_departmental: "Institutionele Afdelings",
+          no_departmental: "Geen Afdelings"
+        },
+        details: {
+          language: "Taal",
+          user_id: "Gebruikers-ID",
+          institution: "Instelling",
+          church: "Kerk",
+          created: "Aangemaakt",
+          updated: "Bijgewerkt"
         },
         gender: {
           MALE: "Man",
@@ -3148,6 +3198,7 @@ const resources = {
     translation: {
       common: {
         language: "Idioma",
+        profile: "Perfil",
         loading: "Carregando...",
         error: "Erro",
         success: "Sucesso",
