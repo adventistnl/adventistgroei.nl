@@ -358,7 +358,7 @@ export default function InstitutionsPage() {
       id: "churches",
       accessorKey: "churches_count",
       header: () => (
-        <div className="text-center font-medium text-gray-900">
+        <div className="text-center font-medium">
           {t('institutions.table.churches')}
         </div>
       ),
@@ -376,7 +376,7 @@ export default function InstitutionsPage() {
       id: "users",
       accessorKey: "users_count",
       header: () => (
-        <div className="text-center font-medium text-gray-900">
+        <div className="text-center font-medium">
           {t('institutions.table.users')}
         </div>
       ),
@@ -390,7 +390,7 @@ export default function InstitutionsPage() {
     {
       id: "budget",
       header: () => (
-        <div className="text-center font-medium text-gray-900">
+        <div className="text-center font-medium">
           {t('institutions.table.budget')}
         </div>
       ),
@@ -401,7 +401,7 @@ export default function InstitutionsPage() {
 
         return (
           <div className="text-center">
-            <div className="text-sm font-semibold text-gray-900">
+            <div className="text-sm font-semibold">
               {hasBudget ? `$${budgetAmount.toLocaleString()}` : '-'}
             </div>
           </div>
@@ -411,7 +411,7 @@ export default function InstitutionsPage() {
     {
       id: "budget_status",
       header: () => (
-        <div className="text-center font-medium text-gray-900">
+        <div className="text-center font-medium">
           {t('institutions.table.budget_status')}
         </div>
       ),
@@ -443,7 +443,7 @@ export default function InstitutionsPage() {
       id: "status",
       accessorKey: "is_deleted",
       header: () => (
-        <div className="text-center font-medium text-gray-900">
+        <div className="text-center font-medium">
           {t('common.status')}
         </div>
       ),
@@ -643,13 +643,16 @@ export default function InstitutionsPage() {
 
         {/* Charts Section */}
           <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
-            <DepartmentActivityChart loading={isLoading} />
-            <UsersByRoleChart 
+            <DepartmentActivityChart
+              departments={displayedInstitution?.departments || []}
+              loading={isLoading}
+            />
+            <UsersByRoleChart
               data={displayedInstitution?.institutionChartsData?.usersByRole}
               monthlyUserGrowth={displayedInstitution?.institutionChartsData?.monthlyUserGrowth}
-              loading={isLoading} 
+              loading={isLoading}
             />
-            <ChurchesByRegionChart 
+            <ChurchesByRegionChart
               data={displayedInstitution?.institutionChartsData?.churchesByRegion}
               loading={isLoading}
             />

@@ -1085,6 +1085,13 @@ export type DepartmentListRelationFilter = {
   some?: InputMaybe<DepartmentWhereInput>;
 };
 
+export type DepartmentMonthlySpending = {
+  __typename?: 'DepartmentMonthlySpending';
+  amount: Scalars['Float']['output'];
+  departmentId: Scalars['String']['output'];
+  departmentName: Scalars['String']['output'];
+};
+
 export type DepartmentNullableScalarRelationFilter = {
   is?: InputMaybe<DepartmentWhereInput>;
   isNot?: InputMaybe<DepartmentWhereInput>;
@@ -2990,6 +2997,7 @@ export type Query = {
   subsidyStatus?: Maybe<SubsidyStatus>;
   subsidyStatuses: Array<SubsidyStatus>;
   user?: Maybe<UserModel>;
+  userWithRoles?: Maybe<UserWithRoles>;
   users: Array<UserModel>;
 };
 
@@ -3119,6 +3127,11 @@ export type QuerySubsidyStatusesArgs = {
 
 
 export type QueryUserArgs = {
+  id: Scalars['String']['input'];
+};
+
+
+export type QueryUserWithRolesArgs = {
   id: Scalars['String']['input'];
 };
 
@@ -3513,12 +3526,8 @@ export type SpecialProjectsWhereInput = {
 export type SpendingOverTime = {
   __typename?: 'SpendingOverTime';
   date: Scalars['String']['output'];
-  finance: Scalars['Float']['output'];
-  hr: Scalars['Float']['output'];
-  it: Scalars['Float']['output'];
-  marketing: Scalars['Float']['output'];
+  departments: Array<DepartmentMonthlySpending>;
   month: Scalars['String']['output'];
-  operations: Scalars['Float']['output'];
 };
 
 export type StringFilter = {
