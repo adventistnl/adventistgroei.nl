@@ -222,6 +222,8 @@ export const DEPARTMENT_FRAGMENT = gql`
       }
     }
   }
+  ${ANNUAL_BUDGET_FRAGMENT}
+  ${CONTACT_FRAGMENT}
 `;
 
 export const CHURCH_FRAGMENT = gql`

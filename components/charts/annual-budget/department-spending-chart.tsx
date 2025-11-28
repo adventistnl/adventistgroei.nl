@@ -1,6 +1,5 @@
 "use client"
 
-// 🔴 MOCK_DATA: departmentSpending - Departments fixos + cálculos simulados
 import React, { useMemo } from "react"
 import { Building, TrendingUp } from "lucide-react"
 import { 
@@ -31,7 +30,6 @@ import { InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
 import { PrivacyOverlay } from "@/components/shared/privacy-overlay"
 import { useComponentPrivacy } from "@/contexts/privacy-context"
 import { createPrivacyConfig } from "@/config/privacy-roles.config"
-import { MockDataIndicator, useShowMockIndicators } from "@/components/shared/mock-data-indicator"
 
 interface DepartmentData {
   name: string
@@ -77,21 +75,22 @@ const PRIVACY_CONFIG = createPrivacyConfig(
 export function DepartmentSpendingChart({ data }: DepartmentSpendingChartProps) {
   // Use privacy hook
   const { isHidden } = useComponentPrivacy(PRIVACY_CONFIG)
-  const showMockIndicators = useShowMockIndicators()
 
   // Transform data to stacked format
   const chartData = useMemo(() => {
     return data.map(dept => {
-      // Spent = approved - reserved (what has been used)
-      const spent = dept.approved - dept.reserved
-      // Available = planned - approved (what's still available)
-      const available = dept.planned - dept.approved
+      // reserved field actually contains total_expenses (spent amount)
+      const spent = dept.reserved // reserved = total_expenses from backend
+      // Calculate true reserved: approved - spent (if approved exists)
+      const reserved = dept.approved > 0 ? Math.max(0, dept.approved - spent) : 0
+      // Available = planned - spent (what hasn't been used yet)
+      const available = Math.max(0, dept.planned - spent)
       
       return {
         department: dept.name,
-        spent: spent > 0 ? spent : 0,
-        reserved: dept.reserved,
-        available: available > 0 ? available : 0,
+        spent: spent,
+        reserved: reserved,
+        available: available,
         total: dept.planned
       }
     })
@@ -108,7 +107,7 @@ export function DepartmentSpendingChart({ data }: DepartmentSpendingChartProps) 
   }, [chartData])
 
   const utilizationRate = totals.total > 0 
-    ? Math.round(((totals.spent + totals.reserved) / totals.total) * 100) 
+    ? Math.round((totals.spent / totals.total) * 100) 
     : 0
 
   return (
@@ -121,12 +120,6 @@ export function DepartmentSpendingChart({ data }: DepartmentSpendingChartProps) 
                 <Building className="w-4 h-4" />
                 Institution Department Spending
               </CardTitle>
-              {showMockIndicators && (
-                <MockDataIndicator
-                  queryName="departmentSpending"
-                  description="Departments fixos + cálculos simulados"
-                />
-              )}
             </div>
             <CardDescription className="text-xs">
               Budget allocation: Spent, Reserved, and Available per department
@@ -236,7 +229,7 @@ export function DepartmentSpendingChart({ data }: DepartmentSpendingChartProps) 
               </div>
               <div className="flex flex-col">
                 <span className="text-muted-foreground">Reserved</span>
-                <span className="font-medium text-gray-600">${(totals.reserved / 1000).toFixed(0)}K</span>
+                <span className="font-medium text-muted-foreground">${(totals.reserved / 1000).toFixed(0)}K</span>
               </div>
               <div className="flex flex-col">
                 <span className="text-muted-foreground">Available</span>

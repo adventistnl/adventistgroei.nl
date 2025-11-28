@@ -29,15 +29,18 @@ export interface GetAnnualBudgetKPIs_departmentSpending {
   institution: string;
 }
 
+export interface GetAnnualBudgetKPIs_spendingOverTime_departments {
+  __typename: "DepartmentMonthlySpending";
+  departmentId: string;
+  departmentName: string;
+  amount: number;
+}
+
 export interface GetAnnualBudgetKPIs_spendingOverTime {
   __typename: "SpendingOverTime";
   date: string;
   month: string;
-  finance: number;
-  operations: number;
-  hr: number;
-  it: number;
-  marketing: number;
+  departments: GetAnnualBudgetKPIs_spendingOverTime_departments[];
 }
 
 export interface GetAnnualBudgetKPIs_budgetDistribution {

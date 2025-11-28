@@ -166,7 +166,7 @@ export function BudgetDistributionChart({ data, year, entityDistribution = [] }:
           
           <div className="flex items-center gap-2">
           {/* Toggle Button */}
-            <div className="flex items-center border border-gray-200 rounded-lg p-1 bg-gray-50">
+            <div className="flex items-center border border-border rounded-lg p-1 bg-muted">
               <Button
                 variant="ghost"
                 size="sm"
@@ -174,8 +174,8 @@ export function BudgetDistributionChart({ data, year, entityDistribution = [] }:
                 className={cn(
                   "h-7 px-2 rounded-md transition-all text-xs",
                   chartType === "radial"
-                    ? "bg-white shadow-sm text-gray-900"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    ? "bg-background shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
                 )}
               >
                 <Target className="w-3.5 h-3.5 mr-1" />
@@ -188,8 +188,8 @@ export function BudgetDistributionChart({ data, year, entityDistribution = [] }:
                 className={cn(
                   "h-7 px-2 rounded-md transition-all text-xs",
                   chartType === "pie"
-                    ? "bg-white shadow-sm text-gray-900"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    ? "bg-background shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
                 )}
               >
                 <PieChartIcon className="w-3.5 h-3.5 mr-1" />
@@ -421,11 +421,11 @@ export function BudgetDistributionChart({ data, year, entityDistribution = [] }:
         </CardContent>
         <CardFooter className="flex-col gap-2 text-xs pt-2">
           {/* Minimalist footer - only show total values */}
-          <div className="w-full flex items-center justify-between text-xs border-t border-gray-100 pt-3">
+          <div className="w-full flex items-center justify-between text-xs border-t border-border pt-3">
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Total Budget</span>
             </div>
-            <span className="font-semibold text-gray-900">
+            <span className="font-semibold text-foreground">
               ${data.total.toLocaleString()}
             </span>
           </div>

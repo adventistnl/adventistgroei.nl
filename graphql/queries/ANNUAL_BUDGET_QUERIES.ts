@@ -163,11 +163,11 @@ export const GET_ANNUAL_BUDGET_KPIS = gql`
     spendingOverTime(year: $year, institutionId: $institutionId) {
       date
       month
-      finance
-      operations
-      hr
-      it
-      marketing
+      departments {
+        departmentId
+        departmentName
+        amount
+      }
     }
 
     budgetDistribution(year: $year, institutionId: $institutionId) {

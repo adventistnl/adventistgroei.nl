@@ -11,7 +11,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import {
-  ChartConfig,
   ChartContainer,
   ChartLegend,
   ChartLegendContent,
@@ -25,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useChartColors, CHART_PRESETS, createGradient } from "@/lib/chart-colors"
+import { useChartColors } from "@/lib/chart-colors"
 import { departmentTranslations } from "@/lib/translations/departments"
 
 interface DepartmentActivityChartProps {
@@ -39,85 +38,83 @@ export function DepartmentActivityChart({ data, loading, departments = [] }: Dep
   const { i18n } = useTranslation()
   const currentLanguage = i18n?.language || 'en'
   const t = departmentTranslations[currentLanguage as keyof typeof departmentTranslations] || departmentTranslations.en
-  
+
+  // Processar departamentos reais e seus valores
+  const departmentsList = React.useMemo(() => {
+    if (!departments || departments.length === 0) return []
+    //TODO: Ajustar lógica de cálculo do gráfico de atividade da instituição conforme dados reais disponíveis
+    return departments
+      .filter((dept: any) => !dept.is_deleted) // Filtrar departamentos ativos
+      .map((dept: any) => {
+        const budget = dept.annual_budgets?.[0]?.planned_budget || 0
+        const userCount = dept.users?.length || 0
+
+        // Calcular atividade baseado em orçamento e usuários reais
+        const activityValue = Math.floor((budget / 1000) + (userCount * 2))
+
+        return {
+          id: dept.id,
+          name: dept.name,
+          value: activityValue,
+        }
+      })
+  }, [departments])
+
   // Usar apenas dados reais dos departamentos
   const chartData = React.useMemo(() => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    
-    if (!departments || departments.length === 0) {
+
+    if (departmentsList.length === 0) {
       // Se não há departamentos, retornar dados zerados
       return months.map((month, index) => ({
         month,
         date: `2024-${String(index + 1).padStart(2, '0')}-01`,
-        finance: 0,
-        education: 0,
-        youth: 0,
-        missions: 0,
       }))
     }
 
-    // Agrupar departamentos por categoria baseado em dados reais
-    const departmentCategories: { [key: string]: number } = {
-      finance: 0,
-      education: 0,
-      youth: 0,
-      missions: 0,
-    }
+    // Distribuir os valores pelos meses baseado apenas nos dados reais
+    return months.map((month, index) => {
+      const monthData: any = {
+        month,
+        date: `2024-${String(index + 1).padStart(2, '0')}-01`,
+      }
 
-    departments.forEach((dept: any) => {
-      const name = dept.name?.toLowerCase() || ''
-      const budget = dept.annual_budgets?.[0]?.planned_budget || 0
-      const userCount = dept.users?.length || 0
-      
-      // Calcular atividade baseado em orçamento e usuários reais (sem randomização)
-      const activityValue = Math.floor((budget / 1000) + (userCount * 2))
-      
-      // Categorizar departamentos baseado no nome
-      if (name.includes('youth') || name.includes('jovem') || name.includes('juventude')) {
-        departmentCategories.youth += activityValue
-      } else if (name.includes('education') || name.includes('educação') || name.includes('school') || name.includes('escola')) {
-        departmentCategories.education += activityValue
-      } else if (name.includes('finance') || name.includes('financ') || name.includes('tesour')) {
-        departmentCategories.finance += activityValue
-      } else {
-        departmentCategories.missions += activityValue
+      // Adicionar cada departamento como uma propriedade
+      departmentsList.forEach((dept) => {
+        monthData[dept.id] = Math.floor(dept.value / 12) // Distribuição uniforme pelos meses
+      })
+
+      return monthData
+    })
+  }, [departmentsList])
+  
+  const { generatePalette } = useChartColors()
+
+  // Gerar cores dinâmicas para cada departamento
+  const departmentColors = React.useMemo(() => {
+    const palette = generatePalette(departmentsList.length)
+    const colorMap: { [key: string]: string } = {}
+
+    departmentsList.forEach((dept, index) => {
+      colorMap[dept.id] = palette[index]
+    })
+
+    return colorMap
+  }, [departmentsList, generatePalette])
+
+  // Configuração dinâmica do gráfico baseada nos departamentos reais
+  const chartConfig = React.useMemo(() => {
+    const config: any = {}
+
+    departmentsList.forEach((dept) => {
+      config[dept.id] = {
+        label: dept.name,
+        color: departmentColors[dept.id],
       }
     })
-    
-    // Distribuir os valores pelos meses baseado apenas nos dados reais
-    return months.map((month, index) => ({
-      month,
-      date: `2024-${String(index + 1).padStart(2, '0')}-01`,
-      finance: Math.floor(departmentCategories.finance / 12), // Distribuição uniforme pelos meses
-      education: Math.floor(departmentCategories.education / 12),
-      youth: Math.floor(departmentCategories.youth / 12),
-      missions: Math.floor(departmentCategories.missions / 12),
-    }))
-  }, [departments])
-  
-  const { colors, theme } = useChartColors()
 
-  // Usar o preset de departamentos
-  const departmentColors = CHART_PRESETS.departments(theme as 'light' | 'dark')
-
-  const chartConfig = {
-    finance: {
-      label: t.charts?.activity_overview?.categories?.finance || "Finance",
-      color: departmentColors.finance,
-    },
-    education: {
-      label: t.charts?.activity_overview?.categories?.education || "Education",
-      color: departmentColors.education,
-    },
-    youth: {
-      label: t.charts?.activity_overview?.categories?.youth || "Youth",
-      color: departmentColors.youth,
-    },
-    missions: {
-      label: t.charts?.activity_overview?.categories?.missions || "Missions",
-      color: departmentColors.missions,
-    },
-  } satisfies ChartConfig
+    return config
+  }, [departmentsList, departmentColors])
 
   const filteredData = React.useMemo(() => {
     if (timeRange === "6m") {
@@ -178,22 +175,12 @@ export function DepartmentActivityChart({ data, loading, departments = [] }: Dep
         >
           <AreaChart data={filteredData}>
             <defs>
-              <linearGradient id="fillFinance" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={departmentColors.finance} stopOpacity={0.8} />
-                <stop offset="95%" stopColor={departmentColors.finance} stopOpacity={0.1} />
-              </linearGradient>
-              <linearGradient id="fillEducation" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={departmentColors.education} stopOpacity={0.8} />
-                <stop offset="95%" stopColor={departmentColors.education} stopOpacity={0.1} />
-              </linearGradient>
-              <linearGradient id="fillYouth" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={departmentColors.youth} stopOpacity={0.8} />
-                <stop offset="95%" stopColor={departmentColors.youth} stopOpacity={0.1} />
-              </linearGradient>
-              <linearGradient id="fillMissions" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={departmentColors.missions} stopOpacity={0.8} />
-                <stop offset="95%" stopColor={departmentColors.missions} stopOpacity={0.1} />
-              </linearGradient>
+              {departmentsList.map((dept) => (
+                <linearGradient key={dept.id} id={`fill${dept.id}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={departmentColors[dept.id]} stopOpacity={0.8} />
+                  <stop offset="95%" stopColor={departmentColors[dept.id]} stopOpacity={0.1} />
+                </linearGradient>
+              ))}
             </defs>
             <CartesianGrid vertical={false} />
             <XAxis
@@ -207,34 +194,16 @@ export function DepartmentActivityChart({ data, loading, departments = [] }: Dep
               cursor={false}
               content={<ChartTooltipContent indicator="dot" />}
             />
-            <Area
-              dataKey="finance"
-              type="natural"
-              fill="url(#fillFinance)"
-              stroke={departmentColors.finance}
-              stackId="a"
-            />
-            <Area
-              dataKey="education"
-              type="natural"
-              fill="url(#fillEducation)"
-              stroke={departmentColors.education}
-              stackId="a"
-            />
-            <Area
-              dataKey="youth"
-              type="natural"
-              fill="url(#fillYouth)"
-              stroke={departmentColors.youth}
-              stackId="a"
-            />
-            <Area
-              dataKey="missions"
-              type="natural"
-              fill="url(#fillMissions)"
-              stroke={departmentColors.missions}
-              stackId="a"
-            />
+            {departmentsList.map((dept) => (
+              <Area
+                key={dept.id}
+                dataKey={dept.id}
+                type="natural"
+                fill={`url(#fill${dept.id})`}
+                stroke={departmentColors[dept.id]}
+                stackId="a"
+              />
+            ))}
             <ChartLegend content={<ChartLegendContent />} />
           </AreaChart>
         </ChartContainer>

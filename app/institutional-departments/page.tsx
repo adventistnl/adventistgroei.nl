@@ -814,7 +814,10 @@ export default function DepartmentsPage() {
 
         {/* Charts Section - Visible in both views */}
         <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
-          <DepartmentActivityChart loading={isLoading} />
+          <DepartmentActivityChart
+            departments={departments}
+            loading={isLoading}
+          />
         </ResponsiveGridCarousel>
 
         <Separator />
