@@ -558,7 +558,6 @@ export type ChurchCreateDto = {
   contact?: InputMaybe<ContactCreateDto>;
   institution_id: Scalars['String']['input'];
   name: Scalars['String']['input'];
-  region_id?: InputMaybe<Scalars['String']['input']>;
   type?: InputMaybe<ChurchType>;
 };
 
@@ -646,7 +645,6 @@ export type ChurchUpdateDto = {
   departmens?: InputMaybe<Array<Scalars['String']['input']>>;
   institution_id?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
-  region_id?: InputMaybe<Scalars['String']['input']>;
   subsidy_requests?: InputMaybe<Array<Scalars['String']['input']>>;
   type?: InputMaybe<ChurchType>;
   users?: InputMaybe<Array<Scalars['String']['input']>>;

@@ -49,7 +49,6 @@ export function EditChurchModal({
   const [formData, setFormData] = useState<UpdateChurchVariables>({
     id: '',
     name: '',
-    region_id: '',
     contactName: '',
     phone: '',
     email: '',
@@ -129,8 +128,10 @@ export function EditChurchModal({
     }
 
     if (step === 2) {
-      // Step 2: Geographic data - all optional now
-      // No validations needed - province/city are optional
+      // Step 2: Geographic data - cidade obrigatória
+      if (!formData.city?.trim()) {
+        newErrors.city = tChurch.validation.city_required || 'Cidade é obrigatória'
+      }
     }
 
     if (step === 3) {
@@ -180,7 +181,6 @@ export function EditChurchModal({
       const variables: UpdateChurchVariables = {
         id: formData.id!,
         name: formData.name!.trim(),
-        region_id: formData.region_id,
         city: formData.city,
         email: formData.email,
         phone: formData.phone,
@@ -305,14 +305,7 @@ export function EditChurchModal({
                 cityError={errors.city}
               />
 
-              <RegionSelector
-                value={formData.region_id || ''}
-                onChangeAction={(value: string) => handleInputChange('region_id', value)}
-                regions={regions}
-                isLoading={regionsLoading}
-                error={errors.region_id}
-                isOptional={true}
-              />
+              {/* Região removida do formulário. Será definida automaticamente pelo backend. */}
             </div>
           </div>
         )

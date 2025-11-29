@@ -53,7 +53,6 @@ export function AddChurchModal({
     city: '',
     country: '',
     state: '',
-    region_id: null,
     type: null,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -184,7 +183,6 @@ export function AddChurchModal({
       const variables: CreateChurchVariables = {
         institution_id: institutionId,
         name: formData.name!.trim(),
-        region_id: formData.region_id,
         city: formData.city,
         email: formData.email,
         phone: formData.phone,
@@ -221,7 +219,6 @@ export function AddChurchModal({
     setFormData({
       institution_id: institutionId,
       name: '',
-      region_id: null,
       contactName: '',
       phone: '',
       email: '',
@@ -298,15 +295,6 @@ export function AddChurchModal({
                 isLoading={isLoading || regionsLoading}
                 provinceError={errors.state}
                 cityError={errors.city}
-              />
-
-              <RegionSelector
-                value={formData.region_id || ''}
-                onChangeAction={(value: string) => handleInputChange('region_id', value)}
-                regions={regions}
-                isLoading={regionsLoading}
-                error={errors.region_id}
-                isOptional={true}
               />
             </div>
           </div>

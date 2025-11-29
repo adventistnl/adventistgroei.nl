@@ -141,6 +141,7 @@ export const regionTranslations = {
       color_required: "Color is required",
       country_required: "Please select a country",
       province_required: "Please select at least one province",
+      city_unique: "Each city can only belong to one region. Remove duplicate cities and try again.",
       please_fix_errors: "Please fix the errors before continuing"
     },
 
@@ -148,7 +149,7 @@ export const regionTranslations = {
     toasts: {
       creating: "Creating region...",
       created: "Region created successfully",
-      create_failed: "Failed to create region",
+      create_failed: "Failed to create region. Check if cities are already assigned to another region.",
       updating: "Updating region...",
       updated: "Region updated successfully",
       update_failed: "Failed to update region",
@@ -344,6 +345,7 @@ export const regionTranslations = {
       color_required: "Kleur is vereist",
       country_required: "Selecteer een land",
       province_required: "Selecteer ten minste één provincie",
+      city_unique: "Elke stad mag slechts aan één regio gekoppeld zijn. Verwijder dubbele steden en probeer opnieuw.",
       please_fix_errors: "Corrigeer de fouten voordat u verdergaat"
     },
 
@@ -351,7 +353,7 @@ export const regionTranslations = {
     toasts: {
       creating: "Regio maken...",
       created: "Regio succesvol gemaakt",
-      create_failed: "Mislukt om regio te maken",
+      create_failed: "Mislukt om regio te maken. Controleer of steden al aan een andere regio zijn toegewezen.",
       updating: "Regio bijwerken...",
       updated: "Regio succesvol bijgewerkt",
       update_failed: "Mislukt om regio bij te werken",
@@ -554,7 +556,7 @@ export const regionTranslations = {
     toasts: {
       creating: "Criando região...",
       created: "Região criada com sucesso",
-      create_failed: "Falha ao criar região",
+      create_failed: "Falha ao criar região. Verifique se as cidades já estão atribuídas a outra região.",
       updating: "Atualizando região...",
       updated: "Região atualizada com sucesso",
       update_failed: "Falha ao atualizar região",

@@ -26,7 +26,6 @@ export interface CreateChurch {
 export interface CreateChurchVariables {
   institution_id: string;
   name: string;
-  region_id?: string | null;
   email: string;
   phone: string;
   contactName: string;

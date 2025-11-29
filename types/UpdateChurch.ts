@@ -26,7 +26,6 @@ export interface UpdateChurch {
 export interface UpdateChurchVariables {
   id: string;
   name?: string | null;
-  region_id?: string | null;
   email?: string | null;
   phone?: string | null;
   contactName?: string | null;

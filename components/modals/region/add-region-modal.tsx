@@ -280,8 +280,7 @@ export function AddRegionModal({
       const res = await createRegion({
         variables: finalData
       })
-      
-      if (!res.data) throw new Error("Failed to create region")
+      if (!res.data) throw new Error(tRegion.toasts.create_failed)
 
       toast.dismiss(loadingToast)
       toast.success(tRegion.toasts.created, { duration: 4000 })
@@ -327,7 +326,6 @@ export function AddRegionModal({
               <h3 className="text-lg font-semibold text-foreground">{tRegion.steps.step_1_title}</h3>
               <p className="text-sm text-muted-foreground">{tRegion.steps.step_1_description}</p>
             </div>
-            
             <div className="space-y-6 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="country" className="flex items-center gap-2 text-sm">
@@ -362,22 +360,9 @@ export function AddRegionModal({
                           {countries.map((country) => (
                             <CommandItem
                               key={country.code}
-                              value={country.code}
-                              onSelect={(currentValue) => {
-                                setSelectedCountry(currentValue)
-                                // Reset provinces when country changes
-                                setSelectedProvinces(new Set())
-                                setSelectedCities({})
-                                setIsCountryPopoverOpen(false)
-                              }}
+                              value={country.name}
+                              onSelect={() => setSelectedCountry(country.code)}
                             >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  selectedCountry === country.code ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
                               {country.name}
                             </CommandItem>
                           ))}
@@ -822,11 +807,11 @@ export function AddRegionModal({
                     </>
                   )}
                 </Button>
-              )}
+              )}            
+              </div>
             </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
+        </DialogContent>
+      </Dialog>
+    )
 }

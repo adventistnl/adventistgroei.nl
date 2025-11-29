@@ -37668,18 +37668,6 @@
             "deprecationReason": null
           },
           {
-            "name": "region_id",
-            "description": null,
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
-            },
-            "defaultValue": null,
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
             "name": "contact",
             "description": null,
             "type": {
@@ -38065,18 +38053,6 @@
           },
           {
             "name": "name",
-            "description": null,
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
-            },
-            "defaultValue": null,
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "region_id",
             "description": null,
             "type": {
               "kind": "SCALAR",
