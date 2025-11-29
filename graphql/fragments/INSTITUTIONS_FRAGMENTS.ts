@@ -205,25 +205,12 @@ export const DEPARTMENT_FRAGMENT = gql`
       ...AnnualBudgetFragment
     }
     users {
-      id
-      name
-      email
-      gender
-      is_deleted
-      language_preference
-      user_roles {
-        id
-        role {
-          id
-          name
-          key_code
-          description
-        }
-      }
+      ...UserFragment
     }
   }
   ${ANNUAL_BUDGET_FRAGMENT}
   ${CONTACT_FRAGMENT}
+  ${USER_FRAGMENT}
 `;
 
 export const CHURCH_FRAGMENT = gql`
@@ -255,24 +242,13 @@ export const CHURCH_FRAGMENT = gql`
       name
     }
     users {
-      id
-      name
-      email
-      gender
-      is_deleted
-      language_preference
-      user_roles {
-        id
-        role {
-          id
-          name
-          key_code
-          description
-        }
-      }
+      ...UserFragment
     }
   }
   ${DEPARTMENT_FRAGMENT}
+  ${USER_FRAGMENT}
+  ${ANNUAL_BUDGET_FRAGMENT}
+  ${CONTACT_FRAGMENT}
 `;
 
 export const CHURCH_KPI_DATA_FRAGMENT = gql`

@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { AnnualBudgetStatus, AnnualBudgetPriority, AnnualBudgetCategory, AnnualBudgetEntityType, GenderType, LanguagePreference } from "./globalTypes";
+import { AnnualBudgetStatus, AnnualBudgetPriority, AnnualBudgetCategory, AnnualBudgetEntityType, LanguagePreference, GenderType } from "./globalTypes";
 
 // ====================================================
 // GraphQL fragment: DepartmentFragment
@@ -76,12 +76,25 @@ export interface DepartmentFragment_annual_budgets {
   entity_type: AnnualBudgetEntityType;
 }
 
+export interface DepartmentFragment_users_church {
+  __typename: "Church";
+  id: string;
+  name: string;
+}
+
+export interface DepartmentFragment_users_institution {
+  __typename: "Institution";
+  id: string;
+  name: string;
+}
+
 export interface DepartmentFragment_users_user_roles_role {
   __typename: "Role";
   id: string;
   name: string;
   key_code: string;
   description: string;
+  color: string | null;
 }
 
 export interface DepartmentFragment_users_user_roles {
@@ -95,9 +108,20 @@ export interface DepartmentFragment_users {
   id: string;
   name: string;
   email: string;
-  gender: GenderType | null;
-  is_deleted: boolean;
+  password: string;
   language_preference: LanguagePreference;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
+  contact_id: string | null;
+  institution_id: string;
+  gender: GenderType | null;
+  church: DepartmentFragment_users_church | null;
+  institution: DepartmentFragment_users_institution;
   user_roles: DepartmentFragment_users_user_roles[] | null;
 }
 

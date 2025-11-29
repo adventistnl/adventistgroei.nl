@@ -1,10 +1,6 @@
 import { config } from "@/config/global";
-import { HttpLink, } from "@apollo/client";
-import { SetContextLink } from "@apollo/client/link/context";
-import {
-  ApolloClient,
-  InMemoryCache
-} from "@apollo/client-integration-nextjs";
+import { HttpLink, ApolloClient, InMemoryCache } from "@apollo/client";
+import { setContext } from "@apollo/client/link/context";
 import { useCookies } from "@/hooks/use-cookies";
 
 // have a function to create a client for you
@@ -15,7 +11,7 @@ export function makeClient() {
     fetchOptions: {},
   });
 
-  const authLink = new SetContextLink((operation, prevContext) => {
+  const authLink = setContext((operation, prevContext) => {
     let token = "";
     if (typeof window !== "undefined") {
       const cookies = getCookies();

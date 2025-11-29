@@ -1,11 +1,14 @@
 'use client'
-import { ApolloNextAppProvider } from "@apollo/client-integration-nextjs";
+import { ApolloProvider } from "@apollo/client";
 import { makeClient } from '@/lib/apollo/apollo-client';
+import { useMemo } from 'react';
 
 export function GraphQLProvider({ children }: { children: React.ReactNode }) {
+  const client = useMemo(() => makeClient(), []);
+
   return (
-    <ApolloNextAppProvider makeClient={makeClient}>
+    <ApolloProvider client={client}>
       {children}
-    </ApolloNextAppProvider>
+    </ApolloProvider>
   );
 }

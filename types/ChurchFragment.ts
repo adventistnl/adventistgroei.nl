@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ChurchType, AnnualBudgetStatus, AnnualBudgetPriority, AnnualBudgetCategory, AnnualBudgetEntityType, GenderType, LanguagePreference } from "./globalTypes";
+import { ChurchType, AnnualBudgetStatus, AnnualBudgetPriority, AnnualBudgetCategory, AnnualBudgetEntityType, LanguagePreference, GenderType } from "./globalTypes";
 
 // ====================================================
 // GraphQL fragment: ChurchFragment
@@ -137,12 +137,25 @@ export interface ChurchFragment_departments_annual_budgets {
   entity_type: AnnualBudgetEntityType;
 }
 
+export interface ChurchFragment_departments_users_church {
+  __typename: "Church";
+  id: string;
+  name: string;
+}
+
+export interface ChurchFragment_departments_users_institution {
+  __typename: "Institution";
+  id: string;
+  name: string;
+}
+
 export interface ChurchFragment_departments_users_user_roles_role {
   __typename: "Role";
   id: string;
   name: string;
   key_code: string;
   description: string;
+  color: string | null;
 }
 
 export interface ChurchFragment_departments_users_user_roles {
@@ -156,9 +169,20 @@ export interface ChurchFragment_departments_users {
   id: string;
   name: string;
   email: string;
-  gender: GenderType | null;
-  is_deleted: boolean;
+  password: string;
   language_preference: LanguagePreference;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
+  contact_id: string | null;
+  institution_id: string;
+  gender: GenderType | null;
+  church: ChurchFragment_departments_users_church | null;
+  institution: ChurchFragment_departments_users_institution;
   user_roles: ChurchFragment_departments_users_user_roles[] | null;
 }
 
@@ -189,12 +213,25 @@ export interface ChurchFragment_region {
   name: string;
 }
 
+export interface ChurchFragment_users_church {
+  __typename: "Church";
+  id: string;
+  name: string;
+}
+
+export interface ChurchFragment_users_institution {
+  __typename: "Institution";
+  id: string;
+  name: string;
+}
+
 export interface ChurchFragment_users_user_roles_role {
   __typename: "Role";
   id: string;
   name: string;
   key_code: string;
   description: string;
+  color: string | null;
 }
 
 export interface ChurchFragment_users_user_roles {
@@ -208,9 +245,20 @@ export interface ChurchFragment_users {
   id: string;
   name: string;
   email: string;
-  gender: GenderType | null;
-  is_deleted: boolean;
+  password: string;
   language_preference: LanguagePreference;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
+  contact_id: string | null;
+  institution_id: string;
+  gender: GenderType | null;
+  church: ChurchFragment_users_church | null;
+  institution: ChurchFragment_users_institution;
   user_roles: ChurchFragment_users_user_roles[] | null;
 }
 

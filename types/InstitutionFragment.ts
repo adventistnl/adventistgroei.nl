@@ -305,12 +305,25 @@ export interface InstitutionFragment_churches_departments_annual_budgets {
   entity_type: AnnualBudgetEntityType;
 }
 
+export interface InstitutionFragment_churches_departments_users_church {
+  __typename: "Church";
+  id: string;
+  name: string;
+}
+
+export interface InstitutionFragment_churches_departments_users_institution {
+  __typename: "Institution";
+  id: string;
+  name: string;
+}
+
 export interface InstitutionFragment_churches_departments_users_user_roles_role {
   __typename: "Role";
   id: string;
   name: string;
   key_code: string;
   description: string;
+  color: string | null;
 }
 
 export interface InstitutionFragment_churches_departments_users_user_roles {
@@ -324,9 +337,20 @@ export interface InstitutionFragment_churches_departments_users {
   id: string;
   name: string;
   email: string;
-  gender: GenderType | null;
-  is_deleted: boolean;
+  password: string;
   language_preference: LanguagePreference;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
+  contact_id: string | null;
+  institution_id: string;
+  gender: GenderType | null;
+  church: InstitutionFragment_churches_departments_users_church | null;
+  institution: InstitutionFragment_churches_departments_users_institution;
   user_roles: InstitutionFragment_churches_departments_users_user_roles[] | null;
 }
 
@@ -357,12 +381,25 @@ export interface InstitutionFragment_churches_region {
   name: string;
 }
 
+export interface InstitutionFragment_churches_users_church {
+  __typename: "Church";
+  id: string;
+  name: string;
+}
+
+export interface InstitutionFragment_churches_users_institution {
+  __typename: "Institution";
+  id: string;
+  name: string;
+}
+
 export interface InstitutionFragment_churches_users_user_roles_role {
   __typename: "Role";
   id: string;
   name: string;
   key_code: string;
   description: string;
+  color: string | null;
 }
 
 export interface InstitutionFragment_churches_users_user_roles {
@@ -376,9 +413,20 @@ export interface InstitutionFragment_churches_users {
   id: string;
   name: string;
   email: string;
-  gender: GenderType | null;
-  is_deleted: boolean;
+  password: string;
   language_preference: LanguagePreference;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
+  contact_id: string | null;
+  institution_id: string;
+  gender: GenderType | null;
+  church: InstitutionFragment_churches_users_church | null;
+  institution: InstitutionFragment_churches_users_institution;
   user_roles: InstitutionFragment_churches_users_user_roles[] | null;
 }
 
@@ -471,12 +519,25 @@ export interface InstitutionFragment_departments_annual_budgets {
   entity_type: AnnualBudgetEntityType;
 }
 
+export interface InstitutionFragment_departments_users_church {
+  __typename: "Church";
+  id: string;
+  name: string;
+}
+
+export interface InstitutionFragment_departments_users_institution {
+  __typename: "Institution";
+  id: string;
+  name: string;
+}
+
 export interface InstitutionFragment_departments_users_user_roles_role {
   __typename: "Role";
   id: string;
   name: string;
   key_code: string;
   description: string;
+  color: string | null;
 }
 
 export interface InstitutionFragment_departments_users_user_roles {
@@ -490,9 +551,20 @@ export interface InstitutionFragment_departments_users {
   id: string;
   name: string;
   email: string;
-  gender: GenderType | null;
-  is_deleted: boolean;
+  password: string;
   language_preference: LanguagePreference;
+  created_at: any;
+  updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
+  contact_id: string | null;
+  institution_id: string;
+  gender: GenderType | null;
+  church: InstitutionFragment_departments_users_church | null;
+  institution: InstitutionFragment_departments_users_institution;
   user_roles: InstitutionFragment_departments_users_user_roles[] | null;
 }
 
