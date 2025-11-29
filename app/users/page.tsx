@@ -59,7 +59,7 @@ import { AccessDenied } from "@/components/access/access-denied"
 export default function UsersPage() {
   const { t } = useTranslation()
   const router = useRouter()
-  const { currentInstitutionData, institutions} = useInstitution()
+  const { currentInstitutionData, institutions, refetchInstitutionById} = useInstitution()
   const { roles } = useRoles(); // Obtém os roles através do hook
   const languageOptions = useLanguageOptions(); // Usando o novo hook
 
@@ -681,8 +681,11 @@ export default function UsersPage() {
                 churches={churches}
                 departments={departments}
                 roles={roles}
-                onSuccess={(userData) => {
-                  // Here you would typically refresh the users list
+                onSuccess={async (userData) => {
+                  // Refetch is already handled by the modal internally
+                  toast.success(t('users.toasts.user_created'), {
+                    duration: 3000
+                  })
                 }}
               />
             </Suspense>
@@ -697,9 +700,9 @@ export default function UsersPage() {
                 churches={churches}
                 departments={departments}
                 roles={roles}
-                onSuccess={(userData) => {
+                onSuccess={async (userData) => {
                   setSelectedUser(null)
-                  // Here you would typically refresh the users list
+                  // Refetch is already handled by the modal internally
                 }}
               />
             </Suspense>
@@ -710,9 +713,12 @@ export default function UsersPage() {
                 isOpen={isDeleteUserOpen}
                 onOpenChange={setIsDeleteUserOpen}
                 user={selectedUser}
-                onSuccess={(deletedUser) => {
+                onSuccess={async (deletedUser) => {
                   setSelectedUser(null)
-                  // Here you would typically refresh the users list
+                  // Refetch is already handled by the modal internally
+                  toast.success(t('users.toasts.user_deleted'), {
+                    duration: 3000
+                  })
                 }}
               />
             </Suspense>

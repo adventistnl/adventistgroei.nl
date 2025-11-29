@@ -1060,7 +1060,98 @@ const resources = {
           },
           edit_user: {
             title: "Edit User",
-            description: "Modify user information and settings",
+            description: "Update user information and permissions",
+            // Form fields
+            fields: {
+              name: "Name",
+              email: "Email",
+              language_preference: "Language Preference",
+              gender: "Gender",
+              male: "Male",
+              female: "Female",
+              status: "Status",
+              active: "Active",
+              inactive: "Inactive",
+              institution: "Institution",
+              church: "Church",
+              department: "Department",
+              roles: "Roles"
+            },
+            // Step descriptions
+            steps: {
+              personal_info: "Personal Information",
+              personal_info_description: "Enter basic user details",
+              organizational_info: "Organizational Information",
+              organizational_info_description: "Select institution, church and department (optional)",
+              assign_roles: "Assign Roles",
+              assign_roles_description: "Select one or more roles for this user"
+            },
+            // Status messages
+            status: {
+              active_description: "User has access to the system",
+              inactive_description: "User loses access to the system",
+              part_of_department: "Part of a Department?",
+              part_of_department_description: "Is this user part of any department?",
+              no_church_departments: "No church departments available",
+              no_institutional_departments: "No institutional departments available",
+              no_roles_assigned: "No roles assigned"
+            },
+            // Department tabs
+            departments: {
+              church_departments: "Church Departments",
+              institutional_departments: "Institutional Departments"
+            },
+            // Role categories
+            categories: {
+              all: "All",
+              administration: "Administration",
+              church: "Church",
+              institutional: "Institutional",
+              leadership: "Leadership",
+              member: "Member"
+            },
+            // Buttons
+            buttons: {
+              back: "Back",
+              cancel: "Cancel",
+              continue: "Continue",
+              update_user: "Update User",
+              updating: "Updating..."
+            },
+            // Progress
+            progress: {
+              step: "Step",
+              of: "of",
+              percent: "%"
+            },
+            // Error messages
+            errors: {
+              name_required: "Name is required",
+              email_required: "Email is required",
+              language_required: "Language is required",
+              institution_required: "Institution is required",
+              department_required: "Please select a department",
+              roles_required: "Please assign at least one role",
+              fill_all_fields: "Please fill in all required fields"
+            },
+            // Success messages
+            toasts: {
+              updating_user: "Updating user...",
+              user_updated: "User updated successfully",
+              user_update_failed: "Failed to update user"
+            },
+            // Placeholders
+            placeholders: {
+              select_language: "Select language",
+              select_institution: "Select institution",
+              select_church: "Select church",
+              search_departments: "Search departments...",
+              search_roles: "Search roles..."
+            },
+            // Filter labels
+            filters: {
+              filter_by_category: "Filter by Category"
+            },
             save: "Save Changes"
           },
           delete_user: {
@@ -2743,7 +2834,98 @@ const resources = {
           },
           edit_user: {
             title: "Gebruiker Bewerken",
-            description: "Wijzig gebruikersinformatie en instellingen",
+            description: "Gebruikersinformatie en machtigingen bijwerken",
+            // Form fields
+            fields: {
+              name: "Naam",
+              email: "E-mail",
+              language_preference: "Taalvoorkeur",
+              gender: "Geslacht",
+              male: "Man",
+              female: "Vrouw",
+              status: "Status",
+              active: "Actief",
+              inactive: "Inactief",
+              institution: "Instelling",
+              church: "Kerk",
+              department: "Afdeling",
+              roles: "Rollen"
+            },
+            // Step descriptions
+            steps: {
+              personal_info: "Persoonlijke Informatie",
+              personal_info_description: "Voer basisgebruikersgegevens in",
+              organizational_info: "Organisatie Informatie",
+              organizational_info_description: "Selecteer instelling, kerk en afdeling (optioneel)",
+              assign_roles: "Rollen Toewijzen",
+              assign_roles_description: "Selecteer een of meer rollen voor deze gebruiker"
+            },
+            // Status messages
+            status: {
+              active_description: "Gebruiker heeft toegang tot het systeem",
+              inactive_description: "Gebruiker verliest toegang tot het systeem",
+              part_of_department: "Deel van een Afdeling?",
+              part_of_department_description: "Is deze gebruiker deel van een afdeling?",
+              no_church_departments: "Geen kerkafdelingen beschikbaar",
+              no_institutional_departments: "Geen institutionele afdelingen beschikbaar",
+              no_roles_assigned: "Geen rollen toegewezen"
+            },
+            // Department tabs
+            departments: {
+              church_departments: "Kerkafdelingen",
+              institutional_departments: "Institutionele Afdelingen"
+            },
+            // Role categories
+            categories: {
+              all: "Alle",
+              administration: "Administratie",
+              church: "Kerk",
+              institutional: "Institutioneel",
+              leadership: "Leiderschap",
+              member: "Lid"
+            },
+            // Buttons
+            buttons: {
+              back: "Terug",
+              cancel: "Annuleren",
+              continue: "Doorgaan",
+              update_user: "Gebruiker Bijwerken",
+              updating: "Bijwerken..."
+            },
+            // Progress
+            progress: {
+              step: "Stap",
+              of: "van",
+              percent: "%"
+            },
+            // Error messages
+            errors: {
+              name_required: "Naam is verplicht",
+              email_required: "E-mail is verplicht",
+              language_required: "Taal is verplicht",
+              institution_required: "Instelling is verplicht",
+              department_required: "Selecteer een afdeling",
+              roles_required: "Wijs ten minste één rol toe",
+              fill_all_fields: "Vul alle verplichte velden in"
+            },
+            // Success messages
+            toasts: {
+              updating_user: "Gebruiker bijwerken...",
+              user_updated: "Gebruiker succesvol bijgewerkt",
+              user_update_failed: "Kon gebruiker niet bijwerken"
+            },
+            // Placeholders
+            placeholders: {
+              select_language: "Selecteer taal",
+              select_institution: "Selecteer instelling",
+              select_church: "Selecteer kerk",
+              search_departments: "Zoek afdelingen...",
+              search_roles: "Zoek rollen..."
+            },
+            // Filter labels
+            filters: {
+              filter_by_category: "Filter op Categorie"
+            },
             save: "Wijzigingen Opslaan"
           },
           delete_user: {
@@ -3799,6 +3981,190 @@ const resources = {
         page: {
           title: "Institutionele Afdelingen",
           description: "Beheer afdelingen in uw instelling"
+        }
+      },
+      users: {
+        title: "Gebruikersbeheer",
+        subtitle: "Beheer systeemgebruikers en hun toegang",
+        table: {
+          name: "Naam",
+          email: "E-mail",
+          institution: "Instelling",
+          church: "Kerk",
+          roles: "Rollen",
+          created_at: "Aangemaakt",
+          actions: "Acties",
+          search_placeholder: "Zoek gebruikers...",
+          no_results: "Geen gebruikers gevonden"
+        },
+        actions: {
+          create_user: "Gebruiker Aanmaken",
+          view_details: "Details Bekijken",
+          edit_user: "Gebruiker Bewerken",
+          assign_role: "Rol Toewijzen",
+          remove_role: "Rol Verwijderen",
+          delete_user: "Gebruiker Verwijderen"
+        },
+        modals: {
+          create_user: {
+            title: "Nieuwe Gebruiker Aanmaken",
+            name: "Volledige Naam",
+            email: "E-mailadres",
+            institution: "Instelling",
+            church: "Kerk",
+            language: "Taalvoorkeur",
+            roles: "Rollen Toewijzen",
+            create: "Gebruiker Aanmaken",
+            cancel: "Annuleren"
+          },
+          edit_user: {
+            title: "Gebruiker Bewerken",
+            description: "Gebruikersinformatie en machtigingen bijwerken",
+            // Form fields
+            fields: {
+              name: "Naam",
+              email: "E-mail",
+              language_preference: "Taalvoorkeur",
+              gender: "Geslacht",
+              male: "Man",
+              female: "Vrouw",
+              status: "Status",
+              active: "Actief",
+              inactive: "Inactief",
+              institution: "Instelling",
+              church: "Kerk",
+              department: "Afdeling",
+              roles: "Rollen"
+            },
+            // Step descriptions
+            steps: {
+              personal_info: "Persoonlijke Informatie",
+              personal_info_description: "Voer basisgebruikersgegevens in",
+              organizational_info: "Organisatie Informatie",
+              organizational_info_description: "Selecteer instelling, kerk en afdeling (optioneel)",
+              assign_roles: "Rollen Toewijzen",
+              assign_roles_description: "Selecteer een of meer rollen voor deze gebruiker"
+            },
+            // Status messages
+            status: {
+              active_description: "Gebruiker heeft toegang tot het systeem",
+              inactive_description: "Gebruiker verliest toegang tot het systeem",
+              part_of_department: "Deel van een Afdeling?",
+              part_of_department_description: "Is deze gebruiker deel van een afdeling?",
+              no_church_departments: "Geen kerkafdelingen beschikbaar",
+              no_institutional_departments: "Geen institutionele afdelingen beschikbaar",
+              no_roles_assigned: "Geen rollen toegewezen"
+            },
+            // Department tabs
+            departments: {
+              church_departments: "Kerkafdelingen",
+              institutional_departments: "Institutionele Afdelingen"
+            },
+            // Role categories
+            categories: {
+              all: "Alle",
+              administration: "Administratie",
+              church: "Kerk",
+              institutional: "Institutioneel",
+              leadership: "Leiderschap",
+              member: "Lid"
+            },
+            // Buttons
+            buttons: {
+              back: "Terug",
+              cancel: "Annuleren",
+              continue: "Doorgaan",
+              update_user: "Gebruiker Bijwerken",
+              updating: "Bijwerken..."
+            },
+            // Progress
+            progress: {
+              step: "Stap",
+              of: "van",
+              percent: "%"
+            },
+            // Error messages
+            errors: {
+              name_required: "Naam is verplicht",
+              email_required: "E-mail is verplicht",
+              language_required: "Taal is verplicht",
+              institution_required: "Instelling is verplicht",
+              department_required: "Selecteer een afdeling",
+              roles_required: "Wijs ten minste één rol toe",
+              fill_all_fields: "Vul alle verplichte velden in"
+            },
+            // Success messages
+            toasts: {
+              updating_user: "Gebruiker bijwerken...",
+              user_updated: "Gebruiker succesvol bijgewerkt",
+              user_update_failed: "Kon gebruiker niet bijwerken"
+            },
+            // Placeholders
+            placeholders: {
+              select_language: "Selecteer taal",
+              select_institution: "Selecteer instelling",
+              select_church: "Selecteer kerk",
+              search_departments: "Zoek afdelingen...",
+              search_roles: "Zoek rollen..."
+            },
+            // Filter labels
+            filters: {
+              filter_by_category: "Filter op Categorie"
+            },
+            save: "Wijzigingen Opslaan"
+          },
+          delete_user: {
+            title: "Gebruiker Verwijderen",
+            description: "Deze actie kan niet ongedaan worden gemaakt. De gebruiker wordt soft verwijderd.",
+            confirm_warning: "Weet u zeker dat u deze gebruiker wilt verwijderen?",
+            confirm_note: "De gebruiker wordt gedeactiveerd en gemarkeerd als verwijderd",
+            delete: "Gebruiker Verwijderen",
+            deactivate_title: "Gebruikerstoegang Deactiveren",
+            deactivate_description: "Deze actie zal de toegang van de gebruiker tot het systeem verwijderen terwijl alle gegevens behouden blijven",
+            view_consequences: "Bekijk Gevolgen",
+            understand_consequences: "Ik begrijp de consequenties",
+            acknowledge_text: "Ik erken dat deze gebruiker toegang tot het systeem en alle bijbehorende privileges zal verliezen",
+            type_confirmation: "Typ \"DELETE USER\" om deze actie te bevestigen:",
+            confirmation_placeholder: "DELETE USER",
+            confirmation_help: "Deze bevestiging zorgt ervoor dat u begrijpt welke actie wordt uitgevoerd",
+            deactivate_user: "Gebruiker Deactiveren",
+            deactivating: "Deactiveren...",
+            consequences: {
+              login_access: "Inlogtoegang Ingetrokken",
+              login_access_desc: "Gebruiker kan niet meer authenticeren of toegang krijgen tot het systeem",
+              data_preservation: "Gegevens Bewaring",
+              data_preservation_desc: "Alle historische records, subsidies en rapporten worden bewaard",
+              role_assignments: "Roltoewijzingen",
+              role_assignments_desc: "Alle roltoewijzingen worden geschorst maar kunnen worden hersteld"
+            },
+            soft_delete: {
+              title: "Zachte Verwijdering",
+              description: "De gebruiker wordt gedeactiveerd maar niet permanent verwijderd. Alle gegevens worden bewaard en kunnen indien nodig worden hersteld."
+            }
+          },
+          user_details: {
+            title: "Gebruikersdetails",
+            description: "Complete gebruikersinformatie en geschiedenis",
+            basic_info: "Basisinformatie",
+            contact_info: "Contactinformatie",
+            system_info: "Systeeminformatie"
+          }
+        },
+        toasts: {
+          user_created: "Gebruiker succesvol aangemaakt",
+          user_updated: "Gebruiker succesvol bijgewerkt",
+          user_deleted: "Gebruiker succesvol verwijderd",
+          role_created: "Rol succesvol aangemaakt",
+          role_updated: "Rol succesvol bijgewerkt",
+          role_deleted: "Rol succesvol verwijderd",
+          role_assigned: "Rol succesvol toegewezen",
+          role_removed: "Rol succesvol verwijderd",
+          permissions_updated: "Machtigingen succesvol bijgewerkt",
+          access_denied: "Toegang geweigerd - onvoldoende machtigingen",
+          creating_role: "Rol aanmaken...",
+          updating_role: "Rol bijwerken...",
+          deleting_role: "Rol verwijderen...",
+          role_create_failed: "Kon rol niet aanmaken"
         }
       }
     }

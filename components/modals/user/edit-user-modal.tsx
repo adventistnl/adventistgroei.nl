@@ -143,12 +143,12 @@ export function EditUserModal({
 
   // Category filters configuration
   const categoryFilters: FilterTag[] = [
-    { key: "all", label: "All Roles" },
-    { key: "administration", label: "Administration" },
-    { key: "church", label: "Church" },
-    { key: "institutional", label: "Institutional" },
-    { key: "leadership", label: "Leadership" },
-    { key: "member", label: "Member" },
+    { key: "all", label: t('users.modals.edit_user.categories.all') },
+    { key: "administration", label: t('users.modals.edit_user.categories.administration') },
+    { key: "church", label: t('users.modals.edit_user.categories.church') },
+    { key: "institutional", label: t('users.modals.edit_user.categories.institutional') },
+    { key: "leadership", label: t('users.modals.edit_user.categories.leadership') },
+    { key: "member", label: t('users.modals.edit_user.categories.member') },
   ];
 
   const totalSteps = 4; // Basic Info, Organizational Info, Roles, Review
@@ -212,29 +212,29 @@ export function EditUserModal({
 
     if (step === 1) {
       if (!userForm.name?.trim()) {
-        newErrors.name = "Name is required";
+        newErrors.name = t('users.modals.edit_user.errors.name_required');
       }
       if (!userForm.email?.trim()) {
-        newErrors.email = "Email is required";
+        newErrors.email = t('users.modals.edit_user.errors.email_required');
       }
       if (!userForm.language_preference) {
-        newErrors.language_preference = "Language is required";
+        newErrors.language_preference = t('users.modals.edit_user.errors.language_required');
       }
     }
 
     if (step === 2) {
       if (!userForm.institution_id) {
-        newErrors.institution_id = "Institution is required";
+        newErrors.institution_id = t('users.modals.edit_user.errors.institution_required');
       }
       // Church is now optional
       if (userForm.has_department && !userForm.department_id) {
-        newErrors.department_id = "Please select a department";
+        newErrors.department_id = t('users.modals.edit_user.errors.department_required');
       }
     }
 
     if (step === 3) {
       if (selectedRoles.length === 0) {
-        newErrors.roles = "Please assign at least one role";
+        newErrors.roles = t('users.modals.edit_user.errors.roles_required');
       }
     }
 
@@ -254,12 +254,12 @@ export function EditUserModal({
 
   const handleSubmit = async () => {
     if (!validateStep(1) || !validateStep(2) || !validateStep(3)) {
-      toast.error("Please fill in all required fields");
+      toast.error(t('users.modals.edit_user.errors.fill_all_fields'));
       return;
     }
 
     setIsLoading(true);
-    const loadingToast = toast.loading(t('users.toasts.updating_user'));
+    const loadingToast = toast.loading(t('users.modals.edit_user.toasts.updating_user'));
 
     try {
       const addedRoles = selectedRoles.filter(
@@ -287,7 +287,7 @@ export function EditUserModal({
       refetchInstitutionById(); // Refetch após sucesso
 
       toast.dismiss(loadingToast);
-      toast.success(t('users.toasts.user_updated'), {
+      toast.success(t('users.modals.edit_user.toasts.user_updated'), {
         duration: 3000
       });
 
@@ -303,7 +303,7 @@ export function EditUserModal({
 
     } catch (error) {
       toast.dismiss(loadingToast);
-      toast.error(t('users.toasts.user_update_failed'));
+      toast.error(t('users.modals.edit_user.toasts.user_update_failed'));
     } finally {
       setIsLoading(false);
     }
@@ -316,15 +316,18 @@ export function EditUserModal({
   }
 
   const handleRoleSelect = (roleId: string) => {
-    // Only one role can be selected at a time
-    const previousRole = selectedRoles[0];
-    
-    setSelectedRoles([roleId]);
-    
-    if (previousRole && previousRole !== roleId) {
-      setUnselectedRoles((prev) => [...prev, previousRole]);
-    }
-    
+    // Allow multiple roles to be selected
+    setSelectedRoles((prev) => {
+      const isSelected = prev.includes(roleId);
+      if (isSelected) {
+        // Remove role if already selected
+        return prev.filter((id) => id !== roleId);
+      } else {
+        // Add role if not selected
+        return [...prev, roleId];
+      }
+    });
+
     setUnselectedRoles((prev) => prev.filter((id) => id !== roleId));
     
     if (errors.roles) {
@@ -364,14 +367,14 @@ export function EditUserModal({
         return (
           <div className="space-y-8 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold text-foreground">Basic Information</h3>
-              <p className="text-sm text-muted-foreground">Enter user name, email and language preference</p>
+              <h3 className="text-lg font-semibold text-foreground">{t('users.modals.edit_user.steps.personal_info')}</h3>
+              <p className="text-sm text-muted-foreground">{t('users.modals.edit_user.steps.personal_info_description')}</p>
             </div>
-            
+
             <div className="space-y-6 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm font-medium">
-                  Name *
+                  {t('users.modals.edit_user.fields.name')} *
                 </Label>
                 <Input
                   id="name"
@@ -388,7 +391,7 @@ export function EditUserModal({
 
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium">
-                  Email *
+                  {t('users.modals.edit_user.fields.email')} *
                 </Label>
                 <Input
                   id="email"
@@ -407,8 +410,8 @@ export function EditUserModal({
               <LanguageSelectorInput
                 value={userForm.language_preference || ''}
                 onValueChange={(value: string) => handleInputChange('language_preference', value)}
-                label="Language Preference"
-                placeholder="Select language"
+                label={t('users.modals.edit_user.fields.language_preference')}
+                placeholder={t('users.modals.edit_user.placeholders.select_language')}
                 variant="combobox"
                 disabled={isLoading}
                 error={errors.language_preference}
@@ -417,7 +420,7 @@ export function EditUserModal({
 
               {/* Gender Selection */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium">Gender</Label>
+                <Label className="text-sm font-medium">{t('users.modals.edit_user.fields.gender')}</Label>
                 <div className="flex gap-4">
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -433,7 +436,7 @@ export function EditUserModal({
                       disabled={isLoading}
                     />
                     <Label htmlFor="gender-male" className="text-sm font-normal cursor-pointer">
-                      Male
+                      {t('users.modals.edit_user.fields.male')}
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -450,7 +453,7 @@ export function EditUserModal({
                       disabled={isLoading}
                     />
                     <Label htmlFor="gender-female" className="text-sm font-normal cursor-pointer">
-                      Female
+                      {t('users.modals.edit_user.fields.female')}
                     </Label>
                   </div>
                 </div>
@@ -460,12 +463,12 @@ export function EditUserModal({
               <div className="flex items-center justify-between rounded-lg border border-border p-4">
                 <div className="space-y-0.5">
                   <Label htmlFor="user-status" className="text-sm font-medium">
-                    Status: {userForm.is_active ? "Active" : "Inactive"}
+                    {t('users.modals.edit_user.fields.status')}: {userForm.is_active ? t('users.modals.edit_user.fields.active') : t('users.modals.edit_user.fields.inactive')}
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    {userForm.is_active 
-                      ? "User has access to the system" 
-                      : "User loses access to the system"}
+                    {userForm.is_active
+                      ? t('users.modals.edit_user.status.active_description')
+                      : t('users.modals.edit_user.status.inactive_description')}
                   </p>
                 </div>
                 <Switch
@@ -484,14 +487,14 @@ export function EditUserModal({
         return (
           <div className="space-y-8 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold text-foreground">Organizational Information</h3>
-              <p className="text-sm text-muted-foreground">Select institution, church and department (optional)</p>
+              <h3 className="text-lg font-semibold text-foreground">{t('users.modals.edit_user.steps.organizational_info')}</h3>
+              <p className="text-sm text-muted-foreground">{t('users.modals.edit_user.steps.organizational_info_description')}</p>
             </div>
-            
+
             <div className="space-y-6 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="institution" className="text-sm font-medium">
-                  Institution *
+                  {t('users.modals.edit_user.fields.institution')} *
                 </Label>
                 <Popover open={openInstitution} onOpenChange={setOpenInstitution}>
                   <PopoverTrigger asChild>
@@ -508,7 +511,7 @@ export function EditUserModal({
                     >
                       {userForm.institution_id
                         ? institutions.find(inst => inst.id === userForm.institution_id)?.name
-                        : "Select institution"}
+                        : t('users.modals.edit_user.placeholders.select_institution')}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
@@ -548,7 +551,7 @@ export function EditUserModal({
 
               <div className="space-y-2">
                 <Label htmlFor="church" className="text-sm font-medium">
-                  Church *
+                  {t('users.modals.edit_user.fields.church')}
                 </Label>
                 <Popover open={openChurch} onOpenChange={setOpenChurch}>
                   <PopoverTrigger asChild>
@@ -565,7 +568,7 @@ export function EditUserModal({
                     >
                       {userForm.church_id
                         ? filteredChurches.find(church => church.id === userForm.church_id)?.name
-                        : "Select church"}
+                        : t('users.modals.edit_user.placeholders.select_church')}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
@@ -607,10 +610,10 @@ export function EditUserModal({
               <div className="flex items-center justify-between rounded-lg border border-border p-4">
                 <div className="space-y-0.5">
                   <Label htmlFor="has-department" className="text-sm font-medium">
-                    Part of a Department?
+                    {t('users.modals.edit_user.status.part_of_department')}
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Is this user part of any department?
+                    {t('users.modals.edit_user.status.part_of_department_description')}
                   </p>
                 </div>
                 <Switch
@@ -629,21 +632,21 @@ export function EditUserModal({
               {/* Department Selection with Tabs */}
               {userForm.has_department && (
                 <div className="space-y-3">
-                  <Label className="text-sm font-medium">Select Department *</Label>
+                  <Label className="text-sm font-medium">{t('users.modals.edit_user.fields.department')} *</Label>
                   <Tabs value={departmentTab} onValueChange={(value) => {
                     setDepartmentTab(value as 'church' | 'institutional');
                     handleInputChange('department_id', '');
                   }}>
                     <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="church">Church Departments</TabsTrigger>
-                      <TabsTrigger value="institutional">Institutional Departments</TabsTrigger>
+                      <TabsTrigger value="church">{t('users.modals.edit_user.departments.church_departments')}</TabsTrigger>
+                      <TabsTrigger value="institutional">{t('users.modals.edit_user.departments.institutional_departments')}</TabsTrigger>
                     </TabsList>
-                    
+
                     <TabsContent value="church" className="mt-4">
                       <div className="space-y-2 max-h-[250px] overflow-y-auto border border-border rounded-lg p-3">
                         {churchDepartments.length === 0 ? (
                           <p className="text-sm text-muted-foreground text-center py-4">
-                            No church departments available
+                            {t('users.modals.edit_user.status.no_church_departments')}
                           </p>
                         ) : (
                           churchDepartments.map((dept) => {
@@ -719,7 +722,7 @@ export function EditUserModal({
                       <div className="space-y-2 max-h-[250px] overflow-y-auto border border-border rounded-lg p-3">
                         {institutionalDepartments.length === 0 ? (
                           <p className="text-sm text-muted-foreground text-center py-4">
-                            No institutional departments available
+                            {t('users.modals.edit_user.status.no_institutional_departments')}
                           </p>
                         ) : (
                           institutionalDepartments.map((dept) => {
@@ -814,21 +817,21 @@ export function EditUserModal({
         );
 
       case 3:
-        // Step 3: Assign Role (Single Selection)
+        // Step 3: Assign Roles (Multiple Selection)
         return (
           <div className="space-y-8 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold text-foreground">Assign Role</h3>
-              <p className="text-sm text-muted-foreground">Select one role for this user</p>
+              <h3 className="text-lg font-semibold text-foreground">{t('users.modals.edit_user.steps.assign_roles')}</h3>
+              <p className="text-sm text-muted-foreground">{t('users.modals.edit_user.steps.assign_roles_description')}</p>
             </div>
-            
+
             <div className="max-w-4xl mx-auto space-y-4">
               {/* Category Filter */}
               <FilterTags
                 tags={categoryFilters}
                 selectedTag={selectedCategory}
                 onTagSelect={(tag) => setSelectedCategory(tag as RoleCategory)}
-                title="Filter by Category"
+                title={t('users.modals.edit_user.filters.filter_by_category')}
                 showTitle={false}
                 size="sm"
                 variant="default"
@@ -911,7 +914,7 @@ export function EditUserModal({
         const allDepartments = [...churchDepartments, ...institutionalDepartments];
         const selectedDepartment = allDepartments.find(d => d.id === userForm.department_id);
         const selectedLanguage = languageOptions.find(l => l.value === userForm.language_preference);
-        const assignedRole = roles.find(r => r.id === selectedRoles[0]);
+        const assignedRoles = roles.filter(r => selectedRoles.includes(r.id));
 
         return (
           <div className="space-y-8 animate-in fade-in-0 duration-300">
@@ -981,20 +984,24 @@ export function EditUserModal({
                 </div>
               </div>
 
-              {/* Assigned Role */}
+              {/* Assigned Roles */}
               <div className="space-y-3">
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Assigned Role
+                  Assigned Roles ({assignedRoles.length})
                 </h4>
-                {assignedRole ? (
-                  <div className="p-3 bg-muted/50 rounded-lg border">
-                    <div className="font-medium text-sm">{assignedRole.name}</div>
-                    {assignedRole.description && (
-                      <div className="text-xs text-muted-foreground mt-1">{assignedRole.description}</div>
-                    )}
+                {assignedRoles.length > 0 ? (
+                  <div className="space-y-2">
+                    {assignedRoles.map((role) => (
+                      <div key={role.id} className="p-3 bg-muted/50 rounded-lg border">
+                        <div className="font-medium text-sm">{role.name}</div>
+                        {role.description && (
+                          <div className="text-xs text-muted-foreground mt-1">{role.description}</div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No role assigned</p>
+                  <p className="text-sm text-muted-foreground">{t('users.modals.edit_user.status.no_roles_assigned')}</p>
                 )}
               </div>
             </div>
@@ -1042,41 +1049,41 @@ export function EditUserModal({
           <div className="flex justify-between items-center">
             <div className="flex gap-2">
               {currentStep > 1 && (
-                <Button 
-                  variant="outline" 
-                  onClick={handlePrevious} 
+                <Button
+                  variant="outline"
+                  onClick={handlePrevious}
                   disabled={isLoading}
                   size="sm"
                   className="flex items-center gap-1"
                 >
                   <ChevronLeft className="w-4 h-4" />
-                  Back
+                  {t('users.modals.edit_user.buttons.back')}
                 </Button>
               )}
-              <Button 
-                variant="ghost" 
-                onClick={handleClose} 
+              <Button
+                variant="ghost"
+                onClick={handleClose}
                 disabled={isLoading}
                 size="sm"
               >
-                Cancel
+                {t('users.modals.edit_user.buttons.cancel')}
               </Button>
             </div>
 
             <div className="flex items-center gap-2">
               {currentStep < totalSteps ? (
-                <Button 
-                  onClick={handleNext} 
+                <Button
+                  onClick={handleNext}
                   disabled={isLoading}
                   size="sm"
                   className="flex items-center gap-1"
                 >
-                  Continue
+                  {t('users.modals.edit_user.buttons.continue')}
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               ) : (
-                <Button 
-                  onClick={handleSubmit} 
+                <Button
+                  onClick={handleSubmit}
                   disabled={isLoading}
                   size="sm"
                   className="min-w-[120px]"
@@ -1084,12 +1091,12 @@ export function EditUserModal({
                   {isLoading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                      Updating...
+                      {t('users.modals.edit_user.buttons.updating')}
                     </>
                   ) : (
                     <>
                       <Check className="w-4 h-4 mr-2" />
-                      Update User
+                      {t('users.modals.edit_user.buttons.update_user')}
                     </>
                   )}
                 </Button>
