@@ -1342,6 +1342,11 @@ const resources = {
       annual_budget: {
         title: "Annual Budget Management",
         subtitle: "Manage budget requests and approvals across all organizational entities",
+        messages: {
+          refresh_success: "Budget data refreshed successfully",
+          refreshing: "Refreshing budget data...",
+          refresh_error: "Failed to refresh budget data"
+        },
         buttons: {
           new_budget_request: "New Budget Request",
           refresh: "Refresh",
@@ -1525,7 +1530,10 @@ const resources = {
             title: "Budget Summary",
             planned: "Planned",
             expenses: "Expenses",
-            balance: "Balance"
+            balance: "Balance",
+            spent: "Spent",
+            reserved: "Reserved",
+            available: "Available"
           },
           review: {
             title: "Review & Confirm"
@@ -1562,7 +1570,21 @@ const resources = {
             approve_error: "Failed to approve budget",
             reject_error: "Failed to reject budget",
             revision_error: "Failed to request revision",
-            delete_error: "Failed to delete budget"
+            delete_error: "Failed to delete budget",
+            institution_budget_not_found: "Institution budget not found for the selected year",
+            budget_locked_edit: "Budget is locked. Unlock it first to edit.",
+            cannot_add_year_beyond: "Cannot add years beyond {{maxYear}}",
+            year_already_exists: "This year already exists",
+            department_budget_save_failed: "Failed to save department budget. Please try again.",
+            institution_budget_create_failed: "Failed to create institution budget. Please try again.",
+            budget_id_required: "Budget ID is required for updates",
+            no_budget_selected: "No budget selected for update",
+            budget_update_failed: "Failed to update budget. Please try again.",
+            year_added_success: "Year {{year}} added successfully! You can now select it and create budgets.",
+            department_budget_updated: "Department budget updated successfully!",
+            department_budget_created: "Budget for {{departmentName}} created successfully!",
+            institution_budget_created: "Institution budget for {{year}} created successfully!",
+            budget_updated: "Budget updated successfully!"
           },
           lock_institution: {
             title: "Confirm Institution Lock",
@@ -3116,6 +3138,11 @@ const resources = {
       annual_budget: {
         title: "Jaarbegroting Beheer",
         subtitle: "Beheer begrotingsaanvragen en goedkeuringen voor alle organisatie-entiteiten",
+        messages: {
+          refresh_success: "Begrotingsgegevens succesvol vernieuwd",
+          refreshing: "Begrotingsgegevens vernieuwen...",
+          refresh_error: "Kon begrotingsgegevens niet vernieuwen"
+        },
         buttons: {
           new_budget_request: "Nieuwe Begrotingsaanvraag",
           refresh: "Vernieuwen",
@@ -3299,7 +3326,10 @@ const resources = {
             title: "Begrotingsoverzicht",
             planned: "Gepland",
             expenses: "Uitgaven",
-            balance: "Saldo"
+            balance: "Saldo",
+            sepent: "Uitgegeven",
+            remaining: "Resterend",
+            available: "Beschikbaar"
           },
           review: {
             title: "Controleren & Bevestigen"
@@ -3336,7 +3366,21 @@ const resources = {
             approve_error: "Begroting goedkeuren mislukt",
             reject_error: "Begroting afwijzen mislukt",
             revision_error: "Revisie aanvragen mislukt",
-            delete_error: "Begroting verwijderen mislukt"
+            delete_error: "Begroting verwijderen mislukt",
+            institution_budget_not_found: "Instellingsbudget niet gevonden voor het geselecteerde jaar",
+            budget_locked_edit: "Begroting is vergrendeld. Ontgrendel eerst om te bewerken.",
+            cannot_add_year_beyond: "Kan geen jaren toevoegen na {{maxYear}}",
+            year_already_exists: "Dit jaar bestaat al",
+            department_budget_save_failed: "Opslaan van afdelingsbudget mislukt. Probeer het opnieuw.",
+            institution_budget_create_failed: "Aanmaken van instellingsbudget mislukt. Probeer het opnieuw.",
+            budget_id_required: "Begrotings-ID is vereist voor updates",
+            no_budget_selected: "Geen begroting geselecteerd voor update",
+            budget_update_failed: "Bijwerken van begroting mislukt. Probeer het opnieuw.",
+            year_added_success: "Jaar {{year}} succesvol toegevoegd! U kunt het nu selecteren en budgetten aanmaken.",
+            department_budget_updated: "Afdelingsbudget succesvol bijgewerkt!",
+            department_budget_created: "Budget voor {{departmentName}} succesvol aangemaakt!",
+            institution_budget_created: "Instellingsbudget voor {{year}} succesvol aangemaakt!",
+            budget_updated: "Begroting succesvol bijgewerkt!"
           },
           lock_institution: {
             title: "Bevestig Instelling Vergrendeling",
@@ -3634,7 +3678,21 @@ const resources = {
             approve_error: "Falha ao aprovar orçamento",
             reject_error: "Falha ao rejeitar orçamento",
             revision_error: "Falha ao solicitar revisão",
-            delete_error: "Falha ao excluir orçamento"
+            delete_error: "Falha ao excluir orçamento",
+            institution_budget_not_found: "Orçamento da instituição não encontrado para o ano selecionado",
+            budget_locked_edit: "Orçamento está bloqueado. Desbloqueie primeiro para editar.",
+            cannot_add_year_beyond: "Não é possível adicionar anos além de {{maxYear}}",
+            year_already_exists: "Este ano já existe",
+            department_budget_save_failed: "Falha ao salvar orçamento do departamento. Tente novamente.",
+            institution_budget_create_failed: "Falha ao criar orçamento da instituição. Tente novamente.",
+            budget_id_required: "ID do orçamento é obrigatório para atualizações",
+            no_budget_selected: "Nenhum orçamento selecionado para atualização",
+            budget_update_failed: "Falha ao atualizar orçamento. Tente novamente.",
+            year_added_success: "Ano {{year}} adicionado com sucesso! Agora você pode selecioná-lo e criar orçamentos.",
+            department_budget_updated: "Orçamento do departamento atualizado com sucesso!",
+            department_budget_created: "Orçamento para {{departmentName}} criado com sucesso!",
+            institution_budget_created: "Orçamento da instituição para {{year}} criado com sucesso!",
+            budget_updated: "Orçamento atualizado com sucesso!"
           },
           lock_institution: {
             title: "Confirmar Bloqueio da Instituição",

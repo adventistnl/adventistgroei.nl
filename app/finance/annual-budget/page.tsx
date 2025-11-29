@@ -115,7 +115,7 @@ export default function AnnualBudgetPage() {
   // GraphQL Queries
   const { data: dashboardData, loading: loadingDashboard, refetch: refetchDashboard } = useBudgetDashboardData(selectedYear)
   const { data: availableYearsData, loading: loadingYears } = useAvailableYears()
-  const { data: kpisData, loading: loadingKPIs } = useAnnualBudgetKPIs({
+  const { data: kpisData, loading: loadingKPIs, refetch: refetchKPIs } = useAnnualBudgetKPIs({
     skip: !currentInstitutionData?.id,
     variables:{
       institutionId: currentInstitutionData?.id!,
@@ -303,7 +303,7 @@ export default function AnnualBudgetPage() {
 
     const institutionBudget = institutionAnnualBudgets[selectedYear]
     if (!institutionBudget?.id) {
-      toast.error('Institution budget not found for the selected year')
+      toast.error(t('annual_budget.messages.institution_budget_not_found'))
       return
     }
 
@@ -327,10 +327,7 @@ export default function AnnualBudgetPage() {
       })
 
       if (result.data?.toggleBudgetLock) {
-        // Refresh the data
-        refetchDashboard()
-        refetchInstitutionById()
-
+        await handleRefresh()
         const isNowLocked = result.data.toggleBudgetLock.is_locked
         toast.success(isNowLocked ? t('annual_budget.messages.lock_success') : t('annual_budget.messages.unlock_success'))
       }
@@ -346,7 +343,7 @@ export default function AnnualBudgetPage() {
     const isLocked = currentBudget?.is_locked || false
     
     if (isLocked) {
-      toast.error('Budget is locked. Unlock it first to edit.', { duration: 3000 })
+      toast.error(t('annual_budget.messages.budget_locked_edit'), { duration: 3000 })
       return
     }
     if (currentBudget) {
@@ -517,16 +514,20 @@ export default function AnnualBudgetPage() {
   }, [kpisData])
 
   // Handlers
+  // Centraliza o recarregamento de todos os dados
   const handleRefresh = async () => {
     setRefreshing(true)
     const refreshToast = toast.loading(t('annual_budget.messages.refreshing'))
-    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await Promise.all([
+        refetchKPIs(),
+        refetchDashboard(),
+        refetchInstitutionById()
+      ])
       toast.success(t('annual_budget.messages.refresh_success'), { duration: 2000 })
     } catch (error) {
       toast.error(t('annual_budget.messages.refresh_error'))
+      console.error('Erro ao recarregar dados:', error)
     } finally {
       toast.dismiss(refreshToast)
       setRefreshing(false)
@@ -539,18 +540,18 @@ export default function AnnualBudgetPage() {
     const nextYear = Math.max(...availableYears) + 1
 
     if (nextYear > maxAllowedYear) {
-      toast.error(`Cannot add years beyond ${maxAllowedYear}`)
+      toast.error(t('annual_budget.messages.cannot_add_year_beyond', { maxYear: maxAllowedYear }))
       return
     }
 
     if (availableYears.includes(nextYear)) {
-      toast.error('This year already exists')
+      toast.error(t('annual_budget.messages.year_already_exists'))
       return
     }
 
     // Add year locally to frontend state
     setAvailableYears(prev => [...prev, nextYear].sort((a, b) => b - a))
-    toast.success(`Year ${nextYear} added successfully! You can now select it and create budgets.`)
+    toast.success(t('annual_budget.messages.year_added_success', { year: nextYear }))
   }
 
   const handleApproveRequest = async (requestId: string, approvedAmount?: number) => {
@@ -563,11 +564,8 @@ export default function AnnualBudgetPage() {
           }
         }
       })
-
       if (result.data?.approveAnnualBudget) {
-        // Refresh the data
-        refetchDashboard()
-        refetchInstitutionById()
+        await handleRefresh()
         toast.success(t('annual_budget.messages.approve_success'))
       }
     } catch (error) {
@@ -586,11 +584,8 @@ export default function AnnualBudgetPage() {
           }
         }
       })
-
       if (result.data?.rejectAnnualBudget) {
-        // Refresh the data
-        refetchDashboard()
-        refetchInstitutionById()
+        await handleRefresh()
         toast.success(t('annual_budget.messages.reject_success'))
       }
     } catch (error) {
@@ -609,11 +604,8 @@ export default function AnnualBudgetPage() {
           }
         }
       })
-
       if (result.data?.requestRevisionAnnualBudget) {
-        // Refresh the data
-        refetchDashboard()
-        refetchInstitutionById()
+        await handleRefresh()
         toast.success(t('annual_budget.messages.revision_success'))
       }
     } catch (error) {
@@ -629,12 +621,8 @@ export default function AnnualBudgetPage() {
           id: requestId
         }
       })
-
       if (result.data?.toggleBudgetLock) {
-        // Refresh the data
-        refetchDashboard()
-        refetchInstitutionById()
-        const request = budgetRequests.find((req: GetBudgetDashboardData_annualBudgets) => req.id === requestId)
+        await handleRefresh()
         const isNowLocked = result.data.toggleBudgetLock.is_locked
         toast.success(isNowLocked ? t('annual_budget.messages.lock_success') : t('annual_budget.messages.unlock_success'))
       }
@@ -651,10 +639,8 @@ export default function AnnualBudgetPage() {
           id: requestId
         }
       })
-
       if (result.data?.deleteAnnualBudget) {
-        // Refresh the data
-        refetchDashboard()
+        await handleRefresh()
         toast.success(t('annual_budget.messages.delete_success'))
       }
     } catch (error) {
@@ -679,14 +665,9 @@ export default function AnnualBudgetPage() {
             }
           }
         })
-
         if (result.data?.updateAnnualBudget) {
-          // Refresh the data
-          refetchDashboard()
-          refetchInstitutionById()
-          toast.success('Department budget updated successfully!')
-          
-          // Close modal and reset state
+          await handleRefresh()
+          toast.success(t('annual_budget.messages.department_budget_updated'))
           setIsViewEditModalOpen(false)
           setSelectedDepartmentData(null)
         }
@@ -705,21 +686,16 @@ export default function AnnualBudgetPage() {
             notes: budget.notes,
           }
         })
-
         if (result.data?.createAnnualBudget) {
-          // Refresh the data
-          refetchDashboard()
-          refetchInstitutionById()
-          toast.success(`Budget for ${departmentData.departmentName} created successfully!`)
-          
-          // Close modal and reset state
+          await handleRefresh()
+          toast.success(t('annual_budget.messages.department_budget_created', { departmentName: departmentData.departmentName }))
           setIsViewEditModalOpen(false)
           setSelectedDepartmentData(null)
         }
       }
     } catch (error) {
       console.error('Error saving department budget:', error)
-      toast.error('Failed to save department budget. Please try again.')
+      toast.error(t('annual_budget.messages.department_budget_save_failed'))
     }
   }
 
@@ -729,7 +705,7 @@ export default function AnnualBudgetPage() {
         variables: {
           year: budget.year,
           planned_budget: budget.planned_budget,
-          total_expenses: budget.total_expenses || 0, // Novo campo - permite enviar gastos iniciais
+          total_expenses: budget.total_expenses || 0,
           description: `Institution budget for ${budget.year}`,
           justification: budget.notes || `Annual budget allocation for institution operations in ${budget.year}`,
           requested_amount: budget.planned_budget,
@@ -738,31 +714,26 @@ export default function AnnualBudgetPage() {
           notes: budget.notes,
         }
       })
-
       if (result.data?.createAnnualBudget) {
-        // Refresh the data
-        refetchDashboard()
-        refetchInstitutionById()
-        toast.success(`Institution budget for ${budget.year} created successfully!`)
-        
-        // Close modal and reset state
+        await handleRefresh()
+        toast.success(t('annual_budget.messages.institution_budget_created', { year: budget.year }))
         setIsInstitutionBudgetModalOpen(false)
         setInstitutionBudgetData(null)
       }
     } catch (error) {
       console.error('Error creating institution budget:', error)
-      toast.error('Failed to create institution budget. Please try again.')
+      toast.error(t('annual_budget.messages.institution_budget_create_failed'))
     }
   }
 
   const handleUpdateBudget = async (budget: AnnualBudgetData) => {
     if (!budget.id) {
-      toast.error('Budget ID is required for updates')
+      toast.error(t('annual_budget.messages.budget_id_required'))
       return
     }
 
     if (!selectedRequest) {
-      toast.error('No budget selected for update')
+      toast.error(t('annual_budget.messages.no_budget_selected'))
       return
     }
 
@@ -775,27 +746,22 @@ export default function AnnualBudgetPage() {
             total_expenses: budget.total_expenses,
             description: `Updated budget for ${budget.year}`,
             justification: budget.notes || `Updated budget allocation`,
-            priority: selectedRequest.priority as any, // Mantém prioridade existente
-            category: selectedRequest.category as any, // Mantém categoria existente
+            priority: selectedRequest.priority as any,
+            category: selectedRequest.category as any,
             notes: budget.notes,
           }
         }
       })
-
       if (result.data?.updateAnnualBudget) {
-        // Refresh the data
-        refetchDashboard()
-        refetchInstitutionById()
-        toast.success('Budget updated successfully!')
-        
-        // Close modal and reset state
+        await handleRefresh()
+        toast.success(t('annual_budget.messages.budget_updated'))
         setIsInstitutionBudgetModalOpen(false)
         setInstitutionBudgetData(null)
         setSelectedRequest(null)
       }
     } catch (error) {
       console.error('Error updating budget:', error)
-      toast.error('Failed to update budget. Please try again.')
+      toast.error(t('annual_budget.messages.budget_update_failed'))
     }
   }
 
