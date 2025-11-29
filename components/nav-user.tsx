@@ -56,9 +56,13 @@ export const NavUser = React.memo(function NavUser({ user }: NavUserProps) {
   }), [isMobile])
 
   // Memoizar handlers para estabilidade
-  const handleLogout = React.useCallback(() => {
+  const handleLogout = React.useCallback(async () => {
     logout()
-  }, [logout])
+    // Pequeno delay para garantir que o estado seja limpo antes do redirecionamento
+    setTimeout(() => {
+      router.push('/login')
+    }, 100)
+  }, [logout, router])
 
   const handleProfileClick = React.useCallback(() => {
     router.push("/profile")

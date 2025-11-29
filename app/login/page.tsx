@@ -42,12 +42,7 @@ function LoginPageContent() {
   const currentLanguage = i18n?.language || 'en'
   const t = loginTranslations[currentLanguage as keyof typeof loginTranslations] || loginTranslations.en
 
-  // Redirecionar se já estiver autenticado
-  useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.push('/dashboard')
-    }
-  }, [isAuthenticated, isLoading, router])
+  // Removido: Redirecionamento automático - agora feito diretamente no login
 
   // Carregar configuração "lembrar por 30 dias"
   useEffect(() => {
@@ -109,8 +104,10 @@ function LoginPageContent() {
       toast.success(`${t.welcomeBack}`, {
         duration: 3000
       })
-      // Redirecionar para dashboard após login bem-sucedido
-      router.push('/dashboard')
+      // Pequeno delay para garantir que o estado seja atualizado antes do redirecionamento
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 100)
     } catch (error) {
       if (error instanceof Error) {
         if (error.message === 'User not found') {
