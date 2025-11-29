@@ -92,7 +92,7 @@ export const institutionTranslations = {
       languageRequired: "Language preference is required",
       emailRequired: "Email is required",
       emailInvalid: "Please enter a valid email address",
-      websiteInvalid: "Website must start with http:// or https://",
+      websiteInvalid: "Website must contain at least one dot (.)",
       fixErrors: "Please fix the errors before continuing"
     },
     
@@ -197,7 +197,7 @@ export const institutionTranslations = {
       languageRequired: "Taalvoorkeur is verplicht",
       emailRequired: "E-mail is verplicht",
       emailInvalid: "Voer een geldig e-mailadres in",
-      websiteInvalid: "Website moet beginnen met http:// of https://",
+      websiteInvalid: "Website moet ten minste één punt (.) bevatten",
       fixErrors: "Corrigeer de fouten voordat u doorgaat"
     },
     
@@ -313,7 +313,7 @@ export const institutionTranslations = {
       languageRequired: "Preferência de idioma é obrigatória",
       emailRequired: "E-mail é obrigatório",
       emailInvalid: "Digite um endereço de e-mail válido",
-      websiteInvalid: "Website deve começar com http:// ou https://",
+      websiteInvalid: "Website deve conter pelo menos um ponto (.)",
       fixErrors: "Corrija os erros antes de continuar"
     },
 

@@ -209,6 +209,9 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
         [field]: ''
       }))
     }
+
+    // Re-validate current step
+    validateStep(currentStep)
   }
 
   const validateStep = (step: number) => {
@@ -221,9 +224,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
     }
 
     if (step === 3) {
-      if (formData.website && formData.website.trim() && !formData.website.match(/^https?:\/\//)) {
-        newErrors.website = t_contact.validation?.websiteInvalid || "Website must start with http:// or https://"
-      }
+      // Website validation removed - no longer required
     }
 
     setErrors(newErrors)
@@ -934,7 +935,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
                 </Label>
                 <Input
                   id="website"
-                  type="url"
+                  type="text"
                   value={formData.website || ''}
                   onChange={(e) => handleInputChange('website', e.target.value)}
                   placeholder={t_contact.websitePlaceholder || "https://example.com"}

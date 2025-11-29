@@ -61,7 +61,7 @@ export const contactTranslations = {
     updatedBy: "Updated By",
     validation: {
       emailInvalid: "Please enter a valid email address",
-      websiteInvalid: "Website must start with http:// or https://",
+      websiteInvalid: "Website must contain at least one dot (.)",
       fixErrors: "Please fix the errors before continuing"
     }
   }

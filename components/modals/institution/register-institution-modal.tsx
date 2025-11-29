@@ -169,9 +169,8 @@ export function RegisterInstitutionModal({
 
       if (formData.contactWebsite && formData.contactWebsite.trim()) {
         const website = formData.contactWebsite.trim()
-        // Basic domain validation: must contain at least one dot and valid characters
-        if (!/^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/.test(website) && 
-            !/^https?:\/\/[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}/.test(website)) {
+        // Simplified validation: must contain at least one dot
+        if (!website.includes('.')) {
           newErrors.contactWebsite = t_institution.validation.websiteInvalid
         }
       }

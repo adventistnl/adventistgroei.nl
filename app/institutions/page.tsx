@@ -68,6 +68,7 @@ import {
 export default function InstitutionsPage() {
   const { t } = useTranslation()
   const { institutions: institutionsData, currentInstitutionData, loading: isLoading, updateInstitutionContact, refetchInstitutionById} = useInstitution();
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null)
 
   // State
   const [refreshing, setRefreshing] = useState(false)
@@ -97,12 +98,12 @@ export default function InstitutionsPage() {
     }
   }, [currentInstitutionData, selectedInstitutionId])
 
-  // Sync selectedInstitutionId with currentInstitutionData changes (from global switcher)
+  // Sync selectedInstitutionId with currentInstitutionData changes (from global switcher) - only in overview mode
   React.useEffect(() => {
-    if (currentInstitutionData && currentInstitutionData.id !== selectedInstitutionId) {
+    if (viewMode === 'overview' && currentInstitutionData && currentInstitutionData.id !== selectedInstitutionId) {
       setSelectedInstitutionId(currentInstitutionData.id)
     }
-  }, [currentInstitutionData?.id, selectedInstitutionId])
+  }, [currentInstitutionData?.id, selectedInstitutionId, viewMode])
 
   // Function to handle institution selection
   const handleViewInstitutionDetails = (institutionId: string) => {
@@ -573,7 +574,7 @@ export default function InstitutionsPage() {
     <AppLayout>
       <WithPermission requiredPermissions={[PermissionResolverName.Institutions]} fallback={<AccessDenied/>}>
       
-      <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">
+      <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden" ref={scrollContainerRef}>
         {/* Breadcrumbs Navigation - Only show in detail view */}
         {viewMode === 'detail' && displayedInstitution && (
           <Breadcrumb>

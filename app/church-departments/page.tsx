@@ -556,7 +556,6 @@ export default function ChurchDepartmentsPage() {
     },
     {
       id: "gender",
-      accessorKey: "gender",
       header: () => (
         <div className="text-center font-medium text-gray-900">
           {t.users?.table?.gender || "Gender"}

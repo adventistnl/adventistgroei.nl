@@ -38,7 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import toast from "react-hot-toast"
-import { structureTranslations } from "@/lib/translations/structure"
+import { departmentTranslations } from "@/lib/translations/departments"
 import { DataTable } from "@/components/ui/data-table"
 import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal } from "@/components/modals/department"
 import { useInstitution } from "@/contexts/institution-context"
@@ -69,7 +69,6 @@ import {
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
 import { WithPermission } from "@/hocs/with-permission"
-import { departmentTranslations } from "@/lib/translations/departments"
 
 
 /**
@@ -88,8 +87,6 @@ export default function DepartmentsPage() {
   const currentLanguage = i18n?.language || 'en'
   const tDept = departmentTranslations[currentLanguage as keyof typeof departmentTranslations] || departmentTranslations.en
 
-
-  
   // View mode states - controla se está na lista ou em detalhes
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
   const [selectedDepartmentDetail, setSelectedDepartmentDetail] = useState<DepartmentData | null>(null)
@@ -589,7 +586,6 @@ export default function DepartmentsPage() {
     },
     {
       id: "gender",
-      accessorKey: "gender",
       header: () => (
         <div className="text-center font-medium text-gray-900">
           {tDept.users?.table?.gender || "Gender"}
@@ -597,7 +593,7 @@ export default function DepartmentsPage() {
       ),
       cell: ({ row }) => {
         const user = row.original;
-        const genderLabel = user.gender ? (tDept.users?.gender as any)?.[user.gender] : 'N/A';
+        const genderLabel = user.gender ? `${user.gender.charAt(0).toUpperCase()}${user.gender.slice(1)}` : 'N/A';
         return (
           <div className="text-center">
             <Badge variant="outline" className="text-xs">

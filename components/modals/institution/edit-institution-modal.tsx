@@ -200,7 +200,7 @@ export function EditInstitutionModal({
         newErrors.email = t_institution.validation.emailInvalid
       }
 
-      if (formData.website && formData.website.trim() && !formData.website.match(/^https?:\/\//)) {
+      if (formData.website && formData.website.trim() && !formData.website.includes('.')) {
         newErrors.website = t_institution.validation.websiteInvalid
       }
     }

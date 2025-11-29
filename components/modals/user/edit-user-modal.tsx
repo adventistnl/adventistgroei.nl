@@ -226,9 +226,7 @@ export function EditUserModal({
       if (!userForm.institution_id) {
         newErrors.institution_id = "Institution is required";
       }
-      if (!userForm.church_id) {
-        newErrors.church_id = "Church is required";
-      }
+      // Church is now optional
       if (userForm.has_department && !userForm.department_id) {
         newErrors.department_id = "Please select a department";
       }
