@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, Suspense } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
 import { AppLayout } from "@/components/layouts/app-layout"
@@ -38,9 +38,11 @@ import "@/lib/i18n"
 import { useUserKPI } from "@/hooks/KPI/use-users-kpi"
 import { useLanguageOptions } from '@/hooks/use-language-preferences'
 
-// User Modals
-import { CreateUserModal, EditUserModal, DeleteUserModal } from "@/components/modals/user"
-import { ContactViewEditModal } from "@/components/modals/contact/contact-view-edit-modal"
+// Lazy load modals
+const CreateUserModal = React.lazy(() => import("@/components/modals/user").then(module => ({ default: module.CreateUserModal })))
+const EditUserModal = React.lazy(() => import("@/components/modals/user").then(module => ({ default: module.EditUserModal })))
+const DeleteUserModal = React.lazy(() => import("@/components/modals/user").then(module => ({ default: module.DeleteUserModal })))
+const ContactViewEditModal = React.lazy(() => import("@/components/modals/contact/contact-view-edit-modal").then(module => ({ default: module.ContactViewEditModal })))
 
 // Components
 import { UseTable } from "@/components/ui/use-table"
@@ -671,43 +673,49 @@ export default function UsersPage() {
 
           {/* User Modals */}
           <WithPermission requiredPermissions={[PermissionResolverName.CreateUser]}>
-            <CreateUserModal
-              isOpen={isCreateUserOpen}
-              onOpenChange={setIsCreateUserOpen}
-              institutions={institutions}
-              churches={churches}
-              departments={departments}
-              roles={roles}
-              onSuccess={(userData) => {
-                // Here you would typically refresh the users list
-              }}
-            />
+            <Suspense fallback={<div>Loading...</div>}>
+              <CreateUserModal
+                isOpen={isCreateUserOpen}
+                onOpenChange={setIsCreateUserOpen}
+                institutions={institutions}
+                churches={churches}
+                departments={departments}
+                roles={roles}
+                onSuccess={(userData) => {
+                  // Here you would typically refresh the users list
+                }}
+              />
+            </Suspense>
           </WithPermission>
           <WithPermission requiredPermissions={[PermissionResolverName.UpdateUser]}>
-            <EditUserModal
-              isOpen={isEditUserOpen}
-              onOpenChange={setIsEditUserOpen}
-              user={selectedUser}
-              institutions={institutions}
-              churches={churches}
-              departments={departments}
-              roles={roles}
-              onSuccess={(userData) => {
-                setSelectedUser(null)
-                // Here you would typically refresh the users list
-              }}
-            />
+            <Suspense fallback={<div>Loading...</div>}>
+              <EditUserModal
+                isOpen={isEditUserOpen}
+                onOpenChange={setIsEditUserOpen}
+                user={selectedUser}
+                institutions={institutions}
+                churches={churches}
+                departments={departments}
+                roles={roles}
+                onSuccess={(userData) => {
+                  setSelectedUser(null)
+                  // Here you would typically refresh the users list
+                }}
+              />
+            </Suspense>
           </WithPermission>
           <WithPermission requiredPermissions={[PermissionResolverName.DeleteUser]}>
-            <DeleteUserModal
-              isOpen={isDeleteUserOpen}
-              onOpenChange={setIsDeleteUserOpen}
-              user={selectedUser}
-              onSuccess={(deletedUser) => {
-                setSelectedUser(null)
-                // Here you would typically refresh the users list
-              }}
-            />
+            <Suspense fallback={<div>Loading...</div>}>
+              <DeleteUserModal
+                isOpen={isDeleteUserOpen}
+                onOpenChange={setIsDeleteUserOpen}
+                user={selectedUser}
+                onSuccess={(deletedUser) => {
+                  setSelectedUser(null)
+                  // Here you would typically refresh the users list
+                }}
+              />
+            </Suspense>
           </WithPermission>
         </div>
       </WithPermission>

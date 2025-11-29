@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, Suspense } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { AppLayout } from "@/components/layouts/app-layout"
@@ -36,15 +36,23 @@ import toast from "react-hot-toast"
 import "@/lib/i18n"
 import { cn } from "@/lib/utils"
 
-// Components
+// Components - Lazy load heavy components
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { UseTable } from "@/components/ui/use-table"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { EntityInfoCard, EntityInfoCardAction } from "@/components/shared/entity-info-card"
-import { ContactViewEditModal } from "@/components/modals/contact"
-import { EditInstitutionModal, DeleteInstitutionModal, RegisterInstitutionModal } from "@/components/modals/institution"
-import { DepartmentActivityChart, UsersByRoleChart, ChurchesByRegionChart } from "@/components/institutions/charts"
+
+// Lazy load modals
+const ContactViewEditModal = React.lazy(() => import("@/components/modals/contact").then(module => ({ default: module.ContactViewEditModal })))
+const EditInstitutionModal = React.lazy(() => import("@/components/modals/institution").then(module => ({ default: module.EditInstitutionModal })))
+const DeleteInstitutionModal = React.lazy(() => import("@/components/modals/institution").then(module => ({ default: module.DeleteInstitutionModal })))
+const RegisterInstitutionModal = React.lazy(() => import("@/components/modals/institution").then(module => ({ default: module.RegisterInstitutionModal })))
+
+// Lazy load charts
+const DepartmentActivityChart = React.lazy(() => import("@/components/institutions/charts").then(module => ({ default: module.DepartmentActivityChart })))
+const UsersByRoleChart = React.lazy(() => import("@/components/institutions/charts").then(module => ({ default: module.UsersByRoleChart })))
+const ChurchesByRegionChart = React.lazy(() => import("@/components/institutions/charts").then(module => ({ default: module.ChurchesByRegionChart })))
 
 import { Institutions_institutions } from "@/types/Institutions"
 import { useInstitution } from "@/contexts/institution-context"
@@ -682,43 +690,49 @@ export default function InstitutionsPage() {
 
         {/* Contact Modal */}
         {displayedInstitution && (
-          <ContactViewEditModal
-            isOpen={isContactModalOpen}
-            onOpenChange={setIsContactModalOpen}
-            contact={(displayedInstitution.contact || null) as Contact | null}
-            entityName={displayedInstitution.name || t('institutions.title')}
-            entityType={t('institutions.title')}
-            onSave={handleContactSaved}
-            entityId={displayedInstitution.id}
-            updateMutation={updateInstitutionContact}
-          />
+          <Suspense fallback={<div>Loading...</div>}>
+            <ContactViewEditModal
+              isOpen={isContactModalOpen}
+              onOpenChange={setIsContactModalOpen}
+              contact={(displayedInstitution.contact || null) as Contact | null}
+              entityName={displayedInstitution.name || t('institutions.title')}
+              entityType={t('institutions.title')}
+              onSave={handleContactSaved}
+              entityId={displayedInstitution.id}
+              updateMutation={updateInstitutionContact}
+            />
+          </Suspense>
         )}
 
         {/* Edit Institution Modal */}
-        <EditInstitutionModal
-          isOpen={isEditInstitutionModalOpen}
-          onOpenChange={(open) => {
-            setIsEditInstitutionModalOpen(open);
-            if (!open) setEditInstitutionId(null);
-          }}
-          institution={
-            (institutionsData.find(i => i.id === (editInstitutionId || displayedInstitution?.id)) || null) as any
-          }
-          onSave={handleInstitutionSaved}
-        />
+        <Suspense fallback={<div>Loading...</div>}>
+          <EditInstitutionModal
+            isOpen={isEditInstitutionModalOpen}
+            onOpenChange={(open) => {
+              setIsEditInstitutionModalOpen(open);
+              if (!open) setEditInstitutionId(null);
+            }}
+            institution={
+              (institutionsData.find(i => i.id === (editInstitutionId || displayedInstitution?.id)) || null) as any
+            }
+            onSave={handleInstitutionSaved}
+          />
+        </Suspense>
 
         {/* Delete Institution Modal */}
-        <DeleteInstitutionModal
-          isOpen={isDeleteInstitutionModalOpen}
-          onOpenChangeAction={(open) => {
-            setIsDeleteInstitutionModalOpen(open);
-            if (!open) setDeleteInstitutionId(null);
-          }}
-          institution={
-            (institutionsData.find(i => i.id === (deleteInstitutionId || displayedInstitution?.id)) || null) as any
-          }
-          onSuccess={handleInstitutionDeleted}
-        />
+        <Suspense fallback={<div>Loading...</div>}>
+          <DeleteInstitutionModal
+            isOpen={isDeleteInstitutionModalOpen}
+            onOpenChangeAction={(open) => {
+              setIsDeleteInstitutionModalOpen(open);
+              if (!open) setDeleteInstitutionId(null);
+            }}
+            institution={
+              (institutionsData.find(i => i.id === (deleteInstitutionId || displayedInstitution?.id)) || null) as any
+            }
+            onSuccess={handleInstitutionDeleted}
+          />
+        </Suspense>
       </div>
       </WithPermission>
     </AppLayout>

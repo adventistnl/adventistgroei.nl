@@ -67,41 +67,41 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Verificação rápida de token básico
   const token = req.cookies.get('auth-token');
-  const userPermissions = req.cookies.get('auth-permissions');
-
-  if (!token || !userPermissions) {
+  if (!token) {
     return NextResponse.redirect(new URL('/login', req.url));
   }
 
-  if (token) {
+  // Validação rápida do token (apenas expiração)
+  try {
     const isTokenValid = validateToken(token.value);
     if (!isTokenValid) {
       return NextResponse.redirect(new URL('/login', req.url));
     }
-  }
-
-  let permissions: string[] = [];
-  try {
-    permissions = JSON.parse(userPermissions.value || '[]');
-  } catch (error) {
+  } catch {
     return NextResponse.redirect(new URL('/login', req.url));
   }
 
+  // Para rotas que requerem permissões específicas, fazer validação completa
   const { resolvers } = getRequiredPermissions(pathname);
+  if (resolvers.length > 0) {
+    const userPermissions = req.cookies.get('auth-permissions');
+    if (!userPermissions) {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
 
+    let permissions: string[] = [];
+    try {
+      permissions = JSON.parse(userPermissions.value || '[]');
+    } catch {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
 
-  // Permitir acesso se nenhuma permissão for necessária
-  if (resolvers.length === 0) {
-    return NextResponse.next();
-  }
-
-  // Verificar se o usuário possui pelo menos uma das permissões necessárias
-  const hasResolverPermission = resolvers.some(resolver => permissions.includes(resolver));
-
-
-  if (!hasResolverPermission) {
-    return NextResponse.redirect(new URL('/unauthorized', req.url));
+    const hasResolverPermission = resolvers.some(resolver => permissions.includes(resolver));
+    if (!hasResolverPermission) {
+      return NextResponse.redirect(new URL('/unauthorized', req.url));
+    }
   }
 
   // Permitir acesso total a recursos estáticos e internos do Next.js

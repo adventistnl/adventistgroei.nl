@@ -1,7 +1,7 @@
 "use client"
 
 import { ChevronRight, type LucideIcon } from "lucide-react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 import {
   Collapsible,
@@ -51,6 +51,7 @@ const NavMainItem = React.memo(function NavMainItem({
   item: NavMainProps['items'][0] 
 }) {
   const { state, setOpen } = useSidebar()
+  const router = useRouter()
   
   // Handler para expandir sidebar quando clicar em item com subitens no modo collapsed
   const handleExpandOnClick = React.useCallback(() => {
@@ -58,15 +59,24 @@ const NavMainItem = React.memo(function NavMainItem({
       setOpen(true)
     }
   }, [state, item.items, setOpen])
+
+  // Handler para navegação instantânea
+  const handleNavigation = React.useCallback((url: string) => {
+    router.push(url)
+  }, [router])
+
   // Se o item não tem subitens, renderizar como link direto
   if (!item.items || item.items.length === 0) {
     return (
       <SidebarMenuItem>
-        <SidebarMenuButton asChild tooltip={item.title} isActive={item.isActive}>
-          <Link href={item.url}>
-            {item.icon && <item.icon className="sidebar-icon" />}
-            <span>{item.title}</span>
-          </Link>
+        <SidebarMenuButton 
+          tooltip={item.title} 
+          isActive={item.isActive}
+          onClick={() => handleNavigation(item.url)}
+          className="cursor-pointer"
+        >
+          {item.icon && <item.icon className="sidebar-icon" />}
+          <span>{item.title}</span>
         </SidebarMenuButton>
       </SidebarMenuItem>
     )
@@ -96,10 +106,12 @@ const NavMainItem = React.memo(function NavMainItem({
             {item.items.map((subItem) => (
               <WithPermission key={subItem.title} requiredPermissions={subItem.permissions}>
                 <SidebarMenuSubItem>
-                  <SidebarMenuSubButton asChild isActive={subItem.isActive}>
-                    <Link href={subItem.url}>
-                      <span>{subItem.title}</span>
-                    </Link>
+                  <SidebarMenuSubButton 
+                    isActive={subItem.isActive}
+                    onClick={() => handleNavigation(subItem.url)}
+                    className="cursor-pointer"
+                  >
+                    <span>{subItem.title}</span>
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               </WithPermission>
