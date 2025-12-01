@@ -61,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(parsedUser);
         setToken(rawStoredToken);
         setPermissions(decodedPermissions);
-        setRoles(parsedUser.user_roles.map((role) => role.key_code) || []); // Define os roles a partir do usuário armazenado
+        setRoles(parsedUser.user_roles?.map((role) => role.role?.key_code).filter(Boolean) || []); // Define os roles a partir do usuário armazenado
       } else {
         throw new Error('fail on getting auth data');
       }
@@ -96,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setToken(accessToken);
         setUser(data.login.user);
         setPermissions(permissions);
-        setRoles(data.login.user.user_roles.map((role) => role.key_code) || []); // Define os roles a partir do login
+        setRoles(data.login.user.user_roles?.map((role) => role.role?.key_code).filter(Boolean) || []); // Define os roles a partir do login
 
         return true;
       } else {
@@ -123,7 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('auth-user', JSON.stringify(updatedUser));
       
       // Atualizar roles se necessário
-      const userRoles = updatedUser?.user_roles?.map((role) => role.key_code) || [];
+      const userRoles = updatedUser?.user_roles?.map((role) => role.role?.key_code).filter(Boolean) || [];
       setRoles(userRoles);
       
     } catch (error) {
