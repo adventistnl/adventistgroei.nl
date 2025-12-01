@@ -33,6 +33,7 @@ import { createPrivacyConfig } from "@/config/privacy-roles.config"
 import { useComponentPrivacy } from "@/contexts/privacy-context"
 import { PrivacyOverlay } from "@/components/shared/privacy-overlay"
 import { Skeleton } from "@/components/ui/skeleton"
+import { CurrencyConfig, formatCurrency } from "@/types/currency"
 
 interface BudgetDistributionData {
   total: number
@@ -44,6 +45,7 @@ interface BudgetDistributionData {
 interface BudgetDistributionChartProps {
   data: BudgetDistributionData
   year: number
+  currency: CurrencyConfig
   entityDistribution?: Array<{
     name: string
     amount: number
@@ -94,7 +96,7 @@ const generateRedGradient = (count: number): string[] => {
   return colors
 }
 
-export function BudgetDistributionChart({ data, year, entityDistribution = [] }: BudgetDistributionChartProps) {
+export function BudgetDistributionChart({ data, year, currency, entityDistribution = [] }: BudgetDistributionChartProps) {
   console.log("Entity Distribution Data:", data, entityDistribution)
   const { t } = useTranslation()
   const [chartType, setChartType] = useState<"radial" | "pie">("radial")
@@ -228,7 +230,7 @@ export function BudgetDistributionChart({ data, year, entityDistribution = [] }:
                       />
                       <span className="font-medium">{entity.name}</span>
                       <span className="text-muted-foreground">
-                        (${(entity.amount / 1000).toFixed(0)}K - {entity.percentage}%)
+                        ({formatCurrency(entity.amount, currency, { compact: true })} - {entity.percentage}%)
                       </span>
                     </div>
                   </SelectItem>
@@ -281,7 +283,7 @@ export function BudgetDistributionChart({ data, year, entityDistribution = [] }:
                   content={
                     <ChartTooltipContent
                       hideLabel
-                      formatter={(value: any) => [`$${(typeof value === 'number' ? value : 0).toLocaleString()}`, '']}
+                      formatter={(value: any) => [formatCurrency(typeof value === 'number' ? value : 0, currency), '']}
                     />
                   }
                 />
@@ -312,7 +314,7 @@ export function BudgetDistributionChart({ data, year, entityDistribution = [] }:
                               y={(viewBox.cy || 0) + 20}
                               className="fill-muted-foreground text-xs font-medium"
                             >
-                              ${(data.allocated / 1000).toFixed(0)}K / ${(data.total / 1000).toFixed(0)}K
+                              {formatCurrency(data.allocated, currency, { compact: true })} / {formatCurrency(data.total, currency, { compact: true })}
                             </tspan>
                           </text>
                         )
@@ -393,7 +395,7 @@ export function BudgetDistributionChart({ data, year, entityDistribution = [] }:
                               y={viewBox.cy}
                               className="fill-foreground text-2xl font-bold"
                             >
-                              ${(activeData.amount / 1000).toFixed(0)}K
+                              {formatCurrency(activeData.amount, currency, { compact: true })}
                             </tspan>
                             <tspan
                               x={viewBox.cx}
@@ -434,20 +436,20 @@ export function BudgetDistributionChart({ data, year, entityDistribution = [] }:
             <>
               <div className="w-full flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[hsl(0,84%,60%)]"></div>
+                  <div className="w-2 h-2 rounded-full bg-[hsl(348,83%,47%)]" />
                   <span className="text-muted-foreground">Allocated</span>
                 </div>
                 <span className="font-medium text-red-600">
-                  ${data.allocated.toLocaleString()}
+                  {formatCurrency(data.allocated, currency)}
                 </span>
               </div>
               <div className="w-full flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[hsl(142,71%,45%)]"></div>
+                  <div className="w-2 h-2 rounded-full bg-[hsl(142,71%,45%)]" />
                   <span className="text-muted-foreground">Available</span>
                 </div>
                 <span className="font-medium text-green-600">
-                  ${data.remaining.toLocaleString()}
+                  {formatCurrency(data.remaining, currency)}
                 </span>
               </div>
             </>
@@ -459,7 +461,7 @@ export function BudgetDistributionChart({ data, year, entityDistribution = [] }:
                 <span className="text-muted-foreground">Selected: {activeEntity}</span>
               </div>
               <span className="font-medium">
-                ${pieChartData.find(e => e.name === activeEntity)?.amount.toLocaleString()} 
+                {formatCurrency(pieChartData.find(e => e.name === activeEntity)?.amount || 0, currency)}
                 <span className="text-muted-foreground ml-1">
                   ({pieChartData.find(e => e.name === activeEntity)?.percentage}%)
                 </span>

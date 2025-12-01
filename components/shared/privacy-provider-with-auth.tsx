@@ -63,8 +63,14 @@ function mapAuthRoleToPrivacyRole(
 ): string {
   // Development fallback: if no roles or in dev environment, use admin
   if (!authRoles || authRoles.length === 0) {
-    console.warn('⚠️ No roles found, using admin as fallback (development mode)')
-    return 'admin'
+    // Only fallback to admin in non-production (development) to avoid leaking elevated access
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('⚠️ No roles found, using admin as fallback (development mode)')
+      return 'admin'
+    }
+
+    // In production, default to the least-privileged role (guest)
+    return 'guest'
   }
 
   // Priority mapping - first match wins (order matters!)

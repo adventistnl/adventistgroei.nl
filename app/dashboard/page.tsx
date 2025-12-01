@@ -664,7 +664,7 @@ export default function DashboardPage() {
 
   return (
     <AppLayout>
-      <WithPermission requiredPermissions={[PermissionResolverName.Institutions]}>
+      <WithPermission requiredPermissions={[PermissionResolverName.Institutions, PermissionResolverName.Institution]}>
       <div className="space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

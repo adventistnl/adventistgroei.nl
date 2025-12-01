@@ -42,6 +42,7 @@ import { createPrivacyConfig } from "@/config/privacy-roles.config"
 import { InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
 import { PrivacyOverlay } from "@/components/shared/privacy-overlay"
 import { Skeleton } from "@/components/ui/skeleton"
+import { CurrencyConfig, formatCurrency } from "@/types/currency"
 
 interface DepartmentSpending {
   departmentId: string
@@ -58,6 +59,7 @@ interface SpendingDataPoint {
 interface SpendingOverTimeChartProps {
   data: SpendingDataPoint[]
   year: number
+  currency: CurrencyConfig
 }
 
 const PRIVACY_CONFIG = createPrivacyConfig(
@@ -81,7 +83,7 @@ const generateColors = (count: number): string[] => {
   return colors
 }
 
-export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps) {
+export function SpendingOverTimeChart({ data, year, currency }: SpendingOverTimeChartProps) {
   const { t } = useTranslation()
   const [timeRange, setTimeRange] = React.useState("12m")
   const [chartType, setChartType] = React.useState<"area" | "bar">("area")
@@ -357,6 +359,7 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
                       <ChartTooltipContent
                         labelFormatter={(value) => `${value} ${year}`}
                         indicator="dot"
+                        formatter={(value) => formatCurrency(typeof value === 'number' ? value : 0, currency)}
                       />
                     }
                   />
@@ -389,6 +392,7 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
                       <ChartTooltipContent
                         labelFormatter={(value) => `${value} ${year}`}
                         indicator="dashed"
+                        formatter={(value) => formatCurrency(typeof value === 'number' ? value : 0, currency)}
                       />
                     }
                   />

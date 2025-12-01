@@ -24,7 +24,16 @@ import {
   Settings,
   TrendingUp,
   Eye,
+  Coins,
 } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { CurrencyConfig, SUPPORTED_CURRENCIES, getCurrencyByCode, formatCurrency } from "@/types/currency"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,6 +61,8 @@ import { useInstitution } from "@/contexts/institution-context"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
 import { WithPermission } from "@/hocs/with-permission"
+import { InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
+import { createPrivacyConfig } from "@/config/privacy-roles.config"
 
 // Chart Components
 import { DepartmentSpendingChart } from "@/components/charts/annual-budget/department-spending-chart"
@@ -89,6 +100,15 @@ export default function AnnualBudgetPage() {
   const { t } = useTranslation()
   const { currentInstitutionData, refetchInstitutionById } = useInstitution()
   
+  // Privacy configurations for KPIs
+  const PRIVACY_CONFIGS = {
+    totalBudget: createPrivacyConfig('kpi-total-budget', 'FINANCIAL_DATA'),
+    totalAllocated: createPrivacyConfig('kpi-total-allocated', 'FINANCIAL_DATA'),
+    totalSpent: createPrivacyConfig('kpi-total-spent', 'FINANCIAL_DATA'),
+    budgetRemaining: createPrivacyConfig('kpi-budget-remaining', 'FINANCIAL_DATA'),
+    budgetUtilization: createPrivacyConfig('kpi-budget-utilization', 'FINANCIAL_DATA'),
+  }
+  
   // GraphQL mutations
   const [createAnnualBudgetMutation, { loading: creatingBudget }] = useCreateAnnualBudgetMutation()
   const [updateAnnualBudgetMutation, { loading: updatingBudget }] = useUpdateAnnualBudgetMutation()
@@ -102,6 +122,10 @@ export default function AnnualBudgetPage() {
   const [refreshing, setRefreshing] = useState(false)
 
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('EUR') // Default to EUR
+  
+  // Get currency configuration
+  const currencyConfig = useMemo(() => getCurrencyByCode(selectedCurrency), [selectedCurrency])
   
   // Modal states
   const [isViewEditModalOpen, setIsViewEditModalOpen] = useState(false)
@@ -386,7 +410,7 @@ export default function AnnualBudgetPage() {
       {
         id: "total_budget",
         title: t('annual_budget.kpi_cards.total_institution_budget.title'),
-        value: hasInstitutionBudget ? `$${(kpiData.totalInstitutionBudget / 1000).toFixed(0)}K` : t('annual_budget.kpi_cards.total_institution_budget.not_set'),
+        value: hasInstitutionBudget ? formatCurrency(kpiData.totalInstitutionBudget, currencyConfig, { compact: true }) : t('annual_budget.kpi_cards.total_institution_budget.not_set'),
         icon: DollarSign,
         subtitle: hasInstitutionBudget 
           ? t('annual_budget.kpi_cards.total_institution_budget.subtitle', { year: selectedYear })
@@ -396,34 +420,41 @@ export default function AnnualBudgetPage() {
           isPositive: true,
           label: t('annual_budget.kpi_cards.total_institution_budget.trend')
         } : undefined,
-        onClick: !hasInstitutionBudget ? handleCreateInstitutionBudget : handleEditInstitutionBudget,
+        onClick: !hasInstitutionBudget ? handleCreateInstitutionBudget : undefined,
         className: !hasInstitutionBudget 
           ? "border-2 border-dashed border-primary animate-pulse cursor-pointer hover:bg-primary/5 transition-all" 
-          : "cursor-pointer hover:bg-blue-50 transition-all border-l-4 border-l-blue-500",
+          : "hover:bg-blue-50 transition-all border-l-4 border-l-blue-500",
+        privacyConfig: PRIVACY_CONFIGS.totalBudget,
         headerAction: hasInstitutionBudget ? (
-          <button
-            onClick={handleToggleInstitutionBudgetLock}
-            className="relative group z-10 cursor-pointer"
-            title={isLocked ? t('annual_budget.table.lock_actions.unlock') : t('annual_budget.table.lock_actions.lock')}
-          >
-            <div className={`w-6 h-6 border-2 border-dashed rounded-full flex items-center justify-center transition-all ${
-              isLocked 
-                ? 'border-foreground bg-foreground hover:bg-foreground/90' 
-                : 'border-border bg-muted opacity-60 hover:opacity-100 hover:border-foreground/60'
-            }`}>
-              {isLocked ? (
-                <Lock className="w-3 h-3 text-background" />
-              ) : (
-                <Unlock className="w-3 h-3 text-muted-foreground" />
-              )}
-            </div>
-          </button>
+          <div className="flex items-center gap-1">
+            <InlinePrivacyToggle 
+              config={PRIVACY_CONFIGS.totalBudget}
+              className="w-6 h-6 flex-shrink-0"
+            />
+            <button
+              onClick={handleToggleInstitutionBudgetLock}
+              className="relative group z-10 cursor-pointer"
+              title={isLocked ? t('annual_budget.table.lock_actions.unlock') : t('annual_budget.table.lock_actions.lock')}
+            >
+              <div className={`w-6 h-6 border-2 border-dashed rounded-full flex items-center justify-center transition-all ${
+                isLocked 
+                  ? 'border-foreground bg-foreground hover:bg-foreground/90' 
+                  : 'border-border bg-muted opacity-60 hover:opacity-100 hover:border-foreground/60'
+              }`}>
+                {isLocked ? (
+                  <Lock className="w-3 h-3 text-background" />
+                ) : (
+                  <Unlock className="w-3 h-3 text-muted-foreground" />
+                )}
+              </div>
+            </button>
+          </div>
         ) : undefined
       },
     {
       id: "total_allocated",
       title: t('annual_budget.kpi_cards.total_allocated.title'),
-      value: `$${(kpiData.totalAllocated / 1000).toFixed(0)}K`,
+      value: formatCurrency(kpiData.totalAllocated, currencyConfig, { compact: true }),
       icon: CheckCircle,
       subtitle: t('annual_budget.kpi_cards.total_allocated.subtitle'),
       trend: {
@@ -433,12 +464,33 @@ export default function AnnualBudgetPage() {
       },
       className: !hasInstitutionBudget 
         ? "opacity-40 pointer-events-none" 
-        : "hover:bg-green-50 transition-all border-l-4 border-l-green-500"
+        : "hover:bg-green-50 transition-all border-l-4 border-l-green-500",
+      privacyConfig: PRIVACY_CONFIGS.totalAllocated,
+      headerAction: hasInstitutionBudget ? (
+        <div className="flex items-center gap-1">
+          <InlinePrivacyToggle 
+            config={PRIVACY_CONFIGS.totalAllocated}
+            className="w-6 h-6 flex-shrink-0"
+          />
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              toast.info(t('annual_budget.kpi_cards.total_allocated.lock_info', 'Lock functionality for allocated budgets'))
+            }}
+            className="relative group z-10 cursor-pointer"
+            title={t('annual_budget.kpi_cards.actions.lock')}
+          >
+            <div className="w-6 h-6 border-2 border-dashed border-border bg-muted rounded-full flex items-center justify-center transition-all opacity-60 hover:opacity-100 hover:border-foreground/60">
+              <Lock className="w-3 h-3 text-muted-foreground" />
+            </div>
+          </button>
+        </div>
+      ) : undefined
     },
     {
       id: "total_spent",
       title: t('annual_budget.kpi_cards.total_spent.title'),
-      value: `$${(kpiData.totalSpent / 1000).toFixed(0)}K`,
+      value: formatCurrency(kpiData.totalSpent, currencyConfig, { compact: true }),
       icon: TrendingUp,
       subtitle: t('annual_budget.kpi_cards.total_spent.subtitle'),
       trend: {
@@ -448,12 +500,33 @@ export default function AnnualBudgetPage() {
       },
       className: !hasInstitutionBudget 
         ? "opacity-40 pointer-events-none" 
-        : "hover:bg-purple-50 transition-all border-l-4 border-l-purple-500"
+        : "hover:bg-purple-50 transition-all border-l-4 border-l-purple-500",
+      privacyConfig: PRIVACY_CONFIGS.totalSpent,
+      headerAction: hasInstitutionBudget ? (
+        <div className="flex items-center gap-1">
+          <InlinePrivacyToggle 
+            config={PRIVACY_CONFIGS.totalSpent}
+            className="w-6 h-6 flex-shrink-0"
+          />
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              toast.info(t('annual_budget.kpi_cards.total_spent.lock_info', 'Lock functionality for spending records'))
+            }}
+            className="relative group z-10 cursor-pointer"
+            title={t('annual_budget.kpi_cards.actions.lock')}
+          >
+            <div className="w-6 h-6 border-2 border-dashed border-border bg-muted rounded-full flex items-center justify-center transition-all opacity-60 hover:opacity-100 hover:border-foreground/60">
+              <Lock className="w-3 h-3 text-muted-foreground" />
+            </div>
+          </button>
+        </div>
+      ) : undefined
     },
     {
       id: "budget_remaining",
       title: t('annual_budget.kpi_cards.budget_remaining.title'),
-      value: `$${Math.abs(budgetRemainingValue / 1000).toFixed(0)}K`,
+      value: formatCurrency(Math.abs(budgetRemainingValue), currencyConfig, { compact: true }),
       icon: AlertTriangle,
       subtitle: isDeficit ? t('annual_budget.kpi_cards.budget_remaining.subtitle_deficit') : t('annual_budget.kpi_cards.budget_remaining.subtitle_available'),
       trend: {
@@ -465,7 +538,28 @@ export default function AnnualBudgetPage() {
         ? "opacity-40 pointer-events-none" 
         : isDeficit
           ? "hover:bg-red-50 transition-all border-l-4 border-l-red-500"
-          : "hover:bg-orange-50 transition-all border-l-4 border-l-orange-500"
+          : "hover:bg-orange-50 transition-all border-l-4 border-l-orange-500",
+      privacyConfig: PRIVACY_CONFIGS.budgetRemaining,
+      headerAction: hasInstitutionBudget ? (
+        <div className="flex items-center gap-1">
+          <InlinePrivacyToggle 
+            config={PRIVACY_CONFIGS.budgetRemaining}
+            className="w-6 h-6 flex-shrink-0"
+          />
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              toast.info(t('annual_budget.kpi_cards.budget_remaining.lock_info', 'Lock functionality for remaining budget'))
+            }}
+            className="relative group z-10 cursor-pointer"
+            title={t('annual_budget.kpi_cards.actions.lock')}
+          >
+            <div className="w-6 h-6 border-2 border-dashed border-border bg-muted rounded-full flex items-center justify-center transition-all opacity-60 hover:opacity-100 hover:border-foreground/60">
+              <Lock className="w-3 h-3 text-muted-foreground" />
+            </div>
+          </button>
+        </div>
+      ) : undefined
     },
     {
       id: "budget_utilization",
@@ -482,9 +576,30 @@ export default function AnnualBudgetPage() {
         ? "opacity-40 pointer-events-none" 
         : utilizationRate > 90
           ? "hover:bg-yellow-50 transition-all border-l-4 border-l-yellow-500"
-          : "hover:bg-muted/50 transition-all border-l-4 border-l-muted-foreground"
+          : "hover:bg-muted/50 transition-all border-l-4 border-l-muted-foreground",
+      privacyConfig: PRIVACY_CONFIGS.budgetUtilization,
+      headerAction: hasInstitutionBudget ? (
+        <div className="flex items-center gap-1">
+          <InlinePrivacyToggle 
+            config={PRIVACY_CONFIGS.budgetUtilization}
+            className="w-6 h-6 flex-shrink-0"
+          />
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              toast.info(t('annual_budget.kpi_cards.budget_utilization.lock_info', 'Lock functionality for utilization tracking'))
+            }}
+            className="relative group z-10 cursor-pointer"
+            title={t('annual_budget.kpi_cards.actions.lock')}
+          >
+            <div className="w-6 h-6 border-2 border-dashed border-border bg-muted rounded-full flex items-center justify-center transition-all opacity-60 hover:opacity-100 hover:border-foreground/60">
+              <Lock className="w-3 h-3 text-muted-foreground" />
+            </div>
+          </button>
+        </div>
+      ) : undefined
     }
-  ]}, [kpiData, selectedYear, hasInstitutionBudget, institutionAnnualBudgets, handleCreateInstitutionBudget, handleEditInstitutionBudget, handleToggleInstitutionBudgetLock])
+  ]}, [kpiData, selectedYear, hasInstitutionBudget, institutionAnnualBudgets, currencyConfig, handleCreateInstitutionBudget, handleEditInstitutionBudget, handleToggleInstitutionBudgetLock])
 
   // Chart data from GraphQL
   const chartData = useMemo(() => {
@@ -857,7 +972,7 @@ export default function AnnualBudgetPage() {
         return (
           <div className={`text-center ${isDisabled ? 'opacity-50' : ''}`}>
             <div className="text-sm font-semibold text-foreground">
-              {isDisabled ? '-' : `$${budgetAmount.toLocaleString()}`}
+              {isDisabled ? '-' : formatCurrency(budgetAmount, currencyConfig)}
             </div>
           </div>
         )
@@ -877,7 +992,7 @@ export default function AnnualBudgetPage() {
         return (
           <div className={`text-center ${isDisabled ? 'opacity-50' : ''}`}>
             <div className="text-sm font-semibold text-foreground">
-              {isDisabled ? '-' : `$${departmentData.spentAmount.toLocaleString()}`}
+              {isDisabled ? '-' : formatCurrency(departmentData.spentAmount, currencyConfig)}
             </div>
           </div>
         )
@@ -1046,7 +1161,7 @@ export default function AnnualBudgetPage() {
         )
       },
     },
-  ], [departmentBudgetData, t, currentInstitutionData])
+  ], [departmentBudgetData, t, currentInstitutionData, currencyConfig])
 
 
 
@@ -1140,6 +1255,21 @@ export default function AnnualBudgetPage() {
             </div>
             
             <div className="flex items-center gap-3">
+              {/* Currency Selector */}
+              <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                <SelectTrigger className="w-[140px] h-9">
+                  <Coins className="w-4 h-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(SUPPORTED_CURRENCIES).map((currency) => (
+                    <SelectItem key={currency.code} value={currency.code}>
+                      {currency.symbol} {currency.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
               <Button 
                 variant="outline" 
                 size="icon"
@@ -1187,13 +1317,18 @@ export default function AnnualBudgetPage() {
               <SpendingOverTimeChart 
                 data={chartData.spendingOverTime}
                 year={selectedYear}
+                currency={currencyConfig}
               />
-              <DepartmentSpendingChart data={chartData.departmentSpending} />
+              <DepartmentSpendingChart 
+                data={chartData.departmentSpending}
+                currency={currencyConfig}
+              />
               
               <BudgetDistributionChart 
                 data={chartData.budgetDistribution} 
                 year={selectedYear}
                 entityDistribution={dashboardData?.entityDistribution || []}
+                currency={currencyConfig}
               />
               
 

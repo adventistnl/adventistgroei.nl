@@ -13,6 +13,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { LucideIcon, TrendingUp, TrendingDown } from "lucide-react"
+import { useComponentPrivacy, type PrivacyConfig } from "@/contexts/privacy-context"
 
 export interface KPICardData {
   id: string
@@ -28,6 +29,7 @@ export interface KPICardData {
   onClick?: () => void
   className?: string
   headerAction?: React.ReactNode
+  privacyConfig?: PrivacyConfig // Nova propriedade para privacy
 }
 
 interface KPICardsProps {
@@ -102,6 +104,26 @@ export function KPICards({
         )
 
     return (
+      <KPICardWithPrivacy
+        key={item.id}
+        item={item}
+        cardClassName={cardClassName}
+        variant={variant}
+        formatValue={formatValue}
+      />
+    )
+  }
+
+  // Componente interno com privacy support
+  const KPICardWithPrivacy = ({ item, cardClassName, variant, formatValue }: {
+    item: KPICardData
+    cardClassName: string
+    variant: "default" | "minimal"
+    formatValue: (value: string | number) => string
+  }) => {
+    const { isHidden } = useComponentPrivacy(item.privacyConfig || { id: item.id, level: 'public' })
+
+    return (
       <Card 
         key={item.id} 
         className={cardClassName}
@@ -113,18 +135,29 @@ export function KPICards({
             {item.headerAction}
             <item.icon className="h-4 w-4 text-muted-foreground" />
           </div>
-          </CardHeader>
+        </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-between">
           <div className="flex-1">
-            <div className="text-2xl font-bold truncate">{formatValue(item.value)}</div>
+            <div className={cn(
+              "text-2xl font-bold truncate transition-all duration-300",
+              isHidden && "blur-md select-none"
+            )}>
+              {formatValue(item.value)}
+            </div>
             {item.subtitle && (
-              <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+              <p className={cn(
+                "text-xs text-muted-foreground line-clamp-2 mt-1 transition-all duration-300",
+                isHidden && "blur-sm select-none"
+              )}>
                 {item.subtitle}
               </p>
             )}
           </div>
           {item.trend && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
+            <p className={cn(
+              "text-xs text-muted-foreground flex items-center gap-1 mt-2 transition-all duration-300",
+              isHidden && "blur-sm select-none"
+            )}>
               {variant === "default" ? (
                 // Show colored trend icons for default variant
                 item.trend.isPositive ? (

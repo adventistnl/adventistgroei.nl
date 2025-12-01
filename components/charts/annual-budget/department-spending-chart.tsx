@@ -30,6 +30,7 @@ import { InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
 import { PrivacyOverlay } from "@/components/shared/privacy-overlay"
 import { useComponentPrivacy } from "@/contexts/privacy-context"
 import { createPrivacyConfig } from "@/config/privacy-roles.config"
+import { CurrencyConfig, formatCurrency } from "@/types/currency"
 
 interface DepartmentData {
   name: string
@@ -41,6 +42,7 @@ interface DepartmentData {
 
 interface DepartmentSpendingChartProps {
   data: DepartmentData[]
+  currency: CurrencyConfig
 }
 
 const chartConfig = {
@@ -72,7 +74,7 @@ const PRIVACY_CONFIG = createPrivacyConfig(
 //   ['DEV', 'ADMIN'] // Only DEV and ADMIN can access
 // )
 
-export function DepartmentSpendingChart({ data }: DepartmentSpendingChartProps) {
+export function DepartmentSpendingChart({ data, currency }: DepartmentSpendingChartProps) {
   // Use privacy hook
   const { isHidden } = useComponentPrivacy(PRIVACY_CONFIG)
 
@@ -168,7 +170,7 @@ export function DepartmentSpendingChart({ data }: DepartmentSpendingChartProps) 
                 tickFormatter={(value) => value.length > 12 ? value.slice(0, 12) + '...' : value}
               />
               <YAxis 
-                tickFormatter={(value) => `$${(value / 1000)}K`} 
+                tickFormatter={(value) => formatCurrency(value, currency, { compact: true })} 
                 fontSize={10}
               />
               <ChartTooltip 
@@ -176,7 +178,7 @@ export function DepartmentSpendingChart({ data }: DepartmentSpendingChartProps) 
                   <ChartTooltipContent
                     hideLabel={false}
                     formatter={(value: any, name: any) => [
-                      `$${(typeof value === 'number' ? value : 0).toLocaleString()}`,
+                      formatCurrency(typeof value === 'number' ? value : 0, currency),
                       chartConfig[name as keyof typeof chartConfig]?.label || name
                     ]}
                   />
@@ -225,15 +227,15 @@ export function DepartmentSpendingChart({ data }: DepartmentSpendingChartProps) 
             <div className="w-full grid grid-cols-3 gap-2 text-xs">
               <div className="flex flex-col">
                 <span className="text-muted-foreground">Spent</span>
-                <span className="font-medium text-red-600">${(totals.spent / 1000).toFixed(0)}K</span>
+                <span className="font-medium text-red-600">{formatCurrency(totals.spent, currency, { compact: true })}</span>
               </div>
               <div className="flex flex-col">
                 <span className="text-muted-foreground">Reserved</span>
-                <span className="font-medium text-muted-foreground">${(totals.reserved / 1000).toFixed(0)}K</span>
+                <span className="font-medium text-muted-foreground">{formatCurrency(totals.reserved, currency, { compact: true })}</span>
               </div>
               <div className="flex flex-col">
                 <span className="text-muted-foreground">Available</span>
-                <span className="font-medium text-green-600">${(totals.available / 1000).toFixed(0)}K</span>
+                <span className="font-medium text-green-600">{formatCurrency(totals.available, currency, { compact: true })}</span>
               </div>
             </div>
           </>

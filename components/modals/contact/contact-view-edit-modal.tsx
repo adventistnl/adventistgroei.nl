@@ -266,8 +266,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
       
       const successMessage = isCreating ? "Contact created successfully!" : (t_contact.updated || "Contact updated successfully!")
       toast.success(successMessage, {
-        duration: 3000,
-        icon: '✅'
+        duration: 3000
       })
 
       if (onSave) {

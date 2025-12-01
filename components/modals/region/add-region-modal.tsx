@@ -76,7 +76,7 @@ export function AddRegionModal({
   children,
   onSuccess
 }: AddRegionModalProps) {
-  const { createRegion } = useRegions();
+  const { createRegion, regions } = useRegions();
 
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -95,6 +95,7 @@ export function AddRegionModal({
   const [selectedCountry, setSelectedCountry] = useState<string>("NL")
   const [selectedProvinces, setSelectedProvinces] = useState<Set<string>>(new Set())
   const [selectedCities, setSelectedCities] = useState<Record<string, Set<string>>>({})
+  const [expandedProvinces, setExpandedProvinces] = useState<Set<string>>(new Set())
   const [searchQuery, setSearchQuery] = useState("")
   
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -125,10 +126,39 @@ export function AddRegionModal({
     }
   }, [isOpen])
 
+  // Collapse expanded provinces when country changes
+  useEffect(() => {
+    setExpandedProvinces(new Set())
+  }, [selectedCountry])
+
   // Get provinces for selected country
   const provincesForSelectedCountry = useMemo(() => {
     return transformToProvinces(selectedCountry);
   }, [selectedCountry]);
+
+  // Build a map of cityCode -> regionName for cities already registered in other regions (by country)
+  const cityOwnersByCountry = useMemo(() => {
+    const map: Record<string, Record<string, string>> = {}
+    if (!regions || regions.length === 0) return map
+
+    regions.forEach(r => {
+      if (!r.territory) return
+      Object.entries(r.territory).forEach(([countryCode, provinces]) => {
+        if (!provinces) return
+        Object.entries(provinces as Record<string, any> || {}).forEach(([provCode, cityCodes]) => {
+          if (!cityCodes || !Array.isArray(cityCodes)) return
+          cityCodes.forEach((cityCode: string) => {
+            map[countryCode] = map[countryCode] || {}
+            if (!map[countryCode][cityCode]) {
+              map[countryCode][cityCode] = r.name || 'Unknown'
+            }
+          })
+        })
+      })
+    })
+
+    return map
+  }, [regions])
 
   // Input handlers
   const handleInputChange = (field: keyof CreateRegionVariables, value: string) => {
@@ -148,12 +178,24 @@ export function AddRegionModal({
 
   // Province selection handlers
   const toggleProvinceSimple = (provinceCode: string) => {
+    const province = provincesForSelectedCountry.find(p => p.code === provinceCode)
+    if (!province) return
+
+    // If any city in the province is already owned by another region, block selecting the whole province
+    const occupiedCities = province.cities.filter(c => !!cityOwnersByCountry[selectedCountry]?.[c.code])
+    if (occupiedCities.length > 0) {
+      const owner = cityOwnersByCountry[selectedCountry][occupiedCities[0].code]
+      const names = occupiedCities.map(c => c.name).slice(0, 5).join(', ')
+      toast.error(tRegion.messages?.cities_conflict?.replace?.('{{list}}', names) || `Some cities are already registered: ${names}`)
+      setErrors(prev => ({ ...prev, territory: tRegion.validation?.cities_conflict || 'Some selected cities are already registered in other regions' }))
+      return
+    }
+
     setSelectedProvinces(prev => {
       const newSet = new Set(prev)
-      const province = provincesForSelectedCountry.find(p => p.code === provinceCode)
-      
+
       if (newSet.has(provinceCode)) {
-        // Desselecionar província e remover suas cidades
+        // Deselect province and remove its cities
         newSet.delete(provinceCode)
         setSelectedCities(prevCities => {
           const newCities = { ...prevCities }
@@ -161,14 +203,12 @@ export function AddRegionModal({
           return newCities
         })
       } else {
-        // Selecionar província e TODAS suas cidades automaticamente
+        // Select province and ALL its cities automatically
         newSet.add(provinceCode)
-        if (province) {
-          setSelectedCities(prevCities => ({
-            ...prevCities,
-            [provinceCode]: new Set(province.cities.map(c => c.code))
-          }))
-        }
+        setSelectedCities(prevCities => ({
+          ...prevCities,
+          [provinceCode]: new Set(province.cities.map(c => c.code))
+        }))
       }
       return newSet
     })
@@ -176,16 +216,33 @@ export function AddRegionModal({
 
   // Toggle city selection
   const toggleCity = (provinceCode: string, cityCode: string) => {
+    // Prevent toggling a city that is already owned by another region
+    const owner = cityOwnersByCountry[selectedCountry]?.[cityCode]
+    if (owner) {
+      toast.error(tRegion.messages?.city_in_use?.replace?.('{{region}}', owner) || `City already registered in ${owner}`)
+      return
+    }
+
     setSelectedCities(prev => {
       const citiesInProvince = prev[provinceCode] || new Set();
       const newCities = new Set(citiesInProvince);
-      
+
+      let added = false
       if (newCities.has(cityCode)) {
         newCities.delete(cityCode);
       } else {
         newCities.add(cityCode);
+        added = true
       }
-      
+
+      // Keep provinces set in sync: if we added a city, ensure province is selected; if removed last city, remove province
+      setSelectedProvinces(prevProvinces => {
+        const next = new Set(prevProvinces)
+        if (added) next.add(provinceCode)
+        else if (!added && newCities.size === 0) next.delete(provinceCode)
+        return next
+      })
+
       return {
         ...prev,
         [provinceCode]: newCities
@@ -268,6 +325,27 @@ export function AddRegionModal({
     try {
       // Build territory object
       const territory = buildTerritoryObject()
+      // Validate conflicts: ensure no selected city is already registered in other regions
+      const conflicts: string[] = []
+      Object.entries(selectedCities).forEach(([provCode, citySet]) => {
+        Array.from(citySet || []).forEach(cityCode => {
+          const owner = cityOwnersByCountry[selectedCountry]?.[cityCode]
+          if (owner) {
+            const province = provincesForSelectedCountry.find(p => p.code === provCode)
+            const cityName = province?.cities.find(c => c.code === cityCode)?.name || cityCode
+            conflicts.push(`${cityName} (${owner})`)
+          }
+        })
+      })
+
+      if (conflicts.length > 0) {
+        toast.dismiss(loadingToast)
+        const list = conflicts.slice(0, 5).join(', ')
+        toast.error(tRegion.messages?.cities_conflict?.replace?.('{{list}}', list) || `Some selected cities are already registered: ${list}`)
+        setErrors(prev => ({ ...prev, territory: tRegion.validation?.cities_conflict || 'Some selected cities are already registered in other regions' }))
+        setIsLoading(false)
+        return
+      }
       
       // Update formData with territory
       const finalData: CreateRegionVariables = {
@@ -522,16 +600,37 @@ export function AddRegionModal({
                       const isSelected = selectedProvinces.has(province.code)
                       const citiesInProvince = selectedCities[province.code] || new Set()
 
+                      // Determine if the entire province should be disabled (all cities occupied)
+                      const provinceOccupied = province.cities.every(c => !!cityOwnersByCountry[selectedCountry]?.[c.code])
+
                       return (
                         <div key={province.code} className="border-b last:border-b-0">
                           {/* Province Row */}
                           <button
                             onClick={() => toggleProvinceSimple(province.code)}
-                            className={`w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors ${
-                              isSelected ? 'bg-slate-50' : ''
-                            }`}
+                            disabled={isLoading || provinceOccupied}
+                            title={provinceOccupied ? (tRegion.messages?.province_all_cities_occupied?.replace?.('{{province}}', province.name) || 'All cities in this province are already registered') : undefined}
+                            className={`w-full flex items-center justify-between px-4 py-3 transition-colors ${
+                              isSelected ? 'bg-slate-50' : 'hover:bg-slate-50'
+                            } ${provinceOccupied ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
                             <div className="flex items-center gap-3 flex-1">
+                              <span
+                                role="button"
+                                onClick={(e) => { e.stopPropagation(); if (!provinceOccupied && !isLoading) {
+                                  setExpandedProvinces(prev => {
+                                    const next = new Set(prev)
+                                    if (next.has(province.code)) next.delete(province.code)
+                                    else next.add(province.code)
+                                    return next
+                                  })
+                                } }}
+                                className={`mr-2 p-1 rounded transition-colors ${provinceOccupied ? 'opacity-50' : 'hover:bg-slate-100'}`}
+                                title={provinceOccupied ? undefined : (expandedProvinces.has(province.code) ? 'Collapse' : 'Expand')}
+                              >
+                                <ChevronRight className={`w-4 h-4 transition-transform ${expandedProvinces.has(province.code) ? 'rotate-90' : ''}`} />
+                              </span>
+
                               <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-colors ${
                                 isSelected ? 'bg-slate-900' : 'bg-slate-300'
                               }`} />
@@ -553,22 +652,28 @@ export function AddRegionModal({
                             </div>
                           </button>
 
-                          {/* Cities List - Expandable when province is selected */}
-                          {isSelected && (
+                          {/* Cities List - Expandable when province is selected or expanded */}
+                          {(isSelected || expandedProvinces.has(province.code)) && (
                             <div className="bg-slate-50/50 px-4 py-3 border-t border-slate-100">
                               <p className="text-xs font-medium text-slate-600 mb-2">Cities:</p>
                               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                                 {province.cities.map((city) => {
                                   const isCitySelected = citiesInProvince.has(city.code)
+                                  const owner = cityOwnersByCountry[selectedCountry]?.[city.code]
+                                  const isCityOccupied = !!owner
+
                                   return (
                                     <button
                                       key={city.code}
                                       onClick={() => toggleCity(province.code, city.code)}
+                                      disabled={isLoading || isCityOccupied}
+                                      title={isCityOccupied ? (tRegion.messages?.city_in_use?.replace?.('{{region}}', owner) || `Already registered in ${owner}`) : undefined}
                                       className={cn(
                                         "text-left px-2 py-1.5 rounded text-xs font-medium transition-colors",
                                         isCitySelected
                                           ? "bg-slate-900 text-white"
-                                          : "bg-white border border-slate-200 text-slate-700 hover:border-slate-300"
+                                          : "bg-white border border-slate-200 text-slate-700 hover:border-slate-300",
+                                        isCityOccupied ? 'opacity-50 cursor-not-allowed' : ''
                                       )}
                                     >
                                       {city.name}
