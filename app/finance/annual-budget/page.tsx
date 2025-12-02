@@ -178,25 +178,28 @@ export default function AnnualBudgetPage() {
     if (!institution?.annual_budgets) return {}
     
     const budgets: Record<number, AnnualBudgetData> = {}
-    institution.annual_budgets.forEach((budget: any) => {
-      budgets[budget.year] = {
-        id: budget.id,
-        year: budget.year,
-        planned_budget: parseFloat(budget.planned_budget) || 0,
-        total_expenses: parseFloat(budget.total_expenses) || 0,
-        balance: parseFloat(budget.balance) || 0,
-        notes: budget.notes || undefined,
-        approved_by: budget.reviewed_by || undefined,
-        created_at: budget.created_at,
-        updated_at: budget.updated_at,
-        created_by: budget.created_by,
-        updated_by: budget.updated_by,
-        is_deleted: budget.is_deleted,
-        deleted_at: budget.deleted_at,
-        deleted_by: budget.deleted_by,
-        is_locked: budget.is_locked || false,
-      }
-    })
+    // Filter only INSTITUTION-type budgets, not department budgets
+    institution.annual_budgets
+      .filter((budget: any) => budget.entity_type === 'INSTITUTION')
+      .forEach((budget: any) => {
+        budgets[budget.year] = {
+          id: budget.id,
+          year: budget.year,
+          planned_budget: parseFloat(budget.planned_budget) || 0,
+          total_expenses: parseFloat(budget.total_expenses) || 0,
+          balance: parseFloat(budget.balance) || 0,
+          notes: budget.notes || undefined,
+          approved_by: budget.reviewed_by || undefined,
+          created_at: budget.created_at,
+          updated_at: budget.updated_at,
+          created_by: budget.created_by,
+          updated_by: budget.updated_by,
+          is_deleted: budget.is_deleted,
+          deleted_at: budget.deleted_at,
+          deleted_by: budget.deleted_by,
+          is_locked: budget.is_locked || false,
+        }
+      })
     return budgets
   }, [currentInstitutionData])
 
@@ -351,7 +354,13 @@ export default function AnnualBudgetPage() {
       })
 
       if (result.data?.toggleBudgetLock) {
-        await handleRefresh()
+        // Otimização: refetch das queries específicas em vez de handleRefresh completo
+        await Promise.all([
+          refetchKPIs(),
+          refetchDashboard(),
+          refetchInstitutionById()
+        ])
+        
         const isNowLocked = result.data.toggleBudgetLock.is_locked
         toast.success(isNowLocked ? t('annual_budget.messages.lock_success') : t('annual_budget.messages.unlock_success'))
       }
@@ -762,7 +771,13 @@ export default function AnnualBudgetPage() {
         }
       })
       if (result.data?.toggleBudgetLock) {
-        await handleRefresh()
+        // Otimização: em vez de recarregar tudo, refetch apenas as queries necessárias
+        await Promise.all([
+          refetchKPIs(),
+          refetchDashboard(),
+          refetchInstitutionById()
+        ])
+        
         const isNowLocked = result.data.toggleBudgetLock.is_locked
         toast.success(isNowLocked ? t('annual_budget.messages.lock_success') : t('annual_budget.messages.unlock_success'))
       }
