@@ -601,6 +601,23 @@ export interface Institutions_institutions_churchesKpiData {
   avgMembersPerChurch: number;
 }
 
+export interface Institutions_institutions_churchesActivityData {
+  __typename: "ChurchActivityData";
+  church_id: string;
+  church_name: string;
+  month: string;
+  year: number;
+  activity_score: number;
+  user_count: number;
+  department_count: number;
+  project_count: number;
+  has_recent_activity: boolean;
+  has_recent_departments: boolean;
+  has_recent_projects: boolean;
+  has_updated_church: boolean;
+  has_new_users: boolean;
+}
+
 export interface Institutions_institutions_institutionChartsData_usersByRole {
   __typename: "UsersByRoleData";
   role: string;
@@ -653,6 +670,7 @@ export interface Institutions_institutions {
   churches: Institutions_institutions_churches[] | null;
   departments: Institutions_institutions_departments[] | null;
   churchesKpiData: Institutions_institutions_churchesKpiData;
+  churchesActivityData: Institutions_institutions_churchesActivityData[];
   institutionChartsData: Institutions_institutions_institutionChartsData;
 }
 

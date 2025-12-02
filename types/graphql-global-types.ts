@@ -534,6 +534,23 @@ export type Church = {
   users?: Maybe<Array<User>>;
 };
 
+export type ChurchActivityData = {
+  __typename?: 'ChurchActivityData';
+  activity_score: Scalars['Float']['output'];
+  church_id: Scalars['String']['output'];
+  church_name: Scalars['String']['output'];
+  department_count: Scalars['Float']['output'];
+  has_new_users: Scalars['Boolean']['output'];
+  has_recent_activity: Scalars['Boolean']['output'];
+  has_recent_departments: Scalars['Boolean']['output'];
+  has_recent_projects: Scalars['Boolean']['output'];
+  has_updated_church: Scalars['Boolean']['output'];
+  month: Scalars['String']['output'];
+  project_count: Scalars['Float']['output'];
+  user_count: Scalars['Float']['output'];
+  year: Scalars['Float']['output'];
+};
+
 export type ChurchChartData = {
   __typename?: 'ChurchChartData';
   activeMembers: Scalars['Float']['output'];
@@ -1666,6 +1683,7 @@ export type Institution = {
   activeChurchesChartData: Array<ChurchChartData>;
   annual_budgets: Array<AnnualBudget>;
   churches?: Maybe<Array<Church>>;
+  churchesActivityData: Array<ChurchActivityData>;
   churchesKpiData: ChurchKpiData;
   churches_count: Scalars['Int']['output'];
   communications?: Maybe<Array<Communication>>;

@@ -264,6 +264,24 @@ export const CHURCH_KPI_DATA_FRAGMENT = gql`
   }
 `;
 
+export const CHURCH_ACTIVITY_DATA_FRAGMENT = gql`
+  fragment ChurchActivityDataFragment on ChurchActivityData {
+    church_id
+    church_name
+    month
+    year
+    activity_score
+    user_count
+    department_count
+    project_count
+    has_recent_activity
+    has_recent_departments
+    has_recent_projects
+    has_updated_church
+    has_new_users
+  }
+`;
+
 export const INSTITUTION_CHARTS_DATA_FRAGMENT = gql`
   fragment InstitutionChartsDataFragment on InstitutionChartsData {
     usersByRole {
@@ -329,11 +347,15 @@ export const INSTITUTION_FRAGMENT = gql`
     churchesKpiData {
      ...ChurchKpiDataFragment
     }
+    churchesActivityData {
+      ...ChurchActivityDataFragment
+    }
     institutionChartsData {
       ...InstitutionChartsDataFragment
     }
   }
   ${CHURCH_KPI_DATA_FRAGMENT}
+  ${CHURCH_ACTIVITY_DATA_FRAGMENT}
   ${INSTITUTION_CHARTS_DATA_FRAGMENT}
   ${CONTACT_FRAGMENT}
   ${ANNUAL_BUDGET_FRAGMENT}

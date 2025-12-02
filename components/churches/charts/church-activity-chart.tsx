@@ -98,11 +98,11 @@ export function ChurchActivityChart({
   // Títulos padrão baseados no modo
   const defaultTitle = mode === 'departments' 
     ? 'Atividades em Projetos por Departamento' 
-    : 'Atividades e Projetos por Igreja'
+    : 'Atividade da Plataforma por Igreja'
   
   const defaultDescription = mode === 'departments'
     ? 'Qual departamento tem feito mais atividades em projetos ao longo do tempo'
-    : 'Qual igreja tem feito mais atividades ao longo do tempo'
+    : 'Mostra qual igreja tem utilizado mais a plataforma baseado em atualizações de usuários e departamentos'
 
   return (
     <Card className="h-full flex flex-col">
