@@ -27,6 +27,7 @@ import {
   TrendingUp,
   Calendar,
   Shield,
+  BarChart3,
   MapPin,
   User,
   ChevronRight
@@ -98,6 +99,7 @@ export default function DepartmentsPage() {
   const [isViewContactModalOpen, setIsViewContactModalOpen] = useState(false)
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentData | null>(null)
   const [selectedContact, setSelectedContact] = useState<ContactData | null>(null)
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
 
 
   const pageTitle = useMemo(() => (
@@ -113,23 +115,60 @@ export default function DepartmentsPage() {
     showBreadcrumbsInHeader: true
   })
 
-  // Estatísticas calculadas dos dados
+  // Estatísticas calculadas dos dados - CORRIGIDAS para usar ano selecionado
   type DepartmentType = typeof departments extends (infer U)[] ? U : any;
-  // Ajustar cálculo para acessar corretamente planned_budget e total_expenses
   const kpiData = useMemo(() => {
     const totalDepartments = departments.length;
-    const totalAnnualBudget = departments.reduce((sum: number, d: DepartmentType) => {
-      const latestBudget = d.annual_budgets?.[0];
-      const plannedBudget = latestBudget?.planned_budget || 0;
-      return sum + plannedBudget;
+    
+    // Filtrar orçamentos pelo ano selecionado
+    const departmentsWithBudgets = departments.map((d: DepartmentType) => {
+      const yearBudget = d.annual_budgets?.find(
+        (budget: any) => budget.year === selectedYear
+      );
+      return {
+        ...d,
+        currentYearBudget: yearBudget
+      };
+    });
+
+    // Calcular totais usando allocated_amount (valor alocado) do ano selecionado
+    const totalAllocatedBudget = departmentsWithBudgets.reduce((sum: number, d: any) => {
+      const allocatedAmount = Number(d.currentYearBudget?.allocated_amount) || 0;
+      return sum + allocatedAmount;
     }, 0);
+    
+    // Calcular total gasto usando total_expenses do ano selecionado
+    const totalSpentBudget = departmentsWithBudgets.reduce((sum: number, d: any) => {
+      const spentAmount = Number(d.currentYearBudget?.total_expenses) || 0;
+      return sum + spentAmount;
+    }, 0);
+    
+    // Calcular total restante
+    const totalRemainingBudget = totalAllocatedBudget - totalSpentBudget;
+    
+    // Calcular utilização média
+    const departmentsWithBudget = departmentsWithBudgets.filter(d => Number(d.currentYearBudget?.allocated_amount) > 0);
+    const avgUtilization = departmentsWithBudget.length > 0 
+      ? Math.round(
+          departmentsWithBudget.reduce((sum, d) => {
+            const allocated = Number(d.currentYearBudget?.allocated_amount) || 0;
+            const spent = Number(d.currentYearBudget?.total_expenses) || 0;
+            return sum + (allocated > 0 ? (spent / allocated) * 100 : 0);
+          }, 0) / departmentsWithBudget.length
+        )
+      : 0;
+
     return {
       totalDepartments,
-      totalAnnualBudget
+      totalAllocatedBudget,
+      totalSpentBudget,
+      totalRemainingBudget,
+      avgUtilization,
+      departmentsWithCurrentYearBudget: departmentsWithBudget.length
     };
-  }, [departments]);
+  }, [departments, selectedYear]);
 
-  // Dados para KPI Cards Carrossel
+  // Dados para KPI Cards Carrossel - CORRIGIDOS
   const kpiCardsData: KPICardData[] = useMemo(() => [
     {
       id: "total_departments",
@@ -144,34 +183,75 @@ export default function DepartmentsPage() {
       }
     },
     {
-      id: "annual_budget",
-      title: tDept.common?.annual_budget || "Annual Budget",
-      value: `$${(kpiData.totalAnnualBudget / 1000).toFixed(0)}K`,
+      id: "allocated_budget",
+      title: tDept.common?.allocated_budget || "Allocated Budget",
+      value: `$${(kpiData.totalAllocatedBudget / 1000).toFixed(0)}K`,
       icon: DollarSign,
-      subtitle: tDept.fields?.annual_budget || "Total annual budget",
+      subtitle: `${tDept.fields?.allocated_budget || "Allocated budget"} ${selectedYear}`,
       trend: {
         value: 0,
         isPositive: true,
         label: tDept.common?.trend?.vs_previous_year || "vs. previous year"
       }
+    },
+    {
+      id: "spent_budget",
+      title: tDept.common?.spent_budget || "Spent Budget",
+      value: `$${(kpiData.totalSpentBudget / 1000).toFixed(0)}K`,
+      icon: TrendingUp,
+      subtitle: `${tDept.common?.spent_this_year || "Spent this year"} ${selectedYear}`,
+      trend: {
+        value: 0,
+        isPositive: true,
+        label: tDept.common?.trend?.vs_previous_month || "vs. previous month"
+      }
+    },
+    {
+      id: "remaining_budget",
+      title: tDept.common?.remaining_budget || "Remaining Budget",
+      value: `$${(kpiData.totalRemainingBudget / 1000).toFixed(0)}K`,
+      icon: Shield,
+      subtitle: tDept.common?.available_budget || "Available budget",
+      trend: {
+        value: 0,
+        isPositive: kpiData.totalRemainingBudget >= 0,
+        label: tDept.common?.trend?.budget_status || "budget status"
+      }
+    },
+    {
+      id: "avg_utilization",
+      title: tDept.common?.budget_utilization || "Budget Utilization",
+      value: `${kpiData.avgUtilization}%`,
+      icon: BarChart3,
+      subtitle: `${kpiData.departmentsWithCurrentYearBudget}/${kpiData.totalDepartments} ${tDept.common?.with_budget || "with budget"}`,
+      trend: {
+        value: 0,
+        isPositive: kpiData.avgUtilization < 90,
+        label: tDept.common?.trend?.efficiency || "efficiency"
+      }
     }
-  ], [kpiData, tDept]);
+  ], [kpiData, tDept, selectedYear]);
 
-  // Dados para gráficos (apenas nome e orçamento)
+  // Dados para gráficos - CORRIGIDOS para usar ano selecionado
   const chartData = useMemo(() => {
     return {
       budgetByDepartment: departments.map(d => {
-        const latestBudget = d.annual_budgets?.[0];
+        // Buscar orçamento do ano selecionado em vez do primeiro
+        const yearBudget = d.annual_budgets?.find(
+          (budget: any) => budget.year === selectedYear
+        );
         return {
           department: d.name,
-          budget: latestBudget?.planned_budget || 0
+          allocated: Number(yearBudget?.allocated_amount) || 0,
+          spent: Number(yearBudget?.total_expenses) || 0,
+          remaining: (Number(yearBudget?.allocated_amount) || 0) - (Number(yearBudget?.total_expenses) || 0)
         };
-      }),
+      }).filter(d => d.allocated > 0), // Filtrar departamentos que têm orçamento
       userRequests: [],
       budgetTimeline: [],
       subsidyRequestsByDepartment: [] // TODO: implementar quando backend fornecer
     };
-  }, [departments]);
+  }, [departments, selectedYear]);
 
   /**
    * Carregamento inicial dos dados
@@ -361,13 +441,23 @@ export default function DepartmentsPage() {
         </div>
       ),
       cell: ({ row }) => {
-        const annual_budget = row.original.annual_budget
-        const hasBudget = annual_budget && annual_budget.planned_budget > 0
+        // Buscar orçamento do ano selecionado
+        const yearBudget = row.original.annual_budgets?.find(
+          (budget: any) => budget.year === selectedYear
+        );
+        const allocatedAmount = Number(yearBudget?.allocated_amount) || 0;
+        const hasBudget = allocatedAmount > 0;
+        
         return (
           <div className={`text-center ${!hasBudget ? 'opacity-50' : ''}`}>
             <div className="text-sm font-semibold text-gray-900">
-              ${annual_budget?.planned_budget?.toLocaleString() || '0'}
+              {hasBudget ? `$${allocatedAmount.toLocaleString()}` : '-'}
             </div>
+            {hasBudget && (
+              <div className="text-xs text-gray-500">
+                {tDept.annual_budget?.table?.allocated || "Allocated"} {selectedYear}
+              </div>
+            )}
           </div>
         )
       },
@@ -380,15 +470,24 @@ export default function DepartmentsPage() {
         </div>
       ),
       cell: ({ row }) => {
-        const annual_budget = row.original.annual_budget
-        const spentAmount = annual_budget?.total_expenses || 0
-        const hasBudget = annual_budget && annual_budget.planned_budget > 0
+        // Buscar orçamento do ano selecionado
+        const yearBudget = row.original.annual_budgets?.find(
+          (budget: any) => budget.year === selectedYear
+        );
+        const spentAmount = Number(yearBudget?.total_expenses) || 0;
+        const allocatedAmount = Number(yearBudget?.allocated_amount) || 0;
+        const hasBudget = allocatedAmount > 0;
         
         return (
           <div className={`text-center ${!hasBudget ? 'opacity-50' : ''}`}>
             <div className="text-sm font-semibold text-gray-900">
-              ${spentAmount.toLocaleString()}
+              {hasBudget ? `$${spentAmount.toLocaleString()}` : '-'}
             </div>
+            {hasBudget && (
+              <div className="text-xs text-gray-500">
+                {tDept.common?.spent_of || "of"} ${allocatedAmount.toLocaleString()}
+              </div>
+            )}
           </div>
         )
       },
@@ -401,11 +500,14 @@ export default function DepartmentsPage() {
         </div>
       ),
       cell: ({ row }) => {
-        const annual_budget = row.original.annual_budget
-        const totalBudget = annual_budget?.planned_budget || 0
-        const usedBudget = annual_budget?.total_expenses || 0
-        const usagePercentage = totalBudget > 0 ? Math.round((usedBudget / totalBudget) * 100) : 0
-        const hasBudget = annual_budget && annual_budget.planned_budget > 0
+        // Buscar orçamento do ano selecionado
+        const yearBudget = row.original.annual_budgets?.find(
+          (budget: any) => budget.year === selectedYear
+        );
+        const allocatedAmount = Number(yearBudget?.allocated_amount) || 0;
+        const usedBudget = Number(yearBudget?.total_expenses) || 0;
+        const usagePercentage = allocatedAmount > 0 ? Math.round((usedBudget / allocatedAmount) * 100) : 0;
+        const hasBudget = allocatedAmount > 0;
         
         return (
           <div className="flex justify-center">
@@ -426,13 +528,19 @@ export default function DepartmentsPage() {
         </div>
       ),
       cell: ({ row }) => {
-        const annual_budget = row.original.annual_budget
-        const hasBudget = annual_budget && annual_budget.planned_budget > 0
+        // Buscar orçamento do ano selecionado
+        const yearBudget = row.original.annual_budgets?.find(
+          (budget: any) => budget.year === selectedYear
+        );
+        const hasBudget = yearBudget && Number(yearBudget.allocated_amount) > 0;
         
         return (
           <div className="flex justify-center">
             <StatusBadge
-              label={hasBudget ? tDept.annual_budget?.table?.budget_status_labels?.completed : tDept.annual_budget?.table?.budget_status_labels?.missing}
+              label={hasBudget ? 
+                (tDept.annual_budget?.table?.budget_status_labels?.completed || "Active") : 
+                (tDept.annual_budget?.table?.budget_status_labels?.missing || "No Budget")
+              }
               variant={hasBudget ? "success" : "neutral"}
               showDot
             />
@@ -443,8 +551,11 @@ export default function DepartmentsPage() {
         if (value === undefined || value === null || value === "") {
           return true
         }
-        const annual_budget = row.original.annual_budget
-        const hasBudget = annual_budget && annual_budget.planned_budget > 0
+        // Buscar orçamento do ano selecionado
+        const yearBudget = row.original.annual_budgets?.find(
+          (budget: any) => budget.year === selectedYear
+        );
+        const hasBudget = yearBudget && Number(yearBudget.allocated_amount) > 0;
         return hasBudget === value
       },
     },
@@ -812,6 +923,7 @@ export default function DepartmentsPage() {
         <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
           <DepartmentActivityChart
             departments={departments}
+            selectedYear={selectedYear}
             loading={isLoading}
           />
         </ResponsiveGridCarousel>

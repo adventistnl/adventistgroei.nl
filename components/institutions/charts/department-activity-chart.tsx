@@ -31,9 +31,10 @@ interface DepartmentActivityChartProps {
   data?: any[]
   loading?: boolean
   departments?: any[]
+  selectedYear?: number
 }
 
-export function DepartmentActivityChart({ data, loading, departments = [] }: DepartmentActivityChartProps) {
+export function DepartmentActivityChart({ data, loading, departments = [], selectedYear = new Date().getFullYear() }: DepartmentActivityChartProps) {
   const [timeRange, setTimeRange] = React.useState("12m")
   const { i18n } = useTranslation()
   const currentLanguage = i18n?.language || 'en'
@@ -42,51 +43,65 @@ export function DepartmentActivityChart({ data, loading, departments = [] }: Dep
   // Processar departamentos reais e seus valores
   const departmentsList = React.useMemo(() => {
     if (!departments || departments.length === 0) return []
-    //TODO: Ajustar lógica de cálculo do gráfico de atividade da instituição conforme dados reais disponíveis
+    
     return departments
       .filter((dept: any) => !dept.is_deleted) // Filtrar departamentos ativos
       .map((dept: any) => {
-        const budget = dept.annual_budgets?.[0]?.planned_budget || 0
-        const userCount = dept.users?.length || 0
+        // Buscar orçamento do ano selecionado
+        const yearBudget = dept.annual_budgets?.find(
+          (budget: any) => budget.year === selectedYear
+        );
+        
+        const allocatedAmount = Number(yearBudget?.allocated_amount) || 0;
+        const spentAmount = Number(yearBudget?.total_expenses) || 0;
+        const userCount = dept.users?.length || 0;
 
-        // Calcular atividade baseado em orçamento e usuários reais
-        const activityValue = Math.floor((budget / 1000) + (userCount * 2))
+        // Calcular atividade baseado em orçamento alocado e gastos reais
+        const activityValue = Math.floor((allocatedAmount / 1000) + (spentAmount / 1000) + (userCount * 2));
 
         return {
           id: dept.id,
           name: dept.name,
+          allocated: allocatedAmount,
+          spent: spentAmount,
           value: activityValue,
         }
       })
-  }, [departments])
+      .filter(dept => dept.allocated > 0) // Mostrar apenas departamentos com orçamento
+  }, [departments, selectedYear])
 
-  // Usar apenas dados reais dos departamentos
+  // Gerar dados realistas baseados nos orçamentos anuais
   const chartData = React.useMemo(() => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const currentMonth = new Date().getMonth();
 
     if (departmentsList.length === 0) {
       // Se não há departamentos, retornar dados zerados
       return months.map((month, index) => ({
         month,
-        date: `2024-${String(index + 1).padStart(2, '0')}-01`,
+        date: `${selectedYear}-${String(index + 1).padStart(2, '0')}-01`,
       }))
     }
 
-    // Distribuir os valores pelos meses baseado apenas nos dados reais
+    // Gerar dados baseados no progresso real do ano
     return months.map((month, index) => {
       const monthData: any = {
         month,
-        date: `2024-${String(index + 1).padStart(2, '0')}-01`,
+        date: `${selectedYear}-${String(index + 1).padStart(2, '0')}-01`,
       }
 
       // Adicionar cada departamento como uma propriedade
       departmentsList.forEach((dept) => {
-        monthData[dept.id] = Math.floor(dept.value / 12) // Distribuição uniforme pelos meses
+        // Simular gastos progressivos ao longo do ano
+        const monthlyProgress = index <= currentMonth ? (index + 1) / 12 : 0;
+        const monthlySpent = Math.floor(dept.spent * monthlyProgress);
+        
+        monthData[dept.id] = monthlySpent / 1000; // Converter para K
       })
 
       return monthData
     })
-  }, [departmentsList])
+  }, [departmentsList, selectedYear])
   
   const { generatePalette } = useChartColors()
 
@@ -143,9 +158,9 @@ export function DepartmentActivityChart({ data, loading, departments = [] }: Dep
     <Card className="h-full flex flex-col">
       <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
         <div className="grid flex-1 gap-1">
-          <CardTitle>{t.charts?.activity_overview?.title || "Department Activity Overview"}</CardTitle>
+          <CardTitle>{t.charts?.activity_overview?.title || "Department Budget Activity"}</CardTitle>
           <CardDescription>
-            {t.charts?.activity_overview?.description || "Activity metrics based on real budget allocation and active users data"}
+            {t.charts?.activity_overview?.description || `Monthly budget utilization by departments for ${selectedYear}`}
           </CardDescription>
         </div>
         <Select value={timeRange} onValueChange={setTimeRange}>
