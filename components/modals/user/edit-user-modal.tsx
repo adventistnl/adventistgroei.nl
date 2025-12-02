@@ -39,6 +39,7 @@ import { cn } from "@/lib/utils"
 import { InstitutionById_institution_churches, InstitutionById_institution_departments, InstitutionById_institution_users as User } from "@/types/InstitutionById"
 import { Institutions_institutions } from "@/types/Institutions"
 import { Role_role } from "@/types/Role"
+import { GenderType } from "@/types/graphql-global-types"
 import { useUser } from '@/hooks/use-user';
 import { useLanguageOptions } from '@/hooks/use-language-preferences';
 import { useInstitution } from "@/contexts/institution-context"
@@ -156,6 +157,14 @@ export function EditUserModal({
   // Update form when user changes
   useEffect(() => {
     if (user && isOpen) {
+      // Convert GenderType enum to lowercase string for form
+      let genderValue: 'male' | 'female' | null = null;
+      if (user.gender === GenderType.Male || user.gender === 'MALE') {
+        genderValue = 'male';
+      } else if (user.gender === GenderType.Female || user.gender === 'FEMALE') {
+        genderValue = 'female';
+      }
+
       setUserForm({
         id: user.id,
         name: user.name,
@@ -168,7 +177,7 @@ export function EditUserModal({
         is_active: !user.is_deleted,
         has_department: false,
         is_institutional_department: false,
-        gender: user.gender as 'male' | 'female' | null
+        gender: genderValue
       });
 
       setDepartmentTab('church');
@@ -270,6 +279,10 @@ export function EditUserModal({
         user?.user_roles?.some((role) => role.role.id === roleId)
       );
 
+      // Convert gender to GenderType enum for backend
+      const genderForBackend = userForm.gender === 'male' ? GenderType.Male : 
+                              userForm.gender === 'female' ? GenderType.Female : null;
+
       await updateUserById(
         userForm.id,
         {
@@ -280,6 +293,7 @@ export function EditUserModal({
           institution_id: userForm.institution_id,
           church_id: userForm.church_id,
           department_id: userForm.has_department ? (userForm.department_id || "") : "",
+          gender: genderForBackend,
         },
         { add: addedRoles, remove: removedRoles }
       );

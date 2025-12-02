@@ -563,7 +563,7 @@ export default function ChurchDepartmentsPage() {
       ),
       cell: ({ row }) => {
         const user = row.original;
-        const genderLabel = user.gender ? `${user.gender.charAt(0).toUpperCase()}${user.gender.slice(1)}` : 'N/A';
+        const genderLabel = user.gender ? `${user.gender.charAt(0).toUpperCase()}${user.gender.slice(1).toLowerCase()}` : 'N/A';
         return (
           <div className="text-center">
             <Badge variant="outline" className="text-xs">

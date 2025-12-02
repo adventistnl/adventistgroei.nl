@@ -61,6 +61,7 @@ export const UPDATE_USER = gql`
     $is_deleted: Boolean
     $phone: String
     $address: String
+    $gender: GenderType
   ) {
     updateUser(
       data: {
@@ -74,6 +75,7 @@ export const UPDATE_USER = gql`
         is_deleted: $is_deleted
         phone: $phone
         address: $address
+        gender: $gender
       }
       id: $id
     ) {

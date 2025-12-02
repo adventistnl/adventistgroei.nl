@@ -2638,6 +2638,7 @@ export enum PermissionResolverName {
   BudgetKpIs = 'budgetKPIs',
   Church = 'church',
   Churches = 'churches',
+  ChurchesActivityData = 'churchesActivityData',
   Communication = 'communication',
   Communications = 'communications',
   CreateAnnualBudget = 'createAnnualBudget',

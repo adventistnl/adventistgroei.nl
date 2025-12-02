@@ -3,6 +3,8 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { GenderType } from "./globalTypes";
+
 // ====================================================
 // GraphQL mutation operation: UpdateUser
 // ====================================================
@@ -28,4 +30,5 @@ export interface UpdateUserVariables {
   is_deleted?: boolean | null;
   phone?: string | null;
   address?: string | null;
+  gender?: GenderType | null;
 }
