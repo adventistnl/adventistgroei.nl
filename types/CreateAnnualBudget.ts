@@ -31,7 +31,7 @@ export interface CreateAnnualBudgetVariables {
   total_expenses?: number | null;
   description: string;
   justification?: string | null;
-  requested_amount: number;
+  allocated_amount: number;
   entity_type: AnnualBudgetEntityType;
   entity_id: string;
   notes?: string | null;

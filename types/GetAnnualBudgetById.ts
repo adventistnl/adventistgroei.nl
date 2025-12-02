@@ -52,7 +52,7 @@ export interface GetAnnualBudgetById_annualBudget {
   institution_id: string | null;
   church_id: string | null;
   department_id: string | null;
-  requested_amount: any;
+  allocated_amount: any;
   approved_amount: any | null;
   requested_by: string;
   reviewed_by: string | null;

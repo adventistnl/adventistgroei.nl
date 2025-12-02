@@ -31,7 +31,7 @@ interface BudgetRequest {
   entity_id: string
   entity_name: string
   year: number
-  requested_amount: number
+  allocated_amount: number
   approved_amount?: number
   status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'requires_revision'
   priority: 'low' | 'medium' | 'high' | 'urgent'
@@ -140,7 +140,7 @@ export function DeleteBudgetModal({
                     </Badge>
                     <Badge variant="outline" className="text-xs bg-white text-gray-700 border-gray-300">
                       <DollarSign className="w-3 h-3 mr-1 text-gray-500" />
-                      ${budget.requested_amount.toLocaleString()}
+                      ${budget.allocated_amount.toLocaleString()}
                     </Badge>
                     {budget.is_locked !== undefined && (
                       <Badge variant="outline" className="text-xs bg-white text-gray-700 border-gray-300">

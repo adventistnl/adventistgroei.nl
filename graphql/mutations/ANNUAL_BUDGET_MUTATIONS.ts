@@ -7,7 +7,7 @@ export const CREATE_ANNUAL_BUDGET_MUTATION = gql`
     $total_expenses: Float
     $description: String!
     $justification: String
-    $requested_amount: Float!
+    $allocated_amount: Float!
     $entity_type: AnnualBudgetEntityType!
     $entity_id: String!
     $notes: String
@@ -19,7 +19,7 @@ export const CREATE_ANNUAL_BUDGET_MUTATION = gql`
         total_expenses: $total_expenses
         description: $description
         justification: $justification
-        requested_amount: $requested_amount
+        allocated_amount: $allocated_amount
         entity_type: $entity_type
         entity_id: $entity_id
         notes: $notes

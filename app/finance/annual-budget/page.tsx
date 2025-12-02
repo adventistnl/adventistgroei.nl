@@ -120,6 +120,7 @@ export default function AnnualBudgetPage() {
   
   const [isLoading, setIsLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const [operationInProgress, setOperationInProgress] = useState(false)
 
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const [selectedCurrency, setSelectedCurrency] = useState<string>('EUR') // Default to EUR
@@ -146,7 +147,6 @@ export default function AnnualBudgetPage() {
       year: selectedYear
     }
   })
-  console.log(kpisData)
 
   // State for managing available years (frontend-managed)
   const [availableYears, setAvailableYears] = useState<number[]>(() => {
@@ -267,7 +267,7 @@ export default function AnnualBudgetPage() {
           status: annualBudget.status,
           priority: annualBudget.priority,
           category: annualBudget.category,
-          requested_amount: parseFloat(annualBudget.requested_amount) || 0,
+          allocated_amount: parseFloat(annualBudget.allocated_amount) || 0,
           approved_amount: annualBudget.approved_amount ? parseFloat(annualBudget.approved_amount) : null,
           notes: annualBudget.notes,
           description: annualBudget.description,
@@ -420,10 +420,10 @@ export default function AnnualBudgetPage() {
           isPositive: true,
           label: t('annual_budget.kpi_cards.total_institution_budget.trend')
         } : undefined,
-        onClick: !hasInstitutionBudget ? handleCreateInstitutionBudget : undefined,
+        onClick: !hasInstitutionBudget ? handleCreateInstitutionBudget : handleEditInstitutionBudget,
         className: !hasInstitutionBudget 
           ? "border-2 border-dashed border-primary animate-pulse cursor-pointer hover:bg-primary/5 transition-all" 
-          : "hover:bg-blue-50 transition-all border-l-4 border-l-blue-500",
+          : "hover:bg-blue-50 transition-all border-l-4 border-l-blue-500 cursor-pointer",
         privacyConfig: PRIVACY_CONFIGS.totalBudget,
         headerAction: hasInstitutionBudget ? (
           <div className="flex items-center gap-1">
@@ -630,21 +630,33 @@ export default function AnnualBudgetPage() {
 
   // Handlers
   // Centraliza o recarregamento de todos os dados
-  const handleRefresh = async () => {
+  const handleRefresh = async (showNotification: boolean = false) => {
     setRefreshing(true)
-    const refreshToast = toast.loading(t('annual_budget.messages.refreshing'))
+    let refreshToast: string | undefined = undefined
+    
+    if (showNotification) {
+      refreshToast = toast.loading(t('annual_budget.messages.refreshing'))
+    }
+    
     try {
       await Promise.all([
         refetchKPIs(),
         refetchDashboard(),
         refetchInstitutionById()
       ])
-      toast.success(t('annual_budget.messages.refresh_success'), { duration: 2000 })
+      
+      if (showNotification) {
+        toast.success(t('annual_budget.messages.refresh_success'), { duration: 2000 })
+      }
     } catch (error) {
-      toast.error(t('annual_budget.messages.refresh_error'))
+      if (showNotification) {
+        toast.error(t('annual_budget.messages.refresh_error'))
+      }
       console.error('Erro ao recarregar dados:', error)
     } finally {
-      toast.dismiss(refreshToast)
+      if (refreshToast) {
+        toast.dismiss(refreshToast)
+      }
       setRefreshing(false)
     }
   }
@@ -670,6 +682,9 @@ export default function AnnualBudgetPage() {
   }
 
   const handleApproveRequest = async (requestId: string, approvedAmount?: number) => {
+    if (operationInProgress) return
+    setOperationInProgress(true)
+    
     try {
       const result = await approveAnnualBudgetMutation({
         variables: {
@@ -686,10 +701,15 @@ export default function AnnualBudgetPage() {
     } catch (error) {
       console.error('Error approving budget:', error)
       toast.error(t('annual_budget.messages.approve_error'))
+    } finally {
+      setOperationInProgress(false)
     }
   }
 
   const handleRejectRequest = async (requestId: string, reason: string) => {
+    if (operationInProgress) return
+    setOperationInProgress(true)
+    
     try {
       const result = await rejectAnnualBudgetMutation({
         variables: {
@@ -706,6 +726,8 @@ export default function AnnualBudgetPage() {
     } catch (error) {
       console.error('Error rejecting budget:', error)
       toast.error(t('annual_budget.messages.reject_error'))
+    } finally {
+      setOperationInProgress(false)
     }
   }
 
@@ -730,6 +752,9 @@ export default function AnnualBudgetPage() {
   }
 
   const handleToggleLock = async (requestId: string) => {
+    if (operationInProgress) return
+    setOperationInProgress(true)
+    
     try {
       const result = await toggleBudgetLockMutation({
         variables: {
@@ -744,6 +769,8 @@ export default function AnnualBudgetPage() {
     } catch (error) {
       console.error('Error toggling budget lock:', error)
       toast.error(t('annual_budget.messages.lock_error'))
+    } finally {
+      setOperationInProgress(false)
     }
   }
 
@@ -795,7 +822,7 @@ export default function AnnualBudgetPage() {
             total_expenses: budget.total_expenses || 0,
             description: `Budget for ${departmentData.departmentName}`,
             justification: budget.notes || `Annual budget allocation for ${departmentData.departmentName}`,
-            requested_amount: budget.planned_budget,
+            allocated_amount: budget.planned_budget,
             entity_type: AnnualBudgetEntityType.INSTITUTION_DEPARTMENT,
             entity_id: departmentData.departmentId,
             notes: budget.notes,
@@ -823,7 +850,7 @@ export default function AnnualBudgetPage() {
           total_expenses: budget.total_expenses || 0,
           description: `Institution budget for ${budget.year}`,
           justification: budget.notes || `Annual budget allocation for institution operations in ${budget.year}`,
-          requested_amount: budget.planned_budget,
+          allocated_amount: budget.planned_budget,
           entity_type: AnnualBudgetEntityType.INSTITUTION,
           entity_id: currentInstitutionData?.id || '',
           notes: budget.notes,
@@ -967,7 +994,7 @@ export default function AnnualBudgetPage() {
       cell: ({ row }) => {
         const departmentData = row.original
         const isDisabled = !departmentData.hasBudgetRecord
-        const budgetAmount = departmentData.annualBudget?.requested_amount || 0
+        const budgetAmount = departmentData.annualBudget?.allocated_amount || 0
         
         return (
           <div className={`text-center ${isDisabled ? 'opacity-50' : ''}`}>
@@ -1273,7 +1300,7 @@ export default function AnnualBudgetPage() {
               <Button 
                 variant="outline" 
                 size="icon"
-                onClick={handleRefresh}
+                onClick={() => handleRefresh(true)}
                 disabled={refreshing}
                 title={t('annual_budget.buttons.refresh')}
               >
@@ -1388,7 +1415,7 @@ export default function AnnualBudgetPage() {
               budget={selectedRequest ? {
                 id: selectedRequest.id,
                 year: selectedRequest.year,
-                planned_budget: parseFloat(selectedRequest.requested_amount as string) || 0,
+                planned_budget: parseFloat(selectedRequest.allocated_amount as string) || 0,
                 total_expenses: selectedRequest.spentAmount || 0,
                 balance: selectedRequest.remainingAmount || 0,
                 notes: selectedRequest.notes || undefined,
@@ -1419,7 +1446,7 @@ export default function AnnualBudgetPage() {
                 entity_id: getEntityId(selectedRequest),
                 entity_name: getEntityName(selectedRequest),
                 year: selectedRequest.year,
-                requested_amount: parseFloat(selectedRequest.requested_amount as string),
+                allocated_amount: parseFloat(selectedRequest.allocated_amount as string),
                 approved_amount: selectedRequest.approvedAmount,
                 status: selectedRequest.status.toLowerCase() as 'pending' | 'under_review' | 'approved' | 'rejected' | 'requires_revision',
                 priority: selectedRequest.priority.toLowerCase() as 'low' | 'medium' | 'high' | 'urgent',

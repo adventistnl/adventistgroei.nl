@@ -144,6 +144,7 @@ export type AddProjectVoluntaryDto = {
 
 export type AnnualBudget = {
   __typename?: 'AnnualBudget';
+  allocated_amount: Scalars['Decimal']['output'];
   approval_date?: Maybe<Scalars['DateTime']['output']>;
   approvedAmount: Scalars['Float']['output'];
   approved_amount?: Maybe<Scalars['Decimal']['output']>;
@@ -173,7 +174,6 @@ export type AnnualBudget = {
   planned_budget: Scalars['Decimal']['output'];
   priority: AnnualBudgetPriority;
   remainingAmount: Scalars['Float']['output'];
-  requested_amount: Scalars['Decimal']['output'];
   requested_by: Scalars['String']['output'];
   review_date?: Maybe<Scalars['DateTime']['output']>;
   reviewed_by?: Maybe<Scalars['String']['output']>;
@@ -196,6 +196,7 @@ export enum AnnualBudgetCategory {
 }
 
 export type AnnualBudgetCreateDto = {
+  allocated_amount: Scalars['Float']['input'];
   category?: InputMaybe<AnnualBudgetCategory>;
   description: Scalars['String']['input'];
   entity_id: Scalars['String']['input'];
@@ -204,7 +205,6 @@ export type AnnualBudgetCreateDto = {
   notes?: InputMaybe<Scalars['String']['input']>;
   planned_budget: Scalars['Float']['input'];
   priority?: InputMaybe<AnnualBudgetPriority>;
-  requested_amount: Scalars['Float']['input'];
   total_expenses?: InputMaybe<Scalars['Float']['input']>;
   year: Scalars['Int']['input'];
 };
@@ -227,6 +227,7 @@ export type AnnualBudgetOrderByRelationAggregateInput = {
 };
 
 export type AnnualBudgetOrderByWithRelationInput = {
+  allocated_amount?: InputMaybe<SortOrder>;
   approval_date?: InputMaybe<SortOrderInput>;
   approved_amount?: InputMaybe<SortOrderInput>;
   approved_by?: InputMaybe<SortOrderInput>;
@@ -254,7 +255,6 @@ export type AnnualBudgetOrderByWithRelationInput = {
   notes?: InputMaybe<SortOrderInput>;
   planned_budget?: InputMaybe<SortOrder>;
   priority?: InputMaybe<SortOrder>;
-  requested_amount?: InputMaybe<SortOrder>;
   requested_by?: InputMaybe<SortOrder>;
   review_date?: InputMaybe<SortOrderInput>;
   reviewed_by?: InputMaybe<SortOrderInput>;
@@ -274,6 +274,7 @@ export enum AnnualBudgetPriority {
 }
 
 export enum AnnualBudgetScalarFieldEnum {
+  AllocatedAmount = 'allocated_amount',
   ApprovalDate = 'approval_date',
   ApprovedAmount = 'approved_amount',
   ApprovedBy = 'approved_by',
@@ -297,7 +298,6 @@ export enum AnnualBudgetScalarFieldEnum {
   Notes = 'notes',
   PlannedBudget = 'planned_budget',
   Priority = 'priority',
-  RequestedAmount = 'requested_amount',
   RequestedBy = 'requested_by',
   ReviewDate = 'review_date',
   ReviewedBy = 'reviewed_by',
@@ -334,6 +334,7 @@ export type AnnualBudgetWhereInput = {
   AND?: InputMaybe<Array<AnnualBudgetWhereInput>>;
   NOT?: InputMaybe<Array<AnnualBudgetWhereInput>>;
   OR?: InputMaybe<Array<AnnualBudgetWhereInput>>;
+  allocated_amount?: InputMaybe<DecimalFilter>;
   approval_date?: InputMaybe<DateTimeNullableFilter>;
   approved_amount?: InputMaybe<DecimalNullableFilter>;
   approved_by?: InputMaybe<StringNullableFilter>;
@@ -361,7 +362,6 @@ export type AnnualBudgetWhereInput = {
   notes?: InputMaybe<StringNullableFilter>;
   planned_budget?: InputMaybe<DecimalFilter>;
   priority?: InputMaybe<EnumAnnualBudgetPriorityFilter>;
-  requested_amount?: InputMaybe<DecimalFilter>;
   requested_by?: InputMaybe<StringFilter>;
   review_date?: InputMaybe<DateTimeNullableFilter>;
   reviewed_by?: InputMaybe<StringNullableFilter>;
@@ -377,6 +377,7 @@ export type AnnualBudgetWhereUniqueInput = {
   AND?: InputMaybe<Array<AnnualBudgetWhereInput>>;
   NOT?: InputMaybe<Array<AnnualBudgetWhereInput>>;
   OR?: InputMaybe<Array<AnnualBudgetWhereInput>>;
+  allocated_amount?: InputMaybe<DecimalFilter>;
   approval_date?: InputMaybe<DateTimeNullableFilter>;
   approved_amount?: InputMaybe<DecimalNullableFilter>;
   approved_by?: InputMaybe<StringNullableFilter>;
@@ -404,7 +405,6 @@ export type AnnualBudgetWhereUniqueInput = {
   notes?: InputMaybe<StringNullableFilter>;
   planned_budget?: InputMaybe<DecimalFilter>;
   priority?: InputMaybe<EnumAnnualBudgetPriorityFilter>;
-  requested_amount?: InputMaybe<DecimalFilter>;
   requested_by?: InputMaybe<StringFilter>;
   review_date?: InputMaybe<DateTimeNullableFilter>;
   reviewed_by?: InputMaybe<StringNullableFilter>;
@@ -1918,6 +1918,7 @@ export type Mutation = {
   inviteUser: InviteModel;
   linkContact: LinkContactResult;
   login: AuthModel;
+  recalculateInstitutionAllocatedAmounts: RecalculateAllocatedAmountsResponse;
   rejectAnnualBudget: RejectBudgetResponse;
   removeProjectVoluntary: VoluntariesOnProjects;
   removeRoleFromUser: UserModel;
@@ -3137,6 +3138,12 @@ export enum QueryMode {
   Default = 'default',
   Insensitive = 'insensitive'
 }
+
+export type RecalculateAllocatedAmountsResponse = {
+  __typename?: 'RecalculateAllocatedAmountsResponse';
+  message: Scalars['String']['output'];
+  updated: Scalars['Int']['output'];
+};
 
 export type Region = {
   __typename?: 'Region';

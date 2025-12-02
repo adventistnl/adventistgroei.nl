@@ -34,7 +34,7 @@ export const GET_BUDGET_DASHBOARD_DATA = gql`
       institution_id
       church_id
       department_id
-      requested_amount
+      allocated_amount
       approved_amount
       requested_by
       reviewed_by
@@ -95,7 +95,7 @@ export const GET_ANNUAL_BUDGET_BY_ID = gql`
       institution_id
       church_id
       department_id
-      requested_amount
+      allocated_amount
       approved_amount
       requested_by
       reviewed_by

@@ -56,7 +56,7 @@ export interface ChurchFragment_annual_budgets {
   institution_id: string | null;
   church_id: string | null;
   department_id: string | null;
-  requested_amount: any;
+  allocated_amount: any;
   approved_amount: any | null;
   reviewed_by: string | null;
   review_date: any | null;
@@ -123,7 +123,7 @@ export interface ChurchFragment_departments_annual_budgets {
   institution_id: string | null;
   church_id: string | null;
   department_id: string | null;
-  requested_amount: any;
+  allocated_amount: any;
   approved_amount: any | null;
   reviewed_by: string | null;
   review_date: any | null;

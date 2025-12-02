@@ -147,7 +147,7 @@ export const ANNUAL_BUDGET_FRAGMENT = gql`
     institution_id
     church_id
     department_id
-    requested_amount
+    allocated_amount
     approved_amount
     reviewed_by
     review_date

@@ -7944,7 +7944,7 @@
             "deprecationReason": null
           },
           {
-            "name": "requested_amount",
+            "name": "allocated_amount",
             "description": null,
             "args": [],
             "type": {
@@ -13685,6 +13685,50 @@
       },
       {
         "kind": "OBJECT",
+        "name": "RecalculateAllocatedAmountsResponse",
+        "description": null,
+        "specifiedByUrl": null,
+        "fields": [
+          {
+            "name": "updated",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "message",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
         "name": "UsersByRoleData",
         "description": null,
         "specifiedByUrl": null,
@@ -16532,7 +16576,7 @@
             "deprecationReason": null
           },
           {
-            "name": "requested_amount",
+            "name": "allocated_amount",
             "description": null,
             "type": {
               "kind": "INPUT_OBJECT",
@@ -32004,7 +32048,7 @@
             "deprecationReason": null
           },
           {
-            "name": "requested_amount",
+            "name": "allocated_amount",
             "description": null,
             "type": {
               "kind": "ENUM",
@@ -34804,7 +34848,7 @@
             "deprecationReason": null
           },
           {
-            "name": "requested_amount",
+            "name": "allocated_amount",
             "description": null,
             "type": {
               "kind": "INPUT_OBJECT",
@@ -35142,7 +35186,7 @@
             "deprecationReason": null
           },
           {
-            "name": "requested_amount",
+            "name": "allocated_amount",
             "description": null,
             "isDeprecated": false,
             "deprecationReason": null
@@ -37480,6 +37524,22 @@
             "deprecationReason": null
           },
           {
+            "name": "recalculateInstitutionAllocatedAmounts",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "OBJECT",
+                "name": "RecalculateAllocatedAmountsResponse",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "sendForgotPasswordCode",
             "description": null,
             "args": [
@@ -37932,7 +37992,7 @@
             "deprecationReason": null
           },
           {
-            "name": "requested_amount",
+            "name": "allocated_amount",
             "description": null,
             "type": {
               "kind": "NON_NULL",
