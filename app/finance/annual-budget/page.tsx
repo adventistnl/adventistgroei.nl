@@ -334,6 +334,11 @@ export default function AnnualBudgetPage() {
       return
     }
 
+    // Prevent multiple calls during loading
+    if (togglingLock) {
+      return
+    }
+
     // Check if trying to lock and there are departments without budget
     const isCurrentlyLocked = institutionBudget.is_locked
     const tryingToLock = !isCurrentlyLocked
@@ -362,11 +367,18 @@ export default function AnnualBudgetPage() {
         ])
         
         const isNowLocked = result.data.toggleBudgetLock.is_locked
-        toast.success(isNowLocked ? t('annual_budget.messages.lock_success') : t('annual_budget.messages.unlock_success'))
+        // Usar toast com id para evitar duplicatas
+        toast.success(isNowLocked ? t('annual_budget.messages.lock_success') : t('annual_budget.messages.unlock_success'), {
+          id: `institution-lock-${institutionBudget.id}`,
+          duration: 2000
+        })
       }
     } catch (error) {
       console.error('Error toggling institution budget lock:', error)
-      toast.error(t('annual_budget.messages.lock_error'))
+      toast.error(t('annual_budget.messages.lock_error'), {
+        id: `institution-lock-error-${institutionBudget.id}`,
+        duration: 3000
+      })
     }
   }
 
@@ -761,7 +773,7 @@ export default function AnnualBudgetPage() {
   }
 
   const handleToggleLock = async (requestId: string) => {
-    if (operationInProgress) return
+    if (operationInProgress || togglingLock) return
     setOperationInProgress(true)
     
     try {
@@ -779,11 +791,18 @@ export default function AnnualBudgetPage() {
         ])
         
         const isNowLocked = result.data.toggleBudgetLock.is_locked
-        toast.success(isNowLocked ? t('annual_budget.messages.lock_success') : t('annual_budget.messages.unlock_success'))
+        // Usar toast com id para evitar duplicatas
+        toast.success(isNowLocked ? t('annual_budget.messages.lock_success') : t('annual_budget.messages.unlock_success'), {
+          id: `budget-lock-${requestId}`,
+          duration: 2000
+        })
       }
     } catch (error) {
       console.error('Error toggling budget lock:', error)
-      toast.error(t('annual_budget.messages.lock_error'))
+      toast.error(t('annual_budget.messages.lock_error'), {
+        id: `budget-lock-error-${requestId}`,
+        duration: 3000
+      })
     } finally {
       setOperationInProgress(false)
     }
