@@ -35,9 +35,23 @@ interface RoleExtraFieldsProps {
 const roleFieldConfig = {
   CHURCH_MEMBER: [
     { name: 'church', label: 'Igreja', type: 'select', required: true },
+  ],
+  CHURCH_LEADER: [  
+    { name: 'church', label: 'Igreja', type: 'select', required: true },
+    { name: 'church_department', label: 'Departamento da Igreja', type: 'select', required: true },
+  ],
+  DEPARTMENT_CHURCH_LEADER: [  
+    { name: 'church', label: 'Igreja', type: 'select', required: true },
     { name: 'church_department', label: 'Departamento da Igreja', type: 'select', required: true },
   ],
   INSTITUTIONAL_LEADER: [
+    { name: 'institution', label: 'Instituição', type: 'select', required: true },
+    { name: 'institution_department', label: 'Departamento da Instituição', type: 'select', required: true },
+  ],
+  INSTITUTIONAL_MEMBER: [
+    { name: 'institution', label: 'Instituição', type: 'select', required: true },
+  ],
+  INSTITUTIONAL_DEPARTMENT_LEADER: [
     { name: 'institution', label: 'Instituição', type: 'select', required: true },
     { name: 'institution_department', label: 'Departamento da Instituição', type: 'select', required: true },
   ],
