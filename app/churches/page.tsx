@@ -46,6 +46,7 @@ import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-caro
 import { ChurchActivityChart } from "@/components/churches/charts/church-activity-chart"
 import { ProjectsByChurchChart } from "@/components/churches/charts/projects-by-church-chart"
 import { MembersByChurchChart } from "@/components/churches/charts/members-by-church-chart"
+import { UsersByRoleChart } from "@/components/churches/charts/users-by-role-chart"
 import { EntityInfoCard } from "@/components/shared/entity-info-card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -542,21 +543,13 @@ export default function ChurchesPage() {
    * @param church - Objeto da church com departments, users, projects
    * @returns Objeto com dados reais para os 3 gráficos:
    *   - activities: Timeline de atividades baseada em updated_by
-   *   - membersByDept: Dados reais de membros por departamento
+   *   - usersByRole: Dados reais de usuários por role
    *   - projectsByDept: Dados reais de projetos por departamento
    */
   const generateChurchDepartmentData = (church: any) => {
     const departments = church?.departments || [];
+    const users = church?.users || [];
     
-    // Se não há departamentos, retorna dados vazios (sem mock)
-    if (departments.length === 0) {
-      return {
-        activities: [],
-        membersByDept: [],
-        projectsByDept: []
-      };
-    }
-
     // Paleta de cores para diferenciar departamentos visualmente
     const colors = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'];
     
@@ -614,7 +607,8 @@ export default function ChurchesPage() {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const currentMonth = new Date().getMonth();
     
-    const activities = months.map((month, index) => {
+    // Se não há departamentos, retorna dados vazios para atividades
+    const activities = departments.length === 0 ? [] : months.map((month, index) => {
       const monthData: any = { month };
       
       departments.forEach((dept: any) => {
@@ -630,18 +624,59 @@ export default function ChurchesPage() {
       return monthData;
     });
 
-    // CHART 2: Gera dados de membros por departamento (dados REAIS apenas)
-    const membersByDept = departments.map((dept: any, index: number) => ({
-      department: dept.name,
-      fullName: dept.name,
-      // Usa contagem REAL de users - sem simulação
-      members: dept.users?.length || 0,
-      activeMembers: dept.users?.filter((u: any) => !u.is_deleted).length || 0,
-      fill: colors[index % colors.length]
-    }));
+    // CHART 2: Gera dados de usuários por role (dados REAIS)
+    const roleMap = new Map<string, { users: number; activeUsers: number; fullName: string }>();
+    
+    users.forEach((user: any) => {
+      if (user.user_roles && user.user_roles.length > 0) {
+        user.user_roles.forEach((userRole: any) => {
+          const roleKey = userRole.role.key_code;
+          const roleName = userRole.role.name;
+          
+          if (!roleMap.has(roleKey)) {
+            roleMap.set(roleKey, {
+              users: 0,
+              activeUsers: 0,
+              fullName: roleName
+            });
+          }
+          
+          const roleData = roleMap.get(roleKey)!;
+          roleData.users += 1;
+          if (!user.is_deleted) {
+            roleData.activeUsers += 1;
+          }
+        });
+      } else {
+        // Usuários sem role
+        const noRoleKey = 'NO_ROLE';
+        if (!roleMap.has(noRoleKey)) {
+          roleMap.set(noRoleKey, {
+            users: 0,
+            activeUsers: 0,
+            fullName: 'No Role'
+          });
+        }
+        const roleData = roleMap.get(noRoleKey)!;
+        roleData.users += 1;
+        if (!user.is_deleted) {
+          roleData.activeUsers += 1;
+        }
+      }
+    });
+
+    const usersByRole = Array.from(roleMap.entries())
+      .map(([roleKey, data], index) => ({
+        role: roleKey,
+        fullName: data.fullName,
+        users: data.users,
+        activeUsers: data.activeUsers,
+        fill: colors[index % colors.length]
+      }))
+      .sort((a, b) => b.users - a.users); // Ordenar por quantidade de usuários
 
     // CHART 3: Gera dados de projetos por departamento (dados REAIS apenas)
-    const projectsByDept = departments.map((dept: any, index: number) => {
+    const projectsByDept = departments.length === 0 ? [] : departments.map((dept: any, index: number) => {
       // Usa contagem REAL de projects - sem simulação
       const totalProjects = dept.projects?.length || 0;
       const activeProjects = dept.projects?.filter((p: any) => !p.is_deleted).length || 0;
@@ -658,7 +693,7 @@ export default function ChurchesPage() {
 
     return {
       activities,
-      membersByDept,
+      usersByRole,
       projectsByDept
     };
   };
@@ -691,8 +726,8 @@ export default function ChurchesPage() {
           return (
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-muted-foreground" />
-              <Badge variant="secondary" className="bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800">
-                {tChurch.table.orphaned}
+              <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-border">
+                No Region
               </Badge>
             </div>
           )
@@ -1142,41 +1177,35 @@ export default function ChurchesPage() {
           </Breadcrumb>
         )}
 
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
-              {viewMode === 'detail' && selectedChurchDetail 
-                ? `${selectedChurchDetail.name} - Details`
-                : tStructure.churchesTitle
-              }
-            </h2>
-            <p className="text-muted-foreground text-0.875rem sm:text-1rem">
-              {viewMode === 'detail' && selectedChurchDetail
-                ? selectedChurchDetail.contact?.city || "Church details, departments and members"
-                : tStructure.churchesSubtitle
-              }
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            {viewMode === 'list' && (
+        {/* Header - Only show in List View */}
+        {viewMode === 'list' && (
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
+                {tStructure.churchesTitle}
+              </h2>
+              <p className="text-muted-foreground text-0.875rem sm:text-1rem">
+                {tStructure.churchesSubtitle}
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3">
               <Button onClick={handleCreate}>
                 <Plus className="w-4 h-4 mr-2" />
                 {tStructure.createChurch}
               </Button>
-            )}
-            
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
+              
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={handleRefresh}
+                disabled={refreshing}
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Conditional View: List or Detail */}
         {viewMode === 'list' ? (
@@ -1221,7 +1250,7 @@ export default function ChurchesPage() {
                   options: [
                     // Adicionar opção para igrejas órfãs
                     ...(churches.some((c: any) => !c.region) ? [{
-                      label: tChurch.table.orphaned_label,
+                      label: "No Region",
                       value: "__orphaned__"
                     }] : []),
                     // Adicionar opções de regiões
@@ -1311,7 +1340,7 @@ export default function ChurchesPage() {
                       description={`${
                         selectedChurchDetail.region?.name 
                           ? selectedChurchDetail.region.name
-                          : `🔗 ${tChurch.table.orphaned_label}`
+                          : 'No Region'
                       } • ${churchMembers} members • ${churchDepartments} departments`}
                       icon={Home}
                       badges={[
@@ -1327,7 +1356,7 @@ export default function ChurchesPage() {
                           : [{
                               label: 'No Region',
                               variant: "outline" as const,
-                              className: "bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800"
+                              className: "bg-muted/50 text-muted-foreground border-border"
                             }]
                         ),
                         ...(selectedChurchDetail.type ? [{
@@ -1365,7 +1394,7 @@ export default function ChurchesPage() {
             {/* Charts Section - Department Analytics */}
             {selectedChurchDetail && (() => {
               // Gera dados dinâmicos baseados nos departamentos da church
-              const chartData = generateChurchDepartmentData(selectedChurchDetail);
+              const departmentChartData = generateChurchDepartmentData(selectedChurchDetail);
               
               return (
                 <div className="space-y-6">
@@ -1378,27 +1407,26 @@ export default function ChurchesPage() {
                   <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
                     {/* Chart 1: Atividades em Projetos por Departamento - Timeline */}
                     <ChurchActivityChart 
-                      data={chartData.activities} 
+                      data={departmentChartData.activities} 
                       loading={false}
                       mode="departments"
                     />
 
-                    {/* Chart 2: Membros por Departamento */}
-                    <MembersByChurchChart 
-                      data={chartData.membersByDept} 
+                    {/* Chart 2: Users by Role within Church */}
+                    <UsersByRoleChart 
+                      data={departmentChartData.usersByRole} 
                       loading={false}
-                      mode="departments"
+                      title="Users by Role"
+                      description="Distribution of users by their roles within this church"
                     />
 
                     {/* Chart 3: Projetos por Departamento */}
                     <ProjectsByChurchChart 
-                      data={chartData.projectsByDept} 
+                      data={departmentChartData.projectsByDept} 
                       loading={false}
                       mode="departments"
                       onItemClick={(department) => {
                         console.log('Department clicked:', department)
-                        // Aqui você pode adicionar lógica adicional quando um departamento for clicado
-                        // Por exemplo, abrir um modal com mais detalhes, filtrar tabelas, etc.
                       }}
                     />
                   </ResponsiveGridCarousel>

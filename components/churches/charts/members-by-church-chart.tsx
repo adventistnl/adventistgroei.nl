@@ -141,9 +141,12 @@ export function MembersByChurchChart({
               tickLine={false}
               tickMargin={10}
               axisLine={false}
-              tickFormatter={(value) =>
-                chartConfig[value as keyof typeof chartConfig]?.label || value
-              }
+              tickFormatter={(value) => {
+                const label = chartConfig[value as keyof typeof chartConfig]?.label || value
+                // Limitar nome a 20 caracteres
+                return label.length > 20 ? `${label.substring(0, 20)}...` : label
+              }}
+              width={140}
             />
             <XAxis dataKey="members" type="number" hide />
             <ChartTooltip

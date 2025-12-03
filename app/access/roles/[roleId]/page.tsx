@@ -6,12 +6,13 @@ import { useRouter, useParams } from "next/navigation"
 
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
-import { LanguageSelector } from "@/components/shared/language-selector"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { AlertTriangle, ArrowLeft, CheckCircle, X, Shield, Crown, Settings, ChevronDown, ChevronRight, Save, Circle } from "lucide-react"
+import { AlertTriangle, ArrowLeft, CheckCircle, X, Shield, Crown, Settings, ChevronDown, ChevronRight, Save, Circle, Search, Tag, Lock } from "lucide-react"
 import { CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
@@ -26,9 +27,10 @@ import { UPDATE_ROLE_MUTATION } from "@/graphql/mutations/ROLE_MUTATIONS"
 import { GET_ROLE_BY_ID_QUERY } from "@/graphql/queries/GET_ROLES_QUERY"
 import { Role } from "@/types/Role"
 import { PermissionResolverName } from "@/types/graphql-global-types"
+import { accessTranslations } from "@/lib/translations/access"
 
 function RolePermissionsPage({ roleId }: { roleId: string }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
 
   const { data: currentRoleData, loading: currentRoleLoading, error: currentRoleError, refetch: refetchCurrentRole } = useQuery<Role, Variables>(GET_ROLE_BY_ID_QUERY, {
@@ -48,6 +50,9 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
   const [addPermissions, setAddPermissions] = useState<string[]>([]);
   const [removePermissions, setRemovePermissions] = useState<string[]>([]);
   const [isExpanded, setIsExpanded] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [crudFilter, setCrudFilter] = useState<string>('all')
 
   const updateRole = async (variables: UpdateRoleVariables) => {
     await useUpdateRoleMutate({ variables });
@@ -67,9 +72,11 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
       }));
 
       return {
+        group: group.group, // This is the category name (USER, ROLE, PERMISSION, etc.)
         name: group.group,
         label: group.group,
         permissions: groupPermissions,
+        data: group.data || []
       };
     });
   }, [currentRole, selectedPermissions]);
@@ -78,23 +85,75 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
     return permissionGroups.flatMap((group) => group.permissions);
   }, [permissionGroups]);
 
+  // Extract unique tags from all permissions
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    permissions.forEach(p => {
+      // Extract tags from permission name or key_code
+      const words = p.name.toLowerCase().split(/[\s_-]+/);
+      words.forEach(word => {
+        if (word.length > 3) tags.add(word);
+      });
+    });
+    return Array.from(tags).sort();
+  }, [permissions]);
+
+  // Filter permissions based on search, selected tags, and CRUD type
+  const filteredPermissionGroups = useMemo(() => {
+    if (!searchQuery && selectedTags.length === 0 && crudFilter === 'all') return permissionGroups;
+
+    return permissionGroups.map(group => ({
+      ...group,
+      data: group.data || [], // Ensure data exists
+      permissions: group.permissions.filter(permission => {
+        const matchesSearch = !searchQuery || 
+          permission.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          permission.key_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          permission.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+        const matchesTags = selectedTags.length === 0 || selectedTags.some(tag =>
+          permission.name.toLowerCase().includes(tag.toLowerCase()) ||
+          permission.key_code.toLowerCase().includes(tag.toLowerCase())
+        );
+
+        const matchesCrud = crudFilter === 'all' || 
+          (crudFilter === 'create' && (permission.name.toLowerCase().includes('create') || permission.key_code.toLowerCase().includes('create'))) ||
+          (crudFilter === 'read' && (permission.name.toLowerCase().includes('read') || permission.name.toLowerCase().includes('view') || permission.key_code.toLowerCase().includes('read') || permission.key_code.toLowerCase().includes('view'))) ||
+          (crudFilter === 'update' && (permission.name.toLowerCase().includes('update') || permission.name.toLowerCase().includes('edit') || permission.key_code.toLowerCase().includes('update') || permission.key_code.toLowerCase().includes('edit'))) ||
+          (crudFilter === 'delete' && (permission.name.toLowerCase().includes('delete') || permission.key_code.toLowerCase().includes('delete')));
+
+        return matchesSearch && matchesTags && matchesCrud;
+      })
+    })).filter(group => group.permissions.length > 0);
+  }, [permissionGroups, searchQuery, selectedTags, crudFilter]);
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev =>
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
+  };
+
   const coverage = useMemo(() => {
     if (permissions.length === 0) return 0;
     return Math.round((selectedPermissions.length / permissions.length) * 100);
   }, [permissions, selectedPermissions]);
 
+  // Get translations for current language
+  const currentLanguage = i18n?.language || 'en'
+  const tAccess = accessTranslations[currentLanguage as keyof typeof accessTranslations] || accessTranslations.en
 
-  const breadcrumbs = useMemo(() => [
-    { name: "Dashboard", href: "/dashboard" },
-    { name: "Users & Access" },
-    { name: "Access Management", href: "/access" },
-    { name: currentRole?.name || "Role Permissions" }
-  ], [currentRole?.name]);
+  const pageTitle = useMemo(() => (
+    <span className="flex items-center gap-2">
+      {tAccess.breadcrumb.access_management}
+      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+      {tAccess.breadcrumb.role_permissions}
+    </span>
+  ), [tAccess])
 
   usePageTitle({
-    title: `${currentRole?.name || 'Role'} Permissions`,
-    breadcrumbs
-  });
+    title: pageTitle,
+    showBreadcrumbsInHeader: true
+  })
 
   const toggleGroup = (groupName: string) => {
     setExpandedGroups(prev => 
@@ -106,7 +165,7 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
 
   const handlePermissionToggle = (permissionId: string, permissionName: string, isEssential: boolean, checked: boolean) => {
     if (isEssential) {
-      toast.error(`Essential permissions cannot be removed`);
+      toast.error(tAccess.messages.essential_cannot_remove);
       return;
     }
     const isCurrentlySelected = selectedPermissions.includes(permissionId)
@@ -124,32 +183,43 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
     setHasUnsavedChanges(true)
     toast.success(
       isCurrentlySelected 
-        ? `Permission removed: ${permissionName}`
-        : `Permission added: ${permissionName}`,
+        ? `${tAccess.toasts.permission_removed}: ${permissionName}`
+        : `${tAccess.toasts.permission_added}: ${permissionName}`,
       { duration: 2000 }
     )
   }
 
   const handleSelectAll = () => {
-    const allPermissionIds = permissions.filter(p => !p.is_essential).map(p => p.id); // Ignora permissões essenciais
+    const allNonEssentialPermissions = permissions.filter(p => !p.is_essential);
+    if (allNonEssentialPermissions.length === 0) {
+      toast.error('All permissions are essential and cannot be modified', { duration: 2500 });
+      return;
+    }
+    const allPermissionIds = allNonEssentialPermissions.map(p => p.id);
     setSelectedPermissions(allPermissionIds);
     setAddPermissions(allPermissionIds); // Atualiza o estado de permissões a serem adicionadas
     setRemovePermissions([]); // Limpa as permissões a serem removidas
     setHasUnsavedChanges(true);
-    toast.success(`All ${allPermissionIds.length} non-essential permissions selected`, { duration: 3000 });
+    toast.success(tAccess.toasts.all_selected, { duration: 3000 });
   };
 
   const handleClearAll = () => {
     const essentialIds = permissions.filter(p => p.is_essential).map(p => p.id);
     const removableIds = permissions.filter(p => !p.is_essential).map(p => p.id);
+    
+    if (removableIds.length === 0) {
+      toast.error('All permissions are essential and cannot be removed', { duration: 2500 });
+      return;
+    }
+    
     setSelectedPermissions(essentialIds); // Mantém apenas permissões essenciais
     setRemovePermissions(removableIds); // Atualiza permissões a serem removidas
     setAddPermissions([]); // Limpa as permissões a serem adicionadas
     setHasUnsavedChanges(true);
     if (essentialIds.length > 0) {
-      toast.success(`Cleared non-essential permissions — preserved ${essentialIds.length} essential permission(s)`, { duration: 2500 });
+      toast.success(`${tAccess.toasts.all_cleared} — preserved ${essentialIds.length} essential permission(s)`, { duration: 2500 });
     } else {
-      toast.success('All permissions cleared', { duration: 2000 });
+      toast.success(tAccess.toasts.all_cleared, { duration: 2000 });
     }
   }
 
@@ -160,7 +230,7 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
     setAddPermissions(prev => [...new Set([...prev, ...nonEssentialGroupIds])]); // Atualiza permissões a serem adicionadas
     setRemovePermissions(prev => prev.filter(id => !nonEssentialGroupIds.includes(id))); // Remove do estado de remoção
     setHasUnsavedChanges(true);
-    toast.success(`All ${groupName} non-essential permissions selected`);
+    toast.success(`${groupName}: ${tAccess.toasts.all_selected}`);
   }
 
   const handleGroupClear = (groupPermissionIds: string[], groupName: string) => {
@@ -172,9 +242,9 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
     setAddPermissions(prev => prev.filter(id => !removable.includes(id))); // Remove do estado de adição
     setHasUnsavedChanges(true);
     if (removable.length === 0) {
-      toast.success(`${groupName} cleared (no non-essential permissions to remove)`);
+      toast.success(`${groupName}: ${tAccess.toasts.all_cleared}`);
     } else {
-      toast.success(`${groupName} non-essential permissions cleared`);
+      toast.success(`${groupName}: ${tAccess.toasts.all_cleared}`);
     }
   }
 
@@ -184,7 +254,7 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
       const filteredRemovePermissionIds = removePermissions.filter(id => !essentialPermissionIds.includes(id));
       const preventedRemovals = removePermissions.length - filteredRemovePermissionIds.length;
       if (preventedRemovals > 0) {
-        toast.error(`${preventedRemovals} essential permission(s) cannot be removed and were skipped.`);
+        toast.error(`${preventedRemovals} ${tAccess.messages.essential_cannot_remove}`);
       }
 
       await updateRole({
@@ -192,13 +262,13 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
         addPermissionIds: addPermissions,
         removePermissionIds: filteredRemovePermissionIds,
       });
-      toast.success(t('access.toasts.permissions_updated', 'Permissões atualizadas com sucesso!'), {
+      toast.success(tAccess.toasts.permissions_updated, {
         duration: 4000,
         icon: '🎉'
       });
       setHasUnsavedChanges(false);
     } catch (error) {
-      toast.error(t('access.toasts.permissions_update_failed', 'Erro ao atualizar permissões.'));
+      toast.error(tAccess.toasts.permissions_update_failed);
     }
   };
 
@@ -247,12 +317,12 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
           <Card className="w-full max-w-md">
             <CardContent className="!p-8 text-center">
               <AlertTriangle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Role Not Found</h2>
+              <h2 className="text-xl font-semibold mb-2">{tAccess.messages.role_not_found}</h2>
               <p className="text-muted-foreground mb-4">
-                The requested role could not be found.
+                {tAccess.messages.role_not_found}
               </p>
               <Button onClick={() => router.push('/access')} variant="outline">
-                Back to Access Management
+                {tAccess.actions.back}
               </Button>
             </CardContent>
           </Card>
@@ -264,443 +334,354 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
   return (
     <AppLayout>
       <WithPermission requiredPermissions={[ PermissionResolverName.Roles, PermissionResolverName.Permissions, PermissionResolverName.UpdateRole ]} fallback={<AccessDenied/>}>
-        <div className="flex flex-1 flex-col gap-4 p-6 pt-4">
+        <div className="flex flex-1 flex-col gap-4 p-3 sm:p-6 pt-3 sm:pt-4">
+          {/* Back Button */}
+          <Button 
+            variant="ghost" 
+            onClick={() => router.push('/access')}
+            className="w-fit"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+
           {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center gap-4">
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => router.push('/access')}
-                className="shrink-0"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div>
-                <h2 className="text-3xl font-bold text-foreground mb-2">
-                  Permission Configuration
-                </h2>
-                <p className="text-muted-foreground">
-                  Configure detailed permissions for the selected role
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <LanguageSelector />
-            </div>
+          <div className="flex flex-col gap-2">
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+              {tAccess.role_permissions}
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              {currentRole.name}
+            </p>
           </div>
 
-          {/* Role Information Card */}
-          <Card className="border-2 !p-2">
-            <CardHeader className="!p-2">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center shadow-sm">
-                      <Shield className="w-8 h-8 text-foreground" />
+          {/* Role Information Card - Minimalist */}
+          <Card>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Shield className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold text-sm sm:text-base">{currentRole.name}</h3>
+                      <Badge variant="secondary" className="text-xs">
+                        {currentRole.key_code}
+                      </Badge>
+                      {currentRole.key_code === 'ADMIN' && (
+                        <Crown className="w-4 h-4 text-yellow-500 flex-shrink-0" />
+                      )}
                     </div>
-                    {currentRole.key_code === 'ADMIN' && (
-                      <Crown className="absolute -top-2 -right-2 w-6 h-6 text-yellow-500" />
-                    )}
+                    <p className="text-xs text-muted-foreground line-clamp-1">{currentRole.description}</p>
                   </div>
-                  <div className="space-y-2">
-                    <div>
-                      <CardTitle className="text-2xl font-bold text-foreground">
-                        {currentRole.name}
-                      </CardTitle>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="secondary" className="text-sm font-mono px-3 py-1">
-                          {currentRole.key_code}
-                        </Badge>
-                      </div>
+                </div>
+                <div className="flex items-center gap-3 sm:gap-6 w-full sm:w-auto justify-around sm:justify-end">
+                  <div className="text-center">
+                    <div className="text-base sm:text-lg font-bold">{selectedPermissions.length}</div>
+                    <div className="text-xs text-muted-foreground">{tAccess.permissions.selected}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-base sm:text-lg font-bold">{permissions.length}</div>
+                    <div className="text-xs text-muted-foreground">{tAccess.permissions.available}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-base sm:text-lg font-bold">
+                      {permissions.length > 0 ? Math.round((selectedPermissions.length / permissions.length) * 100) : 0}%
                     </div>
-                    <p className="text-sm text-muted-foreground max-w-md leading-relaxed">
-                      {currentRole.description}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right space-y-2">
-                  <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Status
-                  </div>
-                  <div className={`flex items-center gap-2 ${
-                    hasUnsavedChanges ? 'text-yellow-600' : 'text-green-600'
-                  }`}>
-                    <div className={`w-3 h-3 rounded-full ${
-                      hasUnsavedChanges ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'
-                    }`} />
-                    <span className="text-sm font-medium">
-                      {hasUnsavedChanges ? 'Modified' : 'Saved'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="!p-1 !px-1">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-3 bg-muted/50 rounded-lg border">
-                  <div className="text-lg font-bold text-foreground">
-                    {selectedPermissions.length}
-                  </div>
-                  <div className="text-xs text-muted-foreground font-medium">
-                    Selected Permissions
-                  </div>
-                </div>
-                <div className="text-center p-3 bg-muted/50 rounded-lg border">
-                  <div className="text-lg font-bold text-foreground">
-                    {permissions.length}
-                  </div>
-                  <div className="text-xs text-muted-foreground font-medium">
-                    Total Available
-                  </div>
-                </div>
-                <div className="text-center p-3 bg-muted/50 rounded-lg border">
-                  <div className="text-lg font-bold text-foreground">
-                    {permissionGroups.length}
-                  </div>
-                  <div className="text-xs text-muted-foreground font-medium">
-                    Permission Groups
-                  </div>
-                </div>
-                <div className="text-center p-3 bg-muted/50 rounded-lg border">
-                  <div className="text-lg font-bold text-foreground">
-                    {permissions.length > 0 ? Math.round((selectedPermissions.length / permissions.length) * 100) : 0}%
-                  </div>
-                  <div className="text-xs text-muted-foreground font-medium">
-                    Coverage
+                    <div className="text-xs text-muted-foreground">{tAccess.permissions.coverage}</div>
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Global Actions */}
-          <Card className="!p-2">
-            <CardContent className="!p-1 !px-1">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="space-y-2">
-                  <h4 className="text-lg font-semibold flex items-center gap-2">
-                    <Settings className="w-5 h-5 text-foreground" />
-                    Permission Matrix
-                  </h4>
-                  <p className="text-sm text-muted-foreground max-w-md">
-                    Select permissions to grant this role access to specific system functions
-                  </p>
-                  <div className="flex items-center gap-4 text-xs">
-                    <span className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-green-500 rounded-full" />
-                      Selected: {selectedPermissions.length}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-muted-foreground rounded-full" />
-                      Available: {permissions.length}
-                    </span>
+          {/* Search and Filter - New Section */}
+          <div className="space-y-3">
+            {/* Action buttons - Above search */}
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={handleSelectAll}
+                disabled={permissions.filter(p => !p.is_essential).length === 0 || selectedPermissions.length === permissions.filter(p => !p.is_essential).length}
+                size="sm"
+                className="flex-1 sm:flex-initial"
+              >
+                <CheckCircle className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">{tAccess.permissions.select_all}</span>
+                <span className="sm:hidden">Select</span>
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={handleClearAll}
+                disabled={permissions.filter(p => !p.is_essential).length === 0 || selectedPermissions.filter(id => !permissions.find(p => p.id === id)?.is_essential).length === 0}
+                size="sm"
+                className="flex-1 sm:flex-initial"
+              >
+                <X className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">{tAccess.permissions.clear_all}</span>
+                <span className="sm:hidden">Clear</span>
+              </Button>
+            </div>
+
+            {/* Search bar and CRUD filter */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search permissions..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Select value={crudFilter} onValueChange={setCrudFilter}>
+                <SelectTrigger className="w-full sm:w-[140px]">
+                  <SelectValue placeholder="CRUD Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="create">Create</SelectItem>
+                  <SelectItem value="read">Read/View</SelectItem>
+                  <SelectItem value="update">Update/Edit</SelectItem>
+                  <SelectItem value="delete">Delete</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Quick Tags - Scrollable container */}
+            {allTags.length > 0 && (
+              <div className="flex items-start gap-2">
+                <Tag className="w-4 h-4 text-muted-foreground mt-1.5 flex-shrink-0" />
+                <div className="flex-1 overflow-x-auto pb-2 -mb-2">
+                  <div className="flex gap-1.5 min-w-max">
+                    {allTags.slice(0, 12).map(tag => (
+                      <Badge
+                        key={tag}
+                        variant={selectedTags.includes(tag) ? "default" : "outline"}
+                        className="cursor-pointer text-xs hover:bg-accent whitespace-nowrap"
+                        onClick={() => toggleTag(tag)}
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
-                <div className="flex gap-3">
-                  <Button 
-                    variant="outline"
-                    onClick={handleSelectAll}
-                    disabled={selectedPermissions.length === permissions.length}
-                    className="hover:bg-muted"
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Select All
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={handleClearAll}
-                    disabled={selectedPermissions.length === 0}
-                    className="hover:bg-muted"
-                  >
-                    <X className="w-4 h-4 mr-2" />
-                    Clear All
-                  </Button>
-                </div>
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
 
           {/* Permission Groups */}
           <div className="space-y-6">
-            {currentRole.permissions.map((group) => {
+            {filteredPermissionGroups.map((group) => {
               const isExpanded = expandedGroups.includes(group.group)
-              const groupPermissionIds = group.data.map(p => p.id)
+              const groupPermissionIds = (group.data || group.permissions || []).map((p: any) => p.id)
               const selectedInGroup = selectedPermissions.filter(id => groupPermissionIds.includes(id)).length
-              const allGroupSelected = selectedInGroup === group.data.length
-              const someGroupSelected = selectedInGroup > 0 && selectedInGroup < group.data.length
+              const allGroupSelected = groupPermissionIds.length > 0 && selectedInGroup === groupPermissionIds.length
+              const someGroupSelected = selectedInGroup > 0 && selectedInGroup < groupPermissionIds.length
+              
+              // Get section title based on the actual group category
+              const getCategoryTitle = (groupName: string) => {
+                if (!groupName || typeof groupName !== 'string') return 'Permissions'
+                
+                // The group name IS the category (USER, ROLE, PERMISSION, etc.)
+                const category = groupName.trim().toUpperCase()
+                
+                // Map categories to readable titles
+                const categoryTitles: Record<string, string> = {
+                  'USER': 'User Management',
+                  'USERS': 'User Management',
+                  'ROLE': 'Role Management',
+                  'ROLES': 'Role Management',
+                  'PERMISSION': 'Permission Management',
+                  'PERMISSIONS': 'Permission Management',
+                  'INSTITUTION': 'Institution Management',
+                  'INSTITUTIONS': 'Institution Management',
+                  'REGION': 'Region Management',
+                  'REGIONS': 'Region Management',
+                  'CHURCH': 'Church Management',
+                  'CHURCHES': 'Church Management',
+                  'DEPARTMENT': 'Department Management',
+                  'DEPARTMENTS': 'Department Management',
+                }
+                
+                return categoryTitles[category] || groupName
+              }
+              
               return (
-                <Card key={group.group} className="border-2 !p-2">
-                  <Collapsible open={isExpanded} onOpenChange={() => toggleGroup(group.group)}>
-                    <CollapsibleTrigger className="w-full">
-                      <CardHeader className="hover:bg-muted/30 transition-colors !p-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center">
-                              {isExpanded ? (
-                                <ChevronDown className="w-6 h-6 text-foreground" /> 
-                              ) : (
-                                <ChevronRight className="w-6 h-6 text-foreground" />
-                              )}
-                            </div>
-                            <div className="text-left space-y-1">
-                              <CardTitle className="text-lg flex items-center gap-3">
-                                <span className="text-foreground">
-                                  { group.group }
-                                </span>
-                                <div className="flex gap-1">
-                                  {!allGroupSelected && (
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-7 px-3 text-xs hover:bg-muted"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        handleGroupSelect(groupPermissionIds, group.group)
-                                      }}
+                <div key={group.group} className="space-y-3">
+               
+                  
+                  {/* Container with card background */}
+                  <Card className="border-none shadow-none">
+                       {/* Section Title - Only once above container */}
+                  <div className="flex items-center justify-between px-1">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                      {getCategoryTitle(group.group)}
+                    </h3>
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                        {selectedInGroup}/{groupPermissionIds.length}
+                      </span>
+                      <div className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 flex-shrink-0 ${
+                        allGroupSelected 
+                          ? 'bg-green-500 border-green-500' 
+                          : someGroupSelected 
+                            ? 'bg-gradient-to-r from-green-500 via-green-500 to-transparent border-muted' 
+                            : 'border-muted bg-transparent'
+                      }`} />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleGroup(group.group)}
+                        className="h-7 px-2 sm:px-3 text-xs"
+                      >
+                        {isExpanded ? 'Close' : 'Open'} Permissions
+                      </Button>
+                    </div>
+                  </div>
+                    <CardContent className="p-0">
+                      <Collapsible open={isExpanded} onOpenChange={() => toggleGroup(group.group)}>
+                      <CollapsibleTrigger className="w-full sr-only">
+                        Toggle
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="p-3 sm:p-4">
+                          <div className="space-y-2">
+                            {group.permissions.map((permission) => {
+                              const isChecked = selectedPermissions.includes(permission.id)
+                              const originallyChecked = currentRole.permissions
+                                .find(p => p.group === group.group)?.data
+                                .some(p => p.id === permission.id && p.is_selected) || false
+                              const isModified = isChecked !== originallyChecked
+                              const isEssential = !!permission.is_essential
+                              
+                              // Check if permission was created in the last 15 days
+                              const createdAt = permission.created_at ? new Date(permission.created_at) : null
+                              const now = new Date()
+                              const fifteenDaysAgo = new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000)
+                              const isNew = createdAt && createdAt > fifteenDaysAgo && !originallyChecked && isChecked
+                              
+                              return (
+                                <div 
+                                  key={permission.id} 
+                                  className={twMerge(
+                                    "relative flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border transition-all",
+                                    isEssential
+                                      ? "cursor-not-allowed bg-muted/30"
+                                      : "cursor-pointer hover:bg-muted/50",
+                                    isChecked && "bg-muted/50"
+                                  )}
+                                  onClick={() => !isEssential && handlePermissionToggle(permission.id, permission.name, isEssential, !isChecked)}
+                                >
+                                  {/* Lock icon - Top Right */}
+                                  {isEssential && (
+                                    <div 
+                                      className="absolute top-2 right-2 group z-10"
+                                      title={tAccess.messages.essential_cannot_remove}
+                                      onClick={(e) => e.stopPropagation()}
                                     >
-                                      Select All
-                                    </Button>
-                                  )}
-                                  {selectedInGroup > 0 && (
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-7 px-3 text-xs hover:bg-muted"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        handleGroupClear(groupPermissionIds, group.group)
-                                      }}
-                                    >
-                                      Clear
-                                    </Button>
-                                  )}
-                                </div>
-                              </CardTitle>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <Badge 
-                              variant="outline"
-                              className="text-sm px-4 py-2 font-bold border-2"
-                            >
-                              {selectedInGroup}/{group.data.length}
-                            </Badge>
-                            {allGroupSelected && (
-                              <Badge className="bg-green-500 text-white">
-                                Complete
-                              </Badge>
-                            )}
-                            {someGroupSelected && !allGroupSelected && (
-                              <Badge className="bg-yellow-500 text-white">
-                                Partial
-                              </Badge>
-                            )}
-                            <div className="relative w-12 h-12">
-                              <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
-                                <path
-                                  className="text-muted stroke-current"
-                                  fill="none"
-                                  strokeWidth="3"
-                                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                />
-                                <path
-                                  className={`stroke-current transition-all duration-500 ${
-                                    allGroupSelected 
-                                      ? 'text-green-500' 
-                                      : someGroupSelected 
-                                        ? 'text-yellow-500' 
-                                        : 'text-muted-foreground'
-                                  }`}
-                                  fill="none"
-                                  strokeWidth="3"
-                                  strokeDasharray={`${(selectedInGroup / group.data.length) * 100}, 100`}
-                                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                />
-                              </svg>
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                {allGroupSelected ? (
-                                  <CheckCircle className="w-5 h-5 text-green-500" />
-                                ) : someGroupSelected ? (
-                                  <Circle className="w-5 h-5 text-yellow-500 fill-current" />
-                                ) : (
-                                  <Circle className="w-5 h-5 text-muted-foreground" />
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </CardHeader>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <CardContent className="!p-1 !px-1">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                          {group.data.map((permission) => {
-                            const isChecked = selectedPermissions.includes(permission.id)
-                            const originallyChecked = currentRole.permissions
-                              .find(p => p.group === group.group)?.data
-                              .some(p => p.id === permission.id && p.is_selected) || false
-                            const isModified = isChecked !== originallyChecked
-                            const isEssential = !!permission.is_essential
-                            return (
-                              <div 
-                                key={permission.id} 
-                                className={twMerge(
-                                  "flex items-start space-x-4 p-4 rounded-lg border-2 transition-all duration-200",
-                                  isEssential
-                                    ? "cursor-not-allowed bg-muted/30 border-border"
-                                    : "cursor-pointer hover:shadow-sm hover:bg-muted/30 border-border",
-                                  isChecked
-                                    ? "bg-muted/50 border-foreground/20"
-                                    : ""
-                                )}
-                                
-                                onClick={() => !isEssential && handlePermissionToggle(permission.id, permission.name, isEssential, !isChecked)}
-                              >
-                                <div className="relative mt-1">
-                                  <Checkbox 
-                                    id={permission.id}
-                                    checked={isChecked}
-                                    className="w-5 h-5 border-foreground/20"
-                                    disabled={isEssential}
-                                    onCheckedChange={() => {}} // Handled by parent click
-                                  />
-                                  {isModified && (
-                                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-500 rounded-full animate-pulse" />
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0 space-y-2">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="space-y-1">
-                                      <Label 
-                                        className={`text-sm font-semibold ${isEssential ? 'cursor-not-allowed' : 'cursor-pointer'} leading-tight text-foreground`}
-                                      >
-                                        <>
-                                          {permission.name}
-                                          {isEssential && (
-                                            <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-600">
-                                              Essential
-                                            </Badge>
-                                          )}
-                                        </>
-                                        
-                                      </Label>
-                                      <div className="flex items-center gap-2">
-                                        <Badge variant="outline" className="text-xs font-mono bg-muted/50">
-                                          {permission.key_code}
-                                        </Badge>
-
-                                        {isChecked && (
-                                          <Badge className="text-xs bg-green-500 text-white">
-                                            Active
-                                          </Badge>
-                                        )}
-                                        {!originallyChecked && isChecked && (
-                                          <Badge variant="outline" className="text-xs border-blue-500 text-blue-600">
-                                            New
-                                          </Badge>
-                                        )}
-                                        {originallyChecked && !isChecked && (
-                                          <Badge variant="outline" className="text-xs border-red-500 text-red-600">
-                                            Removed
-                                          </Badge>
-                                        )}
+                                      <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-dashed rounded-full flex items-center justify-center border-foreground bg-foreground">
+                                        <Lock className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-background" />
+                                      </div>
+                                      <div className="absolute bottom-full right-0 mb-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                        {tAccess.messages.essential_cannot_remove}
                                       </div>
                                     </div>
+                                  )}
+                                  
+                                  <div className="relative mt-0.5 flex-shrink-0">
+                                    <Checkbox 
+                                      id={permission.id}
+                                      checked={isChecked}
+                                      className="w-4 h-4"
+                                      disabled={isEssential}
+                                      onCheckedChange={() => {}}
+                                    />
+                                    {isModified && !isEssential && (
+                                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-500 rounded-full" />
+                                    )}
                                   </div>
-                                  <p className="text-xs text-muted-foreground leading-relaxed">
-                                    {permission.description}
-                                  </p>
+                                  
+                                  <div className="flex-1 min-w-0 pr-6">
+                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                      <Label className={`text-xs sm:text-sm font-medium ${isEssential ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                                        {permission.name}
+                                      </Label>
+                                      {isChecked && !isEssential && (
+                                        <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 sm:gap-2 mb-1 flex-wrap">
+                                      <Badge variant="outline" className="text-xs font-mono">
+                                        {permission.key_code}
+                                      </Badge>
+                                      {isNew && (
+                                        <Badge variant="outline" className="text-xs border-blue-500 text-blue-600">
+                                          {tAccess.status.new}
+                                        </Badge>
+                                      )}
+                                      {originallyChecked && !isChecked && (
+                                        <Badge variant="outline" className="text-xs border-red-500 text-red-600">
+                                          {tAccess.status.removed}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground line-clamp-2">
+                                      {permission.description}
+                                    </p>
+                                  </div>
                                 </div>
-                              </div>
-                            )
-                          })}
+                              )
+                            })}
+                          </div>
                         </div>
-                      </CardContent>
-                    </CollapsibleContent>
-                  </Collapsible>
-                </Card>
+                      </CollapsibleContent>
+                    </Collapsible>
+                    </CardContent>
+                  </Card>
+                </div>
               )
             })}
           </div>
 
-          {/* Action Buttons */}
-          <Card className={`sticky bottom-4 border-2 !p-2 ${hasUnsavedChanges ? 'border-yellow-200' : 'border-border'}`}>
-            <CardContent className="!p-1">
-              <div className="flex items-end justify-between gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${
-                      hasUnsavedChanges ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'
-                    }`} />
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">
-                        {selectedPermissions.length > 0 
-                          ? `${selectedPermissions.length} permissions selected`
-                          : 'No permissions selected'
-                        }
+          {/* Action Buttons - Minimalist */}
+          <Card className={`sticky bottom-4 ${hasUnsavedChanges ? 'border-yellow-500' : ''}`}>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                    hasUnsavedChanges ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'
+                  }`} />
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-medium">
+                      {selectedPermissions.length} / {permissions.length} {tAccess.permissions.selected}
+                    </p>
+                    {hasUnsavedChanges && (
+                      <p className="text-xs text-yellow-600">
+                        {tAccess.messages.unsaved_changes}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {Math.round((selectedPermissions.length / permissions.length) * 100)}% of total permissions
-                      </p>
-                    </div>
+                    )}
                   </div>
-                  {hasUnsavedChanges && (
-                    <div className="flex items-center gap-2 p-2 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                      <AlertTriangle className="w-4 h-4 text-yellow-600" />
-                      <p className="text-xs text-yellow-700 dark:text-yellow-300 font-medium">
-                        You have unsaved changes
-                      </p>
-                    </div>
-                  )}
-                  <Card className="!p-1">
-                    <CardContent className="flex flex-wrap gap-2 p-1">
-                      <Collapsible onOpenChange={() => setIsExpanded(prev => !prev)}>
-                        <CollapsibleTrigger  className="text-sm font-medium text-primary cursor-pointer flex items-center gap-1">
-                          { isExpanded ?
-                            <ChevronDown className="w-4 h-4 transition-transform duration-200" data-state-open="rotate-90" />
-                            :
-                            <ChevronRight className="w-4 h-4 transition-transform duration-200" data-state-open="rotate-90" />
-                          }
-                          Coverage Details
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="p-2 flex flex-wrap gap-1.5">
-                          {permissionGroups?.map((group) => {
-                            const groupPermissionIds = group.permissions.map(p => p.id);
-                            const selectedInGroup = selectedPermissions.filter(id => groupPermissionIds.includes(id)).length;
-                            const percentage = group.permissions.length > 0 
-                              ? Math.round((selectedInGroup / group.permissions.length) * 100) 
-                              : 0;
-                            return (
-                              <Badge 
-                                key={group.name}
-                                variant={selectedInGroup > 0 ? "default" : "outline"}
-                                className="text-xs"
-                              >
-                                {group.name}: {selectedInGroup}/{group.permissions.length} ({percentage}%)
-                              </Badge>
-                            );
-                          })}
-                        </CollapsibleContent>
-                      </Collapsible>
-                    </CardContent>
-                  </Card>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                  <Button 
-                    onClick={handleSave.bind(null, roleId)} 
-                    disabled={!hasUnsavedChanges}
-                    className="w-full sm:w-auto cursor-pointer"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Changes
-                  </Button>
+                <div className="flex gap-2 w-full sm:w-auto">
                   <Button 
                     variant="outline" 
                     onClick={handleCancel}
-                    className="w-full sm:w-auto"
+                    size="sm"
+                    className="flex-1 sm:flex-initial"
                   >
-                    Cancel
+                    {tAccess.actions.cancel}
+                  </Button>
+                  <Button 
+                    onClick={handleSave.bind(null, roleId)} 
+                    disabled={!hasUnsavedChanges}
+                    size="sm"
+                    className="flex-1 sm:flex-initial"
+                  >
+                    <Save className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">{tAccess.actions.save_changes}</span>
+                    <span className="sm:hidden">Save</span>
                   </Button>
                 </div>
               </div>

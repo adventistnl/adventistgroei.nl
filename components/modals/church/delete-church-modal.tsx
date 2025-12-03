@@ -118,8 +118,8 @@ export function DeleteChurchModal({
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="w-[95vw] max-w-lg max-h-[95vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0 pb-4 border-b border-red-200 dark:border-red-900/50">
-          <DialogTitle className="text-lg mb-2 text-red-700 dark:text-red-400">
+        <DialogHeader className="flex-shrink-0 pb-4">
+          <DialogTitle className="text-lg mb-2">
             {tChurch.modals.delete.deactivate_title}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
@@ -132,18 +132,18 @@ export function DeleteChurchModal({
           <div className="space-y-6 p-1">
 
             {/* Church Information */}
-            <div className="flex items-start gap-4 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg">
+            <div className="flex items-start gap-4 p-4 bg-muted/50 rounded-lg border">
               {/* Ícone */}
-              <div className="w-12 h-12 bg-background rounded-full flex items-center justify-center flex-shrink-0 border border-red-200 dark:border-red-900">
-                <Home className="w-6 h-6 text-red-600 dark:text-red-400" />
+              <div className="w-12 h-12 bg-background rounded-full flex items-center justify-center flex-shrink-0 border">
+                <Home className="w-6 h-6 text-muted-foreground" />
               </div>
 
               {/* Informações */}
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-red-900 dark:text-red-100 mb-1">
+                <h3 className="text-base font-semibold text-foreground mb-1">
                   {church.name}
                 </h3>
-                <p className="text-sm text-red-700 dark:text-red-200">
+                <p className="text-sm text-muted-foreground">
                   {church.id}
                 </p>
               </div>
@@ -165,33 +165,33 @@ export function DeleteChurchModal({
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-3 mt-4">
                 {/* Direct Relationships Consequence */}
-                <div className="flex items-start gap-3 p-3 border border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-950 rounded-lg">
-                  <Layers className="w-4 h-4 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
+                <div className="flex items-start gap-3 p-3 border rounded-lg">
+                  <Layers className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-orange-900 dark:text-orange-100">{tChurch.modals.delete.consequences.direct_relationships}</p>
-                    <p className="text-xs text-orange-700 dark:text-orange-200">
+                    <p className="font-medium text-sm text-foreground">{tChurch.modals.delete.consequences.direct_relationships}</p>
+                    <p className="text-xs text-muted-foreground">
                       {tChurch.modals.delete.consequences.direct_relationships_desc}
                     </p>
                   </div>
                 </div>
 
                 {/* Indirect Relationships Consequence */}
-                <div className="flex items-start gap-3 p-3 border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950 rounded-lg">
-                  <Database className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                <div className="flex items-start gap-3 p-3 border rounded-lg">
+                  <Database className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-red-900 dark:text-red-100">{tChurch.modals.delete.consequences.indirect_relationships}</p>
-                    <p className="text-xs text-red-700 dark:text-red-200">
+                    <p className="font-medium text-sm text-foreground">{tChurch.modals.delete.consequences.indirect_relationships}</p>
+                    <p className="text-xs text-muted-foreground">
                       {tChurch.modals.delete.consequences.indirect_relationships_desc}
                     </p>
                   </div>
                 </div>
 
                 {/* Data Preservation Consequence */}
-                <div className="flex items-start gap-3 p-3 border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                  <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="flex items-start gap-3 p-3 border rounded-lg">
+                  <Lock className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-blue-900 dark:text-blue-100">{tChurch.modals.delete.consequences.data_safety}</p>
-                    <p className="text-xs text-blue-700 dark:text-blue-200">
+                    <p className="font-medium text-sm text-foreground">{tChurch.modals.delete.consequences.data_safety}</p>
+                    <p className="text-xs text-muted-foreground">
                       {tChurch.modals.delete.consequences.data_safety_desc}
                     </p>
                   </div>
