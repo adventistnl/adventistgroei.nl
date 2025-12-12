@@ -229,10 +229,6 @@ export function EditDepartmentModal({
       } as DepartmentData
 
       toast.dismiss(loadingToast)
-      toast.success(t.toasts.updated, {
-        duration: 3000,
-        icon: '🏢'
-      })
 
       if (onSave) {
         onSave(updatedDepartment)

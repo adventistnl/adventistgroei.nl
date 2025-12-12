@@ -172,7 +172,7 @@ export default function DepartmentsPage() {
   const kpiCardsData: KPICardData[] = useMemo(() => [
     {
       id: "total_departments",
-      title: tDept.title || "Institutional Departments",
+      title: "Total Institutional Departments",
       value: kpiData.totalDepartments,
       icon: Layers,
       subtitle: tDept.subtitle || "Manage departments across institutions",
@@ -983,7 +983,7 @@ export default function DepartmentsPage() {
                   emptyEntityName={tDept.entity_name || "Departments"}
                   filters={[
                 {
-                  id: "church",
+                  id: "church_id",
                   title: tDept.churches?.church || "Church",
                   options: [
                     { label: tDept.filters?.institutional || "Institutional", value: "institutional" },

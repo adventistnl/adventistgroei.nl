@@ -655,41 +655,35 @@ export default function ChurchDepartmentsPage() {
           </Breadcrumb>
         )}
 
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
-              {viewMode === 'detail' && selectedDepartmentDetail 
-                ? `${selectedDepartmentDetail.name} - ${t.title || "Details"}`
-                : t.page?.title || "Church Departments"
-              }
-            </h2>
-            <p className="text-muted-foreground text-0.875rem sm:text-1rem">
-              {viewMode === 'detail' && selectedDepartmentDetail
-                ? selectedDepartmentDetail.description || t.detail?.no_description || "Department details and members"
-                : t.page?.description || "Manage church-level departments and ministries"
-              }
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            {viewMode === 'list' && (
+        {/* Header - Only show in List View */}
+        {viewMode === 'list' && (
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
+                {t.page?.title || "Church Departments"}
+              </h2>
+              <p className="text-muted-foreground text-0.875rem sm:text-1rem">
+                {t.page?.description || "Manage church-level departments and ministries"}
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3">
               <Button onClick={handleCreate}>
                 <Plus className="w-4 h-4 mr-2" />
                 {t.create_department || "Create Church Department"}
               </Button>
-            )}
-            
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
+              
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={handleRefresh}
+                disabled={refreshing}
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* KPI Cards - Conditional Rendering */}
         {viewMode === 'detail' && selectedDepartmentDetail ? (

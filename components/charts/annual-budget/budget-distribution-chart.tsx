@@ -102,55 +102,61 @@ export function BudgetDistributionChart({ data, year, currency, entityDistributi
   const [chartType, setChartType] = useState<"radial" | "pie">("radial")
   const { isHidden } = useComponentPrivacy(PRIVACY_CONFIG)
   
-  // Use entity distribution data directly from backend (no calculations needed)
-  const entityBudgetData: EntityBudgetData[] = useMemo(() => {
-    if (!entityDistribution || entityDistribution.length === 0) {
-      // Fallback to remaining budget if no distribution data
-      if (data.remaining > 0) {
-        return [{
-          name: "Available",
-          amount: data.remaining,
-          percentage: 100,
-          fill: "hsl(142, 71%, 45%)", // Green for available
-        }]
-      }
-      return []
-    }
-
-    // Convert backend data to chart format
-    const entities = entityDistribution.map((entity) => ({
-      name: entity.name.charAt(0).toUpperCase() + entity.name.slice(1), // Capitalize
-      amount: entity.amount,
-      percentage: entity.percentage,
-    }))
-
-    // Sort by amount descending
-    entities.sort((a, b) => b.amount - a.amount)
-    
-    // Generate colors for entities
-    const redGradient = generateRedGradient(entities.length)
-    
-    return entities.map((entity, index) => ({
-      ...entity,
-      fill: redGradient[index] || "hsl(0, 75%, 50%)",
-    }))
-  }, [entityDistribution, data.remaining])
-
-  // Add remaining budget as first item in pie chart
+  // Build PIE chart data from real department data
   const pieChartData = useMemo(() => {
-    if (data.remaining <= 0) return entityBudgetData
+    const chartItems: EntityBudgetData[] = []
     
-    const remainingItem: EntityBudgetData = {
-      name: "Available",
-      amount: data.remaining,
-      percentage: Math.round((data.remaining / data.total) * 100),
-      fill: "hsl(142, 71%, 45%)", // Static green for available budget
+    // Add department budgets (allocated amounts)
+    if (entityDistribution && entityDistribution.length > 0) {
+      // Generate colors for departments
+      const redGradient = generateRedGradient(entityDistribution.length)
+      
+      // Map departments to chart format with proper colors
+      const departmentItems = entityDistribution
+        .map((entity, index) => ({
+          name: entity.name, // Keep original department name
+          amount: entity.amount,
+          percentage: entity.percentage,
+          fill: redGradient[index] || "hsl(0, 75%, 50%)",
+        }))
+        .filter(item => item.amount > 0)
+        .sort((a, b) => b.amount - a.amount) // Sort by amount descending
+      
+      chartItems.push(...departmentItems)
     }
     
-    return [remainingItem, ...entityBudgetData]
-  }, [data.remaining, data.total, entityBudgetData])
+    // Add "Available" budget as the last item (only if there's remaining budget)
+    if (data.remaining > 0) {
+      const remainingItem: EntityBudgetData = {
+        name: "Available",
+        amount: data.remaining,
+        percentage: Math.round((data.remaining / data.total) * 100),
+        fill: "hsl(142, 71%, 45%)", // Static green for available budget
+      }
+      chartItems.push(remainingItem)
+    }
+    
+    // If no items, show placeholder
+    if (chartItems.length === 0) {
+      return [{
+        name: "No Data",
+        amount: 0,
+        percentage: 0,
+        fill: "hsl(0, 0%, 80%)",
+      }]
+    }
+    
+    return chartItems
+  }, [entityDistribution, data.remaining, data.total])
 
-  const [activeEntity, setActiveEntity] = useState(pieChartData[0]?.name || "Available")
+  const [activeEntity, setActiveEntity] = useState<string>("")
+
+  // Set initial active entity when data loads
+  React.useEffect(() => {
+    if (pieChartData.length > 0 && !activeEntity) {
+      setActiveEntity(pieChartData[0].name)
+    }
+  }, [pieChartData, activeEntity])
 
   const activeIndex = useMemo(
     () => pieChartData.findIndex((item) => item.name === activeEntity),
@@ -167,7 +173,7 @@ export function BudgetDistributionChart({ data, year, currency, entityDistributi
           </div>
           
           <div className="flex items-center gap-2">
-          {/* Toggle Button */}
+            {/* Toggle Button */}
             <div className="flex items-center border border-border rounded-lg p-1 bg-muted">
               <Button
                 variant="ghost"
@@ -203,18 +209,17 @@ export function BudgetDistributionChart({ data, year, currency, entityDistributi
               className="privacy-toggle-button-header flex-shrink-0" 
             />
           </div>
-
         </div>
         
-        {/* Entity Selector for Pie Chart */}
-        {chartType === "pie" && pieChartData.length > 0 && (
+        {/* Department/Entity Selector for Pie Chart */}
+        {chartType === "pie" && pieChartData.length > 0 && pieChartData[0].name !== "No Data" && (
           <div className="w-full mt-3">
             <Select value={activeEntity} onValueChange={setActiveEntity}>
               <SelectTrigger
-                className="h-8 w-full rounded-lg text-xs"
-                aria-label="Select an entity"
+                className="ml-auto h-7 w-full rounded-lg pl-2.5"
+                aria-label="Select a department"
               >
-                <SelectValue placeholder="Select entity" />
+                <SelectValue placeholder="Select department" />
               </SelectTrigger>
               <SelectContent align="end" className="rounded-xl">
                 {pieChartData.map((entity) => (
@@ -225,13 +230,10 @@ export function BudgetDistributionChart({ data, year, currency, entityDistributi
                   >
                     <div className="flex items-center gap-2 text-xs">
                       <span
-                        className="flex h-3 w-3 shrink-0 rounded-sm"
+                        className="flex h-3 w-3 shrink-0 rounded-xs"
                         style={{ backgroundColor: entity.fill }}
                       />
                       <span className="font-medium">{entity.name}</span>
-                      <span className="text-muted-foreground">
-                        ({formatCurrency(entity.amount, currency, { compact: true })} - {entity.percentage}%)
-                      </span>
                     </div>
                   </SelectItem>
                 ))}
@@ -240,7 +242,8 @@ export function BudgetDistributionChart({ data, year, currency, entityDistributi
           </div>
         )}
       </CardHeader>
-      { isHidden ? (
+      
+      {isHidden ? (
         <PrivacyOverlay height="300px" blurIntensity="medium">
           {/* Skeleton Customizado */}
           <div className="space-y-4 p-4">
@@ -259,217 +262,220 @@ export function BudgetDistributionChart({ data, year, currency, entityDistributi
         </PrivacyOverlay>
       ) : (
         <>
-        <CardContent className="flex flex-1 items-center pb-2">
-          {chartType === "radial" ? (
-            // Radial Bar Chart
-            <ChartContainer
-              config={chartConfig}
-              className="mx-auto aspect-square w-full max-w-[350px]"
-            >
-              <RadialBarChart
-                data={[
-                  {
-                    name: 'Budget',
-                    allocated: data.allocated,
-                    remaining: data.remaining
-                  }
-                ]}
-                endAngle={180}
-                innerRadius={90}
-                outerRadius={140}
+          <CardContent className="flex flex-1 items-center pb-2">
+            {chartType === "radial" ? (
+              // Radial Bar Chart
+              <ChartContainer
+                config={chartConfig}
+                className="mx-auto aspect-square w-full max-w-[350px]"
               >
-                <ChartTooltip
-                  cursor={false}
-                  content={
-                    <ChartTooltipContent
-                      hideLabel
-                      formatter={(value: any) => [formatCurrency(typeof value === 'number' ? value : 0, currency), '']}
+                <RadialBarChart
+                  data={[
+                    {
+                      name: 'Budget',
+                      allocated: data.allocated,
+                      remaining: data.remaining
+                    }
+                  ]}
+                  endAngle={180}
+                  innerRadius={90}
+                  outerRadius={140}
+                >
+                  <ChartTooltip
+                    cursor={false}
+                    content={
+                      <ChartTooltipContent
+                        hideLabel
+                        formatter={(value: any) => [formatCurrency(typeof value === 'number' ? value : 0, currency), '']}
+                      />
+                    }
+                  />
+                  <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
+                    <RechartsLabel
+                      content={({ viewBox }) => {
+                        if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                          const percentage = data.percentageUsed
+                          
+                          return (
+                            <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle">
+                              <tspan
+                                x={viewBox.cx}
+                                y={(viewBox.cy || 0) - 16}
+                                className="fill-foreground text-2xl font-bold"
+                              >
+                                {percentage}%
+                              </tspan>
+                              <tspan
+                                x={viewBox.cx}
+                                y={(viewBox.cy || 0) + 4}
+                                className="fill-muted-foreground text-xs"
+                              >
+                                {t("annual_budget.charts.budget_distribution.label.percentage_text")}
+                              </tspan>
+                              <tspan
+                                x={viewBox.cx}
+                                y={(viewBox.cy || 0) + 20}
+                                className="fill-muted-foreground text-xs font-medium"
+                              >
+                                {formatCurrency(data.allocated, currency, { compact: true })} / {formatCurrency(data.total, currency, { compact: true })}
+                              </tspan>
+                            </text>
+                          )
+                        }
+                      }}
                     />
-                  }
-                />
-                <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
-                  <RechartsLabel
-                    content={({ viewBox }) => {
-                      if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                        const percentage = data.percentageUsed
-                        
-                        return (
-                          <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle">
-                            <tspan
-                              x={viewBox.cx}
-                              y={(viewBox.cy || 0) - 16}
-                              className="fill-foreground text-2xl font-bold"
-                            >
-                              {percentage}%
-                            </tspan>
-                            <tspan
-                              x={viewBox.cx}
-                              y={(viewBox.cy || 0) + 4}
-                              className="fill-muted-foreground text-xs"
-                            >
-                              {t("annual_budget.charts.budget_distribution.label.percentage_text")}
-                            </tspan>
-                            <tspan
-                              x={viewBox.cx}
-                              y={(viewBox.cy || 0) + 20}
-                              className="fill-muted-foreground text-xs font-medium"
-                            >
-                              {formatCurrency(data.allocated, currency, { compact: true })} / {formatCurrency(data.total, currency, { compact: true })}
-                            </tspan>
-                          </text>
-                        )
+                  </PolarRadiusAxis>
+                  <RadialBar
+                    dataKey="allocated"
+                    stackId="a"
+                    cornerRadius={5}
+                    fill="var(--color-allocated)"
+                    className="stroke-transparent stroke-2"
+                  />
+                  <RadialBar
+                    dataKey="remaining"
+                    fill="var(--color-remaining)"
+                    stackId="a"
+                    cornerRadius={5}
+                    className="stroke-transparent stroke-2"
+                  />
+                </RadialBarChart>
+              </ChartContainer>
+            ) : (
+              // Pie Chart - Shows departments and available budget
+              <ChartContainer
+                config={chartConfig}
+                className="mx-auto aspect-square w-full max-w-[300px]"
+              >
+                <PieChart>
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent hideLabel />}
+                  />
+                  <Pie
+                    data={pieChartData}
+                    dataKey="amount"
+                    nameKey="name"
+                    innerRadius={60}
+                    strokeWidth={5}
+                    activeIndex={activeIndex}
+                    onClick={(data) => {
+                      // Allow clicking on pie sectors to select them
+                      if (data && data.name) {
+                        setActiveEntity(data.name)
                       }
                     }}
-                  />
-                </PolarRadiusAxis>
-                <RadialBar
-                  dataKey="allocated"
-                  stackId="a"
-                  cornerRadius={5}
-                  fill="var(--color-allocated)"
-                  className="stroke-transparent stroke-2"
-                />
-                <RadialBar
-                  dataKey="remaining"
-                  fill="var(--color-remaining)"
-                  stackId="a"
-                  cornerRadius={5}
-                  className="stroke-transparent stroke-2"
-                />
-              </RadialBarChart>
-            </ChartContainer>
-          ) : (
-            // Pie Chart
-            <ChartContainer
-              config={chartConfig}
-              className="mx-auto aspect-square w-full max-w-[350px]"
-            >
-              <PieChart>
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent hideLabel />}
-                />
-                <Pie
-                  data={pieChartData}
-                  dataKey="amount"
-                  nameKey="name"
-                  innerRadius={70}
-                  outerRadius={120}
-                  strokeWidth={5}
-                  activeIndex={activeIndex}
-                  onClick={(data, index) => {
-                    // Allow clicking on pie sectors to select them
-                    if (data && data.name) {
-                      setActiveEntity(data.name)
-                    }
-                  }}
-                  activeShape={({
-                    outerRadius = 0,
-                    ...props
-                  }: PieSectorDataItem) => (
-                    <g>
-                      <Sector {...props} outerRadius={outerRadius + 10} />
-                      <Sector
-                        {...props}
-                        outerRadius={outerRadius + 25}
-                        innerRadius={outerRadius + 12}
-                      />
-                    </g>
-                  )}
-                >
-                  <RechartsLabel
-                    content={({ viewBox }) => {
-                      if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                        const activeData = pieChartData[activeIndex]
-                        if (!activeData) return null
-                        
-                        return (
-                          <text
-                            x={viewBox.cx}
-                            y={viewBox.cy}
-                            textAnchor="middle"
-                            dominantBaseline="middle"
-                          >
-                            <tspan
+                    activeShape={({
+                      outerRadius = 0,
+                      ...props
+                    }: PieSectorDataItem) => (
+                      <g>
+                        <Sector {...props} outerRadius={outerRadius + 10} />
+                        <Sector
+                          {...props}
+                          outerRadius={outerRadius + 25}
+                          innerRadius={outerRadius + 12}
+                        />
+                      </g>
+                    )}
+                  >
+                    <RechartsLabel
+                      content={({ viewBox }) => {
+                        if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                          const activeData = pieChartData[activeIndex]
+                          if (!activeData) return null
+                          
+                          return (
+                            <text
                               x={viewBox.cx}
                               y={viewBox.cy}
-                              className="fill-foreground text-2xl font-bold"
+                              textAnchor="middle"
+                              dominantBaseline="middle"
                             >
-                              {formatCurrency(activeData.amount, currency, { compact: true })}
-                            </tspan>
-                            <tspan
-                              x={viewBox.cx}
-                              y={(viewBox.cy || 0) + 20}
-                              className="fill-muted-foreground text-xs"
-                            >
-                              {activeData.name}
-                            </tspan>
-                            <tspan
-                              x={viewBox.cx}
-                              y={(viewBox.cy || 0) + 36}
-                              className="fill-muted-foreground text-xs font-medium"
-                            >
-                              {activeData.percentage}% of total
-                            </tspan>
-                          </text>
-                        )
-                      }
-                    }}
-                  />
-                </Pie>
-              </PieChart>
-            </ChartContainer>
-          )}
-        </CardContent>
-        <CardFooter className="flex-col gap-2 text-xs pt-2">
-          {/* Minimalist footer - only show total values */}
-          <div className="w-full flex items-center justify-between text-xs border-t border-border pt-3">
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">Total Budget</span>
-            </div>
-            <span className="font-semibold text-foreground">
-              ${data.total.toLocaleString()}
-            </span>
-          </div>
+                              <tspan
+                                x={viewBox.cx}
+                                y={viewBox.cy}
+                                className="fill-foreground text-3xl font-bold"
+                              >
+                                {formatCurrency(activeData.amount, currency, { compact: true })}
+                              </tspan>
+                              <tspan
+                                x={viewBox.cx}
+                                y={(viewBox.cy || 0) + 24}
+                                className="fill-muted-foreground"
+                              >
+                                {activeData.name === "Available" ? "Available Budget" : activeData.name}
+                              </tspan>
+                            </text>
+                          )
+                        }
+                      }}
+                    />
+                  </Pie>
+                </PieChart>
+              </ChartContainer>
+            )}
+          </CardContent>
           
-          {chartType === "radial" && (
-            <>
-              <div className="w-full flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[hsl(348,83%,47%)]" />
-                  <span className="text-muted-foreground">Allocated</span>
-                </div>
-                <span className="font-medium text-red-600">
-                  {formatCurrency(data.allocated, currency)}
-                </span>
-              </div>
-              <div className="w-full flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[hsl(142,71%,45%)]" />
-                  <span className="text-muted-foreground">Available</span>
-                </div>
-                <span className="font-medium text-green-600">
-                  {formatCurrency(data.remaining, currency)}
-                </span>
-              </div>
-            </>
-          )}
-          
-          {chartType === "pie" && (
+          <CardFooter className="flex-col gap-2 text-xs pt-4 border-t">
+            {/* Minimalist footer - show total and selected entity */}
             <div className="w-full flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">Selected: {activeEntity}</span>
-              </div>
-              <span className="font-medium">
-                {formatCurrency(pieChartData.find(e => e.name === activeEntity)?.amount || 0, currency)}
-                <span className="text-muted-foreground ml-1">
-                  ({pieChartData.find(e => e.name === activeEntity)?.percentage}%)
+                <span className="text-muted-foreground">
+                  {chartType === "radial" ? "Total Budget" : "Total Institution Budget"}
                 </span>
+              </div>
+              <span className="font-semibold text-foreground">
+                {formatCurrency(data.total, currency)}
               </span>
             </div>
-          )}
-        </CardFooter>
-      </>
+            
+            {chartType === "radial" && (
+              <>
+                <div className="w-full flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-[hsl(348,83%,47%)]" />
+                    <span className="text-muted-foreground">Allocated to Departments</span>
+                  </div>
+                  <span className="font-medium text-red-600">
+                    {formatCurrency(data.allocated, currency)}
+                  </span>
+                </div>
+                <div className="w-full flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-[hsl(142,71%,45%)]" />
+                    <span className="text-muted-foreground">Available Budget</span>
+                  </div>
+                  <span className="font-medium text-green-600">
+                    {formatCurrency(data.remaining, currency)}
+                  </span>
+                </div>
+              </>
+            )}
+            
+            {chartType === "pie" && pieChartData[0]?.name !== "No Data" && (
+              <div className="w-full flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-2 h-2 rounded-full" 
+                    style={{ backgroundColor: pieChartData[activeIndex]?.fill }}
+                  />
+                  <span className="text-muted-foreground">
+                    Selected: {pieChartData[activeIndex]?.name === "Available" 
+                      ? "Available Budget" 
+                      : pieChartData[activeIndex]?.name}
+                  </span>
+                </div>
+                <span className="font-medium">
+                  {formatCurrency(pieChartData[activeIndex]?.amount || 0, currency)}
+                  <span className="text-muted-foreground ml-1">
+                    ({pieChartData[activeIndex]?.percentage}%)
+                  </span>
+                </span>
+              </div>
+            )}
+          </CardFooter>
+        </>
       )}
     </Card>
   )
