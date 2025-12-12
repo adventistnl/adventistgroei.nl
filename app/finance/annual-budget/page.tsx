@@ -314,13 +314,14 @@ export default function AnnualBudgetPage() {
       year: selectedYear,
       planned_budget: 0,
       total_expenses: 0,
+      allocated_amount: 0,
       balance: 0,
       notes: `Institution budget for ${selectedYear}`,
       approved_by: undefined,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
-    
+
     setInstitutionBudgetData(newBudget)
     setIsInstitutionBudgetModalOpen(true)
   }
@@ -880,7 +881,7 @@ export default function AnnualBudgetPage() {
             total_expenses: budget.total_expenses || 0,
             description: `Budget for ${departmentData.departmentName}`,
             justification: budget.notes || `Annual budget allocation for ${departmentData.departmentName}`,
-            allocated_amount: budget.planned_budget,
+            allocated_amount: budget.allocated_amount,
             entity_type: AnnualBudgetEntityType.INSTITUTION_DEPARTMENT,
             entity_id: departmentData.departmentId,
             notes: budget.notes,
@@ -900,6 +901,12 @@ export default function AnnualBudgetPage() {
   }
 
   const handleSaveInstitutionBudget = async (budget: AnnualBudgetData) => {
+    console.log('🔍 handleSaveInstitutionBudget - budget received:', budget)
+    console.log('📊 Values being sent:', {
+      total_expenses: budget.total_expenses,
+      allocated_amount: budget.allocated_amount,
+      planned_budget: budget.planned_budget
+    })
     try {
       const result = await createAnnualBudgetMutation({
         variables: {
@@ -908,7 +915,7 @@ export default function AnnualBudgetPage() {
           total_expenses: budget.total_expenses || 0,
           description: `Institution budget for ${budget.year}`,
           justification: budget.notes || `Annual budget allocation for institution operations in ${budget.year}`,
-          allocated_amount: budget.planned_budget,
+          allocated_amount: budget.allocated_amount || 0,
           entity_type: AnnualBudgetEntityType.INSTITUTION,
           entity_id: currentInstitutionData?.id || '',
           notes: budget.notes,
@@ -932,11 +939,6 @@ export default function AnnualBudgetPage() {
       return
     }
 
-    if (!selectedRequest) {
-      toast.error(t('annual_budget.messages.no_budget_selected'))
-      return
-    }
-
     try {
       const result = await updateAnnualBudgetMutation({
         variables: {
@@ -946,8 +948,8 @@ export default function AnnualBudgetPage() {
             total_expenses: budget.total_expenses,
             description: `Updated budget for ${budget.year}`,
             justification: budget.notes || `Updated budget allocation`,
-            priority: selectedRequest.priority as any,
-            category: selectedRequest.category as any,
+            priority: selectedRequest?.priority as any,
+            category: selectedRequest?.category as any,
             notes: budget.notes,
           }
         }
@@ -1493,6 +1495,32 @@ export default function AnnualBudgetPage() {
             />
           )}
 
+          {/* Institution Budget Modal */}
+          {isInstitutionBudgetModalOpen && (
+            <AnnualBudgetViewEditModal
+              isOpen={isInstitutionBudgetModalOpen}
+              onOpenChange={(open) => {
+                setIsInstitutionBudgetModalOpen(open)
+                if (!open) {
+                  setInstitutionBudgetData(null)
+                }
+              }}
+              budget={institutionBudgetData}
+              entityName={currentInstitutionData?.name || 'Institution'}
+              entityType="Institution"
+              isLocked={institutionAnnualBudgets[selectedYear]?.is_locked || false}
+              onSave={(budget) => {
+                // If budget has a real ID (not the temporary one), update it, otherwise create new
+                if (institutionAnnualBudgets[selectedYear]?.id) {
+                  handleUpdateBudget(budget)
+                } else {
+                  handleSaveInstitutionBudget(budget)
+                }
+              }}
+              defaultYear={selectedYear}
+            />
+          )}
+
           {/* Institution Lock Confirmation Modal */}
           <ConfirmationModal
             isOpen={isInstitutionLockConfirmModalOpen}
@@ -1501,14 +1529,14 @@ export default function AnnualBudgetPage() {
             variant="default"
             icon={Lock}
             title={t('annual_budget.modals.lock_institution_budget.title', 'Lock Institution Budget')}
-            description={t('annual_budget.modals.lock_institution_budget.warning', 
+            description={t('annual_budget.modals.lock_institution_budget.warning',
               'This action will lock the institution budget and prevent any further modifications.')}
             impacts={[
-              t('annual_budget.modals.lock_institution_budget.impact_1', 
+              t('annual_budget.modals.lock_institution_budget.impact_1',
                 'All existing department budgets will be locked automatically'),
-              t('annual_budget.modals.lock_institution_budget.impact_2', 
+              t('annual_budget.modals.lock_institution_budget.impact_2',
                 'No new department budgets can be created'),
-              t('annual_budget.modals.lock_institution_budget.impact_3', 
+              t('annual_budget.modals.lock_institution_budget.impact_3',
                 'Departments without budgets will remain without budgets')
             ]}
             confirmText={t('annual_budget.modals.buttons.confirm_lock', 'Yes, Lock Budget')}
@@ -1517,7 +1545,7 @@ export default function AnnualBudgetPage() {
             closeOnConfirm={false}
           >
             <p className="text-sm text-muted-foreground">
-              {t('annual_budget.modals.lock_institution_budget.question', 
+              {t('annual_budget.modals.lock_institution_budget.question',
                 'Are you sure you want to proceed with locking the institution budget?')}
             </p>
           </ConfirmationModal>
