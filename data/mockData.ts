@@ -1521,7 +1521,30 @@ export const mockProjectActivities = [
     start_date: "2024-03-15",
     end_date: "2024-05-30",
     created_at: "2024-03-01T10:30:00Z",
-    updated_at: "2024-04-15T14:20:00Z"
+    updated_at: "2024-04-15T14:20:00Z",
+    assigned_users: [
+      {
+        id: '1',
+        name: 'João Silva',
+        email: 'joao.silva@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=1',
+        role: 'Coordenador'
+      },
+      {
+        id: '2',
+        name: 'Maria Santos',
+        email: 'maria.santos@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=5',
+        role: 'Tesoureiro'
+      },
+      {
+        id: '3',
+        name: 'Pedro Costa',
+        email: 'pedro.costa@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=3',
+        role: 'Secretário'
+      }
+    ]
   },
   {
     id: "act-2", 
@@ -1539,7 +1562,16 @@ export const mockProjectActivities = [
     start_date: "2024-03-01",
     end_date: "2024-03-31",
     created_at: "2024-03-01T10:30:00Z",
-    updated_at: "2024-03-31T16:45:00Z"
+    updated_at: "2024-03-31T16:45:00Z",
+    assigned_users: [
+      {
+        id: '4',
+        name: 'Ana Oliveira',
+        email: 'ana.oliveira@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=9',
+        role: 'Membro'
+      }
+    ]
   },
   {
     id: "act-3",
@@ -1576,7 +1608,37 @@ export const mockProjectActivities = [
     start_date: "2024-02-20",
     end_date: "2024-08-15",
     created_at: "2024-02-15T11:20:00Z",
-    updated_at: "2024-04-20T15:10:00Z"
+    updated_at: "2024-04-20T15:10:00Z",
+    assigned_users: [
+      {
+        id: '5',
+        name: 'Carlos Ferreira',
+        email: 'carlos.ferreira@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=7',
+        role: 'Diácono'
+      },
+      {
+        id: '6',
+        name: 'Beatriz Lima',
+        email: 'beatriz.lima@adventist.nl',
+        initials: 'BL',
+        role: 'Anciã'
+      },
+      {
+        id: '1',
+        name: 'João Silva',
+        email: 'joao.silva@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=1',
+        role: 'Coordenador'
+      },
+      {
+        id: '2',
+        name: 'Maria Santos',
+        email: 'maria.santos@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=5',
+        role: 'Tesoureiro'
+      }
+    ]
   },
   {
     id: "act-5",
@@ -1594,7 +1656,23 @@ export const mockProjectActivities = [
     start_date: "2024-03-01",
     end_date: "2024-07-31",
     created_at: "2024-02-15T11:20:00Z",
-    updated_at: "2024-04-10T13:25:00Z"
+    updated_at: "2024-04-10T13:25:00Z",
+    assigned_users: [
+      {
+        id: '3',
+        name: 'Pedro Costa',
+        email: 'pedro.costa@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=3',
+        role: 'Secretário'
+      },
+      {
+        id: '4',
+        name: 'Ana Oliveira',
+        email: 'ana.oliveira@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=9',
+        role: 'Membro'
+      }
+    ]
   },
   {
     id: "act-6",
