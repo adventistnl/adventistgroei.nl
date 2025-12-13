@@ -5,6 +5,7 @@ export interface ProjectActivity {
   budget_amount: number
   request_subsidy: boolean
   is_subsidized: boolean
+  institution_requested_amount?: number
   tags: string[]
 }
 

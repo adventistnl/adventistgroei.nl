@@ -319,7 +319,7 @@ function ProjectRegisterContent() {
       if (typeof draft?.currentStep === 'number') setCurrentStep(draft.currentStep)
       if (draft?.currentActivity) setCurrentActivity(prev => ({ ...prev, ...draft.currentActivity }))
       if (draft?.editingActivityId) setEditingActivityId(draft.editingActivityId)
-      toast.success((translations as any).toast?.draftLoaded || 'Rascunho carregado')
+      toast.success(translations.toast.draftLoaded)
     } catch (err) {
       // ignore parse errors
     }
@@ -357,7 +357,7 @@ function ProjectRegisterContent() {
   const clearDraft = () => {
     try {
       sessionStorage.removeItem(DRAFT_KEY)
-      toast.success((translations as any).toast?.draftCleared || 'Rascunho limpo')
+      toast.success(translations.toast.draftCleared)
     } catch {
       // ignore
     }
@@ -413,7 +413,7 @@ function ProjectRegisterContent() {
       
       // Add to deleted activities
       setDeletedActivities(prev => [...prev, activityToDelete])
-      toast.success(`${activityToDelete.name} movida para lixeira`)
+      toast.success(translations.toast.activityMovedToTrash.replace('{{name}}', activityToDelete.name))
       return
     }
     
@@ -474,13 +474,13 @@ function ProjectRegisterContent() {
       ...prev,
       activities: [...prev.activities, deletedActivity]
     }))
-    toast.success(`${deletedActivity.name} restaurada`)
+    toast.success(translations.toast.activityRestored.replace('{{name}}', deletedActivity.name))
   }
 
   const clearAllDeletedActivities = () => {
     const count = deletedActivities.length
     setDeletedActivities([])
-    toast.success(`${count} atividades removidas permanentemente`)
+    toast.success(translations.toast.activitiesPermanentlyDeleted.replace('{{count}}', count.toString()))
   }
 
   const deleteActivityPermanently = (activityId: string) => {
@@ -582,31 +582,31 @@ function ProjectRegisterContent() {
 
   const getStepConfig = () => {
     let stepConfig = [
-      { id: 1, title: "Dados do Projeto", description: "Informações básicas" },
-      { id: 2, title: "Atividades", description: "Configure as atividades" },
-      { id: 3, title: "Distribuição de Fundos", description: "Configure os fundos" },
+      { id: 1, title: translations.steps.projectInfo.title, description: translations.steps.projectInfo.description },
+      { id: 2, title: translations.steps.activities.title, description: translations.steps.activities.description },
+      { id: 3, title: translations.steps.funding.title, description: translations.steps.funding.description },
     ]
 
     // Add optional event registration step
     if (formData.register_as_event && !formData.is_private) {
       stepConfig.push({
         id: stepConfig.length + 1,
-        title: "Registro de Evento",
-        description: "Configure o evento"
+        title: translations.steps.eventRegistration.title,
+        description: translations.steps.eventRegistration.description
       })
       
       stepConfig.push({
         id: stepConfig.length + 1,
-        title: "Comunicação",
-        description: "Configure a comunicação"
+        title: translations.steps.communication.title,
+        description: translations.steps.communication.description
       })
     }
 
     // Always add review step at the end
     stepConfig.push({
       id: stepConfig.length + 1,
-      title: "Revisão",
-      description: "Confirme os dados"
+      title: translations.steps.review.title,
+      description: translations.steps.review.description
     })
 
     return stepConfig
@@ -784,7 +784,7 @@ function ProjectRegisterContent() {
     
     // Check by step title since IDs are dynamic
     switch (currentStepConfig.title) {
-      case "Dados do Projeto":
+      case translations.steps.projectInfo.title:
         return (
           <ProjectDataStep
             formData={formData}
@@ -794,15 +794,15 @@ function ProjectRegisterContent() {
             onChange={(updates) => setFormData({ ...formData, ...updates })}
           />
         )
-      case "Atividades":
+      case translations.steps.activities.title:
         return renderActivitiesStep()
-      case "Distribuição de Fundos":
+      case translations.steps.funding.title:
         return renderFundingDistributionStep()
-      case "Registro de Evento":
+      case translations.steps.eventRegistration.title:
         return renderEventRegistrationStep()
-      case "Comunicação":
+      case translations.steps.communication.title:
         return renderCommunicationStep()
-      case "Revisão":
+      case translations.steps.review.title:
         return renderReviewStep()
       default:
         return null
@@ -1758,9 +1758,12 @@ function ProjectRegisterContent() {
                               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">€</span>
                               <Input
                                 type="number"
-                                value={manualAmount || institutionContribution}
-                                placeholder={institutionContribution.toFixed(2)}
-                                onChange={(e) => handleManualAmountChange(Number(e.target.value))}
+                                value={manualAmount || ''}
+                                placeholder="0"
+                                onChange={(e) => {
+                                  const value = e.target.value === '' ? 0 : Number(e.target.value)
+                                  handleManualAmountChange(value)
+                                }}
                                 className="pl-8"
                                 min={0}
                                 max={subsidyTotal}
@@ -1784,7 +1787,7 @@ function ProjectRegisterContent() {
                             </Button>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Máximo: € {subsidyTotal.toLocaleString()} (valor das atividades subsidiadas)
+                            Máximo: € {subsidyTotal.toLocaleString()} ({(isSpecialProject || isChurchPlanting) ? '100' : FUNDING_POLICIES.max_institution_percent}% = € {((subsidyTotal * ((isSpecialProject || isChurchPlanting) ? 100 : FUNDING_POLICIES.max_institution_percent)) / 100).toLocaleString()})
                           </p>
                         </div>
                         
@@ -1797,9 +1800,12 @@ function ProjectRegisterContent() {
                             <div className="relative flex-1">
                               <Input
                                 type="number"
-                                value={manualPercentage || Math.round(currentSubsidyPercentage)}
-                                placeholder={Math.round(currentSubsidyPercentage).toString()}
-                                onChange={(e) => handleManualPercentageChange(Number(e.target.value))}
+                                value={manualPercentage || ''}
+                                placeholder="0"
+                                onChange={(e) => {
+                                  const value = e.target.value === '' ? 0 : Number(e.target.value)
+                                  handleManualPercentageChange(value)
+                                }}
                                 className="pr-8"
                                 min={0}
                                 max={(isSpecialProject || isChurchPlanting) ? 100 : FUNDING_POLICIES.max_institution_percent}
@@ -1822,13 +1828,13 @@ function ProjectRegisterContent() {
                               MAX
                             </Button>
                           </div>
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-xs text-muted-foreground">
                             <div>Aplicado sobre € {subsidyTotal.toLocaleString()}</div>
-                            <div className="text-right">
+                            <div className="text-left sm:text-right">
                               <span>Máximo: </span>
                               <span className="font-medium">{(isSpecialProject || isChurchPlanting) ? '100' : FUNDING_POLICIES.max_institution_percent}%</span>
                               {(isSpecialProject || isChurchPlanting) && (
-                                <span className="text-green-600 font-medium"> • Modo especial ativo</span>
+                                <span className="text-green-600 font-medium"> • Especial</span>
                               )}
                             </div>
                           </div>
@@ -1878,7 +1884,7 @@ function ProjectRegisterContent() {
               )}
 
               {/* Detailed Results Display */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
                 {/* Church Contribution Card */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -1896,7 +1902,7 @@ function ProjectRegisterContent() {
                     </Tooltip>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-blue-600">
+                    <div className="text-xl sm:text-2xl font-bold text-blue-600">
                       € {churchContribution.toLocaleString()}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -1925,7 +1931,7 @@ function ProjectRegisterContent() {
                     </Tooltip>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-xl sm:text-2xl font-bold text-green-600">
                       € {institutionContribution.toLocaleString()}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">

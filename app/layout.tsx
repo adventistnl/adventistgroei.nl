@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/auth-context"
 import { PageProvider } from "@/contexts/page-context"
 import { InstitutionProvider } from "@/contexts/institution-context"
 import { NavigationLoadingProvider } from "@/contexts/navigation-loading-context"
+import { CurrencyProvider } from "@/contexts/currency-context"
 import { I18nProvider } from "@/lib/i18n/i18n-provider"
 import { PrivacyProviderWithAuth } from "@/components/shared/privacy-provider-with-auth"
 import { PrivacyDebugPanel } from "@/components/shared/privacy-debug-panel"
@@ -33,14 +34,16 @@ export default function RootLayout({
             <AuthProvider>
               <PrivacyProviderWithAuth>
                 <InstitutionProvider>
-                  <PageProvider>
-                    <NavigationLoadingProvider>
-                      {children}
-                      <ToastProvider />
-                      <PrivacyDebugPanel />
-                      <PrivacyButtonDebugPanel />
-                    </NavigationLoadingProvider>
-                  </PageProvider>
+                  <CurrencyProvider>
+                    <PageProvider>
+                      <NavigationLoadingProvider>
+                        {children}
+                        <ToastProvider />
+                        <PrivacyDebugPanel />
+                        <PrivacyButtonDebugPanel />
+                      </NavigationLoadingProvider>
+                    </PageProvider>
+                  </CurrencyProvider>
                 </InstitutionProvider>
               </PrivacyProviderWithAuth>
             </AuthProvider>

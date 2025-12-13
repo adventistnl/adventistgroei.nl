@@ -28,10 +28,14 @@ import {
   Image,
   FileImage,
   PanelRight,
-  Flag
+  Flag,
+  Building2,
+  Church,
+  UserPlus
 } from "lucide-react"
 import { ProjectActivityData } from "../../projects/project-activities-table"
 import { Badge } from "@/components/ui/badge"
+import { TagBadge } from "@/components/ui/tag-badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -44,7 +48,9 @@ import {
 } from "@/components/ui/tooltip"
 import { Editor } from "@/components/blocks/editor-x/editor"
 import { useTranslation } from "react-i18next"
+import { useCurrency } from "@/contexts/currency-context"
 import toast from "react-hot-toast"
+import { UserAssignment, type User } from "@/components/shared/user-assignment"
 
 export interface ActivityDocument {
   id: string
@@ -74,6 +80,7 @@ export function ActivityDetailsModal({
   project
 }: ActivityDetailsModalProps) {
   const { t } = useTranslation()
+  const { formatCurrency: formatCurrencyGlobal } = useCurrency()
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [hasChanges, setHasChanges] = useState(false)
   const [isSystemInfoOpen, setIsSystemInfoOpen] = useState(false)
@@ -83,6 +90,36 @@ export function ActivityDetailsModal({
   const [editorState, setEditorState] = useState<any>(null)
   const [isDescriptionEditing, setIsDescriptionEditing] = useState(false)
   
+  // Assigned users state
+  const [assignedUsers, setAssignedUsers] = useState<User[]>(
+    activity?.assigned_users || [
+      {
+        id: '1',
+        name: 'João Silva',
+        email: 'joao.silva@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=1',
+        role: 'Coordenador'
+      },
+      {
+        id: '2',
+        name: 'Maria Santos',
+        email: 'maria.santos@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=5',
+        role: 'Tesoureiro'
+      }
+    ]
+  )
+  
+  // Mock available users for assignment
+  const availableUsers: User[] = [
+    { id: '1', name: 'João Silva', email: 'joao.silva@adventist.nl', avatar: 'https://i.pravatar.cc/150?img=1', role: 'Coordenador' },
+    { id: '2', name: 'Maria Santos', email: 'maria.santos@adventist.nl', avatar: 'https://i.pravatar.cc/150?img=5', role: 'Tesoureiro' },
+    { id: '3', name: 'Pedro Costa', email: 'pedro.costa@adventist.nl', avatar: 'https://i.pravatar.cc/150?img=3', role: 'Secretário' },
+    { id: '4', name: 'Ana Oliveira', email: 'ana.oliveira@adventist.nl', avatar: 'https://i.pravatar.cc/150?img=9', role: 'Membro' },
+    { id: '5', name: 'Carlos Ferreira', email: 'carlos.ferreira@adventist.nl', avatar: 'https://i.pravatar.cc/150?img=7', role: 'Diácono' },
+    { id: '6', name: 'Beatriz Lima', email: 'beatriz.lima@adventist.nl', role: 'Anciã' },
+  ]
+  
   // Form states
   const [formData, setFormData] = useState({
     name: activity?.name || "",
@@ -91,8 +128,18 @@ export function ActivityDetailsModal({
     activity_tag: activity?.activity_tag || "",
     budget_amount: activity?.budget_amount || 0,
     description: activity?.description || "Esta é uma descrição de teste para demonstrar o funcionamento do editor rico.\n\nVocê pode formatar o texto, adicionar listas, links e outros elementos.\n\nClique no botão de editar para modificar este conteúdo usando o editor avançado.",
-    is_subsidized: activity?.is_subsidized || false
+    is_subsidized: activity?.is_subsidized || false,
+    institution_requested_amount: activity?.institution_requested_amount || 0
   })
+
+  // Funding rules configuration
+  const FUNDING_POLICIES = {
+    max_institution_percent: 65,
+    max_institution_amount: 5000,
+    min_church_percent: 35,
+    default_church_percent: 35,
+    default_institution_percent: 65
+  }
 
   // Mock documents data
   const [documents, setDocuments] = useState<ActivityDocument[]>([
@@ -129,10 +176,30 @@ export function ActivityDetailsModal({
         activity_tag: activity.activity_tag,
         budget_amount: activity.budget_amount,
         description: activity.description,
-        is_subsidized: activity.is_subsidized
+        is_subsidized: activity.is_subsidized,
+        institution_requested_amount: activity.institution_requested_amount || 0
       })
     }
   }, [activity])
+
+  // Recalculate institution amount when budget changes to prevent negative values
+  useEffect(() => {
+    if (formData.is_subsidized && formData.budget_amount > 0) {
+      const maxAllowed = (formData.budget_amount * FUNDING_POLICIES.max_institution_percent) / 100
+      
+      // If current institution amount exceeds new maximum, adjust it
+      if (formData.institution_requested_amount > maxAllowed) {
+        setFormData(prev => ({
+          ...prev,
+          institution_requested_amount: maxAllowed
+        }))
+        toast(`Valor da instituição ajustado para ${formatCurrencyGlobal(maxAllowed)} (máximo permitido)`, {
+          icon: 'ℹ️',
+          duration: 3000,
+        })
+      }
+    }
+  }, [formData.budget_amount, formData.is_subsidized])
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -236,11 +303,8 @@ export function ActivityDetailsModal({
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 0,
-    }).format(amount)
+    // Use global currency formatter
+    return formatCurrencyGlobal(amount)
   }
 
   const formatDate = (dateString: string) => {
@@ -273,6 +337,11 @@ export function ActivityDetailsModal({
     if (e.target === e.currentTarget) {
       onClose()
     }
+  }
+
+  const handleAssignmentChange = (users: User[]) => {
+    setAssignedUsers(users)
+    setHasChanges(true)
   }
 
   return (
@@ -346,8 +415,8 @@ export function ActivityDetailsModal({
 
         {/* Status, Priority and Category Section */}
         <div className="p-4 border-b border-gray-200 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {/* Status */}
               <div className="flex items-center gap-3">
                 <Label className="text-sm font-medium text-gray-700">{t('activities.modal.status')}:</Label>
@@ -381,17 +450,16 @@ export function ActivityDetailsModal({
                   </Select>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <Badge 
-                      variant="outline" 
-                      className={`px-3 py-1 text-sm font-medium ${
-                        formData.status === 'todo' ? 'bg-gray-100 text-gray-800 border-gray-200' :
-                        formData.status === 'in_progress' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                        formData.status === 'completed' ? 'bg-green-100 text-green-800 border-green-200' :
-                        'bg-yellow-100 text-yellow-800 border-yellow-200'
-                      }`}
-                    >
-                      {getStatusLabel(formData.status)}
-                    </Badge>
+                    <TagBadge
+                      label={getStatusLabel(formData.status)}
+                      variant={
+                        formData.status === 'todo' ? 'gray' :
+                        formData.status === 'in_progress' ? 'blue' :
+                        formData.status === 'completed' ? 'green' :
+                        'yellow'
+                      }
+                      size="md"
+                    />
                     <Button
                       variant="ghost"
                       size="sm"
@@ -438,17 +506,16 @@ export function ActivityDetailsModal({
                   </Select>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <Badge 
-                      variant="outline" 
-                      className={`px-3 py-1 text-sm font-medium ${
-                        formData.priority === 'urgent' ? 'bg-red-100 text-red-800 border-red-200' :
-                        formData.priority === 'high' ? 'bg-orange-100 text-orange-800 border-orange-200' :
-                        formData.priority === 'medium' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
-                        'bg-green-100 text-green-800 border-green-200'
-                      }`}
-                    >
-                      {getPriorityLabel(formData.priority)}
-                    </Badge>
+                    <TagBadge
+                      label={getPriorityLabel(formData.priority)}
+                      variant={
+                        formData.priority === 'urgent' ? 'red' :
+                        formData.priority === 'high' ? 'orange' :
+                        formData.priority === 'medium' ? 'yellow' :
+                        'green'
+                      }
+                      size="md"
+                    />
                     <Button
                       variant="ghost"
                       size="sm"
@@ -494,17 +561,20 @@ export function ActivityDetailsModal({
                   </Select>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <Badge 
-                      variant="outline" 
-                      className={`px-3 py-1 text-sm font-medium ${
-                        formData.activity_tag === 'reforma' ? 'bg-purple-100 text-purple-800 border-purple-200' :
-                        formData.activity_tag === 'material' ? 'bg-cyan-100 text-cyan-800 border-cyan-200' :
-                        'bg-indigo-100 text-indigo-800 border-indigo-200'
-                      }`}
-                    >
-                      <span className="mr-1">{getActivityTagIcon(formData.activity_tag)}</span>
-                      {getTagLabel(formData.activity_tag)}
-                    </Badge>
+                    <TagBadge
+                      label={getTagLabel(formData.activity_tag)}
+                      variant={
+                        formData.activity_tag === 'reforma' ? 'purple' :
+                        formData.activity_tag === 'material' ? 'cyan' :
+                        'indigo'
+                      }
+                      icon={
+                        formData.activity_tag === 'reforma' ? Wrench :
+                        formData.activity_tag === 'material' ? Package :
+                        GraduationCap
+                      }
+                      size="md"
+                    />
                     <Button
                       variant="ghost"
                       size="sm"
@@ -516,6 +586,23 @@ export function ActivityDetailsModal({
                   </div>
                 )}
               </div>
+
+              {/* Assigned Users */}
+              <UserAssignment
+                assignedUsers={assignedUsers}
+                availableUsers={availableUsers}
+                onAssignmentChange={handleAssignmentChange}
+                label="Responsáveis"
+                avatarSize="md"
+                maxAvatarsDisplay={3}
+                showCount
+                enableSearch
+                toastMessages={{
+                  assigned: (name) => `${name} atribuído à atividade`,
+                  removed: (name) => `${name} removido da atividade`
+                }}
+                compact={false}
+              />
             </div>
 
             {/* Subsidy Icon - Right Side */}
@@ -555,64 +642,215 @@ export function ActivityDetailsModal({
             </div>
           </div>
 
-          {/* Budget Section */}
-          <div className={`rounded-lg p-4 ${
-            formData.is_subsidized 
-              ? 'bg-green-50 border-2 border-green-200' 
-              : 'bg-gray-50 border-2 border-gray-200'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                  formData.is_subsidized 
-                    ? 'bg-green-100' 
-                    : 'bg-gray-100'
-                }`}>
-                  <DollarSign className={`w-4 h-4 ${
-                    formData.is_subsidized ? 'text-green-600' : 'text-gray-600'
-                  }`} />
+          {/* Budget Section - KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Total Budget Card */}
+            <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-white dark:bg-gray-900">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                  <Label className="text-xs font-medium text-gray-600 dark:text-gray-300">Orçamento Total</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">Valor total do orçamento desta atividade</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
-                <div>
-                  <Label className="text-xs font-medium text-gray-600 mb-1 block">{t('activities.modal.total_budget')}</Label>
-                  {editingField === 'budget' ? (
-                    <Input
-                      type="number"
-                      value={formData.budget_amount}
-                      onChange={(e) => handleInputChange('budget_amount', Number(e.target.value))}
-                      onBlur={() => setEditingField(null)}
-                      className="text-lg font-bold h-8 border-0 p-0 focus-visible:ring-0 bg-transparent"
-                      placeholder="0,00"
-                      autoFocus
-                    />
-                  ) : (
-                    <span className="text-lg font-bold text-gray-900">
-                      {formatCurrency(formData.budget_amount)}
-                    </span>
-                  )}
-                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setEditingField('budget')}
+                  className="h-5 w-5 p-0 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                >
+                  <Edit3 className="w-3 h-3" />
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setEditingField('budget')}
-                className={`h-6 w-6 p-0 ${
+              {editingField === 'budget' ? (
+                <Input
+                  type="number"
+                  value={formData.budget_amount}
+                  onChange={(e) => handleInputChange('budget_amount', Number(e.target.value))}
+                  onBlur={() => setEditingField(null)}
+                  className="text-lg font-bold h-8 border-0 p-0 focus-visible:ring-0 bg-transparent dark:text-white"
+                  autoFocus
+                />
+              ) : (
+                <div className="text-lg font-bold text-gray-900 dark:text-white">
+                  {formatCurrency(formData.budget_amount)}
+                </div>
+              )}
+            </div>
+
+            {/* Institution Requested Amount Card - Only if subsidized */}
+            {formData.is_subsidized && (
+              <div className="rounded-lg border border-gray-300 dark:border-gray-600 p-3 bg-gray-50 dark:bg-gray-800 relative">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-3.5 h-3.5 text-gray-600 dark:text-gray-300" />
+                    <Label className="text-xs font-medium text-gray-700 dark:text-gray-200">Instituição</Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">Valor solicitado à instituição (máximo {FUNDING_POLICIES.max_institution_percent}% do orçamento)</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {editingField === 'institution_amount' ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditingField(null)
+                          toast.success('Valor atualizado com sucesso')
+                        }}
+                        className="h-5 w-5 p-0 text-grey-400 hover:text-grey-600 hover:bg-grey-60 dark:text-grey-600 dark:hover:text-grey-600"
+                        title="Confirmar alteração"
+                      >
+                      <Check className="w-3.5 h-3.5" />
+                      {/* <span>save</span> */}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingField('institution_amount')}
+                        className="h-5 w-5 p-0 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                {editingField === 'institution_amount' ? (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400">
+                          {formatCurrency(0).replace(/[\d.,\s]/g, '')}
+                        </span>
+                        <Input
+                          type="number"
+                          value={formData.institution_requested_amount || ''}
+                          placeholder="0"
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : Number(e.target.value)
+                            // Calculate max allowed based on funding rules
+                            const maxAllowed = (formData.budget_amount * FUNDING_POLICIES.max_institution_percent) / 100
+                            if (value <= maxAllowed) {
+                              handleInputChange('institution_requested_amount', value)
+                            } else {
+                              toast.error(`Valor máximo permitido: ${formatCurrency(maxAllowed)} (${FUNDING_POLICIES.max_institution_percent}% do orçamento)`)
+                            }
+                          }}
+                          className="text-lg font-bold h-8 border-0 pl-6 pr-2 py-0 focus-visible:ring-0 bg-transparent dark:text-white"
+                          autoFocus
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          // Calculate max allowed based on funding rules
+                          const maxAllowed = (formData.budget_amount * FUNDING_POLICIES.max_institution_percent) / 100
+                          handleInputChange('institution_requested_amount', maxAllowed)
+                        }}
+                        className="h-8 px-3 text-xs font-mono shrink-0"
+                        title="Aplicar máximo permitido (65% do orçamento)"
+                      >
+                        MAX
+                      </Button>
+                    </div>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                      Máximo: {formatCurrency((formData.budget_amount * FUNDING_POLICIES.max_institution_percent) / 100)} ({FUNDING_POLICIES.max_institution_percent}% do orçamento)
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-lg font-bold text-gray-800 dark:text-gray-100">
+                    {formatCurrency(formData.institution_requested_amount || 0)}
+                  </div>
+                )}
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  {formData.budget_amount > 0 
+                    ? `${Math.round(((formData.institution_requested_amount || 0) / formData.budget_amount) * 100)}% do total`
+                    : '0% do total'
+                  }
+                </p>
+              </div>
+            )}
+
+            {/* Church Contribution Card */}
+            <div className="rounded-lg border border-gray-400 dark:border-gray-500 p-3 bg-gray-100 dark:bg-gray-700">
+              <div className="flex items-center gap-2 mb-2">
+                <Church className="w-3.5 h-3.5 text-gray-700 dark:text-gray-200" />
+                <Label className="text-xs font-medium text-gray-800 dark:text-gray-100">Igreja</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">Contribuição da igreja (mínimo {FUNDING_POLICIES.min_church_percent}% do orçamento)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="text-lg font-bold text-gray-900 dark:text-white">
+                {formatCurrency(
                   formData.is_subsidized 
-                    ? 'text-green-400 hover:text-green-600 hover:bg-green-100' 
-                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <Edit3 className="w-4 h-4" />
-              </Button>
+                    ? formData.budget_amount - (formData.institution_requested_amount || 0)
+                    : formData.budget_amount
+                )}
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                {formData.is_subsidized && formData.budget_amount > 0
+                  ? `${Math.round(((formData.budget_amount - (formData.institution_requested_amount || 0)) / formData.budget_amount) * 100)}% do total`
+                  : '100% do total'
+                }
+              </p>
             </div>
           </div>
+
+          {/* Funding Rules Badges */}
+          {formData.is_subsidized && (
+            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Regras de Financiamento:</span>
+                <TagBadge
+                  label={`Máx. Instituição: ${FUNDING_POLICIES.max_institution_percent}%`}
+                  variant="blue"
+                  size="xs"
+                />
+                <TagBadge
+                  label={`Mín. Igreja: ${FUNDING_POLICIES.min_church_percent}%`}
+                  variant="green"
+                  size="xs"
+                />
+                <TagBadge
+                  label={`Limite: ${formatCurrency(FUNDING_POLICIES.max_institution_amount)}`}
+                  variant="purple"
+                  size="xs"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Main Content with Drawer */}
         <div className="flex flex-1 overflow-hidden">
           {/* Main Content */}
-          <div className={`flex-1 overflow-y-auto p-6 space-y-6 transition-all duration-300 ${
-            isSystemInfoOpen ? 'mr-64' : ''
-          }`}>
+          <div className={`flex-1 overflow-y-auto p-6 space-y-6 transition-all duration-300`}>
             
             {/* Description with Conditional Editor */}
             <div className="space-y-4">
