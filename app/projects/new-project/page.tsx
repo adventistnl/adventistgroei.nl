@@ -796,6 +796,45 @@ function ProjectRegisterContent() {
     const loadingToast = toast.loading(isEditing ? translations.toast.updatingProject : translations.toast.creatingProject)
 
     try {
+      // Map tag strings to ActivityTags enum
+      const mapTagToEnum = (tag: string): string => {
+        const tagMap: Record<string, string> = {
+          'Equipamentos': 'EQUIPMENT',
+          'Materiais': 'MATERIALS',
+          'Serviços': 'SERVICES',
+          'Viagens': 'TRAVEL',
+          'Eventos': 'EVENT',
+          'Transporte': 'TRANSPORT',
+          'Marketing': 'MARKETING',
+          'Reforma': 'REFORM',
+          'Treinamento': 'TRAINING',
+          'Alimentação': 'FEEDING',
+          'Hospedagem': 'ACCOMMODATION',
+        }
+        return tagMap[tag] || 'MATERIALS'
+      }
+
+      // Map activities to backend format
+      const mappedActivities = formData.activities.map(activity => {
+        const activityDeadline = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString() // 60 days from now
+        const ownerId = formData.responsible_id || institutionId || ''
+
+        return {
+          name: activity.name,
+          description: activity.description,
+          budget_amount: activity.budget_amount,
+          deadline: activityDeadline,
+          owner_id: ownerId,
+          tags: activity.tags.map(mapTagToEnum),
+          activity_funding: {
+            entity_contribution_amount: activity.institution_requested_amount || (activity.is_subsidized ? activity.budget_amount * 0.65 : 0),
+            entity_contribution_percent: activity.is_subsidized ? 65 : 0,
+            entity_type: 'INSTITUTION',
+            entity_id: institutionId || '',
+          }
+        }
+      })
+
       // Prepare variables for GraphQL mutation
       const variables: any = {
         title: formData.title,
@@ -809,6 +848,12 @@ function ProjectRegisterContent() {
         is_private: formData.is_private || false,
         required_volunteers: false, // Adjust based on your needs
         is_event: formData.register_as_event || false,
+        owner_id: formData.responsible_id,
+        activities: mappedActivities,
+        is_special_case: isSpecialProject || isChurchPlanting || false,
+        special_case_reason: isChurchPlanting ? churchPlantingJustification : specialProjectJustification,
+        location_church_plant: formData.location_church_plant,
+        special_budget: formData.special_budget,
       }
 
       // Add event data if registering as event

@@ -17,6 +17,11 @@ export const CREATE_PROJECT_MUTATION = gql`
     $owner_id: String
     $deadline: String
     $event: EventCreateDto
+    $activities: [ProjectActivityCreateDto!]
+    $is_special_case: Boolean
+    $special_case_reason: String
+    $location_church_plant: String
+    $special_budget: Float
   ) {
     createProject(
       data: {
@@ -35,6 +40,11 @@ export const CREATE_PROJECT_MUTATION = gql`
         owner_id: $owner_id
         deadline: $deadline
         event: $event
+        activities: $activities
+        is_special_case: $is_special_case
+        special_case_reason: $special_case_reason
+        location_church_plant: $location_church_plant
+        special_budget: $special_budget
       }
     ) {
       id
@@ -54,6 +64,17 @@ export const CREATE_PROJECT_MUTATION = gql`
       event_id
       created_at
       updated_at
+      activities {
+        id
+        name
+        description
+        budget_amount
+        deadline
+        owner_id
+        tags
+        created_at
+        updated_at
+      }
     }
   }
 `;
