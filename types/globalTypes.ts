@@ -45,6 +45,11 @@ export enum ChurchType {
   STANDARD = "STANDARD",
 }
 
+export enum EventType {
+  evangelism = "evangelism",
+  show = "show",
+}
+
 export enum GenderType {
   FEMALE = "FEMALE",
   MALE = "MALE",
@@ -59,11 +64,8 @@ export enum LanguagePreference {
 }
 
 export enum ProjectType {
-  CHURCH_PLANTING = "CHURCH_PLANTING",
-  EVANGELISM = "EVANGELISM",
-  MISSION = "MISSION",
-  OTHER = "OTHER",
-  SOCIAL = "SOCIAL",
+  Global = "Global",
+  Local = "Local",
 }
 
 export interface AnnualBudgetUpdateDto {
@@ -80,6 +82,16 @@ export interface AnnualBudgetUpdateDto {
 export interface ApproveAnnualBudgetDto {
   approved_amount?: number | null;
   notes?: string | null;
+}
+
+export interface EventCreateDto {
+  title: string;
+  description: string;
+  type: EventType;
+  max_participants: number;
+  ticket_amount: number;
+  location: string;
+  subscription_expires_at: string;
 }
 
 export interface RejectAnnualBudgetDto {

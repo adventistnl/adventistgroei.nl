@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
 export const GET_DEPARTMENTS_QUERY = gql`
-  query Departments {
-    departments {
+  query Departments($institution_id: String) {
+    departments(institution_id: $institution_id) {
       id
       institution_id
       church_id

@@ -1485,6 +1485,16 @@ export type EventCount = {
   projects: Scalars['Int']['output'];
 };
 
+export type EventCreateDto = {
+  description: Scalars['String']['input'];
+  location: Scalars['String']['input'];
+  max_participants: Scalars['Float']['input'];
+  subscription_expires_at: Scalars['String']['input'];
+  ticket_amount: Scalars['Float']['input'];
+  title: Scalars['String']['input'];
+  type: EventType;
+};
+
 export type EventListRelationFilter = {
   every?: InputMaybe<EventWhereInput>;
   none?: InputMaybe<EventWhereInput>;
@@ -2758,21 +2768,25 @@ export type Project = {
   budget: Scalars['Decimal']['output'];
   created_at: Scalars['DateTime']['output'];
   created_by: Scalars['String']['output'];
-  deadline: Scalars['DateTime']['output'];
+  deadline?: Maybe<Scalars['DateTime']['output']>;
   deleted_at?: Maybe<Scalars['DateTime']['output']>;
   deleted_by?: Maybe<Scalars['String']['output']>;
   department: Department;
   department_id: Scalars['String']['output'];
   description: Scalars['String']['output'];
+  end_at: Scalars['DateTime']['output'];
   event?: Maybe<Event>;
   event_id?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   institution_id?: Maybe<Scalars['String']['output']>;
   is_deleted: Scalars['Boolean']['output'];
+  is_private: Scalars['Boolean']['output'];
   language_preference: LanguagePreference;
   owner: User;
   owner_id: Scalars['String']['output'];
+  required_volunteers: Scalars['Boolean']['output'];
   special_projects?: Maybe<Array<SpecialProjects>>;
+  start_at: Scalars['DateTime']['output'];
   subsidies?: Maybe<Array<SubsidyRequest>>;
   title: Scalars['String']['output'];
   type: ProjectType;
@@ -2891,14 +2905,20 @@ export type ProjectCount = {
 };
 
 export type ProjectCreateDto = {
-  activities: Array<ProjectActivityCreateDto>;
+  activities?: InputMaybe<Array<ProjectActivityCreateDto>>;
   budget: Scalars['Float']['input'];
-  deadline: Scalars['String']['input'];
+  deadline?: InputMaybe<Scalars['String']['input']>;
   department_id: Scalars['String']['input'];
   description: Scalars['String']['input'];
-  institution_id: Scalars['String']['input'];
+  end_at: Scalars['String']['input'];
+  event?: InputMaybe<EventCreateDto>;
+  institution_id?: InputMaybe<Scalars['String']['input']>;
+  is_event?: Scalars['Boolean']['input'];
+  is_private?: Scalars['Boolean']['input'];
   language_preference: LanguagePreference;
-  owner_id: Scalars['String']['input'];
+  owner_id?: InputMaybe<Scalars['String']['input']>;
+  required_volunteers?: Scalars['Boolean']['input'];
+  start_at: Scalars['String']['input'];
   title: Scalars['String']['input'];
   type: ProjectType;
 };
@@ -2924,11 +2944,8 @@ export type ProjectScalarRelationFilter = {
 };
 
 export enum ProjectType {
-  ChurchPlanting = 'CHURCH_PLANTING',
-  Evangelism = 'EVANGELISM',
-  Mission = 'MISSION',
-  Other = 'OTHER',
-  Social = 'SOCIAL'
+  Global = 'Global',
+  Local = 'Local'
 }
 
 export type ProjectUpdateDto = {
@@ -2937,9 +2954,13 @@ export type ProjectUpdateDto = {
   deadline?: InputMaybe<Scalars['String']['input']>;
   department_id?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
+  end_at?: InputMaybe<Scalars['String']['input']>;
   institution_id?: InputMaybe<Scalars['String']['input']>;
+  is_private?: InputMaybe<Scalars['Boolean']['input']>;
   language_preference?: InputMaybe<LanguagePreference>;
   owner_id?: InputMaybe<Scalars['String']['input']>;
+  required_volunteers?: InputMaybe<Scalars['Boolean']['input']>;
+  start_at?: InputMaybe<Scalars['String']['input']>;
   title?: InputMaybe<Scalars['String']['input']>;
   type?: InputMaybe<ProjectType>;
 };
@@ -2953,21 +2974,25 @@ export type ProjectWhereInput = {
   budget?: InputMaybe<DecimalFilter>;
   created_at?: InputMaybe<DateTimeFilter>;
   created_by?: InputMaybe<StringFilter>;
-  deadline?: InputMaybe<DateTimeFilter>;
+  deadline?: InputMaybe<DateTimeNullableFilter>;
   deleted_at?: InputMaybe<DateTimeNullableFilter>;
   deleted_by?: InputMaybe<StringNullableFilter>;
   department?: InputMaybe<DepartmentScalarRelationFilter>;
   department_id?: InputMaybe<StringFilter>;
   description?: InputMaybe<StringFilter>;
+  end_at?: InputMaybe<DateTimeFilter>;
   event?: InputMaybe<EventNullableScalarRelationFilter>;
   event_id?: InputMaybe<StringNullableFilter>;
   id?: InputMaybe<StringFilter>;
   institution_id?: InputMaybe<StringNullableFilter>;
   is_deleted?: InputMaybe<BoolFilter>;
+  is_private?: InputMaybe<BoolFilter>;
   language_preference?: InputMaybe<EnumLanguagePreferenceFilter>;
   owner?: InputMaybe<UserScalarRelationFilter>;
   owner_id?: InputMaybe<StringFilter>;
+  required_volunteers?: InputMaybe<BoolFilter>;
   special_projects?: InputMaybe<SpecialProjectsListRelationFilter>;
+  start_at?: InputMaybe<DateTimeFilter>;
   subsidies?: InputMaybe<SubsidyRequestListRelationFilter>;
   title?: InputMaybe<StringFilter>;
   type?: InputMaybe<EnumProjectTypeFilter>;

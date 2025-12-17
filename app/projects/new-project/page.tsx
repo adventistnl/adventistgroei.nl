@@ -86,7 +86,6 @@ import {
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
-import { mockDepartments, mockUsers } from "@/data/mockData"
 import { useInstitution } from "@/contexts/institution-context"
 import { projectRegisterTranslations } from "@/lib/translations/project-register"
 import { LanguageSelector } from "@/components/shared/language-selector"
@@ -115,6 +114,11 @@ import type { ProjectFormData, ProjectActivity } from "@/components/projects/typ
 type FormData = ProjectFormData
 type Activity = ProjectActivity
 import toast from "react-hot-toast"
+import { useMutation, useQuery } from "@apollo/client"
+import { CREATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
+import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
+import { GET_ALL_USERS_QUERY } from "@/graphql/queries/GET_USER_QUERY"
+import { ProjectType, LanguagePreference, EventType } from "@/types/globalTypes"
 import "@/lib/i18n"
 
 // Predefined activities with all values defined
@@ -217,7 +221,43 @@ function ProjectRegisterContent() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
   const searchParams = useSearchParams()
-  
+
+  // Get institution context
+  const { currentInstitutionData } = useInstitution()
+  const institutionId = currentInstitutionData?.id
+
+  // GraphQL mutation for creating project
+  const [createProjectMutation, { loading: creatingProject }] = useMutation(CREATE_PROJECT_MUTATION, {
+    onCompleted: (data) => {
+      toast.success(translations.toast.projectCreated, {
+        duration: 3000,
+        icon: '🎉'
+      })
+      // Navigate back to projects page
+      router.push('/projects')
+    },
+    onError: (error) => {
+      console.error("Error creating project:", error)
+      toast.error(`${translations.toast.failedToSave}: ${error.message}`)
+    },
+  })
+
+  // Fetch departments from database filtered by institution
+  const { data: departmentsData, loading: loadingDepartments } = useQuery(GET_DEPARTMENTS_QUERY, {
+    variables: { institution_id: institutionId },
+    skip: !institutionId
+  })
+
+  // Fetch users from database filtered by institution
+  const { data: usersData, loading: loadingUsers } = useQuery(GET_ALL_USERS_QUERY, {
+    variables: { institution_id: institutionId },
+    skip: !institutionId
+  })
+
+  // Extract data with fallback to empty arrays
+  const departments = departmentsData?.departments || []
+  const users = usersData?.users || []
+
   // Get translations for current language - usar o sistema i18n global
   const getCurrentTranslation = (key: string) => {
     try {
@@ -756,21 +796,43 @@ function ProjectRegisterContent() {
     const loadingToast = toast.loading(isEditing ? translations.toast.updatingProject : translations.toast.creatingProject)
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Prepare variables for GraphQL mutation
+      const variables: any = {
+        title: formData.title,
+        description: formData.description,
+        department_id: formData.department_id,
+        budget: formData.total_budget,
+        type: ProjectType.Local, // Default to Local, adjust based on your needs
+        start_at: new Date().toISOString(), // Use current date or get from formData
+        end_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+        language_preference: (i18n.language === 'nl' ? LanguagePreference.nl : LanguagePreference.en),
+        is_private: formData.is_private || false,
+        required_volunteers: false, // Adjust based on your needs
+        is_event: formData.register_as_event || false,
+      }
+
+      // Add event data if registering as event
+      if (formData.register_as_event && formData.event) {
+        variables.event = {
+          title: formData.event.title || formData.title,
+          description: formData.event.description || formData.description,
+          type: EventType.show, // Adjust based on form data
+          max_participants: formData.event.max_participants || 0,
+          ticket_amount: formData.event.ticket_amount || 0,
+          location: formData.event.location || "",
+          subscription_expires_at: formData.event.subscription_expires_at || new Date().toISOString(),
+        }
+      }
+
+      // Execute mutation
+      await createProjectMutation({ variables })
 
       toast.dismiss(loadingToast)
-      toast.success(isEditing ? translations.toast.projectUpdated : translations.toast.projectCreated, {
-        duration: 3000,
-        icon: '🎉'
-      })
-
-      // Navigate back to projects page
-      router.push('/projects')
 
     } catch (error) {
       toast.dismiss(loadingToast)
-      toast.error(translations.toast.failedToSave)
+      console.error('Failed to create project:', error)
+      // Error toast is handled by mutation onError
     } finally {
       setIsLoading(false)
     }
@@ -789,8 +851,8 @@ function ProjectRegisterContent() {
           <ProjectDataStep
             formData={formData}
             errors={errors}
-            departments={mockDepartments}
-            users={mockUsers}
+            departments={departments}
+            users={users}
             onChange={(updates) => setFormData({ ...formData, ...updates })}
           />
         )
@@ -848,12 +910,12 @@ function ProjectRegisterContent() {
             }}
             onChange={(eventData) => setFormData({ ...formData, event: eventData })}
             errors={errors}
-            contacts={mockUsers}
+            contacts={users}
             institutions={[{ id: "1", name: "Adventist Church Netherlands" }]}
-            departments={mockDepartments}
+            departments={departments}
             churches={[{ id: "1", name: "Amsterdam Adventist Church" }]}
             regions={[{ id: "1", name: "Netherlands Region" }]}
-            users={mockUsers}
+            users={users}
           />
         </div>
       </div>
@@ -927,10 +989,10 @@ function ProjectRegisterContent() {
             onChange={(commData) => setFormData({ ...formData, communication: commData })}
             errors={errors}
             institutions={[{ id: "1", name: "Adventist Church Netherlands" }]}
-            departments={mockDepartments}
+            departments={departments}
             churches={[{ id: "1", name: "Amsterdam Adventist Church" }]}
             regions={[{ id: "1", name: "Netherlands Region" }]}
-            users={mockUsers}
+            users={users}
           />
         </div>
       </div>
@@ -2189,7 +2251,7 @@ function ProjectRegisterContent() {
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">{translations.fields.department}</p>
                       <p className="text-base text-foreground">
-                        {mockDepartments.find(d => d.id === formData.department_id)?.name}
+                        {departments.find(d => d.id === formData.department_id)?.name}
                       </p>
                     </div>
                   </div>
@@ -2199,7 +2261,7 @@ function ProjectRegisterContent() {
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Responsável</p>
                       <p className="text-base text-foreground">
-                        {mockUsers.find(u => u.id === formData.responsible_id)?.name || "Não selecionado"}
+                        {users.find(u => u.id === formData.responsible_id)?.name || "Não selecionado"}
                       </p>
                     </div>
                   </div>
@@ -2517,12 +2579,12 @@ function ProjectRegisterContent() {
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               ) : (
-                <Button 
+                <Button
                   onClick={handleSubmit}
                   className="gap-2"
-                  disabled={isLoading}
+                  disabled={isLoading || creatingProject}
                 >
-                  {isLoading ? (
+                  {(isLoading || creatingProject) ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       <span className="hidden sm:inline">{isEditing ? translations.toast.updatingProject : translations.toast.creatingProject}</span>
