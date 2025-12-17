@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
+import { useQuery } from "@apollo/client"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { LanguageSelector } from "@/components/shared/language-selector"
@@ -25,16 +26,10 @@ import { ProjectsTable, ProjectTableData } from "@/components/projects/projects-
 import { useRouter } from "next/navigation"
 import { useNavigateWithLoading } from "@/hooks/use-navigation-loading"
 import { projectTranslations } from "@/lib/translations/projects"
-import {
-  mockProjects,
-  mockDepartments,
-  mockSubsidyRequests,
-  mockSubsidyActivities,
-  projectsKPIs,
-  projectsByDepartmentData,
-  subsidyStatusDistribution,
-  projectsTimelineData
-} from "@/data/mockData"
+import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
+import { DELETE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
+import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
+import { useMutation } from "@apollo/client"
 import {
   Globe,
   DollarSign,
@@ -136,10 +131,10 @@ const statusChartConfig = {
 } satisfies ChartConfig
 
 // Componentes individuais dos gráficos
-const ProjectsByDepartmentChart = () => {
+const ProjectsByDepartmentChart = ({ data }: { data: any[] }) => {
   const { i18n } = useTranslation()
   const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
-  
+
   return (
   <Card className="h-full">
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
@@ -155,7 +150,7 @@ const ProjectsByDepartmentChart = () => {
     </CardHeader>
     <CardContent>
       <ChartContainer config={projectsChartConfig} className="h-[300px] w-full">
-        <BarChart data={projectsByDepartmentData}>
+        <BarChart data={data}>
           <CartesianGrid vertical={false} />
           <XAxis
             dataKey="department"
@@ -185,10 +180,10 @@ const ProjectsByDepartmentChart = () => {
   )
 }
 
-const SubsidyStatusChart = () => {
+const SubsidyStatusChart = ({ data }: { data: any[] }) => {
   const { i18n } = useTranslation()
   const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
-  
+
   return (
   <Card className="h-full">
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
@@ -210,7 +205,7 @@ const SubsidyStatusChart = () => {
             content={<ChartTooltipContent hideLabel />}
           />
           <Pie
-            data={subsidyStatusDistribution}
+            data={data}
             dataKey="count"
             nameKey="status"
             cx="50%"
@@ -220,7 +215,7 @@ const SubsidyStatusChart = () => {
             strokeWidth={2}
             paddingAngle={2}
           >
-            {subsidyStatusDistribution.map((entry, index) => (
+            {data.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
                 fill={entry.color}
@@ -235,10 +230,10 @@ const SubsidyStatusChart = () => {
   )
 }
 
-const ProjectsTimelineChart = () => {
+const ProjectsTimelineChart = ({ data }: { data: any[] }) => {
   const { i18n } = useTranslation()
   const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
-  
+
   return (
   <Card className="h-full">
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
@@ -254,7 +249,7 @@ const ProjectsTimelineChart = () => {
     </CardHeader>
     <CardContent>
       <ChartContainer config={timelineChartConfig} className="h-[300px] w-full">
-        <AreaChart data={projectsTimelineData}>
+        <AreaChart data={data}>
           <defs>
             <linearGradient id="fillCreated" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
@@ -309,16 +304,38 @@ export default function ProjectsPage() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
   const { navigateWithLoading } = useNavigateWithLoading()
-  const [isLoading, setIsLoading] = useState(true)
+  const { currentInstitutionData } = useInstitution()
   const [refreshing, setRefreshing] = useState(false)
-  const [projects, setProjects] = useState<ProjectTableData[]>([])
-  
-  
+
+  const institutionId = currentInstitutionData?.id
+
+  // Fetch projects from backend
+  const { data: projectsData, loading: isLoading, error, refetch } = useQuery(GET_PROJECTS_QUERY)
+
+  // Fetch departments
+  const { data: departmentsData } = useQuery(GET_DEPARTMENTS_QUERY, {
+    variables: { institution_id: institutionId },
+    skip: !institutionId
+  })
+
+  const departments = departmentsData?.departments || []
+
+  // Fetch KPIs and analytics data
+  const { data: kpisData, loading: kpisLoading } = useQuery(GET_PROJECT_KPIS_QUERY, {
+    variables: { institutionId },
+    skip: !institutionId
+  })
+
+  // Delete project mutation
+  const [deleteProjectMutation] = useMutation(DELETE_PROJECT_MUTATION, {
+    refetchQueries: [{ query: GET_PROJECTS_QUERY }, { query: GET_PROJECT_KPIS_QUERY }]
+  })
+
   // Filter states
   const [selectedDepartment, setSelectedDepartment] = useState("all")
   const [selectedPeriod, setSelectedPeriod] = useState("6m")
   const [chartPeriod, setChartPeriod] = useState("6m")
-  
+
   // Get translations for current language
   const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
 
@@ -331,50 +348,75 @@ export default function ProjectsPage() {
     breadcrumbs
   })
 
-  // Transform mock data to table format
-  const transformProjectsData = (projectsData: typeof mockProjects): ProjectTableData[] => {
-    return projectsData.map(project => {
-      const subsidyRequests = mockSubsidyRequests.filter(req => req.project_id === project.id)
-      const totalSubsidyAmount = subsidyRequests.reduce((sum, req) => sum + req.total_budget, 0)
-      const totalActivities = subsidyRequests.reduce((sum, req) => {
-        const activities = mockSubsidyActivities.filter(act => act.subsidy_request_id === req.id)
-        return sum + activities.length
-      }, 0)
+  // Transform backend data to table format
+  const transformProjectsData = (backendProjects: any[]): ProjectTableData[] => {
+    return backendProjects.map((project: any) => {
+      // Calculate status based on dates
+      const now = new Date()
+      const startDate = new Date(project.start_at)
+      const endDate = new Date(project.end_at)
+
+      let status: "active" | "upcoming" | "completed"
+      if (startDate > now) {
+        status = "upcoming"
+      } else if (endDate < now) {
+        status = "completed"
+      } else {
+        status = "active"
+      }
 
       return {
-        ...project,
-        status: project.status as "active" | "upcoming" | "completed",
-        type: (project as any).type as "Local" | "Global" | undefined,
-        is_event: (project as any).is_event || false,
-        eventId: (project as any).eventId || null,
-        subsidyRequests: subsidyRequests.length,
-        subsidyAmount: totalSubsidyAmount,
-        activities: totalActivities
+        id: project.id,
+        department_id: project.department_id,
+        title: project.title,
+        description: project.description,
+        budget: project.budget,
+        is_private: project.is_private,
+        required_volunteers: project.required_volunteers,
+        start_at: project.start_at,
+        end_at: project.end_at,
+        language_preference: project.language_preference,
+        institutionId: project.institution_id || project.Institution?.id || '',
+        status,
+        subsidyRequests: 0, // TODO: Will be populated when subsidy data is available
+        subsidyAmount: 0, // TODO: Will be populated when subsidy data is available
+        activities: project.activities?.length || 0,
+        is_event: !!project.event_id,
+        type: project.type as "Local" | "Global" | undefined,
+        eventId: project.event_id || null
       }
     })
   }
 
+  // Transform projects data
+  const projects = useMemo(() => {
+    if (!projectsData?.projects) return []
+    return transformProjectsData(projectsData.projects)
+  }, [projectsData])
+
   // Filter data based on selected department
   const filteredData = useMemo(() => {
-    const allProjects = transformProjectsData(mockProjects)
-    if (selectedDepartment === "all") return allProjects
-    return allProjects.filter(project => project.department_id === selectedDepartment)
-  }, [selectedDepartment])
+    if (selectedDepartment === "all") return projects
+    return projects.filter(project => project.department_id === selectedDepartment)
+  }, [selectedDepartment, projects])
 
-  // Calculate KPIs based on filtered data
+  // Get KPIs from backend data
   const kpis = useMemo(() => {
-    const filtered = filteredData
-    return {
-      totalProjects: filtered.length,
-      activeProjects: filtered.filter(p => p.status === "active").length,
-      completedProjects: filtered.filter(p => p.status === "completed").length,
-      upcomingProjects: filtered.filter(p => p.status === "upcoming").length,
-      totalBudget: filtered.reduce((sum, p) => sum + p.budget, 0),
-      totalSubsidyRequests: filtered.reduce((sum, p) => sum + (p.subsidyRequests || 0), 0),
-      totalSubsidyAmount: filtered.reduce((sum, p) => sum + (p.subsidyAmount || 0), 0),
-      projectsWithVolunteers: filtered.filter(p => p.required_volunteers).length,
+    if (!kpisData?.projectKPIs) {
+      return {
+        totalProjects: 0,
+        activeProjects: 0,
+        completedProjects: 0,
+        upcomingProjects: 0,
+        totalBudget: 0,
+        totalSubsidyRequests: 0,
+        totalSubsidyAmount: 0,
+        projectsWithVolunteers: 0,
+        averageBudgetPerProject: 0,
+      }
     }
-  }, [filteredData])
+    return kpisData.projectKPIs
+  }, [kpisData])
 
   // Dados para KPI Cards
   const kpiCardsData = [
@@ -430,7 +472,7 @@ export default function ProjectsPage() {
       accessorKey: "department_id",
       header: t_project.table.department,
       cell: ({ row }) => {
-        const dept = mockDepartments.find(d => d.id === row.original.department_id)
+        const dept = departments.find(d => d.id === row.original.department_id)
         return <span className="text-sm">{dept?.name || "Unknown"}</span>
       },
     },
@@ -521,49 +563,26 @@ export default function ProjectsPage() {
     },
   ]
 
-  // Simulate data loading
+  // Show loading/error toasts
   useEffect(() => {
-    const loadProjectsData = async () => {
-      const loadingToast = toast.loading(t_project.toasts.loadingData)
-      
-      try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        
-        setProjects(transformProjectsData(mockProjects))
-        
-        toast.dismiss(loadingToast)
-        toast.success(t_project.toasts.dataRefreshed, {
-          duration: 3000
-        })
-        
-        setIsLoading(false)
-        
-      } catch (error) {
-        toast.dismiss(loadingToast)
-        toast.error(t_project.toasts.errorLoading)
-        setIsLoading(false)
-      }
+    if (error) {
+      toast.error(t_project.toasts.errorLoading)
     }
-
-    loadProjectsData()
-  }, [t_project])
+  }, [error, t_project])
 
   const handleRefresh = async () => {
     setRefreshing(true)
-    
+
     const refreshToast = toast.loading(t_project.toasts.dataRefreshed.replace("successfully!", "..."))
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      setProjects(transformProjectsData(mockProjects))
-      
+      await refetch()
+
       toast.dismiss(refreshToast)
       toast.success(t_project.toasts.dataRefreshed, {
         duration: 2000
       })
-      
+
     } catch (error) {
       toast.dismiss(refreshToast)
       toast.error(t_project.toasts.errorLoading)
@@ -594,11 +613,22 @@ export default function ProjectsPage() {
     })
   }
 
-  const handleDeleteProject = (project: ProjectTableData) => {
+  const handleDeleteProject = async (project: ProjectTableData) => {
     // Show confirmation before deleting
     if (window.confirm(`${t_project.deleteProject}: "${project.title}"?`)) {
-      setProjects(prev => prev.filter(p => p.id !== project.id))
-      toast.success(t_project.toasts.projectDeleted, { duration: 3000 })
+      const deleteToast = toast.loading(`Deleting project: ${project.title}...`)
+
+      try {
+        await deleteProjectMutation({
+          variables: { id: project.id }
+        })
+
+        toast.dismiss(deleteToast)
+        toast.success(t_project.toasts.projectDeleted, { duration: 3000 })
+      } catch (error) {
+        toast.dismiss(deleteToast)
+        toast.error(`Failed to delete project: ${error}`)
+      }
     }
   }
 
@@ -647,7 +677,7 @@ export default function ProjectsPage() {
     </Select>
   )
 
-  if (isLoading) {
+  if (isLoading || kpisLoading) {
     return (
       <AppLayout>
         <div className="space-y-8">
@@ -692,7 +722,7 @@ export default function ProjectsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t_project.filters.allDepartments}</SelectItem>
-                {mockDepartments.map((dept) => (
+                {departments.map((dept) => (
                   <SelectItem key={dept.id} value={dept.id}>
                     {dept.name}
                   </SelectItem>
@@ -736,9 +766,9 @@ export default function ProjectsPage() {
         <div className="space-y-6">
           <h3 className="text-lg sm:text-xl font-semibold">{t_project.charts.projectsByDepartment}</h3>
           <ResponsiveGridCarousel autoplayDelay={5000} className="">
-            <ProjectsByDepartmentChart />
-            <SubsidyStatusChart />
-            <ProjectsTimelineChart />
+            <ProjectsByDepartmentChart data={kpisData?.projectsByDepartment || []} />
+            <SubsidyStatusChart data={kpisData?.subsidyStatusDistribution || []} />
+            <ProjectsTimelineChart data={kpisData?.projectsTimeline || []} />
           </ResponsiveGridCarousel>
         </div>
 
@@ -762,7 +792,7 @@ export default function ProjectsPage() {
               {
                 id: "department_id",
                 title: t_project.table.department,
-                options: mockDepartments.map(dept => ({
+                options: departments.map(dept => ({
                   label: dept.name,
                   value: dept.id
                 }))

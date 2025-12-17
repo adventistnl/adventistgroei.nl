@@ -93,6 +93,7 @@ export interface SubsidyReceiptData {
 
 interface ProjectActivitiesTableProps {
   project: ProjectTableData
+  activities?: ProjectActivityData[] // Optional: if provided, use these activities instead of mock data
   filterSubsidized?: boolean
   statusFilter?: string
   priorityFilter?: string
@@ -144,6 +145,7 @@ const mockReceipts: SubsidyReceiptData[] = [
 
 export function ProjectActivitiesTable({
   project,
+  activities,
   filterSubsidized,
   statusFilter = "all",
   priorityFilter = "all",
@@ -166,8 +168,8 @@ export function ProjectActivitiesTable({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedActivityForDelete, setSelectedActivityForDelete] = useState<ProjectActivityData | null>(null)
 
-  // Get project activities
-  const projectActivities = getActivitiesByProjectId(project.id) as ProjectActivityData[]
+  // Get project activities - use provided activities or fallback to mock data
+  const projectActivities = activities || (getActivitiesByProjectId(project.id) as ProjectActivityData[])
 
   // Filter activities based on subsidy status
   const currentActivities = filterSubsidized !== undefined 

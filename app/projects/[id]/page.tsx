@@ -34,10 +34,11 @@ import { RequestSubsidyModal, SubsidyRequestData as SubsidyRequestFormData } fro
 
 import { ProjectTableData } from "@/components/projects/projects-table"
 import { projectTranslations } from "@/lib/translations/projects"
-import { mockProjects, getActivitiesByProjectId } from "@/data/mockData"
 import { Button } from "@/components/ui/button"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
+import { useQuery } from "@apollo/client"
+import { GET_PROJECT_BY_ID_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 
 export default function ProjectDetailsPage() {
   const params = useParams()
@@ -48,34 +49,7 @@ export default function ProjectDetailsPage() {
   // State management
   const [project, setProject] = useState<ProjectTableData | null>(null)
   const [selectedActivities, setSelectedActivities] = useState<ProjectActivityData[]>([])
-  
-  // Mock subsidy requests data
-  const [mockSubsidyRequests, setMockSubsidyRequests] = useState<SubsidyRequestCardData[]>([
-    {
-      id: "subsidy-1",
-      title: "Subsídio para Reforma do Templo",
-      requested_at: new Date("2024-12-01"),
-      status: "pending",
-      requested_amount: 15000,
-      institution_name: "União Adventista"
-    },
-    {
-      id: "subsidy-2",
-      title: "Equipamentos de Som",
-      requested_at: new Date("2024-11-15"),
-      status: "approved",
-      requested_amount: 8000,
-      institution_name: "União Adventista"
-    },
-    {
-      id: "subsidy-3",
-      title: "Viagem Missionária",
-      requested_at: new Date("2024-12-10"),
-      status: "in_review",
-      requested_amount: 5000,
-      institution_name: "União Adventista"
-    }
-  ])
+  const [subsidyRequests, setSubsidyRequests] = useState<SubsidyRequestCardData[]>([])
   
   // Batch editing state
   const [batchEditData, setBatchEditData] = useState({
@@ -119,69 +93,107 @@ export default function ProjectDetailsPage() {
   
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
 
-  // Get all project activities for the subsidy modal
-  const allProjectActivities = useMemo(() => {
-    if (!project) return []
-    return getActivitiesByProjectId(project.id) as ProjectActivityData[]
-  }, [project])
+  // Fetch project data from backend
+  const { data: projectData, loading: projectLoading, error: projectError } = useQuery(GET_PROJECT_BY_ID_QUERY, {
+    variables: { id: projectId },
+    skip: !projectId,
+    onCompleted: () => {
+      toast.success("📋 Project details loaded successfully!", {
+        duration: 3000
+      })
+    },
+    onError: (error) => {
+      toast.error("Erro ao carregar detalhes do projeto")
+      console.error("Error loading project:", error)
+    }
+  })
 
-  // Transform mock project to ProjectTableData format
-  const transformProjectData = (mockProject: any): ProjectTableData => {
+  // Transform backend project to ProjectTableData format
+  const transformProjectData = (backendProject: any): ProjectTableData => {
+    const now = new Date()
+    const startDate = new Date(backendProject.start_at)
+    const endDate = new Date(backendProject.end_at)
+
+    let status: "active" | "upcoming" | "completed" = "upcoming"
+    if (startDate <= now && endDate >= now) {
+      status = "active"
+    } else if (endDate < now) {
+      status = "completed"
+    }
+
     return {
-      id: mockProject.id,
-      department_id: mockProject.department_id,
-      title: mockProject.title,
-      description: mockProject.description,
-      budget: mockProject.budget,
-      is_private: mockProject.is_private,
-      required_volunteers: mockProject.required_volunteers,
-      start_at: mockProject.start_at,
-      end_at: mockProject.end_at,
-      language_preference: mockProject.language_preference,
-      institutionId: mockProject.institutionId,
-      status: mockProject.status,
-      is_event: mockProject.is_event,
-      type: mockProject.type,
-      eventId: mockProject.eventId,
-      subsidyRequests: 0, // Will be calculated
-      subsidyAmount: 0, // Will be calculated
-      activities: 0 // Will be calculated
+      id: backendProject.id,
+      department_id: backendProject.department_id,
+      title: backendProject.title,
+      description: backendProject.description,
+      budget: Number(backendProject.budget),
+      is_private: backendProject.is_private,
+      required_volunteers: backendProject.required_volunteers,
+      start_at: backendProject.start_at,
+      end_at: backendProject.end_at,
+      language_preference: backendProject.language_preference,
+      institutionId: backendProject.institution_id || "",
+      status: status,
+      is_event: !!backendProject.event_id,
+      type: backendProject.type,
+      eventId: backendProject.event_id,
+      subsidyRequests: 0, // Will be calculated from subsidies
+      subsidyAmount: 0, // Will be calculated from subsidies
+      activities: backendProject.activities?.length || 0
     }
   }
 
-  // Load project data
+  // Set project and subsidies when data is loaded
   useEffect(() => {
-    const loadProjectData = async () => {
-      const loadingToast = toast.loading("Carregando detalhes do projeto...")
-      
-      try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        
-        // Find the project by ID
-        const foundProject = mockProjects.find(p => p.id === projectId)
-        
-        if (foundProject) {
-          const transformedProject = transformProjectData(foundProject)
-          setProject(transformedProject)
-          
-          toast.dismiss(loadingToast)
-          toast.success("📋 Project details loaded successfully!", {
-            duration: 3000
-          })
-        } else {
-          toast.dismiss(loadingToast)
-          toast.error("Projeto não encontrado")
-        }
-        
-      } catch (error) {
-        toast.dismiss(loadingToast)
-        toast.error("Erro ao carregar detalhes do projeto")
+    if (projectData?.project) {
+      const transformedProject = transformProjectData(projectData.project)
+      setProject(transformedProject)
+
+      // Transform subsidies data
+      if (projectData.project.subsidies) {
+        const transformedSubsidies: SubsidyRequestCardData[] = projectData.project.subsidies.map((subsidy: any) => ({
+          id: subsidy.id,
+          title: subsidy.description,
+          requested_at: new Date(subsidy.created_at),
+          status: subsidy.subsidy_status?.name?.toLowerCase() || "pending",
+          requested_amount: Number(subsidy.total_budget),
+          institution_name: subsidy.institution?.name || "Unknown"
+        }))
+        setSubsidyRequests(transformedSubsidies)
       }
     }
+  }, [projectData])
 
-    loadProjectData()
-  }, [projectId])
+  // Get all project activities - transform backend data to match ProjectActivityData interface
+  const allProjectActivities = useMemo(() => {
+    if (!projectData?.project?.activities) return []
+    return projectData.project.activities.map((activity: any) => {
+      const ownerName = activity.owner?.name || "Unknown"
+      const ownerInitials = ownerName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+
+      return {
+        id: activity.id,
+        project_id: projectId,
+        name: activity.name,
+        description: activity.description,
+        budget_amount: Number(activity.budget_amount),
+        deadline: activity.deadline,
+        status: "pending", // You may need to adjust this based on your data
+        priority: "medium", // You may need to adjust this based on your data
+        activity_tag: activity.tags || "material",
+        is_subsidized: false, // You may need to adjust this based on your data
+        completed_at: null,
+        created_at: activity.created_at,
+        updated_at: activity.updated_at,
+        assigned_users: activity.owner ? [{
+          id: activity.owner.id,
+          name: activity.owner.name,
+          email: activity.owner.email,
+          initials: ownerInitials,
+        }] : [],
+      }
+    }) as ProjectActivityData[]
+  }, [projectData, projectId])
 
 
   usePageTitle({
@@ -338,7 +350,7 @@ export default function ProjectDetailsPage() {
   }, [selectedActivities])
 
   const handleViewSubsidyCard = (id: string) => {
-    const subsidy = mockSubsidyRequests.find(s => s.id === id)
+    const subsidy = subsidyRequests.find((s: SubsidyRequestCardData) => s.id === id)
     if (subsidy) {
       setSelectedSubsidyCard(subsidy)
       setIsViewSubsidyRequestModalOpen(true)
@@ -346,7 +358,7 @@ export default function ProjectDetailsPage() {
   }
 
   const handleEditSubsidyCard = (id: string) => {
-    const subsidy = mockSubsidyRequests.find(s => s.id === id)
+    const subsidy = subsidyRequests.find((s: SubsidyRequestCardData) => s.id === id)
     if (subsidy) {
       // TODO: Convert SubsidyRequestCardData to activities and open RequestSubsidyModal
       // For now, just show a message
@@ -356,7 +368,7 @@ export default function ProjectDetailsPage() {
   }
 
   const handleDeleteSubsidyCard = (id: string) => {
-    const subsidy = mockSubsidyRequests.find(s => s.id === id)
+    const subsidy = subsidyRequests.find((s: SubsidyRequestCardData) => s.id === id)
     if (subsidy) {
       setSelectedSubsidyCard(subsidy)
       setIsDeleteSubsidyRequestModalOpen(true)
@@ -364,7 +376,7 @@ export default function ProjectDetailsPage() {
   }
 
   const handleDuplicateSubsidyCard = (id: string) => {
-    const subsidy = mockSubsidyRequests.find(s => s.id === id)
+    const subsidy = subsidyRequests.find((s: SubsidyRequestCardData) => s.id === id)
     if (subsidy) {
       const duplicated: SubsidyRequestCardData = {
         ...subsidy,
@@ -373,7 +385,7 @@ export default function ProjectDetailsPage() {
         requested_at: new Date(),
         status: "pending"
       }
-      setMockSubsidyRequests(prev => [...prev, duplicated])
+      setSubsidyRequests((prev: SubsidyRequestCardData[]) => [...prev, duplicated])
       toast.success(`📋 Solicitação duplicada: ${subsidy.title}`, { duration: 3000 })
     }
   }
@@ -534,7 +546,7 @@ export default function ProjectDetailsPage() {
   }
 
   const handleDeleteSubsidyRequestSuccess = (deletedSubsidy: SubsidyRequestCardData) => {
-    setMockSubsidyRequests(prev => prev.filter(s => s.id !== deletedSubsidy.id))
+    setSubsidyRequests((prev: SubsidyRequestCardData[]) => prev.filter((s: SubsidyRequestCardData) => s.id !== deletedSubsidy.id))
     setSelectedSubsidyCard(null)
   }
 
@@ -637,7 +649,20 @@ export default function ProjectDetailsPage() {
     }
   ], [batchEditData])
 
-  if (!project) {
+  if (projectLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="text-muted-foreground mt-4">Carregando detalhes do projeto...</p>
+          </div>
+        </div>
+      </AppLayout>
+    )
+  }
+
+  if (projectError || !project) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-[400px]">
@@ -670,7 +695,7 @@ export default function ProjectDetailsPage() {
               id: "subsidy-chart",
               component: (
                 <SubsidyActivityChart
-                  data={mockSubsidyRequests}
+                  data={subsidyRequests}
                   selectedYear={new Date().getFullYear()}
                 />
               ),
@@ -680,7 +705,7 @@ export default function ProjectDetailsPage() {
               id: "subsidy-cards",
               component: (
                 <SubsidyRequestsContainer
-                  subsidies={mockSubsidyRequests}
+                  subsidies={subsidyRequests}
                   onAddSubsidy={handleAddSubsidyFromContainer}
                   onViewSubsidy={handleViewSubsidyCard}
                   onEditSubsidy={handleEditSubsidyCard}
@@ -718,6 +743,7 @@ export default function ProjectDetailsPage() {
             {/* Activities Table */}
             <ProjectActivitiesTable
               project={project}
+              activities={allProjectActivities}
               filterSubsidized={subsidyFilter === "all" ? undefined : subsidyFilter === "subsidized"}
               statusFilter={statusFilter}
               priorityFilter={priorityFilter}
