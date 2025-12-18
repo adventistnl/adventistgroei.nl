@@ -13,7 +13,7 @@ import { SubsidyRequestsContainer } from "@/components/projects/subsidy-requests
 import { SubsidyRequestCardData } from "@/components/projects/subsidy-request-card"
 import { SubsidyActivityChart } from "@/components/projects/charts/subsidy-activity-chart"
 import { GridContainer } from "@/components/shared/grid-container"
-import { EditProjectModal, EditProjectFormData } from "@/components/modals/project/edit-project-modal"
+import { EditProjectModal } from "@/components/modals/project/edit-project-modal"
 import { CreateEventModal, EventFormData } from "@/components/modals/project/create-event-modal"
 import { CreateCommunicationModal, CommunicationFormData } from "@/components/modals/project/create-communication-modal"
 import { AddSubsidyModal, SubsidyFormData } from "@/components/modals/project/add-subsidy-modal"
@@ -37,13 +37,17 @@ import { projectTranslations } from "@/lib/translations/projects"
 import { Button } from "@/components/ui/button"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
-import { useQuery } from "@apollo/client"
+import { useQuery, useMutation } from "@apollo/client"
 import { GET_PROJECT_BY_ID_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
+import { BATCH_UPDATE_PROJECT_ACTIVITIES, CREATE_PROJECT_ACTIVITY } from "@/graphql/mutations/PROJECT_ACTIVITY_MUTATIONS"
+import { useAuth } from "@/contexts/auth-context"
+import { ActivityTags, EntityType } from "@/types/graphql-global-types"
 
 export default function ProjectDetailsPage() {
   const params = useParams()
   const router = useRouter()
   const { i18n } = useTranslation()
+  const { user } = useAuth()
   const projectId = params.id as string
   
   // State management
@@ -94,7 +98,7 @@ export default function ProjectDetailsPage() {
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
 
   // Fetch project data from backend
-  const { data: projectData, loading: projectLoading, error: projectError } = useQuery(GET_PROJECT_BY_ID_QUERY, {
+  const { data: projectData, loading: projectLoading, error: projectError, refetch: refetchProject } = useQuery(GET_PROJECT_BY_ID_QUERY, {
     variables: { id: projectId },
     skip: !projectId,
     onCompleted: () => {
@@ -105,6 +109,38 @@ export default function ProjectDetailsPage() {
     onError: (error) => {
       toast.error("Erro ao carregar detalhes do projeto")
       console.error("Error loading project:", error)
+    }
+  })
+
+  // Batch update mutation
+  const [batchUpdateActivities, { loading: batchUpdateLoading }] = useMutation(BATCH_UPDATE_PROJECT_ACTIVITIES, {
+    onCompleted: () => {
+      toast.success("Atividades atualizadas com sucesso!", { duration: 3000 })
+      refetchProject()
+      setSelectedActivities([])
+      setBatchEditData({
+        status: "",
+        priority: "",
+        activity_tag: "",
+        is_subsidized: false
+      })
+    },
+    onError: (error) => {
+      toast.error(`Erro ao atualizar atividades: ${error.message}`)
+      console.error("Error updating activities:", error)
+    }
+  })
+
+  // Create activity mutation
+  const [createProjectActivity, { loading: createActivityLoading }] = useMutation(CREATE_PROJECT_ACTIVITY, {
+    onCompleted: () => {
+      toast.success("✅ Atividade criada com sucesso!", { duration: 3000 })
+      refetchProject()
+      setIsRegisterActivityModalOpen(false)
+    },
+    onError: (error) => {
+      toast.error(`Erro ao criar atividade: ${error.message}`)
+      console.error("Error creating activity:", error)
     }
   })
 
@@ -171,6 +207,27 @@ export default function ProjectDetailsPage() {
       const ownerName = activity.owner?.name || "Unknown"
       const ownerInitials = ownerName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
 
+      // Map backend enum values to frontend values
+      const statusMap: Record<string, string> = {
+        'TODO': 'todo',
+        'IN_PROGRESS': 'in_progress',
+        'COMPLETED': 'completed',
+        'ON_HOLD': 'on_hold'
+      }
+
+      const priorityMap: Record<string, string> = {
+        'URGENT': 'urgent',
+        'HIGH': 'high',
+        'MEDIUM': 'medium',
+        'LOW': 'low'
+      }
+
+      const tagMap: Record<string, string> = {
+        'REFORM': 'reforma',
+        'MATERIALS': 'material',
+        'TRAINING': 'training'
+      }
+
       return {
         id: activity.id,
         project_id: projectId,
@@ -178,10 +235,10 @@ export default function ProjectDetailsPage() {
         description: activity.description,
         budget_amount: Number(activity.budget_amount),
         deadline: activity.deadline,
-        status: "pending", // You may need to adjust this based on your data
-        priority: "medium", // You may need to adjust this based on your data
-        activity_tag: activity.tags || "material",
-        is_subsidized: false, // You may need to adjust this based on your data
+        status: statusMap[activity.status] || "todo",
+        priority: priorityMap[activity.priority] || "medium",
+        activity_tag: activity.tags?.[0] ? tagMap[activity.tags[0]] || "material" : "material",
+        is_subsidized: activity.is_subsidized || false,
         completed_at: null,
         created_at: activity.created_at,
         updated_at: activity.updated_at,
@@ -231,18 +288,10 @@ export default function ProjectDetailsPage() {
     setIsCreateReportModalOpen(true)
   }
 
-  const handleEditSubmit = (data: EditProjectFormData) => {
-    if (project) {
-      const updatedProject = {
-        ...project,
-        ...data,
-        start_at: data.start_at.toISOString(),
-        end_at: data.end_at.toISOString(),
-      }
-      setProject(updatedProject)
-      setIsEditModalOpen(false)
-      toast.success(t.toasts.projectUpdated, { duration: 3000 })
-    }
+  const handleProjectUpdateSuccess = () => {
+    // Refetch project data after successful update
+    refetchProject()
+    setIsEditModalOpen(false)
   }
 
   const handleEventSubmit = (data: EventFormData) => {
@@ -286,7 +335,7 @@ export default function ProjectDetailsPage() {
     }
   }, [])
 
-  const handleBatchEdit = useCallback(() => {
+  const handleBatchEdit = useCallback(async () => {
     // Verificar se algum campo foi alterado
     const hasChanges = Object.entries(batchEditData).some(([key, value]) => {
       if (typeof value === 'string') return value !== ''
@@ -299,29 +348,56 @@ export default function ProjectDetailsPage() {
       return
     }
 
-    console.log('Batch edit data:', batchEditData)
-    console.log('Activities to update:', selectedActivities)
-    
-    // TODO: Implement API call to batch update activities
-    const fieldsUpdated = Object.entries(batchEditData)
-      .filter(([_, value]) => typeof value === 'string' ? value !== '' : true)
-      .map(([key]) => key)
-      .join(', ')
-    
-    toast.success(
-      `✅ ${selectedActivities.length} atividade(s) atualizada(s)!\nCampos: ${fieldsUpdated}`,
-      { duration: 4000 }
-    )
-    
-    // Clear selection and reset form
-    setSelectedActivities([])
-    setBatchEditData({
-      status: "",
-      priority: "",
-      activity_tag: "",
-      is_subsidized: false
-    })
-  }, [selectedActivities, batchEditData])
+    if (selectedActivities.length === 0) {
+      toast.error('Selecione pelo menos uma atividade')
+      return
+    }
+
+    // Prepare variables - convert frontend values to API format
+    const variables: any = {
+      ids: selectedActivities.map(act => act.id)
+    }
+
+    // Map frontend values to backend enum values
+    if (batchEditData.status && batchEditData.status !== '') {
+      const statusMap: Record<string, string> = {
+        'todo': 'TODO',
+        'in_progress': 'IN_PROGRESS',
+        'completed': 'COMPLETED',
+        'on_hold': 'ON_HOLD'
+      }
+      variables.status = statusMap[batchEditData.status]
+    }
+
+    if (batchEditData.priority && batchEditData.priority !== '') {
+      const priorityMap: Record<string, string> = {
+        'urgent': 'URGENT',
+        'high': 'HIGH',
+        'medium': 'MEDIUM',
+        'low': 'LOW'
+      }
+      variables.priority = priorityMap[batchEditData.priority]
+    }
+
+    if (batchEditData.activity_tag && batchEditData.activity_tag !== '') {
+      const tagMap: Record<string, string> = {
+        'reforma': 'REFORM',
+        'material': 'MATERIALS',
+        'training': 'TRAINING'
+      }
+      variables.activity_tag = tagMap[batchEditData.activity_tag]
+    }
+
+    if (batchEditData.is_subsidized !== undefined) {
+      variables.is_subsidized = batchEditData.is_subsidized
+    }
+
+    try {
+      await batchUpdateActivities({ variables })
+    } catch (error) {
+      console.error('Error in batch edit:', error)
+    }
+  }, [selectedActivities, batchEditData, batchUpdateActivities])
 
   const handleBatchSubsidyRequest = useCallback(() => {
     console.log('🔵 Abrindo modal de subsídio com', selectedActivities.length, 'atividades:', selectedActivities)
@@ -396,11 +472,98 @@ export default function ProjectDetailsPage() {
     // setIsRequestSubsidyModalOpen(true)
   }
 
-  const handleRegisterActivitySubmit = (data: RegisterActivityFormData) => {
-    // TODO: Implement API call to register activity
-    console.log("New activity data:", data)
-    toast.success(`✅ Atividade "${data.name}" adicionada com sucesso!`, { duration: 3000 })
-    // Aqui você pode adicionar a lógica para atualizar a lista de atividades
+  const handleRegisterActivitySubmit = async (data: RegisterActivityFormData) => {
+    try {
+      if (!user?.id) {
+        toast.error("Usuário não autenticado")
+        return
+      }
+
+      // Determine entity for funding - use institution if available, otherwise use department
+      const useInstitution = project?.institutionId && project.institutionId !== ""
+      const entityId = useInstitution ? project.institutionId : project?.department_id
+      const entityType = useInstitution ? EntityType.Institution : EntityType.InstitutionDepartment
+
+      if (!entityId) {
+        toast.error("Projeto não possui instituição ou departamento associado")
+        return
+      }
+
+      // Map frontend tags to API enum values
+      const tagMap: Record<string, ActivityTags> = {
+        // Portuguese
+        "Reforma": ActivityTags.Reform,
+        "Equipamentos": ActivityTags.Equipment,
+        "Viagens": ActivityTags.Travel,
+        "Eventos": ActivityTags.Event,
+        "Materiais": ActivityTags.Materials,
+        "Treinamento": ActivityTags.Training,
+        "Alimentação": ActivityTags.Feeding,
+        "Transporte": ActivityTags.Transport,
+        "Hospedagem": ActivityTags.Accommodation,
+        "Marketing": ActivityTags.Marketing,
+        "Serviços": ActivityTags.Services,
+        // English
+        "Renovation": ActivityTags.Reform,
+        "Equipment": ActivityTags.Equipment,
+        "Trips": ActivityTags.Travel,
+        "Events": ActivityTags.Event,
+        "Training": ActivityTags.Training,
+        "Food": ActivityTags.Feeding,
+        "Transportation": ActivityTags.Transport,
+        "Accommodation": ActivityTags.Accommodation,
+        // Dutch
+        "Renovatie": ActivityTags.Reform,
+        "Apparatuur": ActivityTags.Equipment,
+        "Reizen": ActivityTags.Travel,
+        "Evenementen": ActivityTags.Event,
+        "Voedsel": ActivityTags.Feeding,
+        "Materialen": ActivityTags.Materials,
+      }
+
+      const mappedTags: ActivityTags[] = data.tags
+        .map(tag => tagMap[tag])
+        .filter((tag): tag is ActivityTags => tag !== undefined)
+
+      // If no tags were mapped, add a default one
+      if (mappedTags.length === 0) {
+        mappedTags.push(ActivityTags.Materials)
+      }
+
+      // Calculate deadline (30 days from now if not specified)
+      const deadline = new Date()
+      deadline.setDate(deadline.getDate() + 30)
+
+      // Calculate entity contribution
+      const institutionAmount = data.institution_requested_amount || 0
+      const entityContributionPercent = data.budget_amount > 0
+        ? (institutionAmount / data.budget_amount) * 100
+        : 0
+
+      const input = {
+        project_id: projectId,
+        name: data.name,
+        description: data.description,
+        budget_amount: data.budget_amount,
+        deadline: deadline.toISOString(),
+        owner_id: user.id,
+        tags: mappedTags,
+        is_subsidized: data.request_subsidy,
+        activity_funding: {
+          entity_contribution_amount: institutionAmount,
+          entity_contribution_percent: entityContributionPercent,
+          entity_type: entityType,
+          entity_id: entityId,
+        },
+      }
+
+      await createProjectActivity({
+        variables: { input }
+      })
+    } catch (error) {
+      console.error("Error creating activity:", error)
+      toast.error("Erro ao criar atividade")
+    }
   }
 
   const handleUploadReceiptForActivity = (activity: ProjectActivityData) => {
@@ -807,7 +970,7 @@ export default function ProjectDetailsPage() {
         <EditProjectModal
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
-          onSubmit={handleEditSubmit}
+          onSuccess={handleProjectUpdateSuccess}
           project={project}
         />
         

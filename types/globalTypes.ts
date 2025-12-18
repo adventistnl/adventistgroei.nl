@@ -7,6 +7,34 @@
 // START Enums and Input Objects
 //==============================================================
 
+export enum ActivityPriority {
+  HIGH = "HIGH",
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  URGENT = "URGENT",
+}
+
+export enum ActivityStatus {
+  COMPLETED = "COMPLETED",
+  IN_PROGRESS = "IN_PROGRESS",
+  ON_HOLD = "ON_HOLD",
+  TODO = "TODO",
+}
+
+export enum ActivityTags {
+  ACCOMMODATION = "ACCOMMODATION",
+  EQUIPMENT = "EQUIPMENT",
+  EVENT = "EVENT",
+  FEEDING = "FEEDING",
+  MARKETING = "MARKETING",
+  MATERIALS = "MATERIALS",
+  REFORM = "REFORM",
+  SERVICES = "SERVICES",
+  TRAINING = "TRAINING",
+  TRANSPORT = "TRANSPORT",
+  TRAVEL = "TRAVEL",
+}
+
 export enum AnnualBudgetCategory {
   EMERGENCY = "EMERGENCY",
   EXPANSION = "EXPANSION",
@@ -45,6 +73,15 @@ export enum ChurchType {
   STANDARD = "STANDARD",
 }
 
+export enum EntityType {
+  CHURCH = "CHURCH",
+  CHURCH_DEPARTMENT = "CHURCH_DEPARTMENT",
+  INSTITUTION = "INSTITUTION",
+  INSTITUTION_DEPARTMENT = "INSTITUTION_DEPARTMENT",
+  REGION = "REGION",
+  USER = "USER",
+}
+
 export enum EventType {
   evangelism = "evangelism",
   show = "show",
@@ -66,6 +103,13 @@ export enum LanguagePreference {
 export enum ProjectType {
   Global = "Global",
   Local = "Local",
+}
+
+export interface ActivityFundingCreateDto {
+  entity_contribution_amount: number;
+  entity_contribution_percent: number;
+  entity_type: EntityType;
+  entity_id: string;
 }
 
 export interface AnnualBudgetUpdateDto {
@@ -92,6 +136,17 @@ export interface EventCreateDto {
   ticket_amount: number;
   location: string;
   subscription_expires_at: string;
+}
+
+export interface ProjectActivityCreateDto {
+  project_id: string;
+  name: string;
+  description: string;
+  budget_amount: number;
+  deadline: string;
+  owner_id: string;
+  tags: ActivityTags[];
+  activity_funding: ActivityFundingCreateDto;
 }
 
 export interface RejectAnnualBudgetDto {

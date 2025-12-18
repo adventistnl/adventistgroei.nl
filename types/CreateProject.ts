@@ -3,11 +3,24 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ProjectType, LanguagePreference, EventCreateDto } from "./globalTypes";
+import { ProjectType, LanguagePreference, EventCreateDto, ProjectActivityCreateDto, ActivityTags } from "./globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: CreateProject
 // ====================================================
+
+export interface CreateProject_createProject_activities {
+  __typename: "ProjectActivity";
+  id: string;
+  name: string;
+  description: string;
+  budget_amount: any;
+  deadline: any;
+  owner_id: string;
+  tags: ActivityTags[] | null;
+  created_at: any;
+  updated_at: any;
+}
 
 export interface CreateProject_createProject {
   __typename: "Project";
@@ -28,6 +41,7 @@ export interface CreateProject_createProject {
   event_id: string | null;
   created_at: any;
   updated_at: any;
+  activities: CreateProject_createProject_activities[] | null;
 }
 
 export interface CreateProject {
@@ -50,4 +64,9 @@ export interface CreateProjectVariables {
   owner_id?: string | null;
   deadline?: string | null;
   event?: EventCreateDto | null;
+  activities?: ProjectActivityCreateDto[] | null;
+  is_special_case?: boolean | null;
+  special_case_reason?: string | null;
+  location_church_plant?: string | null;
+  special_budget?: number | null;
 }

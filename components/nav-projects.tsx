@@ -33,9 +33,10 @@ import { useNavigateWithLoading } from "@/hooks/use-navigation-loading"
 
 interface NavProjectsProps {
   projects: any[]
+  loading?: boolean
 }
 
-export const NavProjects = React.memo(function NavProjects({ projects }: NavProjectsProps) {
+export const NavProjects = React.memo(function NavProjects({ projects, loading }: NavProjectsProps) {
   const { isMobile } = useSidebar()
   const router = useRouter()
   const { navigateWithLoading } = useNavigateWithLoading()
@@ -60,63 +61,71 @@ export const NavProjects = React.memo(function NavProjects({ projects }: NavProj
           </Button>
         </div>
         <SidebarMenu>
-          {projects.map((project) => (
-            <SidebarMenuItem key={project.id}>
-              <SidebarMenuButton 
-                onClick={() => navigateWithLoading(`/projects/${project.id}`, {
-                  message: `📋 Opening ${project.title}...`,
-                  showToast: true,
-                  delay: 800
-                })}
-              >
-                <div className="flex items-center gap-2 w-full">
-                  <Folder className="sidebar-icon text-blue-500 flex-shrink-0" />
-                  <span className="truncate flex-1 min-w-0">{project.title}</span>
-                  {project.is_private && (
-                    <Lock className="w-3 h-3 text-amber-500 flex-shrink-0" />
-                  )}
-                </div>
+          {loading ? (
+            <SidebarMenuItem>
+              <SidebarMenuButton className="text-sidebar-foreground/70">
+                <Folder className="text-sidebar-foreground/70 sidebar-icon animate-pulse" />
+                <span>Loading projects...</span>
               </SidebarMenuButton>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <SidebarMenuAction showOnHover>
-                    <MoreHorizontal className="sidebar-icon" />
-                    <span className="sr-only">More</span>
-                  </SidebarMenuAction>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="w-48 rounded-lg"
-                  side={isMobile ? "bottom" : "right"}
-                  align={isMobile ? "end" : "start"}
-                >
-                  <DropdownMenuItem onClick={() => navigateWithLoading(`/projects/${project.id}`, {
-                    message: `📋 Opening ${project.title}...`,
-                    showToast: true,
-                    delay: 800
-                  })}>
-                    <Folder className="text-muted-foreground" />
-                    <span>View Project</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Forward className="text-muted-foreground" />
-                    <span>Share Project</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <Trash2 className="text-muted-foreground" />
-                    <span>Delete Project</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </SidebarMenuItem>
-          ))}
-          {projects.length === 0 && (
+          ) : projects.length === 0 ? (
             <SidebarMenuItem>
               <SidebarMenuButton className="text-sidebar-foreground/70">
                 <Folder className="text-sidebar-foreground/70 sidebar-icon" />
                 <span>No projects yet</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
+          ) : (
+            projects.map((project) => (
+              <SidebarMenuItem key={project.id}>
+                <SidebarMenuButton
+                  onClick={() => navigateWithLoading(`/projects/${project.id}`, {
+                    message: `📋 Opening ${project.title}...`,
+                    showToast: true,
+                    delay: 800
+                  })}
+                >
+                  <div className="flex items-center gap-2 w-full">
+                    <Folder className="sidebar-icon text-blue-500 flex-shrink-0" />
+                    <span className="truncate flex-1 min-w-0">{project.title}</span>
+                    {project.is_private && (
+                      <Lock className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                    )}
+                  </div>
+                </SidebarMenuButton>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <SidebarMenuAction showOnHover>
+                      <MoreHorizontal className="sidebar-icon" />
+                      <span className="sr-only">More</span>
+                    </SidebarMenuAction>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    className="w-48 rounded-lg"
+                    side={isMobile ? "bottom" : "right"}
+                    align={isMobile ? "end" : "start"}
+                  >
+                    <DropdownMenuItem onClick={() => navigateWithLoading(`/projects/${project.id}`, {
+                      message: `📋 Opening ${project.title}...`,
+                      showToast: true,
+                      delay: 800
+                    })}>
+                      <Folder className="text-muted-foreground" />
+                      <span>View Project</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Forward className="text-muted-foreground" />
+                      <span>Share Project</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      <Trash2 className="text-muted-foreground" />
+                      <span>Delete Project</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </SidebarMenuItem>
+            ))
           )}
         </SidebarMenu>
       </SidebarGroup>

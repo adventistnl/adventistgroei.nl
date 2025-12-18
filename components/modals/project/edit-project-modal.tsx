@@ -3,17 +3,19 @@
 import * as React from "react"
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
-import { 
-  CalendarIcon, 
-  Globe, 
-  Building, 
-  DollarSign, 
+import {
+  CalendarIcon,
+  Globe,
+  Building,
+  DollarSign,
   Settings,
   CheckCircle,
   Save
 } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { useMutation, useQuery } from "@apollo/client"
+import toast from "react-hot-toast"
 
 import {
   Dialog,
@@ -43,8 +45,10 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { projectTranslations } from "@/lib/translations/projects"
-import { mockDepartments } from "@/data/mockData"
 import { ProjectTableData } from "@/components/projects/projects-table"
+import { UPDATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
+import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
+import { useInstitution } from "@/contexts/institution-context"
 
 export interface EditProjectFormData {
   title: string
@@ -63,13 +67,39 @@ export interface EditProjectFormData {
 interface EditProjectModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (data: EditProjectFormData) => void
+  onSuccess?: () => void
   project?: ProjectTableData
 }
 
-export function EditProjectModal({ isOpen, onClose, onSubmit, project }: EditProjectModalProps) {
+export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditProjectModalProps) {
   const { i18n } = useTranslation()
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+  const { currentInstitutionData } = useInstitution()
+
+  const institutionId = currentInstitutionData?.id
+
+  // Fetch departments
+  const { data: departmentsData } = useQuery(GET_DEPARTMENTS_QUERY, {
+    variables: { institution_id: institutionId },
+    skip: !institutionId
+  })
+
+  const departments = departmentsData?.departments || []
+
+  // Update project mutation
+  const [updateProject, { loading: updateLoading }] = useMutation(UPDATE_PROJECT_MUTATION, {
+    onCompleted: () => {
+      toast.success("Projeto atualizado com sucesso!", { duration: 3000 })
+      handleClose()
+      if (onSuccess) {
+        onSuccess()
+      }
+    },
+    onError: (error) => {
+      toast.error(`Erro ao atualizar projeto: ${error.message}`)
+      console.error("Error updating project:", error)
+    }
+  })
 
   const [formData, setFormData] = useState<EditProjectFormData>({
     title: "",
@@ -107,13 +137,14 @@ export function EditProjectModal({ isOpen, onClose, onSubmit, project }: EditPro
   }, [project])
 
   const getDepartmentName = (id: string) => {
-    const dept = mockDepartments.find(d => d.id === id)
+    const dept = departments.find((d: any) => d.id === id)
     return dept?.name || "Departamento não encontrado"
   }
 
   const getDepartmentBudget = (id: string) => {
-    const dept = mockDepartments.find(d => d.id === id)
-    return dept?.annual_budget || 0
+    const dept = departments.find((d: any) => d.id === id)
+    // TODO: Fetch annual budget for department
+    return 0
   }
 
   const validateForm = (): boolean => {
@@ -143,12 +174,32 @@ export function EditProjectModal({ isOpen, onClose, onSubmit, project }: EditPro
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (validateForm()) {
-      onSubmit(formData)
+
+    if (!validateForm() || !project) {
+      return
+    }
+
+    try {
+      await updateProject({
+        variables: {
+          id: project.id,
+          title: formData.title,
+          description: formData.description,
+          department_id: formData.department_id,
+          budget: formData.budget,
+          type: formData.type,
+          start_at: formData.start_at.toISOString(),
+          end_at: formData.end_at.toISOString(),
+          language_preference: formData.language_preference,
+          is_private: formData.is_private,
+          required_volunteers: formData.required_volunteers,
+        }
+      })
       setErrors({})
+    } catch (error) {
+      console.error("Error submitting form:", error)
     }
   }
 
@@ -226,14 +277,11 @@ export function EditProjectModal({ isOpen, onClose, onSubmit, project }: EditPro
                   <SelectValue placeholder={t.selectDepartment} />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockDepartments.map((dept) => (
+                  {departments.map((dept: any) => (
                     <SelectItem key={dept.id} value={dept.id}>
                       <div className="flex items-center gap-2">
                         <Building className="w-4 h-4" />
                         <span>{dept.name}</span>
-                        <Badge variant="outline" className="ml-2">
-                          R$ {dept.annual_budget.toLocaleString()}
-                        </Badge>
                       </div>
                     </SelectItem>
                   ))}
@@ -437,12 +485,12 @@ export function EditProjectModal({ isOpen, onClose, onSubmit, project }: EditPro
 
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={handleClose}>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={updateLoading}>
               Cancelar
             </Button>
-            <Button type="submit" className="gap-2">
+            <Button type="submit" className="gap-2" disabled={updateLoading}>
               <Save className="w-4 h-4" />
-              Salvar Alterações
+              {updateLoading ? "Salvando..." : "Salvar Alterações"}
             </Button>
           </div>
         </form>

@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
 export const GET_PROJECTS_QUERY = gql`
-  query Projects {
-    projects {
+  query Projects($institutionId: String) {
+    projects(institutionId: $institutionId) {
       id
       title
       description
@@ -41,6 +41,9 @@ export const GET_PROJECTS_QUERY = gql`
         deadline
         owner_id
         tags
+        status
+        priority
+        is_subsidized
         created_at
         updated_at
         owner {
@@ -94,6 +97,9 @@ export const GET_PROJECT_BY_ID_QUERY = gql`
         deadline
         owner_id
         tags
+        status
+        priority
+        is_subsidized
         created_at
         updated_at
         owner {
