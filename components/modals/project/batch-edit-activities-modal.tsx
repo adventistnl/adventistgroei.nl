@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
+import { ActivityTags } from "@/types/graphql-global-types"
 
 export interface BatchEditData {
   status?: string
@@ -89,11 +90,43 @@ export function BatchEditActivitiesModal({
 
   const getTagLabel = (tag: string) => {
     const labels: Record<string, string> = {
-      reforma: "Reforma",
-      material: "Material",
-      training: "Treinamento"
+      [ActivityTags.Reform]: "Reforma",
+      [ActivityTags.Equipment]: "Equipamento",
+      [ActivityTags.Materials]: "Material",
+      [ActivityTags.Training]: "Treinamento",
+      [ActivityTags.Travel]: "Viagem",
+      [ActivityTags.Event]: "Evento",
+      [ActivityTags.Transport]: "Transporte",
+      [ActivityTags.Marketing]: "Marketing",
+      [ActivityTags.Services]: "Serviços",
+      [ActivityTags.Feeding]: "Alimentação",
+      [ActivityTags.Accommodation]: "Acomodação"
     }
     return labels[tag] || tag
+  }
+
+  const getActivityTagOptions = () => {
+    return Object.values(ActivityTags).map(tag => ({
+      value: tag,
+      label: getTagLabel(tag)
+    }))
+  }
+
+  const getTagColor = (tag: string) => {
+    const colors: Record<string, string> = {
+      [ActivityTags.Reform]: 'border-purple-300 text-purple-700 dark:border-purple-600 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/20',
+      [ActivityTags.Equipment]: 'border-blue-300 text-blue-700 dark:border-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/20',
+      [ActivityTags.Materials]: 'border-cyan-300 text-cyan-700 dark:border-cyan-600 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/20',
+      [ActivityTags.Training]: 'border-indigo-300 text-indigo-700 dark:border-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/20',
+      [ActivityTags.Travel]: 'border-green-300 text-green-700 dark:border-green-600 dark:text-green-300 bg-green-50 dark:bg-green-950/20',
+      [ActivityTags.Event]: 'border-pink-300 text-pink-700 dark:border-pink-600 dark:text-pink-300 bg-pink-50 dark:bg-pink-950/20',
+      [ActivityTags.Transport]: 'border-orange-300 text-orange-700 dark:border-orange-600 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/20',
+      [ActivityTags.Marketing]: 'border-red-300 text-red-700 dark:border-red-600 dark:text-red-300 bg-red-50 dark:bg-red-950/20',
+      [ActivityTags.Services]: 'border-yellow-300 text-yellow-700 dark:border-yellow-600 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-950/20',
+      [ActivityTags.Feeding]: 'border-gray-300 text-gray-700 dark:border-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-950/20',
+      [ActivityTags.Accommodation]: 'border-gray-300 text-gray-700 dark:border-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-950/20',
+    }
+    return colors[tag] || 'border-gray-300 text-gray-700 dark:border-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-950/20'
   }
 
   return (
@@ -208,7 +241,7 @@ export function BatchEditActivitiesModal({
             {/* Category */}
             <div className="flex items-center gap-3">
               <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Categoria:</Label>
-              <Select 
+              <Select
                 value={formData.activity_tag || ""}
                 onValueChange={(value) => {
                   setFormData(prev => ({ ...prev, activity_tag: value }))
@@ -221,19 +254,17 @@ export function BatchEditActivitiesModal({
                   <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="reforma">Reforma</SelectItem>
-                  <SelectItem value="material">Material</SelectItem>
-                  <SelectItem value="training">Treinamento</SelectItem>
+                  {getActivityTagOptions().map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {fieldsToUpdate.has('activity_tag') && formData.activity_tag && (
                 <Badge
                   variant="outline"
-                  className={
-                    formData.activity_tag === 'reforma' ? 'border-purple-300 text-purple-700 dark:border-purple-600 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/20' :
-                    formData.activity_tag === 'material' ? 'border-cyan-300 text-cyan-700 dark:border-cyan-600 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/20' :
-                    'border-indigo-300 text-indigo-700 dark:border-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/20'
-                  }
+                  className={getTagColor(formData.activity_tag)}
                 >
                   {getTagLabel(formData.activity_tag)}
                 </Badge>

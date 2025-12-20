@@ -41,6 +41,8 @@ export const GET_PROJECTS_QUERY = gql`
         deadline
         owner_id
         tags
+        custom_tags
+        activity_tag
         status
         priority
         is_subsidized
@@ -50,6 +52,13 @@ export const GET_PROJECTS_QUERY = gql`
           id
           name
           email
+        }
+        activity_funding {
+          id
+          entity_contribution_amount
+          entity_contribution_percent
+          entity_type
+          entity_id
         }
       }
     }
@@ -97,6 +106,8 @@ export const GET_PROJECT_BY_ID_QUERY = gql`
         deadline
         owner_id
         tags
+        custom_tags
+        activity_tag
         status
         priority
         is_subsidized
@@ -106,6 +117,13 @@ export const GET_PROJECT_BY_ID_QUERY = gql`
           id
           name
           email
+        }
+        activity_funding {
+          id
+          entity_contribution_amount
+          entity_contribution_percent
+          entity_type
+          entity_id
         }
       }
       subsidies {

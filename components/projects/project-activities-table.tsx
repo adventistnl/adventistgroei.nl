@@ -43,6 +43,7 @@ import { ProjectTableData } from "@/components/projects/projects-table"
 import { mockProjectActivities, getActivitiesByProjectId } from "@/data/mockData"
 import { ActivityDetailsModal } from "@/components/modals/project/activity-details-modal"
 import { DeleteActivityModal } from "@/components/modals/project/delete-activity-modal"
+import { ActivityTags } from "@/types/graphql-global-types"
 
 // Schema-based interfaces
 export interface ProjectActivityData {
@@ -50,8 +51,9 @@ export interface ProjectActivityData {
   project_id: string
   name: string
   description: string
-  activity_tag: "reforma" | "material" | "training"
+  activity_tag?: ActivityTags
   budget_amount: number
+  deadline: string
   status: string
   priority: string
   created_at: string
@@ -61,11 +63,27 @@ export interface ProjectActivityData {
   is_deleted?: boolean
   deleted_at?: string | null
   deleted_by?: string | null
+  completed_at?: string | null
   // Additional fields
   is_subsidized: boolean
   subsidy_amount?: number
   spent_amount?: number
   institution_requested_amount?: number
+  tags?: string[]
+  custom_tags?: string[]
+  owner_id?: string
+  owner?: {
+    id: string
+    name: string
+    email: string
+  }
+  activity_funding?: Array<{
+    id: string
+    entity_contribution_amount: number
+    entity_contribution_percent: number
+    entity_type: string
+    entity_id: string
+  }>
   assigned_users?: Array<{
     id: string
     name: string
@@ -103,6 +121,14 @@ interface ProjectActivitiesTableProps {
   onDeleteActivity?: (activity: ProjectActivityData) => void
   onViewActivity?: (activity: ProjectActivityData) => void
   onUploadReceipt?: (activity: ProjectActivityData) => void
+  onSaveActivity?: (data: Partial<ProjectActivityData>) => void
+  institutionUsers?: Array<{
+    id: string
+    name: string
+    email: string
+    avatar?: string
+    role?: string
+  }>
   enableRowSelection?: boolean
   onSelectionChange?: (selectedActivities: ProjectActivityData[]) => void
   // Batch editing props
@@ -155,6 +181,8 @@ export function ProjectActivitiesTable({
   onDeleteActivity,
   onViewActivity,
   onUploadReceipt,
+  onSaveActivity,
+  institutionUsers = [],
   enableRowSelection = false,
   onSelectionChange,
   batchEditFields,
@@ -191,13 +219,36 @@ export function ProjectActivitiesTable({
   }, [currentActivities, statusFilter, priorityFilter, tagFilter, searchQuery])
 
   // Helper functions
-  const getActivityTagIcon = (tag: string) => {
+  const getActivityTagIcon = (tag?: ActivityTags) => {
+    if (!tag) return <Activity className="w-4 h-4" />
+
     switch (tag) {
-      case "reforma": return <Wrench className="w-4 h-4" />
-      case "material": return <Package className="w-4 h-4" />
-      case "training": return <GraduationCap className="w-4 h-4" />
+      case ActivityTags.Reform: return <Wrench className="w-4 h-4" />
+      case ActivityTags.Equipment: return <Wrench className="w-4 h-4" />
+      case ActivityTags.Materials: return <Package className="w-4 h-4" />
+      case ActivityTags.Training: return <GraduationCap className="w-4 h-4" />
       default: return <Activity className="w-4 h-4" />
     }
+  }
+
+  const getActivityTagLabel = (tag?: ActivityTags) => {
+    if (!tag) return ''
+
+    const labels: Record<ActivityTags, string> = {
+      [ActivityTags.Reform]: 'Reforma',
+      [ActivityTags.Equipment]: 'Equipamento',
+      [ActivityTags.Materials]: 'Material',
+      [ActivityTags.Training]: 'Treinamento',
+      [ActivityTags.Travel]: 'Viagem',
+      [ActivityTags.Event]: 'Evento',
+      [ActivityTags.Transport]: 'Transporte',
+      [ActivityTags.Marketing]: 'Marketing',
+      [ActivityTags.Services]: 'Serviços',
+      [ActivityTags.Feeding]: 'Alimentação',
+      [ActivityTags.Accommodation]: 'Acomodação',
+    }
+
+    return labels[tag] || tag
   }
 
   // Monochromatic design - all elements use gray tones except subsidy indicator
@@ -270,7 +321,7 @@ export function ProjectActivitiesTable({
       cell: ({ row }) => (
         <Badge variant="outline" className={`${getActivityTagColor()} flex items-center gap-1 w-fit`}>
           {getActivityTagIcon(row.original.activity_tag)}
-          <span className="capitalize">{row.original.activity_tag}</span>
+          <span className="capitalize">{getActivityTagLabel(row.original.activity_tag)}</span>
         </Badge>
       ),
     },
@@ -438,8 +489,12 @@ export function ProjectActivitiesTable({
         onClose={() => setIsViewActivityModalOpen(false)}
         activity={selectedActivityForView}
         project={project}
+        institutionUsers={institutionUsers}
         onSave={(updatedActivity) => {
-          toast.success("Atividade salva com sucesso!")
+          if (onSaveActivity) {
+            onSaveActivity(updatedActivity)
+          }
+          setIsViewActivityModalOpen(false)
         }}
       />
 

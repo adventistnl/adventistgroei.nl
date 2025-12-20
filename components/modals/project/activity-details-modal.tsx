@@ -40,7 +40,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { 
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar"
+import {
   TooltipProvider,
   Tooltip,
   TooltipContent,
@@ -50,7 +55,9 @@ import { Editor } from "@/components/blocks/editor-x/editor"
 import { useTranslation } from "react-i18next"
 import { useCurrency } from "@/contexts/currency-context"
 import toast from "react-hot-toast"
-import { UserAssignment, type User } from "@/components/shared/user-assignment"
+import { UserSelector, type User as UserType } from "@/components/shared/user-selector"
+import { ActivityTags } from "@/types/graphql-global-types"
+import { TagBadgeVariant } from "@/components/ui/tag-badge"
 
 export interface ActivityDocument {
   id: string
@@ -70,6 +77,13 @@ export interface ActivityDetailsModalProps {
   activity: ProjectActivityData | null
   onSave?: (data: Partial<ProjectActivityData>) => void
   project?: any
+  institutionUsers?: Array<{
+    id: string
+    name: string
+    email: string
+    avatar?: string
+    role?: string
+  }>
 }
 
 export function ActivityDetailsModal({
@@ -77,7 +91,8 @@ export function ActivityDetailsModal({
   onClose,
   activity,
   onSave,
-  project
+  project,
+  institutionUsers = []
 }: ActivityDetailsModalProps) {
   const { t } = useTranslation()
   const { formatCurrency: formatCurrencyGlobal } = useCurrency()
@@ -90,44 +105,69 @@ export function ActivityDetailsModal({
   const [editorState, setEditorState] = useState<any>(null)
   const [isDescriptionEditing, setIsDescriptionEditing] = useState(false)
   
-  // Assigned users state
-  const [assignedUsers, setAssignedUsers] = useState<User[]>(
-    activity?.assigned_users || [
-      {
-        id: '1',
-        name: 'João Silva',
-        email: 'joao.silva@adventist.nl',
-        avatar: 'https://i.pravatar.cc/150?img=1',
-        role: 'Coordenador'
-      },
-      {
-        id: '2',
-        name: 'Maria Santos',
-        email: 'maria.santos@adventist.nl',
-        avatar: 'https://i.pravatar.cc/150?img=5',
-        role: 'Tesoureiro'
-      }
-    ]
-  )
+  // Assigned users state - Only show the owner as a single user
+  const [assignedUsers, setAssignedUsers] = useState<User[]>(() => {
+    if (activity?.owner) {
+      return [{
+        id: activity.owner.id,
+        name: activity.owner.name,
+        email: activity.owner.email,
+        role: 'Responsável'
+      }]
+    }
+    return []
+  })
+
+  // Available users from institution
+  const availableUsers: User[] = institutionUsers.map(user => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    avatar: user.avatar,
+    role: user.role || 'Membro'
+  }))
+
+  // Debug: Log available users
+  useEffect(() => {
+    console.log('📊 Institution Users:', institutionUsers)
+    console.log('👥 Available Users:', availableUsers)
+  }, [institutionUsers, availableUsers])
   
-  // Mock available users for assignment
-  const availableUsers: User[] = [
-    { id: '1', name: 'João Silva', email: 'joao.silva@adventist.nl', avatar: 'https://i.pravatar.cc/150?img=1', role: 'Coordenador' },
-    { id: '2', name: 'Maria Santos', email: 'maria.santos@adventist.nl', avatar: 'https://i.pravatar.cc/150?img=5', role: 'Tesoureiro' },
-    { id: '3', name: 'Pedro Costa', email: 'pedro.costa@adventist.nl', avatar: 'https://i.pravatar.cc/150?img=3', role: 'Secretário' },
-    { id: '4', name: 'Ana Oliveira', email: 'ana.oliveira@adventist.nl', avatar: 'https://i.pravatar.cc/150?img=9', role: 'Membro' },
-    { id: '5', name: 'Carlos Ferreira', email: 'carlos.ferreira@adventist.nl', avatar: 'https://i.pravatar.cc/150?img=7', role: 'Diácono' },
-    { id: '6', name: 'Beatriz Lima', email: 'beatriz.lima@adventist.nl', role: 'Anciã' },
-  ]
-  
+  // Converte valores antigos (português/minúsculo) para os valores corretos do enum
+  const normalizeActivityTag = (tag?: string): string => {
+    if (!tag) return ''
+
+    // Se já está no formato correto do enum, retorna
+    if (Object.values(ActivityTags).includes(tag as ActivityTags)) {
+      return tag
+    }
+
+    // Mapeamento de valores antigos para novos
+    const legacyMap: Record<string, ActivityTags> = {
+      'reforma': ActivityTags.Reform,
+      'material': ActivityTags.Materials,
+      'training': ActivityTags.Training,
+      'viagem': ActivityTags.Travel,
+      'evento': ActivityTags.Event,
+      'transporte': ActivityTags.Transport,
+      'marketing': ActivityTags.Marketing,
+      'servicos': ActivityTags.Services,
+      'alimentacao': ActivityTags.Feeding,
+      'acomodacao': ActivityTags.Accommodation,
+      'equipamento': ActivityTags.Equipment,
+    }
+
+    return legacyMap[tag.toLowerCase()] || tag
+  }
+
   // Form states
   const [formData, setFormData] = useState({
     name: activity?.name || "",
     status: activity?.status || "",
     priority: activity?.priority || "",
-    activity_tag: activity?.activity_tag || "",
+    activity_tag: normalizeActivityTag(activity?.activity_tag),
     budget_amount: activity?.budget_amount || 0,
-    description: activity?.description || "Esta é uma descrição de teste para demonstrar o funcionamento do editor rico.\n\nVocê pode formatar o texto, adicionar listas, links e outros elementos.\n\nClique no botão de editar para modificar este conteúdo usando o editor avançado.",
+    description: activity?.description || "",
     is_subsidized: activity?.is_subsidized || false,
     institution_requested_amount: activity?.institution_requested_amount || 0
   })
@@ -179,6 +219,18 @@ export function ActivityDetailsModal({
         is_subsidized: activity.is_subsidized,
         institution_requested_amount: activity.institution_requested_amount || 0
       })
+
+      // Update assigned users when activity changes
+      if (activity.owner) {
+        setAssignedUsers([{
+          id: activity.owner.id,
+          name: activity.owner.name,
+          email: activity.owner.email,
+          role: 'Responsável'
+        }])
+      } else {
+        setAssignedUsers([])
+      }
     }
   }, [activity])
 
@@ -263,15 +315,6 @@ export function ActivityDetailsModal({
   }
 
   // Helper functions
-  const getActivityTagIcon = (tag: string) => {
-    switch (tag) {
-      case "reforma": return <Wrench className="w-4 h-4" />
-      case "material": return <Package className="w-4 h-4" />
-      case "training": return <GraduationCap className="w-4 h-4" />
-      default: return <Tag className="w-4 h-4" />
-    }
-  }
-
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
       planning: "Planejamento",
@@ -295,11 +338,60 @@ export function ActivityDetailsModal({
 
   const getTagLabel = (tag: string) => {
     const labels: Record<string, string> = {
-      reforma: "Reforma",
-      material: "Material",
-      training: "Treinamento"
+      [ActivityTags.Reform]: "Reforma",
+      [ActivityTags.Equipment]: "Equipamento",
+      [ActivityTags.Materials]: "Material",
+      [ActivityTags.Training]: "Treinamento",
+      [ActivityTags.Travel]: "Viagem",
+      [ActivityTags.Event]: "Evento",
+      [ActivityTags.Transport]: "Transporte",
+      [ActivityTags.Marketing]: "Marketing",
+      [ActivityTags.Services]: "Serviços",
+      [ActivityTags.Feeding]: "Alimentação",
+      [ActivityTags.Accommodation]: "Acomodação"
     }
     return labels[tag] || tag
+  }
+
+  const getActivityTagOptions = () => {
+    return Object.values(ActivityTags).map(tag => ({
+      value: tag,
+      label: getTagLabel(tag)
+    }))
+  }
+
+  const getActivityTagIcon = (tag: string) => {
+    const icons: Record<string, any> = {
+      [ActivityTags.Reform]: Wrench,
+      [ActivityTags.Equipment]: Wrench,
+      [ActivityTags.Materials]: Package,
+      [ActivityTags.Training]: GraduationCap,
+      [ActivityTags.Travel]: Tag,
+      [ActivityTags.Event]: Tag,
+      [ActivityTags.Transport]: Tag,
+      [ActivityTags.Marketing]: Tag,
+      [ActivityTags.Services]: Tag,
+      [ActivityTags.Feeding]: Tag,
+      [ActivityTags.Accommodation]: Tag
+    }
+    return icons[tag] || Tag
+  }
+
+  const getActivityTagVariant = (tag: string): TagBadgeVariant => {
+    const variants: Record<string, TagBadgeVariant> = {
+      [ActivityTags.Reform]: 'purple',
+      [ActivityTags.Equipment]: 'blue',
+      [ActivityTags.Materials]: 'cyan',
+      [ActivityTags.Training]: 'indigo',
+      [ActivityTags.Travel]: 'green',
+      [ActivityTags.Event]: 'pink',
+      [ActivityTags.Transport]: 'orange',
+      [ActivityTags.Marketing]: 'red',
+      [ActivityTags.Services]: 'yellow',
+      [ActivityTags.Feeding]: 'gray',
+      [ActivityTags.Accommodation]: 'gray'
+    }
+    return variants[tag] || 'gray'
   }
 
   const formatCurrency = (amount: number) => {
@@ -326,8 +418,17 @@ export function ActivityDetailsModal({
   }
 
   const handleSave = () => {
-    if (onSave) {
-      onSave(formData as Partial<ProjectActivityData>)
+    if (onSave && activity) {
+      // Include activity id and owner_id from assignedUsers
+      const dataToSave: Partial<ProjectActivityData> = {
+        id: activity.id,
+        ...formData,
+        activity_tag: normalizeActivityTag(formData.activity_tag) as any,
+        owner_id: assignedUsers.length > 0 ? assignedUsers[0].id : activity.owner_id,
+      }
+      console.log('💾 Saving activity with data:', dataToSave)
+      console.log('🏷️ Activity tag being sent:', dataToSave.activity_tag)
+      onSave(dataToSave)
       toast.success(t('common.success'))
       setHasChanges(false)
     }
@@ -339,8 +440,8 @@ export function ActivityDetailsModal({
     }
   }
 
-  const handleAssignmentChange = (users: User[]) => {
-    setAssignedUsers(users)
+  const handleUserSelect = (user: UserType) => {
+    setAssignedUsers([user])
     setHasChanges(true)
   }
 
@@ -543,8 +644,8 @@ export function ActivityDetailsModal({
                   </Tooltip>
                 </TooltipProvider>
                 {editingField === 'category' ? (
-                  <Select 
-                    value={formData.activity_tag} 
+                  <Select
+                    value={formData.activity_tag}
                     onValueChange={(value) => {
                       handleInputChange('activity_tag', value)
                       setEditingField(null)
@@ -554,25 +655,19 @@ export function ActivityDetailsModal({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="reforma">{t('activities.modal.category_options.reforma')}</SelectItem>
-                      <SelectItem value="material">{t('activities.modal.category_options.material')}</SelectItem>
-                      <SelectItem value="training">{t('activities.modal.category_options.training')}</SelectItem>
+                      {getActivityTagOptions().map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 ) : (
                   <div className="flex items-center gap-2">
                     <TagBadge
                       label={getTagLabel(formData.activity_tag)}
-                      variant={
-                        formData.activity_tag === 'reforma' ? 'purple' :
-                        formData.activity_tag === 'material' ? 'cyan' :
-                        'indigo'
-                      }
-                      icon={
-                        formData.activity_tag === 'reforma' ? Wrench :
-                        formData.activity_tag === 'material' ? Package :
-                        GraduationCap
-                      }
+                      variant={getActivityTagVariant(formData.activity_tag)}
+                      icon={getActivityTagIcon(formData.activity_tag)}
                       size="md"
                     />
                     <Button
@@ -588,21 +683,32 @@ export function ActivityDetailsModal({
               </div>
 
               {/* Assigned Users */}
-              <UserAssignment
-                assignedUsers={assignedUsers}
-                availableUsers={availableUsers}
-                onAssignmentChange={handleAssignmentChange}
-                label="Responsáveis"
-                avatarSize="md"
-                maxAvatarsDisplay={3}
-                showCount
-                enableSearch
-                toastMessages={{
-                  assigned: (name) => `${name} atribuído à atividade`,
-                  removed: (name) => `${name} removido da atividade`
-                }}
-                compact={false}
-              />
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Responsável:
+                </span>
+                {assignedUsers.length > 0 && (
+                  <div className="flex items-center gap-1">
+                    <Avatar className="h-8 w-8 border-2 border-gray-200 dark:border-gray-700">
+                      <AvatarImage src={assignedUsers[0].avatar} alt={assignedUsers[0].name} />
+                      <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                        {assignedUsers[0].name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {assignedUsers[0].name}
+                    </span>
+                  </div>
+                )}
+                <UserSelector
+                  availableUsers={availableUsers}
+                  selectedUser={assignedUsers.length > 0 ? assignedUsers[0] : null}
+                  onUserSelect={handleUserSelect}
+                  buttonLabel={assignedUsers.length > 0 ? "Alterar" : "Selecionar"}
+                  dialogTitle="Selecionar Responsável"
+                  searchPlaceholder="Buscar usuário..."
+                />
+              </div>
             </div>
 
             {/* Subsidy Icon - Right Side */}
@@ -872,14 +978,45 @@ export function ActivityDetailsModal({
               
               {isDescriptionEditing ? (
                 <div className="border border-gray-200 rounded-lg p-4 min-h-[200px] relative">
-                  <Editor 
+                  <Editor
+                    editorSerializedState={
+                      formData.description ? {
+                        root: {
+                          children: [
+                            {
+                              children: [
+                                {
+                                  detail: 0,
+                                  format: 0,
+                                  mode: "normal",
+                                  style: "",
+                                  text: formData.description,
+                                  type: "text",
+                                  version: 1,
+                                },
+                              ],
+                              direction: "ltr",
+                              format: "",
+                              indent: 0,
+                              type: "paragraph",
+                              version: 1,
+                            },
+                          ],
+                          direction: "ltr",
+                          format: "",
+                          indent: 0,
+                          type: "root",
+                          version: 1,
+                        },
+                      } : undefined
+                    }
                     onChange={(state) => {
                       setEditorState(state)
                       const extractedText = extractTextFromEditorState(state)
                       handleInputChange('description', extractedText)
                     }}
                   />
-                  {!editorState && (
+                  {!editorState && !formData.description && (
                     <div className="absolute inset-4 pointer-events-none text-gray-400 text-sm">
                       {t('activities.modal.click_to_edit')}
                     </div>

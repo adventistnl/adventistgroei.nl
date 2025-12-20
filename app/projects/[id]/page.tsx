@@ -39,15 +39,60 @@ import toast from "react-hot-toast"
 import "@/lib/i18n"
 import { useQuery, useMutation } from "@apollo/client"
 import { GET_PROJECT_BY_ID_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
-import { BATCH_UPDATE_PROJECT_ACTIVITIES, CREATE_PROJECT_ACTIVITY } from "@/graphql/mutations/PROJECT_ACTIVITY_MUTATIONS"
+import { GET_ALL_USERS_QUERY } from "@/graphql/queries/GET_USER_QUERY"
+import { BATCH_UPDATE_PROJECT_ACTIVITIES, CREATE_PROJECT_ACTIVITY, UPDATE_PROJECT_ACTIVITY } from "@/graphql/mutations/PROJECT_ACTIVITY_MUTATIONS"
 import { useAuth } from "@/contexts/auth-context"
-import { ActivityTags, EntityType } from "@/types/graphql-global-types"
+import { useInstitution } from "@/contexts/institution-context"
+import { ActivityTags, EntityType, ActivityPriority, ActivityStatus } from "@/types/graphql-global-types"
+
+// Helper functions for ActivityTags
+const getActivityTagLabel = (tag: ActivityTags): string => {
+  const labels: Record<ActivityTags, string> = {
+    [ActivityTags.Reform]: "Reforma",
+    [ActivityTags.Equipment]: "Equipamento",
+    [ActivityTags.Materials]: "Material",
+    [ActivityTags.Training]: "Treinamento",
+    [ActivityTags.Travel]: "Viagem",
+    [ActivityTags.Event]: "Evento",
+    [ActivityTags.Transport]: "Transporte",
+    [ActivityTags.Marketing]: "Marketing",
+    [ActivityTags.Services]: "Serviços",
+    [ActivityTags.Feeding]: "Alimentação",
+    [ActivityTags.Accommodation]: "Acomodação"
+  }
+  return labels[tag]
+}
+
+const getActivityTagOptions = () => {
+  return Object.values(ActivityTags).map(tag => ({
+    value: tag,
+    label: getActivityTagLabel(tag)
+  }))
+}
+
+const getActivityTagVariant = (tag: ActivityTags): string => {
+  const variants: Record<ActivityTags, string> = {
+    [ActivityTags.Reform]: 'purple',
+    [ActivityTags.Equipment]: 'blue',
+    [ActivityTags.Materials]: 'cyan',
+    [ActivityTags.Training]: 'indigo',
+    [ActivityTags.Travel]: 'green',
+    [ActivityTags.Event]: 'pink',
+    [ActivityTags.Transport]: 'orange',
+    [ActivityTags.Marketing]: 'red',
+    [ActivityTags.Services]: 'yellow',
+    [ActivityTags.Feeding]: 'gray',
+    [ActivityTags.Accommodation]: 'gray'
+  }
+  return variants[tag] || 'gray'
+}
 
 export default function ProjectDetailsPage() {
   const params = useParams()
   const router = useRouter()
   const { i18n } = useTranslation()
   const { user } = useAuth()
+  const { currentInstitutionData } = useInstitution()
   const projectId = params.id as string
   
   // State management
@@ -112,6 +157,22 @@ export default function ProjectDetailsPage() {
     }
   })
 
+  // Fetch users from the project's institution or active institution as fallback
+  const institutionIdForUsers = projectData?.project?.institution_id || currentInstitutionData?.id || user?.institution_id
+
+  const { data: usersData, loading: usersLoading } = useQuery(GET_ALL_USERS_QUERY, {
+    variables: { institution_id: institutionIdForUsers },
+    skip: !institutionIdForUsers,
+    onCompleted: (data) => {
+      console.log('✅ Users loaded:', data.users)
+      console.log('🏛️ Institution ID used:', institutionIdForUsers)
+      console.log('📍 Source:', projectData?.project?.institution_id ? 'project' : currentInstitutionData?.id ? 'context' : 'user')
+    },
+    onError: (error) => {
+      console.error('❌ Error loading users:', error)
+    }
+  })
+
   // Batch update mutation
   const [batchUpdateActivities, { loading: batchUpdateLoading }] = useMutation(BATCH_UPDATE_PROJECT_ACTIVITIES, {
     onCompleted: () => {
@@ -141,6 +202,20 @@ export default function ProjectDetailsPage() {
     onError: (error) => {
       toast.error(`Erro ao criar atividade: ${error.message}`)
       console.error("Error creating activity:", error)
+    }
+  })
+
+  // Update activity mutation
+  const [updateProjectActivity, { loading: updateActivityLoading }] = useMutation(UPDATE_PROJECT_ACTIVITY, {
+    onCompleted: () => {
+      toast.success("✅ Atividade atualizada com sucesso!", { duration: 3000 })
+      refetchProject()
+      setIsEditActivityModalOpen(false)
+      setSelectedActivity(undefined)
+    },
+    onError: (error) => {
+      toast.error(`Erro ao atualizar atividade: ${error.message}`)
+      console.error("Error updating activity:", error)
     }
   })
 
@@ -185,6 +260,10 @@ export default function ProjectDetailsPage() {
       const transformedProject = transformProjectData(projectData.project)
       setProject(transformedProject)
 
+      // Debug: Log project institution_id
+      console.log('🏢 Project Data:', projectData.project)
+      console.log('🏢 Project institution_id:', projectData.project.institution_id)
+
       // Transform subsidies data
       if (projectData.project.subsidies) {
         const transformedSubsidies: SubsidyRequestCardData[] = projectData.project.subsidies.map((subsidy: any) => ({
@@ -222,12 +301,6 @@ export default function ProjectDetailsPage() {
         'LOW': 'low'
       }
 
-      const tagMap: Record<string, string> = {
-        'REFORM': 'reforma',
-        'MATERIALS': 'material',
-        'TRAINING': 'training'
-      }
-
       return {
         id: activity.id,
         project_id: projectId,
@@ -237,7 +310,7 @@ export default function ProjectDetailsPage() {
         deadline: activity.deadline,
         status: statusMap[activity.status] || "todo",
         priority: priorityMap[activity.priority] || "medium",
-        activity_tag: activity.tags?.[0] ? tagMap[activity.tags[0]] || "material" : "material",
+        activity_tag: (activity.activity_tag as ActivityTags) || undefined,
         is_subsidized: activity.is_subsidized || false,
         completed_at: null,
         created_at: activity.created_at,
@@ -248,6 +321,12 @@ export default function ProjectDetailsPage() {
           email: activity.owner.email,
           initials: ownerInitials,
         }] : [],
+        // Additional fields for edit modal
+        tags: activity.tags || [],
+        custom_tags: activity.custom_tags || [],
+        owner: activity.owner,
+        activity_funding: activity.activity_funding || [],
+        owner_id: activity.owner_id,
       }
     }) as ProjectActivityData[]
   }, [projectData, projectId])
@@ -380,17 +459,15 @@ export default function ProjectDetailsPage() {
     }
 
     if (batchEditData.activity_tag && batchEditData.activity_tag !== '') {
-      const tagMap: Record<string, string> = {
-        'reforma': 'REFORM',
-        'material': 'MATERIALS',
-        'training': 'TRAINING'
-      }
-      variables.activity_tag = tagMap[batchEditData.activity_tag]
+      // Values are already in the correct enum format (REFORM, MATERIALS, etc.)
+      variables.activity_tag = batchEditData.activity_tag
     }
 
     if (batchEditData.is_subsidized !== undefined) {
       variables.is_subsidized = batchEditData.is_subsidized
     }
+
+    console.log('🔄 Batch update variables:', variables)
 
     try {
       await batchUpdateActivities({ variables })
@@ -504,14 +581,20 @@ export default function ProjectDetailsPage() {
         "Marketing": ActivityTags.Marketing,
         "Serviços": ActivityTags.Services,
         // English
+        "Reform": ActivityTags.Reform,
         "Renovation": ActivityTags.Reform,
         "Equipment": ActivityTags.Equipment,
         "Trips": ActivityTags.Travel,
+        "Travel": ActivityTags.Travel,
         "Events": ActivityTags.Event,
+        "Materials": ActivityTags.Materials,
         "Training": ActivityTags.Training,
         "Food": ActivityTags.Feeding,
+        "Feeding": ActivityTags.Feeding,
         "Transportation": ActivityTags.Transport,
+        "Transport": ActivityTags.Transport,
         "Accommodation": ActivityTags.Accommodation,
+        "Services": ActivityTags.Services,
         // Dutch
         "Renovatie": ActivityTags.Reform,
         "Apparatuur": ActivityTags.Equipment,
@@ -519,14 +602,30 @@ export default function ProjectDetailsPage() {
         "Evenementen": ActivityTags.Event,
         "Voedsel": ActivityTags.Feeding,
         "Materialen": ActivityTags.Materials,
+        "Vervoer": ActivityTags.Transport,
+        "Accommodatie": ActivityTags.Accommodation,
+        "Diensten": ActivityTags.Services,
       }
 
-      const mappedTags: ActivityTags[] = data.tags
-        .map(tag => tagMap[tag])
-        .filter((tag): tag is ActivityTags => tag !== undefined)
+      // Separate tags into enum tags and custom tags
+      const mappedTags: ActivityTags[] = []
+      const customTags: string[] = []
+
+      data.tags.forEach(tag => {
+        const enumTag = tagMap[tag]
+        if (enumTag) {
+          // Avoid duplicates in mapped tags
+          if (!mappedTags.includes(enumTag)) {
+            mappedTags.push(enumTag)
+          }
+        } else {
+          // Add to custom tags if not found in enum
+          customTags.push(tag)
+        }
+      })
 
       // If no tags were mapped, add a default one
-      if (mappedTags.length === 0) {
+      if (mappedTags.length === 0 && customTags.length === 0) {
         mappedTags.push(ActivityTags.Materials)
       }
 
@@ -540,6 +639,13 @@ export default function ProjectDetailsPage() {
         ? (institutionAmount / data.budget_amount) * 100
         : 0
 
+      // Map priority from frontend to API enum
+      const priorityMap: Record<string, ActivityPriority> = {
+        "low": ActivityPriority.Low,
+        "medium": ActivityPriority.Medium,
+        "high": ActivityPriority.High,
+      }
+
       const input = {
         project_id: projectId,
         name: data.name,
@@ -548,6 +654,9 @@ export default function ProjectDetailsPage() {
         deadline: deadline.toISOString(),
         owner_id: user.id,
         tags: mappedTags,
+        custom_tags: customTags,
+        priority: priorityMap[data.priority] || ActivityPriority.Medium,
+        status: ActivityStatus.Todo,
         is_subsidized: data.request_subsidy,
         activity_funding: {
           entity_contribution_amount: institutionAmount,
@@ -681,11 +790,183 @@ export default function ProjectDetailsPage() {
     toast.success(t.activity.uploadSuccess, { duration: 3000 })
   }
 
-  const handleEditActivitySubmit = (data: EditActivityFormData) => {
-    // TODO: Implement activity update API call
-    setIsEditActivityModalOpen(false)
-    setSelectedActivity(undefined)
-    toast.success(t.activity.activityUpdated, { duration: 3000 })
+  // Wrapper to convert ProjectActivityData to EditActivityFormData
+  const handleSaveActivityFromDetailsModal = async (data: Partial<ProjectActivityData>) => {
+    if (!data.id) return
+
+    // Convert to EditActivityFormData format
+    const formData: EditActivityFormData = {
+      id: data.id,
+      name: data.name || "",
+      description: data.description || "",
+      budget_amount: data.budget_amount || 0,
+      tags: data.tags || [],
+      custom_tags: data.custom_tags || [],
+      priority: (data.priority?.toLowerCase() as EditActivityFormData["priority"]) || "medium",
+      status: (data.status?.toLowerCase() as EditActivityFormData["status"]) || "todo",
+      is_subsidized: data.is_subsidized || false,
+      deadline: data.deadline || "",
+      institution_requested_amount: data.institution_requested_amount,
+    }
+
+    // Pass through owner_id and activity_tag
+    await handleEditActivitySubmit(formData, data.owner_id, data.activity_tag)
+  }
+
+  const handleEditActivitySubmit = async (data: EditActivityFormData, owner_id?: string, activity_tag?: string) => {
+    try {
+      // Same tag mapping logic as create
+      const tagMap: Record<string, ActivityTags> = {
+        // Portuguese
+        "Reforma": ActivityTags.Reform,
+        "Equipamentos": ActivityTags.Equipment,
+        "Viagens": ActivityTags.Travel,
+        "Eventos": ActivityTags.Event,
+        "Materiais": ActivityTags.Materials,
+        "Treinamento": ActivityTags.Training,
+        "Alimentação": ActivityTags.Feeding,
+        "Transporte": ActivityTags.Transport,
+        "Hospedagem": ActivityTags.Accommodation,
+        "Marketing": ActivityTags.Marketing,
+        "Serviços": ActivityTags.Services,
+        // English
+        "Reform": ActivityTags.Reform,
+        "Renovation": ActivityTags.Reform,
+        "Equipment": ActivityTags.Equipment,
+        "Trips": ActivityTags.Travel,
+        "Travel": ActivityTags.Travel,
+        "Events": ActivityTags.Event,
+        "Materials": ActivityTags.Materials,
+        "Training": ActivityTags.Training,
+        "Food": ActivityTags.Feeding,
+        "Feeding": ActivityTags.Feeding,
+        "Transportation": ActivityTags.Transport,
+        "Transport": ActivityTags.Transport,
+        "Accommodation": ActivityTags.Accommodation,
+        "Services": ActivityTags.Services,
+        // Dutch
+        "Renovatie": ActivityTags.Reform,
+        "Apparatuur": ActivityTags.Equipment,
+        "Reizen": ActivityTags.Travel,
+        "Evenementen": ActivityTags.Event,
+        "Voedsel": ActivityTags.Feeding,
+        "Materialen": ActivityTags.Materials,
+        "Vervoer": ActivityTags.Transport,
+        "Accommodatie": ActivityTags.Accommodation,
+        "Diensten": ActivityTags.Services,
+      }
+
+      // Separate tags into enum tags and custom tags
+      const mappedTags: ActivityTags[] = []
+      const customTags: string[] = []
+
+      data.tags?.forEach(tag => {
+        const enumTag = tagMap[tag]
+        if (enumTag) {
+          if (!mappedTags.includes(enumTag)) {
+            mappedTags.push(enumTag)
+          }
+        } else {
+          customTags.push(tag)
+        }
+      })
+
+      // Add custom_tags from data
+      if (data.custom_tags) {
+        customTags.push(...data.custom_tags)
+      }
+
+      // Map priority
+      const priorityMap: Record<string, ActivityPriority> = {
+        "low": ActivityPriority.Low,
+        "medium": ActivityPriority.Medium,
+        "high": ActivityPriority.High,
+        "urgent": ActivityPriority.Urgent,
+      }
+
+      // Map status
+      const statusMap: Record<string, ActivityStatus> = {
+        "todo": ActivityStatus.Todo,
+        "in_progress": ActivityStatus.InProgress,
+        "completed": ActivityStatus.Completed,
+        "on_hold": ActivityStatus.OnHold,
+      }
+
+      const input: any = {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        budget_amount: data.budget_amount,
+      }
+
+      if (mappedTags.length > 0) {
+        input.tags = mappedTags
+      }
+
+      if (customTags.length > 0) {
+        input.custom_tags = customTags
+      }
+
+      if (data.priority) {
+        input.priority = priorityMap[data.priority] || ActivityPriority.Medium
+      }
+
+      if (data.status) {
+        input.status = statusMap[data.status] || ActivityStatus.Todo
+      }
+
+      if (data.deadline) {
+        input.deadline = data.deadline
+      }
+
+      if (data.is_subsidized !== undefined) {
+        input.is_subsidized = data.is_subsidized
+      }
+
+      // Add owner_id if provided
+      if (owner_id) {
+        input.owner_id = owner_id
+      }
+
+      // Add activity_tag if provided
+      if (activity_tag) {
+        // Map activity_tag string to ActivityTags enum
+        const activityTagMap: Record<string, ActivityTags> = {
+          // Enum values (current format)
+          "REFORM": ActivityTags.Reform,
+          "EQUIPMENT": ActivityTags.Equipment,
+          "TRAVEL": ActivityTags.Travel,
+          "EVENT": ActivityTags.Event,
+          "MATERIALS": ActivityTags.Materials,
+          "TRAINING": ActivityTags.Training,
+          "FEEDING": ActivityTags.Feeding,
+          "TRANSPORT": ActivityTags.Transport,
+          "ACCOMMODATION": ActivityTags.Accommodation,
+          "MARKETING": ActivityTags.Marketing,
+          "SERVICES": ActivityTags.Services,
+          // Legacy values (old format - lowercase, Portuguese)
+          "reforma": ActivityTags.Reform,
+          "material": ActivityTags.Materials,
+          "training": ActivityTags.Training,
+          "viagem": ActivityTags.Travel,
+          "evento": ActivityTags.Event,
+          "transporte": ActivityTags.Transport,
+          "marketing": ActivityTags.Marketing,
+          "servicos": ActivityTags.Services,
+          "alimentacao": ActivityTags.Feeding,
+          "acomodacao": ActivityTags.Accommodation,
+          "equipamento": ActivityTags.Equipment,
+        }
+        input.activity_tag = activityTagMap[activity_tag] || activity_tag
+      }
+
+      await updateProjectActivity({
+        variables: { input }
+      })
+    } catch (error) {
+      console.error("Error updating activity:", error)
+      toast.error("Erro ao atualizar atividade")
+    }
   }
 
   const handleDeleteActivityConfirm = () => {
@@ -721,7 +1002,7 @@ export default function ProjectDetailsPage() {
       project_id: projectId,
       name: activity.name,
       description: activity.description || "",
-      activity_tag: "material" as "reforma" | "material" | "training",
+      activity_tag: ActivityTags.Materials,
       budget_amount: activity.budget_amount,
       status: activity.status,
       priority: "medium",
@@ -786,20 +1067,9 @@ export default function ProjectDetailsPage() {
       label: 'Categoria',
       type: 'select',
       value: batchEditData.activity_tag,
-      options: [
-        { value: 'reforma', label: 'Reforma' },
-        { value: 'material', label: 'Material' },
-        { value: 'training', label: 'Treinamento' }
-      ],
+      options: getActivityTagOptions(),
       onChange: (value) => setBatchEditData(prev => ({ ...prev, activity_tag: value as string })),
-      getBadgeVariant: (value) => {
-        const map: Record<string, string> = {
-          reforma: 'purple',
-          material: 'cyan',
-          training: 'indigo'
-        }
-        return map[value] || 'gray'
-      }
+      getBadgeVariant: (value) => getActivityTagVariant(value as ActivityTags)
     },
     {
       id: 'is_subsidized',
@@ -916,6 +1186,8 @@ export default function ProjectDetailsPage() {
               onDeleteActivity={handleDeleteActivity}
               onViewActivity={undefined}
               onUploadReceipt={handleUploadReceiptForActivity}
+              onSaveActivity={handleSaveActivityFromDetailsModal}
+              institutionUsers={usersData?.users || []}
               enableRowSelection={true}
               onSelectionChange={handleSelectionChange}
               batchEditFields={batchEditFields}

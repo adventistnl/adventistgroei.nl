@@ -11,6 +11,7 @@ export const CREATE_PROJECT_ACTIVITY = gql`
       status
       priority
       tags
+      custom_tags
       is_subsidized
       created_at
       updated_at
@@ -55,6 +56,7 @@ export const BATCH_UPDATE_PROJECT_ACTIVITIES = gql`
       status
       priority
       tags
+      activity_tag
       is_subsidized
       updated_at
       owner {
@@ -62,6 +64,50 @@ export const BATCH_UPDATE_PROJECT_ACTIVITIES = gql`
         name
         email
       }
+    }
+  }
+`;
+
+export const UPDATE_PROJECT_ACTIVITY = gql`
+  mutation UpdateProjectActivity($input: ProjectActivityUpdateDto!) {
+    updateProjectActivity(input: $input) {
+      id
+      name
+      description
+      budget_amount
+      deadline
+      owner_id
+      status
+      priority
+      tags
+      custom_tags
+      activity_tag
+      is_subsidized
+      created_at
+      updated_at
+      owner {
+        id
+        name
+        email
+      }
+      activity_funding {
+        id
+        entity_contribution_amount
+        entity_contribution_percent
+        entity_type
+        entity_id
+      }
+    }
+  }
+`;
+
+export const DELETE_PROJECT_ACTIVITY = gql`
+  mutation DeleteProjectActivity($id: ID!) {
+    deleteProjectActivity(id: $id) {
+      id
+      name
+      is_deleted
+      deleted_at
     }
   }
 `;

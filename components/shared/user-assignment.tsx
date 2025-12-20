@@ -12,6 +12,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
   Avatar,
   AvatarFallback,
   AvatarImage,
@@ -129,31 +134,34 @@ export function UserAssignment({
       .slice(0, 2)
   }
 
-  const handleToggleUser = (user: User) => {
+  const handleToggleUser = (e: React.MouseEvent, user: User) => {
+    e.preventDefault()
+    e.stopPropagation()
+
     if (disabled) return
 
     const isAssigned = assignedUsers.some((u) => u.id === user.id)
-    
+
     let newAssignedUsers: User[]
-    
+
     if (isAssigned) {
       newAssignedUsers = assignedUsers.filter((u) => u.id !== user.id)
-      
+
       const message = toastMessages?.removed
         ? toastMessages.removed(user.name)
         : `${user.name} removido`
-      
+
       toast.success(message)
     } else {
       newAssignedUsers = [...assignedUsers, user]
-      
+
       const message = toastMessages?.assigned
         ? toastMessages.assigned(user.name)
         : `${user.name} atribuído`
-      
+
       toast.success(message)
     }
-    
+
     onAssignmentChange(newAssignedUsers)
   }
 
@@ -230,113 +238,125 @@ export function UserAssignment({
             ({assignedUsers.length})
           </span>
         )}
-        
-        <TooltipProvider>
-          <Tooltip open={isOpen} onOpenChange={handleOpenChange}>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={disabled}
-                className={cn(
-                  "h-6 w-6 p-0 rounded-md transition-colors",
-                  "hover:bg-gray-100 dark:hover:bg-gray-800",
-                  "text-gray-400 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300",
-                  disabled && "opacity-50 cursor-not-allowed"
-                )}
-              >
-                <UserPlus className="w-3.5 h-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent 
-              side="bottom" 
-              align="end"
-              className="w-64 p-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-lg"
-              onPointerDownOutside={() => handleOpenChange(false)}
+
+        <Popover open={isOpen} onOpenChange={handleOpenChange}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={disabled}
+              className={cn(
+                "h-6 w-6 p-0 rounded-md transition-colors",
+                "hover:bg-gray-100 dark:hover:bg-gray-800",
+                "text-gray-400 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300",
+                disabled && "opacity-50 cursor-not-allowed"
+              )}
             >
-              <div className="p-2 space-y-2">
-                <div className="flex items-center justify-between px-2 py-1">
-                  <h4 className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                    {addButtonTooltip}
-                  </h4>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleOpenChange(false)}
-                    className="h-4 w-4 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
+              <UserPlus className="w-3.5 h-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            side="bottom"
+            align="end"
+            sideOffset={5}
+            className="w-64 p-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-lg"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+          >
+            <div
+              className="p-2 space-y-2"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-2 py-1">
+                <h4 className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                  {addButtonTooltip}
+                </h4>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    handleOpenChange(false)
+                  }}
+                  className="h-4 w-4 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+
+              {enableSearch && (
+                <div className="px-2">
+                  <Input
+                    placeholder="Buscar..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-7 text-xs border-gray-200 dark:border-gray-700"
+                  />
                 </div>
-                
-                {enableSearch && (
-                  <div className="px-2">
-                    <Input
-                      placeholder="Buscar..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="h-7 text-xs border-gray-200 dark:border-gray-700"
-                    />
-                  </div>
-                )}
-                
-                <div className="max-h-60 overflow-y-auto space-y-0.5 px-1">
-                  {sortedUsers.length === 0 ? (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-6">
-                      {searchQuery ? "Nenhum usuário encontrado" : "Nenhum usuário disponível"}
-                    </p>
-                  ) : (
-                    sortedUsers.map((user) => {
-                      const isAssigned = assignedUsers.some((u) => u.id === user.id)
-                      
-                      return (
-                        <button
-                          key={user.id}
-                          onClick={() => handleToggleUser(user)}
-                          className={cn(
-                            "w-full flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors text-left",
-                            "hover:bg-gray-100 dark:hover:bg-gray-800",
-                            isAssigned && "bg-gray-50 dark:bg-gray-800/50"
-                          )}
-                        >
-                          <Avatar className="size-6 border border-gray-200 dark:border-gray-700">
-                            <AvatarImage src={user.avatar} alt={user.name} />
-                            <AvatarFallback className="text-[9px] bg-gradient-to-br from-blue-500 to-purple-500 text-white">
-                              {getInitials(user)}
-                            </AvatarFallback>
-                          </Avatar>
-                          
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">
-                              {user.name}
+              )}
+
+              <div
+                className="max-h-60 overflow-y-auto space-y-0.5 px-1"
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {sortedUsers.length === 0 ? (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-6">
+                    {searchQuery ? "Nenhum usuário encontrado" : "Nenhum usuário disponível"}
+                  </p>
+                ) : (
+                  sortedUsers.map((user) => {
+                    const isAssigned = assignedUsers.some((u) => u.id === user.id)
+
+                    return (
+                      <button
+                        type="button"
+                        key={user.id}
+                        onClick={(e) => handleToggleUser(e, user)}
+                        className={cn(
+                          "w-full flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors text-left",
+                          "hover:bg-gray-100 dark:hover:bg-gray-800",
+                          isAssigned && "bg-gray-50 dark:bg-gray-800/50"
+                        )}
+                      >
+                        <Avatar className="size-6 border border-gray-200 dark:border-gray-700">
+                          <AvatarImage src={user.avatar} alt={user.name} />
+                          <AvatarFallback className="text-[9px] bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                            {getInitials(user)}
+                          </AvatarFallback>
+                        </Avatar>
+
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">
+                            {user.name}
+                          </p>
+                          {(user.email || user.role) && (
+                            <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                              {user.role || user.email}
                             </p>
-                            {(user.email || user.role) && (
-                              <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
-                                {user.role || user.email}
-                              </p>
-                            )}
-                          </div>
-                          
-                          {isAssigned && (
-                            <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                           )}
-                        </button>
-                      )
-                    })
-                  )}
-                </div>
-                
-                {assignedUsers.length > 0 && (
-                  <div className="px-2 py-1 border-t border-gray-200 dark:border-gray-700">
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                      {assignedUsers.length} {assignedUsers.length === 1 ? "usuário atribuído" : "usuários atribuídos"}
-                    </p>
-                  </div>
+                        </div>
+
+                        {isAssigned && (
+                          <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                        )}
+                      </button>
+                    )
+                  })
                 )}
               </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+
+              {assignedUsers.length > 0 && (
+                <div className="px-2 py-1 border-t border-gray-200 dark:border-gray-700">
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                    {assignedUsers.length} {assignedUsers.length === 1 ? "usuário atribuído" : "usuários atribuídos"}
+                  </p>
+                </div>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   )
