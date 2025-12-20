@@ -1189,6 +1189,7 @@ export default function ProjectDetailsPage() {
               onSaveActivity={handleSaveActivityFromDetailsModal}
               institutionUsers={usersData?.users || []}
               enableRowSelection={true}
+              selectedActivities={selectedActivities}
               onSelectionChange={handleSelectionChange}
               batchEditFields={batchEditFields}
               batchActions={[

@@ -69,6 +69,7 @@ interface UseTableProps<TData, TValue> {
   showSearch?: boolean // Optional: show or hide search bar
   showColumnToggle?: boolean // Optional: show or hide column visibility dropdown
   enableRowSelection?: boolean // Optional: enable multi-row selection with checkboxes
+  selectedRows?: TData[] // Controlled selection
   onSelectionChange?: (selectedRows: TData[]) => void // Callback when selection changes
   className?: string
   onRowClick?: (row: TData) => void
@@ -89,6 +90,7 @@ export function UseTable<TData, TValue>({
   showSearch = true, // Default to true for backward compatibility
   showColumnToggle = true, // Default to true for backward compatibility
   enableRowSelection = false, // Default to false for backward compatibility
+  selectedRows,
   onSelectionChange,
   className = "",
   onRowClick,
@@ -105,7 +107,7 @@ export function UseTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(() => {
     // Inicializar com todas as colunas visíveis por padrão
     const initialVisibility: VisibilityState = {}
-    
+
     columns.forEach((column) => {
       if (column.id) {
         initialVisibility[column.id] = true
@@ -117,6 +119,7 @@ export function UseTable<TData, TValue>({
   const [globalFilter, setGlobalFilter] = React.useState("")
   const [expandedRows, setExpandedRows] = React.useState<Record<string, boolean>>({})
   const [hoveredRowId, setHoveredRowId] = React.useState<string | null>(null)
+  const isInternalUpdate = React.useRef(false)
 
   // Adicionar coluna de seleção dinamicamente se habilitado
   const tableColumns = React.useMemo(() => {
@@ -184,11 +187,42 @@ export function UseTable<TData, TValue>({
 
   // Notificar mudanças de seleção
   React.useEffect(() => {
-    if (enableRowSelection && onSelectionChange) {
-      const selectedRows = table.getFilteredSelectedRowModel().rows.map(row => row.original)
-      onSelectionChange(selectedRows)
+    if (enableRowSelection && onSelectionChange && !isInternalUpdate.current) {
+      const selectedRowsData = table.getFilteredSelectedRowModel().rows.map(row => row.original)
+      onSelectionChange(selectedRowsData)
     }
-  }, [rowSelection, enableRowSelection, table])
+    isInternalUpdate.current = false
+  }, [rowSelection, enableRowSelection, table, onSelectionChange])
+
+  // Sincronizar seleção controlada externamente
+  React.useEffect(() => {
+    if (enableRowSelection && selectedRows !== undefined) {
+      const currentSelectedIds = table.getFilteredSelectedRowModel().rows.map(row => row.id)
+      const newSelectedIds = selectedRows.map((row: any) => {
+        const rowIndex = data.findIndex((d: any) => d.id === row.id)
+        return rowIndex >= 0 ? rowIndex.toString() : null
+      }).filter(Boolean) as string[]
+
+      // Comparar se a seleção mudou
+      const hasChanged =
+        currentSelectedIds.length !== newSelectedIds.length ||
+        currentSelectedIds.some(id => !newSelectedIds.includes(id))
+
+      if (hasChanged) {
+        isInternalUpdate.current = true
+
+        if (selectedRows.length === 0) {
+          setRowSelection({})
+        } else {
+          const selectedIds: Record<string, boolean> = {}
+          newSelectedIds.forEach(id => {
+            selectedIds[id] = true
+          })
+          setRowSelection(selectedIds)
+        }
+      }
+    }
+  }, [selectedRows, enableRowSelection, data, table])
 
   // Hook para gerenciar visibilidade responsiva das colunas
   React.useEffect(() => {

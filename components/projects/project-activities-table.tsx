@@ -130,6 +130,7 @@ interface ProjectActivitiesTableProps {
     role?: string
   }>
   enableRowSelection?: boolean
+  selectedActivities?: ProjectActivityData[] // Controlled selection
   onSelectionChange?: (selectedActivities: ProjectActivityData[]) => void
   // Batch editing props
   batchEditFields?: any[]
@@ -184,6 +185,7 @@ export function ProjectActivitiesTable({
   onSaveActivity,
   institutionUsers = [],
   enableRowSelection = false,
+  selectedActivities,
   onSelectionChange,
   batchEditFields,
   batchActions,
@@ -251,16 +253,34 @@ export function ProjectActivitiesTable({
     return labels[tag] || tag
   }
 
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      "TODO": "Pendente",
+      "todo": "Pendente",
+      "IN_PROGRESS": "Em Andamento",
+      "in_progress": "Em Andamento",
+      "COMPLETED": "Concluído",
+      "completed": "Concluído",
+      "ON_HOLD": "Em Espera",
+      "on_hold": "Em Espera"
+    }
+
+    return labels[status] || status
+  }
+
   // Monochromatic design - all elements use gray tones except subsidy indicator
   const getActivityTagColor = () => {
     return "bg-gray-100 text-gray-800 border-gray-200"
   }
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
+    const statusLower = status.toLowerCase()
+    switch (statusLower) {
       case "completed": return <CheckCircle className="w-4 h-4 text-gray-600" />
       case "in_progress": return <Clock className="w-4 h-4 text-gray-600" />
+      case "todo":
       case "pending": return <AlertCircle className="w-4 h-4 text-gray-600" />
+      case "on_hold": return <Settings className="w-4 h-4 text-gray-600" />
       default: return <Activity className="w-4 h-4 text-gray-600" />
     }
   }
@@ -357,7 +377,7 @@ export function ProjectActivitiesTable({
       cell: ({ row }) => (
         <Badge variant="outline" className={`${getStatusColor()} flex items-center gap-1 w-fit`}>
           {getStatusIcon(row.original.status)}
-          <span className="capitalize">{row.original.status}</span>
+          <span>{getStatusLabel(row.original.status)}</span>
         </Badge>
       ),
     },
@@ -467,6 +487,7 @@ export function ProjectActivitiesTable({
         showColumnToggle={false}
         onRowClick={enableRowSelection ? undefined : handleManageActivity}
         enableRowSelection={enableRowSelection}
+        selectedRows={selectedActivities}
         onSelectionChange={onSelectionChange}
         batchEditFields={batchEditFields}
         batchActions={batchActions}
