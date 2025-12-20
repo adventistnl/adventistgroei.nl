@@ -31,8 +31,12 @@ import {
   Flag,
   Building2,
   Church,
-  UserPlus
+  UserPlus,
+  History
 } from "lucide-react"
+import { useQuery } from "@apollo/client"
+import { GET_PROJECT_ACTIVITY_LOGS_QUERY } from "@/graphql/queries/ACTIVITY_LOGS_QUERY"
+import { ActivityLogs } from "@/components/projects/activity-logs"
 import { ProjectActivityData } from "../../projects/project-activities-table"
 import { Badge } from "@/components/ui/badge"
 import { TagBadge } from "@/components/ui/tag-badge"
@@ -58,6 +62,9 @@ import toast from "react-hot-toast"
 import { UserSelector, type User as UserType } from "@/components/shared/user-selector"
 import { ActivityTags } from "@/types/graphql-global-types"
 import { TagBadgeVariant } from "@/components/ui/tag-badge"
+
+// Type alias for User
+type User = UserType
 
 export interface ActivityDocument {
   id: string
@@ -99,11 +106,21 @@ export function ActivityDetailsModal({
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [hasChanges, setHasChanges] = useState(false)
   const [isSystemInfoOpen, setIsSystemInfoOpen] = useState(false)
+  const [systemInfoTab, setSystemInfoTab] = useState<'metadata' | 'logs'>('metadata')
   const [dragActive, setDragActive] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [editingField, setEditingField] = useState<string | null>(null)
   const [editorState, setEditorState] = useState<any>(null)
   const [isDescriptionEditing, setIsDescriptionEditing] = useState(false)
+
+  // Fetch activity logs
+  const { data: logsData, loading: logsLoading, refetch: refetchLogs } = useQuery(
+    GET_PROJECT_ACTIVITY_LOGS_QUERY,
+    {
+      variables: { activityId: activity?.id },
+      skip: !activity?.id || !isSystemInfoOpen,
+    }
+  )
   
   // Assigned users state - Only show the owner as a single user
   const [assignedUsers, setAssignedUsers] = useState<User[]>(() => {
@@ -431,6 +448,13 @@ export function ActivityDetailsModal({
       onSave(dataToSave)
       toast.success(t('common.success'))
       setHasChanges(false)
+
+      // Refetch logs after saving to show the new changes
+      if (refetchLogs) {
+        setTimeout(() => {
+          refetchLogs()
+        }, 500)
+      }
     }
   }
 
@@ -1192,8 +1216,9 @@ export function ActivityDetailsModal({
           
           {/* Internal Drawer - System Info */}
           {isSystemInfoOpen && (
-            <div className="w-64 border-l border-gray-200 bg-gray-50 p-4 space-y-4 overflow-y-auto">
-              <div className="flex items-center justify-between mb-4">
+            <div className="w-80 border-l border-gray-200 bg-gray-50 flex flex-col overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
                 <h3 className="text-lg font-semibold text-gray-900">{t('activities.modal.system_info')}</h3>
                 <Button
                   variant="ghost"
@@ -1204,34 +1229,79 @@ export function ActivityDetailsModal({
                   <X className="w-4 h-4" />
                 </Button>
               </div>
-              
-              <p className="text-sm text-gray-600 mb-6">Detalhes técnicos e metadados da atividade</p>
-              
-              <div className="space-y-4">
-                <div className="bg-white rounded-lg p-3 border border-gray-200">
-                  <p className="text-xs font-medium text-gray-500 mb-1">{t('activities.modal.activity_id')}</p>
-                  <p className="text-sm text-gray-700 font-mono break-all">{activity.id}</p>
-                </div>
-                
-                <div className="bg-white rounded-lg p-3 border border-gray-200">
-                  <p className="text-xs font-medium text-gray-500 mb-1">{t('activities.modal.created_at')}</p>
-                  <p className="text-sm text-gray-700">{formatDate(activity.created_at)}</p>
-                </div>
-                
-                <div className="bg-white rounded-lg p-3 border border-gray-200">
-                  <p className="text-xs font-medium text-gray-500 mb-1">{t('activities.modal.updated_at')}</p>
-                  <p className="text-sm text-gray-700">{formatDate(activity.updated_at)}</p>
-                </div>
-                
-                <div className="bg-white rounded-lg p-3 border border-gray-200">
-                  <p className="text-xs font-medium text-gray-500 mb-1">{t('activities.modal.created_by')}</p>
-                  <p className="text-sm text-gray-700">{activity.created_by}</p>
-                </div>
-                
-                <div className="bg-white rounded-lg p-3 border border-gray-200">
-                  <p className="text-xs font-medium text-gray-500 mb-1">{t('activities.modal.updated_by')}</p>
-                  <p className="text-sm text-gray-700">{activity.updated_by}</p>
-                </div>
+
+              {/* Tabs */}
+              <div className="flex border-b border-gray-200 bg-white px-4">
+                <button
+                  onClick={() => setSystemInfoTab('metadata')}
+                  className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+                    systemInfoTab === 'metadata'
+                      ? 'text-gray-900'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <Info className="w-4 h-4 inline-block mr-1.5" />
+                  Metadados
+                  {systemInfoTab === 'metadata' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900" />
+                  )}
+                </button>
+                <button
+                  onClick={() => setSystemInfoTab('logs')}
+                  className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+                    systemInfoTab === 'logs'
+                      ? 'text-gray-900'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <History className="w-4 h-4 inline-block mr-1.5" />
+                  Histórico
+                  {systemInfoTab === 'logs' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900" />
+                  )}
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-4">
+                {systemInfoTab === 'metadata' ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600 mb-4">Detalhes técnicos e metadados da atividade</p>
+
+                    <div className="bg-white rounded-lg p-3 border border-gray-200">
+                      <p className="text-xs font-medium text-gray-500 mb-1">{t('activities.modal.activity_id')}</p>
+                      <p className="text-sm text-gray-700 font-mono break-all">{activity.id}</p>
+                    </div>
+
+                    <div className="bg-white rounded-lg p-3 border border-gray-200">
+                      <p className="text-xs font-medium text-gray-500 mb-1">{t('activities.modal.created_at')}</p>
+                      <p className="text-sm text-gray-700">{formatDate(activity.created_at)}</p>
+                    </div>
+
+                    <div className="bg-white rounded-lg p-3 border border-gray-200">
+                      <p className="text-xs font-medium text-gray-500 mb-1">{t('activities.modal.updated_at')}</p>
+                      <p className="text-sm text-gray-700">{formatDate(activity.updated_at)}</p>
+                    </div>
+
+                    <div className="bg-white rounded-lg p-3 border border-gray-200">
+                      <p className="text-xs font-medium text-gray-500 mb-1">{t('activities.modal.created_by')}</p>
+                      <p className="text-sm text-gray-700">{activity.created_by}</p>
+                    </div>
+
+                    <div className="bg-white rounded-lg p-3 border border-gray-200">
+                      <p className="text-xs font-medium text-gray-500 mb-1">{t('activities.modal.updated_by')}</p>
+                      <p className="text-sm text-gray-700">{activity.updated_by}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600 mb-4">Histórico de alterações da atividade</p>
+                    <ActivityLogs
+                      logs={logsData?.projectActivityLogs || []}
+                      isLoading={logsLoading}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}
