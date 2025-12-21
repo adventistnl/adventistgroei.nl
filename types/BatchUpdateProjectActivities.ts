@@ -26,6 +26,7 @@ export interface BatchUpdateProjectActivities_batchUpdateProjectActivities {
   status: ActivityStatus;
   priority: ActivityPriority;
   tags: ActivityTags[] | null;
+  activity_tag: ActivityTags | null;
   is_subsidized: boolean;
   updated_at: any;
   owner: BatchUpdateProjectActivities_batchUpdateProjectActivities_owner;

@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ProjectType, LanguagePreference, ActivityTags, ActivityStatus, ActivityPriority } from "./globalTypes";
+import { ProjectType, LanguagePreference, ActivityTags, ActivityStatus, ActivityPriority, EntityType } from "./globalTypes";
 
 // ====================================================
 // GraphQL query operation: Projects
@@ -35,6 +35,15 @@ export interface Projects_projects_activities_owner {
   email: string;
 }
 
+export interface Projects_projects_activities_activity_funding {
+  __typename: "ActivityFunding";
+  id: string;
+  entity_contribution_amount: any;
+  entity_contribution_percent: number;
+  entity_type: EntityType;
+  entity_id: string;
+}
+
 export interface Projects_projects_activities {
   __typename: "ProjectActivity";
   id: string;
@@ -44,12 +53,15 @@ export interface Projects_projects_activities {
   deadline: any;
   owner_id: string;
   tags: ActivityTags[] | null;
+  custom_tags: string[] | null;
+  activity_tag: ActivityTags | null;
   status: ActivityStatus;
   priority: ActivityPriority;
   is_subsidized: boolean;
   created_at: any;
   updated_at: any;
   owner: Projects_projects_activities_owner;
+  activity_funding: Projects_projects_activities_activity_funding | null;
 }
 
 export interface Projects_projects {
@@ -79,4 +91,8 @@ export interface Projects_projects {
 
 export interface Projects {
   projects: Projects_projects[];
+}
+
+export interface ProjectsVariables {
+  institutionId?: string | null;
 }

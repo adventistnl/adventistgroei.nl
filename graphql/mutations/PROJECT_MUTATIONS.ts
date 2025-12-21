@@ -17,7 +17,7 @@ export const CREATE_PROJECT_MUTATION = gql`
     $owner_id: String
     $deadline: String
     $event: EventCreateDto
-    $activities: [ProjectActivityCreateDto!]
+    $activities: [ProjectActivityCreateWithoutProjectDto!]
     $is_special_case: Boolean
     $special_case_reason: String
     $location_church_plant: String

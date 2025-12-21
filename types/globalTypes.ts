@@ -100,6 +100,21 @@ export enum LanguagePreference {
   nl = "nl",
 }
 
+export enum ProjectActivityLogAction {
+  ASSIGNED = "ASSIGNED",
+  BUDGET_UPDATED = "BUDGET_UPDATED",
+  CREATED = "CREATED",
+  DEADLINE_UPDATED = "DEADLINE_UPDATED",
+  DELETED = "DELETED",
+  PRIORITY_CHANGED = "PRIORITY_CHANGED",
+  STATUS_CHANGED = "STATUS_CHANGED",
+  SUBSIDIZED_CHANGED = "SUBSIDIZED_CHANGED",
+  TAG_ADDED = "TAG_ADDED",
+  TAG_REMOVED = "TAG_REMOVED",
+  UNASSIGNED = "UNASSIGNED",
+  UPDATED = "UPDATED",
+}
+
 export enum ProjectType {
   Global = "Global",
   Local = "Local",
@@ -110,6 +125,13 @@ export interface ActivityFundingCreateDto {
   entity_contribution_percent: number;
   entity_type: EntityType;
   entity_id: string;
+}
+
+export interface ActivityFundingUpdateDto {
+  entity_contribution_amount?: number | null;
+  entity_contribution_percent?: number | null;
+  entity_type?: EntityType | null;
+  entity_id?: string | null;
 }
 
 export interface AnnualBudgetUpdateDto {
@@ -139,14 +161,48 @@ export interface EventCreateDto {
 }
 
 export interface ProjectActivityCreateDto {
-  project_id: string;
   name: string;
   description: string;
   budget_amount: number;
   deadline: string;
   owner_id: string;
   tags: ActivityTags[];
+  custom_tags?: string[] | null;
+  status?: ActivityStatus | null;
+  priority?: ActivityPriority | null;
+  is_subsidized?: boolean | null;
   activity_funding: ActivityFundingCreateDto;
+  project_id: string;
+}
+
+export interface ProjectActivityCreateWithoutProjectDto {
+  name: string;
+  description: string;
+  budget_amount: number;
+  deadline: string;
+  owner_id: string;
+  tags: ActivityTags[];
+  custom_tags?: string[] | null;
+  status?: ActivityStatus | null;
+  priority?: ActivityPriority | null;
+  is_subsidized?: boolean | null;
+  activity_funding: ActivityFundingCreateDto;
+}
+
+export interface ProjectActivityUpdateDto {
+  id: string;
+  name?: string | null;
+  description?: string | null;
+  budget_amount?: number | null;
+  deadline?: string | null;
+  owner_id?: string | null;
+  tags?: ActivityTags[] | null;
+  custom_tags?: string[] | null;
+  status?: ActivityStatus | null;
+  priority?: ActivityPriority | null;
+  is_subsidized?: boolean | null;
+  activity_tag?: ActivityTags | null;
+  activity_funding?: ActivityFundingUpdateDto | null;
 }
 
 export interface RejectAnnualBudgetDto {
@@ -155,6 +211,12 @@ export interface RejectAnnualBudgetDto {
 
 export interface RequestRevisionAnnualBudgetDto {
   revision_notes: string;
+}
+
+export interface UploadActivityDocumentDto {
+  activity_id: string;
+  project_activity_id: string;
+  type: string;
 }
 
 //==============================================================

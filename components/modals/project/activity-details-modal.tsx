@@ -1,32 +1,29 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { 
-  X, 
-  Activity, 
-  DollarSign, 
-  Calendar, 
-  User, 
-  Clock, 
-  CheckCircle, 
-  AlertCircle, 
-  Edit3, 
-  Copy, 
-  Check, 
-  Tag, 
-  Wrench, 
-  Package, 
-  GraduationCap, 
-  ChevronDown, 
-  Upload, 
-  FileText, 
+import {
+  X,
+  Activity,
+  DollarSign,
+  Calendar,
+  User,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Edit3,
+  Copy,
+  Check,
+  Tag,
+  Wrench,
+  Package,
+  GraduationCap,
+  ChevronDown,
+  FileText,
   Receipt,
-  File,
   ExternalLink,
   Save,
   Info,
   Image,
-  FileImage,
   PanelRight,
   Flag,
   Building2,
@@ -62,21 +59,10 @@ import toast from "react-hot-toast"
 import { UserSelector, type User as UserType } from "@/components/shared/user-selector"
 import { ActivityTags } from "@/types/graphql-global-types"
 import { TagBadgeVariant } from "@/components/ui/tag-badge"
+import { ActivityDocumentsSection } from "@/components/projects/activity-documents-section"
 
 // Type alias for User
 type User = UserType
-
-export interface ActivityDocument {
-  id: string
-  activity_id: string
-  file_url: string
-  type: "INVOICE" | "RECEIPT" | "CONTRACT" | "OTHER"
-  is_validated: boolean
-  uploaded_by: string
-  created_at: string
-  validated_at?: string
-  filename: string
-}
 
 export interface ActivityDetailsModalProps {
   isOpen: boolean
@@ -107,8 +93,6 @@ export function ActivityDetailsModal({
   const [hasChanges, setHasChanges] = useState(false)
   const [isSystemInfoOpen, setIsSystemInfoOpen] = useState(false)
   const [systemInfoTab, setSystemInfoTab] = useState<'metadata' | 'logs'>('metadata')
-  const [dragActive, setDragActive] = useState(false)
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [editingField, setEditingField] = useState<string | null>(null)
   const [editorState, setEditorState] = useState<any>(null)
   const [isDescriptionEditing, setIsDescriptionEditing] = useState(false)
@@ -198,30 +182,6 @@ export function ActivityDetailsModal({
     default_institution_percent: 65
   }
 
-  // Mock documents data
-  const [documents, setDocuments] = useState<ActivityDocument[]>([
-    {
-      id: "1",
-      activity_id: activity?.id || "",
-      file_url: "/documents/invoice-001.pdf",
-      type: "INVOICE",
-      is_validated: true,
-      uploaded_by: "user1",
-      created_at: "2024-01-15T14:30:00Z",
-      validated_at: "2024-01-16T09:00:00Z",
-      filename: "Fatura_Janeiro_2024.pdf"
-    },
-    {
-      id: "2",
-      activity_id: activity?.id || "",
-      file_url: "/documents/receipt-001.pdf", 
-      type: "RECEIPT",
-      is_validated: false,
-      uploaded_by: "user1",
-      created_at: "2024-01-20T09:15:00Z",
-      filename: "Recibo_Pagamento_Janeiro.pdf"
-    }
-  ])
 
   // Update form data when activity changes
   useEffect(() => {
@@ -1092,124 +1052,11 @@ export function ActivityDetailsModal({
               )}
             </div>
 
-            {/* File Upload Area */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Arquivos Anexados</h3>
-              </div>
-              
-              {/* Drop Zone */}
-              <div
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                  dragActive 
-                    ? 'border-blue-400 bg-blue-50' 
-                    : 'border-gray-300 hover:border-gray-400'
-                }`}
-                onDragEnter={(e) => { e.preventDefault(); setDragActive(true) }}
-                onDragLeave={(e) => { e.preventDefault(); setDragActive(false) }}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault()
-                  setDragActive(false)
-                  
-                  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                    const droppedFiles = Array.from(e.dataTransfer.files)
-                    const validFiles = droppedFiles.filter(file => {
-                      const isValidType = file.type.startsWith('image/') || file.type === 'application/pdf'
-                      const isValidSize = file.size <= 10 * 1024 * 1024 // 10MB
-                      return isValidType && isValidSize
-                    })
-                    
-                    if (validFiles.length > 0) {
-                      setUploadedFiles(prev => [...prev, ...validFiles])
-                      toast.success(`${validFiles.length} arquivo(s) adicionado(s)`)
-                    }
-                    
-                    if (validFiles.length !== droppedFiles.length) {
-                      toast.error("Alguns arquivos foram rejeitados (apenas PDF e imagens até 10MB)")
-                    }
-                  }
-                }}
-              >
-                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                                <p className="text-sm text-gray-600 mb-1">{t('activities.modal.drop_files')}</p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const input = document.createElement('input')
-                    input.type = 'file'
-                    input.multiple = true
-                    input.accept = 'image/*,application/pdf'
-                    input.onchange = (e) => {
-                      const files = (e.target as HTMLInputElement).files
-                      if (files) {
-                        const fileArray = Array.from(files)
-                        const validFiles = fileArray.filter(file => {
-                          const isValidType = file.type.startsWith('image/') || file.type === 'application/pdf'
-                          const isValidSize = file.size <= 10 * 1024 * 1024 // 10MB
-                          return isValidType && isValidSize
-                        })
-                        
-                        if (validFiles.length > 0) {
-                          setUploadedFiles(prev => [...prev, ...validFiles])
-                          toast.success(`${validFiles.length} arquivo(s) adicionado(s)`)
-                        }
-                      }
-                    }
-                    input.click()
-                  }}
-                  className="text-xs h-7"
-                >
-                  {t('common.upload')}
-                </Button>
-                <p className="text-xs text-gray-500 mt-2">{t('activities.modal.supported_formats')}</p>
-              </div>
-
-              {/* Uploaded Files as Tags */}
-              {uploadedFiles.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-700">{t('activities.modal.documents')}:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {uploadedFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-md text-sm cursor-pointer hover:bg-gray-50 hover:border-gray-400 transition-colors shadow-sm"
-                        onClick={() => {
-                          // Create temporary download link
-                          const url = URL.createObjectURL(file)
-                          const a = document.createElement('a')
-                          a.href = url
-                          a.download = file.name
-                          document.body.appendChild(a)
-                          a.click()
-                          document.body.removeChild(a)
-                          URL.revokeObjectURL(url)
-                        }}
-                      >
-                        {file.type.startsWith('image/') ? (
-                          <FileImage className="w-3 h-3" />
-                        ) : (
-                          <File className="w-3 h-3" />
-                        )}
-                        <span className="truncate max-w-[150px]">{file.name}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setUploadedFiles(prev => prev.filter((_, i) => i !== index))
-                          }}
-                          className="h-4 w-4 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-200"
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* File Upload Area - New Integrated Component */}
+            <ActivityDocumentsSection
+              activityId={activity.id}
+              projectActivityId={activity.id}
+            />
 
 
           </div>
