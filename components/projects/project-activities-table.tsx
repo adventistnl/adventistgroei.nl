@@ -3,16 +3,11 @@
 import React, { useState, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { DataTable } from "@/components/ui/data-table"
+import { UseTable } from "@/components/ui/use-table"
 import {
   Activity,
-  Plus,
   MoreHorizontal,
   Trash2,
   Settings,
@@ -31,12 +26,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 import toast from "react-hot-toast"
 import { ProjectTableData } from "@/components/projects/projects-table"
 import { mockProjectActivities, getActivitiesByProjectId } from "@/data/mockData"
 import { ActivityDetailsModal } from "@/components/modals/project/activity-details-modal"
 import { DeleteActivityModal } from "@/components/modals/project/delete-activity-modal"
+import { ActivityTags } from "@/types/graphql-global-types"
 
 // Schema-based interfaces
 export interface ProjectActivityData {
@@ -44,8 +51,9 @@ export interface ProjectActivityData {
   project_id: string
   name: string
   description: string
-  activity_tag: "reforma" | "material" | "training"
+  activity_tag?: ActivityTags
   budget_amount: number
+  deadline: string
   status: string
   priority: string
   created_at: string
@@ -55,10 +63,35 @@ export interface ProjectActivityData {
   is_deleted?: boolean
   deleted_at?: string | null
   deleted_by?: string | null
+  completed_at?: string | null
   // Additional fields
   is_subsidized: boolean
   subsidy_amount?: number
   spent_amount?: number
+  institution_requested_amount?: number
+  tags?: string[]
+  custom_tags?: string[]
+  owner_id?: string
+  owner?: {
+    id: string
+    name: string
+    email: string
+  }
+  activity_funding?: Array<{
+    id: string
+    entity_contribution_amount: number
+    entity_contribution_percent: number
+    entity_type: string
+    entity_id: string
+  }>
+  assigned_users?: Array<{
+    id: string
+    name: string
+    email?: string
+    avatar?: string
+    initials?: string
+    role?: string
+  }>
 }
 
 export interface SubsidyReceiptData {
@@ -78,11 +111,32 @@ export interface SubsidyReceiptData {
 
 interface ProjectActivitiesTableProps {
   project: ProjectTableData
-  onAddActivity?: () => void
+  activities?: ProjectActivityData[] // Optional: if provided, use these activities instead of mock data
+  filterSubsidized?: boolean
+  statusFilter?: string
+  priorityFilter?: string
+  tagFilter?: string
+  searchQuery?: string
   onEditActivity?: (activity: ProjectActivityData) => void
   onDeleteActivity?: (activity: ProjectActivityData) => void
   onViewActivity?: (activity: ProjectActivityData) => void
   onUploadReceipt?: (activity: ProjectActivityData) => void
+  onSaveActivity?: (data: Partial<ProjectActivityData>) => void
+  institutionUsers?: Array<{
+    id: string
+    name: string
+    email: string
+    avatar?: string
+    role?: string
+  }>
+  enableRowSelection?: boolean
+  selectedActivities?: ProjectActivityData[] // Controlled selection
+  onSelectionChange?: (selectedActivities: ProjectActivityData[]) => void
+  // Batch editing props
+  batchEditFields?: any[]
+  batchActions?: any[]
+  batchPrimaryAction?: any
+  batchSummary?: React.ReactNode
 }
 
 // Mock receipts data
@@ -118,33 +172,39 @@ const mockReceipts: SubsidyReceiptData[] = [
 
 export function ProjectActivitiesTable({
   project,
-  onAddActivity,
+  activities,
+  filterSubsidized,
+  statusFilter = "all",
+  priorityFilter = "all",
+  tagFilter = "all",
+  searchQuery = "",
   onEditActivity,
   onDeleteActivity,
   onViewActivity,
-  onUploadReceipt
+  onUploadReceipt,
+  onSaveActivity,
+  institutionUsers = [],
+  enableRowSelection = false,
+  selectedActivities,
+  onSelectionChange,
+  batchEditFields,
+  batchActions,
+  batchPrimaryAction,
+  batchSummary
 }: ProjectActivitiesTableProps) {
   const { t } = useTranslation()
-  const [activeTab, setActiveTab] = useState<"subsidized" | "non-subsidized">("subsidized")
   const [isViewActivityModalOpen, setIsViewActivityModalOpen] = useState(false)
   const [selectedActivityForView, setSelectedActivityForView] = useState<ProjectActivityData | null>(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedActivityForDelete, setSelectedActivityForDelete] = useState<ProjectActivityData | null>(null)
-  
-  // Filters
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [priorityFilter, setPriorityFilter] = useState<string>("all")
-  const [tagFilter, setTagFilter] = useState<string>("all")
 
-  // Get project activities
-  const projectActivities = getActivitiesByProjectId(project.id) as ProjectActivityData[]
+  // Get project activities - use provided activities or fallback to mock data
+  const projectActivities = activities || (getActivitiesByProjectId(project.id) as ProjectActivityData[])
 
-  // Separate activities by subsidy status
-  const subsidizedActivities = projectActivities.filter(activity => activity.is_subsidized)
-  const nonSubsidizedActivities = projectActivities.filter(activity => !activity.is_subsidized)
-  
-  // Get current tab data
-  const currentActivities = activeTab === "subsidized" ? subsidizedActivities : nonSubsidizedActivities
+  // Filter activities based on subsidy status
+  const currentActivities = filterSubsidized !== undefined 
+    ? projectActivities.filter(activity => activity.is_subsidized === filterSubsidized)
+    : projectActivities
 
   // Apply filters
   const filteredActivities = useMemo(() => {
@@ -152,19 +212,60 @@ export function ProjectActivitiesTable({
       const matchesStatus = statusFilter === "all" || activity.status === statusFilter
       const matchesPriority = priorityFilter === "all" || activity.priority === priorityFilter
       const matchesTag = tagFilter === "all" || activity.activity_tag === tagFilter
+      const matchesSearch = searchQuery === "" || 
+        activity.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        activity.description.toLowerCase().includes(searchQuery.toLowerCase())
       
-      return matchesStatus && matchesPriority && matchesTag
+      return matchesStatus && matchesPriority && matchesTag && matchesSearch
     })
-  }, [currentActivities, statusFilter, priorityFilter, tagFilter])
+  }, [currentActivities, statusFilter, priorityFilter, tagFilter, searchQuery])
 
   // Helper functions
-  const getActivityTagIcon = (tag: string) => {
+  const getActivityTagIcon = (tag?: ActivityTags) => {
+    if (!tag) return <Activity className="w-4 h-4" />
+
     switch (tag) {
-      case "reforma": return <Wrench className="w-4 h-4" />
-      case "material": return <Package className="w-4 h-4" />
-      case "training": return <GraduationCap className="w-4 h-4" />
+      case ActivityTags.Reform: return <Wrench className="w-4 h-4" />
+      case ActivityTags.Equipment: return <Wrench className="w-4 h-4" />
+      case ActivityTags.Materials: return <Package className="w-4 h-4" />
+      case ActivityTags.Training: return <GraduationCap className="w-4 h-4" />
       default: return <Activity className="w-4 h-4" />
     }
+  }
+
+  const getActivityTagLabel = (tag?: ActivityTags) => {
+    if (!tag) return ''
+
+    const labels: Record<ActivityTags, string> = {
+      [ActivityTags.Reform]: 'Reforma',
+      [ActivityTags.Equipment]: 'Equipamento',
+      [ActivityTags.Materials]: 'Material',
+      [ActivityTags.Training]: 'Treinamento',
+      [ActivityTags.Travel]: 'Viagem',
+      [ActivityTags.Event]: 'Evento',
+      [ActivityTags.Transport]: 'Transporte',
+      [ActivityTags.Marketing]: 'Marketing',
+      [ActivityTags.Services]: 'Serviços',
+      [ActivityTags.Feeding]: 'Alimentação',
+      [ActivityTags.Accommodation]: 'Acomodação',
+    }
+
+    return labels[tag] || tag
+  }
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      "TODO": "Pendente",
+      "todo": "Pendente",
+      "IN_PROGRESS": "Em Andamento",
+      "in_progress": "Em Andamento",
+      "COMPLETED": "Concluído",
+      "completed": "Concluído",
+      "ON_HOLD": "Em Espera",
+      "on_hold": "Em Espera"
+    }
+
+    return labels[status] || status
   }
 
   // Monochromatic design - all elements use gray tones except subsidy indicator
@@ -173,10 +274,13 @@ export function ProjectActivitiesTable({
   }
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
+    const statusLower = status.toLowerCase()
+    switch (statusLower) {
       case "completed": return <CheckCircle className="w-4 h-4 text-gray-600" />
       case "in_progress": return <Clock className="w-4 h-4 text-gray-600" />
+      case "todo":
       case "pending": return <AlertCircle className="w-4 h-4 text-gray-600" />
+      case "on_hold": return <Settings className="w-4 h-4 text-gray-600" />
       default: return <Activity className="w-4 h-4 text-gray-600" />
     }
   }
@@ -210,13 +314,6 @@ export function ProjectActivitiesTable({
     setIsDeleteModalOpen(true)
   }
 
-  const clearFilters = () => {
-    setStatusFilter("all")
-    setPriorityFilter("all")
-    setTagFilter("all")
-    toast.success(t('activities.table.filters_cleared'), { duration: 1500 })
-  }
-
   // Table columns
   const columns: ColumnDef<ProjectActivityData>[] = [
     {
@@ -244,7 +341,7 @@ export function ProjectActivitiesTable({
       cell: ({ row }) => (
         <Badge variant="outline" className={`${getActivityTagColor()} flex items-center gap-1 w-fit`}>
           {getActivityTagIcon(row.original.activity_tag)}
-          <span className="capitalize">{row.original.activity_tag}</span>
+          <span className="capitalize">{getActivityTagLabel(row.original.activity_tag)}</span>
         </Badge>
       ),
     },
@@ -280,7 +377,7 @@ export function ProjectActivitiesTable({
       cell: ({ row }) => (
         <Badge variant="outline" className={`${getStatusColor()} flex items-center gap-1 w-fit`}>
           {getStatusIcon(row.original.status)}
-          <span className="capitalize">{row.original.status}</span>
+          <span>{getStatusLabel(row.original.status)}</span>
         </Badge>
       ),
     },
@@ -293,6 +390,64 @@ export function ProjectActivitiesTable({
           {row.original.priority}
         </Badge>
       ),
+    },
+    {
+      id: "assigned_users",
+      header: "Responsáveis",
+      cell: ({ row }) => {
+        const assignedUsers = row.original.assigned_users || []
+        const maxDisplay = 3
+        const displayedUsers = assignedUsers.slice(0, maxDisplay)
+        const remainingCount = assignedUsers.length - maxDisplay
+        
+        if (assignedUsers.length === 0) {
+          return (
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              Nenhum
+            </span>
+          )
+        }
+        
+        return (
+          <div className="flex items-center -space-x-2">
+            {displayedUsers.map((user, index) => (
+              <TooltipProvider key={user.id}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Avatar 
+                      className="size-7 border-2 border-background cursor-pointer"
+                      style={{ zIndex: displayedUsers.length - index }}
+                    >
+                      <AvatarImage src={user.avatar} alt={user.name} />
+                      <AvatarFallback className="text-[9px] bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                        {user.initials || user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    <div>
+                      <p className="font-medium">{user.name}</p>
+                      {user.email && (
+                        <p className="text-gray-400 text-[10px]">{user.email}</p>
+                      )}
+                      {user.role && (
+                        <p className="text-gray-400 text-[10px]">{user.role}</p>
+                      )}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ))}
+            {remainingCount > 0 && (
+              <div className="size-7 rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-background flex items-center justify-center">
+                <span className="text-[9px] font-medium text-gray-600 dark:text-gray-300">
+                  +{remainingCount}
+                </span>
+              </div>
+            )}
+          </div>
+        )
+      },
     },
     {
       id: "actions",
@@ -325,150 +480,29 @@ export function ProjectActivitiesTable({
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="w-5 h-5 text-gray-600" />
-                {t('activities.table.activity')} do Projeto
-              </CardTitle>
-              <CardDescription>
-                Gerencie as atividades do projeto
-              </CardDescription>
-            </div>
-            <Button onClick={onAddActivity}>
-              <Plus className="w-4 h-4 mr-2" />
-              {t('activities.table.new_activity')}
-            </Button>
-          </div>
-        </CardHeader>
-        
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "subsidized" | "non-subsidized")} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="subsidized" className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-green-100 rounded-full flex items-center justify-center">
-                  <DollarSign className="w-2.5 h-2.5 text-green-600" />
-                </div>
-                {t('activities.table.subsidized_tab')} ({subsidizedActivities.length})
-              </TabsTrigger>
-              <TabsTrigger value="non-subsidized" className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-gray-100 rounded-full flex items-center justify-center">
-                  <DollarSign className="w-2.5 h-2.5 text-gray-400" />
-                </div>
-                {t('activities.table.non_subsidized_tab')} ({nonSubsidizedActivities.length})
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Filters Section - positioned near columns */}
-            <div className="flex justify-end items-center gap-4 mb-4">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-32 h-8">
-                  <SelectValue placeholder={t('activities.table.status')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="pending">Pendente</SelectItem>
-                  <SelectItem value="in_progress">Em Andamento</SelectItem>
-                  <SelectItem value="completed">Concluída</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                <SelectTrigger className="w-32 h-8">
-                  <SelectValue placeholder={t('activities.table.priority')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="urgent">Urgente</SelectItem>
-                  <SelectItem value="high">Alta</SelectItem>
-                  <SelectItem value="medium">Média</SelectItem>
-                  <SelectItem value="low">Baixa</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={tagFilter} onValueChange={setTagFilter}>
-                <SelectTrigger className="w-32 h-8">
-                  <SelectValue placeholder={t('activities.table.category')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="reforma">Reforma</SelectItem>
-                  <SelectItem value="material">Material</SelectItem>
-                  <SelectItem value="training">Treinamento</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Button variant="outline" size="sm" onClick={clearFilters} className="h-8">
-                {t('activities.table.clear_filters')}
-              </Button>
-            </div>
-
-            <TabsContent value="subsidized" className="space-y-4">
-              {filteredActivities.length > 0 ? (
-                <DataTable
-                  columns={columns}
-                  data={filteredActivities}
-                  searchKey="name"
-                  searchPlaceholder="Buscar atividades subsidiadas..."
-                />
-              ) : (
-                <div className="text-center py-12">
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <DollarSign className="w-6 h-6 text-green-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-muted-foreground mb-2">
-                    {t('activities.table.no_subsidized_found')}
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    {statusFilter !== "all" || priorityFilter !== "all" || tagFilter !== "all"
-                      ? t('activities.table.adjust_filters')
-                      : t('activities.table.create_first_subsidized')
-                    }
-                  </p>
-                  <Button onClick={onAddActivity}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    {t('activities.table.new_activity')}
-                  </Button>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="non-subsidized" className="space-y-4">
-              {filteredActivities.length > 0 ? (
-                <DataTable
-                  columns={columns}
-                  data={filteredActivities}
-                  searchKey="name"
-                  searchPlaceholder="Buscar atividades não subsidiadas..."
-                />
-              ) : (
-                <div className="text-center py-12">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <DollarSign className="w-6 h-6 text-gray-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-muted-foreground mb-2">
-                    {t('activities.table.no_non_subsidized_found')}
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    {statusFilter !== "all" || priorityFilter !== "all" || tagFilter !== "all"
-                      ? t('activities.table.adjust_filters')
-                      : t('activities.table.create_first_non_subsidized')
-                    }
-                  </p>
-                  <Button onClick={onAddActivity}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    {t('activities.table.new_activity')}
-                  </Button>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
-
+      <UseTable
+        columns={columns}
+        data={filteredActivities}
+        showSearch={false}
+        showColumnToggle={false}
+        onRowClick={enableRowSelection ? undefined : handleManageActivity}
+        enableRowSelection={enableRowSelection}
+        selectedRows={selectedActivities}
+        onSelectionChange={onSelectionChange}
+        batchEditFields={batchEditFields}
+        batchActions={batchActions}
+        batchPrimaryAction={batchPrimaryAction}
+        batchSummary={batchSummary}
+        emptyMessage={
+          filterSubsidized 
+            ? (statusFilter !== "all" || priorityFilter !== "all" || tagFilter !== "all" || searchQuery !== ""
+                ? t('activities.table.adjust_filters')
+                : t('activities.table.create_first_subsidized'))
+            : (statusFilter !== "all" || priorityFilter !== "all" || tagFilter !== "all" || searchQuery !== ""
+                ? t('activities.table.adjust_filters')
+                : t('activities.table.create_first_non_subsidized'))
+        }
+      />
 
       {/* View Activity Modal */}
       <ActivityDetailsModal
@@ -476,8 +510,12 @@ export function ProjectActivitiesTable({
         onClose={() => setIsViewActivityModalOpen(false)}
         activity={selectedActivityForView}
         project={project}
+        institutionUsers={institutionUsers}
         onSave={(updatedActivity) => {
-          toast.success("Atividade salva com sucesso!")
+          if (onSaveActivity) {
+            onSaveActivity(updatedActivity)
+          }
+          setIsViewActivityModalOpen(false)
         }}
       />
 

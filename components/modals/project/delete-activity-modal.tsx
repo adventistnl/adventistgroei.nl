@@ -2,14 +2,18 @@
 
 import React, { useState } from "react"
 import { useTranslation } from "react-i18next"
+import { useMutation } from "@apollo/client"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import { 
-  AlertTriangle, 
+import {
+  AlertTriangle,
   Activity
 } from "lucide-react"
+import { DELETE_PROJECT_ACTIVITY } from "@/graphql/mutations/PROJECT_ACTIVITY_MUTATIONS"
+import { GET_PROJECT_BY_ID_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
+import { ActivityTags } from "@/types/graphql-global-types"
 
 import toast from "react-hot-toast"
 
@@ -19,7 +23,7 @@ interface ProjectActivityData {
   project_id: string
   name: string
   description: string
-  activity_tag: "reforma" | "material" | "training"
+  activity_tag?: ActivityTags
   budget_amount: number
   status: string
   priority: string
@@ -53,14 +57,25 @@ export function DeleteActivityModal({
   const [understoodConsequences, setUnderstoodConsequences] = useState(false)
   const [finalConfirmation, setFinalConfirmation] = useState('')
 
+  const [deleteActivity] = useMutation(DELETE_PROJECT_ACTIVITY, {
+    refetchQueries: [
+      {
+        query: GET_PROJECT_BY_ID_QUERY,
+        variables: { id: activity?.project_id }
+      }
+    ],
+    awaitRefetchQueries: true
+  })
+
   const handleSubmit = async () => {
     if (!activity) return
     setIsLoading(true)
     const loadingToast = toast.loading(t('activities.toasts.deleting'))
     try {
-      // Simulate API call - replace with actual implementation
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
+      await deleteActivity({
+        variables: { id: activity.id }
+      })
+
       toast.dismiss(loadingToast)
       toast.success(t('activities.toasts.deleted'), {
         duration: 3000,
@@ -71,6 +86,7 @@ export function DeleteActivityModal({
       }
       onOpenChangeAction(false)
     } catch (error) {
+      console.error("Error deleting activity:", error)
       toast.dismiss(loadingToast)
       toast.error(t('activities.toasts.delete_failed'))
     } finally {
@@ -85,6 +101,14 @@ export function DeleteActivityModal({
       onOpenChangeAction(false)
     }
   }
+
+  // Reset state when modal opens with new activity
+  React.useEffect(() => {
+    if (isOpen) {
+      setUnderstoodConsequences(false)
+      setFinalConfirmation('')
+    }
+  }, [isOpen, activity?.id])
 
   const isDeleteEnabled = understoodConsequences && finalConfirmation.toLowerCase() === t('activities.modal.delete.confirmation_text').toLowerCase()
 

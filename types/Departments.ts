@@ -27,3 +27,7 @@ export interface Departments_departments {
 export interface Departments {
   departments: Departments_departments[];
 }
+
+export interface DepartmentsVariables {
+  institution_id?: string | null;
+}

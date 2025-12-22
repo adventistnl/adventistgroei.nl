@@ -52,6 +52,8 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Card } from "@/components/ui/card"
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible"
+import { BatchActionsPanel, BatchAction } from "@/components/shared/batch-actions-panel"
+import { InlineBatchEditor, BatchEditField } from "@/components/shared/inline-batch-editor"
 
 interface FilterConfig {
   id: string
@@ -64,10 +66,20 @@ interface UseTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   filters?: FilterConfig[]
   searchKey?: string
+  showSearch?: boolean // Optional: show or hide search bar
+  showColumnToggle?: boolean // Optional: show or hide column visibility dropdown
+  enableRowSelection?: boolean // Optional: enable multi-row selection with checkboxes
+  selectedRows?: TData[] // Controlled selection
+  onSelectionChange?: (selectedRows: TData[]) => void // Callback when selection changes
   className?: string
   onRowClick?: (row: TData) => void
   emptyMessage?: string // Mensagem customizada quando não há dados
   emptyEntityName?: string // Nome da entidade para mensagem padrão
+  // Batch editing props
+  batchEditFields?: BatchEditField[] // Campos para edição em lote
+  batchActions?: BatchAction[] // Ações adicionais do painel
+  batchPrimaryAction?: BatchAction // Ação primária do painel
+  batchSummary?: React.ReactNode // Sumário customizado
 }
 
 export function UseTable<TData, TValue>({
@@ -75,10 +87,19 @@ export function UseTable<TData, TValue>({
   columns,
   filters = [],
   searchKey = "name",
+  showSearch = true, // Default to true for backward compatibility
+  showColumnToggle = true, // Default to true for backward compatibility
+  enableRowSelection = false, // Default to false for backward compatibility
+  selectedRows,
+  onSelectionChange,
   className = "",
   onRowClick,
   emptyMessage,
   emptyEntityName,
+  batchEditFields,
+  batchActions = [],
+  batchPrimaryAction,
+  batchSummary,
 }: UseTableProps<TData, TValue>) {
   const { t } = useTranslation()
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -86,7 +107,7 @@ export function UseTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(() => {
     // Inicializar com todas as colunas visíveis por padrão
     const initialVisibility: VisibilityState = {}
-    
+
     columns.forEach((column) => {
       if (column.id) {
         initialVisibility[column.id] = true
@@ -97,10 +118,42 @@ export function UseTable<TData, TValue>({
   const [rowSelection, setRowSelection] = React.useState({})
   const [globalFilter, setGlobalFilter] = React.useState("")
   const [expandedRows, setExpandedRows] = React.useState<Record<string, boolean>>({})
+  const [hoveredRowId, setHoveredRowId] = React.useState<string | null>(null)
+  const isInternalUpdate = React.useRef(false)
+
+  // Adicionar coluna de seleção dinamicamente se habilitado
+  const tableColumns = React.useMemo(() => {
+    if (!enableRowSelection) return columns
+
+    const selectionColumn: ColumnDef<TData, TValue> = {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+          className="border-gray-300 dark:border-gray-600 data-[state=checked]:bg-gray-700 data-[state=checked]:border-gray-700 dark:data-[state=checked]:bg-gray-500 dark:data-[state=checked]:border-gray-500"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+          onClick={(e) => e.stopPropagation()}
+          className="border-gray-300 dark:border-gray-600 data-[state=checked]:bg-gray-700 data-[state=checked]:border-gray-700 dark:data-[state=checked]:bg-gray-500 dark:data-[state=checked]:border-gray-500"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    }
+
+    return [selectionColumn, ...columns]
+  }, [enableRowSelection, columns])
 
   const table = useReactTable({
     data,
-    columns,
+    columns: tableColumns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -111,6 +164,7 @@ export function UseTable<TData, TValue>({
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
     globalFilterFn: "includesString",
+    enableRowSelection: enableRowSelection,
     state: {
       sorting,
       columnFilters,
@@ -130,6 +184,45 @@ export function UseTable<TData, TValue>({
       },
     },
   })
+
+  // Notificar mudanças de seleção
+  React.useEffect(() => {
+    if (enableRowSelection && onSelectionChange && !isInternalUpdate.current) {
+      const selectedRowsData = table.getFilteredSelectedRowModel().rows.map(row => row.original)
+      onSelectionChange(selectedRowsData)
+    }
+    isInternalUpdate.current = false
+  }, [rowSelection, enableRowSelection, table, onSelectionChange])
+
+  // Sincronizar seleção controlada externamente
+  React.useEffect(() => {
+    if (enableRowSelection && selectedRows !== undefined) {
+      const currentSelectedIds = table.getFilteredSelectedRowModel().rows.map(row => row.id)
+      const newSelectedIds = selectedRows.map((row: any) => {
+        const rowIndex = data.findIndex((d: any) => d.id === row.id)
+        return rowIndex >= 0 ? rowIndex.toString() : null
+      }).filter(Boolean) as string[]
+
+      // Comparar se a seleção mudou
+      const hasChanged =
+        currentSelectedIds.length !== newSelectedIds.length ||
+        currentSelectedIds.some(id => !newSelectedIds.includes(id))
+
+      if (hasChanged) {
+        isInternalUpdate.current = true
+
+        if (selectedRows.length === 0) {
+          setRowSelection({})
+        } else {
+          const selectedIds: Record<string, boolean> = {}
+          newSelectedIds.forEach(id => {
+            selectedIds[id] = true
+          })
+          setRowSelection(selectedIds)
+        }
+      }
+    }
+  }, [selectedRows, enableRowSelection, data, table])
 
   // Hook para gerenciar visibilidade responsiva das colunas
   React.useEffect(() => {
@@ -218,10 +311,10 @@ export function UseTable<TData, TValue>({
 
   return (
     <div className={`w-full h-full max-w-screen space-y-4 bg-transparent ${className}`}>
-      {/* Top Bar - Always Visible */}
+      {/* Top Bar - Conditionally Visible */}
       <div className="flex flex-col gap-4">
-        {/* Search Bar - Always on top */}
-        <SearchBar className="w-full" />
+        {/* Search Bar - Conditionally rendered */}
+        {showSearch && <SearchBar className="w-full" />}
         
         {/* Controls Row */}
         <div className="flex gap-3 md:flex-row md:items-center justify-between">
@@ -279,52 +372,51 @@ export function UseTable<TData, TValue>({
             )}
           </div>
           
-          {/* Column Visibility - Always visible */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 border-2 hover:border-primary/50">
-                <Settings2 className="h-4 w-4 mr-2" />
-                Columns
-                <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[200px]">
-              <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Column Visibility - Conditionally rendered */}
+          {showColumnToggle && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 border-2 hover:border-primary/50">
+                  <Settings2 className="h-4 w-4 mr-2" />
+                  Columns
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[200px]">
+                <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 
-      {/* Selection Info */}
-      {Object.keys(rowSelection).length > 0 && (
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary">
-            {Object.keys(rowSelection).length} selected
-          </Badge>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setRowSelection({})}
-            className="h-6 px-2"
-          >
-            Clear selection
-            <X className="ml-1 h-3 w-3" />
-          </Button>
-        </div>
+      {/* Batch Actions Panel */}
+      {enableRowSelection && Object.keys(rowSelection).length > 0 && (
+        <BatchActionsPanel
+          selectedCount={Object.keys(rowSelection).length}
+          onClearSelection={() => {
+            setRowSelection({})
+            table.resetRowSelection()
+          }}
+          summary={batchSummary}
+          editFields={batchEditFields}
+          actions={batchActions}
+          primaryAction={batchPrimaryAction}
+        />
       )}
 
       {/* Table */}
@@ -360,13 +452,30 @@ export function UseTable<TData, TValue>({
                     {/* Main Row */}
                     <TableRow
                       data-state={row.getIsSelected() && "selected"}
-                      className={`${onRowClick ? "cursor-pointer hover:bg-muted/50" : ""} ${expandedRows[row.id] ? "bg-muted/30" : ""}`}
+                      className={`${
+                        onRowClick || enableRowSelection ? "cursor-pointer hover:bg-muted/50" : ""
+                      } ${
+                        expandedRows[row.id] ? "bg-muted/30" : ""
+                      } ${
+                        row.getIsSelected() ? "bg-blue-50 dark:bg-blue-950/20 border-l-2 border-blue-500" : ""
+                      } transition-all duration-150 group relative`}
                       onClick={(e) => {
-                        // Don't expand if clicking on action buttons
-                        if (!(e.target as HTMLElement).closest('[data-action-button]')) {
-                          onRowClick?.(row.original)
+                        // Don't do anything if clicking on action buttons or checkbox
+                        const target = e.target as HTMLElement
+                        if (target.closest('[data-action-button]') || target.closest('button[role="checkbox"]')) {
+                          return
+                        }
+                        
+                        // If row selection is enabled, toggle selection on row click
+                        if (enableRowSelection) {
+                          row.toggleSelected()
+                        } else if (onRowClick) {
+                          // Otherwise use the onRowClick handler
+                          onRowClick(row.original)
                         }
                       }}
+                      onMouseEnter={() => enableRowSelection && setHoveredRowId(row.id)}
+                      onMouseLeave={() => enableRowSelection && setHoveredRowId(null)}
                     >
                       {/* Mobile Expand Button */}
                       <TableCell className="md:hidden w-6 p-0">
@@ -390,12 +499,24 @@ export function UseTable<TData, TValue>({
                       {/* Regular Cells */}
                       {row.getVisibleCells().map((cell) => {
                         const isActionCell = cell.column.id === 'actions'
+                        const isSelectCell = cell.column.id === 'select'
+                        
                         return (
                           <TableCell 
                             key={cell.id} 
-                            className={`whitespace-nowrap px-4 py-3 ${isActionCell ? 'text-right' : 'text-left'}`}
+                            className={`whitespace-nowrap px-4 py-3 ${isActionCell ? 'text-right' : 'text-left'} ${
+                              isSelectCell ? 'relative' : ''
+                            }`}
                           >
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            {isSelectCell ? (
+                              <div className={`transition-opacity duration-150 ${
+                                row.getIsSelected() || hoveredRowId === row.id ? 'opacity-100' : 'opacity-50'
+                              }`}>
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                              </div>
+                            ) : (
+                              flexRender(cell.column.columnDef.cell, cell.getContext())
+                            )}
                           </TableCell>
                         )
                       })}

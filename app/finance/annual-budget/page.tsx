@@ -71,8 +71,8 @@ import { SpendingOverTimeChart } from "@/components/charts/annual-budget/spendin
 
 // Modal Components
 import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget/annual-budget-view-edit-modal"
-
 import { DeleteBudgetModal } from "@/components/modals/annual-budget/delete-budget-modal"
+import { ConfirmationModal } from "@/components/shared/confirmation-modal"
 
 // GraphQL Hooks
 import { 
@@ -136,6 +136,7 @@ export default function AnnualBudgetPage() {
   const [isInstitutionBudgetModalOpen, setIsInstitutionBudgetModalOpen] = useState(false)
   const [institutionBudgetData, setInstitutionBudgetData] = useState<AnnualBudgetData | null>(null)
   const [isInstitutionLockConfirmModalOpen, setIsInstitutionLockConfirmModalOpen] = useState(false)
+  const [pendingLockAction, setPendingLockAction] = useState<{ event: React.MouseEvent, forceLock: boolean } | null>(null)
 
   // GraphQL Queries
   const { data: dashboardData, loading: loadingDashboard, refetch: refetchDashboard } = useBudgetDashboardData(selectedYear)
@@ -313,13 +314,14 @@ export default function AnnualBudgetPage() {
       year: selectedYear,
       planned_budget: 0,
       total_expenses: 0,
+      allocated_amount: 0,
       balance: 0,
       notes: `Institution budget for ${selectedYear}`,
       approved_by: undefined,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
-    
+
     setInstitutionBudgetData(newBudget)
     setIsInstitutionBudgetModalOpen(true)
   }
@@ -343,15 +345,27 @@ export default function AnnualBudgetPage() {
     const isCurrentlyLocked = institutionBudget.is_locked
     const tryingToLock = !isCurrentlyLocked
 
+    // Show confirmation modal when trying to lock
     if (tryingToLock && !forceLock) {
-      const departmentsWithoutBudget = departmentBudgetData.filter((dept: any) => !dept.hasBudgetRecord)
-      if (departmentsWithoutBudget.length > 0) {
-        setIsInstitutionLockConfirmModalOpen(true)
-        return
-      }
+      setPendingLockAction({ event: e, forceLock: false })
+      setIsInstitutionLockConfirmModalOpen(true)
+      return
     }
 
+    // Get all department budgets with locks for unlock operation
+    const departmentBudgetsWithLocks = isCurrentlyLocked 
+      ? departmentBudgetData.filter((dept: any) => dept.hasBudgetRecord && dept.isLocked && dept.annualBudget?.id)
+      : []
+
+    // Show loading toast
+    const loadingToast = toast.loading(
+      isCurrentlyLocked 
+        ? t('annual_budget.messages.unlocking_budget', `Unlocking institution budget and ${departmentBudgetsWithLocks.length} department budgets...`)
+        : t('annual_budget.messages.locking_budget', 'Locking institution budget and all department budgets...')
+    )
+
     try {
+      // First, toggle the institution budget lock
       const result = await toggleBudgetLockMutation({
         variables: {
           id: institutionBudget.id
@@ -359,26 +373,59 @@ export default function AnnualBudgetPage() {
       })
 
       if (result.data?.toggleBudgetLock) {
-        // Otimização: refetch das queries específicas em vez de handleRefresh completo
+        const isNowLocked = result.data.toggleBudgetLock.is_locked
+        
+        // If unlocking, also unlock all locked department budgets
+        if (!isNowLocked && departmentBudgetsWithLocks.length > 0) {
+          // Unlock all department budgets in parallel
+          const unlockPromises = departmentBudgetsWithLocks.map((dept: any) => 
+            toggleBudgetLockMutation({
+              variables: {
+                id: dept.annualBudget!.id
+              }
+            })
+          )
+          
+          await Promise.all(unlockPromises)
+        }
+        
+        // Refetch all data to ensure consistency
         await Promise.all([
           refetchKPIs(),
           refetchDashboard(),
           refetchInstitutionById()
         ])
         
-        const isNowLocked = result.data.toggleBudgetLock.is_locked
-        // Usar toast com id para evitar duplicatas
-        toast.success(isNowLocked ? t('annual_budget.messages.lock_success') : t('annual_budget.messages.unlock_success'), {
-          id: `institution-lock-${institutionBudget.id}`,
-          duration: 2000
-        })
+        // Dismiss loading and show success
+        toast.dismiss(loadingToast)
+        toast.success(
+          isNowLocked 
+            ? t('annual_budget.messages.lock_success') 
+            : t('annual_budget.messages.unlock_success', `Institution and ${departmentBudgetsWithLocks.length} departments unlocked successfully`), 
+          {
+            id: `institution-lock-${institutionBudget.id}`,
+            duration: 3000
+          }
+        )
       }
     } catch (error) {
       console.error('Error toggling institution budget lock:', error)
+      toast.dismiss(loadingToast)
       toast.error(t('annual_budget.messages.lock_error'), {
         id: `institution-lock-error-${institutionBudget.id}`,
         duration: 3000
       })
+    }
+  }
+
+  // Handler to confirm lock action from modal
+  const handleConfirmLock = async () => {
+    setIsInstitutionLockConfirmModalOpen(false)
+    
+    if (pendingLockAction) {
+      // Execute the lock action with forceLock = true
+      await handleToggleInstitutionBudgetLock(pendingLockAction.event, true)
+      setPendingLockAction(null)
     }
   }
 
@@ -397,28 +444,42 @@ export default function AnnualBudgetPage() {
     }
   }
 
-  // KPI Data from GraphQL
+  // KPI Data from GraphQL and local calculations
   const kpiData = useMemo(() => {
-    if (!kpisData?.budgetKPIs) {
-      return {
-        totalInstitutionBudget: 0,
-        totalAllocated: 0,
-        totalSpent: 0,
-        budgetRemaining: 0,
-        budgetUtilization: 0,
-        activeDepartments: 0
-      }
-    }
+    // Get institution budget for selected year
+    const institutionBudget = institutionAnnualBudgets[selectedYear]
+    const totalInstitutionBudget = institutionBudget?.planned_budget || 0
+
+    // Calculate total allocated from departments (sum of department budgets)
+    const totalAllocated = departmentBudgetData.reduce((sum: number, dept: any) => {
+      return sum + (dept.annualBudget?.allocated_amount || 0)
+    }, 0)
+
+    // Calculate total spent from departments
+    const totalSpent = departmentBudgetData.reduce((sum: number, dept: any) => {
+      return sum + (dept.spentAmount || 0)
+    }, 0)
+
+    // Calculate budget remaining: institution budget - total allocated
+    const budgetRemaining = totalInstitutionBudget - totalAllocated
+
+    // Calculate budget utilization percentage: % of institution budget that was allocated to departments
+    const budgetUtilization = totalInstitutionBudget > 0 
+      ? Math.round((totalAllocated / totalInstitutionBudget) * 100)
+      : 0
+
+    // Count active departments (departments with budgets)
+    const activeDepartments = departmentBudgetData.filter((dept: any) => dept.hasBudgetRecord).length
 
     return {
-      totalInstitutionBudget: kpisData.budgetKPIs.totalInstitutionBudget || 0,
-      totalAllocated: kpisData.budgetKPIs.totalAllocated || 0,
-      totalSpent: kpisData.budgetKPIs.totalSpent || 0,
-      budgetRemaining: kpisData.budgetKPIs.budgetRemaining || 0,
-      budgetUtilization: kpisData.budgetKPIs.budgetUtilization || 0,
-      activeDepartments: kpisData.budgetKPIs.activeDepartments || 0
+      totalInstitutionBudget,
+      totalAllocated,
+      totalSpent,
+      budgetRemaining,
+      budgetUtilization,
+      activeDepartments
     }
-  }, [kpisData])
+  }, [institutionAnnualBudgets, selectedYear, departmentBudgetData])
 
   const kpiCardsData: KPICardData[] = useMemo(() => {
     const institutionBudget = institutionAnnualBudgets[selectedYear]
@@ -488,24 +549,10 @@ export default function AnnualBudgetPage() {
         : "hover:bg-green-50 transition-all border-l-4 border-l-green-500",
       privacyConfig: PRIVACY_CONFIGS.totalAllocated,
       headerAction: hasInstitutionBudget ? (
-        <div className="flex items-center gap-1">
-          <InlinePrivacyToggle 
-            config={PRIVACY_CONFIGS.totalAllocated}
-            className="w-6 h-6 flex-shrink-0"
-          />
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              toast.info(t('annual_budget.kpi_cards.total_allocated.lock_info', 'Lock functionality for allocated budgets'))
-            }}
-            className="relative group z-10 cursor-pointer"
-            title={t('annual_budget.kpi_cards.actions.lock')}
-          >
-            <div className="w-6 h-6 border-2 border-dashed border-border bg-muted rounded-full flex items-center justify-center transition-all opacity-60 hover:opacity-100 hover:border-foreground/60">
-              <Lock className="w-3 h-3 text-muted-foreground" />
-            </div>
-          </button>
-        </div>
+        <InlinePrivacyToggle 
+          config={PRIVACY_CONFIGS.totalAllocated}
+          className="w-6 h-6 flex-shrink-0"
+        />
       ) : undefined
     },
     {
@@ -524,62 +571,38 @@ export default function AnnualBudgetPage() {
         : "hover:bg-purple-50 transition-all border-l-4 border-l-purple-500",
       privacyConfig: PRIVACY_CONFIGS.totalSpent,
       headerAction: hasInstitutionBudget ? (
-        <div className="flex items-center gap-1">
-          <InlinePrivacyToggle 
-            config={PRIVACY_CONFIGS.totalSpent}
-            className="w-6 h-6 flex-shrink-0"
-          />
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              toast.info(t('annual_budget.kpi_cards.total_spent.lock_info', 'Lock functionality for spending records'))
-            }}
-            className="relative group z-10 cursor-pointer"
-            title={t('annual_budget.kpi_cards.actions.lock')}
-          >
-            <div className="w-6 h-6 border-2 border-dashed border-border bg-muted rounded-full flex items-center justify-center transition-all opacity-60 hover:opacity-100 hover:border-foreground/60">
-              <Lock className="w-3 h-3 text-muted-foreground" />
-            </div>
-          </button>
-        </div>
+        <InlinePrivacyToggle 
+          config={PRIVACY_CONFIGS.totalSpent}
+          className="w-6 h-6 flex-shrink-0"
+        />
       ) : undefined
     },
     {
       id: "budget_remaining",
       title: t('annual_budget.kpi_cards.budget_remaining.title'),
-      value: formatCurrency(Math.abs(budgetRemainingValue), currencyConfig, { compact: true }),
-      icon: AlertTriangle,
+      value: (
+        <span className={isDeficit ? 'text-red-600' : 'text-green-600'}>
+          {isDeficit && '-'}{formatCurrency(Math.abs(budgetRemainingValue), currencyConfig, { compact: true })}
+        </span>
+      ),
+      icon: isDeficit ? AlertTriangle : CheckCircle,
       subtitle: isDeficit ? t('annual_budget.kpi_cards.budget_remaining.subtitle_deficit') : t('annual_budget.kpi_cards.budget_remaining.subtitle_available'),
       trend: {
-        value: 10,
+        value: Math.round((Math.abs(budgetRemainingValue) / kpiData.totalInstitutionBudget) * 100) || 0,
         isPositive: !isDeficit,
-        label: t('annual_budget.kpi_cards.budget_remaining.trend')
+        label: isDeficit ? t('annual_budget.kpi_cards.budget_remaining.trend_over') : t('annual_budget.kpi_cards.budget_remaining.trend')
       },
       className: !hasInstitutionBudget 
         ? "opacity-40 pointer-events-none" 
         : isDeficit
-          ? "hover:bg-red-50 transition-all border-l-4 border-l-red-500"
-          : "hover:bg-orange-50 transition-all border-l-4 border-l-orange-500",
+          ? "hover:bg-red-50/50 transition-all border-l-4 border-l-red-500"
+          : "hover:bg-green-50/50 transition-all border-l-4 border-l-green-500",
       privacyConfig: PRIVACY_CONFIGS.budgetRemaining,
       headerAction: hasInstitutionBudget ? (
-        <div className="flex items-center gap-1">
-          <InlinePrivacyToggle 
-            config={PRIVACY_CONFIGS.budgetRemaining}
-            className="w-6 h-6 flex-shrink-0"
-          />
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              toast.info(t('annual_budget.kpi_cards.budget_remaining.lock_info', 'Lock functionality for remaining budget'))
-            }}
-            className="relative group z-10 cursor-pointer"
-            title={t('annual_budget.kpi_cards.actions.lock')}
-          >
-            <div className="w-6 h-6 border-2 border-dashed border-border bg-muted rounded-full flex items-center justify-center transition-all opacity-60 hover:opacity-100 hover:border-foreground/60">
-              <Lock className="w-3 h-3 text-muted-foreground" />
-            </div>
-          </button>
-        </div>
+        <InlinePrivacyToggle 
+          config={PRIVACY_CONFIGS.budgetRemaining}
+          className="w-6 h-6 flex-shrink-0"
+        />
       ) : undefined
     },
     {
@@ -600,54 +623,56 @@ export default function AnnualBudgetPage() {
           : "hover:bg-muted/50 transition-all border-l-4 border-l-muted-foreground",
       privacyConfig: PRIVACY_CONFIGS.budgetUtilization,
       headerAction: hasInstitutionBudget ? (
-        <div className="flex items-center gap-1">
-          <InlinePrivacyToggle 
-            config={PRIVACY_CONFIGS.budgetUtilization}
-            className="w-6 h-6 flex-shrink-0"
-          />
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              toast.info(t('annual_budget.kpi_cards.budget_utilization.lock_info', 'Lock functionality for utilization tracking'))
-            }}
-            className="relative group z-10 cursor-pointer"
-            title={t('annual_budget.kpi_cards.actions.lock')}
-          >
-            <div className="w-6 h-6 border-2 border-dashed border-border bg-muted rounded-full flex items-center justify-center transition-all opacity-60 hover:opacity-100 hover:border-foreground/60">
-              <Lock className="w-3 h-3 text-muted-foreground" />
-            </div>
-          </button>
-        </div>
+        <InlinePrivacyToggle 
+          config={PRIVACY_CONFIGS.budgetUtilization}
+          className="w-6 h-6 flex-shrink-0"
+        />
       ) : undefined
     }
-  ]}, [kpiData, selectedYear, hasInstitutionBudget, institutionAnnualBudgets, currencyConfig, handleCreateInstitutionBudget, handleEditInstitutionBudget, handleToggleInstitutionBudgetLock])
+  ]
+  }, [kpiData, selectedYear, hasInstitutionBudget, institutionAnnualBudgets, currencyConfig, handleCreateInstitutionBudget, handleEditInstitutionBudget, handleToggleInstitutionBudgetLock, t])
 
   // Chart data from GraphQL
   const chartData = useMemo(() => {
+    // Build entity distribution from real department data
+    const entityDistribution = departmentBudgetData
+      .filter((dept: any) => dept.hasBudgetRecord && dept.annualBudget)
+      .map((dept: any) => ({
+        name: dept.departmentName,
+        amount: dept.annualBudget?.allocated_amount || 0,
+        percentage: kpiData.totalInstitutionBudget > 0 
+          ? Math.round(((dept.annualBudget?.allocated_amount || 0) / kpiData.totalInstitutionBudget) * 100)
+          : 0,
+        count: 1
+      }))
+      .filter((entity: any) => entity.amount > 0)
+
     if (!kpisData) {
       return {
         budgetDistribution: {
-          total: 0,
-          allocated: 0,
-          remaining: 0,
-          percentageUsed: 0
+          total: kpiData.totalInstitutionBudget,
+          allocated: kpiData.totalAllocated,
+          remaining: kpiData.budgetRemaining,
+          percentageUsed: kpiData.budgetUtilization
         },
         departmentSpending: [],
-        spendingOverTime: []
+        spendingOverTime: [],
+        entityDistribution
       }
     }
 
     return {
-      budgetDistribution: kpisData.budgetDistribution || {
-        total: 0,
-        allocated: 0,
-        remaining: 0,
-        percentageUsed: 0
+      budgetDistribution: {
+        total: kpiData.totalInstitutionBudget,
+        allocated: kpiData.totalAllocated,
+        remaining: kpiData.budgetRemaining,
+        percentageUsed: kpiData.budgetUtilization
       },
       departmentSpending: kpisData.departmentSpending || [],
-      spendingOverTime: kpisData.spendingOverTime || []
+      spendingOverTime: kpisData.spendingOverTime || [],
+      entityDistribution
     }
-  }, [kpisData])
+  }, [kpisData, kpiData, departmentBudgetData])
 
   // Handlers
   // Centraliza o recarregamento de todos os dados
@@ -856,7 +881,7 @@ export default function AnnualBudgetPage() {
             total_expenses: budget.total_expenses || 0,
             description: `Budget for ${departmentData.departmentName}`,
             justification: budget.notes || `Annual budget allocation for ${departmentData.departmentName}`,
-            allocated_amount: budget.planned_budget,
+            allocated_amount: budget.allocated_amount,
             entity_type: AnnualBudgetEntityType.INSTITUTION_DEPARTMENT,
             entity_id: departmentData.departmentId,
             notes: budget.notes,
@@ -876,6 +901,12 @@ export default function AnnualBudgetPage() {
   }
 
   const handleSaveInstitutionBudget = async (budget: AnnualBudgetData) => {
+    console.log('🔍 handleSaveInstitutionBudget - budget received:', budget)
+    console.log('📊 Values being sent:', {
+      total_expenses: budget.total_expenses,
+      allocated_amount: budget.allocated_amount,
+      planned_budget: budget.planned_budget
+    })
     try {
       const result = await createAnnualBudgetMutation({
         variables: {
@@ -884,7 +915,7 @@ export default function AnnualBudgetPage() {
           total_expenses: budget.total_expenses || 0,
           description: `Institution budget for ${budget.year}`,
           justification: budget.notes || `Annual budget allocation for institution operations in ${budget.year}`,
-          allocated_amount: budget.planned_budget,
+          allocated_amount: budget.allocated_amount || 0,
           entity_type: AnnualBudgetEntityType.INSTITUTION,
           entity_id: currentInstitutionData?.id || '',
           notes: budget.notes,
@@ -908,11 +939,6 @@ export default function AnnualBudgetPage() {
       return
     }
 
-    if (!selectedRequest) {
-      toast.error(t('annual_budget.messages.no_budget_selected'))
-      return
-    }
-
     try {
       const result = await updateAnnualBudgetMutation({
         variables: {
@@ -922,8 +948,8 @@ export default function AnnualBudgetPage() {
             total_expenses: budget.total_expenses,
             description: `Updated budget for ${budget.year}`,
             justification: budget.notes || `Updated budget allocation`,
-            priority: selectedRequest.priority as any,
-            category: selectedRequest.category as any,
+            priority: selectedRequest?.priority as any,
+            category: selectedRequest?.category as any,
             notes: budget.notes,
           }
         }
@@ -1469,87 +1495,60 @@ export default function AnnualBudgetPage() {
             />
           )}
 
-          {/* Delete Budget Modal */}
-          {selectedRequest && (
-            <DeleteBudgetModal
-              isOpen={isDeleteModalOpen}
-              onOpenChange={setIsDeleteModalOpen}
-              budget={{
-                id: selectedRequest.id,
-                entity_type: selectedRequest.entity_type.toLowerCase() as 'institution' | 'region' | 'church' | 'department',
-                entity_id: getEntityId(selectedRequest),
-                entity_name: getEntityName(selectedRequest),
-                year: selectedRequest.year,
-                allocated_amount: parseFloat(selectedRequest.allocated_amount as string),
-                approved_amount: selectedRequest.approvedAmount,
-                status: selectedRequest.status.toLowerCase() as 'pending' | 'under_review' | 'approved' | 'rejected' | 'requires_revision',
-                priority: selectedRequest.priority.toLowerCase() as 'low' | 'medium' | 'high' | 'urgent',
-                category: selectedRequest.category.toLowerCase() as 'operational' | 'project' | 'maintenance' | 'emergency' | 'expansion',
-                description: selectedRequest.description || '',
-                justification: selectedRequest.justification || '',
-                requested_by: selectedRequest.requested_by,
-                reviewed_by: selectedRequest.reviewed_by || undefined,
-                submitted_date: selectedRequest.submitted_date as string,
-                review_date: selectedRequest.review_date as string,
-                approval_date: selectedRequest.approval_date as string,
-                notes: selectedRequest.notes || undefined,
-                created_at: selectedRequest.created_at as string,
-                updated_at: selectedRequest.updated_at as string,
-                is_locked: selectedRequest.is_locked
-              }}
-              onSuccess={(deletedBudget) => {
-                handleDeleteBudget(deletedBudget.id)
-              }}
-            />
-          )}
-
           {/* Institution Budget Modal */}
-          {institutionBudgetData && (
+          {isInstitutionBudgetModalOpen && (
             <AnnualBudgetViewEditModal
               isOpen={isInstitutionBudgetModalOpen}
-              onOpenChange={setIsInstitutionBudgetModalOpen}
+              onOpenChange={(open) => {
+                setIsInstitutionBudgetModalOpen(open)
+                if (!open) {
+                  setInstitutionBudgetData(null)
+                }
+              }}
               budget={institutionBudgetData}
-              entityName={currentInstitutionData?.name || "Main Institution"}
+              entityName={currentInstitutionData?.name || 'Institution'}
               entityType="Institution"
-              onSave={handleSaveInstitutionBudget}
-              readonly={false}
-              isLocked={institutionBudgetData?.is_locked || false}
+              isLocked={institutionAnnualBudgets[selectedYear]?.is_locked || false}
+              onSave={(budget) => {
+                // If budget has a real ID (not the temporary one), update it, otherwise create new
+                if (institutionAnnualBudgets[selectedYear]?.id) {
+                  handleUpdateBudget(budget)
+                } else {
+                  handleSaveInstitutionBudget(budget)
+                }
+              }}
               defaultYear={selectedYear}
             />
           )}
 
           {/* Institution Lock Confirmation Modal */}
-          <Dialog open={isInstitutionLockConfirmModalOpen} onOpenChange={setIsInstitutionLockConfirmModalOpen}>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-amber-500" />
-                  {t('annual_budget.modals.lock_institution.title', 'Confirm Institution Lock')}
-                </DialogTitle>
-                <DialogDescription>
-                  {t('annual_budget.modals.lock_institution.description', 
-                    'Some departments do not have budgets yet. Locking the institution budget will also lock all existing department budgets. Are you sure you want to continue?')}
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsInstitutionLockConfirmModalOpen(false)}
-                >
-                  {t('annual_budget.modals.buttons.cancel', 'Cancel')}
-                </Button>
-                <Button
-                  onClick={(e) => {
-                    setIsInstitutionLockConfirmModalOpen(false)
-                    handleToggleInstitutionBudgetLock(e, true)
-                  }}
-                >
-                  {t('annual_budget.modals.buttons.continue', 'Continue')}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
+          <ConfirmationModal
+            isOpen={isInstitutionLockConfirmModalOpen}
+            onOpenChange={setIsInstitutionLockConfirmModalOpen}
+            onConfirm={handleConfirmLock}
+            variant="default"
+            icon={Lock}
+            title={t('annual_budget.modals.lock_institution_budget.title', 'Lock Institution Budget')}
+            description={t('annual_budget.modals.lock_institution_budget.warning',
+              'This action will lock the institution budget and prevent any further modifications.')}
+            impacts={[
+              t('annual_budget.modals.lock_institution_budget.impact_1',
+                'All existing department budgets will be locked automatically'),
+              t('annual_budget.modals.lock_institution_budget.impact_2',
+                'No new department budgets can be created'),
+              t('annual_budget.modals.lock_institution_budget.impact_3',
+                'Departments without budgets will remain without budgets')
+            ]}
+            confirmText={t('annual_budget.modals.buttons.confirm_lock', 'Yes, Lock Budget')}
+            cancelText={t('annual_budget.modals.buttons.cancel', 'Cancel')}
+            isLoading={togglingLock}
+            closeOnConfirm={false}
+          >
+            <p className="text-sm text-muted-foreground">
+              {t('annual_budget.modals.lock_institution_budget.question',
+                'Are you sure you want to proceed with locking the institution budget?')}
+            </p>
+          </ConfirmationModal>
 
         </div>
       </WithPermission>

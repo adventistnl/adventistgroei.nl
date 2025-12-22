@@ -126,11 +126,12 @@ export function AnnualBudgetViewEditModal({
 
   const yearOptions = generateYearOptions()
 
-  // Calculate balance automatically
-  const calculateBalance = (plannedBudget: string | number, totalExpenses: string | number) => {
+  // Calculate balance automatically: planned_budget - (total_expenses + allocated_amount)
+  const calculateBalance = (plannedBudget: string | number, totalExpenses: string | number, allocatedAmount: string | number = 0) => {
     const planned = typeof plannedBudget === 'string' ? parseFloat(plannedBudget) || 0 : plannedBudget
     const expenses = typeof totalExpenses === 'string' ? parseFloat(totalExpenses) || 0 : totalExpenses
-    return planned - expenses
+    const allocated = typeof allocatedAmount === 'string' ? parseFloat(allocatedAmount) || 0 : allocatedAmount
+    return planned - (expenses + allocated)
   }
 
   useEffect(() => {
@@ -275,7 +276,7 @@ export function AnnualBudgetViewEditModal({
         planned_budget: parseFloat(formData.planned_budget),
         total_expenses: parseFloat(formData.total_expenses) || 0,
         allocated_amount: parseFloat(formData.reserved) || 0, // Map reserved to allocated_amount
-        balance: calculateBalance(formData.planned_budget, formData.total_expenses),
+        balance: calculateBalance(formData.planned_budget, formData.total_expenses, formData.reserved),
         notes: formData.notes || null,
         approved_by: formData.approved_by || null,
         updated_at: new Date().toISOString()
@@ -286,7 +287,7 @@ export function AnnualBudgetViewEditModal({
         planned_budget: parseFloat(formData.planned_budget),
         total_expenses: parseFloat(formData.total_expenses) || 0,
         allocated_amount: parseFloat(formData.reserved) || 0, // Map reserved to allocated_amount
-        balance: calculateBalance(formData.planned_budget, formData.total_expenses),
+        balance: calculateBalance(formData.planned_budget, formData.total_expenses, formData.reserved),
         notes: formData.notes || null,
         approved_by: formData.approved_by || null,
         created_at: new Date().toISOString(),
@@ -796,16 +797,16 @@ export function AnnualBudgetViewEditModal({
                 <div className="relative">
                   <Input
                     type="text"
-                    value={formatCurrency(calculateBalance(formData.planned_budget, formData.total_expenses))}
+                    value={formatCurrency(calculateBalance(formData.planned_budget, formData.total_expenses, formData.reserved))}
                     disabled={true}
                     className="h-12 text-base border-border bg-muted text-foreground"
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                    <Badge 
-                      variant={calculateBalance(formData.planned_budget, formData.total_expenses) >= 0 ? "default" : "destructive"}
+                    <Badge
+                      variant={calculateBalance(formData.planned_budget, formData.total_expenses, formData.reserved) >= 0 ? "default" : "destructive"}
                       className="text-xs"
                     >
-                      {calculateBalance(formData.planned_budget, formData.total_expenses) >= 0 ? (t("annual_budget.modals.status.positive") || "Positive") : (t("annual_budget.modals.status.deficit") || "Deficit")}
+                      {calculateBalance(formData.planned_budget, formData.total_expenses, formData.reserved) >= 0 ? (t("annual_budget.modals.status.positive") || "Positive") : (t("annual_budget.modals.status.deficit") || "Deficit")}
                     </Badge>
                   </div>
                 </div>
@@ -825,13 +826,13 @@ export function AnnualBudgetViewEditModal({
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("annual_budget.modals.summary.reserved") || "Reserved"}:</span>
                     <span className="font-medium text-foreground">
-                      {formatCurrency(0)}
+                      {formatCurrency(parseFloat(formData.reserved || "0"))}
                     </span>
                   </div>
                   <div className="flex justify-between border-t border-border pt-2">
                     <span className="text-muted-foreground">{t("annual_budget.modals.summary.available") || "Available"}:</span>
-                    <span className={`font-semibold ${calculateBalance(formData.planned_budget, formData.total_expenses) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(calculateBalance(formData.planned_budget, formData.total_expenses))}
+                    <span className={`font-semibold ${calculateBalance(formData.planned_budget, formData.total_expenses, formData.reserved) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {formatCurrency(calculateBalance(formData.planned_budget, formData.total_expenses, formData.reserved))}
                     </span>
                   </div>
                 </div>
@@ -894,8 +895,8 @@ export function AnnualBudgetViewEditModal({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("annual_budget.modals.summary.available") || "Available"}:</span>
-                    <span className={`font-semibold ${calculateBalance(formData.planned_budget, formData.total_expenses) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(calculateBalance(formData.planned_budget, formData.total_expenses))}
+                    <span className={`font-semibold ${calculateBalance(formData.planned_budget, formData.total_expenses, formData.reserved) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {formatCurrency(calculateBalance(formData.planned_budget, formData.total_expenses, formData.reserved))}
                     </span>
                   </div>
                 </div>

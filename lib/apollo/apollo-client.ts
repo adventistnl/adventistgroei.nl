@@ -1,12 +1,13 @@
 import { config } from "@/config/global";
-import { HttpLink, ApolloClient, InMemoryCache } from "@apollo/client";
+import { ApolloClient, InMemoryCache } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
+import { createUploadLink } from "apollo-upload-client";
 import { useCookies } from "@/hooks/use-cookies";
 
 // have a function to create a client for you
 export function makeClient() {
   const { getCookies } = useCookies();
-  const httpLink = new HttpLink({
+  const uploadLink = createUploadLink({
     uri: config.graphqlApiUrl,
     fetchOptions: {},
   });
@@ -21,6 +22,7 @@ export function makeClient() {
       ...prevContext,
       headers: {
         Authorization: token ? `Bearer ${token}` : "",
+        "apollo-require-preflight": "true",
       },
     };
   });
@@ -48,6 +50,6 @@ export function makeClient() {
         },
       },
     }),
-    link: authLink.concat(httpLink),
+    link: authLink.concat(uploadLink),
   });
 }

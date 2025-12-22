@@ -30,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import toast from "react-hot-toast"
+import { ActivityTags } from "@/types/graphql-global-types"
 
 export interface ActivityOverlayModalProps {
   isOpen: boolean
@@ -66,11 +67,14 @@ export function ActivityOverlayModal({
   if (!isOpen || !activity) return null
 
   // Helper functions
-  const getActivityTagIcon = (tag: string) => {
+  const getActivityTagIcon = (tag?: ActivityTags) => {
+    if (!tag) return <Tag className="w-4 h-4" />
+
     switch (tag) {
-      case "reforma": return <Wrench className="w-4 h-4" />
-      case "material": return <Package className="w-4 h-4" />
-      case "training": return <GraduationCap className="w-4 h-4" />
+      case ActivityTags.Reform: return <Wrench className="w-4 h-4" />
+      case ActivityTags.Equipment: return <Wrench className="w-4 h-4" />
+      case ActivityTags.Materials: return <Package className="w-4 h-4" />
+      case ActivityTags.Training: return <GraduationCap className="w-4 h-4" />
       default: return <Tag className="w-4 h-4" />
     }
   }
@@ -128,11 +132,21 @@ export function ActivityOverlayModal({
     return labels[priority] || priority
   }
 
-  const getTagLabel = (tag: string) => {
-    const labels: Record<string, string> = {
-      reforma: "Reforma",
-      material: "Material",
-      training: "Treinamento"
+  const getTagLabel = (tag?: ActivityTags) => {
+    if (!tag) return ''
+
+    const labels: Record<ActivityTags, string> = {
+      [ActivityTags.Reform]: "Reforma",
+      [ActivityTags.Equipment]: "Equipamento",
+      [ActivityTags.Materials]: "Material",
+      [ActivityTags.Training]: "Treinamento",
+      [ActivityTags.Travel]: "Viagem",
+      [ActivityTags.Event]: "Evento",
+      [ActivityTags.Transport]: "Transporte",
+      [ActivityTags.Marketing]: "Marketing",
+      [ActivityTags.Services]: "Serviços",
+      [ActivityTags.Feeding]: "Alimentação",
+      [ActivityTags.Accommodation]: "Acomodação"
     }
     return labels[tag] || tag
   }

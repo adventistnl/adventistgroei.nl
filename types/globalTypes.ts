@@ -7,6 +7,34 @@
 // START Enums and Input Objects
 //==============================================================
 
+export enum ActivityPriority {
+  HIGH = "HIGH",
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  URGENT = "URGENT",
+}
+
+export enum ActivityStatus {
+  COMPLETED = "COMPLETED",
+  IN_PROGRESS = "IN_PROGRESS",
+  ON_HOLD = "ON_HOLD",
+  TODO = "TODO",
+}
+
+export enum ActivityTags {
+  ACCOMMODATION = "ACCOMMODATION",
+  EQUIPMENT = "EQUIPMENT",
+  EVENT = "EVENT",
+  FEEDING = "FEEDING",
+  MARKETING = "MARKETING",
+  MATERIALS = "MATERIALS",
+  REFORM = "REFORM",
+  SERVICES = "SERVICES",
+  TRAINING = "TRAINING",
+  TRANSPORT = "TRANSPORT",
+  TRAVEL = "TRAVEL",
+}
+
 export enum AnnualBudgetCategory {
   EMERGENCY = "EMERGENCY",
   EXPANSION = "EXPANSION",
@@ -45,6 +73,20 @@ export enum ChurchType {
   STANDARD = "STANDARD",
 }
 
+export enum EntityType {
+  CHURCH = "CHURCH",
+  CHURCH_DEPARTMENT = "CHURCH_DEPARTMENT",
+  INSTITUTION = "INSTITUTION",
+  INSTITUTION_DEPARTMENT = "INSTITUTION_DEPARTMENT",
+  REGION = "REGION",
+  USER = "USER",
+}
+
+export enum EventType {
+  evangelism = "evangelism",
+  show = "show",
+}
+
 export enum GenderType {
   FEMALE = "FEMALE",
   MALE = "MALE",
@@ -58,12 +100,38 @@ export enum LanguagePreference {
   nl = "nl",
 }
 
+export enum ProjectActivityLogAction {
+  ASSIGNED = "ASSIGNED",
+  BUDGET_UPDATED = "BUDGET_UPDATED",
+  CREATED = "CREATED",
+  DEADLINE_UPDATED = "DEADLINE_UPDATED",
+  DELETED = "DELETED",
+  PRIORITY_CHANGED = "PRIORITY_CHANGED",
+  STATUS_CHANGED = "STATUS_CHANGED",
+  SUBSIDIZED_CHANGED = "SUBSIDIZED_CHANGED",
+  TAG_ADDED = "TAG_ADDED",
+  TAG_REMOVED = "TAG_REMOVED",
+  UNASSIGNED = "UNASSIGNED",
+  UPDATED = "UPDATED",
+}
+
 export enum ProjectType {
-  CHURCH_PLANTING = "CHURCH_PLANTING",
-  EVANGELISM = "EVANGELISM",
-  MISSION = "MISSION",
-  OTHER = "OTHER",
-  SOCIAL = "SOCIAL",
+  Global = "Global",
+  Local = "Local",
+}
+
+export interface ActivityFundingCreateDto {
+  entity_contribution_amount: number;
+  entity_contribution_percent: number;
+  entity_type: EntityType;
+  entity_id: string;
+}
+
+export interface ActivityFundingUpdateDto {
+  entity_contribution_amount?: number | null;
+  entity_contribution_percent?: number | null;
+  entity_type?: EntityType | null;
+  entity_id?: string | null;
 }
 
 export interface AnnualBudgetUpdateDto {
@@ -82,12 +150,73 @@ export interface ApproveAnnualBudgetDto {
   notes?: string | null;
 }
 
+export interface EventCreateDto {
+  title: string;
+  description: string;
+  type: EventType;
+  max_participants: number;
+  ticket_amount: number;
+  location: string;
+  subscription_expires_at: string;
+}
+
+export interface ProjectActivityCreateDto {
+  name: string;
+  description: string;
+  budget_amount: number;
+  deadline: string;
+  owner_id: string;
+  tags: ActivityTags[];
+  custom_tags?: string[] | null;
+  status?: ActivityStatus | null;
+  priority?: ActivityPriority | null;
+  is_subsidized?: boolean | null;
+  activity_funding: ActivityFundingCreateDto;
+  project_id: string;
+}
+
+export interface ProjectActivityCreateWithoutProjectDto {
+  name: string;
+  description: string;
+  budget_amount: number;
+  deadline: string;
+  owner_id: string;
+  tags: ActivityTags[];
+  custom_tags?: string[] | null;
+  status?: ActivityStatus | null;
+  priority?: ActivityPriority | null;
+  is_subsidized?: boolean | null;
+  activity_funding: ActivityFundingCreateDto;
+}
+
+export interface ProjectActivityUpdateDto {
+  id: string;
+  name?: string | null;
+  description?: string | null;
+  budget_amount?: number | null;
+  deadline?: string | null;
+  owner_id?: string | null;
+  tags?: ActivityTags[] | null;
+  custom_tags?: string[] | null;
+  status?: ActivityStatus | null;
+  priority?: ActivityPriority | null;
+  is_subsidized?: boolean | null;
+  activity_tag?: ActivityTags | null;
+  activity_funding?: ActivityFundingUpdateDto | null;
+}
+
 export interface RejectAnnualBudgetDto {
   reason: string;
 }
 
 export interface RequestRevisionAnnualBudgetDto {
   revision_notes: string;
+}
+
+export interface UploadActivityDocumentDto {
+  activity_id: string;
+  project_activity_id: string;
+  type: string;
 }
 
 //==============================================================

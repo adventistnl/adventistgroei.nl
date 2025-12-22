@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
+import { useQuery } from "@apollo/client"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { LanguageSelector } from "@/components/shared/language-selector"
@@ -25,16 +26,10 @@ import { ProjectsTable, ProjectTableData } from "@/components/projects/projects-
 import { useRouter } from "next/navigation"
 import { useNavigateWithLoading } from "@/hooks/use-navigation-loading"
 import { projectTranslations } from "@/lib/translations/projects"
-import {
-  mockProjects,
-  mockDepartments,
-  mockSubsidyRequests,
-  mockSubsidyActivities,
-  projectsKPIs,
-  projectsByDepartmentData,
-  subsidyStatusDistribution,
-  projectsTimelineData
-} from "@/data/mockData"
+import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
+import { DELETE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
+import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
+import { useMutation } from "@apollo/client"
 import {
   Globe,
   DollarSign,
@@ -136,22 +131,26 @@ const statusChartConfig = {
 } satisfies ChartConfig
 
 // Componentes individuais dos gráficos
-const ProjectsByDepartmentChart = () => (
+const ProjectsByDepartmentChart = ({ data }: { data: any[] }) => {
+  const { i18n } = useTranslation()
+  const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+
+  return (
   <Card className="h-full">
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
       <div>
         <CardTitle className="flex items-center gap-2">
           <BarChart3 className="w-5 h-5" />
-          Projects by Department
+          {t_project.charts.projectsByDepartment}
         </CardTitle>
         <CardDescription className="mt-1">
-          Distribuição de projetos e orçamentos
+          {t_project.charts.budgetVsSubsidies}
         </CardDescription>
       </div>
     </CardHeader>
     <CardContent>
       <ChartContainer config={projectsChartConfig} className="h-[300px] w-full">
-        <BarChart data={projectsByDepartmentData}>
+        <BarChart data={data}>
           <CartesianGrid vertical={false} />
           <XAxis
             dataKey="department"
@@ -171,25 +170,30 @@ const ProjectsByDepartmentChart = () => (
             content={<ChartTooltipContent />}
           />
           <Legend />
-          <Bar dataKey="projects" fill="#3b82f6" radius={4} name="Projetos" />
-          <Bar dataKey="budget_used" fill="#10b981" radius={4} name="Orçamento Usado" />
-          <Bar dataKey="remaining_budget" fill="#e5e7eb" radius={4} name="Orçamento Restante" />
+          <Bar dataKey="projects" fill="#3b82f6" radius={4} name={t_project.projects} />
+          <Bar dataKey="budget_used" fill="#10b981" radius={4} name={t_project.budget.budgetUsed} />
+          <Bar dataKey="remaining_budget" fill="#e5e7eb" radius={4} name={t_project.budget.remainingBudget} />
         </BarChart>
       </ChartContainer>
     </CardContent>
   </Card>
-)
+  )
+}
 
-const SubsidyStatusChart = () => (
+const SubsidyStatusChart = ({ data }: { data: any[] }) => {
+  const { i18n } = useTranslation()
+  const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+
+  return (
   <Card className="h-full">
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
       <div>
         <CardTitle className="flex items-center gap-2">
           <PieChart className="w-5 h-5" />
-          Subsidy Distribution
+          {t_project.charts.subsidyDistribution}
         </CardTitle>
         <CardDescription className="mt-1">
-          Status dos pedidos de subsídio
+          {t_project.charts.subsidyStatusBreakdown}
         </CardDescription>
       </div>
     </CardHeader>
@@ -201,7 +205,7 @@ const SubsidyStatusChart = () => (
             content={<ChartTooltipContent hideLabel />}
           />
           <Pie
-            data={subsidyStatusDistribution}
+            data={data}
             dataKey="count"
             nameKey="status"
             cx="50%"
@@ -211,7 +215,7 @@ const SubsidyStatusChart = () => (
             strokeWidth={2}
             paddingAngle={2}
           >
-            {subsidyStatusDistribution.map((entry, index) => (
+            {data.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
                 fill={entry.color}
@@ -223,24 +227,29 @@ const SubsidyStatusChart = () => (
       </ChartContainer>
     </CardContent>
   </Card>
-)
+  )
+}
 
-const ProjectsTimelineChart = () => (
+const ProjectsTimelineChart = ({ data }: { data: any[] }) => {
+  const { i18n } = useTranslation()
+  const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+
+  return (
   <Card className="h-full">
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
       <div>
         <CardTitle className="flex items-center gap-2">
           <LineChart className="w-5 h-5" />
-          Projects Timeline
+          {t_project.charts.projectsTimeline}
         </CardTitle>
         <CardDescription className="mt-1">
-          Evolução mensal dos projetos
+          {t_project.charts.monthlyProgress}
         </CardDescription>
       </div>
     </CardHeader>
     <CardContent>
       <ChartContainer config={timelineChartConfig} className="h-[300px] w-full">
-        <AreaChart data={projectsTimelineData}>
+        <AreaChart data={data}>
           <defs>
             <linearGradient id="fillCreated" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
@@ -288,22 +297,45 @@ const ProjectsTimelineChart = () => (
       </ChartContainer>
     </CardContent>
   </Card>
-)
+  )
+}
 
 export default function ProjectsPage() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
   const { navigateWithLoading } = useNavigateWithLoading()
-  const [isLoading, setIsLoading] = useState(true)
+  const { currentInstitutionData } = useInstitution()
   const [refreshing, setRefreshing] = useState(false)
-  const [projects, setProjects] = useState<ProjectTableData[]>([])
-  
-  
+
+  const institutionId = currentInstitutionData?.id
+
+  // Fetch projects from backend
+  const { data: projectsData, loading: isLoading, error, refetch } = useQuery(GET_PROJECTS_QUERY)
+
+  // Fetch departments
+  const { data: departmentsData } = useQuery(GET_DEPARTMENTS_QUERY, {
+    variables: { institution_id: institutionId },
+    skip: !institutionId
+  })
+
+  const departments = departmentsData?.departments || []
+
+  // Fetch KPIs and analytics data
+  const { data: kpisData, loading: kpisLoading } = useQuery(GET_PROJECT_KPIS_QUERY, {
+    variables: { institutionId },
+    skip: !institutionId
+  })
+
+  // Delete project mutation
+  const [deleteProjectMutation] = useMutation(DELETE_PROJECT_MUTATION, {
+    refetchQueries: [{ query: GET_PROJECTS_QUERY }, { query: GET_PROJECT_KPIS_QUERY }]
+  })
+
   // Filter states
   const [selectedDepartment, setSelectedDepartment] = useState("all")
   const [selectedPeriod, setSelectedPeriod] = useState("6m")
   const [chartPeriod, setChartPeriod] = useState("6m")
-  
+
   // Get translations for current language
   const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
 
@@ -316,64 +348,89 @@ export default function ProjectsPage() {
     breadcrumbs
   })
 
-  // Transform mock data to table format
-  const transformProjectsData = (projectsData: typeof mockProjects): ProjectTableData[] => {
-    return projectsData.map(project => {
-      const subsidyRequests = mockSubsidyRequests.filter(req => req.project_id === project.id)
-      const totalSubsidyAmount = subsidyRequests.reduce((sum, req) => sum + req.total_budget, 0)
-      const totalActivities = subsidyRequests.reduce((sum, req) => {
-        const activities = mockSubsidyActivities.filter(act => act.subsidy_request_id === req.id)
-        return sum + activities.length
-      }, 0)
+  // Transform backend data to table format
+  const transformProjectsData = (backendProjects: any[]): ProjectTableData[] => {
+    return backendProjects.map((project: any) => {
+      // Calculate status based on dates
+      const now = new Date()
+      const startDate = new Date(project.start_at)
+      const endDate = new Date(project.end_at)
+
+      let status: "active" | "upcoming" | "completed"
+      if (startDate > now) {
+        status = "upcoming"
+      } else if (endDate < now) {
+        status = "completed"
+      } else {
+        status = "active"
+      }
 
       return {
-        ...project,
-        status: project.status as "active" | "upcoming" | "completed",
-        type: (project as any).type as "Local" | "Global" | undefined,
-        is_event: (project as any).is_event || false,
-        eventId: (project as any).eventId || null,
-        subsidyRequests: subsidyRequests.length,
-        subsidyAmount: totalSubsidyAmount,
-        activities: totalActivities
+        id: project.id,
+        department_id: project.department_id,
+        title: project.title,
+        description: project.description,
+        budget: project.budget,
+        is_private: project.is_private,
+        required_volunteers: project.required_volunteers,
+        start_at: project.start_at,
+        end_at: project.end_at,
+        language_preference: project.language_preference,
+        institutionId: project.institution_id || project.Institution?.id || '',
+        status,
+        subsidyRequests: 0, // TODO: Will be populated when subsidy data is available
+        subsidyAmount: 0, // TODO: Will be populated when subsidy data is available
+        activities: project.activities?.length || 0,
+        is_event: !!project.event_id,
+        type: project.type as "Local" | "Global" | undefined,
+        eventId: project.event_id || null
       }
     })
   }
 
+  // Transform projects data
+  const projects = useMemo(() => {
+    if (!projectsData?.projects) return []
+    return transformProjectsData(projectsData.projects)
+  }, [projectsData])
+
   // Filter data based on selected department
   const filteredData = useMemo(() => {
-    const allProjects = transformProjectsData(mockProjects)
-    if (selectedDepartment === "all") return allProjects
-    return allProjects.filter(project => project.department_id === selectedDepartment)
-  }, [selectedDepartment])
+    if (selectedDepartment === "all") return projects
+    return projects.filter(project => project.department_id === selectedDepartment)
+  }, [selectedDepartment, projects])
 
-  // Calculate KPIs based on filtered data
+  // Get KPIs from backend data
   const kpis = useMemo(() => {
-    const filtered = filteredData
-    return {
-      totalProjects: filtered.length,
-      activeProjects: filtered.filter(p => p.status === "active").length,
-      completedProjects: filtered.filter(p => p.status === "completed").length,
-      upcomingProjects: filtered.filter(p => p.status === "upcoming").length,
-      totalBudget: filtered.reduce((sum, p) => sum + p.budget, 0),
-      totalSubsidyRequests: filtered.reduce((sum, p) => sum + (p.subsidyRequests || 0), 0),
-      totalSubsidyAmount: filtered.reduce((sum, p) => sum + (p.subsidyAmount || 0), 0),
-      projectsWithVolunteers: filtered.filter(p => p.required_volunteers).length,
+    if (!kpisData?.projectKPIs) {
+      return {
+        totalProjects: 0,
+        activeProjects: 0,
+        completedProjects: 0,
+        upcomingProjects: 0,
+        totalBudget: 0,
+        totalSubsidyRequests: 0,
+        totalSubsidyAmount: 0,
+        projectsWithVolunteers: 0,
+        averageBudgetPerProject: 0,
+      }
     }
-  }, [filteredData])
+    return kpisData.projectKPIs
+  }, [kpisData])
 
   // Dados para KPI Cards
   const kpiCardsData = [
     {
       id: "total-projects",
-      title: "Total Projects",
+      title: t_project.kpis.totalProjects,
       value: kpis.totalProjects.toString(),
-      change: `${kpis.activeProjects} active`,
+      change: `${kpis.activeProjects} ${t_project.active.toLowerCase()}`,
       trend: { value: 12, isPositive: true },
       icon: Globe,
     },
     {
       id: "total-budget",
-      title: "Total Budget",
+      title: t_project.kpis.totalBudget,
       value: `R$ ${(kpis.totalBudget / 1000).toFixed(0)}K`,
       change: `Avg: R$ ${Math.round(kpis.totalBudget / (kpis.totalProjects || 1)).toLocaleString()}`,
       trend: { value: 8, isPositive: true },
@@ -381,17 +438,17 @@ export default function ProjectsPage() {
     },
     {
       id: "subsidy-requests",
-      title: "Subsidy Requests",
+      title: t_project.kpis.totalSubsidyRequests,
       value: kpis.totalSubsidyRequests.toString(),
-      change: `R$ ${(kpis.totalSubsidyAmount / 1000).toFixed(0)}K requested`,
+      change: `R$ ${(kpis.totalSubsidyAmount / 1000).toFixed(0)}K`,
       trend: { value: 15, isPositive: true },
       icon: Activity,
     },
     {
       id: "volunteers-projects",
-      title: "With Volunteers",
+      title: t_project.kpis.projectsWithVolunteers,
       value: kpis.projectsWithVolunteers.toString(),
-      change: `${Math.round((kpis.projectsWithVolunteers / (kpis.totalProjects || 1)) * 100)}% of projects`,
+      change: `${Math.round((kpis.projectsWithVolunteers / (kpis.totalProjects || 1)) * 100)}%`,
       trend: { value: 5, isPositive: true },
       icon: Users,
     },
@@ -406,44 +463,47 @@ export default function ProjectsPage() {
     },
     {
       accessorKey: "title",
-      header: "Project Title",
+      header: t_project.table.projectTitle,
       cell: ({ row }) => (
         <div className="font-medium">{row.original.title}</div>
       ),
     },
     {
       accessorKey: "department_id",
-      header: "Department",
+      header: t_project.table.department,
       cell: ({ row }) => {
-        const dept = mockDepartments.find(d => d.id === row.original.department_id)
+        const dept = departments.find(d => d.id === row.original.department_id)
         return <span className="text-sm">{dept?.name || "Unknown"}</span>
       },
     },
     {
       accessorKey: "budget",
-      header: "Budget",
+      header: t_project.budget.annualBudget,
       cell: ({ row }) => (
         <span className="font-mono">R$ {row.original.budget.toLocaleString()}</span>
       ),
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: t_project.table.status,
       cell: ({ row }) => {
         const status = row.original.status
+        const statusText = status === "active" ? t_project.active :
+                          status === "completed" ? t_project.completed :
+                          t_project.upcoming
         const color = status === "active" ? "bg-green-100 text-green-700" : 
                      status === "completed" ? "bg-blue-100 text-blue-700" : 
                      "bg-yellow-100 text-yellow-700"
         return (
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}>
-            {status}
+            {statusText}
           </span>
         )
       },
     },
     {
       accessorKey: "start_at",
-      header: "Start Date",
+      header: t_project.table.startDate,
       cell: ({ row }) => {
         const date = new Date(row.original.start_at)
         return date.toLocaleDateString()
@@ -451,7 +511,7 @@ export default function ProjectsPage() {
     },
     {
       id: "actions",
-      header: "Actions",
+      header: t_project.table.actions,
       cell: ({ row }) => {
         const project = row.original
         
@@ -473,7 +533,7 @@ export default function ProjectsPage() {
                   className="cursor-pointer"
                 >
                   <Eye className="mr-2 h-4 w-4" />
-                  View Project
+                  {t_project.viewProject}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={(e) => {
@@ -483,7 +543,7 @@ export default function ProjectsPage() {
                   className="cursor-pointer"
                 >
                   <Edit className="mr-2 h-4 w-4" />
-                  Edit Project
+                  {t_project.editProject}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={(e) => {
@@ -493,7 +553,7 @@ export default function ProjectsPage() {
                   className="cursor-pointer text-destructive focus:text-destructive"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Project
+                  {t_project.deleteProject}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -503,49 +563,26 @@ export default function ProjectsPage() {
     },
   ]
 
-  // Simulate data loading
+  // Show loading/error toasts
   useEffect(() => {
-    const loadProjectsData = async () => {
-      const loadingToast = toast.loading(t_project.toasts.loadingData)
-      
-      try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        
-        setProjects(transformProjectsData(mockProjects))
-        
-        toast.dismiss(loadingToast)
-        toast.success("Projects data loaded successfully!", {
-          duration: 3000
-        })
-        
-        setIsLoading(false)
-        
-      } catch (error) {
-        toast.dismiss(loadingToast)
-        toast.error(t_project.toasts.errorLoading)
-        setIsLoading(false)
-      }
+    if (error) {
+      toast.error(t_project.toasts.errorLoading)
     }
-
-    loadProjectsData()
-  }, [t_project])
+  }, [error, t_project])
 
   const handleRefresh = async () => {
     setRefreshing(true)
-    
+
     const refreshToast = toast.loading(t_project.toasts.dataRefreshed.replace("successfully!", "..."))
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      setProjects(transformProjectsData(mockProjects))
-      
+      await refetch()
+
       toast.dismiss(refreshToast)
       toast.success(t_project.toasts.dataRefreshed, {
         duration: 2000
       })
-      
+
     } catch (error) {
       toast.dismiss(refreshToast)
       toast.error(t_project.toasts.errorLoading)
@@ -576,21 +613,32 @@ export default function ProjectsPage() {
     })
   }
 
-  const handleDeleteProject = (project: ProjectTableData) => {
+  const handleDeleteProject = async (project: ProjectTableData) => {
     // Show confirmation before deleting
-    if (window.confirm(`Are you sure you want to delete "${project.title}"? This action cannot be undone.`)) {
-      setProjects(prev => prev.filter(p => p.id !== project.id))
-      toast.success(`🗑️ Project "${project.title}" deleted successfully`, { duration: 3000 })
+    if (window.confirm(`${t_project.deleteProject}: "${project.title}"?`)) {
+      const deleteToast = toast.loading(`Deleting project: ${project.title}...`)
+
+      try {
+        await deleteProjectMutation({
+          variables: { id: project.id }
+        })
+
+        toast.dismiss(deleteToast)
+        toast.success(t_project.toasts.projectDeleted, { duration: 3000 })
+      } catch (error) {
+        toast.dismiss(deleteToast)
+        toast.error(`Failed to delete project: ${error}`)
+      }
     }
   }
 
   const handleCreateEvent = (project: ProjectTableData) => {
-    toast.success(`Creating event for: ${project.title}`)
+    toast.success(t_project.toasts.eventCreated)
     // Navigate to event creation page or handle inline
   }
 
   const handleCreateCommunication = (project: ProjectTableData) => {
-    toast.success(`Creating communication for: ${project.title}`)
+    toast.success(t_project.toasts.communicationCreated)
     // Navigate to communication creation page or handle inline
   }
 
@@ -598,7 +646,7 @@ export default function ProjectsPage() {
     const duplicatedProject: ProjectTableData = {
       ...project,
       id: `duplicate-${Date.now()}`,
-      title: `${project.title} (Cópia)`,
+      title: `${project.title} (${i18n.language === 'pt' ? 'Cópia' : i18n.language === 'nl' ? 'Kopie' : 'Copy'})`,
       status: "upcoming",
       subsidyRequests: 0,
       subsidyAmount: 0,
@@ -606,7 +654,7 @@ export default function ProjectsPage() {
     }
     
     setProjects(prev => [duplicatedProject, ...prev])
-    toast.success(`📋 Projeto duplicado: ${project.title}`, { duration: 3000 })
+    toast.success(`${t_project.actions.duplicateProject}: ${project.title}`, { duration: 3000 })
   }
 
   // Period selector component
@@ -629,7 +677,7 @@ export default function ProjectsPage() {
     </Select>
   )
 
-  if (isLoading) {
+  if (isLoading || kpisLoading) {
     return (
       <AppLayout>
         <div className="space-y-8">
@@ -674,7 +722,7 @@ export default function ProjectsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t_project.filters.allDepartments}</SelectItem>
-                {mockDepartments.map((dept) => (
+                {departments.map((dept) => (
                   <SelectItem key={dept.id} value={dept.id}>
                     {dept.name}
                   </SelectItem>
@@ -716,17 +764,17 @@ export default function ProjectsPage() {
 
         {/* Charts Section */}
         <div className="space-y-6">
-          <h3 className="text-lg sm:text-xl font-semibold">Project Analytics</h3>
+          <h3 className="text-lg sm:text-xl font-semibold">{t_project.charts.projectsByDepartment}</h3>
           <ResponsiveGridCarousel autoplayDelay={5000} className="">
-            <ProjectsByDepartmentChart />
-            <SubsidyStatusChart />
-            <ProjectsTimelineChart />
+            <ProjectsByDepartmentChart data={kpisData?.projectsByDepartment || []} />
+            <SubsidyStatusChart data={kpisData?.subsidyStatusDistribution || []} />
+            <ProjectsTimelineChart data={kpisData?.projectsTimeline || []} />
           </ResponsiveGridCarousel>
         </div>
 
         {/* Projects Table */}
         <div className="space-y-4">
-          <h3 className="text-lg sm:text-xl font-semibold">Project Management</h3>
+          <h3 className="text-lg sm:text-xl font-semibold">{t_project.projectsOverview}</h3>
           <UseTable
             columns={projectColumns}
             data={filteredData}
@@ -734,17 +782,17 @@ export default function ProjectsPage() {
             filters={[
               {
                 id: "status",
-                title: "Status",
+                title: t_project.table.status,
                 options: [
-                  { label: "Active", value: "active" },
-                  { label: "Completed", value: "completed" },
-                  { label: "Upcoming", value: "upcoming" }
+                  { label: t_project.active, value: "active" },
+                  { label: t_project.completed, value: "completed" },
+                  { label: t_project.upcoming, value: "upcoming" }
                 ]
               },
               {
                 id: "department_id",
-                title: "Department",
-                options: mockDepartments.map(dept => ({
+                title: t_project.table.department,
+                options: departments.map(dept => ({
                   label: dept.name,
                   value: dept.id
                 }))

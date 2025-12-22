@@ -45,7 +45,7 @@ import { Regions_regions } from "@/types/Regions"
  */
 export default function RegionsPage() {
   const { t, i18n } = useTranslation()
-  const { regions, refetchRegions } = useRegions();
+  const { regions, refetchRegions, updateRegion } = useRegions();
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   
@@ -166,6 +166,29 @@ export default function RegionsPage() {
     if (region) {
       setSelectedRegion(region);
       setIsDeleteModalOpen(true);
+    }
+  };
+
+  const handleActivate = async (region: Regions_regions) => {
+    if (!region) return;
+
+    const ok = window.confirm(tRegion.messages?.confirm_restore || 'Do you want to reactivate this region?');
+    if (!ok) return;
+
+    // Analysis: the GraphQL schema does not expose a restore/undelete mutation for Region
+    // and `updateRegion` input (RegionUpdateDto) does not include `is_deleted` according to schema.
+    // Therefore a server-side change is required to support reactivation.
+
+    const infoToast = toast.loading('Reactivate not supported by API. Checking...');
+    try {
+      // We cannot reliably change `is_deleted` from the client because the update input lacks that field.
+      // Inform the user and suggest backend change.
+      toast.dismiss(infoToast);
+      toast.error(tRegion.messages?.restore_not_supported || 'API does not support restoring regions. Please add a restore mutation or allow `is_deleted` in UpdateRegion.', { duration: 7000 });
+    } catch (error) {
+      toast.dismiss(infoToast);
+      toast.error(tRegion.messages?.restore_failed || 'Failed to reactivate region');
+      console.error('Error trying to reactivate region:', error);
     }
   };
 
@@ -292,14 +315,23 @@ export default function RegionsPage() {
                 <Edit className="w-4 h-4 mr-2" />
                 {tRegion.messages.edit_region}
               </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => handleDelete(row.original)}
-                disabled={row.original.is_deleted}
-                className={row.original.is_deleted ? "opacity-50 cursor-not-allowed" : ""}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                {tRegion.messages.delete_region}
-              </DropdownMenuItem>
+              {!row.original.is_deleted ? (
+                <DropdownMenuItem 
+                  onClick={() => handleDelete(row.original)}
+                  disabled={row.original.is_deleted}
+                  className={row.original.is_deleted ? "opacity-50 cursor-not-allowed" : ""}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {tRegion.messages.delete_region}
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem 
+                  onClick={() => handleActivate(row.original)}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  {tRegion.messages?.activate_region || 'Activate Region'}
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

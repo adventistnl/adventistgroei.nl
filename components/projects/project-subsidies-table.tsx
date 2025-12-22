@@ -80,17 +80,36 @@ export interface SubsidyRequestData {
 
 export interface ActivityData {
   id: string
-  subsidy_request_id: string
+  project_id?: string
+  subsidy_request_id?: string
   name: string
   description: string
   budget_amount: number
+  deadline: string
+  owner_id: string
+  tags: string[]
+  custom_tags?: string[]
   status: string
+  priority: string
+  is_subsidized: boolean
   created_at: string
   updated_at: string
-  receipts: ReceiptData[]
-  approvedAmount: number
-  receiptsCount: number
-  progressPercentage: number
+  owner: {
+    id: string
+    name: string
+    email: string
+  }
+  activity_funding?: {
+    id: string
+    entity_contribution_amount: number
+    entity_contribution_percent: number
+    entity_type: string
+    entity_id: string
+  }[]
+  receipts?: ReceiptData[]
+  approvedAmount?: number
+  receiptsCount?: number
+  progressPercentage?: number
 }
 
 export interface ReceiptData {

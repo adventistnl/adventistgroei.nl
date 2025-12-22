@@ -67,8 +67,8 @@ export const GET_USER_QUERY = gql`
 `;
 
 export const GET_ALL_USERS_QUERY = gql`
-  query Users {
-    users {
+  query Users($institution_id: String) {
+    users(institution_id: $institution_id) {
         id
         institution_id
         password

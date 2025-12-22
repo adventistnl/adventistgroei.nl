@@ -17,7 +17,7 @@ import { ProjectFormData } from '@/components/projects/types'
 interface ProjectDataStepProps {
   formData: ProjectFormData
   errors: Record<string, string>
-  departments: Array<{ id: string; name: string; annual_budget: number }>
+  departments: Array<{ id: string; name: string; annual_budget?: number }>
   users: Array<{ id: string; name: string; email: string }>
   onChange: (data: Partial<ProjectFormData>) => void
 }
@@ -159,9 +159,11 @@ export function ProjectDataStep({ formData, errors, departments, users, onChange
                                 </div>
                                 <div className="flex-1">
                                   <span className="font-medium">{dept.name}</span>
-                                  <Badge variant="outline" className="ml-2 text-xs">
-                                    € {dept.annual_budget.toLocaleString()}
-                                  </Badge>
+                                  {dept.annual_budget !== undefined && (
+                                    <Badge variant="outline" className="ml-2 text-xs">
+                                      € {dept.annual_budget.toLocaleString()}
+                                    </Badge>
+                                  )}
                                 </div>
                                 {formData.department_id === dept.id && (
                                   <Check className="ml-auto h-4 w-4" />

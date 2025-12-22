@@ -4,6 +4,7 @@ import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { GlobalSearch, useGlobalSearch } from "@/components/global-search"
 import { LanguageSelector } from "@/components/shared/language-selector"
+import { CurrencySelector } from "@/components/shared/currency-selector"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 // TODO: Implementar no final
 // import { NotificationsSidebar } from "@/components/notifications-sidebar"
@@ -127,6 +128,9 @@ export function ModernHeader() {
 
             {/* Language Selector */}
             <LanguageSelector />
+
+            {/* Currency Selector */}
+            <CurrencySelector />
 
             {/* Invite Button - Far Right */}
             <WithPermission requiredPermissions={[PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail]} partialPermissionCheck >

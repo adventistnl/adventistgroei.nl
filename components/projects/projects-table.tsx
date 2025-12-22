@@ -30,7 +30,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { projectTranslations } from "@/lib/translations/projects"
-import { mockDepartments } from "@/data/mockData"
+import { useQuery } from "@apollo/client"
+import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
+import { useInstitution } from "@/contexts/institution-context"
 
 export interface ProjectTableData {
   id: string
@@ -63,20 +65,31 @@ interface ProjectsTableProps {
   onDuplicate?: (project: ProjectTableData) => void
 }
 
-export function ProjectsTable({ 
-  data, 
-  onView, 
-  onEdit, 
-  onDelete, 
-  onCreateEvent, 
-  onCreateCommunication, 
-  onDuplicate 
+export function ProjectsTable({
+  data,
+  onView,
+  onEdit,
+  onDelete,
+  onCreateEvent,
+  onCreateCommunication,
+  onDuplicate
 }: ProjectsTableProps) {
   const { i18n } = useTranslation()
+  const { currentInstitutionData } = useInstitution()
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
 
+  const institutionId = currentInstitutionData?.id
+
+  // Fetch departments
+  const { data: departmentsData } = useQuery(GET_DEPARTMENTS_QUERY, {
+    variables: { institution_id: institutionId },
+    skip: !institutionId
+  })
+
+  const departments = departmentsData?.departments || []
+
   const getDepartmentName = (departmentId: string) => {
-    const department = mockDepartments.find(d => d.id === departmentId)
+    const department = departments.find(d => d.id === departmentId)
     return department?.name || "Unknown"
   }
 
@@ -262,7 +275,7 @@ export function ProjectsTable({
         {
           id: "department_id",
           title: t.table.department,
-          options: mockDepartments.map(dept => ({
+          options: departments.map(dept => ({
             label: dept.name,
             value: dept.id
           }))

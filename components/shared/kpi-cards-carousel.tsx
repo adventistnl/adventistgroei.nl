@@ -18,7 +18,7 @@ import { useComponentPrivacy, type PrivacyConfig } from "@/contexts/privacy-cont
 export interface KPICardData {
   id: string
   title: string
-  value: string | number
+  value: string | number | React.ReactNode // Suporta JSX elements para valores customizados
   icon: LucideIcon
   subtitle?: string
   trend?: {

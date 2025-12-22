@@ -29,3 +29,7 @@ export interface Users_users {
 export interface Users {
   users: Users_users[];
 }
+
+export interface UsersVariables {
+  institution_id?: string | null;
+}

@@ -143,6 +143,9 @@ importers:
       '@types/react-big-calendar':
         specifier: ^1.16.3
         version: 1.16.3
+      apollo-upload-client:
+        specifier: ^17.0.0
+        version: 17.0.0(@apollo/client@3.14.0(@types/react@19.2.0)(graphql-ws@6.0.6(graphql@15.10.1)(ws@8.18.3))(graphql@15.10.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(graphql@15.10.1)
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.21(postcss@8.5.6)
@@ -282,6 +285,9 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.1.9
         version: 4.1.14
+      '@types/apollo-upload-client':
+        specifier: ^17.0.5
+        version: 17.0.5(@types/react@19.2.0)(graphql-ws@6.0.6(graphql@15.10.1)(ws@8.18.3))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@types/jwt-decode':
         specifier: ^3.1.0
         version: 3.1.0
@@ -2203,6 +2209,9 @@ packages:
   '@turf/invariant@6.5.0':
     resolution: {integrity: sha512-Wv8PRNCtPD31UVbdJE/KVAWKe7l6US+lJItRR/HOEW3eh+U/JwRCSUl/KZ7bmjM/C+zLNoreM2TU6OoLACs4eg==}
 
+  '@types/apollo-upload-client@17.0.5':
+    resolution: {integrity: sha512-rPKHaE4QNd06LNtBgz6hfntVO+pOQMS2yTcynrzBPg9+a/nbtJ2gus5KgzRp2rqfzmnKEc/sRGjLen/9Ot0Z2A==}
+
   '@types/d3-array@3.2.2':
     resolution: {integrity: sha512-hOLWVbm7uRza0BYXpIIW5pxfrKe0W+D5lrFiAEYR+pb6w3N2SwSMaJbXdUfSEv+dT4MfHBLtn5js0LAWaO6otw==}
 
@@ -2247,6 +2256,9 @@ packages:
 
   '@types/date-arithmetic@4.1.4':
     resolution: {integrity: sha512-p9eZ2X9B80iKiTW4ukVj8B4K6q9/+xFtQ5MGYA5HWToY9nL4EkhV9+6ftT2VHpVMEZb5Tv00Iel516bVdO+yRw==}
+
+  '@types/extract-files@13.0.2':
+    resolution: {integrity: sha512-4sd7uDB0OVZmwH2wD6w7Qlpr2P5Pn8C9IGwnaq9aiiBDD3Lou7CwFjjkJTDYCDsEvk9zxAtmv9TaMg1lt/YJfA==}
 
   '@types/geojson-vt@3.2.5':
     resolution: {integrity: sha512-qDO7wqtprzlpe8FfQ//ClPV9xiuoh2nkIgiouIptON9w5jvD/fA4szvP9GBlDVdJ5dldAl0kX/sy3URbWwLx0g==}
@@ -2492,6 +2504,13 @@ packages:
     deprecated: The `apollo-server-errors` package is part of Apollo Server v2 and v3, which are now end-of-life (as of October 22nd 2023 and October 22nd 2024, respectively). This package's functionality is now found in the `@apollo/server` package. See https://www.apollographql.com/docs/apollo-server/previous-versions/ for more details.
     peerDependencies:
       graphql: ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0
+
+  apollo-upload-client@17.0.0:
+    resolution: {integrity: sha512-pue33bWVbdlXAGFPkgz53TTmxVMrKeQr0mdRcftNY+PoHIdbGZD0hoaXHvO6OePJAkFz7OiCFUf98p1G/9+Ykw==}
+    engines: {node: ^12.22.0 || ^14.17.0 || >= 16.0.0}
+    peerDependencies:
+      '@apollo/client': ^3.0.0
+      graphql: 14 - 16
 
   apollo-utilities@1.3.4:
     resolution: {integrity: sha512-pk2hiWrCXMAy2fRPwEyhvka+mqwzeP60Jr1tRYi5xru+3ko94HI9o6lK0CT33/w4RDlxWchmdhDCrvdr+pHCig==}
@@ -3240,6 +3259,10 @@ packages:
   extend-shallow@3.0.2:
     resolution: {integrity: sha512-BwY5b5Ql4+qZoefgMj2NUmx+tehVTH/Kf4k1ZEtOHNFcm2wSxMRo992l6X3TIgni2eZVTZ85xMOjF31fwZAj6Q==}
     engines: {node: '>=0.10.0'}
+
+  extract-files@11.0.0:
+    resolution: {integrity: sha512-FuoE1qtbJ4bBVvv94CC7s0oTnKUGvQs+Rjf1L2SJFfS+HTVVjhPFtehPdQ0JiGPqVNfSSZvL5yzHHQq2Z4WNhQ==}
+    engines: {node: ^12.20 || >= 14.13}
 
   extract-stack@2.0.0:
     resolution: {integrity: sha512-AEo4zm+TenK7zQorGK1f9mJ8L14hnTDi2ZQPR+Mub1NX8zimka1mXpV5LpH8x9HoUmFSHZCfLHqWvp0Y4FxxzQ==}
@@ -7915,6 +7938,18 @@ snapshots:
     dependencies:
       '@turf/helpers': 6.5.0
 
+  '@types/apollo-upload-client@17.0.5(@types/react@19.2.0)(graphql-ws@6.0.6(graphql@15.10.1)(ws@8.18.3))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+    dependencies:
+      '@apollo/client': 3.14.0(@types/react@19.2.0)(graphql-ws@6.0.6(graphql@15.10.1)(ws@8.18.3))(graphql@15.10.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@types/extract-files': 13.0.2
+      graphql: 15.10.1
+    transitivePeerDependencies:
+      - '@types/react'
+      - graphql-ws
+      - react
+      - react-dom
+      - subscriptions-transport-ws
+
   '@types/d3-array@3.2.2': {}
 
   '@types/d3-color@2.0.6': {}
@@ -7957,6 +7992,8 @@ snapshots:
       '@types/d3-selection': 2.0.5
 
   '@types/date-arithmetic@4.1.4': {}
+
+  '@types/extract-files@13.0.2': {}
 
   '@types/geojson-vt@3.2.5':
     dependencies:
@@ -8279,6 +8316,12 @@ snapshots:
 
   apollo-server-errors@2.5.0(graphql@15.10.1):
     dependencies:
+      graphql: 15.10.1
+
+  apollo-upload-client@17.0.0(@apollo/client@3.14.0(@types/react@19.2.0)(graphql-ws@6.0.6(graphql@15.10.1)(ws@8.18.3))(graphql@15.10.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(graphql@15.10.1):
+    dependencies:
+      '@apollo/client': 3.14.0(@types/react@19.2.0)(graphql-ws@6.0.6(graphql@15.10.1)(ws@8.18.3))(graphql@15.10.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      extract-files: 11.0.0
       graphql: 15.10.1
 
   apollo-utilities@1.3.4(graphql@15.10.1):
@@ -9204,6 +9247,8 @@ snapshots:
     dependencies:
       assign-symbols: 1.0.0
       is-extendable: 1.0.1
+
+  extract-files@11.0.0: {}
 
   extract-stack@2.0.0: {}
 

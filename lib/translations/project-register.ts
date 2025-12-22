@@ -24,6 +24,16 @@ export const projectRegisterTranslations = {
         description: "Funding calculator",
         content: "This step automatically calculates the funding distribution based on your project activities. The system validates that all funding policies are respected, including the maximum institution contribution of 65% and the absolute limit of R$ 5,000 per project. Churches must contribute at least 35% of the total budget to ensure local commitment and sustainability."
       },
+      eventRegistration: {
+        title: "Event Registration",
+        description: "Configure the event",
+        content: "Define the event details that will be created to publicize and organize the project activities."
+      },
+      communication: {
+        title: "Communication",
+        description: "Configure communication",
+        content: "Create communications to promote the project, recruit volunteers, or inform about progress."
+      },
       review: {
         title: "Review & Submit",
         description: "Review and finalize",
@@ -211,9 +221,16 @@ export const projectRegisterTranslations = {
       updatingProject: "Updating project...",
       failedToSave: "Failed to save project",
       institutionPercentExceeded: "Institution percentage cannot exceed {{percent}}%",
-      institutionAmountExceeded: "Institution amount exceeds R$ {{amount}} limit"
+      institutionAmountExceeded: "Institution amount exceeds R$ {{amount}} limit",
+      activitiesPermanentlyDeleted: "{{count}} activities permanently removed",
+      activityMovedToTrash: "{{name}} moved to trash",
+      activityRestored: "{{name}} restored",
+      draftLoaded: "Draft loaded",
+      draftCleared: "Draft cleared"
     },
     activityGroups: {
+      title: "Activity Groups",
+      totalActivities: "activities",
       subsidized: "Subsidized Activities",
       nonSubsidized: "Non-Subsidized Activities",
       trash: "Deleted Activities",
@@ -300,6 +317,16 @@ export const projectRegisterTranslations = {
         title: "Distribuição de Custeio",
         description: "Calculadora de financiamento",
         content: "Esta etapa calcula automaticamente a distribuição de financiamento com base nas atividades do seu projeto. O sistema valida que todas as políticas de financiamento são respeitadas, incluindo a contribuição máxima da instituição de 65% e o limite absoluto de R$ 5.000 por projeto. As igrejas devem contribuir com pelo menos 35% do orçamento total para garantir compromisso local e sustentabilidade."
+      },
+      eventRegistration: {
+        title: "Registro de Evento",
+        description: "Configure o evento",
+        content: "Defina os detalhes do evento que será criado para divulgar e organizar as atividades do projeto."
+      },
+      communication: {
+        title: "Comunicação",
+        description: "Configure a comunicação",
+        content: "Crie comunicações para divulgar o projeto, recrutar voluntários ou informar sobre progresso."
       },
       review: {
         title: "Resumo e Validação",
@@ -455,7 +482,12 @@ export const projectRegisterTranslations = {
       updatingProject: "Atualizando projeto...",
       failedToSave: "Falha ao salvar projeto",
       institutionPercentExceeded: "Percentual da instituição não pode exceder {{percent}}%",
-      institutionAmountExceeded: "Valor da instituição excede o limite de R$ {{amount}}"
+      institutionAmountExceeded: "Valor da instituição excede o limite de R$ {{amount}}",
+      activitiesPermanentlyDeleted: "{{count}} atividades removidas permanentemente",
+      activityMovedToTrash: "{{name}} movida para lixeira",
+      activityRestored: "{{name}} restaurada",
+      draftLoaded: "Rascunho carregado",
+      draftCleared: "Rascunho limpo"
     },
     highlights: {
       totalBudget: "Orçamento Total",
@@ -491,6 +523,8 @@ export const projectRegisterTranslations = {
       remainingInstitutionCapacity: "Capacidade Restante da Instituição"
     },
     activityGroups: {
+      title: "Grupos de Atividades",
+      totalActivities: "atividades",
       subsidized: "Atividades Subsidiadas",
       nonSubsidized: "Atividades Não Subsidiadas", 
       trash: "Atividades Excluídas",
@@ -577,6 +611,16 @@ export const projectRegisterTranslations = {
         title: "Financieringsverdeling",
         description: "Financieringscalculator",
         content: "Deze stap berekent automatisch de financieringsverdeling op basis van uw projectactiviteiten. Het systeem valideert dat alle financieringsbeleid wordt gerespecteerd, inclusief de maximale instellingsbijdrage van 65% en de absolute limiet van R$ 5.000 per project. Kerken moeten ten minste 35% van het totale budget bijdragen om lokale betrokkenheid en duurzaamheid te waarborgen."
+      },
+      eventRegistration: {
+        title: "Evenement Registratie",
+        description: "Configureer het evenement",
+        content: "Definieer de evenementdetails die worden gemaakt om de projectactiviteiten te promoten en organiseren."
+      },
+      communication: {
+        title: "Communicatie",
+        description: "Configureer communicatie",
+        content: "Maak communicaties om het project te promoten, vrijwilligers te werven of te informeren over de voortgang."
       },
       review: {
         title: "Beoordeling & Indienen",
@@ -669,9 +713,16 @@ export const projectRegisterTranslations = {
       updatingProject: "Project bijwerken...",
       failedToSave: "Kan project niet opslaan",
       institutionPercentExceeded: "Instellingspercentage kan {{percent}}% niet overschrijden",
-      institutionAmountExceeded: "Instellingsbedrag overschrijdt R$ {{amount}} limiet"
+      institutionAmountExceeded: "Instellingsbedrag overschrijdt R$ {{amount}} limiet",
+      activitiesPermanentlyDeleted: "{{count}} activiteiten permanent verwijderd",
+      activityMovedToTrash: "{{name}} verplaatst naar prullenbak",
+      activityRestored: "{{name}} hersteld",
+      draftLoaded: "Concept geladen",
+      draftCleared: "Concept gewist"
     },
     activityGroups: {
+      title: "Activiteitsgroepen",
+      totalActivities: "activiteiten",
       subsidized: "Gesubsidieerde Activiteiten",
       nonSubsidized: "Niet-gesubsidieerde Activiteiten",
       trash: "Verwijderde Activiteiten", 
