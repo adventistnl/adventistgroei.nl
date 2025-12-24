@@ -71,12 +71,6 @@ export interface ProjectActivityData {
   institution_requested_amount?: number
   tags?: string[]
   custom_tags?: string[]
-  owner_id?: string
-  owner?: {
-    id: string
-    name: string
-    email: string
-  }
   activity_funding?: Array<{
     id: string
     entity_contribution_amount: number
@@ -84,6 +78,18 @@ export interface ProjectActivityData {
     entity_type: string
     entity_id: string
   }>
+  // Múltiplos responsáveis via tabela de relacionamento
+  assignees?: Array<{
+    id: string
+    user: {
+      id: string
+      name: string
+      email: string
+    }
+  }>
+  // Array de IDs para envio de atualização
+  assignee_ids?: string[]
+  // Legacy: manter para compatibilidade
   assigned_users?: Array<{
     id: string
     name: string
@@ -395,7 +401,21 @@ export function ProjectActivitiesTable({
       id: "assigned_users",
       header: "Responsáveis",
       cell: ({ row }) => {
-        const assignedUsers = row.original.assigned_users || []
+        // Prioridade: assignees (nova estrutura) > assigned_users (legacy)
+        let assignedUsers: Array<{ id: string; name: string; email?: string; avatar?: string; initials?: string; role?: string }> = []
+        
+        if (row.original.assignees && row.original.assignees.length > 0) {
+          // Nova estrutura: assignees da tabela de relacionamento
+          assignedUsers = row.original.assignees.map(a => ({
+            id: a.user.id,
+            name: a.user.name,
+            email: a.user.email,
+          }))
+        } else if (row.original.assigned_users && row.original.assigned_users.length > 0) {
+          // Legacy: assigned_users
+          assignedUsers = row.original.assigned_users
+        }
+        
         const maxDisplay = 3
         const displayedUsers = assignedUsers.slice(0, maxDisplay)
         const remainingCount = assignedUsers.length - maxDisplay

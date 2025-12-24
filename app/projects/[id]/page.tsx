@@ -146,6 +146,7 @@ export default function ProjectDetailsPage() {
   const { data: projectData, loading: projectLoading, error: projectError, refetch: refetchProject } = useQuery(GET_PROJECT_BY_ID_QUERY, {
     variables: { id: projectId },
     skip: !projectId,
+    fetchPolicy: 'network-only', // Sempre buscar do servidor para garantir dados atualizados
     onCompleted: () => {
       toast.success("📋 Project details loaded successfully!", {
         duration: 3000
@@ -282,10 +283,12 @@ export default function ProjectDetailsPage() {
   // Get all project activities - transform backend data to match ProjectActivityData interface
   const allProjectActivities = useMemo(() => {
     if (!projectData?.project?.activities) return []
+    
+    // Debug: Log raw activities data
+    console.log('🔍 Raw activities from API:', projectData.project.activities)
+    console.log('🔍 First activity assignees:', projectData.project.activities[0]?.assignees)
+    
     return projectData.project.activities.map((activity: any) => {
-      const ownerName = activity.owner?.name || "Unknown"
-      const ownerInitials = ownerName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
-
       // Map backend enum values to frontend values
       const statusMap: Record<string, string> = {
         'TODO': 'todo',
@@ -315,18 +318,21 @@ export default function ProjectDetailsPage() {
         completed_at: null,
         created_at: activity.created_at,
         updated_at: activity.updated_at,
-        assigned_users: activity.owner ? [{
-          id: activity.owner.id,
-          name: activity.owner.name,
-          email: activity.owner.email,
-          initials: ownerInitials,
-        }] : [],
+        // Usar assignees diretamente
+        assigned_users: activity.assignees && activity.assignees.length > 0
+          ? activity.assignees.map((a: any) => ({
+              id: a.user.id,
+              name: a.user.name,
+              email: a.user.email,
+              initials: a.user.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase(),
+            }))
+          : [],
+        // Incluir assignees diretamente para o modal
+        assignees: activity.assignees || [],
         // Additional fields for edit modal
         tags: activity.tags || [],
         custom_tags: activity.custom_tags || [],
-        owner: activity.owner,
         activity_funding: activity.activity_funding || [],
-        owner_id: activity.owner_id,
       }
     }) as ProjectActivityData[]
   }, [projectData, projectId])
@@ -652,7 +658,7 @@ export default function ProjectDetailsPage() {
         description: data.description,
         budget_amount: data.budget_amount,
         deadline: deadline.toISOString(),
-        owner_id: user.id,
+        assignee_ids: [user.id], // Novo: usar assignee_ids ao invés de owner_id
         tags: mappedTags,
         custom_tags: customTags,
         priority: priorityMap[data.priority] || ActivityPriority.Medium,
@@ -809,11 +815,11 @@ export default function ProjectDetailsPage() {
       institution_requested_amount: data.institution_requested_amount,
     }
 
-    // Pass through owner_id and activity_tag
-    await handleEditActivitySubmit(formData, data.owner_id, data.activity_tag)
+    // Pass through activity_tag and assignee_ids
+    await handleEditActivitySubmit(formData, data.activity_tag, data.assignee_ids)
   }
 
-  const handleEditActivitySubmit = async (data: EditActivityFormData, owner_id?: string, activity_tag?: string) => {
+  const handleEditActivitySubmit = async (data: EditActivityFormData, activity_tag?: string, assignee_ids?: string[]) => {
     try {
       // Same tag mapping logic as create
       const tagMap: Record<string, ActivityTags> = {
@@ -923,11 +929,6 @@ export default function ProjectDetailsPage() {
         input.is_subsidized = data.is_subsidized
       }
 
-      // Add owner_id if provided
-      if (owner_id) {
-        input.owner_id = owner_id
-      }
-
       // Add activity_tag if provided
       if (activity_tag) {
         // Map activity_tag string to ActivityTags enum
@@ -959,6 +960,14 @@ export default function ProjectDetailsPage() {
         }
         input.activity_tag = activityTagMap[activity_tag] || activity_tag
       }
+
+      // Add assignee_ids if provided (múltiplos responsáveis)
+      // Sempre enviar assignee_ids se foi passado (mesmo se vazio, para remover todos)
+      if (assignee_ids !== undefined) {
+        input.assignee_ids = assignee_ids
+      }
+
+      console.log('🚀 Sending update input:', JSON.stringify(input, null, 2))
 
       await updateProjectActivity({
         variables: { input }

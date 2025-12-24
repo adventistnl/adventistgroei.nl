@@ -15,10 +15,13 @@ export const CREATE_PROJECT_ACTIVITY = gql`
       is_subsidized
       created_at
       updated_at
-      owner {
+      assignees {
         id
-        name
-        email
+        user {
+          id
+          name
+          email
+        }
       }
       activity_funding {
         id
@@ -59,10 +62,13 @@ export const BATCH_UPDATE_PROJECT_ACTIVITIES = gql`
       activity_tag
       is_subsidized
       updated_at
-      owner {
+      assignees {
         id
-        name
-        email
+        user {
+          id
+          name
+          email
+        }
       }
     }
   }
@@ -76,7 +82,6 @@ export const UPDATE_PROJECT_ACTIVITY = gql`
       description
       budget_amount
       deadline
-      owner_id
       status
       priority
       tags
@@ -85,10 +90,13 @@ export const UPDATE_PROJECT_ACTIVITY = gql`
       is_subsidized
       created_at
       updated_at
-      owner {
+      assignees {
         id
-        name
-        email
+        user {
+          id
+          name
+          email
+        }
       }
       activity_funding {
         id
