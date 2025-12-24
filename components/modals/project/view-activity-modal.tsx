@@ -206,13 +206,22 @@ export function ViewActivityModal({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card>
                 <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Badge variant="outline" className={`${getActivityTagColor(activity.activity_tag)} flex items-center gap-1`}>
-                      {getActivityTagIcon(activity.activity_tag)}
-                      <span className="text-xs">{getTagLabel(activity.activity_tag)}</span>
-                    </Badge>
+                  <div className="flex flex-wrap gap-2">
+                    {activity.tags && activity.tags.length > 0 ? (
+                      activity.tags.map((tag: any) => (
+                        <Badge key={tag} variant="outline" className={`${getActivityTagColor(tag)} flex items-center gap-1`}>
+                          {getActivityTagIcon(tag)}
+                          <span className="text-xs">{getTagLabel(tag)}</span>
+                        </Badge>
+                      ))
+                    ) : (
+                      <Badge variant="outline" className="flex items-center gap-1 bg-gray-100 text-gray-800 border-gray-200">
+                        <Tag className="w-4 h-4" />
+                        <span className="text-xs">Sem categoria</span>
+                      </Badge>
+                    )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">Categoria</p>
+                  <p className="text-xs text-muted-foreground mt-1">Categorias</p>
                 </CardContent>
               </Card>
 

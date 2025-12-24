@@ -136,7 +136,9 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
       'deadline': 'Prazo',
       'owner_id': 'Responsável',
       'is_subsidized': 'Subsidiado',
-      'activity_tag': 'Categoria'
+      'activity_tag': 'Categoria (Antigo)',
+      'tags': 'Categorias',
+      'custom_tags': 'Tags Personalizadas'
     }
     return fieldNames[fieldName] || fieldName
   }

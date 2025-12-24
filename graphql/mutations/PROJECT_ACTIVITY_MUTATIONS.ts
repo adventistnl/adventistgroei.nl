@@ -39,7 +39,6 @@ export const BATCH_UPDATE_PROJECT_ACTIVITIES = gql`
     $ids: [String!]!
     $status: ActivityStatus
     $priority: ActivityPriority
-    $activity_tag: ActivityTags
     $is_subsidized: Boolean
   ) {
     batchUpdateProjectActivities(
@@ -47,7 +46,6 @@ export const BATCH_UPDATE_PROJECT_ACTIVITIES = gql`
         ids: $ids
         status: $status
         priority: $priority
-        activity_tag: $activity_tag
         is_subsidized: $is_subsidized
       }
     ) {
@@ -59,7 +57,6 @@ export const BATCH_UPDATE_PROJECT_ACTIVITIES = gql`
       status
       priority
       tags
-      activity_tag
       is_subsidized
       updated_at
       assignees {
@@ -86,7 +83,6 @@ export const UPDATE_PROJECT_ACTIVITY = gql`
       priority
       tags
       custom_tags
-      activity_tag
       is_subsidized
       created_at
       updated_at

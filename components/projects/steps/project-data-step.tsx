@@ -80,13 +80,13 @@ export function ProjectDataStep({ formData, errors, departments, users, onChange
             <div className="space-y-4">
               <Label htmlFor="title" className="flex items-center gap-2 text-base font-medium">
                 <Target className="w-4 h-4 text-muted-foreground" />
-                {t('projectRegister.fields.title')} *
+                {t('projectRegister.fields.projectTitle')} *
               </Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) => onChange({ title: e.target.value })}
-                placeholder={t('projectRegister.placeholders.title')}
+                placeholder={t('projectRegister.placeholders.enterProjectTitle')}
                 className={`h-12 text-base border-2 ${errors.title ? 'border-red-500' : 'border-border'}`}
               />
               {errors.title && <p className="text-sm text-red-600">{errors.title}</p>}
@@ -96,13 +96,13 @@ export function ProjectDataStep({ formData, errors, departments, users, onChange
             <div className="space-y-4">
               <Label htmlFor="description" className="flex items-center gap-2 text-base font-medium">
                 <Globe className="w-4 h-4 text-muted-foreground" />
-                {t('projectRegister.fields.description')} *
+                {t('projectRegister.fields.projectDescription')} *
               </Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => onChange({ description: e.target.value })}
-                placeholder={t('projectRegister.placeholders.description')}
+                placeholder={t('projectRegister.placeholders.describeProject')}
                 className={`min-h-[120px] text-base border-2 ${errors.description ? 'border-red-500' : 'border-border'}`}
               />
               {errors.description && <p className="text-sm text-red-600">{errors.description}</p>}

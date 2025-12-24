@@ -23,7 +23,7 @@ interface ProjectActivityData {
   project_id: string
   name: string
   description: string
-  activity_tag?: ActivityTags
+  tags?: ActivityTags[]
   budget_amount: number
   status: string
   priority: string

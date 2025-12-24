@@ -1,5 +1,6 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
+import { projectRegisterTranslations } from './translations/project-register'
 
 // Recursos de tradução
 const resources = {
@@ -1796,7 +1797,8 @@ const resources = {
             delete_failed: "Failed to delete rule"
           }
         }
-      }
+      },
+      projectRegister: projectRegisterTranslations.en
     }
   },
   nl: {
@@ -3417,7 +3419,8 @@ const resources = {
             }
           }
         }
-      }
+      },
+      projectRegister: projectRegisterTranslations.nl
     }
   },
   pt: {
@@ -4225,6 +4228,8 @@ const resources = {
           role_create_failed: "Kon rol niet aanmaken"
         }
       }
+      ,
+      projectRegister: projectRegisterTranslations.pt
     }
   }
 }
@@ -4294,3 +4299,4 @@ const initializeI18n = async () => {
 initializeI18n()
 
 export default i18n
+// Temporary fix - add projectRegister to pt manually

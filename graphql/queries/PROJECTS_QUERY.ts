@@ -41,7 +41,6 @@ export const GET_PROJECTS_QUERY = gql`
         deadline
         tags
         custom_tags
-        activity_tag
         status
         priority
         is_subsidized
@@ -108,7 +107,6 @@ export const GET_PROJECT_BY_ID_QUERY = gql`
         deadline
         tags
         custom_tags
-        activity_tag
         status
         priority
         is_subsidized

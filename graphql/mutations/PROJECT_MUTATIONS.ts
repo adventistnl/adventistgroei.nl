@@ -70,7 +70,6 @@ export const CREATE_PROJECT_MUTATION = gql`
         description
         budget_amount
         deadline
-        owner_id
         tags
         created_at
         updated_at
