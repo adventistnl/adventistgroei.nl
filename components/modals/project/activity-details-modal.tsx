@@ -168,7 +168,7 @@ export function ActivityDetailsModal({
     name: activity?.name || "",
     status: activity?.status || "",
     priority: activity?.priority || "",
-    activity_tag: normalizeActivityTag(activity?.activity_tag),
+    tags: activity?.tags || [],
     budget_amount: activity?.budget_amount || 0,
     description: activity?.description || "",
     is_subsidized: activity?.is_subsidized || false,
@@ -192,7 +192,7 @@ export function ActivityDetailsModal({
         name: activity.name,
         status: activity.status,
         priority: activity.priority,
-        activity_tag: activity.activity_tag,
+        tags: activity.tags || [],
         budget_amount: activity.budget_amount,
         description: activity.description,
         is_subsidized: activity.is_subsidized,
@@ -388,7 +388,7 @@ export function ActivityDetailsModal({
     })
   }
 
-  const handleInputChange = (field: string, value: string | number | boolean) => {
+  const handleInputChange = (field: string, value: string | number | boolean | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -402,11 +402,10 @@ export function ActivityDetailsModal({
       const dataToSave: Partial<ProjectActivityData> = {
         id: activity.id,
         ...formData,
-        activity_tag: normalizeActivityTag(formData.activity_tag) as any,
+        tags: formData.tags.map(tag => normalizeActivityTag(tag) as ActivityTags),
         assignee_ids: assignedUsers.map(u => u.id), // Enviar todos os responsáveis
       }
       console.log('💾 Saving activity with data:', dataToSave)
-      console.log('🏷️ Activity tag being sent:', dataToSave.activity_tag)
       console.log('👥 Assignees being sent:', dataToSave.assignee_ids)
       onSave(dataToSave)
       toast.success(t('common.success'))
@@ -621,7 +620,7 @@ export function ActivityDetailsModal({
                 )}
               </div>
 
-              {/* Category */}
+              {/* Category - Multiple Tags */}
               <div className="flex items-center gap-3">
                 <Tag className="w-4 h-4 text-gray-600" />
                 <Label className="text-sm font-medium text-gray-700">{t('activities.modal.category')}:</Label>
@@ -636,32 +635,57 @@ export function ActivityDetailsModal({
                   </Tooltip>
                 </TooltipProvider>
                 {editingField === 'category' ? (
-                  <Select
-                    value={formData.activity_tag}
-                    onValueChange={(value) => {
-                      handleInputChange('activity_tag', value)
-                      setEditingField(null)
-                    }}
-                  >
-                    <SelectTrigger className="w-[150px] h-8 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getActivityTagOptions().map(option => (
-                        <SelectItem key={option.value} value={option.value}>
+                  <div className="flex flex-wrap gap-2">
+                    {getActivityTagOptions().map(option => {
+                      const isSelected = formData.tags.includes(option.value)
+                      return (
+                        <Button
+                          key={option.value}
+                          variant={isSelected ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            const newTags = isSelected
+                              ? formData.tags.filter(t => t !== option.value)
+                              : [...formData.tags, option.value]
+                            handleInputChange('tags', newTags)
+                          }}
+                          className={`h-7 text-xs transition-all duration-200 ${
+                            isSelected 
+                              ? 'bg-primary text-primary-foreground shadow-sm' 
+                              : 'hover:bg-muted hover:border-primary/50'
+                          }`}
+                        >
                           {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                        </Button>
+                      )
+                    })}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditingField(null)}
+                      className="h-7 text-xs"
+                    >
+                      <Check className="w-3 h-3 mr-1" />
+                      Concluir
+                    </Button>
+                  </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <TagBadge
-                      label={getTagLabel(formData.activity_tag)}
-                      variant={getActivityTagVariant(formData.activity_tag)}
-                      icon={getActivityTagIcon(formData.activity_tag)}
-                      size="md"
-                    />
+                    <div className="flex flex-wrap gap-1">
+                      {formData.tags.length > 0 ? (
+                        formData.tags.map(tag => (
+                          <TagBadge
+                            key={tag}
+                            label={getTagLabel(tag)}
+                            variant={getActivityTagVariant(tag)}
+                            icon={getActivityTagIcon(tag)}
+                            size="sm"
+                          />
+                        ))
+                      ) : (
+                        <span className="text-xs text-gray-400">Nenhuma categoria</span>
+                      )}
+                    </div>
                     <Button
                       variant="ghost"
                       size="sm"

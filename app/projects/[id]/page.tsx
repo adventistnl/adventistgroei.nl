@@ -632,6 +632,14 @@ export default function ProjectDetailsPage() {
       const customTags: string[] = []
 
       data.tags.forEach(tag => {
+        // Check if tag is already a valid enum value
+        if (Object.values(ActivityTags).includes(tag as ActivityTags)) {
+          if (!mappedTags.includes(tag as ActivityTags)) {
+            mappedTags.push(tag as ActivityTags)
+          }
+          return
+        }
+
         const enumTag = tagMap[tag]
         if (enumTag) {
           // Avoid duplicates in mapped tags
@@ -829,11 +837,11 @@ export default function ProjectDetailsPage() {
       institution_requested_amount: data.institution_requested_amount,
     }
 
-    // Pass through activity_tag and assignee_ids
-    await handleEditActivitySubmit(formData, data.activity_tag, data.assignee_ids)
+    // Pass through assignee_ids
+    await handleEditActivitySubmit(formData, data.assignee_ids)
   }
 
-  const handleEditActivitySubmit = async (data: EditActivityFormData, activity_tag?: string, assignee_ids?: string[]) => {
+  const handleEditActivitySubmit = async (data: EditActivityFormData, assignee_ids?: string[]) => {
     try {
       // Same tag mapping logic as create
       const tagMap: Record<string, ActivityTags> = {
@@ -881,6 +889,14 @@ export default function ProjectDetailsPage() {
       const customTags: string[] = []
 
       data.tags?.forEach(tag => {
+        // Check if tag is already a valid enum value
+        if (Object.values(ActivityTags).includes(tag as ActivityTags)) {
+          if (!mappedTags.includes(tag as ActivityTags)) {
+            mappedTags.push(tag as ActivityTags)
+          }
+          return
+        }
+
         const enumTag = tagMap[tag]
         if (enumTag) {
           if (!mappedTags.includes(enumTag)) {
@@ -943,38 +959,6 @@ export default function ProjectDetailsPage() {
         input.is_subsidized = data.is_subsidized
       }
 
-      // Add activity_tag if provided
-      if (activity_tag) {
-        // Map activity_tag string to ActivityTags enum
-        const activityTagMap: Record<string, ActivityTags> = {
-          // Enum values (current format)
-          "REFORM": ActivityTags.Reform,
-          "EQUIPMENT": ActivityTags.Equipment,
-          "TRAVEL": ActivityTags.Travel,
-          "EVENT": ActivityTags.Event,
-          "MATERIALS": ActivityTags.Materials,
-          "TRAINING": ActivityTags.Training,
-          "FEEDING": ActivityTags.Feeding,
-          "TRANSPORT": ActivityTags.Transport,
-          "ACCOMMODATION": ActivityTags.Accommodation,
-          "MARKETING": ActivityTags.Marketing,
-          "SERVICES": ActivityTags.Services,
-          // Legacy values (old format - lowercase, Portuguese)
-          "reforma": ActivityTags.Reform,
-          "material": ActivityTags.Materials,
-          "training": ActivityTags.Training,
-          "viagem": ActivityTags.Travel,
-          "evento": ActivityTags.Event,
-          "transporte": ActivityTags.Transport,
-          "marketing": ActivityTags.Marketing,
-          "servicos": ActivityTags.Services,
-          "alimentacao": ActivityTags.Feeding,
-          "acomodacao": ActivityTags.Accommodation,
-          "equipamento": ActivityTags.Equipment,
-        }
-        input.activity_tag = activityTagMap[activity_tag] || activity_tag
-      }
-
       // Add assignee_ids if provided (múltiplos responsáveis)
       // Sempre enviar assignee_ids se foi passado (mesmo se vazio, para remover todos)
       if (assignee_ids !== undefined) {
@@ -1025,7 +1009,7 @@ export default function ProjectDetailsPage() {
       project_id: projectId,
       name: activity.name,
       description: activity.description || "",
-      activity_tag: ActivityTags.Materials,
+      tags: [ActivityTags.Materials], // Default tag
       budget_amount: activity.budget_amount,
       status: activity.status,
       priority: "medium",
@@ -1085,15 +1069,7 @@ export default function ProjectDetailsPage() {
         return map[value] || 'gray'
       }
     },
-    {
-      id: 'activity_tag',
-      label: 'Categoria',
-      type: 'select',
-      value: batchEditData.activity_tag,
-      options: getActivityTagOptions(),
-      onChange: (value) => setBatchEditData(prev => ({ ...prev, activity_tag: value as string })),
-      getBadgeVariant: (value) => getActivityTagVariant(value as ActivityTags)
-    },
+    // activity_tag field removed - legacy field
     {
       id: 'is_subsidized',
       label: 'Subsidiado',

@@ -268,12 +268,21 @@ export function ActivityOverlayModal({
             </div>
             
             <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">CATEGORIA</label>
-              <div className="h-8 flex items-center">
-                <Badge variant="outline" className="bg-white text-gray-700 border-gray-300 text-xs flex items-center gap-1">
-                  {getActivityTagIcon(activity.activity_tag)}
-                  {getTagLabel(activity.activity_tag)}
-                </Badge>
+              <label className="text-xs font-medium text-gray-600 mb-1 block">CATEGORIAS</label>
+              <div className="flex flex-wrap gap-1 min-h-[32px] items-center">
+                {activity.tags && activity.tags.length > 0 ? (
+                  activity.tags.map((tag: any) => (
+                    <Badge key={tag} variant="outline" className="bg-white text-gray-700 border-gray-300 text-xs flex items-center gap-1">
+                      {getActivityTagIcon(tag)}
+                      {getTagLabel(tag)}
+                    </Badge>
+                  ))
+                ) : (
+                  <Badge variant="outline" className="bg-white text-gray-700 border-gray-300 text-xs flex items-center gap-1">
+                    <Tag className="w-3 h-3" />
+                    Sem categoria
+                  </Badge>
+                )}
               </div>
             </div>
             
