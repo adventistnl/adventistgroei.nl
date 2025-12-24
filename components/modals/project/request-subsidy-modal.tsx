@@ -59,6 +59,10 @@ interface RequestSubsidyModalProps {
   churchId?: string
   onSubmit: (data: SubsidyRequestData) => void
   allActivities?: ProjectActivityData[]
+  /** Optional initial data to populate the form when editing */
+  initialData?: Partial<SubsidyRequestData> | null
+  /** Mode: create (default) or edit */
+  mode?: "create" | "edit"
 }
 
 export interface SubsidyRequestData {
@@ -80,7 +84,9 @@ export function RequestSubsidyModal({
   departmentId = "",
   churchId = "",
   onSubmit,
-  allActivities = []
+  allActivities = [],
+  initialData = null,
+  mode = "create",
 }: RequestSubsidyModalProps) {
   const { formatCurrency } = useCurrency()
   const { t, i18n } = useTranslation()
@@ -128,6 +134,29 @@ export function RequestSubsidyModal({
       setCurrentActivityIndex(0)
     }
   }, [isOpen, selectedActivities, institutionId, departmentId, churchId, projectId])
+
+  // If initialData is provided (edit mode), populate the form with it when opening
+  React.useEffect(() => {
+    if (isOpen && initialData) {
+      setFormData(prev => ({
+        institution_id: initialData.institution_id || institutionId,
+        department_id: initialData.department_id || departmentId,
+        church_id: initialData.church_id || churchId,
+        project_id: initialData.project_id || projectId,
+        requested_amount: initialData.requested_amount || 0,
+        notes: initialData.notes || "",
+        items: initialData.items && initialData.items.length > 0 ? initialData.items : (selectedActivities.length > 0 ? selectedActivities.map(activity => ({
+          activity_id: activity.id,
+          activity_name: activity.name,
+          requested_amount: activity.institution_requested_amount || 0,
+          budget_amount: activity.budget_amount,
+          activity_documents: [],
+          notes: ""
+        })) : [])
+      }))
+      setCurrentActivityIndex(0)
+    }
+  }, [isOpen, initialData, institutionId, departmentId, churchId, projectId, selectedActivities])
 
   // Calculate total requested amount
   const totalRequestedAmount = useMemo(() => {
@@ -380,7 +409,11 @@ export function RequestSubsidyModal({
     }
 
     onSubmit(formData)
-    toast.success(translations.success.created)
+    if (mode === "edit") {
+      toast.success(translations.success?.updated || "Solicitação atualizada")
+    } else {
+      toast.success(translations.success?.created || "Solicitação criada")
+    }
     onClose()
   }
 
@@ -1268,7 +1301,7 @@ export function RequestSubsidyModal({
                 className="h-9 px-4 bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-50"
               >
                 <DollarSign className="w-4 h-4 mr-1" />
-                {translations.buttons.submit}
+                {mode === "edit" ? (translations.buttons?.saveChanges || "Salvar alterações") : translations.buttons.submit}
               </Button>
             </div>
           </div>

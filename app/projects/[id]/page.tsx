@@ -31,6 +31,7 @@ import { RegisterActivityModal, RegisterActivityFormData } from "@/components/mo
 import { BatchEditActivitiesModal, BatchEditData } from "@/components/modals/project/batch-edit-activities-modal"
 import { BatchEditField } from "@/components/shared/inline-batch-editor"
 import { RequestSubsidyModal, SubsidyRequestData as SubsidyRequestFormData } from "@/components/modals/project/request-subsidy-modal"
+import { SelectActivitiesModal } from "@/components/modals/project/select-activities-modal"
 
 import { ProjectTableData } from "@/components/projects/projects-table"
 import { projectTranslations } from "@/lib/translations/projects"
@@ -133,6 +134,7 @@ export default function ProjectDetailsPage() {
   const [isCreateReportModalOpen, setIsCreateReportModalOpen] = useState(false)
   const [isRegisterActivityModalOpen, setIsRegisterActivityModalOpen] = useState(false)
   const [isRequestSubsidyModalOpen, setIsRequestSubsidyModalOpen] = useState(false)
+  const [isSelectActivitiesModalOpen, setIsSelectActivitiesModalOpen] = useState(false)
   const [selectedReceipt, setSelectedReceipt] = useState<any>(undefined)
   
   // Selected items for modals
@@ -544,9 +546,21 @@ export default function ProjectDetailsPage() {
   }
 
   const handleAddSubsidyFromContainer = () => {
-    toast.success("➕ Abrindo formulário de nova solicitação...", { duration: 2000 })
-    // You can open the RequestSubsidyModal here if needed
-    // setIsRequestSubsidyModalOpen(true)
+    // Abrir modal de seleção de atividades
+    setIsSelectActivitiesModalOpen(true)
+  }
+
+  const handleActivitiesSelected = (activities: ProjectActivityData[]) => {
+    // Fechar modal de seleção
+    setIsSelectActivitiesModalOpen(false)
+    
+    // Definir atividades selecionadas
+    setSelectedActivities(activities)
+    
+    // Abrir modal de solicitação de subsídio com as atividades selecionadas
+    setIsRequestSubsidyModalOpen(true)
+    
+    toast.success(`✅ ${activities.length} atividade(s) selecionada(s)`, { duration: 2000 })
   }
 
   const handleRegisterActivitySubmit = async (data: RegisterActivityFormData) => {
@@ -1380,6 +1394,17 @@ export default function ProjectDetailsPage() {
           onOpenChangeAction={setIsDeleteSubsidyRequestModalOpen}
           subsidy={selectedSubsidyCard}
           onSuccess={handleDeleteSubsidyRequestSuccess}
+        />
+
+        {/* Modal de Seleção de Atividades */}
+        <SelectActivitiesModal
+          isOpen={isSelectActivitiesModalOpen}
+          onClose={() => setIsSelectActivitiesModalOpen(false)}
+          activities={allProjectActivities}
+          onConfirm={handleActivitiesSelected}
+          title="Selecionar Atividades para Subsídio"
+          description="Selecione as atividades subsidiadas que deseja incluir na solicitação de subsídio."
+          filterSubsidized={true}
         />
 
       </div>
