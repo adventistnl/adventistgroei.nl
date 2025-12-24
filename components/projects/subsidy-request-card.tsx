@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { MoreVertical, FileText, DollarSign } from "lucide-react"
+import { MoreVertical, FileText, DollarSign, Archive, Info } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -21,6 +21,7 @@ export interface SubsidyRequestCardData {
   requested_at: string | Date
   status: "pending" | "approved" | "rejected" | "in_review"
   requested_amount: number
+  archived?: boolean
   institution_name?: string
 }
 
@@ -30,6 +31,7 @@ interface SubsidyRequestCardProps {
   onDelete?: (id: string) => void
   onView?: (id: string) => void
   onDuplicate?: (id: string) => void
+  onArchive?: (id: string) => void
   className?: string
 }
 
@@ -39,8 +41,10 @@ export function SubsidyRequestCard({
   onDelete,
   onView,
   onDuplicate,
+  onArchive,
   className,
 }: SubsidyRequestCardProps) {
+  const contentDisabledClass = data.archived ? "opacity-60 pointer-events-none" : ""
   const statusConfig: Record<
     SubsidyRequestCardData["status"],
     { label: string; className: string }
@@ -74,21 +78,33 @@ export function SubsidyRequestCard({
       )}
     >
       {/* Header: Icon + Title + Menu */}
+      {/* Archived overlay indicator */}
+      {data.archived && (
+        <div className="absolute top-2 left-2 z-20">
+          <div className="h-8 w-8 rounded-full bg-white/90 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700 flex items-center justify-center shadow-sm">
+            <Archive className="w-4 h-4 text-gray-700 dark:text-gray-200" />
+          </div>
+        </div>
+      )}
+
       <div className="flex items-start gap-2">
-        {/* Icon */}
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100">
-          <FileText className="h-4 w-4 text-gray-600" />
+        {/* Left content (icon + title) - becomes inert when archived */}
+        <div className={cn("flex items-start gap-2 flex-1 min-w-0", contentDisabledClass)}>
+          {/* Icon */}
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+            <FileText className="h-4 w-4 text-gray-600" />
+          </div>
+
+          {/* Title */}
+          <div className="min-w-0 flex-1">
+            <h4 className="truncate text-xs font-semibold text-gray-900">{data.title}</h4>
+            {data.institution_name && (
+              <p className="truncate text-[10px] text-gray-500">{data.institution_name}</p>
+            )}
+          </div>
         </div>
 
-        {/* Title */}
-        <div className="min-w-0 flex-1">
-          <h4 className="truncate text-xs font-semibold text-gray-900">{data.title}</h4>
-          {data.institution_name && (
-            <p className="truncate text-[10px] text-gray-500">{data.institution_name}</p>
-          )}
-        </div>
-
-        {/* Three-dot menu */}
+        {/* Three-dot menu (always interactive) */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -101,20 +117,16 @@ export function SubsidyRequestCard({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {onView && (
-              <DropdownMenuItem onClick={() => onView(data.id)}>
+              <DropdownMenuItem disabled={!!data.archived} onClick={() => onView(data.id)}>
                 Visualizar
               </DropdownMenuItem>
             )}
             {onEdit && (
-              <DropdownMenuItem onClick={() => onEdit(data.id)}>
+              <DropdownMenuItem disabled={!!data.archived} onClick={() => onEdit(data.id)}>
                 Editar
               </DropdownMenuItem>
             )}
-            {onDuplicate && (
-              <DropdownMenuItem onClick={() => onDuplicate(data.id)}>
-                Duplicar
-              </DropdownMenuItem>
-            )}
+            {/* Removed Duplicate action per request */}
             {(onEdit || onView || onDuplicate) && onDelete && <DropdownMenuSeparator />}
             {onDelete && (
               <DropdownMenuItem
@@ -124,26 +136,39 @@ export function SubsidyRequestCard({
                 Excluir
               </DropdownMenuItem>
             )}
+            {/* Archive / Unarchive action */}
+            {onArchive && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onArchive && onArchive(data.id)}>
+                  <Archive className="w-3 h-3 mr-2" />
+                  {data.archived ? "Desarquivar" : "Arquivar"}
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      {/* Date */}
-      <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-        <span>Solicitado:</span>
-        <span className="font-medium text-gray-700">{formattedDate}</span>
-      </div>
+      {/* Rest of content - disabled when archived */}
+      <div className={cn("space-y-2", contentDisabledClass)}>
+        {/* Date */}
+        <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
+          <span>Solicitado:</span>
+          <span className="font-medium text-gray-700">{formattedDate}</span>
+        </div>
 
-      {/* Status Badge + Amount in same row */}
-      <div className="flex items-center justify-between gap-2">
-        <Badge variant="outline" className={cn("text-[10px] font-medium px-1.5 py-0.5", currentStatus.className)}>
-          {currentStatus.label}
-        </Badge>
+        {/* Status Badge + Amount in same row */}
+        <div className="flex items-center justify-between gap-2">
+          <Badge variant="outline" className={cn("text-[10px] font-medium px-1.5 py-0.5", currentStatus.className)}>
+            {currentStatus.label}
+          </Badge>
 
-        {/* Amount */}
-        <div className="flex items-center gap-1">
-          <DollarSign className="h-3 w-3 text-gray-400" />
-          <span className="text-sm font-bold text-gray-900">{formattedAmount}</span>
+          {/* Amount */}
+          <div className="flex items-center gap-1">
+            <DollarSign className="h-3 w-3 text-gray-400" />
+            <span className="text-sm font-bold text-gray-900">{formattedAmount}</span>
+          </div>
         </div>
       </div>
     </div>
