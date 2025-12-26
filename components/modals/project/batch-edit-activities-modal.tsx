@@ -12,7 +12,6 @@ import { ActivityTags } from "@/types/graphql-global-types"
 export interface BatchEditData {
   status?: string
   priority?: string
-  activity_tag?: string
   is_subsidized?: boolean
 }
 
@@ -238,38 +237,7 @@ export function BatchEditActivitiesModal({
               )}
             </div>
 
-            {/* Category */}
-            <div className="flex items-center gap-3">
-              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Categoria:</Label>
-              <Select
-                value={formData.activity_tag || ""}
-                onValueChange={(value) => {
-                  setFormData(prev => ({ ...prev, activity_tag: value }))
-                  const newFields = new Set(fieldsToUpdate)
-                  newFields.add('activity_tag')
-                  setFieldsToUpdate(newFields)
-                }}
-              >
-                <SelectTrigger className="w-[150px] h-8">
-                  <SelectValue placeholder="Selecione..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {getActivityTagOptions().map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {fieldsToUpdate.has('activity_tag') && formData.activity_tag && (
-                <Badge
-                  variant="outline"
-                  className={getTagColor(formData.activity_tag)}
-                >
-                  {getTagLabel(formData.activity_tag)}
-                </Badge>
-              )}
-            </div>
+            {/* Category field removed - use multiple tags editing in individual activity edit */ }
 
             {/* Subsidized */}
             <div className="flex items-center gap-3">

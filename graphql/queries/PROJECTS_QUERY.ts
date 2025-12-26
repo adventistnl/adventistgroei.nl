@@ -39,19 +39,20 @@ export const GET_PROJECTS_QUERY = gql`
         description
         budget_amount
         deadline
-        owner_id
         tags
         custom_tags
-        activity_tag
         status
         priority
         is_subsidized
         created_at
         updated_at
-        owner {
+        assignees {
           id
-          name
-          email
+          user {
+            id
+            name
+            email
+          }
         }
         activity_funding {
           id
@@ -104,19 +105,20 @@ export const GET_PROJECT_BY_ID_QUERY = gql`
         description
         budget_amount
         deadline
-        owner_id
         tags
         custom_tags
-        activity_tag
         status
         priority
         is_subsidized
         created_at
         updated_at
-        owner {
+        assignees {
           id
-          name
-          email
+          user {
+            id
+            name
+            email
+          }
         }
         activity_funding {
           id

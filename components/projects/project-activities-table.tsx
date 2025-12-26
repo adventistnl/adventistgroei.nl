@@ -51,7 +51,8 @@ export interface ProjectActivityData {
   project_id: string
   name: string
   description: string
-  activity_tag?: ActivityTags
+  tags?: ActivityTags[]
+  custom_tags?: string[]
   budget_amount: number
   deadline: string
   status: string
@@ -69,14 +70,7 @@ export interface ProjectActivityData {
   subsidy_amount?: number
   spent_amount?: number
   institution_requested_amount?: number
-  tags?: string[]
-  custom_tags?: string[]
-  owner_id?: string
-  owner?: {
-    id: string
-    name: string
-    email: string
-  }
+  // institution_requested_amount removed (duplicate)
   activity_funding?: Array<{
     id: string
     entity_contribution_amount: number
@@ -84,6 +78,18 @@ export interface ProjectActivityData {
     entity_type: string
     entity_id: string
   }>
+  // Múltiplos responsáveis via tabela de relacionamento
+  assignees?: Array<{
+    id: string
+    user: {
+      id: string
+      name: string
+      email: string
+    }
+  }>
+  // Array de IDs para envio de atualização
+  assignee_ids?: string[]
+  // Legacy: manter para compatibilidade
   assigned_users?: Array<{
     id: string
     name: string
@@ -211,7 +217,7 @@ export function ProjectActivitiesTable({
     return currentActivities.filter((activity: ProjectActivityData) => {
       const matchesStatus = statusFilter === "all" || activity.status === statusFilter
       const matchesPriority = priorityFilter === "all" || activity.priority === priorityFilter
-      const matchesTag = tagFilter === "all" || activity.activity_tag === tagFilter
+      const matchesTag = tagFilter === "all" || activity.tags?.includes(tagFilter as ActivityTags)
       const matchesSearch = searchQuery === "" || 
         activity.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         activity.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -269,8 +275,23 @@ export function ProjectActivitiesTable({
   }
 
   // Monochromatic design - all elements use gray tones except subsidy indicator
-  const getActivityTagColor = () => {
-    return "bg-gray-100 text-gray-800 border-gray-200"
+  const getActivityTagColor = (tag?: ActivityTags) => {
+    if (!tag) return "bg-gray-100 text-gray-800 border-gray-200"
+
+    const colors: Record<ActivityTags, string> = {
+      [ActivityTags.Reform]: 'bg-purple-50 text-purple-700 border-purple-200',
+      [ActivityTags.Equipment]: 'bg-blue-50 text-blue-700 border-blue-200',
+      [ActivityTags.Materials]: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+      [ActivityTags.Training]: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      [ActivityTags.Travel]: 'bg-green-50 text-green-700 border-green-200',
+      [ActivityTags.Event]: 'bg-pink-50 text-pink-700 border-pink-200',
+      [ActivityTags.Transport]: 'bg-orange-50 text-orange-700 border-orange-200',
+      [ActivityTags.Marketing]: 'bg-red-50 text-red-700 border-red-200',
+      [ActivityTags.Services]: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+      [ActivityTags.Feeding]: 'bg-gray-50 text-gray-700 border-gray-200',
+      [ActivityTags.Accommodation]: 'bg-gray-50 text-gray-700 border-gray-200',
+    }
+    return colors[tag] || "bg-gray-100 text-gray-800 border-gray-200"
   }
 
   const getStatusIcon = (status: string) => {
@@ -335,14 +356,22 @@ export function ProjectActivitiesTable({
       ),
     },
     {
-      id: "activity_tag",
-      accessorKey: "activity_tag",
+      id: "tags",
+      accessorKey: "tags",
       header: t('activities.table.category'),
       cell: ({ row }) => (
-        <Badge variant="outline" className={`${getActivityTagColor()} flex items-center gap-1 w-fit`}>
-          {getActivityTagIcon(row.original.activity_tag)}
-          <span className="capitalize">{getActivityTagLabel(row.original.activity_tag)}</span>
-        </Badge>
+        <div className="flex flex-wrap gap-1">
+          {row.original.tags && row.original.tags.length > 0 ? (
+            row.original.tags.map((tag: ActivityTags) => (
+              <Badge key={tag} variant="outline" className={`${getActivityTagColor(tag)} flex items-center gap-1 w-fit`}>
+                {getActivityTagIcon(tag)}
+                <span className="capitalize">{getActivityTagLabel(tag)}</span>
+              </Badge>
+            ))
+          ) : (
+            <span className="text-xs text-muted-foreground">Sem categoria</span>
+          )}
+        </div>
       ),
     },
     {
@@ -395,7 +424,21 @@ export function ProjectActivitiesTable({
       id: "assigned_users",
       header: "Responsáveis",
       cell: ({ row }) => {
-        const assignedUsers = row.original.assigned_users || []
+        // Prioridade: assignees (nova estrutura) > assigned_users (legacy)
+        let assignedUsers: Array<{ id: string; name: string; email?: string; avatar?: string; initials?: string; role?: string }> = []
+        
+        if (row.original.assignees && row.original.assignees.length > 0) {
+          // Nova estrutura: assignees da tabela de relacionamento
+          assignedUsers = row.original.assignees.map(a => ({
+            id: a.user.id,
+            name: a.user.name,
+            email: a.user.email,
+          }))
+        } else if (row.original.assigned_users && row.original.assigned_users.length > 0) {
+          // Legacy: assigned_users
+          assignedUsers = row.original.assigned_users
+        }
+        
         const maxDisplay = 3
         const displayedUsers = assignedUsers.slice(0, maxDisplay)
         const remainingCount = assignedUsers.length - maxDisplay

@@ -15,10 +15,13 @@ export const CREATE_PROJECT_ACTIVITY = gql`
       is_subsidized
       created_at
       updated_at
-      owner {
+      assignees {
         id
-        name
-        email
+        user {
+          id
+          name
+          email
+        }
       }
       activity_funding {
         id
@@ -36,7 +39,6 @@ export const BATCH_UPDATE_PROJECT_ACTIVITIES = gql`
     $ids: [String!]!
     $status: ActivityStatus
     $priority: ActivityPriority
-    $activity_tag: ActivityTags
     $is_subsidized: Boolean
   ) {
     batchUpdateProjectActivities(
@@ -44,7 +46,6 @@ export const BATCH_UPDATE_PROJECT_ACTIVITIES = gql`
         ids: $ids
         status: $status
         priority: $priority
-        activity_tag: $activity_tag
         is_subsidized: $is_subsidized
       }
     ) {
@@ -56,13 +57,15 @@ export const BATCH_UPDATE_PROJECT_ACTIVITIES = gql`
       status
       priority
       tags
-      activity_tag
       is_subsidized
       updated_at
-      owner {
+      assignees {
         id
-        name
-        email
+        user {
+          id
+          name
+          email
+        }
       }
     }
   }
@@ -76,19 +79,20 @@ export const UPDATE_PROJECT_ACTIVITY = gql`
       description
       budget_amount
       deadline
-      owner_id
       status
       priority
       tags
       custom_tags
-      activity_tag
       is_subsidized
       created_at
       updated_at
-      owner {
+      assignees {
         id
-        name
-        email
+        user {
+          id
+          name
+          email
+        }
       }
       activity_funding {
         id

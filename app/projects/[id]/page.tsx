@@ -31,6 +31,7 @@ import { RegisterActivityModal, RegisterActivityFormData } from "@/components/mo
 import { BatchEditActivitiesModal, BatchEditData } from "@/components/modals/project/batch-edit-activities-modal"
 import { BatchEditField } from "@/components/shared/inline-batch-editor"
 import { RequestSubsidyModal, SubsidyRequestData as SubsidyRequestFormData } from "@/components/modals/project/request-subsidy-modal"
+import { SelectActivitiesModal } from "@/components/modals/project/select-activities-modal"
 
 import { ProjectTableData } from "@/components/projects/projects-table"
 import { projectTranslations } from "@/lib/translations/projects"
@@ -133,6 +134,7 @@ export default function ProjectDetailsPage() {
   const [isCreateReportModalOpen, setIsCreateReportModalOpen] = useState(false)
   const [isRegisterActivityModalOpen, setIsRegisterActivityModalOpen] = useState(false)
   const [isRequestSubsidyModalOpen, setIsRequestSubsidyModalOpen] = useState(false)
+  const [isSelectActivitiesModalOpen, setIsSelectActivitiesModalOpen] = useState(false)
   const [selectedReceipt, setSelectedReceipt] = useState<any>(undefined)
   
   // Selected items for modals
@@ -146,6 +148,7 @@ export default function ProjectDetailsPage() {
   const { data: projectData, loading: projectLoading, error: projectError, refetch: refetchProject } = useQuery(GET_PROJECT_BY_ID_QUERY, {
     variables: { id: projectId },
     skip: !projectId,
+    fetchPolicy: 'network-only', // Sempre buscar do servidor para garantir dados atualizados
     onCompleted: () => {
       toast.success("📋 Project details loaded successfully!", {
         duration: 3000
@@ -282,10 +285,12 @@ export default function ProjectDetailsPage() {
   // Get all project activities - transform backend data to match ProjectActivityData interface
   const allProjectActivities = useMemo(() => {
     if (!projectData?.project?.activities) return []
+    
+    // Debug: Log raw activities data
+    console.log('🔍 Raw activities from API:', projectData.project.activities)
+    console.log('🔍 First activity assignees:', projectData.project.activities[0]?.assignees)
+    
     return projectData.project.activities.map((activity: any) => {
-      const ownerName = activity.owner?.name || "Unknown"
-      const ownerInitials = ownerName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
-
       // Map backend enum values to frontend values
       const statusMap: Record<string, string> = {
         'TODO': 'todo',
@@ -315,18 +320,21 @@ export default function ProjectDetailsPage() {
         completed_at: null,
         created_at: activity.created_at,
         updated_at: activity.updated_at,
-        assigned_users: activity.owner ? [{
-          id: activity.owner.id,
-          name: activity.owner.name,
-          email: activity.owner.email,
-          initials: ownerInitials,
-        }] : [],
+        // Usar assignees diretamente
+        assigned_users: activity.assignees && activity.assignees.length > 0
+          ? activity.assignees.map((a: any) => ({
+              id: a.user.id,
+              name: a.user.name,
+              email: a.user.email,
+              initials: a.user.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase(),
+            }))
+          : [],
+        // Incluir assignees diretamente para o modal
+        assignees: activity.assignees || [],
         // Additional fields for edit modal
         tags: activity.tags || [],
         custom_tags: activity.custom_tags || [],
-        owner: activity.owner,
         activity_funding: activity.activity_funding || [],
-        owner_id: activity.owner_id,
       }
     }) as ProjectActivityData[]
   }, [projectData, projectId])
@@ -544,9 +552,21 @@ export default function ProjectDetailsPage() {
   }
 
   const handleAddSubsidyFromContainer = () => {
-    toast.success("➕ Abrindo formulário de nova solicitação...", { duration: 2000 })
-    // You can open the RequestSubsidyModal here if needed
-    // setIsRequestSubsidyModalOpen(true)
+    // Abrir modal de seleção de atividades
+    setIsSelectActivitiesModalOpen(true)
+  }
+
+  const handleActivitiesSelected = (activities: ProjectActivityData[]) => {
+    // Fechar modal de seleção
+    setIsSelectActivitiesModalOpen(false)
+    
+    // Definir atividades selecionadas
+    setSelectedActivities(activities)
+    
+    // Abrir modal de solicitação de subsídio com as atividades selecionadas
+    setIsRequestSubsidyModalOpen(true)
+    
+    toast.success(`✅ ${activities.length} atividade(s) selecionada(s)`, { duration: 2000 })
   }
 
   const handleRegisterActivitySubmit = async (data: RegisterActivityFormData) => {
@@ -612,6 +632,14 @@ export default function ProjectDetailsPage() {
       const customTags: string[] = []
 
       data.tags.forEach(tag => {
+        // Check if tag is already a valid enum value
+        if (Object.values(ActivityTags).includes(tag as ActivityTags)) {
+          if (!mappedTags.includes(tag as ActivityTags)) {
+            mappedTags.push(tag as ActivityTags)
+          }
+          return
+        }
+
         const enumTag = tagMap[tag]
         if (enumTag) {
           // Avoid duplicates in mapped tags
@@ -652,7 +680,7 @@ export default function ProjectDetailsPage() {
         description: data.description,
         budget_amount: data.budget_amount,
         deadline: deadline.toISOString(),
-        owner_id: user.id,
+        assignee_ids: [user.id], // Novo: usar assignee_ids ao invés de owner_id
         tags: mappedTags,
         custom_tags: customTags,
         priority: priorityMap[data.priority] || ActivityPriority.Medium,
@@ -809,11 +837,11 @@ export default function ProjectDetailsPage() {
       institution_requested_amount: data.institution_requested_amount,
     }
 
-    // Pass through owner_id and activity_tag
-    await handleEditActivitySubmit(formData, data.owner_id, data.activity_tag)
+    // Pass through assignee_ids
+    await handleEditActivitySubmit(formData, data.assignee_ids)
   }
 
-  const handleEditActivitySubmit = async (data: EditActivityFormData, owner_id?: string, activity_tag?: string) => {
+  const handleEditActivitySubmit = async (data: EditActivityFormData, assignee_ids?: string[]) => {
     try {
       // Same tag mapping logic as create
       const tagMap: Record<string, ActivityTags> = {
@@ -861,6 +889,14 @@ export default function ProjectDetailsPage() {
       const customTags: string[] = []
 
       data.tags?.forEach(tag => {
+        // Check if tag is already a valid enum value
+        if (Object.values(ActivityTags).includes(tag as ActivityTags)) {
+          if (!mappedTags.includes(tag as ActivityTags)) {
+            mappedTags.push(tag as ActivityTags)
+          }
+          return
+        }
+
         const enumTag = tagMap[tag]
         if (enumTag) {
           if (!mappedTags.includes(enumTag)) {
@@ -923,42 +959,13 @@ export default function ProjectDetailsPage() {
         input.is_subsidized = data.is_subsidized
       }
 
-      // Add owner_id if provided
-      if (owner_id) {
-        input.owner_id = owner_id
+      // Add assignee_ids if provided (múltiplos responsáveis)
+      // Sempre enviar assignee_ids se foi passado (mesmo se vazio, para remover todos)
+      if (assignee_ids !== undefined) {
+        input.assignee_ids = assignee_ids
       }
 
-      // Add activity_tag if provided
-      if (activity_tag) {
-        // Map activity_tag string to ActivityTags enum
-        const activityTagMap: Record<string, ActivityTags> = {
-          // Enum values (current format)
-          "REFORM": ActivityTags.Reform,
-          "EQUIPMENT": ActivityTags.Equipment,
-          "TRAVEL": ActivityTags.Travel,
-          "EVENT": ActivityTags.Event,
-          "MATERIALS": ActivityTags.Materials,
-          "TRAINING": ActivityTags.Training,
-          "FEEDING": ActivityTags.Feeding,
-          "TRANSPORT": ActivityTags.Transport,
-          "ACCOMMODATION": ActivityTags.Accommodation,
-          "MARKETING": ActivityTags.Marketing,
-          "SERVICES": ActivityTags.Services,
-          // Legacy values (old format - lowercase, Portuguese)
-          "reforma": ActivityTags.Reform,
-          "material": ActivityTags.Materials,
-          "training": ActivityTags.Training,
-          "viagem": ActivityTags.Travel,
-          "evento": ActivityTags.Event,
-          "transporte": ActivityTags.Transport,
-          "marketing": ActivityTags.Marketing,
-          "servicos": ActivityTags.Services,
-          "alimentacao": ActivityTags.Feeding,
-          "acomodacao": ActivityTags.Accommodation,
-          "equipamento": ActivityTags.Equipment,
-        }
-        input.activity_tag = activityTagMap[activity_tag] || activity_tag
-      }
+      console.log('🚀 Sending update input:', JSON.stringify(input, null, 2))
 
       await updateProjectActivity({
         variables: { input }
@@ -1002,7 +1009,7 @@ export default function ProjectDetailsPage() {
       project_id: projectId,
       name: activity.name,
       description: activity.description || "",
-      activity_tag: ActivityTags.Materials,
+      tags: [ActivityTags.Materials], // Default tag
       budget_amount: activity.budget_amount,
       status: activity.status,
       priority: "medium",
@@ -1062,15 +1069,7 @@ export default function ProjectDetailsPage() {
         return map[value] || 'gray'
       }
     },
-    {
-      id: 'activity_tag',
-      label: 'Categoria',
-      type: 'select',
-      value: batchEditData.activity_tag,
-      options: getActivityTagOptions(),
-      onChange: (value) => setBatchEditData(prev => ({ ...prev, activity_tag: value as string })),
-      getBadgeVariant: (value) => getActivityTagVariant(value as ActivityTags)
-    },
+    // activity_tag field removed - legacy field
     {
       id: 'is_subsidized',
       label: 'Subsidiado',
@@ -1380,6 +1379,17 @@ export default function ProjectDetailsPage() {
           onOpenChangeAction={setIsDeleteSubsidyRequestModalOpen}
           subsidy={selectedSubsidyCard}
           onSuccess={handleDeleteSubsidyRequestSuccess}
+        />
+
+        {/* Modal de Seleção de Atividades */}
+        <SelectActivitiesModal
+          isOpen={isSelectActivitiesModalOpen}
+          onClose={() => setIsSelectActivitiesModalOpen(false)}
+          activities={allProjectActivities}
+          onConfirm={handleActivitiesSelected}
+          title="Selecionar Atividades para Subsídio"
+          description="Selecione as atividades subsidiadas que deseja incluir na solicitação de subsídio."
+          filterSubsidized={true}
         />
 
       </div>

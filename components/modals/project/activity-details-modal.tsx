@@ -57,6 +57,7 @@ import { useTranslation } from "react-i18next"
 import { useCurrency } from "@/contexts/currency-context"
 import toast from "react-hot-toast"
 import { UserSelector, type User as UserType } from "@/components/shared/user-selector"
+import { UserMultiSelector } from "@/components/shared/user-multi-selector"
 import { ActivityTags } from "@/types/graphql-global-types"
 import { TagBadgeVariant } from "@/components/ui/tag-badge"
 import { ActivityDocumentsSection } from "@/components/projects/activity-documents-section"
@@ -106,15 +107,16 @@ export function ActivityDetailsModal({
     }
   )
   
-  // Assigned users state - Only show the owner as a single user
+  // Assigned users state - Support multiple assignees
   const [assignedUsers, setAssignedUsers] = useState<User[]>(() => {
-    if (activity?.owner) {
-      return [{
-        id: activity.owner.id,
-        name: activity.owner.name,
-        email: activity.owner.email,
+    // Usar assignees (múltiplos responsáveis)
+    if (activity?.assignees && activity.assignees.length > 0) {
+      return activity.assignees.map(assignee => ({
+        id: assignee.user.id,
+        name: assignee.user.name,
+        email: assignee.user.email,
         role: 'Responsável'
-      }]
+      }))
     }
     return []
   })
@@ -166,7 +168,7 @@ export function ActivityDetailsModal({
     name: activity?.name || "",
     status: activity?.status || "",
     priority: activity?.priority || "",
-    activity_tag: normalizeActivityTag(activity?.activity_tag),
+    tags: activity?.tags || [],
     budget_amount: activity?.budget_amount || 0,
     description: activity?.description || "",
     is_subsidized: activity?.is_subsidized || false,
@@ -190,21 +192,21 @@ export function ActivityDetailsModal({
         name: activity.name,
         status: activity.status,
         priority: activity.priority,
-        activity_tag: activity.activity_tag,
+        tags: activity.tags || [],
         budget_amount: activity.budget_amount,
         description: activity.description,
         is_subsidized: activity.is_subsidized,
         institution_requested_amount: activity.institution_requested_amount || 0
       })
 
-      // Update assigned users when activity changes
-      if (activity.owner) {
-        setAssignedUsers([{
-          id: activity.owner.id,
-          name: activity.owner.name,
-          email: activity.owner.email,
+      // Update assigned users when activity changes - support multiple assignees
+      if (activity.assignees && activity.assignees.length > 0) {
+        setAssignedUsers(activity.assignees.map(assignee => ({
+          id: assignee.user.id,
+          name: assignee.user.name,
+          email: assignee.user.email,
           role: 'Responsável'
-        }])
+        })))
       } else {
         setAssignedUsers([])
       }
@@ -386,7 +388,7 @@ export function ActivityDetailsModal({
     })
   }
 
-  const handleInputChange = (field: string, value: string | number | boolean) => {
+  const handleInputChange = (field: string, value: string | number | boolean | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -396,15 +398,15 @@ export function ActivityDetailsModal({
 
   const handleSave = () => {
     if (onSave && activity) {
-      // Include activity id and owner_id from assignedUsers
+      // Include activity id and assignee_ids from assignedUsers
       const dataToSave: Partial<ProjectActivityData> = {
         id: activity.id,
         ...formData,
-        activity_tag: normalizeActivityTag(formData.activity_tag) as any,
-        owner_id: assignedUsers.length > 0 ? assignedUsers[0].id : activity.owner_id,
+        tags: formData.tags.map(tag => normalizeActivityTag(tag) as ActivityTags),
+        assignee_ids: assignedUsers.map(u => u.id), // Enviar todos os responsáveis
       }
       console.log('💾 Saving activity with data:', dataToSave)
-      console.log('🏷️ Activity tag being sent:', dataToSave.activity_tag)
+      console.log('👥 Assignees being sent:', dataToSave.assignee_ids)
       onSave(dataToSave)
       toast.success(t('common.success'))
       setHasChanges(false)
@@ -426,6 +428,11 @@ export function ActivityDetailsModal({
 
   const handleUserSelect = (user: UserType) => {
     setAssignedUsers([user])
+    setHasChanges(true)
+  }
+
+  const handleUsersChange = (users: User[]) => {
+    setAssignedUsers(users)
     setHasChanges(true)
   }
 
@@ -613,7 +620,7 @@ export function ActivityDetailsModal({
                 )}
               </div>
 
-              {/* Category */}
+              {/* Category - Multiple Tags */}
               <div className="flex items-center gap-3">
                 <Tag className="w-4 h-4 text-gray-600" />
                 <Label className="text-sm font-medium text-gray-700">{t('activities.modal.category')}:</Label>
@@ -628,32 +635,57 @@ export function ActivityDetailsModal({
                   </Tooltip>
                 </TooltipProvider>
                 {editingField === 'category' ? (
-                  <Select
-                    value={formData.activity_tag}
-                    onValueChange={(value) => {
-                      handleInputChange('activity_tag', value)
-                      setEditingField(null)
-                    }}
-                  >
-                    <SelectTrigger className="w-[150px] h-8 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getActivityTagOptions().map(option => (
-                        <SelectItem key={option.value} value={option.value}>
+                  <div className="flex flex-wrap gap-2">
+                    {getActivityTagOptions().map(option => {
+                      const isSelected = formData.tags.includes(option.value)
+                      return (
+                        <Button
+                          key={option.value}
+                          variant={isSelected ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            const newTags = isSelected
+                              ? formData.tags.filter(t => t !== option.value)
+                              : [...formData.tags, option.value]
+                            handleInputChange('tags', newTags)
+                          }}
+                          className={`h-7 text-xs transition-all duration-200 ${
+                            isSelected 
+                              ? 'bg-primary text-primary-foreground shadow-sm' 
+                              : 'hover:bg-muted hover:border-primary/50'
+                          }`}
+                        >
                           {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                        </Button>
+                      )
+                    })}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditingField(null)}
+                      className="h-7 text-xs"
+                    >
+                      <Check className="w-3 h-3 mr-1" />
+                      Concluir
+                    </Button>
+                  </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <TagBadge
-                      label={getTagLabel(formData.activity_tag)}
-                      variant={getActivityTagVariant(formData.activity_tag)}
-                      icon={getActivityTagIcon(formData.activity_tag)}
-                      size="md"
-                    />
+                    <div className="flex flex-wrap gap-1">
+                      {formData.tags.length > 0 ? (
+                        formData.tags.map(tag => (
+                          <TagBadge
+                            key={tag}
+                            label={getTagLabel(tag)}
+                            variant={getActivityTagVariant(tag)}
+                            icon={getActivityTagIcon(tag)}
+                            size="sm"
+                          />
+                        ))
+                      ) : (
+                        <span className="text-xs text-gray-400">Nenhuma categoria</span>
+                      )}
+                    </div>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -666,30 +698,51 @@ export function ActivityDetailsModal({
                 )}
               </div>
 
-              {/* Assigned Users */}
+              {/* Assigned Users - Multiple */}
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Responsável:
+                  Responsáveis:
                 </span>
                 {assignedUsers.length > 0 && (
                   <div className="flex items-center gap-1">
-                    <Avatar className="h-8 w-8 border-2 border-gray-200 dark:border-gray-700">
-                      <AvatarImage src={assignedUsers[0].avatar} alt={assignedUsers[0].name} />
-                      <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-500 text-white">
-                        {assignedUsers[0].name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {assignedUsers[0].name}
-                    </span>
+                    {/* Mostrar até 3 avatars empilhados */}
+                    <div className="flex -space-x-2">
+                      {assignedUsers.slice(0, 3).map((user, index) => (
+                        <Avatar 
+                          key={user.id}
+                          className="h-8 w-8 border-2 border-white dark:border-gray-800"
+                          style={{ zIndex: 3 - index }}
+                        >
+                          <AvatarImage src={user.avatar} alt={user.name} />
+                          <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                            {user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
+                      {assignedUsers.length > 3 && (
+                        <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-white dark:border-gray-800 flex items-center justify-center text-xs font-medium text-gray-600 dark:text-gray-300">
+                          +{assignedUsers.length - 3}
+                        </div>
+                      )}
+                    </div>
+                    {assignedUsers.length === 1 && (
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {assignedUsers[0].name}
+                      </span>
+                    )}
+                    {assignedUsers.length > 1 && (
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {assignedUsers.length} responsáveis
+                      </span>
+                    )}
                   </div>
                 )}
-                <UserSelector
+                <UserMultiSelector
                   availableUsers={availableUsers}
-                  selectedUser={assignedUsers.length > 0 ? assignedUsers[0] : null}
-                  onUserSelect={handleUserSelect}
-                  buttonLabel={assignedUsers.length > 0 ? "Alterar" : "Selecionar"}
-                  dialogTitle="Selecionar Responsável"
+                  selectedUsers={assignedUsers}
+                  onUsersChange={handleUsersChange}
+                  buttonLabel={assignedUsers.length > 0 ? "Editar" : "Adicionar"}
+                  dialogTitle="Selecionar Responsáveis"
                   searchPlaceholder="Buscar usuário..."
                 />
               </div>

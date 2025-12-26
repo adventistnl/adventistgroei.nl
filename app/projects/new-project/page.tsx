@@ -238,7 +238,11 @@ function ProjectRegisterContent() {
     },
     onError: (error) => {
       console.error("Error creating project:", error)
-      toast.error(`${translations.toast.failedToSave}: ${error.message}`)
+      // Extract user-friendly error message
+      const errorMessage = error.graphQLErrors?.[0]?.message || error.message || 'Erro desconhecido'
+      // Only show the first line of the error (not the stack trace)
+      const userFriendlyMessage = errorMessage.split('\n')[0]
+      toast.error(`${translations.toast.failedToSave}: ${userFriendlyMessage}`)
     },
   })
 
@@ -817,15 +821,13 @@ function ProjectRegisterContent() {
       // Map activities to backend format
       const mappedActivities = formData.activities.map(activity => {
         const activityDeadline = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString() // 60 days from now
-        const ownerId = formData.responsible_id || institutionId || ''
 
         return {
           name: activity.name,
           description: activity.description,
           budget_amount: activity.budget_amount,
           deadline: activityDeadline,
-          owner_id: ownerId,
-          tags: activity.tags.map(mapTagToEnum),
+          tags: activity.tags.map(mapTagToEnum), // Already sending as array - correct!
           activity_funding: {
             entity_contribution_amount: activity.institution_requested_amount || (activity.is_subsidized ? activity.budget_amount * 0.65 : 0),
             entity_contribution_percent: activity.is_subsidized ? 65 : 0,
