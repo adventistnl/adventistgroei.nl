@@ -1,61 +1,89 @@
 import { gql } from "@apollo/client";
 
-export const CREATE_ANNUAL_BUDGET_MUTATION = gql`
-  mutation CreateAnnualBudget(
-    $year: Int!
-    $planned_budget: Float!
-    $total_expenses: Float
-    $description: String!
-    $justification: String
-    $allocated_amount: Float!
-    $entity_type: AnnualBudgetEntityType!
-    $entity_id: String!
-    $notes: String
+// INSTITUTION BUDGET MUTATIONS
+export const CREATE_INSTITUTION_BUDGET_MUTATION = gql`
+  mutation CreateInstitutionBudget($data: InstitutionBudgetCreateDto!) {
+    createInstitutionBudget(data: $data) {
+      year
+      planned_budget
+      total_expenses
+      allocated_amount
+      balance
+      status
+      priority
+      category
+      description
+      justification
+      notes
+      is_locked
+    }
+  }
+`;
+
+export const UPDATE_INSTITUTION_BUDGET_MUTATION = gql`
+  mutation UpdateInstitutionBudget(
+    $id: String!
+    $data: InstitutionBudgetUpdateDto!
   ) {
-    createAnnualBudget(
-      data: {
-        year: $year
-        planned_budget: $planned_budget
-        total_expenses: $total_expenses
-        description: $description
-        justification: $justification
-        allocated_amount: $allocated_amount
-        entity_type: $entity_type
-        entity_id: $entity_id
-        notes: $notes
-      }
-    ) {
+    updateInstitutionBudget(id: $id, data: $data) {
       id
       year
       planned_budget
       total_expenses
+      allocated_amount
       balance
       status
+      priority
+      category
+      description
+      justification
+      notes
+      is_locked
       created_at
       updated_at
     }
   }
 `;
 
-export const UPDATE_ANNUAL_BUDGET_MUTATION = gql`
-  mutation UpdateAnnualBudget(
-    $id: String!
-    $data: AnnualBudgetUpdateDto!
-  ) {
-    updateAnnualBudget(
-      id: $id
-      data: $data
-    ) {
-      id
+// DEPARTMENT BUDGET MUTATIONS
+export const CREATE_DEPARTMENT_BUDGET_MUTATION = gql`
+  mutation CreateDepartmentBudget($data: DepartmentBudgetCreateDto!) {
+    createDepartmentBudget(data: $data) {
       year
       planned_budget
       total_expenses
+      allocated_amount
       balance
       status
       priority
       category
-      requested_by
-      submitted_date
+      description
+      justification
+      notes
+      is_locked
+    }
+  }
+`;
+
+export const UPDATE_DEPARTMENT_BUDGET_MUTATION = gql`
+  mutation UpdateDepartmentBudget(
+    $id: String!
+    $data: DepartmentBudgetUpdateDto!
+  ) {
+    updateDepartmentBudget(id: $id, data: $data) {
+      id
+      year
+      planned_budget
+      total_expenses
+      allocated_amount
+      balance
+      status
+      priority
+      category
+      description
+      justification
+      notes
+      is_locked
       created_at
       updated_at
     }
