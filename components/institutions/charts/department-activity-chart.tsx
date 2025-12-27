@@ -28,13 +28,12 @@ import { useChartColors } from "@/lib/chart-colors"
 import { departmentTranslations } from "@/lib/translations/departments"
 
 interface DepartmentActivityChartProps {
-  data?: any[]
   loading?: boolean
   departments?: any[]
   selectedYear?: number
 }
 
-export function DepartmentActivityChart({ data, loading, departments = [], selectedYear = new Date().getFullYear() }: DepartmentActivityChartProps) {
+export function DepartmentActivityChart({ loading, departments = [], selectedYear = new Date().getFullYear() }: DepartmentActivityChartProps) {
   const [timeRange, setTimeRange] = React.useState("12m")
   const { i18n } = useTranslation()
   const currentLanguage = i18n?.language || 'en'
@@ -43,7 +42,7 @@ export function DepartmentActivityChart({ data, loading, departments = [], selec
   // Processar departamentos reais e seus valores
   const departmentsList = React.useMemo(() => {
     if (!departments || departments.length === 0) return []
-    
+
     return departments
       .filter((dept: any) => !dept.is_deleted) // Filtrar departamentos ativos
       .map((dept: any) => {
@@ -51,7 +50,7 @@ export function DepartmentActivityChart({ data, loading, departments = [], selec
         const yearBudget = dept.annual_budgets?.find(
           (budget: any) => budget.year === selectedYear
         );
-        
+
         const allocatedAmount = Number(yearBudget?.allocated_amount) || 0;
         const spentAmount = Number(yearBudget?.total_expenses) || 0;
         const userCount = dept.users?.length || 0;
@@ -64,10 +63,11 @@ export function DepartmentActivityChart({ data, loading, departments = [], selec
           name: dept.name,
           allocated: allocatedAmount,
           spent: spentAmount,
+          userCount: userCount,
           value: activityValue,
         }
       })
-      .filter(dept => dept.allocated > 0) // Mostrar apenas departamentos com orçamento
+      .filter(dept => dept.allocated > 0 || dept.userCount > 0) // Mostrar departamentos com orçamento OU com usuários/atividades
   }, [departments, selectedYear])
 
   // Gerar dados realistas baseados nos orçamentos anuais
