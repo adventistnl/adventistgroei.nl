@@ -262,7 +262,7 @@ export default function AnnualBudgetPage() {
         departmentId: department.id,
         departmentName: department.name,
         departmentDescription: department.description,
-        annualBudget: annualBudget ? {
+        annualBudget: (annualBudget && annualBudget.has_budget_record) ? {
           id: annualBudget.id,
           year: annualBudget.year,
           planned_budget: parseFloat(annualBudget.planned_budget) || 0,

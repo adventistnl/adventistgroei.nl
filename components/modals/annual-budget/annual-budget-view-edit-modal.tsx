@@ -281,8 +281,7 @@ export function AnnualBudgetViewEditModal({
         approved_by: formData.approved_by || null,
         updated_at: new Date().toISOString()
       } : {
-        // Create new budget
-        id: Date.now().toString(),
+        // Create new budget - DO NOT include id, let backend generate it
         year: parseInt(formData.year),
         planned_budget: parseFloat(formData.planned_budget),
         total_expenses: parseFloat(formData.total_expenses) || 0,
