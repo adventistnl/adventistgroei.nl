@@ -188,6 +188,7 @@ export default function AnnualBudgetPage() {
           year: budget.year,
           planned_budget: parseFloat(budget.planned_budget) || 0,
           total_expenses: parseFloat(budget.total_expenses) || 0,
+          allocated_amount: parseFloat(budget.allocated_amount) || 0,
           balance: parseFloat(budget.balance) || 0,
           notes: budget.notes || undefined,
           approved_by: budget.reviewed_by || undefined,
@@ -248,7 +249,7 @@ export default function AnnualBudgetPage() {
 
   // Transform departments data for table display
   const departmentBudgetData = useMemo(() => {
-    const institution = currentInstitutionData as any
+    const institution = currentInstitutionData
     if (!institution?.departments) return []
     
     return institution.departments.map((department: any) => {
@@ -444,42 +445,23 @@ export default function AnnualBudgetPage() {
     }
   }
 
-  // KPI Data from GraphQL and local calculations
+  // KPI Data from GraphQL - use backend data from institution budget
   const kpiData = useMemo(() => {
-    // Get institution budget for selected year
-    const institutionBudget = institutionAnnualBudgets[selectedYear]
-    const totalInstitutionBudget = institutionBudget?.planned_budget || 0
-
-    // Calculate total allocated from departments (sum of department budgets)
-    const totalAllocated = departmentBudgetData.reduce((sum: number, dept: any) => {
-      return sum + (dept.annualBudget?.allocated_amount || 0)
-    }, 0)
-
-    // Calculate total spent from departments
-    const totalSpent = departmentBudgetData.reduce((sum: number, dept: any) => {
-      return sum + (dept.spentAmount || 0)
-    }, 0)
-
-    // Calculate budget remaining: institution budget - total allocated
-    const budgetRemaining = totalInstitutionBudget - totalAllocated
-
-    // Calculate budget utilization percentage: % of institution budget that was allocated to departments
-    const budgetUtilization = totalInstitutionBudget > 0 
-      ? Math.round((totalAllocated / totalInstitutionBudget) * 100)
-      : 0
-
-    // Count active departments (departments with budgets)
-    const activeDepartments = departmentBudgetData.filter((dept: any) => dept.hasBudgetRecord).length
-
-    return {
-      totalInstitutionBudget,
-      totalAllocated,
-      totalSpent,
-      budgetRemaining,
-      budgetUtilization,
-      activeDepartments
+    // Use data from backend (kpisData.budgetKPIs) which comes from institution budget
+    if (kpisData?.budgetKPIs) {
+      return kpisData.budgetKPIs
     }
-  }, [institutionAnnualBudgets, selectedYear, departmentBudgetData])
+
+    // Fallback to zeros if no data from backend
+    return {
+      totalInstitutionBudget: 0,
+      totalAllocated: 0,
+      totalSpent: 0,
+      budgetRemaining: 0,
+      budgetUtilization: 0,
+      activeDepartments: 0
+    }
+  }, [kpisData])
 
   const kpiCardsData: KPICardData[] = useMemo(() => {
     const institutionBudget = institutionAnnualBudgets[selectedYear]
@@ -946,6 +928,7 @@ export default function AnnualBudgetPage() {
           data: {
             planned_budget: budget.planned_budget,
             total_expenses: budget.total_expenses,
+            allocated_amount: budget.allocated_amount,
             description: `Updated budget for ${budget.year}`,
             justification: budget.notes || `Updated budget allocation`,
             priority: selectedRequest?.priority as any,
@@ -1054,12 +1037,33 @@ export default function AnnualBudgetPage() {
       cell: ({ row }) => {
         const departmentData = row.original
         const isDisabled = !departmentData.hasBudgetRecord
-        const budgetAmount = departmentData.annualBudget?.allocated_amount || 0
+        const budgetAmount = departmentData.annualBudget?.planned_budget || 0
         
         return (
           <div className={`text-center ${isDisabled ? 'opacity-50' : ''}`}>
             <div className="text-sm font-semibold text-foreground">
               {isDisabled ? '-' : formatCurrency(budgetAmount, currencyConfig)}
+            </div>
+          </div>
+        )
+      },
+    },
+    {
+      id: "allocated_amount",
+      header: () => (
+        <div className="text-center font-medium text-foreground">
+          {t('annual_budget.table.headers.allocated_amount')}
+        </div>
+      ),
+      cell: ({ row }) => {
+        const departmentData = row.original
+        const isDisabled = !departmentData.hasBudgetRecord
+        const allocatedAmount = departmentData.annualBudget?.allocated_amount || 0
+        
+        return (
+          <div className={`text-center ${isDisabled ? 'opacity-50' : ''}`}>
+            <div className="text-sm font-semibold text-foreground">
+              {isDisabled ? '-' : formatCurrency(allocatedAmount, currencyConfig)}
             </div>
           </div>
         )

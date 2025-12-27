@@ -1436,7 +1436,8 @@ const resources = {
             usage_percentage: "Usage %",
             lock_status: "Lock Status",
             budget_status: "Budget Status",
-            actions: "Actions"
+            actions: "Actions",
+            allocated_amount: "Allocated Amount"
           },
           lock_tooltips: {
             locked: "Click to unlock",
@@ -3233,7 +3234,8 @@ const resources = {
             usage_percentage: "Gebruik %",
             lock_status: "Vergrendelstatus",
             budget_status: "Budgetstatus",
-            actions: "Acties"
+            actions: "Acties",
+            allocated_amount: "Totaal bedrag"
           },
           lock_tooltips: {
             locked: "Klik om te ontgrendelen",
