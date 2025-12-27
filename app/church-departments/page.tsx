@@ -69,6 +69,7 @@ import {
 import { PermissionResolverName, AnnualBudgetEntityType } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
 import { WithPermission } from "@/hocs/with-permission"
+import { useDepartmentKPIs } from "@/hooks/use-department-kpis"
 
 
 /**
@@ -82,8 +83,21 @@ export default function ChurchDepartmentsPage() {
   const { i18n } = useTranslation()
   const currentLanguage = i18n?.language || 'en'
   const t = departmentTranslations[currentLanguage as keyof typeof departmentTranslations] || departmentTranslations.en
-  const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+
+  // Fetch department KPIs
+  // Pass church_id as a flag to get ALL church departments from the institution (not institutional departments)
+  const {
+    kpis,
+    activityData,
+    loading: kpisLoading
+  } = useDepartmentKPIs({
+    institution_id: currentInstitutionData?.id,
+    church_id: 'all',
+    selectedYear: new Date().getFullYear()
+  })
+
+  const isLoading = !currentInstitutionData || kpisLoading
   
   // View mode states - controla se está na lista ou em detalhes
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
@@ -101,84 +115,76 @@ export default function ChurchDepartmentsPage() {
     title: t.church_page?.title || "Church Departments"
   })
 
-  // Estatísticas calculadas dos dados
-  type DepartmentType = typeof departments extends (infer U)[] ? U : any;
-  const kpiData = useMemo(() => {
-    const totalDepartments = departments.length;
-    
-    // Total de churches únicas que têm departamentos
-    const uniqueChurches = new Set(departments.map(d => d.church_id));
-    const totalChurches = uniqueChurches.size;
-    
-    // Total de projetos registrados, em aberto e concluídos
-    let totalProjects = 0;
-    let openProjects = 0;
-    let completedProjects = 0;
-    
-    departments.forEach((d: DepartmentType) => {
-      const projects = (d as any).projects || [];
-      totalProjects += projects.length;
-      
-      projects.forEach((project: any) => {
-        if (project.status === 'COMPLETED' || project.is_completed) {
-          completedProjects++;
-        } else {
-          openProjects++;
-        }
-      });
-    });
-    
-    return {
-      totalDepartments,
-      totalChurches,
-      totalProjects,
-      openProjects,
-      completedProjects
-    };
-  }, [departments]);
+  // Criar mapeamento de dados de atividade por department_id
+  const departmentActivityMap = useMemo(() => {
+    const map = new Map<string, any>()
+    activityData.forEach(data => {
+      map.set(data.department_id, data)
+    })
+    return map
+  }, [activityData])
+
+  // Enriquecer departments com dados de projetos da API
+  const enrichedDepartments = useMemo(() => {
+    return departments.map(dept => {
+      const activityInfo = departmentActivityMap.get(dept.id)
+      return {
+        ...dept,
+        open_projects: activityInfo?.open_projects || 0,
+        completed_projects: activityInfo?.completed_projects || 0,
+        total_projects: activityInfo?.project_count || 0,
+      }
+    })
+  }, [departments, departmentActivityMap])
 
   // Dados para KPI Cards Carrossel
   const kpiCardsData: KPICardData[] = useMemo(() => {
+    if (!kpis) return []
+
     const kpiCardsTranslations = (t.church_page as any)?.kpi_cards || {}
-    
+
+    // Total de churches únicas que têm departamentos
+    const uniqueChurches = new Set(departments.map(d => d.church_id));
+    const totalChurches = uniqueChurches.size;
+
     return [
       {
         id: "total_departments",
         title: kpiCardsTranslations.total_departments || "Church Departments",
-        value: kpiData.totalDepartments,
+        value: kpis.totalDepartments,
         icon: Layers,
         subtitle: kpiCardsTranslations.total_departments_subtitle || "Total church departments"
       },
       {
         id: "total_churches",
         title: kpiCardsTranslations.total_churches || "Total Churches",
-        value: kpiData.totalChurches,
+        value: totalChurches,
         icon: Home,
         subtitle: kpiCardsTranslations.total_churches_subtitle || "Churches with departments"
       },
       {
         id: "total_projects",
         title: kpiCardsTranslations.total_projects || "Total Projects",
-        value: kpiData.totalProjects,
+        value: kpis.totalProjects,
         icon: TrendingUp,
         subtitle: kpiCardsTranslations.total_projects_subtitle || "All registered projects"
       },
       {
         id: "open_projects",
         title: kpiCardsTranslations.open_projects || "Open Projects",
-        value: kpiData.openProjects,
-        icon: Calendar,
+        value: kpis.openProjects,
+        icon: FileText,
         subtitle: kpiCardsTranslations.open_projects_subtitle || "Projects in progress"
       },
       {
         id: "completed_projects",
         title: kpiCardsTranslations.completed_projects || "Completed Projects",
-        value: kpiData.completedProjects,
-        icon: Shield,
+        value: kpis.completedProjects,
+        icon: CheckCircle2,
         subtitle: kpiCardsTranslations.completed_projects_subtitle || "Successfully completed"
       }
     ]
-  }, [kpiData, t]);
+  }, [kpis, departments, t]);
 
   // Dados para gráficos (apenas nome e orçamento)
   const chartData = useMemo(() => {
@@ -205,15 +211,13 @@ export default function ChurchDepartmentsPage() {
       
       try {
         await new Promise(resolve => setTimeout(resolve, 1500))
-        
+
         toast.dismiss(loadingToast)
         toast.success(t.common?.data_loaded || "Data loaded successfully", { duration: 3000 })
-        setIsLoading(false)
-        
+
       } catch (error) {
         toast.dismiss(loadingToast)
         toast.error(t.common?.error || "An error occurred")
-        setIsLoading(false)
       }
     }
 
@@ -380,43 +384,29 @@ export default function ChurchDepartmentsPage() {
       id: "open_projects",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          {t.stats?.projects || "Projects"} ({t.common?.status || "Status"})
+          {t.stats?.projects || "Projects"} (Open)
         </div>
       ),
-      cell: ({ row }) => {
-        const projects = (row.original.projects as any) || [];
-        const openCount = projects.filter((p: any) => 
-          p.status !== 'COMPLETED' && !p.is_completed
-        ).length;
-        
-        return (
-          <div className="flex items-center justify-center gap-2">
-            <FileText className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">{openCount}</span>
-          </div>
-        )
-      },
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center gap-2">
+          <FileText className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">{row.original.open_projects || 0}</span>
+        </div>
+      ),
     },
     {
       id: "completed_projects",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          {t.stats?.projects || "Projects"} ({t.common?.status || "Status"})
+          {t.stats?.projects || "Projects"} (Completed)
         </div>
       ),
-      cell: ({ row }) => {
-        const projects = (row.original.projects as any) || [];
-        const completedCount = projects.filter((p: any) => 
-          p.status === 'COMPLETED' || p.is_completed
-        ).length;
-        
-        return (
-          <div className="flex items-center justify-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">{completedCount}</span>
-          </div>
-        )
-      },
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium">{row.original.completed_projects || 0}</span>
+        </div>
+      ),
     },
     {
       id: "status",
@@ -845,7 +835,7 @@ export default function ChurchDepartmentsPage() {
               <CardContent className="overflow-hidden p-0">
                 <UseTable
                   columns={departmentColumns}
-                  data={departments}
+                  data={enrichedDepartments}
                   searchKey="name"
                   emptyEntityName={t.entity_name || "Church Departments"}
                   filters={[

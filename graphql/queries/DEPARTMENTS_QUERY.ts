@@ -16,6 +16,17 @@ export const GET_DEPARTMENTS_QUERY = gql`
       is_deleted
       deleted_at
       deleted_by
+      annual_budgets {
+        id
+        year
+        allocated_amount
+        total_expenses
+      }
+      users {
+        id
+        name
+        email
+      }
     }
   }
 `;
