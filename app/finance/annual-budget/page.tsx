@@ -75,9 +75,11 @@ import { DeleteBudgetModal } from "@/components/modals/annual-budget/delete-budg
 import { ConfirmationModal } from "@/components/shared/confirmation-modal"
 
 // GraphQL Hooks
-import { 
-  useCreateAnnualBudgetMutation,
-  useUpdateAnnualBudgetMutation,
+import {
+  useCreateInstitutionBudgetMutation,
+  useUpdateInstitutionBudgetMutation,
+  useCreateDepartmentBudgetMutation,
+  useUpdateDepartmentBudgetMutation,
   useDeleteAnnualBudgetMutation,
   useApproveAnnualBudgetMutation,
   useRejectAnnualBudgetMutation,
@@ -90,7 +92,6 @@ import {
   useBudgetDashboardData
 } from "@/hooks/graphql/use-annual-budget-queries"
 import { GetBudgetDashboardData_annualBudgets } from "@/types/GetBudgetDashboardData"
-import { AnnualBudgetEntityType, AnnualBudgetPriority, AnnualBudgetCategory } from "@/types/globalTypes"
 
 /**
  * PÁGINA DE GESTÃO DE ORÇAMENTO ANUAL
@@ -110,12 +111,14 @@ export default function AnnualBudgetPage() {
   }
   
   // GraphQL mutations
-  const [createAnnualBudgetMutation, { loading: creatingBudget }] = useCreateAnnualBudgetMutation()
-  const [updateAnnualBudgetMutation, { loading: updatingBudget }] = useUpdateAnnualBudgetMutation()
-  const [deleteAnnualBudgetMutation, { loading: deletingBudget }] = useDeleteAnnualBudgetMutation()
-  const [approveAnnualBudgetMutation, { loading: approvingBudget }] = useApproveAnnualBudgetMutation()
-  const [rejectAnnualBudgetMutation, { loading: rejectingBudget }] = useRejectAnnualBudgetMutation()
-  const [requestRevisionAnnualBudgetMutation, { loading: requestingRevision }] = useRequestRevisionAnnualBudgetMutation()
+  const [createInstitutionBudgetMutation] = useCreateInstitutionBudgetMutation()
+  const [updateInstitutionBudgetMutation] = useUpdateInstitutionBudgetMutation()
+  const [createDepartmentBudgetMutation] = useCreateDepartmentBudgetMutation()
+  const [updateDepartmentBudgetMutation] = useUpdateDepartmentBudgetMutation()
+  const [deleteAnnualBudgetMutation] = useDeleteAnnualBudgetMutation()
+  const [approveAnnualBudgetMutation] = useApproveAnnualBudgetMutation()
+  const [rejectAnnualBudgetMutation] = useRejectAnnualBudgetMutation()
+  const [requestRevisionAnnualBudgetMutation] = useRequestRevisionAnnualBudgetMutation()
   const [toggleBudgetLockMutation, { loading: togglingLock }] = useToggleBudgetLockMutation()
   
   const [isLoading, setIsLoading] = useState(false)
@@ -409,10 +412,12 @@ export default function AnnualBudgetPage() {
           }
         )
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error toggling institution budget lock:', error)
       toast.dismiss(loadingToast)
-      toast.error(t('annual_budget.messages.lock_error'), {
+      // Extract actual error message from GraphQL error
+      const errorMessage = error?.graphQLErrors?.[0]?.message || error?.message || t('annual_budget.messages.lock_error')
+      toast.error(errorMessage, {
         id: `institution-lock-error-${institutionBudget.id}`,
         duration: 3000
       })
@@ -726,9 +731,11 @@ export default function AnnualBudgetPage() {
         await handleRefresh()
         toast.success(t('annual_budget.messages.approve_success'))
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error approving budget:', error)
-      toast.error(t('annual_budget.messages.approve_error'))
+      // Extract actual error message from GraphQL error
+      const errorMessage = error?.graphQLErrors?.[0]?.message || error?.message || t('annual_budget.messages.approve_error')
+      toast.error(errorMessage)
     } finally {
       setOperationInProgress(false)
     }
@@ -751,9 +758,11 @@ export default function AnnualBudgetPage() {
         await handleRefresh()
         toast.success(t('annual_budget.messages.reject_success'))
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error rejecting budget:', error)
-      toast.error(t('annual_budget.messages.reject_error'))
+      // Extract actual error message from GraphQL error
+      const errorMessage = error?.graphQLErrors?.[0]?.message || error?.message || t('annual_budget.messages.reject_error')
+      toast.error(errorMessage)
     } finally {
       setOperationInProgress(false)
     }
@@ -773,9 +782,11 @@ export default function AnnualBudgetPage() {
         await handleRefresh()
         toast.success(t('annual_budget.messages.revision_success'))
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error requesting revision:', error)
-      toast.error(t('annual_budget.messages.revision_error'))
+      // Extract actual error message from GraphQL error
+      const errorMessage = error?.graphQLErrors?.[0]?.message || error?.message || t('annual_budget.messages.revision_error')
+      toast.error(errorMessage)
     }
   }
 
@@ -804,9 +815,11 @@ export default function AnnualBudgetPage() {
           duration: 2000
         })
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error toggling budget lock:', error)
-      toast.error(t('annual_budget.messages.lock_error'), {
+      // Extract actual error message from GraphQL error
+      const errorMessage = error?.graphQLErrors?.[0]?.message || error?.message || t('annual_budget.messages.lock_error')
+      toast.error(errorMessage, {
         id: `budget-lock-error-${requestId}`,
         duration: 3000
       })
@@ -826,59 +839,65 @@ export default function AnnualBudgetPage() {
         await handleRefresh()
         toast.success(t('annual_budget.messages.delete_success'))
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting budget:', error)
-      toast.error(t('annual_budget.messages.delete_error'))
+      // Extract actual error message from GraphQL error
+      const errorMessage = error?.graphQLErrors?.[0]?.message || error?.message || t('annual_budget.messages.delete_error')
+      toast.error(errorMessage)
     }
   }
 
   const handleDepartmentBudgetSave = async (budget: AnnualBudgetData, departmentData: any) => {
     try {
       if (budget.id) {
-        // Update existing budget
-        const result = await updateAnnualBudgetMutation({
+        // Update existing department budget
+        const result = await updateDepartmentBudgetMutation({
           variables: {
             id: budget.id,
             data: {
               planned_budget: budget.planned_budget,
               total_expenses: budget.total_expenses,
+              allocated_amount: budget.allocated_amount,
               description: `Updated budget for ${departmentData.departmentName}`,
               justification: budget.notes || `Updated budget allocation`,
               notes: budget.notes,
             }
           }
         })
-        if (result.data?.updateAnnualBudget) {
+        if (result.data?.updateDepartmentBudget) {
           await handleRefresh()
           toast.success(t('annual_budget.messages.department_budget_updated'))
           setIsViewEditModalOpen(false)
           setSelectedDepartmentData(null)
         }
       } else {
-        // Create new budget
-        const result = await createAnnualBudgetMutation({
+        // Create new department budget
+        const result = await createDepartmentBudgetMutation({
           variables: {
-            year: budget.year,
-            planned_budget: budget.planned_budget,
-            total_expenses: budget.total_expenses || 0,
-            description: `Budget for ${departmentData.departmentName}`,
-            justification: budget.notes || `Annual budget allocation for ${departmentData.departmentName}`,
-            allocated_amount: budget.allocated_amount,
-            entity_type: AnnualBudgetEntityType.INSTITUTION_DEPARTMENT,
-            entity_id: departmentData.departmentId,
-            notes: budget.notes,
+            data: {
+              department_id: departmentData.departmentId,
+              year: budget.year,
+              planned_budget: budget.planned_budget,
+              total_expenses: budget.total_expenses || 0,
+              allocated_amount: budget.allocated_amount || 0,
+              description: `Budget for ${departmentData.departmentName}`,
+              justification: budget.notes || `Annual budget allocation for ${departmentData.departmentName}`,
+              notes: budget.notes,
+            }
           }
         })
-        if (result.data?.createAnnualBudget) {
+        if (result.data?.createDepartmentBudget) {
           await handleRefresh()
           toast.success(t('annual_budget.messages.department_budget_created', { departmentName: departmentData.departmentName }))
           setIsViewEditModalOpen(false)
           setSelectedDepartmentData(null)
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving department budget:', error)
-      toast.error(t('annual_budget.messages.department_budget_save_failed'))
+      // Extract actual error message from GraphQL error
+      const errorMessage = error?.graphQLErrors?.[0]?.message || error?.message || t('annual_budget.messages.department_budget_save_failed')
+      toast.error(errorMessage)
     }
   }
 
@@ -890,28 +909,31 @@ export default function AnnualBudgetPage() {
       planned_budget: budget.planned_budget
     })
     try {
-      const result = await createAnnualBudgetMutation({
+      const result = await createInstitutionBudgetMutation({
         variables: {
-          year: budget.year,
-          planned_budget: budget.planned_budget,
-          total_expenses: budget.total_expenses || 0,
-          description: `Institution budget for ${budget.year}`,
-          justification: budget.notes || `Annual budget allocation for institution operations in ${budget.year}`,
-          allocated_amount: budget.allocated_amount || 0,
-          entity_type: AnnualBudgetEntityType.INSTITUTION,
-          entity_id: currentInstitutionData?.id || '',
-          notes: budget.notes,
+          data: {
+            institution_id: currentInstitutionData?.id || '',
+            year: budget.year,
+            planned_budget: budget.planned_budget,
+            total_expenses: budget.total_expenses || 0,
+            allocated_amount: budget.allocated_amount || 0,
+            description: `Institution budget for ${budget.year}`,
+            justification: budget.notes || `Annual budget allocation for institution operations in ${budget.year}`,
+            notes: budget.notes,
+          }
         }
       })
-      if (result.data?.createAnnualBudget) {
+      if (result.data?.createInstitutionBudget) {
         await handleRefresh()
         toast.success(t('annual_budget.messages.institution_budget_created', { year: budget.year }))
         setIsInstitutionBudgetModalOpen(false)
         setInstitutionBudgetData(null)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating institution budget:', error)
-      toast.error(t('annual_budget.messages.institution_budget_create_failed'))
+      // Extract actual error message from GraphQL error
+      const errorMessage = error?.graphQLErrors?.[0]?.message || error?.message || t('annual_budget.messages.institution_budget_create_failed')
+      toast.error(errorMessage)
     }
   }
 
@@ -922,7 +944,7 @@ export default function AnnualBudgetPage() {
     }
 
     try {
-      const result = await updateAnnualBudgetMutation({
+      const result = await updateInstitutionBudgetMutation({
         variables: {
           id: budget.id,
           data: {
@@ -931,22 +953,22 @@ export default function AnnualBudgetPage() {
             allocated_amount: budget.allocated_amount,
             description: `Updated budget for ${budget.year}`,
             justification: budget.notes || `Updated budget allocation`,
-            priority: selectedRequest?.priority as any,
-            category: selectedRequest?.category as any,
             notes: budget.notes,
           }
         }
       })
-      if (result.data?.updateAnnualBudget) {
+      if (result.data?.updateInstitutionBudget) {
         await handleRefresh()
         toast.success(t('annual_budget.messages.budget_updated'))
         setIsInstitutionBudgetModalOpen(false)
         setInstitutionBudgetData(null)
         setSelectedRequest(null)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating budget:', error)
-      toast.error(t('annual_budget.messages.budget_update_failed'))
+      // Extract actual error message from GraphQL error
+      const errorMessage = error?.graphQLErrors?.[0]?.message || error?.message || t('annual_budget.messages.budget_update_failed')
+      toast.error(errorMessage)
     }
   }
 
