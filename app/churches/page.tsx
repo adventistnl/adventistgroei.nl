@@ -65,6 +65,7 @@ import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName, AnnualBudgetEntityType } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
 import { ChurchType as ChurchTypeEnum } from "@/types/graphql-global-types"
+import { useChurchActivityTimeline } from "@/hooks/use-church-activity-timeline"
 // Dados reais de igrejas virão do contexto da instituição
 
 // Timeline de solicitações de subsídio por igreja
@@ -81,6 +82,15 @@ export default function ChurchesPage() {
   const activeChurches = React.useMemo(() => churches.filter((church: any) => !church.is_deleted), [churches]);
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+
+  // Fetch church activity timeline from backend
+  const {
+    activityData: churchActivityTimelineData,
+    loading: activityTimelineLoading
+  } = useChurchActivityTimeline({
+    institution_id: currentInstitutionData?.id,
+    selectedYear: new Date().getFullYear()
+  })
   
   // View mode states - controla se está na lista ou em detalhes
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
@@ -384,18 +394,19 @@ export default function ChurchesPage() {
 
   // Dados para gráficos - agora vindos do backend via KPI
   const chartData = useMemo(() => {
-    // Se há dados de atividade do backend, usar esses
-    if (currentInstitutionData?.churchesActivityData && currentInstitutionData.churchesActivityData.length > 0) {
-      return {
-        churchActivities: transformBackendActivityData(currentInstitutionData.churchesActivityData),
-        membersByChurch: generateChurchListChartData(activeChurches).membersByChurch,
-        projectsByChurch: generateChurchListChartData(activeChurches).projectsByChurch
-      };
-    }
-    
-    // Fallback para cálculo local se dados do backend não disponíveis
-    return generateChurchListChartData(activeChurches);
-  }, [activeChurches, currentInstitutionData?.churchesActivityData]);
+    // Use church activity timeline data from backend if available
+    const churchActivities = churchActivityTimelineData && churchActivityTimelineData.length > 0
+      ? churchActivityTimelineData
+      : (currentInstitutionData?.churchesActivityData && currentInstitutionData.churchesActivityData.length > 0
+          ? transformBackendActivityData(currentInstitutionData.churchesActivityData)
+          : generateChurchListChartData(activeChurches).churchActivities);
+
+    return {
+      churchActivities,
+      membersByChurch: generateChurchListChartData(activeChurches).membersByChurch,
+      projectsByChurch: generateChurchListChartData(activeChurches).projectsByChurch
+    };
+  }, [activeChurches, currentInstitutionData?.churchesActivityData, churchActivityTimelineData]);
 
   /**
    * Carregamento inicial dos dados
@@ -1219,7 +1230,7 @@ export default function ChurchesPage() {
             <div className="space-y-6">
           <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
             {/* Chart 1: Church Activities & Projects Timeline - Area Chart with Gradients */}
-            <ChurchActivityChart data={chartData.churchActivities} loading={false} />
+            <ChurchActivityChart data={chartData.churchActivities} loading={activityTimelineLoading} />
 
             {/* Chart 2: Members by Church - Horizontal Bar Chart */}
             <MembersByChurchChart data={chartData.membersByChurch} loading={false} />
