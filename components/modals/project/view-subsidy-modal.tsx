@@ -67,6 +67,11 @@ export function ViewSubsidyModal({
   onClose,
   subsidy
 }: ViewSubsidyModalProps) {
+  // Early return BEFORE any hooks to maintain consistent hook order
+  if (!isOpen || !subsidy) {
+    return null
+  }
+
   const { formatCurrency } = useCurrency()
   const { t, i18n } = useTranslation()
   const [selectedActivityIndex, setSelectedActivityIndex] = React.useState(0)
