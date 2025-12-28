@@ -102,28 +102,33 @@ const navMainBase: NavItem[] = [
   //   ],
   // },
 
-  {
-    title: "Reports & Projects",
-    url: "#",
-    icon: File,
-    items: [
-      { title: "Projects", url: "/projects", permissions: [PermissionResolverName.Projects] },
-      { title: "Reports", url: "/reports", permissions: [] },
-    ],
-     permissions: []
+  // {
+  //   title: "Reports & Projects",
+  //   url: "#",
+  //   icon: File,
+  //   items: [
+  //     { title: "Projects", url: "/projects", permissions: [PermissionResolverName.Projects] },
+  //     { title: "Reports", url: "/reports", permissions: [] },
+  //   ],
+  //    permissions: []
+  // },
+  { title: "Projects", 
+    url: "/projects", 
+    permissions: [PermissionResolverName.Projects] 
   },
-  {
-    title: "Events",
-    url: "/events",
-    icon: Calendar,
-    permissions: []
-  },
-    {
-      title: "Communications",
-      url: "/communications",
-      icon: MessageSquare,
-      permissions: [PermissionResolverName.Communications]
-    },
+
+  // {
+  //   title: "Events",
+  //   url: "/events",
+  //   icon: Calendar,
+  //   permissions: []
+  // },
+  //   {
+  //     title: "Communications",
+  //     url: "/communications",
+  //     icon: MessageSquare,
+  //     permissions: [PermissionResolverName.Communications]
+  //   },
     // {
     //   title: "Settings",
     //   url: "/settings",
