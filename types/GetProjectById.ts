@@ -28,11 +28,17 @@ export interface GetProjectById_project_Institution {
   name: string;
 }
 
-export interface GetProjectById_project_activities_owner {
+export interface GetProjectById_project_activities_assignees_user {
   __typename: "User";
   id: string;
   name: string;
   email: string;
+}
+
+export interface GetProjectById_project_activities_assignees {
+  __typename: "ProjectActivityAssignee";
+  id: string;
+  user: GetProjectById_project_activities_assignees_user;
 }
 
 export interface GetProjectById_project_activities_activity_funding {
@@ -51,16 +57,14 @@ export interface GetProjectById_project_activities {
   description: string;
   budget_amount: any;
   deadline: any;
-  owner_id: string;
   tags: ActivityTags[] | null;
   custom_tags: string[] | null;
-  activity_tag: ActivityTags | null;
   status: ActivityStatus;
   priority: ActivityPriority;
   is_subsidized: boolean;
   created_at: any;
   updated_at: any;
-  owner: GetProjectById_project_activities_owner;
+  assignees: GetProjectById_project_activities_assignees[] | null;
   activity_funding: GetProjectById_project_activities_activity_funding | null;
 }
 

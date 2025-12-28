@@ -157,6 +157,8 @@ export const GET_ANNUAL_BUDGET_KPIS = gql`
       planned
       approved
       reserved
+      spent
+      available
       institution
     }
 

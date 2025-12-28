@@ -134,20 +134,34 @@ export interface ActivityFundingUpdateDto {
   entity_id?: string | null;
 }
 
-export interface AnnualBudgetUpdateDto {
+export interface ApproveAnnualBudgetDto {
+  approved_amount?: number | null;
+  notes?: string | null;
+}
+
+export interface DepartmentBudgetCreateDto {
+  department_id: string;
+  year: number;
+  planned_budget: number;
+  total_expenses?: number | null;
+  allocated_amount?: number | null;
+  description?: string | null;
+  justification?: string | null;
+  priority?: AnnualBudgetPriority | null;
+  category?: AnnualBudgetCategory | null;
+  notes?: string | null;
+}
+
+export interface DepartmentBudgetUpdateDto {
   planned_budget?: number | null;
+  total_expenses?: number | null;
+  allocated_amount?: number | null;
   description?: string | null;
   justification?: string | null;
   priority?: AnnualBudgetPriority | null;
   category?: AnnualBudgetCategory | null;
   notes?: string | null;
   documents?: string[] | null;
-  total_expenses?: number | null;
-}
-
-export interface ApproveAnnualBudgetDto {
-  approved_amount?: number | null;
-  notes?: string | null;
 }
 
 export interface EventCreateDto {
@@ -160,12 +174,37 @@ export interface EventCreateDto {
   subscription_expires_at: string;
 }
 
+export interface InstitutionBudgetCreateDto {
+  institution_id: string;
+  year: number;
+  planned_budget: number;
+  total_expenses?: number | null;
+  allocated_amount?: number | null;
+  description?: string | null;
+  justification?: string | null;
+  priority?: AnnualBudgetPriority | null;
+  category?: AnnualBudgetCategory | null;
+  notes?: string | null;
+}
+
+export interface InstitutionBudgetUpdateDto {
+  planned_budget?: number | null;
+  total_expenses?: number | null;
+  allocated_amount?: number | null;
+  description?: string | null;
+  justification?: string | null;
+  priority?: AnnualBudgetPriority | null;
+  category?: AnnualBudgetCategory | null;
+  notes?: string | null;
+  documents?: string[] | null;
+}
+
 export interface ProjectActivityCreateDto {
   name: string;
   description: string;
   budget_amount: number;
   deadline: string;
-  owner_id: string;
+  assignee_ids?: string[] | null;
   tags: ActivityTags[];
   custom_tags?: string[] | null;
   status?: ActivityStatus | null;
@@ -180,7 +219,7 @@ export interface ProjectActivityCreateWithoutProjectDto {
   description: string;
   budget_amount: number;
   deadline: string;
-  owner_id: string;
+  assignee_ids?: string[] | null;
   tags: ActivityTags[];
   custom_tags?: string[] | null;
   status?: ActivityStatus | null;
@@ -195,13 +234,12 @@ export interface ProjectActivityUpdateDto {
   description?: string | null;
   budget_amount?: number | null;
   deadline?: string | null;
-  owner_id?: string | null;
+  assignee_ids?: string[] | null;
   tags?: ActivityTags[] | null;
   custom_tags?: string[] | null;
   status?: ActivityStatus | null;
   priority?: ActivityPriority | null;
   is_subsidized?: boolean | null;
-  activity_tag?: ActivityTags | null;
   activity_funding?: ActivityFundingUpdateDto | null;
 }
 

@@ -26,6 +26,8 @@ export interface GetAnnualBudgetKPIs_departmentSpending {
   planned: number;
   approved: number;
   reserved: number;
+  spent: number;
+  available: number;
   institution: string;
 }
 

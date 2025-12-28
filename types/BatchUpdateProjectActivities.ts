@@ -9,11 +9,17 @@ import { ActivityStatus, ActivityPriority, ActivityTags } from "./globalTypes";
 // GraphQL mutation operation: BatchUpdateProjectActivities
 // ====================================================
 
-export interface BatchUpdateProjectActivities_batchUpdateProjectActivities_owner {
+export interface BatchUpdateProjectActivities_batchUpdateProjectActivities_assignees_user {
   __typename: "User";
   id: string;
   name: string;
   email: string;
+}
+
+export interface BatchUpdateProjectActivities_batchUpdateProjectActivities_assignees {
+  __typename: "ProjectActivityAssignee";
+  id: string;
+  user: BatchUpdateProjectActivities_batchUpdateProjectActivities_assignees_user;
 }
 
 export interface BatchUpdateProjectActivities_batchUpdateProjectActivities {
@@ -26,10 +32,9 @@ export interface BatchUpdateProjectActivities_batchUpdateProjectActivities {
   status: ActivityStatus;
   priority: ActivityPriority;
   tags: ActivityTags[] | null;
-  activity_tag: ActivityTags | null;
   is_subsidized: boolean;
   updated_at: any;
-  owner: BatchUpdateProjectActivities_batchUpdateProjectActivities_owner;
+  assignees: BatchUpdateProjectActivities_batchUpdateProjectActivities_assignees[] | null;
 }
 
 export interface BatchUpdateProjectActivities {
@@ -40,6 +45,5 @@ export interface BatchUpdateProjectActivitiesVariables {
   ids: string[];
   status?: ActivityStatus | null;
   priority?: ActivityPriority | null;
-  activity_tag?: ActivityTags | null;
   is_subsidized?: boolean | null;
 }
