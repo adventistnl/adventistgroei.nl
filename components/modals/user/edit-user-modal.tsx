@@ -165,6 +165,36 @@ export function EditUserModal({
         genderValue = 'female';
       }
 
+      // Detect if user belongs to a department (same logic as getDepartmentInfo in users page)
+      let userDepartmentId = '';
+      let hasUserDepartment = false;
+      let isInstitutionalDept = false;
+      let departmentTabValue: 'church' | 'institutional' = 'church';
+
+      // Check church departments
+      const churchDepartment = allChurchesData
+        .flatMap(church => church.departments || [])
+        .find(dept => dept.users?.some(u => u.id === user.id));
+
+      if (churchDepartment) {
+        userDepartmentId = churchDepartment.id;
+        hasUserDepartment = true;
+        isInstitutionalDept = false;
+        departmentTabValue = 'church';
+      } else {
+        // Check institutional departments
+        const institutionalDepartment = allInstitutionDepartments.find(dept =>
+          dept.users?.some(u => u.id === user.id)
+        );
+
+        if (institutionalDepartment) {
+          userDepartmentId = institutionalDepartment.id;
+          hasUserDepartment = true;
+          isInstitutionalDept = true;
+          departmentTabValue = 'institutional';
+        }
+      }
+
       setUserForm({
         id: user.id,
         name: user.name,
@@ -172,15 +202,15 @@ export function EditUserModal({
         language_preference: user.language_preference,
         institution_id: user.institution_id,
         church_id: user.church?.id || '',
-        department_id: '',
+        department_id: userDepartmentId,
         role_ids: user.user_roles?.map((role) => role.role.id) || [],
         is_active: !user.is_deleted,
-        has_department: false,
-        is_institutional_department: false,
+        has_department: hasUserDepartment,
+        is_institutional_department: isInstitutionalDept,
         gender: genderValue
       });
 
-      setDepartmentTab('church');
+      setDepartmentTab(departmentTabValue);
 
       const userRoleIds = user.user_roles?.map((role) => role.role.id) || [];
       setSelectedRoles(userRoleIds);
@@ -188,7 +218,7 @@ export function EditUserModal({
       setCurrentStep(1);
       setErrors({});
     }
-  }, [user, roles, isOpen])
+  }, [user, roles, isOpen, allChurchesData, allInstitutionDepartments])
 
   // Filter churches and departments based on selected institution
   const filteredChurches = useMemo(() => 
