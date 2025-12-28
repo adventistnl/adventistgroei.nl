@@ -87,7 +87,7 @@ export function ViewSubsidyModal({
   const chatInputRef = React.useRef<HTMLInputElement>(null)
 
   // Mock data para demonstração - em produção virá do backend
-  const mockActivities: ActivityItem[] = React.useMemo(() => {
+  const mockActivities = React.useMemo<ActivityItem[]>(() => {
     if (!subsidy) return []
     
     return [
@@ -134,7 +134,7 @@ export function ViewSubsidyModal({
     ]
   }, [subsidy])
 
-  const mockHistory: StatusHistoryItem[] = React.useMemo(() => {
+  const mockHistory = React.useMemo<StatusHistoryItem[]>(() => {
     if (!subsidy) return []
     
     const history: StatusHistoryItem[] = [
