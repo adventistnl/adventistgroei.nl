@@ -415,8 +415,14 @@ export default function AnnualBudgetPage() {
     } catch (error: any) {
       console.error('Error toggling institution budget lock:', error)
       toast.dismiss(loadingToast)
-      // Extract actual error message from GraphQL error
-      const errorMessage = error?.graphQLErrors?.[0]?.message || error?.message || t('annual_budget.messages.lock_error')
+      // Extract actual error message from multiple possible error sources
+      const errorMessage =
+        error?.graphQLErrors?.[0]?.message ||
+        error?.networkError?.result?.errors?.[0]?.message ||
+        error?.networkError?.message ||
+        error?.message ||
+        t('annual_budget.messages.lock_error')
+
       toast.error(errorMessage, {
         id: `institution-lock-error-${institutionBudget.id}`,
         duration: 3000
@@ -733,8 +739,14 @@ export default function AnnualBudgetPage() {
       }
     } catch (error: any) {
       console.error('Error approving budget:', error)
-      // Extract actual error message from GraphQL error
-      const errorMessage = error?.graphQLErrors?.[0]?.message || error?.message || t('annual_budget.messages.approve_error')
+      // Extract actual error message from multiple possible error sources
+      const errorMessage =
+        error?.graphQLErrors?.[0]?.message ||
+        error?.networkError?.result?.errors?.[0]?.message ||
+        error?.networkError?.message ||
+        error?.message ||
+        t('annual_budget.messages.approve_error')
+
       toast.error(errorMessage)
     } finally {
       setOperationInProgress(false)
@@ -760,8 +772,14 @@ export default function AnnualBudgetPage() {
       }
     } catch (error: any) {
       console.error('Error rejecting budget:', error)
-      // Extract actual error message from GraphQL error
-      const errorMessage = error?.graphQLErrors?.[0]?.message || error?.message || t('annual_budget.messages.reject_error')
+      // Extract actual error message from multiple possible error sources
+      const errorMessage =
+        error?.graphQLErrors?.[0]?.message ||
+        error?.networkError?.result?.errors?.[0]?.message ||
+        error?.networkError?.message ||
+        error?.message ||
+        t('annual_budget.messages.reject_error')
+
       toast.error(errorMessage)
     } finally {
       setOperationInProgress(false)
@@ -784,8 +802,14 @@ export default function AnnualBudgetPage() {
       }
     } catch (error: any) {
       console.error('Error requesting revision:', error)
-      // Extract actual error message from GraphQL error
-      const errorMessage = error?.graphQLErrors?.[0]?.message || error?.message || t('annual_budget.messages.revision_error')
+      // Extract actual error message from multiple possible error sources
+      const errorMessage =
+        error?.graphQLErrors?.[0]?.message ||
+        error?.networkError?.result?.errors?.[0]?.message ||
+        error?.networkError?.message ||
+        error?.message ||
+        t('annual_budget.messages.revision_error')
+
       toast.error(errorMessage)
     }
   }
@@ -817,8 +841,14 @@ export default function AnnualBudgetPage() {
       }
     } catch (error: any) {
       console.error('Error toggling budget lock:', error)
-      // Extract actual error message from GraphQL error
-      const errorMessage = error?.graphQLErrors?.[0]?.message || error?.message || t('annual_budget.messages.lock_error')
+      // Extract actual error message from multiple possible error sources
+      const errorMessage =
+        error?.graphQLErrors?.[0]?.message ||
+        error?.networkError?.result?.errors?.[0]?.message ||
+        error?.networkError?.message ||
+        error?.message ||
+        t('annual_budget.messages.lock_error')
+
       toast.error(errorMessage, {
         id: `budget-lock-error-${requestId}`,
         duration: 3000
@@ -841,8 +871,14 @@ export default function AnnualBudgetPage() {
       }
     } catch (error: any) {
       console.error('Error deleting budget:', error)
-      // Extract actual error message from GraphQL error
-      const errorMessage = error?.graphQLErrors?.[0]?.message || error?.message || t('annual_budget.messages.delete_error')
+      // Extract actual error message from multiple possible error sources
+      const errorMessage =
+        error?.graphQLErrors?.[0]?.message ||
+        error?.networkError?.result?.errors?.[0]?.message ||
+        error?.networkError?.message ||
+        error?.message ||
+        t('annual_budget.messages.delete_error')
+
       toast.error(errorMessage)
     }
   }
@@ -895,8 +931,14 @@ export default function AnnualBudgetPage() {
       }
     } catch (error: any) {
       console.error('Error saving department budget:', error)
-      // Extract actual error message from GraphQL error
-      const errorMessage = error?.graphQLErrors?.[0]?.message || error?.message || t('annual_budget.messages.department_budget_save_failed')
+      // Extract actual error message from multiple possible error sources
+      const errorMessage =
+        error?.graphQLErrors?.[0]?.message ||
+        error?.networkError?.result?.errors?.[0]?.message ||
+        error?.networkError?.message ||
+        error?.message ||
+        t('annual_budget.messages.department_budget_save_failed')
+
       toast.error(errorMessage)
     }
   }
@@ -931,8 +973,14 @@ export default function AnnualBudgetPage() {
       }
     } catch (error: any) {
       console.error('Error creating institution budget:', error)
-      // Extract actual error message from GraphQL error
-      const errorMessage = error?.graphQLErrors?.[0]?.message || error?.message || t('annual_budget.messages.institution_budget_create_failed')
+      // Extract actual error message from multiple possible error sources
+      const errorMessage =
+        error?.graphQLErrors?.[0]?.message ||
+        error?.networkError?.result?.errors?.[0]?.message ||
+        error?.networkError?.message ||
+        error?.message ||
+        t('annual_budget.messages.institution_budget_create_failed')
+
       toast.error(errorMessage)
     }
   }
@@ -966,8 +1014,14 @@ export default function AnnualBudgetPage() {
       }
     } catch (error: any) {
       console.error('Error updating budget:', error)
-      // Extract actual error message from GraphQL error
-      const errorMessage = error?.graphQLErrors?.[0]?.message || error?.message || t('annual_budget.messages.budget_update_failed')
+      // Extract actual error message from multiple possible error sources
+      const errorMessage =
+        error?.graphQLErrors?.[0]?.message ||
+        error?.networkError?.result?.errors?.[0]?.message ||
+        error?.networkError?.message ||
+        error?.message ||
+        t('annual_budget.messages.budget_update_failed')
+
       toast.error(errorMessage)
     }
   }
