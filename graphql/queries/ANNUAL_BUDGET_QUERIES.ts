@@ -181,3 +181,16 @@ export const GET_ANNUAL_BUDGET_KPIS = gql`
     }
   }
 `;
+
+export const GET_INSTITUTIONAL_DEPARTMENTS_KPIS = gql`
+  query GetInstitutionalDepartmentsKPIs($year: Int!, $institutionId: String!) {
+    institutionalDepartmentsKPIs(year: $year, institutionId: $institutionId) {
+      totalPlanned
+      totalAllocated
+      totalSpent
+      totalAvailable
+      totalDepartments
+      departmentsWithBudget
+    }
+  }
+`;
