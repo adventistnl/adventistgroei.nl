@@ -37,6 +37,8 @@ interface DepartmentData {
   planned: number
   approved: number
   reserved: number
+  spent: number
+  available: number
   institution: string
 }
 
@@ -81,18 +83,15 @@ export function DepartmentSpendingChart({ data, currency }: DepartmentSpendingCh
   // Transform data to stacked format
   const chartData = useMemo(() => {
     return data.map(dept => {
-      // reserved field actually contains total_expenses (spent amount)
-      const spent = dept.reserved // reserved = total_expenses from backend
-      // Calculate true reserved: approved - spent (if approved exists)
-      const reserved = dept.approved > 0 ? Math.max(0, dept.approved - spent) : 0
-      // Available = planned - spent (what hasn't been used yet)
-      const available = Math.max(0, dept.planned - spent)
-      
+      // All values come directly from backend now:
+      // - spent = total_expenses (money already used)
+      // - reserved = allocated_amount (money set aside but not spent yet)
+      // - available = balance (not allocated yet)
       return {
         department: dept.name,
-        spent: spent,
-        reserved: reserved,
-        available: available,
+        spent: dept.spent,
+        reserved: dept.reserved,
+        available: dept.available,
         total: dept.planned
       }
     })

@@ -16,7 +16,6 @@ export interface CreateProject_createProject_activities {
   description: string;
   budget_amount: any;
   deadline: any;
-  owner_id: string;
   tags: ActivityTags[] | null;
   created_at: any;
   updated_at: any;

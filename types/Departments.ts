@@ -7,6 +7,21 @@
 // GraphQL query operation: Departments
 // ====================================================
 
+export interface Departments_departments_annual_budgets {
+  __typename: "AnnualBudget";
+  id: string;
+  year: number;
+  allocated_amount: any;
+  total_expenses: any;
+}
+
+export interface Departments_departments_users {
+  __typename: "User";
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface Departments_departments {
   __typename: "Department";
   id: string;
@@ -22,6 +37,8 @@ export interface Departments_departments {
   is_deleted: boolean;
   deleted_at: any | null;
   deleted_by: string | null;
+  annual_budgets: Departments_departments_annual_budgets[] | null;
+  users: Departments_departments_users[] | null;
 }
 
 export interface Departments {
