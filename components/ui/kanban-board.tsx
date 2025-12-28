@@ -3,24 +3,15 @@
 import React, { useState, ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { StatusBadge } from "@/components/ui/status-badge"
-import { 
-  Plus, 
-  MoreHorizontal,
-  Save,
-  X
-} from "lucide-react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Plus } from "lucide-react"
 import { CreateFundingPolicyGroupModal } from "@/components/modals/funding-policy-group"
 import toast from "react-hot-toast"
+import { KanbanCard } from "./kanban-card"
+import { KanbanGroupHeader } from "./kanban-group-header"
+import { KanbanEmptyState } from "./kanban-empty-state"
+import { KanbanSavePanel } from "./kanban-save-panel"
 
 // Generic interfaces for the Kanban board
 export interface KanbanGroup {
@@ -275,144 +266,42 @@ export function KanbanBoard({
 
   // Default item renderer
   const defaultRenderItem = (item: KanbanItem, group: KanbanGroup) => {
-    const IconComponent = item.icon
-    const groupActions = actions.filter(action => action.showInItem)
-    
     return (
-      <Card 
+      <KanbanCard
         key={item.id}
-        className={`relative w-full p-3 border hover:border-foreground/20 transition-all duration-200 bg-card/50 ${
-          enableDragDrop ? 'cursor-grab active:cursor-grabbing hover:shadow-sm' : ''
-        } ${draggingItemId === item.id ? 'opacity-50 scale-95' : ''}`}
-        draggable={enableDragDrop}
-        onDragStart={(e) => handleDragStart(e, item)}
+        item={item}
+        group={group}
+        actions={actions}
+        isDragging={draggingItemId === item.id}
+        enableDragDrop={enableDragDrop}
+        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-2 flex-1 min-w-0">
-            {IconComponent && (
-              <IconComponent className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-            )}
-            <div className="flex-1 min-w-0 space-y-1.5">
-              <h4 className="font-medium text-sm leading-tight line-clamp-2">{item.title}</h4>
-              
-              {item.metadata?.type && (
-                <StatusBadge 
-                  label={item.metadata.type}
-                  variant="neutral"
-                  size="sm"
-                />
-              )}
-            </div>
-          </div>
-          
-          {groupActions.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0">
-                  <MoreHorizontal className="w-3.5 h-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {groupActions.map((action) => (
-                  <DropdownMenuItem 
-                    key={action.id}
-                    onClick={() => action.onClick(group, item)}
-                    className={action.variant === 'destructive' ? 'text-destructive' : ''}
-                  >
-                    <action.icon className="w-4 h-4 mr-2" />
-                    {action.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-      </Card>
+      />
     )
   }
 
   // Default group header renderer
   const defaultRenderGroupHeader = (group: KanbanGroup) => {
     const groupItems = itemsByGroup[group.id] || []
-    const groupActions = actions.filter(action => action.showInGroup)
     
     return (
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div 
-            className="w-2 h-2 rounded-full flex-shrink-0" 
-            style={{ backgroundColor: group.color }}
-          />
-          <CardTitle className="text-base font-semibold truncate">{group.name}</CardTitle>
-          <StatusBadge 
-            label={`${groupItems.length}`}
-            variant="neutral"
-            size="sm"
-            className="flex-shrink-0"
-          />
-        </div>
-        
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {group.active !== false && (
-            <StatusBadge 
-              label="Active"
-              variant="success"
-              showDot
-              size="sm"
-            />
-          )}
-          
-          {groupActions.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {groupActions.map((action) => (
-                  <DropdownMenuItem 
-                    key={action.id}
-                    onClick={() => action.onClick(group)}
-                    className={action.variant === 'destructive' ? 'text-destructive' : ''}
-                  >
-                    <action.icon className="w-4 h-4 mr-2" />
-                    {action.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-      </div>
+      <KanbanGroupHeader
+        group={group}
+        itemCount={groupItems.length}
+        actions={actions}
+      />
     )
   }
 
   // Default empty group renderer
   const defaultRenderEmptyGroup = (group: KanbanGroup) => {
-    const addItemAction = actions.find(action => action.showInGroup && action.label.toLowerCase().includes('add'))
-    
     return (
-      <div className={`text-center py-6 text-muted-foreground transition-all duration-200 ${
-        dragOverGroupId === group.id ? 'text-foreground border-2 border-dashed rounded-lg' : ''
-      }`}>
-        <p className="text-xs">
-          {dragOverGroupId === group.id && draggingItemId ? t('kanban.dropItemHere') : t('kanban.noItemsYet')}
-        </p>
-        
-        {!draggingItemId && addItemAction && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="mt-2 h-7 text-xs"
-            onClick={() => addItemAction.onClick(group)}
-          >
-            <Plus className="w-3 h-3 mr-1" />
-            {t('kanban.addFirstItem')}
-          </Button>
-        )}
-      </div>
+      <KanbanEmptyState
+        group={group}
+        actions={actions}
+        isDragOver={dragOverGroupId === group.id}
+        isDragging={!!draggingItemId}
+      />
     )
   }
 
@@ -471,54 +360,13 @@ export function KanbanBoard({
 
   return (
     <div className={`kanban-board ${className}`}>
-      {/* Pending Changes Notification - Fixed Position */}
-      {pendingChanges.length > 0 && (
-        <div className="fixed bottom-6 right-6 z-50">
-          <Card className="shadow-xl border-2 border-primary/20">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
-                  <div className="text-sm">
-                    <span className="font-semibold">{pendingChanges.length}</span>
-                    <span className="text-muted-foreground ml-1">
-                      unsaved change{pendingChanges.length !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDiscardChanges}
-                    disabled={isSaving}
-                  >
-                    <X className="w-4 h-4 mr-1" />
-                    Discard
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleSaveChanges}
-                    disabled={isSaving}
-                  >
-                    {isSaving ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4 mr-1" />
-                        Save Changes
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {/* Save Panel */}
+      <KanbanSavePanel
+        pendingChangesCount={pendingChanges.length}
+        isSaving={isSaving}
+        onSave={handleSaveChanges}
+        onDiscard={handleDiscardChanges}
+      />
       
       {/* Main container - contained within viewport */}
       <div 
@@ -605,3 +453,5 @@ export function KanbanBoard({
 }
 
 export default KanbanBoard
+ 
+                         
