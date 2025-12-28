@@ -37,8 +37,9 @@ import { CurrencyConfig, formatCurrency } from "@/types/currency"
 
 interface BudgetDistributionData {
   total: number
+  spent: number
   allocated: number
-  remaining: number
+  available: number
   percentageUsed: number
 }
 
@@ -46,12 +47,6 @@ interface BudgetDistributionChartProps {
   data: BudgetDistributionData
   year: number
   currency: CurrencyConfig
-  entityDistribution?: Array<{
-    name: string
-    amount: number
-    percentage: number
-    count: number
-  }>
 }
 
 // Department/Entity data for Pie Chart
@@ -63,13 +58,17 @@ interface EntityBudgetData {
 }
 
 const chartConfig = {
+  spent: {
+    label: "Spent (Used)",
+    color: "hsl(0, 84%, 60%)", // Red for spent
+  },
   allocated: {
     label: "Allocated",
-    color: "hsl(0, 84%, 60%)", // Red for allocated (already spent)
+    color: "hsl(48, 96%, 53%)", // Yellow for allocated
   },
-  remaining: {
-    label: "Remaining",
-    color: "hsl(142, 71%, 45%)", // Green for remaining (available)
+  available: {
+    label: "Available",
+    color: "hsl(142, 71%, 45%)", // Green for available
   },
 }
 
@@ -78,64 +77,45 @@ const PRIVACY_CONFIG = createPrivacyConfig(
   'FINANCIAL_DATA' // Uses DEV, ADMIN, FINANCE_MANAGER automatically
 )
 
-// Dynamic red gradient generator
-const generateRedGradient = (count: number): string[] => {
-  if (count === 0) return []
-  if (count === 1) return ["hsl(0, 75%, 50%)"]
-  
-  // Generate gradient from dark red to light red
-  const colors: string[] = []
-  for (let i = 0; i < count; i++) {
-    // Lightness from 30% (darkest) to 75% (lightest)
-    // Saturation from 70% (rich) to 90% (vibrant)
-    const lightness = 30 + (45 * i) / (count - 1)
-    const saturation = 70 + (20 * i) / (count - 1)
-    colors.push(`hsl(0, ${saturation.toFixed(0)}%, ${lightness.toFixed(0)}%)`)
-  }
-  
-  return colors
-}
-
-export function BudgetDistributionChart({ data, year, currency, entityDistribution = [] }: BudgetDistributionChartProps) {
-  console.log("Entity Distribution Data:", data, entityDistribution)
+export function BudgetDistributionChart({ data, year, currency }: BudgetDistributionChartProps) {
   const { t } = useTranslation()
   const [chartType, setChartType] = useState<"radial" | "pie">("radial")
   const { isHidden } = useComponentPrivacy(PRIVACY_CONFIG)
   
-  // Build PIE chart data from real department data
+  // Build PIE chart data - shows the same 3 categories as radial chart
   const pieChartData = useMemo(() => {
     const chartItems: EntityBudgetData[] = []
-    
-    // Add department budgets (allocated amounts)
-    if (entityDistribution && entityDistribution.length > 0) {
-      // Generate colors for departments
-      const redGradient = generateRedGradient(entityDistribution.length)
-      
-      // Map departments to chart format with proper colors
-      const departmentItems = entityDistribution
-        .map((entity, index) => ({
-          name: entity.name, // Keep original department name
-          amount: entity.amount,
-          percentage: entity.percentage,
-          fill: redGradient[index] || "hsl(0, 75%, 50%)",
-        }))
-        .filter(item => item.amount > 0)
-        .sort((a, b) => b.amount - a.amount) // Sort by amount descending
-      
-      chartItems.push(...departmentItems)
+
+    // Add Spent (if > 0)
+    if (data.spent > 0) {
+      chartItems.push({
+        name: "Spent (Used)",
+        amount: data.spent,
+        percentage: Math.round((data.spent / data.total) * 100),
+        fill: "hsl(0, 84%, 60%)", // Red for spent
+      })
     }
-    
-    // Add "Available" budget as the last item (only if there's remaining budget)
-    if (data.remaining > 0) {
-      const remainingItem: EntityBudgetData = {
+
+    // Add Allocated (if > 0)
+    if (data.allocated > 0) {
+      chartItems.push({
+        name: "Allocated (Reserved)",
+        amount: data.allocated,
+        percentage: Math.round((data.allocated / data.total) * 100),
+        fill: "hsl(48, 96%, 53%)", // Yellow for allocated
+      })
+    }
+
+    // Add Available (if > 0)
+    if (data.available > 0) {
+      chartItems.push({
         name: "Available",
-        amount: data.remaining,
-        percentage: Math.round((data.remaining / data.total) * 100),
-        fill: "hsl(142, 71%, 45%)", // Static green for available budget
-      }
-      chartItems.push(remainingItem)
+        amount: data.available,
+        percentage: Math.round((data.available / data.total) * 100),
+        fill: "hsl(142, 71%, 45%)", // Green for available
+      })
     }
-    
+
     // If no items, show placeholder
     if (chartItems.length === 0) {
       return [{
@@ -145,9 +125,9 @@ export function BudgetDistributionChart({ data, year, currency, entityDistributi
         fill: "hsl(0, 0%, 80%)",
       }]
     }
-    
+
     return chartItems
-  }, [entityDistribution, data.remaining, data.total])
+  }, [data.spent, data.allocated, data.available, data.total])
 
   const [activeEntity, setActiveEntity] = useState<string>("")
 
@@ -273,8 +253,9 @@ export function BudgetDistributionChart({ data, year, currency, entityDistributi
                   data={[
                     {
                       name: 'Budget',
+                      spent: data.spent,
                       allocated: data.allocated,
-                      remaining: data.remaining
+                      available: data.available
                     }
                   ]}
                   endAngle={180}
@@ -295,7 +276,7 @@ export function BudgetDistributionChart({ data, year, currency, entityDistributi
                       content={({ viewBox }) => {
                         if (viewBox && "cx" in viewBox && "cy" in viewBox) {
                           const percentage = data.percentageUsed
-                          
+
                           return (
                             <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle">
                               <tspan
@@ -317,7 +298,7 @@ export function BudgetDistributionChart({ data, year, currency, entityDistributi
                                 y={(viewBox.cy || 0) + 20}
                                 className="fill-muted-foreground text-xs font-medium"
                               >
-                                {formatCurrency(data.allocated, currency, { compact: true })} / {formatCurrency(data.total, currency, { compact: true })}
+                                {formatCurrency(data.spent + data.allocated, currency, { compact: true })} / {formatCurrency(data.total, currency, { compact: true })}
                               </tspan>
                             </text>
                           )
@@ -326,6 +307,13 @@ export function BudgetDistributionChart({ data, year, currency, entityDistributi
                     />
                   </PolarRadiusAxis>
                   <RadialBar
+                    dataKey="spent"
+                    stackId="a"
+                    cornerRadius={5}
+                    fill="var(--color-spent)"
+                    className="stroke-transparent stroke-2"
+                  />
+                  <RadialBar
                     dataKey="allocated"
                     stackId="a"
                     cornerRadius={5}
@@ -333,8 +321,8 @@ export function BudgetDistributionChart({ data, year, currency, entityDistributi
                     className="stroke-transparent stroke-2"
                   />
                   <RadialBar
-                    dataKey="remaining"
-                    fill="var(--color-remaining)"
+                    dataKey="available"
+                    fill="var(--color-available)"
                     stackId="a"
                     cornerRadius={5}
                     className="stroke-transparent stroke-2"
@@ -434,20 +422,29 @@ export function BudgetDistributionChart({ data, year, currency, entityDistributi
               <>
                 <div className="w-full flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-[hsl(348,83%,47%)]" />
-                    <span className="text-muted-foreground">Allocated to Departments</span>
+                    <div className="w-2 h-2 rounded-full bg-[hsl(0,84%,60%)]" />
+                    <span className="text-muted-foreground">Spent (Used)</span>
                   </div>
                   <span className="font-medium text-red-600">
+                    {formatCurrency(data.spent, currency)}
+                  </span>
+                </div>
+                <div className="w-full flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-[hsl(48,96%,53%)]" />
+                    <span className="text-muted-foreground">Allocated (Reserved)</span>
+                  </div>
+                  <span className="font-medium text-yellow-600">
                     {formatCurrency(data.allocated, currency)}
                   </span>
                 </div>
                 <div className="w-full flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-[hsl(142,71%,45%)]" />
-                    <span className="text-muted-foreground">Available Budget</span>
+                    <span className="text-muted-foreground">Available</span>
                   </div>
                   <span className="font-medium text-green-600">
-                    {formatCurrency(data.remaining, currency)}
+                    {formatCurrency(data.available, currency)}
                   </span>
                 </div>
               </>

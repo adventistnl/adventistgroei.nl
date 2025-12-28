@@ -174,8 +174,9 @@ export const GET_ANNUAL_BUDGET_KPIS = gql`
 
     budgetDistribution(year: $year, institutionId: $institutionId) {
       total
+      spent
       allocated
-      remaining
+      available
       percentageUsed
     }
   }
