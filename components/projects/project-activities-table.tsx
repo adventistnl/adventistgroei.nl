@@ -329,7 +329,6 @@ export function ProjectActivitiesTable({
       default: return "default"
     }
   }
-
   const getPriorityLabel = (priority: string) => {
     const labels: Record<string, string> = {
       "urgent": "Urgente",
