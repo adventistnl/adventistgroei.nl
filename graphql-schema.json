@@ -12412,6 +12412,22 @@
             "deprecationReason": null
           },
           {
+            "name": "current_year_budget",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Float",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "has_budget_record",
             "description": null,
             "args": [],
@@ -16668,6 +16684,22 @@
             "deprecationReason": null
           },
           {
+            "name": "spent",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Float",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "allocated",
             "description": null,
             "args": [],
@@ -16684,7 +16716,7 @@
             "deprecationReason": null
           },
           {
-            "name": "remaining",
+            "name": "available",
             "description": null,
             "args": [],
             "type": {

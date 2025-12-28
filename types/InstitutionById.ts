@@ -660,6 +660,7 @@ export interface InstitutionById_institution {
   departments_count: number;
   users_count: number;
   total_budget: number;
+  current_year_budget: number;
   has_budget_record: boolean;
   contact: InstitutionById_institution_contact | null;
   annual_budgets: InstitutionById_institution_annual_budgets[];

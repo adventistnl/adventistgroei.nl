@@ -487,8 +487,9 @@ export type BoolFilter = {
 export type BudgetDistribution = {
   __typename?: 'BudgetDistribution';
   allocated: Scalars['Float']['output'];
+  available: Scalars['Float']['output'];
   percentageUsed: Scalars['Float']['output'];
-  remaining: Scalars['Float']['output'];
+  spent: Scalars['Float']['output'];
   total: Scalars['Float']['output'];
 };
 
@@ -1776,6 +1777,7 @@ export type Institution = {
   contact_id?: Maybe<Scalars['String']['output']>;
   created_at: Scalars['DateTime']['output'];
   created_by: Scalars['String']['output'];
+  current_year_budget: Scalars['Float']['output'];
   deleted_at?: Maybe<Scalars['DateTime']['output']>;
   deleted_by?: Maybe<Scalars['String']['output']>;
   denomination: Scalars['String']['output'];
