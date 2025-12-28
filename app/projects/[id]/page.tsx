@@ -12,7 +12,10 @@ import { ProjectSubsidiesTable, SubsidyRequestData, ActivityData } from "@/compo
 import { SubsidyRequestsContainer } from "@/components/projects/subsidy-requests-container"
 import { SubsidyRequestCardData } from "@/components/projects/subsidy-request-card"
 import { SubsidyActivityChart } from "@/components/projects/charts/subsidy-activity-chart"
+import { CommunicationsContainer } from "@/components/projects/communications-container"
+import { CommunicationCardData } from "@/components/projects/communication-card"
 import { GridContainer } from "@/components/shared/grid-container"
+import { KPICards } from "@/components/shared/kpi-cards-carousel"
 import { EditProjectModal } from "@/components/modals/project/edit-project-modal"
 import { CreateEventModal, EventFormData } from "@/components/modals/project/create-event-modal"
 import { CreateCommunicationModal, CommunicationFormData } from "@/components/modals/project/create-communication-modal"
@@ -32,10 +35,35 @@ import { BatchEditActivitiesModal, BatchEditData } from "@/components/modals/pro
 import { BatchEditField } from "@/components/shared/inline-batch-editor"
 import { RequestSubsidyModal, SubsidyRequestData as SubsidyRequestFormData } from "@/components/modals/project/request-subsidy-modal"
 import { SelectActivitiesModal } from "@/components/modals/project/select-activities-modal"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
 
 import { ProjectTableData } from "@/components/projects/projects-table"
 import { projectTranslations } from "@/lib/translations/projects"
 import { Button } from "@/components/ui/button"
+import { 
+  DollarSign, 
+  CheckCircle, 
+  Activity, 
+  Calendar,
+  Target,
+  TrendingUp 
+} from "lucide-react"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
 import { useQuery, useMutation } from "@apollo/client"
@@ -100,6 +128,8 @@ export default function ProjectDetailsPage() {
   const [project, setProject] = useState<ProjectTableData | null>(null)
   const [selectedActivities, setSelectedActivities] = useState<ProjectActivityData[]>([])
   const [subsidyRequests, setSubsidyRequests] = useState<SubsidyRequestCardData[]>([])
+  const [communications, setCommunications] = useState<CommunicationCardData[]>([])
+  const [activeTab, setActiveTab] = useState<"subsidies" | "communications">("subsidies")
   
   // Batch editing state
   const [batchEditData, setBatchEditData] = useState({
@@ -135,6 +165,7 @@ export default function ProjectDetailsPage() {
   const [isRegisterActivityModalOpen, setIsRegisterActivityModalOpen] = useState(false)
   const [isRequestSubsidyModalOpen, setIsRequestSubsidyModalOpen] = useState(false)
   const [isSelectActivitiesModalOpen, setIsSelectActivitiesModalOpen] = useState(false)
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false)
   const [selectedReceipt, setSelectedReceipt] = useState<any>(undefined)
   
   // Selected items for modals
@@ -278,8 +309,35 @@ export default function ProjectDetailsPage() {
         }))
         setSubsidyRequests(transformedSubsidies)
       }
+
+      // Mock communications data (TODO: Replace with real data from backend)
+      const mockCommunications: CommunicationCardData[] = [
+        {
+          id: "comm-1",
+          title: "Atualização do Projeto",
+          content: "O projeto está progredindo conforme planejado. Todas as atividades estão em dia.",
+          type: "update",
+          priority: "medium",
+          status: "published",
+          published_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+          author_name: user?.name || "Sistema",
+          recipients_count: 5
+        },
+        {
+          id: "comm-2",
+          title: "Reunião Agendada",
+          content: "Próxima reunião de acompanhamento agendada para discutir o progresso e próximos passos.",
+          type: "announcement",
+          priority: "high",
+          status: "scheduled",
+          schedule_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+          author_name: user?.name || "Sistema",
+          recipients_count: 8
+        }
+      ]
+      setCommunications(mockCommunications)
     }
-  }, [projectData])
+  }, [projectData, user])
 
   // Get all project activities - transform backend data to match ProjectActivityData interface
   const allProjectActivities = useMemo(() => {
@@ -332,6 +390,131 @@ export default function ProjectDetailsPage() {
       }
     }) as ProjectActivityData[]
   }, [projectData, projectId])
+
+  // Transform users data for UsersAvatarGroup
+  const projectUsers = useMemo(() => {
+    if (!usersData?.users) return []
+    
+    // Get unique users from activities
+    const activityOwners = allProjectActivities
+      .filter(activity => activity.owner)
+      .map(activity => ({
+        id: activity.owner!.id,
+        name: activity.owner!.name,
+        email: activity.owner!.email,
+      }))
+    
+    // Remove duplicates by id
+    const uniqueUsers = Array.from(
+      new Map(activityOwners.map(user => [user.id, user])).values()
+    )
+    
+    return uniqueUsers.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: 'Colaborador',
+    }))
+  }, [usersData, allProjectActivities])
+
+  // Calculate project KPIs
+  const projectKPIs = useMemo(() => {
+    if (!projectData?.project) return null
+
+    const activities = allProjectActivities
+    const totalActivities = activities.length
+    const completedActivities = activities.filter(a => a.status === 'completed').length
+    const inProgressActivities = activities.filter(a => a.status === 'in_progress').length
+    const subsidizedActivities = activities.filter(a => a.is_subsidized).length
+    
+    const totalBudgetActivities = activities.reduce((sum, a) => sum + a.budget_amount, 0)
+    const completionRate = totalActivities > 0 ? Math.round((completedActivities / totalActivities) * 100) : 0
+    const subsidyRate = totalActivities > 0 ? Math.round((subsidizedActivities / totalActivities) * 100) : 0
+    
+    // Calculate days until project end
+    const now = new Date()
+    const endDate = new Date(project?.end_at || '')
+    const daysRemaining = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    
+    // Calculate budget utilization
+    const projectBudget = Number(project?.budget || 0)
+    const budgetUtilization = projectBudget > 0 ? Math.round((totalBudgetActivities / projectBudget) * 100) : 0
+
+    return [
+      {
+        id: "total-activities",
+        title: "Total de Atividades",
+        value: totalActivities.toString(),
+        subtitle: `${completedActivities} concluídas | ${inProgressActivities} em andamento`,
+        trend: {
+          value: completionRate,
+          isPositive: completionRate > 50,
+          label: `${completionRate}% concluídas`
+        },
+        icon: Activity,
+      },
+      {
+        id: "project-budget",
+        title: "Orçamento do Projeto",
+        value: `R$ ${(projectBudget / 1000).toFixed(1)}K`,
+        subtitle: `R$ ${(totalBudgetActivities / 1000).toFixed(1)}K alocado em atividades`,
+        trend: {
+          value: budgetUtilization,
+          isPositive: budgetUtilization <= 100,
+          label: `${budgetUtilization}% utilizado`
+        },
+        icon: DollarSign,
+      },
+      {
+        id: "completion-rate",
+        title: "Taxa de Conclusão",
+        value: `${completionRate}%`,
+        subtitle: `${completedActivities} de ${totalActivities} finalizadas`,
+        trend: {
+          value: completedActivities,
+          isPositive: completedActivities > 0,
+          label: "atividades completas"
+        },
+        icon: CheckCircle,
+      },
+      {
+        id: "subsidized-activities",
+        title: "Atividades Subsidiadas",
+        value: subsidizedActivities.toString(),
+        subtitle: `${subsidyRate}% do total de atividades`,
+        trend: {
+          value: subsidyRequests.length,
+          isPositive: subsidyRequests.length > 0,
+          label: `${subsidyRequests.length} pedidos de subsídio`
+        },
+        icon: Target,
+      },
+      {
+        id: "project-timeline",
+        title: daysRemaining > 0 ? "Prazo Restante" : "Projeto Finalizado",
+        value: daysRemaining > 0 ? `${daysRemaining} dias` : "Concluído",
+        subtitle: `Termina em ${endDate.toLocaleDateString('pt-BR')}`,
+        trend: {
+          value: Math.abs(daysRemaining),
+          isPositive: daysRemaining > 30,
+          label: daysRemaining > 0 ? "dias restantes" : "dias atrás"
+        },
+        icon: Calendar,
+      },
+      {
+        id: "subsidy-amount",
+        title: "Valor em Subsídios",
+        value: `R$ ${(subsidyRequests.reduce((sum, s) => sum + s.requested_amount, 0) / 1000).toFixed(1)}K`,
+        subtitle: `${subsidyRequests.length} solicitações enviadas`,
+        trend: {
+          value: subsidyRequests.filter(s => s.status === 'approved').length,
+          isPositive: true,
+          label: "aprovadas"
+        },
+        icon: TrendingUp,
+      },
+    ]
+  }, [projectData, allProjectActivities, project, subsidyRequests])
 
 
   usePageTitle({
@@ -769,6 +952,74 @@ export default function ProjectDetailsPage() {
     // The modal handles the redirection internally
   }
 
+  // Add user to project handler
+  const handleAddUser = () => {
+    setIsAddUserModalOpen(true)
+  }
+
+  const handleUserSelect = async (user: any) => {
+    try {
+      // TODO: Implement GraphQL mutation to add user to project
+      // For now, we'll just show a success message
+      toast.success(`✅ ${user.name} adicionado ao projeto com sucesso!`, {
+        duration: 3000
+      })
+      setIsAddUserModalOpen(false)
+      // Refetch project to update user list
+      refetchProject()
+    } catch (error) {
+      toast.error(`Erro ao adicionar usuário: ${error}`)
+      console.error('Error adding user to project:', error)
+    }
+  }
+
+  // Communication handlers
+  const handleAddCommunication = () => {
+    toast.success("✏️ Abrindo formulário de nova comunicação...", { duration: 2000 })
+    // TODO: Open communication creation modal
+  }
+
+  const handleViewCommunication = (id: string) => {
+    const comm = communications.find(c => c.id === id)
+    if (comm) {
+      toast.success(`👁️ Visualizando: ${comm.title}`, { duration: 2000 })
+      // TODO: Open communication view modal
+    }
+  }
+
+  const handleEditCommunication = (id: string) => {
+    const comm = communications.find(c => c.id === id)
+    if (comm) {
+      toast.success(`✏️ Editando: ${comm.title}`, { duration: 2000 })
+      // TODO: Open communication edit modal
+    }
+  }
+
+  const handleDeleteCommunication = (id: string) => {
+    const comm = communications.find(c => c.id === id)
+    if (comm) {
+      setCommunications(prev => prev.filter(c => c.id !== id))
+      toast.success(`🗑️ Comunicação excluída: ${comm.title}`, { duration: 3000 })
+      // TODO: Implement delete mutation
+    }
+  }
+
+  const handleDuplicateCommunication = (id: string) => {
+    const comm = communications.find(c => c.id === id)
+    if (comm) {
+      const duplicated: CommunicationCardData = {
+        ...comm,
+        id: `comm-${Date.now()}`,
+        title: `${comm.title} (Cópia)`,
+        status: "draft",
+        published_at: null,
+        schedule_at: null
+      }
+      setCommunications(prev => [...prev, duplicated])
+      toast.success(`📋 Comunicação duplicada: ${comm.title}`, { duration: 3000 })
+    }
+  }
+
   // Modal submit handlers
   const handleSubsidySubmit = (data: SubsidyFormData) => {
     // TODO: Implement subsidy creation API call
@@ -1133,41 +1384,119 @@ export default function ProjectDetailsPage() {
           onDelete={handleDeleteProject}
           onCreateEvent={handleCreateEvent}
           onCreateCommunication={handleCreateCommunication}
+          users={projectUsers}
+          onAddUser={handleAddUser}
         />
 
-        {/* Grid Container - Chart + Subsidy Cards */}
+        {/* KPI Cards */}
+        {projectKPIs && (
+          <KPICards 
+            data={projectKPIs}
+            isLoading={projectLoading}
+            minCardsForCarousel={4}
+            showCarousel={true}
+          />
+        )}
+
+        {/* Grid Container - Chart + Subsidy Cards OR Communications */}
         <GridContainer
-          items={[
-            {
-              id: "subsidy-chart",
-              component: (
-                <SubsidyActivityChart
-                  data={subsidyRequests}
-                  selectedYear={new Date().getFullYear()}
-                />
-              ),
-              colSpan: "col-span-12 lg:col-span-8",
-            },
-            {
-              id: "subsidy-cards",
-              component: (
-                <SubsidyRequestsContainer
-                  subsidies={subsidyRequests}
-                  onAddSubsidy={handleAddSubsidyFromContainer}
-                  onViewSubsidy={handleViewSubsidyCard}
-                  onEditSubsidy={handleEditSubsidyCard}
-                  onDeleteSubsidy={handleDeleteSubsidyCard}
-                  onDuplicateSubsidy={handleDuplicateSubsidyCard}
-                  description="Gerencie as solicitações de subsídio"
-                />
-              ),
-              colSpan: "col-span-12 lg:col-span-4",
-            },
-          ]}
+          items={
+            activeTab === "subsidies"
+              ? [
+                  {
+                    id: "subsidy-chart",
+                    component: (
+                      <SubsidyActivityChart
+                        data={subsidyRequests}
+                        selectedYear={new Date().getFullYear()}
+                      />
+                    ),
+                    colSpan: "col-span-12 lg:col-span-8",
+                  },
+                  {
+                    id: "subsidy-cards",
+                    component: (
+                      <>
+                        {/* Tabs - Subsídios e Comunicações */}
+
+                        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "subsidies" | "communications")} className="w-full">
+                          <TabsList className="grid w-full grid-cols-2 max-w-md">
+                            <TabsTrigger value="subsidies" className="gap-2">
+                              <DollarSign className="w-4 h-4" />
+                              Subsídios
+                            </TabsTrigger>
+                            <TabsTrigger value="communications" className="gap-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+                              Comunicações
+                            </TabsTrigger>
+                          </TabsList>
+                        </Tabs>
+
+                        <SubsidyRequestsContainer
+                          subsidies={subsidyRequests}
+                          onAddSubsidy={handleAddSubsidyFromContainer}
+                          onViewSubsidy={handleViewSubsidyCard}
+                          onEditSubsidy={handleEditSubsidyCard}
+                          onDeleteSubsidy={handleDeleteSubsidyCard}
+                          onDuplicateSubsidy={handleDuplicateSubsidyCard}
+                          description="Gerencie as solicitações de subsídio"
+                        />
+                      </>
+                 
+                    ),
+                    colSpan: "col-span-12 lg:col-span-4",
+                  },
+                ]
+              : [ 
+                  {
+                    id: "subsidy-chart",
+                    component: (
+                      <SubsidyActivityChart
+                        data={subsidyRequests}
+                        selectedYear={new Date().getFullYear()}
+                      />
+                    ),
+                    colSpan: "col-span-12 lg:col-span-8",
+                  },
+                  {
+                    id: "communications",
+                    component: (
+                      <>
+                           {/* Tabs - Subsídios e Comunicações */}
+                        
+                        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "subsidies" | "communications")} className="w-full">
+                          <TabsList className="grid w-full grid-cols-2 max-w-md">
+                            <TabsTrigger value="subsidies" className="gap-2">
+                              <DollarSign className="w-4 h-4" />
+                              Subsídios
+                            </TabsTrigger>
+                            <TabsTrigger value="communications" className="gap-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+                              Comunicações
+                            </TabsTrigger>
+                          </TabsList>
+                        </Tabs>
+
+                         <CommunicationsContainer
+                          communications={communications}
+                          onAddCommunication={handleAddCommunication}
+                          onViewCommunication={handleViewCommunication}
+                          onEditCommunication={handleEditCommunication}
+                          onDeleteCommunication={handleDeleteCommunication}
+                          onDuplicateCommunication={handleDuplicateCommunication}
+                          description="Comunicações do projeto"
+                        />
+                      </>
+                     
+                    ),
+                     colSpan: "col-span-12 lg:col-span-4",
+                  },
+                ]
+          }
           gap="lg"
         />
 
-        {/* Main Content Grid */}
+        {/* Main Content Grid - Project Activities */}
         <div className="grid grid-cols-12 gap-6">
           {/* Left Column - Activities (col-span-8) */}
           <div className="col-span-12 lg:col-span-12 space-y-6">
@@ -1406,6 +1735,68 @@ export default function ProjectDetailsPage() {
           description="Selecione as atividades subsidiadas que deseja incluir na solicitação de subsídio."
           filterSubsidized={true}
         />
+
+        {/* Add User Modal */}
+        <Dialog open={isAddUserModalOpen} onOpenChange={setIsAddUserModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Adicionar Usuário ao Projeto</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {/* Users List */}
+              <div className="max-h-[400px] overflow-y-auto space-y-1">
+                {usersData?.users && usersData.users.length > 0 ? (
+                  usersData.users
+                    .filter((user: any) => 
+                      !projectUsers.some(pu => pu.id === user.id)
+                    )
+                    .map((user: any) => {
+                      const userInitials = user.name
+                        .split(" ")
+                        .map((n: string) => n[0])
+                        .join("")
+                        .toUpperCase()
+                        .slice(0, 2)
+
+                      return (
+                        <button
+                          key={user.id}
+                          type="button"
+                          onClick={() => handleUserSelect(user)}
+                          className="w-full flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+                        >
+                          <Avatar className="h-10 w-10 border-2 border-background">
+                            <AvatarImage src={user.avatar} alt={user.name} />
+                            <AvatarFallback className="text-xs bg-gray-600 dark:bg-gray-700 text-white font-semibold">
+                              {userInitials}
+                            </AvatarFallback>
+                          </Avatar>
+
+                          <div className="flex-1 text-left min-w-0">
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                              {user.name}
+                            </p>
+                            {user.email && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                {user.email}
+                              </p>
+                            )}
+                          </div>
+                        </button>
+                      )
+                    })
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {usersLoading ? "Carregando usuários..." : "Nenhum usuário disponível"}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
       </div>
     </AppLayout>

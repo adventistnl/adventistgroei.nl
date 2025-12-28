@@ -111,7 +111,7 @@ export function MobileHeader() {
 
       {/* Desktop Header - Mantém o header original para desktop */}
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 hidden md:block">
-        <div className="w-full px-6 py-3">
+        <div className="w-full px-6 py-2">
           <div className="flex h-12 items-center justify-between gap-6">
             
             {/* Left Section - Breadcrumb & Sidebar Toggle */}

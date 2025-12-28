@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { StatusBadge, StatusBadgeVariant } from "@/components/ui/status-badge"
 import { UseTable } from "@/components/ui/use-table"
 import {
   Activity,
@@ -273,24 +274,49 @@ export function ProjectActivitiesTable({
     return "bg-gray-100 text-gray-800 border-gray-200"
   }
 
-  const getStatusIcon = (status: string) => {
+  const getStatusVariant = (status: string): StatusBadgeVariant => {
     const statusLower = status.toLowerCase()
     switch (statusLower) {
-      case "completed": return <CheckCircle className="w-4 h-4 text-gray-600" />
-      case "in_progress": return <Clock className="w-4 h-4 text-gray-600" />
+      case "completed": return "success"
+      case "in_progress": return "info"
       case "todo":
-      case "pending": return <AlertCircle className="w-4 h-4 text-gray-600" />
-      case "on_hold": return <Settings className="w-4 h-4 text-gray-600" />
-      default: return <Activity className="w-4 h-4 text-gray-600" />
+      case "pending": return "warning"
+      case "on_hold": return "neutral"
+      default: return "default"
     }
   }
 
-  const getStatusColor = () => {
-    return "bg-gray-100 text-gray-800 border-gray-200"
+  const getStatusIcon = (status: string) => {
+    const statusLower = status.toLowerCase()
+    switch (statusLower) {
+      case "completed": return CheckCircle
+      case "in_progress": return Clock
+      case "todo":
+      case "pending": return AlertCircle
+      case "on_hold": return Settings
+      default: return Activity
+    }
   }
 
-  const getPriorityColor = () => {
-    return "bg-gray-100 text-gray-800 border-gray-200"
+  const getPriorityVariant = (priority: string): StatusBadgeVariant => {
+    const priorityLower = priority.toLowerCase()
+    switch (priorityLower) {
+      case "urgent": return "error"
+      case "high": return "warning"
+      case "medium": return "info"
+      case "low": return "success"
+      default: return "default"
+    }
+  }
+
+  const getPriorityLabel = (priority: string) => {
+    const labels: Record<string, string> = {
+      "urgent": "Urgente",
+      "high": "Alta",
+      "medium": "Média",
+      "low": "Baixa"
+    }
+    return labels[priority.toLowerCase()] || priority
   }
 
   const formatCurrency = (amount: number) => {
@@ -375,10 +401,12 @@ export function ProjectActivitiesTable({
       accessorKey: "status",
       header: t('activities.table.status'),
       cell: ({ row }) => (
-        <Badge variant="outline" className={`${getStatusColor()} flex items-center gap-1 w-fit`}>
-          {getStatusIcon(row.original.status)}
-          <span>{getStatusLabel(row.original.status)}</span>
-        </Badge>
+        <StatusBadge
+          label={getStatusLabel(row.original.status)}
+          variant={getStatusVariant(row.original.status)}
+          icon={getStatusIcon(row.original.status)}
+          size="sm"
+        />
       ),
     },
     {
@@ -386,9 +414,12 @@ export function ProjectActivitiesTable({
       accessorKey: "priority",
       header: t('activities.table.priority'),
       cell: ({ row }) => (
-        <Badge variant="outline" className={`${getPriorityColor()} capitalize w-fit`}>
-          {row.original.priority}
-        </Badge>
+        <StatusBadge
+          label={getPriorityLabel(row.original.priority)}
+          variant={getPriorityVariant(row.original.priority)}
+          showDot={true}
+          size="sm"
+        />
       ),
     },
     {
