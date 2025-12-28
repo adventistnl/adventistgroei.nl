@@ -1544,6 +1544,7 @@ export default function ProjectDetailsPage() {
           onCreateEvent={handleCreateEvent}
           onCreateCommunication={handleCreateCommunication}
           users={projectUsers}
+
         />
 
         {/* KPI Cards */}

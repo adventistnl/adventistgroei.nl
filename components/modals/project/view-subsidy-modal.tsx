@@ -532,6 +532,8 @@ export function ViewSubsidyModal({
     })
   }, [messages, chatFilterActivity, activities])
 
+
+
   const getDocumentTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
       INVOICE: "Fatura",
