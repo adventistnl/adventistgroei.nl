@@ -9,11 +9,17 @@ import { ProjectActivityCreateDto, ActivityStatus, ActivityPriority, ActivityTag
 // GraphQL mutation operation: CreateProjectActivity
 // ====================================================
 
-export interface CreateProjectActivity_createProjectActivity_owner {
+export interface CreateProjectActivity_createProjectActivity_assignees_user {
   __typename: "User";
   id: string;
   name: string;
   email: string;
+}
+
+export interface CreateProjectActivity_createProjectActivity_assignees {
+  __typename: "ProjectActivityAssignee";
+  id: string;
+  user: CreateProjectActivity_createProjectActivity_assignees_user;
 }
 
 export interface CreateProjectActivity_createProjectActivity_activity_funding {
@@ -39,7 +45,7 @@ export interface CreateProjectActivity_createProjectActivity {
   is_subsidized: boolean;
   created_at: any;
   updated_at: any;
-  owner: CreateProjectActivity_createProjectActivity_owner;
+  assignees: CreateProjectActivity_createProjectActivity_assignees[] | null;
   activity_funding: CreateProjectActivity_createProjectActivity_activity_funding | null;
 }
 

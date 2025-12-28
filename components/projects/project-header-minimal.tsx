@@ -14,6 +14,7 @@ import {
   Sprout,
   Plus,
   DollarSign,
+  UserPlus,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -29,6 +30,7 @@ import { cn } from "@/lib/utils"
 import { projectTranslations } from "@/lib/translations/projects"
 import { ProjectTableData } from "@/components/projects/projects-table"
 import { mockDepartments } from "@/data/mockData"
+import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
 
 interface ProjectHeaderMinimalProps {
   project: ProjectTableData
@@ -58,6 +60,10 @@ interface ProjectHeaderMinimalProps {
     default_church_percent: number
     default_institution_percent: number
   }>
+  /** Users registered in the project */
+  users?: UserAvatarData[]
+  /** Callback when adding new users to the project */
+  onAddUser?: () => void
 }
 
 export function ProjectHeaderMinimal({
@@ -69,6 +75,8 @@ export function ProjectHeaderMinimal({
   variant = 'default',
   funding,
   fundingPolicies: fundingPoliciesProp,
+  users = [],
+  onAddUser,
 }: ProjectHeaderMinimalProps) {
   const router = useRouter()
   const { i18n } = useTranslation()
@@ -209,7 +217,23 @@ export function ProjectHeaderMinimal({
         </Avatar>
 
         <div className="flex-1 min-w-0">
-          <h1 className="text-3xl font-bold mb-1">{project.title}</h1>
+          {/* Title and Users Row */}
+          <div className="flex items-start justify-between gap-4 mb-1">
+            <h1 className="text-3xl font-bold flex-1">{project.title}</h1>
+            
+            {/* Users Avatar Group - Top Right */}
+            <div className="flex items-center gap-2">
+              <UsersAvatarGroup 
+                users={users}
+                maxDisplay={5}
+                size="md"
+                showLabel={true}
+                showAddButton={true}
+                onAddUser={onAddUser}
+              />
+            </div>
+          </div>
+          
           {project.description && (
             <p className="text-muted-foreground mb-3">{project.description}</p>
           )}

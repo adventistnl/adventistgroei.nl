@@ -16,6 +16,7 @@ export interface UploadActivityDocument_uploadActivityDocument {
   project_activity_id: string | null;
   file_url: string;
   drive_file_id: string | null;
+  filename: string;
   type: string;
   is_validated: boolean;
   uploaded_by: string;

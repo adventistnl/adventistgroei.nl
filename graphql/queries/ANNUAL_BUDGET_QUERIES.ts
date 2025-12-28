@@ -157,6 +157,8 @@ export const GET_ANNUAL_BUDGET_KPIS = gql`
       planned
       approved
       reserved
+      spent
+      available
       institution
     }
 
@@ -172,9 +174,23 @@ export const GET_ANNUAL_BUDGET_KPIS = gql`
 
     budgetDistribution(year: $year, institutionId: $institutionId) {
       total
+      spent
       allocated
-      remaining
+      available
       percentageUsed
+    }
+  }
+`;
+
+export const GET_INSTITUTIONAL_DEPARTMENTS_KPIS = gql`
+  query GetInstitutionalDepartmentsKPIs($year: Int!, $institutionId: String!) {
+    institutionalDepartmentsKPIs(year: $year, institutionId: $institutionId) {
+      totalPlanned
+      totalAllocated
+      totalSpent
+      totalAvailable
+      totalDepartments
+      departmentsWithBudget
     }
   }
 `;

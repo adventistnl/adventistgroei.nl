@@ -1,11 +1,21 @@
 "use client"
 
 import * as React from "react"
-import { X, FileText, Download, Clock, CheckCircle2, XCircle, AlertCircle, DollarSign, Building2, User, Calendar, ChevronLeft, ChevronRight, Send, Info, MessageCircle } from "lucide-react"
+import { X, FileText, Download, Clock, CheckCircle2, XCircle, AlertCircle, DollarSign, Building2, User, Calendar, ChevronLeft, ChevronRight, Send, Info, MessageCircle, Check, Ban, AtSign, Pencil, Trash2, Filter, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from "@/components/ui/dropdown-menu"
 import { useCurrency } from "@/contexts/currency-context"
 import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
@@ -13,6 +23,8 @@ import { ptBR } from "date-fns/locale"
 import { SubsidyRequestCardData } from "@/components/projects/subsidy-request-card"
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 interface ActivityItem {
   id: string
@@ -21,6 +33,7 @@ interface ActivityItem {
   requested_amount: number
   documents: DocumentItem[]
 }
+
 interface DocumentItem {
   id: string
   file_name: string
@@ -28,9 +41,22 @@ interface DocumentItem {
   document_type: "INVOICE" | "RECEIPT" | "CONTRACT" | "PROOF_OF_PAYMENT" | "OTHER"
   amount: number
   file_url: string
+  is_validated?: boolean
+  validated_by?: string
+  validated_at?: string
+  validation_note?: string
 }
 
 interface StatusHistoryItem {
+  id: string
+  status: "pending" | "in_review" | "approved" | "rejected"
+  reason: string
+  changed_by: string
+  changed_at: Date
+  isNew: boolean
+}
+
+interface ViewSubsidyModalProps {
   isOpen: boolean
   onClose: () => void
   subsidy: SubsidyRequestCardData | null
@@ -41,6 +67,11 @@ export function ViewSubsidyModal({
   onClose,
   subsidy
 }: ViewSubsidyModalProps) {
+  // Early return BEFORE any hooks to maintain consistent hook order
+  if (!isOpen || !subsidy) {
+    return null
+  }
+
   const { formatCurrency } = useCurrency()
   const { t, i18n } = useTranslation()
   const [selectedActivityIndex, setSelectedActivityIndex] = React.useState(0)
@@ -48,9 +79,20 @@ export function ViewSubsidyModal({
   const [newMessage, setNewMessage] = React.useState("")
   const [messages, setMessages] = React.useState<StatusHistoryItem[]>([])
   const messagesEndRef = React.useRef<HTMLDivElement>(null)
+  const [documentValidations, setDocumentValidations] = React.useState<Record<string, { note: string; isValid: boolean | null }>>({})
+  const [mentionMode, setMentionMode] = React.useState<string | null>(null)
+  const [commentingDocument, setCommentingDocument] = React.useState<{ id: string; name: string } | null>(null)
+  const [documentComment, setDocumentComment] = React.useState("")
+  const [editingMessage, setEditingMessage] = React.useState<string | null>(null)
+  const [chatFilterActivity, setChatFilterActivity] = React.useState<string | null>(null)
+  const [currentSubsidyStatus, setCurrentSubsidyStatus] = React.useState(subsidy?.status || "pending")
+  const [currentPriority, setCurrentPriority] = React.useState<"low" | "medium" | "high">("medium")
+  const [mentionStatus, setMentionStatus] = React.useState<"pending" | "in_review" | "approved" | "rejected" | null>(null)
+  const [mentionPriority, setMentionPriority] = React.useState<"low" | "medium" | "high" | null>(null)
+  const chatInputRef = React.useRef<HTMLInputElement>(null)
 
   // Mock data para demonstração - em produção virá do backend
-  const mockActivities: ActivityItem[] = React.useMemo(() => {
+  const mockActivities = React.useMemo<ActivityItem[]>(() => {
     if (!subsidy) return []
     
     return [
@@ -97,7 +139,7 @@ export function ViewSubsidyModal({
     ]
   }, [subsidy])
 
-  const mockHistory: StatusHistoryItem[] = React.useMemo(() => {
+  const mockHistory = React.useMemo<StatusHistoryItem[]>(() => {
     if (!subsidy) return []
     
     const history: StatusHistoryItem[] = [
@@ -164,13 +206,71 @@ export function ViewSubsidyModal({
     return messages.filter(m => m.isNew).length
   }, [messages])
 
+  // Focus input when entering comment or mention mode
+  React.useEffect(() => {
+    if (commentingDocument || mentionMode || editingMessage) {
+      chatInputRef.current?.focus()
+    }
+  }, [commentingDocument, mentionMode, editingMessage])
+
   const handleSendMessage = () => {
     if (!newMessage.trim()) return
 
+    // Handle editing existing message
+    if (editingMessage) {
+      setMessages(prev => prev.map(msg => 
+        msg.id === editingMessage 
+          ? { ...msg, reason: newMessage, changed_at: new Date() }
+          : msg
+      ))
+      toast.success("Comentário atualizado")
+      setEditingMessage(null)
+      setNewMessage("")
+      return
+    }
+
+    // Handle document comment
+    if (commentingDocument) {
+      const message: StatusHistoryItem = {
+        id: `msg-${Date.now()}`,
+        status: "in_review",
+        reason: `Comentário sobre documento "${commentingDocument.name}": ${newMessage}`,
+        changed_by: "Admin User",
+        changed_at: new Date(),
+        isNew: false
+      }
+      setMessages(prev => [...prev, message])
+      toast.success("Comentário adicionado")
+      setCommentingDocument(null)
+      setNewMessage("")
+      return
+    }
+
+    // Handle document rejection
+    if (mentionMode) {
+      handleValidateDocument(mentionMode, false)
+      return
+    }
+
+    // Handle regular message
+    let messageText = newMessage
+    
+    // Add status mention if present
+    if (mentionStatus) {
+      const statusLabel = statusConfig[mentionStatus].label
+      messageText = `@Status: ${statusLabel} - ${messageText}`
+    }
+    
+    // Add priority mention if present
+    if (mentionPriority) {
+      const priorityLabel = mentionPriority === 'high' ? 'Alta' : mentionPriority === 'medium' ? 'Média' : 'Baixa'
+      messageText = `@Prioridade: ${priorityLabel} - ${messageText}`
+    }
+    
     const message: StatusHistoryItem = {
       id: `msg-${Date.now()}`,
       status: subsidy?.status || "pending",
-      reason: newMessage,
+      reason: messageText,
       changed_by: "Você",
       changed_at: new Date(),
       isNew: false
@@ -178,7 +278,101 @@ export function ViewSubsidyModal({
 
     setMessages(prev => [...prev, message])
     setNewMessage("")
+    setMentionStatus(null)
+    setMentionPriority(null)
     toast.success("Mensagem enviada")
+  }
+
+  const handleDeleteMessage = (messageId: string) => {
+    setMessages(prev => prev.filter(msg => msg.id !== messageId))
+    toast.success("Comentário deletado")
+  }
+
+  const handleEditMessage = (message: StatusHistoryItem) => {
+    setEditingMessage(message.id)
+    setNewMessage(message.reason)
+    // Clear other modes
+    setCommentingDocument(null)
+    setMentionMode(null)
+  }
+
+  const handleValidateDocument = (docId: string, isValid: boolean) => {
+    // Buscar informações do documento
+    let docName = ''
+    for (const act of mockActivities) {
+      const doc = act.documents.find(d => d.id === docId)
+      if (doc) {
+        docName = doc.file_name
+        break
+      }
+    }
+
+    if (isValid) {
+      // Validação direta sem nota
+      const updatedActivities = mockActivities.map(act => ({
+        ...act,
+        documents: act.documents.map(doc => 
+          doc.id === docId 
+            ? { 
+                ...doc, 
+                is_validated: true,
+                validated_by: 'Admin User',
+                validated_at: new Date().toISOString()
+              } 
+            : doc
+        )
+      }))
+      
+      // Adicionar mensagem ao histórico
+      const approvalMessage: StatusHistoryItem = {
+        id: `msg-${Date.now()}`,
+        status: "in_review",
+        reason: `Documento "${docName}" foi validado e aprovado.`,
+        changed_by: "Admin User",
+        changed_at: new Date(),
+        isNew: false
+      }
+      setMessages(prev => [...prev, approvalMessage])
+      
+      toast.success("Documento validado com sucesso")
+      setMentionMode(null)
+    } else {
+      // Rejeição com nota obrigatória
+      if (!newMessage.trim()) {
+        toast.error("Adicione um motivo para a rejeição")
+        return
+      }
+      
+      const updatedActivities = mockActivities.map(act => ({
+        ...act,
+        documents: act.documents.map(doc => 
+          doc.id === docId 
+            ? { 
+                ...doc, 
+                is_validated: false,
+                validated_by: 'Admin User',
+                validated_at: new Date().toISOString(),
+                validation_note: newMessage
+              } 
+            : doc
+        )
+      }))
+      
+      // Adicionar mensagem ao histórico com motivo da rejeição
+      const rejectionMessage: StatusHistoryItem = {
+        id: `msg-${Date.now()}`,
+        status: "rejected",
+        reason: `Documento "${docName}" foi rejeitado. Motivo: ${newMessage}`,
+        changed_by: "Admin User",
+        changed_at: new Date(),
+        isNew: false
+      }
+      setMessages(prev => [...prev, rejectionMessage])
+      
+      toast.success("Documento rejeitado")
+      setMentionMode(null)
+      setNewMessage("")
+    }
   }
 
   if (!isOpen || !subsidy) return null
@@ -209,9 +403,33 @@ export function ViewSubsidyModal({
     },
   }
 
-  const currentStatus = statusConfig[subsidy.status]
+  const currentStatus = statusConfig[currentSubsidyStatus]
   const StatusIcon = currentStatus.icon
   const currentActivity = mockActivities[selectedActivityIndex]
+
+  // Helper function to get activity document status
+  const getActivityDocumentStatus = (activity: ActivityItem) => {
+    const docs = activity.documents
+    if (docs.length === 0) return 'none'
+    const allApproved = docs.every(d => d.is_validated === true)
+    const anyRejected = docs.some(d => d.is_validated === false)
+    const anyPending = docs.some(d => d.is_validated === undefined)
+    
+    if (allApproved) return 'approved'
+    if (anyRejected) return 'rejected'
+    if (anyPending) return 'pending'
+    return 'none'
+  }
+
+  // Filter messages by activity if filter is active
+  const filteredMessages = React.useMemo(() => {
+    if (!chatFilterActivity) return messages
+    return messages.filter(msg => {
+      // Check if message mentions the filtered activity
+      const activity = mockActivities.find(a => a.id === chatFilterActivity)
+      return activity && msg.reason.toLowerCase().includes(activity.name.toLowerCase())
+    })
+  }, [messages, chatFilterActivity, mockActivities])
 
   const getDocumentTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
@@ -249,36 +467,168 @@ export function ViewSubsidyModal({
         {/* Header - Minimalista */}
         <div className="border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3 flex-1">
+            <div className="flex items-center gap-3">
               <div>
                 <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
                   {subsidy.title}
                 </h2>
-                <div className="flex items-center gap-2 mt-1">
-                  <StatusIcon className={cn("w-3.5 h-3.5", currentStatus.className)} />
+                <div className="flex items-center gap-2 mt-1.5">
                   <span className="text-xs text-gray-600 dark:text-gray-400">
-                    {currentStatus.label}
-                  </span>
-                  <span className="text-xs text-gray-400 dark:text-gray-600">•</span>
-                  <span className="text-xs text-gray-600 dark:text-gray-400">
-                    {format(new Date(subsidy.requested_at), "dd/MM/yyyy", { locale: ptBR })}
+                    Solicitado em {format(new Date(subsidy.requested_at), "dd/MM/yyyy", { locale: ptBR })}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* KPIs - Canto Superior Direito */}
+            {/* KPIs + Dropdowns - Canto Superior Direito */}
             <TooltipProvider>
-              <div className="flex items-center gap-3 mr-4">
+              <div className="flex items-center gap-2">
+                {/* Status Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-auto p-0 hover:bg-transparent">
+                      <div className={cn(
+                        "flex items-center gap-2 px-3 py-2 rounded-md border cursor-pointer min-w-[140px] justify-between",
+                        currentSubsidyStatus === 'approved' && "bg-green-50 dark:bg-green-950/30 border-green-500",
+                        currentSubsidyStatus === 'rejected' && "bg-red-50 dark:bg-red-950/30 border-red-500",
+                        currentSubsidyStatus === 'in_review' && "bg-blue-50 dark:bg-blue-950/30 border-blue-500",
+                        currentSubsidyStatus === 'pending' && "bg-amber-50 dark:bg-amber-950/30 border-amber-500"
+                      )}>
+                        <div className="flex items-center gap-2">
+                          <StatusIcon className={cn(
+                            "w-4 h-4",
+                            currentSubsidyStatus === 'approved' && "text-green-600 dark:text-green-400",
+                            currentSubsidyStatus === 'rejected' && "text-red-600 dark:text-red-400",
+                            currentSubsidyStatus === 'in_review' && "text-blue-600 dark:text-blue-400",
+                            currentSubsidyStatus === 'pending' && "text-amber-600 dark:text-amber-400"
+                          )} />
+                          <span className={cn(
+                            "text-sm font-semibold",
+                            currentSubsidyStatus === 'approved' && "text-green-700 dark:text-green-400",
+                            currentSubsidyStatus === 'rejected' && "text-red-700 dark:text-red-400",
+                            currentSubsidyStatus === 'in_review' && "text-blue-700 dark:text-blue-400",
+                            currentSubsidyStatus === 'pending' && "text-amber-700 dark:text-amber-400"
+                          )}>
+                            {currentStatus.label}
+                          </span>
+                        </div>
+                        <ChevronDown className="w-3 h-3 text-gray-500" />
+                      </div>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuLabel>Alterar Status</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => {
+                      setCurrentSubsidyStatus('pending')
+                      setMentionStatus('pending')
+                      setNewMessage('Alteração de status para Pendente')
+                      chatInputRef.current?.focus()
+                      toast.success('Status alterado para Pendente')
+                    }}>
+                      <Clock className="mr-2 h-4 w-4 text-amber-500" />
+                      Pendente
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      setCurrentSubsidyStatus('in_review')
+                      setMentionStatus('in_review')
+                      setNewMessage('Alteração de status para Em Análise')
+                      chatInputRef.current?.focus()
+                      toast.success('Status alterado para Em Análise')
+                    }}>
+                      <AlertCircle className="mr-2 h-4 w-4 text-blue-500" />
+                      Em Análise
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      setCurrentSubsidyStatus('approved')
+                      setMentionStatus('approved')
+                      setNewMessage('Alteração de status para Aprovado')
+                      chatInputRef.current?.focus()
+                      toast.success('Status alterado para Aprovado')
+                    }}>
+                      <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
+                      Aprovado
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      setCurrentSubsidyStatus('rejected')
+                      setMentionStatus('rejected')
+                      setNewMessage('Alteração de status para Rejeitado')
+                      chatInputRef.current?.focus()
+                      toast.success('Status alterado para Rejeitado')
+                    }}>
+                      <XCircle className="mr-2 h-4 w-4 text-red-500" />
+                      Rejeitado
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                
+                {/* Priority Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-auto p-0 hover:bg-transparent">
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 cursor-pointer min-w-[140px] justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className={cn(
+                            "w-2 h-2 rounded-full",
+                            currentPriority === 'high' && "bg-red-500",
+                            currentPriority === 'medium' && "bg-yellow-500",
+                            currentPriority === 'low' && "bg-green-500"
+                          )} />
+                          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                            {currentPriority === 'high' && 'Alta'}
+                            {currentPriority === 'medium' && 'Média'}
+                            {currentPriority === 'low' && 'Baixa'}
+                          </span>
+                        </div>
+                        <ChevronDown className="w-3 h-3 text-gray-500" />
+                      </div>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuLabel>Alterar Prioridade</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => {
+                      setCurrentPriority('high')
+                      setMentionPriority('high')
+                      setNewMessage('Alteração de prioridade para Alta')
+                      chatInputRef.current?.focus()
+                      toast.success('Prioridade alterada para Alta')
+                    }}>
+                      <div className="w-2 h-2 rounded-full bg-red-500 mr-2" />
+                      Alta
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      setCurrentPriority('medium')
+                      setMentionPriority('medium')
+                      setNewMessage('Alteração de prioridade para Média')
+                      chatInputRef.current?.focus()
+                      toast.success('Prioridade alterada para Média')
+                    }}>
+                      <div className="w-2 h-2 rounded-full bg-yellow-500 mr-2" />
+                      Média
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      setCurrentPriority('low')
+                      setMentionPriority('low')
+                      setNewMessage('Alteração de prioridade para Baixa')
+                      chatInputRef.current?.focus()
+                      toast.success('Prioridade alterada para Baixa')
+                    }}>
+                      <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+                      Baixa
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
                 {/* Atividades */}
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 min-w-[140px]">
                       <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                         {mockActivities.length}
                       </span>
-                      <Info className="w-3 h-3 text-gray-400" />
+                      <Info className="w-3 h-3 text-gray-400 ml-auto" />
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -289,12 +639,12 @@ export function ViewSubsidyModal({
                 {/* Orçamento Total */}
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 min-w-[140px]">
                       <DollarSign className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                         {formatCurrency(mockActivities.reduce((sum, act) => sum + act.budget_amount, 0))}
                       </span>
-                      <Info className="w-3 h-3 text-gray-400" />
+                      <Info className="w-3 h-3 text-gray-400 ml-auto" />
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -305,12 +655,12 @@ export function ViewSubsidyModal({
                 {/* Valor Solicitado */}
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-gray-900 dark:border-gray-100 bg-gray-900 dark:bg-gray-100">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-gray-900 dark:border-gray-100 bg-gray-900 dark:bg-gray-100 min-w-[140px]">
                       <CheckCircle2 className="w-4 h-4 text-white dark:text-gray-900" />
                       <span className="text-sm font-semibold text-white dark:text-gray-900">
                         {formatCurrency(subsidy.requested_amount)}
                       </span>
-                      <Info className="w-3 h-3 text-gray-300 dark:text-gray-700" />
+                      <Info className="w-3 h-3 text-gray-300 dark:text-gray-700 ml-auto" />
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -348,17 +698,30 @@ export function ViewSubsidyModal({
               
               <div className="flex gap-2 overflow-x-auto pb-2">
                 {/* Botão de colapso do chat ao lado do cabeçalho de atividades */}
-                {mockActivities.map((activity, index) => (
+                {mockActivities.map((activity, index) => {
+                  const docStatus = getActivityDocumentStatus(activity)
+                  return (
                   <button
                     key={activity.id}
                     onClick={() => setSelectedActivityIndex(index)}
                     className={cn(
-                      "flex-shrink-0 px-4 py-2.5 rounded-md border text-left transition-all",
+                      "flex-shrink-0 px-4 py-2.5 rounded-md border text-left transition-all relative",
                       selectedActivityIndex === index
                         ? "border-gray-900 dark:border-gray-100 bg-gray-900 dark:bg-gray-100"
                         : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-700"
                     )}
                   >
+                    {/* Document Status Badge */}
+                    {docStatus !== 'none' && (
+                      <div className="absolute -top-1 -right-1">
+                        <div className={cn(
+                          "w-3 h-3 rounded-full border-2 border-white dark:border-gray-900",
+                          docStatus === 'approved' && "bg-green-500",
+                          docStatus === 'rejected' && "bg-red-500",
+                          docStatus === 'pending' && "bg-amber-500"
+                        )} />
+                      </div>
+                    )}
                     <p className={cn(
                       "text-xs font-medium truncate max-w-[180px]",
                       selectedActivityIndex === index
@@ -376,7 +739,7 @@ export function ViewSubsidyModal({
                       {formatCurrency(activity.requested_amount)}
                     </p>
                   </button>
-                ))}
+                )})}
               </div>
             </div>
 
@@ -420,39 +783,177 @@ export function ViewSubsidyModal({
                     </p>
                   ) : (
                     <div className="space-y-2">
-                      {currentActivity.documents.map((doc) => (
+                      {currentActivity.documents.map((doc) => {
+                        const validation = documentValidations[doc.id]
+                        const isInMentionMode = mentionMode === doc.id
+                        
+                        return (
                         <div
                           key={doc.id}
-                          className="flex items-center justify-between p-3 rounded-md bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-colors"
+                          className={cn(
+                            "group p-3 rounded-md transition-all border border-gray-200 dark:border-gray-800",
+                            doc.is_validated === true && "bg-green-50/30 dark:bg-green-950/5 border-l-4 border-l-green-500 dark:border-l-green-600",
+                            doc.is_validated === false && "bg-red-50/30 dark:bg-red-950/5 border-l-4 border-l-red-500 dark:border-l-red-600",
+                            doc.is_validated === undefined && "bg-gray-50 dark:bg-gray-800/50 border-l-4 border-l-amber-400 dark:border-l-amber-600 hover:border-l-amber-500 dark:hover:border-l-amber-500"
+                          )}
                         >
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                                {doc.file_name}
-                              </p>
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <FileText className={cn(
+                                "w-4 h-4",
+                                doc.is_validated === true && "text-green-600 dark:text-green-500",
+                                doc.is_validated === false && "text-red-600 dark:text-red-500",
+                                doc.is_validated === undefined && "text-amber-600 dark:text-amber-500"
+                              )} />
+                              <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                  {doc.file_name}
+                                </p>
+                                {/* Status Badge Minimalista */}
+                                {doc.is_validated === true && (
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-100 dark:bg-green-950/50 border-green-400 text-green-700 dark:text-green-400">
+                                    Aprovado
+                                  </Badge>
+                                )}
+                                {doc.is_validated === false && (
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-red-100 dark:bg-red-950/50 border-red-400 text-red-700 dark:text-red-400">
+                                    Rejeitado
+                                  </Badge>
+                                )}
+                                {doc.is_validated === undefined && (
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-100 dark:bg-amber-950/50 border-amber-400 text-amber-700 dark:text-amber-400">
+                                    Pendente
+                                  </Badge>
+                                )}
+                              </div>
                               <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                <span className={cn(
+                                  "text-xs",
+                                  doc.is_validated !== undefined && "opacity-60"
+                                )}>
                                   {getDocumentTypeLabel(doc.document_type)}
                                 </span>
                                 <span className="text-xs text-gray-400 dark:text-gray-600">•</span>
-                                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                <span className={cn(
+                                  "text-xs font-medium",
+                                  doc.is_validated === true && "text-green-700 dark:text-green-400",
+                                  doc.is_validated === false && "text-red-700 dark:text-red-400",
+                                  doc.is_validated === undefined && "text-gray-700 dark:text-gray-300"
+                                )}>
                                   {formatCurrency(doc.amount)}
                                 </span>
                               </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-1">
+                              {/* Finance Management Actions - Hidden by default, shown on hover */}
+                              <WithPermission requiredPermissions={[PermissionResolverName.Institutions]} partialPermissionCheck>
+                                {doc.is_validated === undefined && (
+                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => handleValidateDocument(doc.id, true)}
+                                          className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950/30"
+                                        >
+                                          <Check className="w-3.5 h-3.5" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top">
+                                        <p className="text-xs">Aprovar documento</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                    
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => {
+                                            setMentionMode(doc.id)
+                                            setNewMessage("")
+                                          }}
+                                          className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                        >
+                                          <Ban className="w-3.5 h-3.5" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top">
+                                        <p className="text-xs">Rejeitar documento</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                    
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => {
+                                            setCommentingDocument({ id: doc.id, name: doc.file_name })
+                                            setNewMessage("")
+                                          }}
+                                          className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                                        >
+                                          <MessageCircle className="w-3.5 h-3.5" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top">
+                                        <p className="text-xs">Adicionar comentário</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </div>
+                                )}
+                              </WithPermission>
+                              
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDownload(doc)}
+                                    disabled={doc.is_validated !== undefined}
+                                    className={cn(
+                                      "h-7 w-7 p-0",
+                                      doc.is_validated === undefined 
+                                        ? "text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                                        : "text-gray-400 dark:text-gray-600 opacity-50 cursor-not-allowed"
+                                    )}
+                                  >
+                                    <Download className="w-3.5 h-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  <p className="text-xs">{doc.is_validated !== undefined ? 'Download desabilitado' : 'Download documento'}</p>
+                                </TooltipContent>
+                              </Tooltip>
                             </div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDownload(doc)}
-                            className="h-8 gap-1.5 text-xs"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            Download
-                          </Button>
+                          
+                          {/* Validation note display only */}
+                          {doc.validation_note && (
+                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                              <div className="flex items-start gap-2 p-2 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                                <AtSign className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs text-amber-900 dark:text-amber-200">
+                                    {doc.validation_note}
+                                  </p>
+                                  {doc.validated_by && doc.validated_at && (
+                                    <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1">
+                                      Por {doc.validated_by} em {format(new Date(doc.validated_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      ))}
+                      )}
+                      )}
                     </div>
                   )}
                 </div>
@@ -481,37 +982,155 @@ export function ViewSubsidyModal({
                         </Badge>
                       )}
                     </div>
+                    
+                    {/* Activity Filter */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-7 px-2">
+                          <Filter className={cn(
+                            "h-3 w-3",
+                            chatFilterActivity && "text-blue-600 dark:text-blue-400"
+                          )} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Filtrar por Atividade</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setChatFilterActivity(null)}>
+                          <div className="flex items-center gap-2">
+                            {!chatFilterActivity && <Check className="h-3 w-3" />}
+                            <span className={!chatFilterActivity ? "font-semibold" : ""}>Todas</span>
+                          </div>
+                        </DropdownMenuItem>
+                        {mockActivities.map(activity => (
+                          <DropdownMenuItem key={activity.id} onClick={() => setChatFilterActivity(activity.id)}>
+                            <div className="flex items-center gap-2">
+                              {chatFilterActivity === activity.id && <Check className="h-3 w-3" />}
+                              <span className={chatFilterActivity === activity.id ? "font-semibold" : ""}>
+                                {activity.name}
+                              </span>
+                            </div>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
+                  
+                  {/* Active Filter Badge */}
+                  {chatFilterActivity && (
+                    <div className="mt-2">
+                      <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-950/30 border-blue-300 text-blue-700 dark:text-blue-400">
+                        <Filter className="w-3 h-3 mr-1" />
+                        {mockActivities.find(a => a.id === chatFilterActivity)?.name}
+                        <button onClick={() => setChatFilterActivity(null)} className="ml-1 hover:text-blue-900">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    </div>
+                  )}
                 </div>
 
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {messages.map((item, index) => {
-                    const itemConfig = statusConfig[item.status]
-                    const ItemIcon = itemConfig.icon
+                  {filteredMessages.map((item, index) => {
+                    // Check if this message is related to an activity
+                    const relatedActivity = mockActivities.find(act => 
+                      item.reason.toLowerCase().includes(act.name.toLowerCase())
+                    )
+                    const showActivityDivider = relatedActivity && (
+                      index === 0 || 
+                      !filteredMessages[index - 1]?.reason.toLowerCase().includes(relatedActivity.name.toLowerCase())
+                    )
+
+                    // Determinar tipo de mensagem e ícone apropriado
+                    const isDocumentValidation = item.reason.includes('validado') || item.reason.includes('aprovado')
+                    const isDocumentRejection = item.reason.includes('rejeitado')
+                    const isDocumentComment = item.reason.includes('Comentário sobre documento')
+                    const isStatusChange = !isDocumentValidation && !isDocumentRejection && !isDocumentComment
+                    
+                    let MessageIcon = MessageCircle
+                    let iconColor = "text-gray-500 dark:text-gray-400"
+                    
+                    if (isDocumentValidation) {
+                      MessageIcon = CheckCircle2
+                      iconColor = "text-gray-600 dark:text-gray-400"
+                    } else if (isDocumentRejection) {
+                      MessageIcon = XCircle
+                      iconColor = "text-gray-600 dark:text-gray-400"
+                    } else if (isDocumentComment) {
+                      MessageIcon = FileText
+                      iconColor = "text-gray-600 dark:text-gray-400"
+                    } else if (isStatusChange) {
+                      MessageIcon = AlertCircle
+                      iconColor = "text-gray-600 dark:text-gray-400"
+                    }
+                    
+                    // Check if message can be edited (user's own messages)
+                    const canEdit = item.changed_by === "Você" || item.changed_by === "Admin User"
 
                     return (
-                      <div key={item.id} className="relative">
-                        <div className="flex gap-3">
-                          <div className="flex-shrink-0 w-7 h-7 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 flex items-center justify-center">
-                            <ItemIcon className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
+                      <React.Fragment key={item.id}>
+                        {/* Activity Divider */}
+                        {showActivityDivider && relatedActivity && !chatFilterActivity && (
+                          <div className="flex items-center gap-3 py-4">
+                            <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-gray-300 dark:to-gray-600" />
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700">
+                              <FileText className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+                              <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                                {relatedActivity.name}
+                              </span>
+                            </div>
+                            <div className="h-[2px] flex-1 bg-gradient-to-r from-gray-300 dark:from-gray-600 via-gray-300 dark:via-gray-600 to-transparent" />
+                          </div>
+                        )}
+                        
+                      <div className="group relative">
+                        <div className={cn(
+                          "flex gap-3",
+                          canEdit && "flex-row-reverse"
+                        )}>
+                          <div className="flex-shrink-0 w-7 h-7 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center">
+                            <MessageIcon className={cn("w-3.5 h-3.5", iconColor)} />
                           </div>
                           
-                          <div className="flex-1 pb-3">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Badge variant="outline" className="text-[10px] border-gray-300 dark:border-gray-700">
-                                {itemConfig.label}
-                              </Badge>
-                              {item.isNew && (
-                                <Badge variant="default" className="text-[9px] bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-1.5 py-0">
-                                  Nova
-                                </Badge>
-                              )}
+                          <div className={cn(
+                            "flex-1 pb-3 max-w-[75%]",
+                            canEdit && "flex flex-col items-end"
+                          )}>
+                            <div className={cn(
+                              "rounded-lg p-3 mb-2",
+                              canEdit 
+                                ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900" 
+                                : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                            )}>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className={cn(
+                                  "text-[10px] font-medium",
+                                  canEdit 
+                                    ? "text-gray-300 dark:text-gray-600" 
+                                    : "text-gray-600 dark:text-gray-400"
+                                )}>
+                                  {isDocumentValidation && 'Documento Aprovado'}
+                                  {isDocumentRejection && 'Documento Rejeitado'}
+                                  {isDocumentComment && 'Comentário'}
+                                  {isStatusChange && 'Atualização de Status'}
+                                </span>
+                                {item.isNew && (
+                                  <Badge variant="default" className="text-[9px] bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-1.5 py-0">
+                                    Nova
+                                  </Badge>
+                                )}
+                              </div>
+                              
+                              <p className={cn(
+                                "text-xs mb-0 leading-relaxed",
+                                canEdit 
+                                  ? "text-white dark:text-gray-900" 
+                                  : "text-gray-700 dark:text-gray-300"
+                              )}>
+                                {item.reason}
+                              </p>
                             </div>
-                            
-                            <p className="text-xs text-gray-700 dark:text-gray-300 mb-2 leading-relaxed">
-                              {item.reason}
-                            </p>
                             
                             <div className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-gray-400">
                               <User className="w-3 h-3" />
@@ -519,9 +1138,49 @@ export function ViewSubsidyModal({
                               <span>•</span>
                               <span>{format(item.changed_at, "dd/MM HH:mm", { locale: ptBR })}</span>
                             </div>
+                            
+                            {/* Edit/Delete Actions - Only for user's messages */}
+                            {canEdit && (
+                              <div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleEditMessage(item)}
+                                      className="h-6 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                                    >
+                                      <Pencil className="w-3 h-3 mr-1" />
+                                      <span className="text-[10px]">Editar</span>
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">
+                                    <p className="text-xs">Editar comentário</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleDeleteMessage(item.id)}
+                                      className="h-6 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                    >
+                                      <Trash2 className="w-3 h-3 mr-1" />
+                                      <span className="text-[10px]">Deletar</span>
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">
+                                    <p className="text-xs">Deletar comentário</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
+                      </React.Fragment>
                     )
                   })}
                   <div ref={messagesEndRef} />
@@ -529,13 +1188,156 @@ export function ViewSubsidyModal({
 
                 {/* Input de Mensagem */}
                 <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-                  <div className="flex gap-2">
+                  {/* Mention Labels */}
+                  {(mentionStatus || mentionPriority) && (
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      {mentionStatus && (
+                        <div className={cn(
+                          "flex items-center gap-2 px-2.5 py-1.5 rounded-md border text-xs font-medium",
+                          mentionStatus === 'approved' && "bg-green-50 dark:bg-green-950/30 border-green-400 text-green-700 dark:text-green-400",
+                          mentionStatus === 'rejected' && "bg-red-50 dark:bg-red-950/30 border-red-400 text-red-700 dark:text-red-400",
+                          mentionStatus === 'in_review' && "bg-blue-50 dark:bg-blue-950/30 border-blue-400 text-blue-700 dark:text-blue-400",
+                          mentionStatus === 'pending' && "bg-amber-50 dark:bg-amber-950/30 border-amber-400 text-amber-700 dark:text-amber-400"
+                        )}>
+                          <AtSign className="w-3 h-3" />
+                          <span>Status: {statusConfig[mentionStatus].label}</span>
+                          <button onClick={() => setMentionStatus(null)} className="hover:opacity-70">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                      {mentionPriority && (
+                        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-medium text-gray-900 dark:text-gray-100">
+                          <AtSign className="w-3 h-3" />
+                          <div className={cn(
+                            "w-2 h-2 rounded-full",
+                            mentionPriority === 'high' && "bg-red-500",
+                            mentionPriority === 'medium' && "bg-yellow-500",
+                            mentionPriority === 'low' && "bg-green-500"
+                          )} />
+                          <span>Prioridade: {mentionPriority === 'high' ? 'Alta' : mentionPriority === 'medium' ? 'Média' : 'Baixa'}</span>
+                          <button onClick={() => setMentionPriority(null)} className="hover:opacity-70">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Context Banners */}
+                  {editingMessage && (
+                    <div className="mb-3 p-2.5 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <Pencil className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                          <p className="text-xs font-medium text-amber-900 dark:text-amber-200 truncate">
+                            Editando comentário
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditingMessage(null)
+                            setNewMessage("")
+                          }}
+                          className="h-5 w-5 p-0 text-amber-600 hover:text-amber-700 dark:text-amber-400"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {commentingDocument && (
+                    <div className="mb-3 p-2.5 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-300 dark:border-blue-700">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                          <p className="text-xs font-medium text-blue-900 dark:text-blue-200 truncate">
+                            Comentário: {commentingDocument.name}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setCommentingDocument(null)
+                            setNewMessage("")
+                          }}
+                          className="h-5 w-5 p-0 text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {mentionMode && (
+                    <div className="mb-3 p-2.5 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-300 dark:border-red-700">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <Ban className="w-3.5 h-3.5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                          <p className="text-xs font-medium text-red-900 dark:text-red-200 truncate">
+                            Rejeitar documento: {mockActivities.flatMap(a => a.documents).find(d => d.id === mentionMode)?.file_name}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setMentionMode(null)
+                            setNewMessage("")
+                          }}
+                          className="h-5 w-5 p-0 text-red-600 hover:text-red-700 dark:text-red-400"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Single Unified Input */}
+                  <div className="flex gap-2 items-center">
+                    {/* Mention Buttons */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-9 px-2">
+                          <AtSign className="w-3.5 h-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        <DropdownMenuLabel>Mencionar</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setMentionStatus(currentSubsidyStatus)}>
+                          Status Atual
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setMentionPriority(currentPriority)}>
+                          Prioridade Atual
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                     <Input
+                      ref={chatInputRef}
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                      placeholder="Adicionar comentário..."
-                      className="flex-1 h-9 text-xs border-gray-300 dark:border-gray-700"
+                      placeholder={
+                        editingMessage
+                          ? "Edite seu comentário..."
+                          : commentingDocument 
+                          ? "Digite seu comentário sobre o documento..."
+                          : mentionMode 
+                          ? "Digite o motivo da rejeição..."
+                          : "Adicionar comentário..."
+                      }
+                      className={cn(
+                        "flex-1 h-9 text-xs transition-all",
+                        editingMessage && "border-amber-500 dark:border-amber-500 ring-2 ring-amber-200 dark:ring-amber-900",
+                        commentingDocument && "border-blue-500 dark:border-blue-500 ring-2 ring-blue-200 dark:ring-blue-900",
+                        mentionMode && "border-red-500 dark:border-red-500 ring-2 ring-red-200 dark:ring-red-900",
+                        !editingMessage && !commentingDocument && !mentionMode && "border-gray-300 dark:border-gray-700"
+                      )}
                     />
                     <Button
                       onClick={handleSendMessage}

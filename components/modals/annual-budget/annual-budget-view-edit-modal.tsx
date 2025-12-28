@@ -281,8 +281,7 @@ export function AnnualBudgetViewEditModal({
         approved_by: formData.approved_by || null,
         updated_at: new Date().toISOString()
       } : {
-        // Create new budget
-        id: Date.now().toString(),
+        // Create new budget - DO NOT include id, let backend generate it
         year: parseInt(formData.year),
         planned_budget: parseFloat(formData.planned_budget),
         total_expenses: parseFloat(formData.total_expenses) || 0,
@@ -530,7 +529,14 @@ export function AnnualBudgetViewEditModal({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t("annual_budget.modals.summary.reserved") || "Reserved"}:</span>
-                  <span className="font-medium text-foreground">{formatCurrency(budget.allocated_amount || 0)}</span>
+                  <div className="text-right">
+                    <span className="font-medium text-foreground">{formatCurrency(budget.allocated_amount || 0)}</span>
+                    {budget.total_expenses > 0 && (
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        + {formatCurrency(budget.total_expenses)}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="flex justify-between border-t border-border pt-2">
                   <span className="text-muted-foreground">{t("annual_budget.modals.summary.available") || "Available"}:</span>
@@ -825,9 +831,16 @@ export function AnnualBudgetViewEditModal({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("annual_budget.modals.summary.reserved") || "Reserved"}:</span>
-                    <span className="font-medium text-foreground">
-                      {formatCurrency(parseFloat(formData.reserved || "0"))}
-                    </span>
+                    <div className="text-right">
+                      <span className="font-medium text-foreground">
+                        {formatCurrency(parseFloat(formData.reserved || "0"))}
+                      </span>
+                      {parseFloat(formData.total_expenses || "0") > 0 && (
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          + {formatCurrency(parseFloat(formData.total_expenses || "0"))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex justify-between border-t border-border pt-2">
                     <span className="text-muted-foreground">{t("annual_budget.modals.summary.available") || "Available"}:</span>
@@ -889,9 +902,16 @@ export function AnnualBudgetViewEditModal({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("annual_budget.modals.summary.reserved") || "Reserved"}:</span>
-                    <span className="font-medium text-foreground">
-                      {formatCurrency(parseFloat(formData.reserved || "0"))}
-                    </span>
+                    <div className="text-right">
+                      <span className="font-medium text-foreground">
+                        {formatCurrency(parseFloat(formData.reserved || "0"))}
+                      </span>
+                      {parseFloat(formData.total_expenses || "0") > 0 && (
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          + {formatCurrency(parseFloat(formData.total_expenses || "0"))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("annual_budget.modals.summary.available") || "Available"}:</span>

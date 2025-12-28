@@ -26,6 +26,8 @@ export interface GetAnnualBudgetKPIs_departmentSpending {
   planned: number;
   approved: number;
   reserved: number;
+  spent: number;
+  available: number;
   institution: string;
 }
 
@@ -46,8 +48,9 @@ export interface GetAnnualBudgetKPIs_spendingOverTime {
 export interface GetAnnualBudgetKPIs_budgetDistribution {
   __typename: "BudgetDistribution";
   total: number;
+  spent: number;
   allocated: number;
-  remaining: number;
+  available: number;
   percentageUsed: number;
 }
 

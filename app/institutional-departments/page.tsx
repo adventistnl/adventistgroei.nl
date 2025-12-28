@@ -3,6 +3,12 @@
 import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
+import { useQuery } from "@apollo/client"
+import { GET_INSTITUTIONAL_DEPARTMENTS_KPIS } from "@/graphql/queries/ANNUAL_BUDGET_QUERIES"
+import {
+  GetInstitutionalDepartmentsKPIs,
+  GetInstitutionalDepartmentsKPIsVariables
+} from "@/types/GetInstitutionalDepartmentsKPIs"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
@@ -78,12 +84,22 @@ import { WithPermission } from "@/hocs/with-permission"
  */
 export default function DepartmentsPage() {
   const { currentInstitutionData, refetchInstitutionById } = useInstitution();
-  const departments: DepartmentData[] = currentInstitutionData?.departments || [];
+  // Filtrar apenas departamentos INSTITUCIONAIS (sem church_id)
+  const allDepartments = currentInstitutionData?.departments || [];
+  const departments: DepartmentData[] = allDepartments.filter(dept => !dept.church_id);
   const churches: ChurchData[] = currentInstitutionData?.churches || [];
   const { t, i18n } = useTranslation()
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  
+
+  // Debug: verificar se annual_budgets está chegando
+  useEffect(() => {
+    if (departments.length > 0) {
+      console.log('🔍 Institutional Departments:', departments);
+      console.log('🔍 First department annual_budgets:', departments[0]?.annual_budgets);
+    }
+  }, [departments]);
+
   // Obter traduções para o idioma atual - EXATAMENTE COMO EM CHURCHES
   const currentLanguage = i18n?.language || 'en'
   const tDept = departmentTranslations[currentLanguage as keyof typeof departmentTranslations] || departmentTranslations.en
@@ -101,6 +117,17 @@ export default function DepartmentsPage() {
   const [selectedContact, setSelectedContact] = useState<ContactData | null>(null)
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
 
+  // Buscar KPIs dos departamentos institucionais do backend
+  const { data: kpisData, loading: kpisLoading, refetch: refetchKPIs } = useQuery<
+    GetInstitutionalDepartmentsKPIs,
+    GetInstitutionalDepartmentsKPIsVariables
+  >(GET_INSTITUTIONAL_DEPARTMENTS_KPIS, {
+    variables: {
+      year: selectedYear,
+      institutionId: currentInstitutionData?.id || ''
+    },
+    skip: !currentInstitutionData?.id
+  });
 
   const pageTitle = useMemo(() => (
     <span className="flex items-center gap-2">
@@ -115,60 +142,39 @@ export default function DepartmentsPage() {
     showBreadcrumbsInHeader: true
   })
 
-  // Estatísticas calculadas dos dados - CORRIGIDAS para usar ano selecionado
-  type DepartmentType = typeof departments extends (infer U)[] ? U : any;
+  // Estatísticas dos KPIs vindas do backend
   const kpiData = useMemo(() => {
-    const totalDepartments = departments.length;
-    
-    // Filtrar orçamentos pelo ano selecionado
-    const departmentsWithBudgets = departments.map((d: DepartmentType) => {
-      const yearBudget = d.annual_budgets?.find(
-        (budget: any) => budget.year === selectedYear
-      );
+    if (!kpisData?.institutionalDepartmentsKPIs) {
       return {
-        ...d,
-        currentYearBudget: yearBudget
+        totalDepartments: 0,
+        totalPlannedBudget: 0,
+        totalAllocatedBudget: 0,
+        totalSpentBudget: 0,
+        totalAvailableBudget: 0,
+        avgUtilization: 0,
+        departmentsWithCurrentYearBudget: 0
       };
-    });
+    }
 
-    // Calcular totais usando allocated_amount (valor alocado) do ano selecionado
-    const totalAllocatedBudget = departmentsWithBudgets.reduce((sum: number, d: any) => {
-      const allocatedAmount = Number(d.currentYearBudget?.allocated_amount) || 0;
-      return sum + allocatedAmount;
-    }, 0);
-    
-    // Calcular total gasto usando total_expenses do ano selecionado
-    const totalSpentBudget = departmentsWithBudgets.reduce((sum: number, d: any) => {
-      const spentAmount = Number(d.currentYearBudget?.total_expenses) || 0;
-      return sum + spentAmount;
-    }, 0);
-    
-    // Calcular total restante
-    const totalRemainingBudget = totalAllocatedBudget - totalSpentBudget;
-    
-    // Calcular utilização média
-    const departmentsWithBudget = departmentsWithBudgets.filter(d => Number(d.currentYearBudget?.allocated_amount) > 0);
-    const avgUtilization = departmentsWithBudget.length > 0 
-      ? Math.round(
-          departmentsWithBudget.reduce((sum, d) => {
-            const allocated = Number(d.currentYearBudget?.allocated_amount) || 0;
-            const spent = Number(d.currentYearBudget?.total_expenses) || 0;
-            return sum + (allocated > 0 ? (spent / allocated) * 100 : 0);
-          }, 0) / departmentsWithBudget.length
-        )
+    const kpis = kpisData.institutionalDepartmentsKPIs;
+
+    // Calcular utilização média baseado no totalPlanned
+    const avgUtilization = kpis.totalPlanned > 0
+      ? Math.round(((kpis.totalAllocated + kpis.totalSpent) / kpis.totalPlanned) * 100)
       : 0;
 
     return {
-      totalDepartments,
-      totalAllocatedBudget,
-      totalSpentBudget,
-      totalRemainingBudget,
+      totalDepartments: kpis.totalDepartments,
+      totalPlannedBudget: kpis.totalPlanned,
+      totalAllocatedBudget: kpis.totalAllocated,
+      totalSpentBudget: kpis.totalSpent,
+      totalAvailableBudget: kpis.totalAvailable,
       avgUtilization,
-      departmentsWithCurrentYearBudget: departmentsWithBudget.length
+      departmentsWithCurrentYearBudget: kpis.departmentsWithBudget
     };
-  }, [departments, selectedYear]);
+  }, [kpisData]);
 
-  // Dados para KPI Cards Carrossel - CORRIGIDOS
+  // Dados para KPI Cards Carrossel - KPIs de budget do backend
   const kpiCardsData: KPICardData[] = useMemo(() => [
     {
       id: "total_departments",
@@ -183,10 +189,22 @@ export default function DepartmentsPage() {
       }
     },
     {
+      id: "planned_budget",
+      title: tDept.common?.planned_budget || "Planned Budget",
+      value: `$${(kpiData.totalPlannedBudget / 1000).toFixed(0)}K`,
+      icon: DollarSign,
+      subtitle: `${tDept.fields?.planned_budget || "Planned budget"} ${selectedYear}`,
+      trend: {
+        value: 0,
+        isPositive: true,
+        label: tDept.common?.trend?.vs_previous_year || "vs. previous year"
+      }
+    },
+    {
       id: "allocated_budget",
       title: tDept.common?.allocated_budget || "Allocated Budget",
       value: `$${(kpiData.totalAllocatedBudget / 1000).toFixed(0)}K`,
-      icon: DollarSign,
+      icon: Building2,
       subtitle: `${tDept.fields?.allocated_budget || "Allocated budget"} ${selectedYear}`,
       trend: {
         value: 0,
@@ -207,14 +225,14 @@ export default function DepartmentsPage() {
       }
     },
     {
-      id: "remaining_budget",
-      title: tDept.common?.remaining_budget || "Remaining Budget",
-      value: `$${(kpiData.totalRemainingBudget / 1000).toFixed(0)}K`,
+      id: "available_budget",
+      title: tDept.common?.available_budget || "Available Budget",
+      value: `$${(kpiData.totalAvailableBudget / 1000).toFixed(0)}K`,
       icon: Shield,
       subtitle: tDept.common?.available_budget || "Available budget",
       trend: {
         value: 0,
-        isPositive: kpiData.totalRemainingBudget >= 0,
+        isPositive: kpiData.totalAvailableBudget >= 0,
         label: tDept.common?.trend?.budget_status || "budget status"
       }
     },
@@ -283,9 +301,12 @@ export default function DepartmentsPage() {
   const handleRefresh = async () => {
     setRefreshing(true)
     const refreshToast = toast.loading(tDept.common?.refreshing || "Refreshing...")
-    
+
     try {
-      await refetchInstitutionById()
+      await Promise.all([
+        refetchInstitutionById(),
+        refetchKPIs()
+      ])
       toast.success(tDept.common?.data_refreshed || "Data refreshed", { duration: 2000 })
     } catch (error) {
       toast.error(tDept.common?.error_refreshing || "Error refreshing")
@@ -437,7 +458,7 @@ export default function DepartmentsPage() {
       id: "budget_total",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          {tDept.annual_budget?.table?.headers?.budget_total || "Budget Total"}
+          {tDept.annual_budget?.table?.headers?.budget_total || "Total Budget"}
         </div>
       ),
       cell: ({ row }) => {
@@ -445,17 +466,17 @@ export default function DepartmentsPage() {
         const yearBudget = row.original.annual_budgets?.find(
           (budget: any) => budget.year === selectedYear
         );
-        const allocatedAmount = Number(yearBudget?.allocated_amount) || 0;
-        const hasBudget = allocatedAmount > 0;
-        
+        const plannedBudget = Number(yearBudget?.planned_budget) || 0;
+        const hasBudget = plannedBudget > 0;
+
         return (
           <div className={`text-center ${!hasBudget ? 'opacity-50' : ''}`}>
             <div className="text-sm font-semibold text-gray-900">
-              {hasBudget ? `$${allocatedAmount.toLocaleString()}` : '-'}
+              {hasBudget ? `$${plannedBudget.toLocaleString()}` : '-'}
             </div>
             {hasBudget && (
               <div className="text-xs text-gray-500">
-                {tDept.annual_budget?.table?.allocated || "Allocated"} {selectedYear}
+                {tDept.annual_budget?.table?.planned || "Planned"} {selectedYear}
               </div>
             )}
           </div>
@@ -475,9 +496,9 @@ export default function DepartmentsPage() {
           (budget: any) => budget.year === selectedYear
         );
         const spentAmount = Number(yearBudget?.total_expenses) || 0;
-        const allocatedAmount = Number(yearBudget?.allocated_amount) || 0;
-        const hasBudget = allocatedAmount > 0;
-        
+        const plannedBudget = Number(yearBudget?.planned_budget) || 0;
+        const hasBudget = plannedBudget > 0;
+
         return (
           <div className={`text-center ${!hasBudget ? 'opacity-50' : ''}`}>
             <div className="text-sm font-semibold text-gray-900">
@@ -485,7 +506,7 @@ export default function DepartmentsPage() {
             </div>
             {hasBudget && (
               <div className="text-xs text-gray-500">
-                {tDept.common?.spent_of || "of"} ${allocatedAmount.toLocaleString()}
+                {tDept.common?.spent_of || "of"} ${plannedBudget.toLocaleString()}
               </div>
             )}
           </div>
@@ -504,14 +525,14 @@ export default function DepartmentsPage() {
         const yearBudget = row.original.annual_budgets?.find(
           (budget: any) => budget.year === selectedYear
         );
-        const allocatedAmount = Number(yearBudget?.allocated_amount) || 0;
+        const plannedBudget = Number(yearBudget?.planned_budget) || 0;
         const usedBudget = Number(yearBudget?.total_expenses) || 0;
-        const usagePercentage = allocatedAmount > 0 ? Math.round((usedBudget / allocatedAmount) * 100) : 0;
-        const hasBudget = allocatedAmount > 0;
-        
+        const usagePercentage = plannedBudget > 0 ? Math.round((usedBudget / plannedBudget) * 100) : 0;
+        const hasBudget = plannedBudget > 0;
+
         return (
           <div className="flex justify-center">
-            <UsageIndicator 
+            <UsageIndicator
               percentage={usagePercentage}
               disabled={!hasBudget}
               size="md"
@@ -532,13 +553,13 @@ export default function DepartmentsPage() {
         const yearBudget = row.original.annual_budgets?.find(
           (budget: any) => budget.year === selectedYear
         );
-        const hasBudget = yearBudget && Number(yearBudget.allocated_amount) > 0;
-        
+        const hasBudget = yearBudget && Number(yearBudget.planned_budget) > 0;
+
         return (
           <div className="flex justify-center">
             <StatusBadge
-              label={hasBudget ? 
-                (tDept.annual_budget?.table?.budget_status_labels?.completed || "Active") : 
+              label={hasBudget ?
+                (tDept.annual_budget?.table?.budget_status_labels?.completed || "Active") :
                 (tDept.annual_budget?.table?.budget_status_labels?.missing || "No Budget")
               }
               variant={hasBudget ? "success" : "neutral"}
@@ -555,7 +576,7 @@ export default function DepartmentsPage() {
         const yearBudget = row.original.annual_budgets?.find(
           (budget: any) => budget.year === selectedYear
         );
-        const hasBudget = yearBudget && Number(yearBudget.allocated_amount) > 0;
+        const hasBudget = yearBudget && Number(yearBudget.planned_budget) > 0;
         return hasBudget === value
       },
     },

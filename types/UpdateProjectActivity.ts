@@ -9,11 +9,17 @@ import { ProjectActivityUpdateDto, ActivityStatus, ActivityPriority, ActivityTag
 // GraphQL mutation operation: UpdateProjectActivity
 // ====================================================
 
-export interface UpdateProjectActivity_updateProjectActivity_owner {
+export interface UpdateProjectActivity_updateProjectActivity_assignees_user {
   __typename: "User";
   id: string;
   name: string;
   email: string;
+}
+
+export interface UpdateProjectActivity_updateProjectActivity_assignees {
+  __typename: "ProjectActivityAssignee";
+  id: string;
+  user: UpdateProjectActivity_updateProjectActivity_assignees_user;
 }
 
 export interface UpdateProjectActivity_updateProjectActivity_activity_funding {
@@ -32,16 +38,14 @@ export interface UpdateProjectActivity_updateProjectActivity {
   description: string;
   budget_amount: any;
   deadline: any;
-  owner_id: string;
   status: ActivityStatus;
   priority: ActivityPriority;
   tags: ActivityTags[] | null;
   custom_tags: string[] | null;
-  activity_tag: ActivityTags | null;
   is_subsidized: boolean;
   created_at: any;
   updated_at: any;
-  owner: UpdateProjectActivity_updateProjectActivity_owner;
+  assignees: UpdateProjectActivity_updateProjectActivity_assignees[] | null;
   activity_funding: UpdateProjectActivity_updateProjectActivity_activity_funding | null;
 }
 

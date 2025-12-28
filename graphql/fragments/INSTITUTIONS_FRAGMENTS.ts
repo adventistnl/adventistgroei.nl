@@ -319,6 +319,7 @@ export const INSTITUTION_FRAGMENT = gql`
     departments_count
     users_count
     total_budget
+    current_year_budget
     has_budget_record
     contact {
       ...ContactFragment

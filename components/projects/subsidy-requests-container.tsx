@@ -8,7 +8,6 @@ import { EmptyState } from "@/components/shared/empty-state"
 import { SubsidyRequestCard, SubsidyRequestCardData } from "./subsidy-request-card"
 import { ViewSubsidyModal } from "@/components/modals/project/view-subsidy-modal"
 import { RequestSubsidyModal } from "@/components/modals/project/request-subsidy-modal"
-import { ConfirmDeleteSubsidyModal } from "@/components/modals/project/confirm-delete-subsidy-modal"
 import { cn } from "@/lib/utils"
 
 interface SubsidyRequestsContainerProps {
@@ -148,7 +147,7 @@ export function SubsidyRequestsContainer({
 
   // Archive flow - mark archived in local state
   const handleArchive = (id: string) => {
-    setDisplaySubsidies(prev => prev.map(s => s.id === id ? ({ ...s, archived: !s.archived } as any) : s))
+    setDisplaySubsidies(prev => prev.map(s => s.id === id ? ({ ...s, archived: true } as any) : s))
   }
 
   const handleEditSubsidy = (id: string) => {
@@ -198,7 +197,7 @@ export function SubsidyRequestsContainer({
 
   return (
     <>
-      <div className={cn(gridColSpan, className, "h-full")}>
+      <div className={cn(gridColSpan, className,"mt-4")}>
       <div className="h-full flex flex-col space-y-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
         {/* Header */}
         <div className="flex items-start justify-between flex-shrink-0">
@@ -238,10 +237,9 @@ export function SubsidyRequestsContainer({
                   key={subsidy.id}
                   data={subsidy}
                   onEdit={handleEditSubsidy}
-                  onDelete={handleRequestDelete}
+                  onDelete={onDeleteSubsidy}
                   onView={handleViewSubsidy}
-                  onDuplicate={undefined}
-                  onArchive={handleArchive}
+                  onDuplicate={onDuplicateSubsidy}
                 />
               ))}
             </div>
@@ -296,16 +294,6 @@ export function SubsidyRequestsContainer({
           }
         }}
         allActivities={[]}
-      />
-
-      {/* Confirm Delete Modal */}
-      <ConfirmDeleteSubsidyModal
-        isOpen={isConfirmDeleteOpen}
-        onClose={() => { setIsConfirmDeleteOpen(false); setSubsidyPendingDelete(null) }}
-        onConfirm={confirmDelete}
-        deletable={!!subsidyPendingDelete && subsidyPendingDelete.status !== "approved" && subsidyPendingDelete.status !== "in_review"}
-        title={subsidyPendingDelete ? `Excluir ${subsidyPendingDelete.title}` : undefined}
-        description={subsidyPendingDelete && (subsidyPendingDelete.status === "approved" || subsidyPendingDelete.status === "in_review") ? "Esta solicitação não pode ser excluída pois já está em análise ou aprovada." : undefined}
       />
     </>
   )

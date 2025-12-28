@@ -27,6 +27,7 @@ export type ActivityDocuments = {
   deleted_by?: Maybe<Scalars['String']['output']>;
   drive_file_id?: Maybe<Scalars['String']['output']>;
   file_url: Scalars['String']['output'];
+  filename: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   is_deleted: Scalars['Boolean']['output'];
   is_validated: Scalars['Boolean']['output'];
@@ -55,6 +56,7 @@ export type ActivityDocumentsWhereInput = {
   deleted_by?: InputMaybe<StringNullableFilter>;
   drive_file_id?: InputMaybe<StringNullableFilter>;
   file_url?: InputMaybe<StringFilter>;
+  filename?: InputMaybe<StringFilter>;
   id?: InputMaybe<StringFilter>;
   is_deleted?: InputMaybe<BoolFilter>;
   is_validated?: InputMaybe<BoolFilter>;
@@ -212,20 +214,6 @@ export enum AnnualBudgetCategory {
   Project = 'PROJECT'
 }
 
-export type AnnualBudgetCreateDto = {
-  allocated_amount: Scalars['Float']['input'];
-  category?: InputMaybe<AnnualBudgetCategory>;
-  description: Scalars['String']['input'];
-  entity_id: Scalars['String']['input'];
-  entity_type: AnnualBudgetEntityType;
-  justification?: InputMaybe<Scalars['String']['input']>;
-  notes?: InputMaybe<Scalars['String']['input']>;
-  planned_budget: Scalars['Float']['input'];
-  priority?: InputMaybe<AnnualBudgetPriority>;
-  total_expenses?: InputMaybe<Scalars['Float']['input']>;
-  year: Scalars['Int']['input'];
-};
-
 export enum AnnualBudgetEntityType {
   Church = 'CHURCH',
   ChurchDepartment = 'CHURCH_DEPARTMENT',
@@ -335,17 +323,6 @@ export enum AnnualBudgetStatus {
   RevisionRequested = 'REVISION_REQUESTED',
   Submitted = 'SUBMITTED'
 }
-
-export type AnnualBudgetUpdateDto = {
-  category?: InputMaybe<AnnualBudgetCategory>;
-  description?: InputMaybe<Scalars['String']['input']>;
-  documents?: InputMaybe<Array<Scalars['String']['input']>>;
-  justification?: InputMaybe<Scalars['String']['input']>;
-  notes?: InputMaybe<Scalars['String']['input']>;
-  planned_budget?: InputMaybe<Scalars['Float']['input']>;
-  priority?: InputMaybe<AnnualBudgetPriority>;
-  total_expenses?: InputMaybe<Scalars['Float']['input']>;
-};
 
 export type AnnualBudgetWhereInput = {
   AND?: InputMaybe<Array<AnnualBudgetWhereInput>>;
@@ -510,8 +487,9 @@ export type BoolFilter = {
 export type BudgetDistribution = {
   __typename?: 'BudgetDistribution';
   allocated: Scalars['Float']['output'];
+  available: Scalars['Float']['output'];
   percentageUsed: Scalars['Float']['output'];
-  remaining: Scalars['Float']['output'];
+  spent: Scalars['Float']['output'];
   total: Scalars['Float']['output'];
 };
 
@@ -588,7 +566,6 @@ export type ChurchCount = {
 };
 
 export type ChurchCreateDto = {
-  annual_budget?: InputMaybe<AnnualBudgetCreateDto>;
   contact?: InputMaybe<ContactCreateDto>;
   institution_id: Scalars['String']['input'];
   name: Scalars['String']['input'];
@@ -674,7 +651,6 @@ export enum ChurchType {
 }
 
 export type ChurchUpdateDto = {
-  annual_budget?: InputMaybe<AnnualBudgetUpdateDto>;
   contact?: InputMaybe<ContactCreateDto>;
   departmens?: InputMaybe<Array<Scalars['String']['input']>>;
   institution_id?: InputMaybe<Scalars['String']['input']>;
@@ -1092,6 +1068,53 @@ export type Department = {
   users?: Maybe<Array<User>>;
 };
 
+export type DepartmentActivityData = {
+  __typename?: 'DepartmentActivityData';
+  activity_count: Scalars['Int']['output'];
+  allocated_amount: Scalars['Float']['output'];
+  completed_projects: Scalars['Int']['output'];
+  department_id: Scalars['String']['output'];
+  department_name: Scalars['String']['output'];
+  open_projects: Scalars['Int']['output'];
+  project_count: Scalars['Int']['output'];
+  spent_amount: Scalars['Float']['output'];
+  user_count: Scalars['Int']['output'];
+};
+
+export type DepartmentBudgetCreateDto = {
+  allocated_amount?: InputMaybe<Scalars['Float']['input']>;
+  category?: InputMaybe<AnnualBudgetCategory>;
+  department_id: Scalars['String']['input'];
+  description?: InputMaybe<Scalars['String']['input']>;
+  justification?: InputMaybe<Scalars['String']['input']>;
+  notes?: InputMaybe<Scalars['String']['input']>;
+  planned_budget: Scalars['Float']['input'];
+  priority?: InputMaybe<AnnualBudgetPriority>;
+  total_expenses?: InputMaybe<Scalars['Float']['input']>;
+  year: Scalars['Int']['input'];
+};
+
+export type DepartmentBudgetTimeline = {
+  __typename?: 'DepartmentBudgetTimeline';
+  allocated: Scalars['Float']['output'];
+  department_id: Scalars['String']['output'];
+  department_name: Scalars['String']['output'];
+  month: Scalars['String']['output'];
+  spent: Scalars['Float']['output'];
+};
+
+export type DepartmentBudgetUpdateDto = {
+  allocated_amount?: InputMaybe<Scalars['Float']['input']>;
+  category?: InputMaybe<AnnualBudgetCategory>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  documents?: InputMaybe<Array<Scalars['String']['input']>>;
+  justification?: InputMaybe<Scalars['String']['input']>;
+  notes?: InputMaybe<Scalars['String']['input']>;
+  planned_budget?: InputMaybe<Scalars['Float']['input']>;
+  priority?: InputMaybe<AnnualBudgetPriority>;
+  total_expenses?: InputMaybe<Scalars['Float']['input']>;
+};
+
 export type DepartmentCount = {
   __typename?: 'DepartmentCount';
   annual_budgets: Scalars['Int']['output'];
@@ -1103,12 +1126,26 @@ export type DepartmentCount = {
 };
 
 export type DepartmentCreateDto = {
-  annual_budget?: InputMaybe<AnnualBudgetCreateDto>;
   church?: InputMaybe<Scalars['String']['input']>;
   contact?: InputMaybe<ContactCreateDto>;
   description: Scalars['String']['input'];
   institution: Scalars['String']['input'];
   name: Scalars['String']['input'];
+};
+
+export type DepartmentKpIs = {
+  __typename?: 'DepartmentKPIs';
+  activeDepartments: Scalars['Int']['output'];
+  averageBudgetPerDepartment: Scalars['Float']['output'];
+  averageUsersPerDepartment: Scalars['Float']['output'];
+  completedProjects: Scalars['Int']['output'];
+  departmentsWithBudget: Scalars['Int']['output'];
+  openProjects: Scalars['Int']['output'];
+  totalAllocatedBudget: Scalars['Float']['output'];
+  totalDepartments: Scalars['Int']['output'];
+  totalProjects: Scalars['Int']['output'];
+  totalSpentBudget: Scalars['Float']['output'];
+  totalUsers: Scalars['Int']['output'];
 };
 
 export type DepartmentListRelationFilter = {
@@ -1166,14 +1203,15 @@ export type DepartmentScalarRelationFilter = {
 export type DepartmentSpending = {
   __typename?: 'DepartmentSpending';
   approved: Scalars['Float']['output'];
+  available: Scalars['Float']['output'];
   institution: Scalars['String']['output'];
   name: Scalars['String']['output'];
   planned: Scalars['Float']['output'];
   reserved: Scalars['Float']['output'];
+  spent: Scalars['Float']['output'];
 };
 
 export type DepartmentUpdateDto = {
-  annual_budget?: InputMaybe<AnnualBudgetUpdateDto>;
   church_id?: InputMaybe<Scalars['String']['input']>;
   contact?: InputMaybe<ContactCreateDto>;
   description?: InputMaybe<Scalars['String']['input']>;
@@ -1369,13 +1407,6 @@ export type EnumActivityStatusFilter = {
   in?: InputMaybe<Array<ActivityStatus>>;
   not?: InputMaybe<NestedEnumActivityStatusFilter>;
   notIn?: InputMaybe<Array<ActivityStatus>>;
-};
-
-export type EnumActivityTagsNullableFilter = {
-  equals?: InputMaybe<ActivityTags>;
-  in?: InputMaybe<Array<ActivityTags>>;
-  not?: InputMaybe<NestedEnumActivityTagsNullableFilter>;
-  notIn?: InputMaybe<Array<ActivityTags>>;
 };
 
 export type EnumActivityTagsNullableListFilter = {
@@ -1746,6 +1777,7 @@ export type Institution = {
   contact_id?: Maybe<Scalars['String']['output']>;
   created_at: Scalars['DateTime']['output'];
   created_by: Scalars['String']['output'];
+  current_year_budget: Scalars['Float']['output'];
   deleted_at?: Maybe<Scalars['DateTime']['output']>;
   deleted_by?: Maybe<Scalars['String']['output']>;
   denomination: Scalars['String']['output'];
@@ -1770,6 +1802,31 @@ export type Institution = {
   users_count: Scalars['Int']['output'];
 };
 
+export type InstitutionBudgetCreateDto = {
+  allocated_amount?: InputMaybe<Scalars['Float']['input']>;
+  category?: InputMaybe<AnnualBudgetCategory>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  institution_id: Scalars['String']['input'];
+  justification?: InputMaybe<Scalars['String']['input']>;
+  notes?: InputMaybe<Scalars['String']['input']>;
+  planned_budget: Scalars['Float']['input'];
+  priority?: InputMaybe<AnnualBudgetPriority>;
+  total_expenses?: InputMaybe<Scalars['Float']['input']>;
+  year: Scalars['Int']['input'];
+};
+
+export type InstitutionBudgetUpdateDto = {
+  allocated_amount?: InputMaybe<Scalars['Float']['input']>;
+  category?: InputMaybe<AnnualBudgetCategory>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  documents?: InputMaybe<Array<Scalars['String']['input']>>;
+  justification?: InputMaybe<Scalars['String']['input']>;
+  notes?: InputMaybe<Scalars['String']['input']>;
+  planned_budget?: InputMaybe<Scalars['Float']['input']>;
+  priority?: InputMaybe<AnnualBudgetPriority>;
+  total_expenses?: InputMaybe<Scalars['Float']['input']>;
+};
+
 export type InstitutionChartsData = {
   __typename?: 'InstitutionChartsData';
   churchesByRegion: Array<ChurchesByRegionData>;
@@ -1792,7 +1849,6 @@ export type InstitutionCount = {
 };
 
 export type InstitutionCreateDto = {
-  annual_budget?: InputMaybe<AnnualBudgetCreateDto>;
   contact?: InputMaybe<ContactCreateDto>;
   denomination: Scalars['String']['input'];
   description?: InputMaybe<Scalars['String']['input']>;
@@ -1838,7 +1894,6 @@ export type InstitutionScalarRelationFilter = {
 };
 
 export type InstitutionUpdateDto = {
-  annual_budget?: InputMaybe<AnnualBudgetUpdateDto>;
   contact?: InputMaybe<ContactUpdateDto>;
   denomination?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
@@ -1874,6 +1929,16 @@ export type InstitutionWhereInput = {
   updated_at?: InputMaybe<DateTimeFilter>;
   updated_by?: InputMaybe<StringFilter>;
   users?: InputMaybe<UserListRelationFilter>;
+};
+
+export type InstitutionalDepartmentsKpIs = {
+  __typename?: 'InstitutionalDepartmentsKPIs';
+  departmentsWithBudget: Scalars['Int']['output'];
+  totalAllocated: Scalars['Float']['output'];
+  totalAvailable: Scalars['Float']['output'];
+  totalDepartments: Scalars['Int']['output'];
+  totalPlanned: Scalars['Float']['output'];
+  totalSpent: Scalars['Float']['output'];
 };
 
 export type IntFilter = {
@@ -1958,13 +2023,14 @@ export type Mutation = {
   addRoleToUser: UserModel;
   approveAnnualBudget: ApproveBudgetResponse;
   batchUpdateProjectActivities: Array<ProjectActivity>;
-  createAnnualBudget: AnnualBudget;
   createChurch: ChurchModel;
   createCommunication: Communication;
   createContact: Contact;
   createDepartment: Department;
+  createDepartmentBudget: AnnualBudget;
   createDirectMessage: DirectMessage;
   createInstitution: Institution;
+  createInstitutionBudget: AnnualBudget;
   createNotification: Notification;
   createProject: Project;
   createProjectActivity: ProjectActivity;
@@ -2004,13 +2070,14 @@ export type Mutation = {
   /** Send an invitation email */
   sendInviteEmail: Scalars['Boolean']['output'];
   toggleBudgetLock: ToggleLockBudgetResponse;
-  updateAnnualBudget: AnnualBudget;
   updateChurch: ChurchModel;
   updateCommunication: Communication;
   updateContact: Contact;
   updateDepartment: Department;
+  updateDepartmentBudget: AnnualBudget;
   updateDirectMessage: DirectMessage;
   updateInstitution: Institution;
+  updateInstitutionBudget: AnnualBudget;
   updateNotification: Notification;
   updateProject: Project;
   updateProjectActivity: ProjectActivity;
@@ -2049,11 +2116,6 @@ export type MutationBatchUpdateProjectActivitiesArgs = {
 };
 
 
-export type MutationCreateAnnualBudgetArgs = {
-  data: AnnualBudgetCreateDto;
-};
-
-
 export type MutationCreateChurchArgs = {
   data: ChurchCreateDto;
 };
@@ -2075,6 +2137,11 @@ export type MutationCreateDepartmentArgs = {
 };
 
 
+export type MutationCreateDepartmentBudgetArgs = {
+  data: DepartmentBudgetCreateDto;
+};
+
+
 export type MutationCreateDirectMessageArgs = {
   data: DirectMessageCreateDto;
 };
@@ -2082,6 +2149,11 @@ export type MutationCreateDirectMessageArgs = {
 
 export type MutationCreateInstitutionArgs = {
   data: InstitutionCreateDto;
+};
+
+
+export type MutationCreateInstitutionBudgetArgs = {
+  data: InstitutionBudgetCreateDto;
 };
 
 
@@ -2274,12 +2346,6 @@ export type MutationToggleBudgetLockArgs = {
 };
 
 
-export type MutationUpdateAnnualBudgetArgs = {
-  data: AnnualBudgetUpdateDto;
-  id: Scalars['String']['input'];
-};
-
-
 export type MutationUpdateChurchArgs = {
   data: ChurchUpdateDto;
   id: Scalars['String']['input'];
@@ -2303,6 +2369,12 @@ export type MutationUpdateDepartmentArgs = {
 };
 
 
+export type MutationUpdateDepartmentBudgetArgs = {
+  data: DepartmentBudgetUpdateDto;
+  id: Scalars['String']['input'];
+};
+
+
 export type MutationUpdateDirectMessageArgs = {
   data: DirectMessageUpdateDto;
   id: Scalars['String']['input'];
@@ -2311,6 +2383,12 @@ export type MutationUpdateDirectMessageArgs = {
 
 export type MutationUpdateInstitutionArgs = {
   data: InstitutionUpdateDto;
+  id: Scalars['String']['input'];
+};
+
+
+export type MutationUpdateInstitutionBudgetArgs = {
+  data: InstitutionBudgetUpdateDto;
   id: Scalars['String']['input'];
 };
 
@@ -2447,13 +2525,6 @@ export type NestedEnumActivityStatusFilter = {
   in?: InputMaybe<Array<ActivityStatus>>;
   not?: InputMaybe<NestedEnumActivityStatusFilter>;
   notIn?: InputMaybe<Array<ActivityStatus>>;
-};
-
-export type NestedEnumActivityTagsNullableFilter = {
-  equals?: InputMaybe<ActivityTags>;
-  in?: InputMaybe<Array<ActivityTags>>;
-  not?: InputMaybe<NestedEnumActivityTagsNullableFilter>;
-  notIn?: InputMaybe<Array<ActivityTags>>;
 };
 
 export type NestedEnumAnnualBudgetCategoryFilter = {
@@ -2759,16 +2830,18 @@ export enum PermissionResolverName {
   BudgetDistribution = 'budgetDistribution',
   BudgetKpIs = 'budgetKPIs',
   Church = 'church',
+  ChurchActivityTimeline = 'churchActivityTimeline',
   Churches = 'churches',
   ChurchesActivityData = 'churchesActivityData',
   Communication = 'communication',
   Communications = 'communications',
-  CreateAnnualBudget = 'createAnnualBudget',
   CreateChurch = 'createChurch',
   CreateCommunication = 'createCommunication',
   CreateDepartment = 'createDepartment',
+  CreateDepartmentBudget = 'createDepartmentBudget',
   CreateDirectMessage = 'createDirectMessage',
   CreateInstitution = 'createInstitution',
+  CreateInstitutionBudget = 'createInstitutionBudget',
   CreateNotification = 'createNotification',
   CreateProject = 'createProject',
   CreateProjectActivity = 'createProjectActivity',
@@ -2795,6 +2868,9 @@ export enum PermissionResolverName {
   DeleteSubsidyStatus = 'deleteSubsidyStatus',
   DeleteUser = 'deleteUser',
   Department = 'department',
+  DepartmentActivityData = 'departmentActivityData',
+  DepartmentBudgetTimeline = 'departmentBudgetTimeline',
+  DepartmentKpIs = 'departmentKPIs',
   DepartmentSpending = 'departmentSpending',
   Departments = 'departments',
   DirectMessage = 'directMessage',
@@ -2803,6 +2879,7 @@ export enum PermissionResolverName {
   EntityDistribution = 'entityDistribution',
   GetActivityDocuments = 'getActivityDocuments',
   Institution = 'institution',
+  InstitutionalDepartmentsKpIs = 'institutionalDepartmentsKPIs',
   Institutions = 'institutions',
   InviteUser = 'inviteUser',
   Notification = 'notification',
@@ -2835,12 +2912,13 @@ export enum PermissionResolverName {
   SubsidyStatusDistribution = 'subsidyStatusDistribution',
   SubsidyStatuses = 'subsidyStatuses',
   ToggleBudgetLock = 'toggleBudgetLock',
-  UpdateAnnualBudget = 'updateAnnualBudget',
   UpdateChurch = 'updateChurch',
   UpdateCommunication = 'updateCommunication',
   UpdateDepartment = 'updateDepartment',
+  UpdateDepartmentBudget = 'updateDepartmentBudget',
   UpdateDirectMessage = 'updateDirectMessage',
   UpdateInstitution = 'updateInstitution',
+  UpdateInstitutionBudget = 'updateInstitutionBudget',
   UpdateNotification = 'updateNotification',
   UpdateProject = 'updateProject',
   UpdateProjectActivity = 'updateProjectActivity',
@@ -2923,7 +3001,7 @@ export type ProjectActivity = {
   _count: ProjectActivityCount;
   activity_documents?: Maybe<Array<ActivityDocuments>>;
   activity_funding?: Maybe<ActivityFunding>;
-  activity_tag?: Maybe<ActivityTags>;
+  assignees?: Maybe<Array<ProjectActivityAssignee>>;
   budget_amount: Scalars['Decimal']['output'];
   created_at: Scalars['DateTime']['output'];
   created_by: Scalars['String']['output'];
@@ -2937,8 +3015,6 @@ export type ProjectActivity = {
   is_subsidized: Scalars['Boolean']['output'];
   logs?: Maybe<Array<ProjectActivityLog>>;
   name: Scalars['String']['output'];
-  owner: User;
-  owner_id: Scalars['String']['output'];
   priority: ActivityPriority;
   project: Project;
   project_id: Scalars['String']['output'];
@@ -2950,8 +3026,41 @@ export type ProjectActivity = {
   updated_by: Scalars['String']['output'];
 };
 
+export type ProjectActivityAssignee = {
+  __typename?: 'ProjectActivityAssignee';
+  activity: ProjectActivity;
+  activity_id: Scalars['String']['output'];
+  created_at: Scalars['DateTime']['output'];
+  created_by: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  user: User;
+  user_id: Scalars['String']['output'];
+};
+
+export type ProjectActivityAssigneeListRelationFilter = {
+  every?: InputMaybe<ProjectActivityAssigneeWhereInput>;
+  none?: InputMaybe<ProjectActivityAssigneeWhereInput>;
+  some?: InputMaybe<ProjectActivityAssigneeWhereInput>;
+};
+
+export type ProjectActivityAssigneeOrderByRelationAggregateInput = {
+  _count?: InputMaybe<SortOrder>;
+};
+
+export type ProjectActivityAssigneeWhereInput = {
+  AND?: InputMaybe<Array<ProjectActivityAssigneeWhereInput>>;
+  NOT?: InputMaybe<Array<ProjectActivityAssigneeWhereInput>>;
+  OR?: InputMaybe<Array<ProjectActivityAssigneeWhereInput>>;
+  activity?: InputMaybe<ProjectActivityScalarRelationFilter>;
+  activity_id?: InputMaybe<StringFilter>;
+  created_at?: InputMaybe<DateTimeFilter>;
+  created_by?: InputMaybe<StringFilter>;
+  id?: InputMaybe<StringFilter>;
+  user?: InputMaybe<UserScalarRelationFilter>;
+  user_id?: InputMaybe<StringFilter>;
+};
+
 export type ProjectActivityBatchUpdateDto = {
-  activity_tag?: InputMaybe<ActivityTags>;
   ids: Array<Scalars['String']['input']>;
   is_subsidized?: InputMaybe<Scalars['Boolean']['input']>;
   priority?: InputMaybe<ActivityPriority>;
@@ -2961,6 +3070,7 @@ export type ProjectActivityBatchUpdateDto = {
 export type ProjectActivityCount = {
   __typename?: 'ProjectActivityCount';
   activity_documents: Scalars['Int']['output'];
+  assignees: Scalars['Int']['output'];
   logs: Scalars['Int']['output'];
   subsidy_receipts: Scalars['Int']['output'];
   subsidy_request: Scalars['Int']['output'];
@@ -2968,13 +3078,13 @@ export type ProjectActivityCount = {
 
 export type ProjectActivityCreateDto = {
   activity_funding: ActivityFundingCreateDto;
+  assignee_ids?: InputMaybe<Array<Scalars['String']['input']>>;
   budget_amount: Scalars['Float']['input'];
   custom_tags?: InputMaybe<Array<Scalars['String']['input']>>;
   deadline: Scalars['String']['input'];
   description: Scalars['String']['input'];
   is_subsidized?: InputMaybe<Scalars['Boolean']['input']>;
   name: Scalars['String']['input'];
-  owner_id: Scalars['String']['input'];
   priority?: InputMaybe<ActivityPriority>;
   project_id: Scalars['String']['input'];
   status?: InputMaybe<ActivityStatus>;
@@ -2983,13 +3093,13 @@ export type ProjectActivityCreateDto = {
 
 export type ProjectActivityCreateWithoutProjectDto = {
   activity_funding: ActivityFundingCreateDto;
+  assignee_ids?: InputMaybe<Array<Scalars['String']['input']>>;
   budget_amount: Scalars['Float']['input'];
   custom_tags?: InputMaybe<Array<Scalars['String']['input']>>;
   deadline: Scalars['String']['input'];
   description: Scalars['String']['input'];
   is_subsidized?: InputMaybe<Scalars['Boolean']['input']>;
   name: Scalars['String']['input'];
-  owner_id: Scalars['String']['input'];
   priority?: InputMaybe<ActivityPriority>;
   status?: InputMaybe<ActivityStatus>;
   tags: Array<ActivityTags>;
@@ -3063,10 +3173,6 @@ export type ProjectActivityNullableScalarRelationFilter = {
   isNot?: InputMaybe<ProjectActivityWhereInput>;
 };
 
-export type ProjectActivityOrderByRelationAggregateInput = {
-  _count?: InputMaybe<SortOrder>;
-};
-
 export type ProjectActivityScalarRelationFilter = {
   is?: InputMaybe<ProjectActivityWhereInput>;
   isNot?: InputMaybe<ProjectActivityWhereInput>;
@@ -3074,7 +3180,7 @@ export type ProjectActivityScalarRelationFilter = {
 
 export type ProjectActivityUpdateDto = {
   activity_funding?: InputMaybe<ActivityFundingUpdateDto>;
-  activity_tag?: InputMaybe<ActivityTags>;
+  assignee_ids?: InputMaybe<Array<Scalars['String']['input']>>;
   budget_amount?: InputMaybe<Scalars['Float']['input']>;
   custom_tags?: InputMaybe<Array<Scalars['String']['input']>>;
   deadline?: InputMaybe<Scalars['String']['input']>;
@@ -3082,7 +3188,6 @@ export type ProjectActivityUpdateDto = {
   id: Scalars['String']['input'];
   is_subsidized?: InputMaybe<Scalars['Boolean']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
-  owner_id?: InputMaybe<Scalars['String']['input']>;
   priority?: InputMaybe<ActivityPriority>;
   status?: InputMaybe<ActivityStatus>;
   tags?: InputMaybe<Array<ActivityTags>>;
@@ -3094,7 +3199,7 @@ export type ProjectActivityWhereInput = {
   OR?: InputMaybe<Array<ProjectActivityWhereInput>>;
   activity_documents?: InputMaybe<ActivityDocumentsListRelationFilter>;
   activity_funding?: InputMaybe<ActivityFundingNullableScalarRelationFilter>;
-  activity_tag?: InputMaybe<EnumActivityTagsNullableFilter>;
+  assignees?: InputMaybe<ProjectActivityAssigneeListRelationFilter>;
   budget_amount?: InputMaybe<DecimalFilter>;
   created_at?: InputMaybe<DateTimeFilter>;
   created_by?: InputMaybe<StringFilter>;
@@ -3108,8 +3213,6 @@ export type ProjectActivityWhereInput = {
   is_subsidized?: InputMaybe<BoolFilter>;
   logs?: InputMaybe<ProjectActivityLogListRelationFilter>;
   name?: InputMaybe<StringFilter>;
-  owner?: InputMaybe<UserScalarRelationFilter>;
-  owner_id?: InputMaybe<StringFilter>;
   priority?: InputMaybe<EnumActivityPriorityFilter>;
   project?: InputMaybe<ProjectScalarRelationFilter>;
   project_id?: InputMaybe<StringFilter>;
@@ -3267,12 +3370,16 @@ export type Query = {
   budgetDistribution: BudgetDistribution;
   budgetKPIs: BudgetKpIs;
   church?: Maybe<ChurchModel>;
+  churchActivityTimeline: Array<Scalars['JSON']['output']>;
   churches: Array<ChurchModel>;
   communication?: Maybe<Communication>;
   communications: Array<Communication>;
   contact?: Maybe<Contact>;
   contacts: Array<Contact>;
   department?: Maybe<Department>;
+  departmentActivityData: Array<DepartmentActivityData>;
+  departmentBudgetTimeline: Array<DepartmentBudgetTimeline>;
+  departmentKPIs: DepartmentKpIs;
   departmentSpending: Array<DepartmentSpending>;
   departments: Array<Department>;
   directMessage?: Maybe<DirectMessage>;
@@ -3281,6 +3388,7 @@ export type Query = {
   entityDistribution: Array<EntityDistribution>;
   getActivityDocuments: Array<ActivityDocuments>;
   institution?: Maybe<Institution>;
+  institutionalDepartmentsKPIs: InstitutionalDepartmentsKpIs;
   institutions: Array<Institution>;
   notification?: Maybe<Notification>;
   notifications: Array<Notification>;
@@ -3343,6 +3451,12 @@ export type QueryChurchArgs = {
 };
 
 
+export type QueryChurchActivityTimelineArgs = {
+  institution_id?: InputMaybe<Scalars['String']['input']>;
+  selectedYear?: InputMaybe<Scalars['Float']['input']>;
+};
+
+
 export type QueryCommunicationArgs = {
   id: Scalars['String']['input'];
 };
@@ -3355,6 +3469,27 @@ export type QueryContactArgs = {
 
 export type QueryDepartmentArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type QueryDepartmentActivityDataArgs = {
+  church_id?: InputMaybe<Scalars['String']['input']>;
+  institution_id?: InputMaybe<Scalars['String']['input']>;
+  selectedYear?: InputMaybe<Scalars['Float']['input']>;
+};
+
+
+export type QueryDepartmentBudgetTimelineArgs = {
+  church_id?: InputMaybe<Scalars['String']['input']>;
+  institution_id?: InputMaybe<Scalars['String']['input']>;
+  selectedYear?: InputMaybe<Scalars['Float']['input']>;
+};
+
+
+export type QueryDepartmentKpIsArgs = {
+  church_id?: InputMaybe<Scalars['String']['input']>;
+  institution_id?: InputMaybe<Scalars['String']['input']>;
+  selectedYear?: InputMaybe<Scalars['Float']['input']>;
 };
 
 
@@ -3391,6 +3526,12 @@ export type QueryGetActivityDocumentsArgs = {
 
 export type QueryInstitutionArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type QueryInstitutionalDepartmentsKpIsArgs = {
+  institutionId: Scalars['String']['input'];
+  year: Scalars['Int']['input'];
 };
 
 
@@ -4196,6 +4337,7 @@ export type User = {
   SubsidyRequest?: Maybe<Array<SubsidyRequest>>;
   SubsidyStatus?: Maybe<Array<SubsidyStatus>>;
   _count: UserCount;
+  activity_assignments?: Maybe<Array<ProjectActivityAssignee>>;
   approved_annual_budgets?: Maybe<Array<AnnualBudget>>;
   church?: Maybe<Church>;
   church_id?: Maybe<Scalars['String']['output']>;
@@ -4222,7 +4364,6 @@ export type User = {
   name: Scalars['String']['output'];
   notifications?: Maybe<Array<Notification>>;
   password: Scalars['String']['output'];
-  project_activities?: Maybe<Array<ProjectActivity>>;
   project_activity_logs?: Maybe<Array<ProjectActivityLog>>;
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
@@ -4235,6 +4376,7 @@ export type UserCount = {
   Project: Scalars['Int']['output'];
   SubsidyRequest: Scalars['Int']['output'];
   SubsidyStatus: Scalars['Int']['output'];
+  activity_assignments: Scalars['Int']['output'];
   approved_annual_budgets: Scalars['Int']['output'];
   communications: Scalars['Int']['output'];
   direct_message_recipients: Scalars['Int']['output'];
@@ -4242,7 +4384,6 @@ export type UserCount = {
   event_recipients: Scalars['Int']['output'];
   event_registrations: Scalars['Int']['output'];
   notifications: Scalars['Int']['output'];
-  project_activities: Scalars['Int']['output'];
   project_activity_logs: Scalars['Int']['output'];
   user_roles: Scalars['Int']['output'];
   voluntary_projects: Scalars['Int']['output'];
@@ -4304,6 +4445,7 @@ export type UserOrderByWithRelationInput = {
   Project?: InputMaybe<ProjectOrderByRelationAggregateInput>;
   SubsidyRequest?: InputMaybe<SubsidyRequestOrderByRelationAggregateInput>;
   SubsidyStatus?: InputMaybe<SubsidyStatusOrderByRelationAggregateInput>;
+  activity_assignments?: InputMaybe<ProjectActivityAssigneeOrderByRelationAggregateInput>;
   approved_annual_budgets?: InputMaybe<AnnualBudgetOrderByRelationAggregateInput>;
   church?: InputMaybe<ChurchOrderByWithRelationInput>;
   church_id?: InputMaybe<SortOrderInput>;
@@ -4330,7 +4472,6 @@ export type UserOrderByWithRelationInput = {
   name?: InputMaybe<SortOrder>;
   notifications?: InputMaybe<NotificationOrderByRelationAggregateInput>;
   password?: InputMaybe<SortOrder>;
-  project_activities?: InputMaybe<ProjectActivityOrderByRelationAggregateInput>;
   project_activity_logs?: InputMaybe<ProjectActivityLogOrderByRelationAggregateInput>;
   updated_at?: InputMaybe<SortOrder>;
   updated_by?: InputMaybe<SortOrder>;
@@ -4409,6 +4550,7 @@ export type UserWhereInput = {
   Project?: InputMaybe<ProjectListRelationFilter>;
   SubsidyRequest?: InputMaybe<SubsidyRequestListRelationFilter>;
   SubsidyStatus?: InputMaybe<SubsidyStatusListRelationFilter>;
+  activity_assignments?: InputMaybe<ProjectActivityAssigneeListRelationFilter>;
   approved_annual_budgets?: InputMaybe<AnnualBudgetListRelationFilter>;
   church?: InputMaybe<ChurchNullableScalarRelationFilter>;
   church_id?: InputMaybe<StringNullableFilter>;
@@ -4435,7 +4577,6 @@ export type UserWhereInput = {
   name?: InputMaybe<StringFilter>;
   notifications?: InputMaybe<NotificationListRelationFilter>;
   password?: InputMaybe<StringFilter>;
-  project_activities?: InputMaybe<ProjectActivityListRelationFilter>;
   project_activity_logs?: InputMaybe<ProjectActivityLogListRelationFilter>;
   updated_at?: InputMaybe<DateTimeFilter>;
   updated_by?: InputMaybe<StringFilter>;
