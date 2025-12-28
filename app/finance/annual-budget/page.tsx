@@ -644,8 +644,9 @@ export default function AnnualBudgetPage() {
       return {
         budgetDistribution: {
           total: kpiData.totalInstitutionBudget,
+          spent: kpiData.totalSpent,
           allocated: kpiData.totalAllocated,
-          remaining: kpiData.budgetRemaining,
+          available: kpiData.budgetRemaining,
           percentageUsed: kpiData.budgetUtilization
         },
         departmentSpending: [],
@@ -655,12 +656,7 @@ export default function AnnualBudgetPage() {
     }
 
     return {
-      budgetDistribution: {
-        total: kpiData.totalInstitutionBudget,
-        allocated: kpiData.totalAllocated,
-        remaining: kpiData.budgetRemaining,
-        percentageUsed: kpiData.budgetUtilization
-      },
+      budgetDistribution: kpisData.budgetDistribution,
       departmentSpending: kpisData.departmentSpending || [],
       spendingOverTime: kpisData.spendingOverTime || [],
       entityDistribution
@@ -1491,10 +1487,9 @@ export default function AnnualBudgetPage() {
                 currency={currencyConfig}
               />
               
-              <BudgetDistributionChart 
-                data={chartData.budgetDistribution} 
+              <BudgetDistributionChart
+                data={chartData.budgetDistribution}
                 year={selectedYear}
-                entityDistribution={dashboardData?.entityDistribution || []}
                 currency={currencyConfig}
               />
               
