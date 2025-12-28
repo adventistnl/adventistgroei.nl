@@ -16,13 +16,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { ColumnDef } from "@tanstack/react-table"
 import { ProjectTableData } from "@/components/projects/projects-table"
 import { useNavigateWithLoading } from "@/hooks/use-navigation-loading"
 import { projectTranslations } from "@/lib/translations/projects"
 import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { DELETE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
-import { Globe, Plus, RefreshCw, Building } from "lucide-react"
+import { Globe, Plus, RefreshCw, Building, MoreHorizontal, Eye, Edit, Trash2, Activity, TrendingUp, Users, DollarSign } from "lucide-react"
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
 import { ProjectsKPIs } from "@/components/projects/projects-kpis"
@@ -158,30 +165,140 @@ export default function ProjectsPage() {
     return projectsByYear.filter(project => project.department_id === selectedDepartment)
   }, [selectedDepartment, projectsByYear])
 
+
+
   // Get KPIs from backend data filtered by year
   const kpis = useMemo(() => {
-    // Calculate KPIs based on filtered projects by year
-    const yearProjects = projectsByYear
+    if (kpisData?.projectKPIs) {
+      return kpisData.projectKPIs
+    }
     
+    // Fallback calculation if backend data is missing
+    const yearProjects = projectsByYear
     const totalProjects = yearProjects.length
-    const activeProjects = yearProjects.filter(p => p.status === 'active').length
-    const completedProjects = yearProjects.filter(p => p.status === 'completed').length
-    const upcomingProjects = yearProjects.filter(p => p.status === 'upcoming').length
     const totalBudget = yearProjects.reduce((sum, p) => sum + (p.budget || 0), 0)
-    const averageBudgetPerProject = totalProjects > 0 ? totalBudget / totalProjects : 0
     
     return {
       totalProjects,
-      activeProjects,
-      completedProjects,
-      upcomingProjects,
+      activeProjects: yearProjects.filter(p => p.status === 'active').length,
+      completedProjects: yearProjects.filter(p => p.status === 'completed').length,
+      upcomingProjects: yearProjects.filter(p => p.status === 'upcoming').length,
       totalBudget,
-      totalSubsidyRequests: 0, // TODO: Will be populated when subsidy data is available
-      totalSubsidyAmount: 0, // TODO: Will be populated when subsidy data is available
+      totalSubsidyRequests: 0,
+      totalSubsidyAmount: 0,
       projectsWithVolunteers: yearProjects.filter(p => p.required_volunteers).length,
-      averageBudgetPerProject,
+      averageBudgetPerProject: totalProjects > 0 ? totalBudget / totalProjects : 0,
     }
-  }, [projectsByYear])
+  }, [kpisData, projectsByYear])
+
+  // Colunas para a tabela de projetos
+  const projectColumns: ColumnDef<ProjectTableData>[] = [
+    {
+      id: "mobile-expand",
+      header: "",
+      cell: () => null, // Renderizado pelo UseTable
+    },
+    {
+      accessorKey: "title",
+      header: t_project.table.projectTitle,
+      cell: ({ row }) => (
+        <div className="font-medium">{row.original.title}</div>
+      ),
+    },
+    {
+      accessorKey: "department_id",
+      header: t_project.table.department,
+      cell: ({ row }) => {
+        const dept = departments.find(d => d.id === row.original.department_id)
+        return <span className="text-sm">{dept?.name || "Unknown"}</span>
+      },
+    },
+    {
+      accessorKey: "budget",
+      header: t_project.budget.annualBudget,
+      cell: ({ row }) => (
+        <span className="font-mono">R$ {row.original.budget.toLocaleString()}</span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: t_project.table.status,
+      cell: ({ row }) => {
+        const status = row.original.status
+        const statusText = status === "active" ? t_project.active :
+                          status === "completed" ? t_project.completed :
+                          t_project.upcoming
+        const color = status === "active" ? "bg-green-100 text-green-700" : 
+                     status === "completed" ? "bg-blue-100 text-blue-700" : 
+                     "bg-yellow-100 text-yellow-700"
+        return (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}>
+            {statusText}
+          </span>
+        )
+      },
+    },
+    {
+      accessorKey: "start_at",
+      header: t_project.table.startDate,
+      cell: ({ row }) => {
+        const date = new Date(row.original.start_at)
+        return date.toLocaleDateString()
+      },
+    },
+    {
+      id: "actions",
+      header: t_project.table.actions,
+      cell: ({ row }) => {
+        const project = row.original
+        
+        return (
+          <div data-action-button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleViewProject(project)
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  {t_project.viewProject}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleEditProject(project)
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  {t_project.editProject}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDeleteProject(project)
+                  }}
+                  className="cursor-pointer text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {t_project.deleteProject}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )
+      },
+    },
+  ]
 
   // Show loading/error toasts
   useEffect(() => {
@@ -274,14 +391,7 @@ export default function ProjectsPage() {
     }
   }
 
-  // Create table columns with handlers
-  const projectColumns = useMemo(() => {
-    return createProjectColumns(departments, t_project, {
-      handleViewProject,
-      handleEditProject,
-      handleDeleteProject,
-    })
-  }, [departments, t_project])
+
 
   // Year Filter Component
   const YearFilter = ({ showAddButton = true }: { showAddButton?: boolean }) => {
