@@ -1931,6 +1931,16 @@ export type InstitutionWhereInput = {
   users?: InputMaybe<UserListRelationFilter>;
 };
 
+export type InstitutionalDepartmentsKpIs = {
+  __typename?: 'InstitutionalDepartmentsKPIs';
+  departmentsWithBudget: Scalars['Int']['output'];
+  totalAllocated: Scalars['Float']['output'];
+  totalAvailable: Scalars['Float']['output'];
+  totalDepartments: Scalars['Int']['output'];
+  totalPlanned: Scalars['Float']['output'];
+  totalSpent: Scalars['Float']['output'];
+};
+
 export type IntFilter = {
   equals?: InputMaybe<Scalars['Int']['input']>;
   gt?: InputMaybe<Scalars['Int']['input']>;
@@ -2869,6 +2879,7 @@ export enum PermissionResolverName {
   EntityDistribution = 'entityDistribution',
   GetActivityDocuments = 'getActivityDocuments',
   Institution = 'institution',
+  InstitutionalDepartmentsKpIs = 'institutionalDepartmentsKPIs',
   Institutions = 'institutions',
   InviteUser = 'inviteUser',
   Notification = 'notification',
@@ -3377,6 +3388,7 @@ export type Query = {
   entityDistribution: Array<EntityDistribution>;
   getActivityDocuments: Array<ActivityDocuments>;
   institution?: Maybe<Institution>;
+  institutionalDepartmentsKPIs: InstitutionalDepartmentsKpIs;
   institutions: Array<Institution>;
   notification?: Maybe<Notification>;
   notifications: Array<Notification>;
@@ -3514,6 +3526,12 @@ export type QueryGetActivityDocumentsArgs = {
 
 export type QueryInstitutionArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type QueryInstitutionalDepartmentsKpIsArgs = {
+  institutionId: Scalars['String']['input'];
+  year: Scalars['Int']['input'];
 };
 
 
