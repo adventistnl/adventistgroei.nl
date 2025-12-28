@@ -405,8 +405,8 @@ export default function InstitutionsPage() {
       ),
       cell: ({ row }) => {
         const institution = row.original;
-        const hasBudget = institution.has_budget_record;
-        const budgetAmount = institution.total_budget || 0;
+        const budgetAmount = institution.current_year_budget || 0;
+        const hasBudget = budgetAmount > 0;
 
         return (
           <div className="text-center">
