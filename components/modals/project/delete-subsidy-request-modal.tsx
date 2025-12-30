@@ -1,17 +1,17 @@
 "use client"
 
 import React, { useState } from "react"
-import { useTranslation } from "react-i18next"
+import { useMutation } from "@apollo/client"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { 
+import {
   Trash2,
-  FileText, 
-  ChevronDown, 
-  ChevronRight, 
+  FileText,
+  ChevronDown,
+  ChevronRight,
   AlertTriangle,
   Database,
   Building,
@@ -23,6 +23,7 @@ import { SubsidyRequestCardData } from "@/components/projects/subsidy-request-ca
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useCurrency } from "@/contexts/currency-context"
+import { DELETE_SUBSIDY_REQUEST } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
 
 export interface DeleteSubsidyRequestModalProps {
   isOpen: boolean
@@ -37,12 +38,28 @@ export function DeleteSubsidyRequestModal({
   subsidy,
   onSuccess
 }: DeleteSubsidyRequestModalProps) {
-  const { t } = useTranslation()
   const { formatCurrency } = useCurrency()
-  const [isLoading, setIsLoading] = useState(false)
   const [consequencesOpen, setConsequencesOpen] = useState(false)
   const [understoodConsequences, setUnderstoodConsequences] = useState(false)
   const [finalConfirmation, setFinalConfirmation] = useState('')
+
+  const [deleteSubsidyRequest, { loading: isLoading }] = useMutation(DELETE_SUBSIDY_REQUEST, {
+    onCompleted: () => {
+      toast.success('✅ Solicitação excluída com sucesso', { duration: 3000 })
+      if (onSuccess && subsidy) {
+        onSuccess(subsidy)
+      }
+      onOpenChangeAction(false)
+      // Reset form state
+      setConsequencesOpen(false)
+      setUnderstoodConsequences(false)
+      setFinalConfirmation('')
+    },
+    onError: (error) => {
+      toast.error(`Erro ao excluir solicitação: ${error.message}`)
+      console.error('Error deleting subsidy request:', error)
+    }
+  })
 
   const statusConfig: Record<SubsidyRequestCardData["status"], { label: string; className: string }> = {
     pending: { label: "Pendente", className: "bg-amber-50 text-amber-700 border-amber-200" },
@@ -53,29 +70,14 @@ export function DeleteSubsidyRequestModal({
 
   const handleSubmit = async () => {
     if (!subsidy) return
-    
-    setIsLoading(true)
-    const loadingToast = toast.loading('Excluindo solicitação...')
-    
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      toast.dismiss(loadingToast)
-      toast.success('Solicitação excluída com sucesso', {
-        duration: 3000
+      await deleteSubsidyRequest({
+        variables: { id: subsidy.id }
       })
-      
-      if (onSuccess) {
-        onSuccess(subsidy)
-      }
-      
-      onOpenChangeAction(false)
     } catch (error) {
-      toast.dismiss(loadingToast)
-      toast.error('Erro ao excluir solicitação')
-    } finally {
-      setIsLoading(false)
+      // Error already handled by mutation onError
+      console.error('Failed to delete subsidy request:', error)
     }
   }
 

@@ -22,7 +22,7 @@ import { CreateCommunicationModal, CommunicationFormData } from "@/components/mo
 import { AddSubsidyModal, SubsidyFormData } from "@/components/modals/project/add-subsidy-modal"
 import { EditSubsidyModal, EditSubsidyFormData } from "@/components/modals/project/edit-subsidy-modal"
 import { DeleteSubsidyModal } from "@/components/modals/project/delete-subsidy-modal"
-import { SubsidyRequestViewModal } from "@/components/modals/project/subsidy-request-view-modal"
+// View subsidy modal is handled internally by SubsidyRequestsContainer
 import { DeleteSubsidyRequestModal } from "@/components/modals/project/delete-subsidy-request-modal"
 import { AddActivityModal, ActivityFormData } from "@/components/modals/project/add-activity-modal"
 import { EditActivityModal, EditActivityFormData } from "@/components/modals/project/edit-activity-modal"
@@ -70,6 +70,7 @@ import { useQuery, useMutation } from "@apollo/client"
 import { GET_PROJECT_BY_ID_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { GET_ALL_USERS_QUERY } from "@/graphql/queries/GET_USER_QUERY"
 import { BATCH_UPDATE_PROJECT_ACTIVITIES, CREATE_PROJECT_ACTIVITY, UPDATE_PROJECT_ACTIVITY } from "@/graphql/mutations/PROJECT_ACTIVITY_MUTATIONS"
+import { CREATE_SUBSIDY_REQUEST, UPDATE_SUBSIDY_REQUEST, APPROVE_SUBSIDY_REQUEST, REJECT_SUBSIDY_REQUEST, DELETE_SUBSIDY_REQUEST } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
 import { useAuth } from "@/contexts/auth-context"
 import { useInstitution } from "@/contexts/institution-context"
 import { ActivityTags, EntityType, ActivityPriority, ActivityStatus } from "@/types/graphql-global-types"
@@ -153,7 +154,7 @@ export default function ProjectDetailsPage() {
   const [isAddSubsidyModalOpen, setIsAddSubsidyModalOpen] = useState(false)
   const [isEditSubsidyModalOpen, setIsEditSubsidyModalOpen] = useState(false)
   const [isDeleteSubsidyModalOpen, setIsDeleteSubsidyModalOpen] = useState(false)
-  const [isViewSubsidyRequestModalOpen, setIsViewSubsidyRequestModalOpen] = useState(false)
+  // View subsidy modal is handled by SubsidyRequestsContainer internally
   const [isDeleteSubsidyRequestModalOpen, setIsDeleteSubsidyRequestModalOpen] = useState(false)
   const [isAddActivityModalOpen, setIsAddActivityModalOpen] = useState(false)
   const [isEditActivityModalOpen, setIsEditActivityModalOpen] = useState(false)
@@ -253,6 +254,66 @@ export default function ProjectDetailsPage() {
     }
   })
 
+  // Subsidy Request Mutations
+  const [createSubsidyRequest, { loading: createSubsidyLoading }] = useMutation(CREATE_SUBSIDY_REQUEST, {
+    onCompleted: () => {
+      toast.success("✅ Solicitação de subsídio criada com sucesso!", { duration: 3000 })
+      refetchProject()
+      setIsRequestSubsidyModalOpen(false)
+      setSelectedActivities([])
+    },
+    onError: (error) => {
+      toast.error(`Erro ao criar solicitação de subsídio: ${error.message}`)
+      console.error("Error creating subsidy request:", error)
+    }
+  })
+
+  const [updateSubsidyRequest, { loading: updateSubsidyLoading }] = useMutation(UPDATE_SUBSIDY_REQUEST, {
+    onCompleted: () => {
+      toast.success("✅ Solicitação de subsídio atualizada com sucesso!", { duration: 3000 })
+      refetchProject()
+    },
+    onError: (error) => {
+      toast.error(`Erro ao atualizar solicitação de subsídio: ${error.message}`)
+      console.error("Error updating subsidy request:", error)
+    }
+  })
+
+  const [approveSubsidyRequest, { loading: approveSubsidyLoading }] = useMutation(APPROVE_SUBSIDY_REQUEST, {
+    onCompleted: () => {
+      toast.success("✅ Solicitação de subsídio aprovada!", { duration: 3000 })
+      refetchProject()
+    },
+    onError: (error) => {
+      toast.error(`Erro ao aprovar solicitação de subsídio: ${error.message}`)
+      console.error("Error approving subsidy request:", error)
+    }
+  })
+
+  const [rejectSubsidyRequest, { loading: rejectSubsidyLoading }] = useMutation(REJECT_SUBSIDY_REQUEST, {
+    onCompleted: () => {
+      toast.success("Solicitação de subsídio rejeitada", { duration: 3000 })
+      refetchProject()
+    },
+    onError: (error) => {
+      toast.error(`Erro ao rejeitar solicitação de subsídio: ${error.message}`)
+      console.error("Error rejecting subsidy request:", error)
+    }
+  })
+
+  const [deleteSubsidyRequest, { loading: deleteSubsidyLoading }] = useMutation(DELETE_SUBSIDY_REQUEST, {
+    onCompleted: () => {
+      toast.success("🗑️ Solicitação de subsídio deletada", { duration: 3000 })
+      refetchProject()
+      setIsDeleteSubsidyRequestModalOpen(false)
+      setSelectedSubsidyCard(null)
+    },
+    onError: (error) => {
+      toast.error(`Erro ao deletar solicitação de subsídio: ${error.message}`)
+      console.error("Error deleting subsidy request:", error)
+    }
+  })
+
   // Transform backend project to ProjectTableData format
   const transformProjectData = (backendProject: any): ProjectTableData => {
     const now = new Date()
@@ -278,6 +339,9 @@ export default function ProjectDetailsPage() {
       end_at: backendProject.end_at,
       language_preference: backendProject.language_preference,
       institutionId: backendProject.institution_id || "",
+      // Names for display
+      institutionName: backendProject.Institution?.name || "",
+      departmentName: backendProject.department?.name || "",
       status: status,
       is_event: !!backendProject.event_id,
       type: backendProject.type,
@@ -298,7 +362,7 @@ export default function ProjectDetailsPage() {
       console.log('🏢 Project Data:', projectData.project)
       console.log('🏢 Project institution_id:', projectData.project.institution_id)
 
-      // Transform subsidies data
+      // Transform subsidies data with new items structure
       if (projectData.project.subsidies) {
         const transformedSubsidies: SubsidyRequestCardData[] = projectData.project.subsidies.map((subsidy: any) => ({
           id: subsidy.id,
@@ -306,7 +370,44 @@ export default function ProjectDetailsPage() {
           requested_at: new Date(subsidy.created_at),
           status: subsidy.subsidy_status?.name?.toLowerCase() || "pending",
           requested_amount: Number(subsidy.total_budget),
-          institution_name: subsidy.institution?.name || "Unknown"
+          approved_amount: Number(subsidy.approved_amount || 0),
+          rejection_reason: subsidy.rejection_reason,
+          approved_at: subsidy.approved_at ? new Date(subsidy.approved_at) : undefined,
+          rejected_at: subsidy.rejection_reason && subsidy.updated_at ? new Date(subsidy.updated_at) : undefined,
+          // IDs for editing
+          project_id: subsidy.project_id || projectId,
+          institution_id: subsidy.institution_id,
+          department_id: subsidy.department_id,
+          // Use church from department for CHURCH_DEPARTMENT types as fallback
+          church_id: subsidy.church_id || subsidy.department?.church?.id,
+          // notes field is not available in backend yet
+          notes: "",
+          // Display names
+          institution_name: subsidy.institution?.name || "Unknown",
+          // Use church from department for CHURCH_DEPARTMENT types as fallback
+          church_name: subsidy.church?.name || subsidy.department?.church?.name,
+          department_name: subsidy.department?.name,
+          activities_count: subsidy.items?.length || 0,
+          total_budget: subsidy.items?.reduce((sum: number, item: any) => sum + Number(item.project_activity?.budget_amount || 0), 0) || Number(subsidy.total_budget),
+          // Store items for detailed view
+          items: subsidy.items?.map((item: any) => ({
+            id: item.id,
+            activity_id: item.project_activity_id,
+            activity_name: item.project_activity?.name || "Unknown",
+            requested_amount: Number(item.requested_amount),
+            approved_amount: Number(item.approved_amount || 0),
+            budget_amount: Number(item.project_activity?.budget_amount || 0),
+            notes: item.notes,
+            activity: {
+              id: item.project_activity?.id,
+              name: item.project_activity?.name,
+              description: item.project_activity?.description,
+              budget_amount: Number(item.project_activity?.budget_amount || 0),
+              status: item.project_activity?.status,
+              priority: item.project_activity?.priority,
+              is_subsidized: item.project_activity?.is_subsidized
+            }
+          })) || []
         }))
         setSubsidyRequests(transformedSubsidies)
       }
@@ -672,14 +773,38 @@ export default function ProjectDetailsPage() {
     setIsRequestSubsidyModalOpen(true)
   }, [selectedActivities])
 
-  const handleSubsidyRequestSubmit = (data: SubsidyRequestFormData) => {
-    console.log('Subsidy request submitted:', data)
-    toast.success(
-      `📋 Solicitação de subsídio criada!\n${data.items.length} atividade(s) incluída(s)\nTotal: ${data.requested_amount}`,
-      { duration: 4000 }
-    )
-    setIsRequestSubsidyModalOpen(false)
-    setSelectedActivities([])
+  const handleSubsidyRequestSubmit = async (data: SubsidyRequestFormData) => {
+    try {
+      console.log('📋 Submitting subsidy request:', data)
+
+      // Transform items to match backend expected format
+      const subsidyItems = data.items.map(item => ({
+        project_activity_id: item.activity_id,
+        requested_amount: item.requested_amount,
+        notes: item.notes || ""
+      }))
+
+      // Call mutation
+      await createSubsidyRequest({
+        variables: {
+          data: {
+            description: data.notes || `Solicitação de subsídio com ${data.items.length} atividade(s)`,
+            total_budget: data.requested_amount,
+            institution_id: data.institution_id,
+            department_id: data.department_id || undefined,
+            church_id: data.church_id || undefined,
+            project_id: data.project_id,
+            items: subsidyItems,
+            notes: data.notes
+          }
+        }
+      })
+
+      console.log('✅ Subsidy request created successfully')
+    } catch (error) {
+      console.error('❌ Error creating subsidy request:', error)
+      // Error is already handled by mutation onError
+    }
   }
 
   // Check if all selected activities are subsidized
@@ -693,13 +818,7 @@ export default function ProjectDetailsPage() {
     toast.success(`📊 Exportando ${selectedActivities.length} atividade(s)...`)
   }, [selectedActivities])
 
-  const handleViewSubsidyCard = (id: string) => {
-    const subsidy = subsidyRequests.find((s: SubsidyRequestCardData) => s.id === id)
-    if (subsidy) {
-      setSelectedSubsidyCard(subsidy)
-      setIsViewSubsidyRequestModalOpen(true)
-    }
-  }
+  // View subsidy is handled internally by SubsidyRequestsContainer using ViewSubsidyModal
 
   const handleEditSubsidyCard = (id: string) => {
     const subsidy = subsidyRequests.find((s: SubsidyRequestCardData) => s.id === id)
@@ -1405,22 +1524,21 @@ export default function ProjectDetailsPage() {
                         {/* Tabs - Subsídios e Comunicações */}
 
                         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "subsidies" | "communications")} className="w-full">
-                          <TabsList className="grid w-full grid-cols-2 max-w-md">
+                          <TabsList className="grid w-full grid-cols-1 max-w-md">
                             <TabsTrigger value="subsidies" className="gap-2">
                               <DollarSign className="w-4 h-4" />
                               Subsídios
                             </TabsTrigger>
-                            <TabsTrigger value="communications" className="gap-2">
+                            {/* <TabsTrigger value="communications" className="gap-2">
                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
                               Comunicações
-                            </TabsTrigger>
+                            </TabsTrigger> */}
                           </TabsList>
                         </Tabs>
 
                         <SubsidyRequestsContainer
                           subsidies={subsidyRequests}
                           onAddSubsidy={handleAddSubsidyFromContainer}
-                          onViewSubsidy={handleViewSubsidyCard}
                           onEditSubsidy={handleEditSubsidyCard}
                           onDeleteSubsidy={handleDeleteSubsidyCard}
                           onDuplicateSubsidy={handleDuplicateSubsidyCard}
@@ -1433,49 +1551,49 @@ export default function ProjectDetailsPage() {
                   },
                 ]
               : [ 
-                  {
-                    id: "subsidy-chart",
-                    component: (
-                      <SubsidyActivityChart
-                        data={subsidyRequests}
-                        selectedYear={new Date().getFullYear()}
-                      />
-                    ),
-                    colSpan: "col-span-12 lg:col-span-8",
-                  },
-                  {
-                    id: "communications",
-                    component: (
-                      <>
-                           {/* Tabs - Subsídios e Comunicações */}
+                  // {
+                  //   id: "subsidy-chart",
+                  //   component: (
+                  //     <SubsidyActivityChart
+                  //       data={subsidyRequests}
+                  //       selectedYear={new Date().getFullYear()}
+                  //     />
+                  //   ),
+                  //   colSpan: "col-span-12 lg:col-span-8",
+                  // },
+                  // {
+                  //   id: "communications",
+                  //   component: (
+                  //     <>
+                  //          {/* Tabs - Subsídios e Comunicações */}
                         
-                        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "subsidies" | "communications")} className="w-full">
-                          <TabsList className="grid w-full grid-cols-2 max-w-md">
-                            <TabsTrigger value="subsidies" className="gap-2">
-                              <DollarSign className="w-4 h-4" />
-                              Subsídios
-                            </TabsTrigger>
-                            <TabsTrigger value="communications" className="gap-2">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
-                              Comunicações
-                            </TabsTrigger>
-                          </TabsList>
-                        </Tabs>
+                  //       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "subsidies" | "communications")} className="w-full">
+                  //         <TabsList className="grid w-full grid-cols-2 max-w-md">
+                  //           <TabsTrigger value="subsidies" className="gap-2">
+                  //             <DollarSign className="w-4 h-4" />
+                  //             Subsídios
+                  //           </TabsTrigger>
+                  //           <TabsTrigger value="communications" className="gap-2">
+                  //             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+                  //             Comunicações
+                  //           </TabsTrigger>
+                  //         </TabsList>
+                  //       </Tabs>
 
-                         <CommunicationsContainer
-                          communications={communications}
-                          onAddCommunication={handleAddCommunication}
-                          onViewCommunication={handleViewCommunication}
-                          onEditCommunication={handleEditCommunication}
-                          onDeleteCommunication={handleDeleteCommunication}
-                          onDuplicateCommunication={handleDuplicateCommunication}
-                          description="Comunicações do projeto"
-                        />
-                      </>
+                  //        <CommunicationsContainer
+                  //         communications={communications}
+                  //         onAddCommunication={handleAddCommunication}
+                  //         onViewCommunication={handleViewCommunication}
+                  //         onEditCommunication={handleEditCommunication}
+                  //         onDeleteCommunication={handleDeleteCommunication}
+                  //         onDuplicateCommunication={handleDuplicateCommunication}
+                  //         description="Comunicações do projeto"
+                  //       />
+                  //     </>
                      
-                    ),
-                     colSpan: "col-span-12 lg:col-span-4",
-                  },
+                  //   ),
+                  //    colSpan: "col-span-12 lg:col-span-4",
+                  // },
                 ]
           }
           gap="lg"
@@ -1692,17 +1810,13 @@ export default function ProjectDetailsPage() {
           projectId={projectId}
           institutionId={project?.institutionId}
           departmentId={project?.department_id}
+          institutionName={project?.institutionName}
+          departmentName={project?.departmentName}
           onSubmit={handleSubsidyRequestSubmit}
           allActivities={allProjectActivities}
         />
 
-        {/* Subsidy Request Card Modals */}
-        <SubsidyRequestViewModal
-          isOpen={isViewSubsidyRequestModalOpen}
-          onOpenChange={setIsViewSubsidyRequestModalOpen}
-          subsidy={selectedSubsidyCard}
-        />
-
+        {/* Subsidy Request Card Modals - View is handled by SubsidyRequestsContainer */}
         <DeleteSubsidyRequestModal
           isOpen={isDeleteSubsidyRequestModalOpen}
           onOpenChangeAction={setIsDeleteSubsidyRequestModalOpen}
