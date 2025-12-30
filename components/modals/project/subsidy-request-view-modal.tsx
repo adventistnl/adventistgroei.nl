@@ -44,7 +44,7 @@ export interface SubsidyRequestItemData {
   activity_name: string
   requested_amount: number
   budget_amount: number
-  activity_documents: SubsidyDocumentData[]
+  activity_documents?: SubsidyDocumentData[]
   notes?: string
 }
 
@@ -380,13 +380,13 @@ export function SubsidyRequestViewModal({
                   <div>
                     <Label className="text-xs text-muted-foreground">Documentos</Label>
                     <p className="text-sm font-semibold text-foreground">
-                      {item.activity_documents.length} arquivo(s)
+                      {(item.activity_documents?.length || 0)} arquivo(s)
                     </p>
                   </div>
                 </div>
 
                 {/* Documents List */}
-                {item.activity_documents.length > 0 && (
+                {item.activity_documents && item.activity_documents.length > 0 && (
                   <div className="space-y-2">
                     <Label className="text-xs text-muted-foreground">Documentos Anexados</Label>
                     {item.activity_documents.map((doc) => (

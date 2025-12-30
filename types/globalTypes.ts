@@ -251,6 +251,39 @@ export interface RequestRevisionAnnualBudgetDto {
   revision_notes: string;
 }
 
+export interface SubsidyRequestCreateDto {
+  description: string;
+  total_budget: number;
+  institution_id?: string | null;
+  requester_id: string;
+  department_id: string;
+  church_id?: string | null;
+  subsidy_status_id?: string | null;
+  items: SubsidyRequestItemInput[];
+  project_id: string;
+  notes?: string | null;
+}
+
+export interface SubsidyRequestItemInput {
+  project_activity_id: string;
+  requested_amount: number;
+  notes?: string | null;
+}
+
+export interface SubsidyRequestUpdateDto {
+  description?: string | null;
+  total_budget?: number | null;
+  institution_id?: string | null;
+  requester_id?: string | null;
+  department_id?: string | null;
+  church_id?: string | null;
+  subsidy_status_id?: string | null;
+  items?: SubsidyRequestItemInput[] | null;
+  approved_amount?: number | null;
+  rejection_reason?: string | null;
+  notes?: string | null;
+}
+
 export interface UploadActivityDocumentDto {
   activity_id: string;
   project_activity_id: string;

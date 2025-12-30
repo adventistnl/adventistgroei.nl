@@ -81,16 +81,64 @@ export interface GetProjectById_project_subsidies_institution {
   name: string;
 }
 
+export interface GetProjectById_project_subsidies_department {
+  __typename: "Department";
+  id: string;
+  name: string;
+}
+
+export interface GetProjectById_project_subsidies_church {
+  __typename: "Church";
+  id: string;
+  name: string;
+}
+
+export interface GetProjectById_project_subsidies_items_project_activity {
+  __typename: "ProjectActivity";
+  id: string;
+  name: string;
+  description: string;
+  budget_amount: any;
+  status: ActivityStatus;
+  priority: ActivityPriority;
+  is_subsidized: boolean;
+}
+
+export interface GetProjectById_project_subsidies_items {
+  __typename: "SubsidyRequestItem";
+  id: string;
+  subsidy_request_id: string;
+  project_activity_id: string;
+  requested_amount: any;
+  approved_amount: any;
+  notes: string | null;
+  created_at: any;
+  updated_at: any;
+  project_activity: GetProjectById_project_subsidies_items_project_activity;
+}
+
 export interface GetProjectById_project_subsidies {
   __typename: "SubsidyRequest";
   id: string;
   description: string;
   total_budget: any;
+  approved_amount: any;
+  rejection_reason: string | null;
   created_at: any;
   updated_at: any;
+  approved_at: any | null;
+  created_by: string;
+  updated_by: string;
+  approved_by: string | null;
   institution_id: string;
+  department_id: string;
+  church_id: string | null;
+  project_id: string;
   subsidy_status: GetProjectById_project_subsidies_subsidy_status;
   institution: GetProjectById_project_subsidies_institution;
+  department: GetProjectById_project_subsidies_department;
+  church: GetProjectById_project_subsidies_church | null;
+  items: GetProjectById_project_subsidies_items[] | null;
 }
 
 export interface GetProjectById_project_special_projects {

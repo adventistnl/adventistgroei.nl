@@ -85,7 +85,7 @@ export interface Institutions_institutions_subsidy_requests {
   institution_id: string;
   requester_id: string;
   department_id: string;
-  church_id: string;
+  church_id: string | null;
   subsidy_statuses_id: string;
   project_id: string;
 }
@@ -371,7 +371,7 @@ export interface Institutions_institutions_churches_departments {
   deleted_by: string | null;
   contact: Institutions_institutions_churches_departments_contact | null;
   church: Institutions_institutions_churches_departments_church | null;
-  annual_budgets: Institutions_institutions_churches_departments_annual_budgets[] | null;
+  annual_budgets: Institutions_institutions_churches_departments_annual_budgets[];
   users: Institutions_institutions_churches_departments_users[] | null;
 }
 
@@ -585,7 +585,7 @@ export interface Institutions_institutions_departments {
   deleted_by: string | null;
   contact: Institutions_institutions_departments_contact | null;
   church: Institutions_institutions_departments_church | null;
-  annual_budgets: Institutions_institutions_departments_annual_budgets[] | null;
+  annual_budgets: Institutions_institutions_departments_annual_budgets[];
   users: Institutions_institutions_departments_users[] | null;
 }
 

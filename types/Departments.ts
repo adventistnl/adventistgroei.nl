@@ -37,7 +37,7 @@ export interface Departments_departments {
   is_deleted: boolean;
   deleted_at: any | null;
   deleted_by: string | null;
-  annual_budgets: Departments_departments_annual_budgets[] | null;
+  annual_budgets: Departments_departments_annual_budgets[];
   users: Departments_departments_users[] | null;
 }
 
