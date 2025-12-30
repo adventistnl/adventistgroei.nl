@@ -639,11 +639,6 @@ export type ChurchOrderByWithRelationInput = {
   users?: InputMaybe<UserOrderByRelationAggregateInput>;
 };
 
-export type ChurchScalarRelationFilter = {
-  is?: InputMaybe<ChurchWhereInput>;
-  isNot?: InputMaybe<ChurchWhereInput>;
-};
-
 export enum ChurchType {
   Company = 'COMPANY',
   Plant = 'PLANT',
@@ -1044,7 +1039,7 @@ export type DeleteBudgetResponse = {
 export type Department = {
   __typename?: 'Department';
   _count: DepartmentCount;
-  annual_budgets?: Maybe<Array<AnnualBudget>>;
+  annual_budgets: Array<AnnualBudget>;
   annual_reports?: Maybe<Array<AnnualReport>>;
   church?: Maybe<Church>;
   church_id?: Maybe<Scalars['String']['output']>;
@@ -2022,6 +2017,7 @@ export type Mutation = {
   addProjectVoluntary: VoluntariesOnProjects;
   addRoleToUser: UserModel;
   approveAnnualBudget: ApproveBudgetResponse;
+  approveSubsidyRequest: SubsidyRequest;
   batchUpdateProjectActivities: Array<ProjectActivity>;
   createChurch: ChurchModel;
   createCommunication: Communication;
@@ -2062,6 +2058,7 @@ export type Mutation = {
   login: AuthModel;
   recalculateInstitutionAllocatedAmounts: RecalculateAllocatedAmountsResponse;
   rejectAnnualBudget: RejectBudgetResponse;
+  rejectSubsidyRequest: SubsidyRequest;
   removeProjectVoluntary: VoluntariesOnProjects;
   removeRoleFromUser: UserModel;
   requestRevisionAnnualBudget: RequestRevisionBudgetResponse;
@@ -2107,6 +2104,12 @@ export type MutationAddRoleToUserArgs = {
 
 export type MutationApproveAnnualBudgetArgs = {
   data: ApproveAnnualBudgetDto;
+  id: Scalars['String']['input'];
+};
+
+
+export type MutationApproveSubsidyRequestArgs = {
+  approved_amount: Scalars['Float']['input'];
   id: Scalars['String']['input'];
 };
 
@@ -2306,6 +2309,12 @@ export type MutationLoginArgs = {
 export type MutationRejectAnnualBudgetArgs = {
   data: RejectAnnualBudgetDto;
   id: Scalars['String']['input'];
+};
+
+
+export type MutationRejectSubsidyRequestArgs = {
+  id: Scalars['String']['input'];
+  rejection_reason: Scalars['String']['input'];
 };
 
 
@@ -2825,6 +2834,7 @@ export enum PermissionResolverName {
   AnnualBudget = 'annualBudget',
   AnnualBudgets = 'annualBudgets',
   ApproveAnnualBudget = 'approveAnnualBudget',
+  ApproveSubsidyRequest = 'approveSubsidyRequest',
   Auth = 'auth',
   BatchUpdateProjectActivities = 'batchUpdateProjectActivities',
   BudgetDistribution = 'budgetDistribution',
@@ -2897,6 +2907,7 @@ export enum PermissionResolverName {
   Region = 'region',
   Regions = 'regions',
   RejectAnnualBudget = 'rejectAnnualBudget',
+  RejectSubsidyRequest = 'rejectSubsidyRequest',
   RemoveProjectVoluntary = 'removeProjectVoluntary',
   RemoveRoleFromUser = 'removeRoleFromUser',
   RequestRevisionAnnualBudget = 'requestRevisionAnnualBudget',
@@ -3020,7 +3031,7 @@ export type ProjectActivity = {
   project_id: Scalars['String']['output'];
   status: ActivityStatus;
   subsidy_receipts?: Maybe<Array<SubsidyReceipt>>;
-  subsidy_request?: Maybe<Array<SubsidyRequest>>;
+  subsidy_request_items?: Maybe<Array<SubsidyRequestItem>>;
   tags?: Maybe<Array<ActivityTags>>;
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
@@ -3073,7 +3084,7 @@ export type ProjectActivityCount = {
   assignees: Scalars['Int']['output'];
   logs: Scalars['Int']['output'];
   subsidy_receipts: Scalars['Int']['output'];
-  subsidy_request: Scalars['Int']['output'];
+  subsidy_request_items: Scalars['Int']['output'];
 };
 
 export type ProjectActivityCreateDto = {
@@ -3218,7 +3229,7 @@ export type ProjectActivityWhereInput = {
   project_id?: InputMaybe<StringFilter>;
   status?: InputMaybe<EnumActivityStatusFilter>;
   subsidy_receipts?: InputMaybe<SubsidyReceiptListRelationFilter>;
-  subsidy_request?: InputMaybe<SubsidyRequestListRelationFilter>;
+  subsidy_request_items?: InputMaybe<SubsidyRequestItemListRelationFilter>;
   tags?: InputMaybe<EnumActivityTagsNullableListFilter>;
   updated_at?: InputMaybe<DateTimeFilter>;
   updated_by?: InputMaybe<StringFilter>;
@@ -3603,6 +3614,11 @@ export type QuerySpendingOverTimeArgs = {
 
 export type QuerySubsidyRequestArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type QuerySubsidyRequestsArgs = {
+  project_id?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -4123,8 +4139,11 @@ export type SubsidyReceiptWhereInput = {
 export type SubsidyRequest = {
   __typename?: 'SubsidyRequest';
   _count: SubsidyRequestCount;
-  church: Church;
-  church_id: Scalars['String']['output'];
+  approved_amount: Scalars['Decimal']['output'];
+  approved_at?: Maybe<Scalars['DateTime']['output']>;
+  approved_by?: Maybe<Scalars['String']['output']>;
+  church?: Maybe<Church>;
+  church_id?: Maybe<Scalars['String']['output']>;
   created_at: Scalars['DateTime']['output'];
   created_by: Scalars['String']['output'];
   deleted_at?: Maybe<Scalars['DateTime']['output']>;
@@ -4136,9 +4155,10 @@ export type SubsidyRequest = {
   institution: Institution;
   institution_id: Scalars['String']['output'];
   is_deleted: Scalars['Boolean']['output'];
+  items?: Maybe<Array<SubsidyRequestItem>>;
   project: Project;
-  project_activities?: Maybe<Array<ProjectActivity>>;
   project_id: Scalars['String']['output'];
+  rejection_reason?: Maybe<Scalars['String']['output']>;
   requester: User;
   requester_id: Scalars['String']['output'];
   subsidy_receipts?: Maybe<Array<SubsidyReceipt>>;
@@ -4151,20 +4171,69 @@ export type SubsidyRequest = {
 
 export type SubsidyRequestCount = {
   __typename?: 'SubsidyRequestCount';
-  project_activities: Scalars['Int']['output'];
+  items: Scalars['Int']['output'];
   subsidy_receipts: Scalars['Int']['output'];
 };
 
 export type SubsidyRequestCreateDto = {
-  church_id: Scalars['String']['input'];
+  church_id?: InputMaybe<Scalars['String']['input']>;
   department_id: Scalars['String']['input'];
   description: Scalars['String']['input'];
   institution_id?: InputMaybe<Scalars['String']['input']>;
-  project_activities: Array<Scalars['String']['input']>;
+  items: Array<SubsidyRequestItemInput>;
+  notes?: InputMaybe<Scalars['String']['input']>;
   project_id: Scalars['String']['input'];
   requester_id: Scalars['String']['input'];
-  subsidy_status_id: Scalars['String']['input'];
+  subsidy_status_id?: InputMaybe<Scalars['String']['input']>;
   total_budget: Scalars['Float']['input'];
+};
+
+export type SubsidyRequestItem = {
+  __typename?: 'SubsidyRequestItem';
+  approved_amount: Scalars['Decimal']['output'];
+  created_at: Scalars['DateTime']['output'];
+  deleted_at?: Maybe<Scalars['DateTime']['output']>;
+  deleted_by?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  is_deleted: Scalars['Boolean']['output'];
+  notes?: Maybe<Scalars['String']['output']>;
+  project_activity: ProjectActivity;
+  project_activity_id: Scalars['String']['output'];
+  requested_amount: Scalars['Decimal']['output'];
+  subsidy_request: SubsidyRequest;
+  subsidy_request_id: Scalars['String']['output'];
+  updated_at: Scalars['DateTime']['output'];
+};
+
+export type SubsidyRequestItemInput = {
+  notes?: InputMaybe<Scalars['String']['input']>;
+  project_activity_id: Scalars['String']['input'];
+  requested_amount: Scalars['Float']['input'];
+};
+
+export type SubsidyRequestItemListRelationFilter = {
+  every?: InputMaybe<SubsidyRequestItemWhereInput>;
+  none?: InputMaybe<SubsidyRequestItemWhereInput>;
+  some?: InputMaybe<SubsidyRequestItemWhereInput>;
+};
+
+export type SubsidyRequestItemWhereInput = {
+  AND?: InputMaybe<Array<SubsidyRequestItemWhereInput>>;
+  NOT?: InputMaybe<Array<SubsidyRequestItemWhereInput>>;
+  OR?: InputMaybe<Array<SubsidyRequestItemWhereInput>>;
+  approved_amount?: InputMaybe<DecimalFilter>;
+  created_at?: InputMaybe<DateTimeFilter>;
+  deleted_at?: InputMaybe<DateTimeNullableFilter>;
+  deleted_by?: InputMaybe<StringNullableFilter>;
+  id?: InputMaybe<StringFilter>;
+  is_deleted?: InputMaybe<BoolFilter>;
+  notes?: InputMaybe<StringNullableFilter>;
+  project_activity?: InputMaybe<ProjectActivityScalarRelationFilter>;
+  project_activity_id?: InputMaybe<StringFilter>;
+  requested_amount?: InputMaybe<DecimalFilter>;
+  subsidy_request?: InputMaybe<SubsidyRequestScalarRelationFilter>;
+  subsidy_request_id?: InputMaybe<StringFilter>;
+  updated_at?: InputMaybe<DateTimeFilter>;
 };
 
 export type SubsidyRequestListRelationFilter = {
@@ -4182,11 +4251,20 @@ export type SubsidyRequestOrderByRelationAggregateInput = {
   _count?: InputMaybe<SortOrder>;
 };
 
+export type SubsidyRequestScalarRelationFilter = {
+  is?: InputMaybe<SubsidyRequestWhereInput>;
+  isNot?: InputMaybe<SubsidyRequestWhereInput>;
+};
+
 export type SubsidyRequestUpdateDto = {
+  approved_amount?: InputMaybe<Scalars['Float']['input']>;
   church_id?: InputMaybe<Scalars['String']['input']>;
   department_id?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   institution_id?: InputMaybe<Scalars['String']['input']>;
+  items?: InputMaybe<Array<SubsidyRequestItemInput>>;
+  notes?: InputMaybe<Scalars['String']['input']>;
+  rejection_reason?: InputMaybe<Scalars['String']['input']>;
   requester_id?: InputMaybe<Scalars['String']['input']>;
   subsidy_status_id?: InputMaybe<Scalars['String']['input']>;
   total_budget?: InputMaybe<Scalars['Float']['input']>;
@@ -4196,8 +4274,11 @@ export type SubsidyRequestWhereInput = {
   AND?: InputMaybe<Array<SubsidyRequestWhereInput>>;
   NOT?: InputMaybe<Array<SubsidyRequestWhereInput>>;
   OR?: InputMaybe<Array<SubsidyRequestWhereInput>>;
-  church?: InputMaybe<ChurchScalarRelationFilter>;
-  church_id?: InputMaybe<StringFilter>;
+  approved_amount?: InputMaybe<DecimalFilter>;
+  approved_at?: InputMaybe<DateTimeNullableFilter>;
+  approved_by?: InputMaybe<StringNullableFilter>;
+  church?: InputMaybe<ChurchNullableScalarRelationFilter>;
+  church_id?: InputMaybe<StringNullableFilter>;
   created_at?: InputMaybe<DateTimeFilter>;
   created_by?: InputMaybe<StringFilter>;
   deleted_at?: InputMaybe<DateTimeNullableFilter>;
@@ -4209,9 +4290,10 @@ export type SubsidyRequestWhereInput = {
   institution?: InputMaybe<InstitutionScalarRelationFilter>;
   institution_id?: InputMaybe<StringFilter>;
   is_deleted?: InputMaybe<BoolFilter>;
+  items?: InputMaybe<SubsidyRequestItemListRelationFilter>;
   project?: InputMaybe<ProjectScalarRelationFilter>;
-  project_activities?: InputMaybe<ProjectActivityListRelationFilter>;
   project_id?: InputMaybe<StringFilter>;
+  rejection_reason?: InputMaybe<StringNullableFilter>;
   requester?: InputMaybe<UserScalarRelationFilter>;
   requester_id?: InputMaybe<StringFilter>;
   subsidy_receipts?: InputMaybe<SubsidyReceiptListRelationFilter>;

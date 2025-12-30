@@ -203,7 +203,7 @@ export interface ChurchFragment_departments {
   deleted_by: string | null;
   contact: ChurchFragment_departments_contact | null;
   church: ChurchFragment_departments_church | null;
-  annual_budgets: ChurchFragment_departments_annual_budgets[] | null;
+  annual_budgets: ChurchFragment_departments_annual_budgets[];
   users: ChurchFragment_departments_users[] | null;
 }
 

@@ -91,64 +91,32 @@ export function ViewSubsidyModal({
   const [mentionPriority, setMentionPriority] = React.useState<"low" | "medium" | "high" | null>(null)
   const chatInputRef = React.useRef<HTMLInputElement>(null)
 
-  // Mock data para demonstração - em produção virá do backend
-  const mockActivities = React.useMemo<ActivityItem[]>(() => {
-    if (!subsidy) return []
-    
-    return [
-      {
-        id: "act-1",
-        name: "Material de Construção",
-        budget_amount: 8000,
-        requested_amount: 6000,
-        documents: [
-          {
-            id: "doc-1",
-            file_name: "fatura_materiais.pdf",
-            file_type: "PDF",
-            document_type: "INVOICE",
-            amount: 3500,
-            file_url: "#"
-          },
-          {
-            id: "doc-2",
-            file_name: "recibo_pagamento.pdf",
-            file_type: "PDF",
-            document_type: "RECEIPT",
-            amount: 2500,
-            file_url: "#"
-          }
-        ]
-      },
-      {
-        id: "act-2",
-        name: "Mão de Obra",
-        budget_amount: 7000,
-        requested_amount: 5000,
-        documents: [
-          {
-            id: "doc-3",
-            file_name: "contrato_servicos.pdf",
-            file_type: "PDF",
-            document_type: "CONTRACT",
-            amount: 5000,
-            file_url: "#"
-          }
-        ]
-      }
-    ]
+  // Transform subsidy items to activities format
+  const activities = React.useMemo<ActivityItem[]>(() => {
+    if (!subsidy || !subsidy.items) return []
+
+    return subsidy.items.map(item => ({
+      id: item.activity_id,
+      name: item.activity_name,
+      budget_amount: item.budget_amount,
+      requested_amount: item.requested_amount,
+      // Documents would need to be fetched separately - for now empty array
+      // TODO: Add documents to subsidy items in the GraphQL query
+      documents: []
+    }))
   }, [subsidy])
 
-  const mockHistory = React.useMemo<StatusHistoryItem[]>(() => {
+  // Generate status history based on real subsidy data
+  const statusHistory = React.useMemo<StatusHistoryItem[]>(() => {
     if (!subsidy) return []
-    
+
     const history: StatusHistoryItem[] = [
       {
         id: "hist-1",
         status: "pending",
         reason: "Solicitação criada e enviada para análise",
-        changed_by: "João Silva",
-        changed_at: new Date("2024-11-15T10:00:00"),
+        changed_by: "Sistema",
+        changed_at: new Date(subsidy.requested_at),
         isNew: false
       }
     ]
@@ -158,19 +126,19 @@ export function ViewSubsidyModal({
         id: "hist-2",
         status: "in_review",
         reason: "Documentação em análise pela equipe financeira",
-        changed_by: "Maria Santos",
-        changed_at: new Date("2024-11-18T14:30:00"),
+        changed_by: "Equipe Financeira",
+        changed_at: new Date(new Date(subsidy.requested_at).getTime() + 3 * 24 * 60 * 60 * 1000), // 3 days after request
         isNew: false
       })
     }
 
-    if (subsidy.status === "approved") {
+    if (subsidy.status === "approved" && subsidy.approved_at) {
       history.push({
         id: "hist-3",
         status: "approved",
-        reason: "Solicitação aprovada. Todos os documentos foram validados e o orçamento foi confirmado.",
-        changed_by: "Carlos Ferreira",
-        changed_at: new Date("2024-11-20T16:45:00"),
+        reason: `Solicitação aprovada. Valor aprovado: ${subsidy.approved_amount || subsidy.requested_amount}`,
+        changed_by: "Equipe Financeira",
+        changed_at: new Date(subsidy.approved_at),
         isNew: true
       })
     }
@@ -179,9 +147,9 @@ export function ViewSubsidyModal({
       history.push({
         id: "hist-3",
         status: "rejected",
-        reason: "Documentação incompleta. Falta comprovante de pagamento da atividade 2.",
-        changed_by: "Ana Costa",
-        changed_at: new Date("2024-11-25T11:20:00"),
+        reason: subsidy.rejection_reason || "Solicitação rejeitada.",
+        changed_by: "Equipe Financeira",
+        changed_at: subsidy.rejected_at ? new Date(subsidy.rejected_at) : new Date(),
         isNew: true
       })
     }
@@ -191,10 +159,10 @@ export function ViewSubsidyModal({
 
   // Initialize messages when modal opens
   React.useEffect(() => {
-    if (isOpen && mockHistory.length > 0) {
-      setMessages(mockHistory)
+    if (isOpen && statusHistory.length > 0) {
+      setMessages(statusHistory)
     }
-  }, [isOpen, mockHistory])
+  }, [isOpen, statusHistory])
 
   // Scroll to bottom when messages change
   React.useEffect(() => {
@@ -299,7 +267,7 @@ export function ViewSubsidyModal({
   const handleValidateDocument = (docId: string, isValid: boolean) => {
     // Buscar informações do documento
     let docName = ''
-    for (const act of mockActivities) {
+    for (const act of activities) {
       const doc = act.documents.find(d => d.id === docId)
       if (doc) {
         docName = doc.file_name
@@ -309,7 +277,7 @@ export function ViewSubsidyModal({
 
     if (isValid) {
       // Validação direta sem nota
-      const updatedActivities = mockActivities.map(act => ({
+      const updatedActivities = activities.map(act => ({
         ...act,
         documents: act.documents.map(doc => 
           doc.id === docId 
@@ -343,7 +311,7 @@ export function ViewSubsidyModal({
         return
       }
       
-      const updatedActivities = mockActivities.map(act => ({
+      const updatedActivities = activities.map(act => ({
         ...act,
         documents: act.documents.map(doc => 
           doc.id === docId 
@@ -405,7 +373,7 @@ export function ViewSubsidyModal({
 
   const currentStatus = statusConfig[currentSubsidyStatus]
   const StatusIcon = currentStatus.icon
-  const currentActivity = mockActivities[selectedActivityIndex]
+  const currentActivity = activities[selectedActivityIndex]
 
   // Helper function to get activity document status
   const getActivityDocumentStatus = (activity: ActivityItem) => {
@@ -426,10 +394,10 @@ export function ViewSubsidyModal({
     if (!chatFilterActivity) return messages
     return messages.filter(msg => {
       // Check if message mentions the filtered activity
-      const activity = mockActivities.find(a => a.id === chatFilterActivity)
+      const activity = activities.find(a => a.id === chatFilterActivity)
       return activity && msg.reason.toLowerCase().includes(activity.name.toLowerCase())
     })
-  }, [messages, chatFilterActivity, mockActivities])
+  }, [messages, chatFilterActivity, activities])
 
   const getDocumentTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
@@ -626,7 +594,7 @@ export function ViewSubsidyModal({
                     <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 min-w-[140px]">
                       <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                        {mockActivities.length}
+                        {activities.length}
                       </span>
                       <Info className="w-3 h-3 text-gray-400 ml-auto" />
                     </div>
@@ -642,7 +610,7 @@ export function ViewSubsidyModal({
                     <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 min-w-[140px]">
                       <DollarSign className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                        {formatCurrency(mockActivities.reduce((sum, act) => sum + act.budget_amount, 0))}
+                        {formatCurrency(activities.reduce((sum, act) => sum + act.budget_amount, 0))}
                       </span>
                       <Info className="w-3 h-3 text-gray-400 ml-auto" />
                     </div>
@@ -698,7 +666,7 @@ export function ViewSubsidyModal({
               
               <div className="flex gap-2 overflow-x-auto pb-2">
                 {/* Botão de colapso do chat ao lado do cabeçalho de atividades */}
-                {mockActivities.map((activity, index) => {
+                {activities.map((activity, index) => {
                   const docStatus = getActivityDocumentStatus(activity)
                   return (
                   <button
@@ -1002,7 +970,7 @@ export function ViewSubsidyModal({
                             <span className={!chatFilterActivity ? "font-semibold" : ""}>Todas</span>
                           </div>
                         </DropdownMenuItem>
-                        {mockActivities.map(activity => (
+                        {activities.map(activity => (
                           <DropdownMenuItem key={activity.id} onClick={() => setChatFilterActivity(activity.id)}>
                             <div className="flex items-center gap-2">
                               {chatFilterActivity === activity.id && <Check className="h-3 w-3" />}
@@ -1021,7 +989,7 @@ export function ViewSubsidyModal({
                     <div className="mt-2">
                       <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-950/30 border-blue-300 text-blue-700 dark:text-blue-400">
                         <Filter className="w-3 h-3 mr-1" />
-                        {mockActivities.find(a => a.id === chatFilterActivity)?.name}
+                        {activities.find(a => a.id === chatFilterActivity)?.name}
                         <button onClick={() => setChatFilterActivity(null)} className="ml-1 hover:text-blue-900">
                           <X className="w-3 h-3" />
                         </button>
@@ -1034,7 +1002,7 @@ export function ViewSubsidyModal({
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
                   {filteredMessages.map((item, index) => {
                     // Check if this message is related to an activity
-                    const relatedActivity = mockActivities.find(act => 
+                    const relatedActivity = activities.find(act => 
                       item.reason.toLowerCase().includes(act.name.toLowerCase())
                     )
                     const showActivityDivider = relatedActivity && (
@@ -1279,7 +1247,7 @@ export function ViewSubsidyModal({
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <Ban className="w-3.5 h-3.5 text-red-600 dark:text-red-400 flex-shrink-0" />
                           <p className="text-xs font-medium text-red-900 dark:text-red-200 truncate">
-                            Rejeitar documento: {mockActivities.flatMap(a => a.documents).find(d => d.id === mentionMode)?.file_name}
+                            Rejeitar documento: {activities.flatMap(a => a.documents).find(d => d.id === mentionMode)?.file_name}
                           </p>
                         </div>
                         <Button

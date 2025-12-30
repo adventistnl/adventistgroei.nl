@@ -57,47 +57,8 @@ export function SubsidyRequestsContainer({
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
   const [selectedSubsidyForEdit, setSelectedSubsidyForEdit] = React.useState<SubsidyRequestCardData | null>(null)
 
-  // ==================== MOCK DATA - PARA TESTES ====================
-  // Dados mockados ATIVOS para testes - Comente o bloco abaixo para usar dados reais
-  const mockSubsidies: SubsidyRequestCardData[] = [
-    {
-      id: "mock-1",
-      title: "Reforma do Templo Principal",
-      requested_amount: 15000,
-      approved_amount: 12000,
-      status: "approved",
-      requested_at: new Date("2024-11-15"),
-      approved_at: new Date("2024-11-20"),
-      activities_count: 5,
-      total_budget: 20000,
-    },
-    {
-      id: "mock-2",
-      title: "Equipamentos para Escola Sabatina",
-      requested_amount: 8000,
-      approved_amount: 0,
-      status: "pending",
-      requested_at: new Date("2024-12-01"),
-      activities_count: 3,
-      total_budget: 10000,
-    },
-    {
-      id: "mock-3",
-      title: "Materiais para Programa de Jovens",
-      requested_amount: 5000,
-      approved_amount: 0,
-      status: "rejected",
-      requested_at: new Date("2024-10-10"),
-      rejected_at: new Date("2024-10-25"),
-      activities_count: 2,
-      total_budget: 6000,
-    },
-  ]
-  
-  // MOCK ATIVO - Usando dados mockados em vez dos dados reais
-  const [displaySubsidies, setDisplaySubsidies] = React.useState<SubsidyRequestCardData[]>(mockSubsidies)
-  // Para usar dados reais, inicialize o estado com `subsidies` (ou remova este estado)
-  // ================================================================
+  // Usando dados reais passados via props
+  const displaySubsidies = subsidies
 
   // Default translations
   const defaultTitle = title || t("subsidy.requests", "Solicitações de Subsídio")
@@ -106,14 +67,17 @@ export function SubsidyRequestsContainer({
 
   // Handlers
   const handleViewSubsidy = (id: string) => {
+    // Se existe callback do parent, usar o modal do parent
+    if (onViewSubsidy) {
+      onViewSubsidy(id)
+      return
+    }
+
+    // Caso contrário, usar o modal interno do container
     const subsidy = displaySubsidies.find(s => s.id === id)
     if (subsidy) {
       setSelectedSubsidy(subsidy)
       setIsViewModalOpen(true)
-    }
-    // Também chama o callback original se existir
-    if (onViewSubsidy) {
-      onViewSubsidy(id)
     }
   }
 
@@ -133,21 +97,21 @@ export function SubsidyRequestsContainer({
     // Only allow delete if NOT approved or in_review
     if (subsidyPendingDelete.status === "approved" || subsidyPendingDelete.status === "in_review") {
       // show info via toast and close modal
-      // keep modal open as informational - but we use confirm modal's deletable=false
       setIsConfirmDeleteOpen(false)
       setSubsidyPendingDelete(null)
       return
     }
 
-    setDisplaySubsidies(prev => prev.filter(s => s.id !== subsidyPendingDelete.id))
+    // Call parent callback to handle actual deletion
+    if (onDeleteSubsidy) onDeleteSubsidy(subsidyPendingDelete.id)
     setIsConfirmDeleteOpen(false)
     setSubsidyPendingDelete(null)
-    if (onDeleteSubsidy) onDeleteSubsidy(subsidyPendingDelete.id)
   }
 
-  // Archive flow - mark archived in local state
+  // Archive flow - call parent callback (archive is handled as a delete action)
   const handleArchive = (id: string) => {
-    setDisplaySubsidies(prev => prev.map(s => s.id === id ? ({ ...s, archived: true } as any) : s))
+    // TODO: Add onArchiveSubsidy callback prop if archive functionality is needed
+    console.log('Archive subsidy:', id)
   }
 
   const handleEditSubsidy = (id: string) => {
@@ -159,33 +123,34 @@ export function SubsidyRequestsContainer({
     if (onEditSubsidy) onEditSubsidy(id)
   }
 
-  // Build initialData for edit modal using available subsidy details (falls back to sensible defaults)
+  // Build initialData for edit modal using real subsidy items
   const editInitialData = React.useMemo(() => {
     if (!selectedSubsidyForEdit) return null
 
-    const anySub: any = selectedSubsidyForEdit
-    const activitiesCount = anySub.activities_count || 0
-    const totalBudget = anySub.total_budget || 0
-    const requested = anySub.requested_amount || 0
+    // Use real items from the subsidy if available
+    const items = selectedSubsidyForEdit.items?.map(item => ({
+      activity_id: item.activity_id,
+      activity_name: item.activity_name,
+      requested_amount: item.requested_amount,
+      budget_amount: item.budget_amount,
+      activity_documents: [], // Documents would need to be loaded separately
+      notes: item.notes || ""
+    })) || []
 
-    const items = activitiesCount > 0
-      ? Array.from({ length: activitiesCount }).map((_, i) => ({
-          activity_id: `${selectedSubsidyForEdit.id}-act-${i+1}`,
-          activity_name: `Atividade ${i+1}`,
-          requested_amount: Math.round(requested / activitiesCount),
-          budget_amount: Math.round(totalBudget / activitiesCount),
-          activity_documents: [],
-          notes: ""
-        }))
-      : []
+    console.log('📝 Building editInitialData:', {
+      project_id: selectedSubsidyForEdit.project_id,
+      institution_id: selectedSubsidyForEdit.institution_id,
+      department_id: selectedSubsidyForEdit.department_id,
+      church_id: selectedSubsidyForEdit.church_id,
+    })
 
     return {
-      project_id: selectedSubsidyForEdit.id,
-      institution_id: "",
-      department_id: "",
-      church_id: "",
-      requested_amount: requested,
-      notes: anySub.notes || "",
+      project_id: selectedSubsidyForEdit.project_id || "",
+      institution_id: selectedSubsidyForEdit.institution_id || "",
+      department_id: selectedSubsidyForEdit.department_id || "",
+      church_id: selectedSubsidyForEdit.church_id || "",
+      requested_amount: selectedSubsidyForEdit.requested_amount,
+      notes: selectedSubsidyForEdit.notes || "",
       items,
     }
   }, [selectedSubsidyForEdit])
@@ -282,7 +247,13 @@ export function SubsidyRequestsContainer({
         isOpen={isEditModalOpen}
         onClose={() => { setIsEditModalOpen(false); setSelectedSubsidyForEdit(null) }}
         selectedActivities={[]}
-        projectId={selectedSubsidyForEdit?.id || ""}
+        projectId={selectedSubsidyForEdit?.project_id || ""}
+        institutionId={selectedSubsidyForEdit?.institution_id || ""}
+        departmentId={selectedSubsidyForEdit?.department_id || ""}
+        churchId={selectedSubsidyForEdit?.church_id || ""}
+        institutionName={selectedSubsidyForEdit?.institution_name || ""}
+        departmentName={selectedSubsidyForEdit?.department_name || ""}
+        churchName={selectedSubsidyForEdit?.church_name || ""}
         initialData={editInitialData}
         mode="edit"
         onSubmit={(data) => {

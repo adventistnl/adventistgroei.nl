@@ -57,6 +57,10 @@ interface RequestSubsidyModalProps {
   institutionId?: string
   departmentId?: string
   churchId?: string
+  // Display names
+  institutionName?: string
+  departmentName?: string
+  churchName?: string
   onSubmit: (data: SubsidyRequestData) => void
   allActivities?: ProjectActivityData[]
   /** Optional initial data to populate the form when editing */
@@ -83,6 +87,9 @@ export function RequestSubsidyModal({
   institutionId = "",
   departmentId = "",
   churchId = "",
+  institutionName = "",
+  departmentName = "",
+  churchName = "",
   onSubmit,
   allActivities = [],
   initialData = null,
@@ -112,9 +119,10 @@ export function RequestSubsidyModal({
     items: []
   })
 
-  // Update formData when modal opens or selectedActivities change
+  // Update formData when modal opens in CREATE mode with selectedActivities
   React.useEffect(() => {
-    if (isOpen && selectedActivities.length > 0) {
+    if (isOpen && mode === "create" && selectedActivities.length > 0) {
+      console.log('🆕 Create mode - Loading selectedActivities:', selectedActivities.length)
       setFormData({
         institution_id: institutionId,
         department_id: departmentId,
@@ -133,30 +141,45 @@ export function RequestSubsidyModal({
       })
       setCurrentActivityIndex(0)
     }
-  }, [isOpen, selectedActivities, institutionId, departmentId, churchId, projectId])
+  }, [isOpen, mode, selectedActivities, institutionId, departmentId, churchId, projectId])
 
   // If initialData is provided (edit mode), populate the form with it when opening
   React.useEffect(() => {
-    if (isOpen && initialData) {
-      setFormData(prev => ({
+    if (isOpen && initialData && mode === "edit") {
+      console.log('📝 Edit mode - Loading initialData:', initialData)
+
+      // In edit mode, always use initialData items (even if empty array)
+      // Only fall back to selectedActivities if initialData.items is undefined
+      const itemsToUse = initialData.items !== undefined
+        ? initialData.items.map(item => ({
+            activity_id: item.activity_id,
+            activity_name: item.activity_name,
+            requested_amount: item.requested_amount,
+            budget_amount: item.budget_amount,
+            activity_documents: item.activity_documents || [],
+            notes: item.notes || ""
+          }))
+        : selectedActivities.map(activity => ({
+            activity_id: activity.id,
+            activity_name: activity.name,
+            requested_amount: activity.institution_requested_amount || 0,
+            budget_amount: activity.budget_amount,
+            activity_documents: [],
+            notes: ""
+          }))
+
+      setFormData({
         institution_id: initialData.institution_id || institutionId,
         department_id: initialData.department_id || departmentId,
         church_id: initialData.church_id || churchId,
         project_id: initialData.project_id || projectId,
         requested_amount: initialData.requested_amount || 0,
         notes: initialData.notes || "",
-        items: initialData.items && initialData.items.length > 0 ? initialData.items : (selectedActivities.length > 0 ? selectedActivities.map(activity => ({
-          activity_id: activity.id,
-          activity_name: activity.name,
-          requested_amount: activity.institution_requested_amount || 0,
-          budget_amount: activity.budget_amount,
-          activity_documents: [],
-          notes: ""
-        })) : [])
-      }))
+        items: itemsToUse
+      })
       setCurrentActivityIndex(0)
     }
-  }, [isOpen, initialData, institutionId, departmentId, churchId, projectId, selectedActivities])
+  }, [isOpen, initialData, mode, institutionId, departmentId, churchId, projectId, selectedActivities])
 
   // Calculate total requested amount
   const totalRequestedAmount = useMemo(() => {
@@ -488,16 +511,33 @@ export function RequestSubsidyModal({
                 <Building2 className="w-4 h-4 text-gray-600" />
                 <div>
                   <p className="text-xs text-gray-500">{translations.summary.institution}</p>
-                  <p className="text-sm font-semibold text-gray-900">União Portuguesa</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {institutionName || "Não informado"}
+                  </p>
                 </div>
               </div>
+
+              {/* Department (if applicable) */}
+              {departmentId && (
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-gray-600" />
+                  <div>
+                    <p className="text-xs text-gray-500">Departamento</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {departmentName || "Não informado"}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Church */}
               <div className="flex items-center gap-2">
                 <Church className="w-4 h-4 text-gray-600" />
                 <div>
                   <p className="text-xs text-gray-500">{translations.summary.church}</p>
-                  <p className="text-sm font-semibold text-gray-900">Igreja Central de Lisboa</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {churchName || (churchId ? "Carregando..." : "Sem igreja registrada")}
+                  </p>
                 </div>
               </div>
             </div>

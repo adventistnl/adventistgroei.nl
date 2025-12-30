@@ -142,6 +142,6 @@ export interface DepartmentFragment {
   deleted_by: string | null;
   contact: DepartmentFragment_contact | null;
   church: DepartmentFragment_church | null;
-  annual_budgets: DepartmentFragment_annual_budgets[] | null;
+  annual_budgets: DepartmentFragment_annual_budgets[];
   users: DepartmentFragment_users[] | null;
 }
