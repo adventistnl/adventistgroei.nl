@@ -25,6 +25,10 @@ import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
+import { useSubsidyReceipts, SubsidyReceipt } from "@/hooks/use-subsidy-receipts"
+import { useMutation, useQuery } from "@apollo/client"
+import { UPDATE_SUBSIDY_REQUEST, APPROVE_SUBSIDY_REQUEST, REJECT_SUBSIDY_REQUEST } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
+import { GET_SUBSIDY_STATUS_HISTORY } from "@/graphql/queries/SUBSIDY_STATUS_HISTORY_QUERIES"
 
 interface ActivityItem {
   id: string
@@ -60,12 +64,15 @@ interface ViewSubsidyModalProps {
   isOpen: boolean
   onClose: () => void
   subsidy: SubsidyRequestCardData | null
+  /** Optional callback when subsidy is updated (for refetching data) */
+  onSubsidyUpdated?: () => void
 }
 
 export function ViewSubsidyModal({
   isOpen,
   onClose,
-  subsidy
+  subsidy,
+  onSubsidyUpdated
 }: ViewSubsidyModalProps) {
   // Early return BEFORE any hooks to maintain consistent hook order
   if (!isOpen || !subsidy) {
@@ -90,72 +97,188 @@ export function ViewSubsidyModal({
   const [mentionStatus, setMentionStatus] = React.useState<"pending" | "in_review" | "approved" | "rejected" | null>(null)
   const [mentionPriority, setMentionPriority] = React.useState<"low" | "medium" | "high" | null>(null)
   const chatInputRef = React.useRef<HTMLInputElement>(null)
+  const [loadingDocuments, setLoadingDocuments] = React.useState(false)
+  const [receipts, setReceipts] = React.useState<SubsidyReceipt[]>([])
 
-  // Transform subsidy items to activities format
+  // Hook for fetching and managing subsidy receipts
+  const {
+    fetchReceipts,
+    validateReceipt,
+    rejectReceipt,
+    downloadReceipt,
+    loading: receiptsLoading,
+    validating: receiptsValidating,
+  } = useSubsidyReceipts({
+    subsidyRequestId: subsidy?.id,
+  })
+
+  // Mutations for updating subsidy status
+  const [updateSubsidyRequest] = useMutation(UPDATE_SUBSIDY_REQUEST, {
+    awaitRefetchQueries: true,
+    onCompleted: () => {
+      toast.success("Status atualizado com sucesso!")
+      // Trigger callback to refresh data in parent
+      onSubsidyUpdated?.()
+    },
+    onError: (error) => {
+      toast.error(`Erro ao atualizar status: ${error.message}`)
+      console.error("Error updating subsidy:", error)
+    }
+  })
+
+  const [approveSubsidyRequest] = useMutation(APPROVE_SUBSIDY_REQUEST, {
+    awaitRefetchQueries: true,
+    onCompleted: () => {
+      toast.success("Subsídio aprovado com sucesso!")
+      onSubsidyUpdated?.()
+    },
+    onError: (error) => {
+      toast.error(`Erro ao aprovar subsídio: ${error.message}`)
+      console.error("Error approving subsidy:", error)
+    }
+  })
+
+  const [rejectSubsidyRequest] = useMutation(REJECT_SUBSIDY_REQUEST, {
+    awaitRefetchQueries: true,
+    onCompleted: () => {
+      toast.success("Subsídio rejeitado")
+      onSubsidyUpdated?.()
+    },
+    onError: (error) => {
+      toast.error(`Erro ao rejeitar subsídio: ${error.message}`)
+      console.error("Error rejecting subsidy:", error)
+    }
+  })
+
+  // Status ID mapping (from database)
+  const STATUS_IDS = {
+    pending: 'e91a39fa-08d2-4900-ba0b-6cd5cbcb0a1d',
+    approved: 'eb9dfcc0-752c-4cfe-a8db-7e7171a4e965',
+    rejected: '2898eb33-ab05-4fdf-bf46-732c1e41a870',
+    in_review: '5f037eb0-8b5e-4156-b3fc-2c2e327e79f5',
+  }
+
+  // Fetch receipts when modal opens
+  React.useEffect(() => {
+    if (isOpen && subsidy?.id) {
+      setLoadingDocuments(true)
+      fetchReceipts(subsidy.id)
+        .then((fetchedReceipts) => {
+          console.log('📄 Fetched receipts for subsidy:', fetchedReceipts)
+          setReceipts(fetchedReceipts || [])
+        })
+        .catch((error) => {
+          console.error('Error fetching receipts:', error)
+          toast.error('Erro ao carregar documentos')
+        })
+        .finally(() => {
+          setLoadingDocuments(false)
+        })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, subsidy?.id])
+
+  // Helper to map receipt type to document type
+  const mapReceiptTypeToDocType = (type: string): "INVOICE" | "RECEIPT" | "CONTRACT" | "PROOF_OF_PAYMENT" | "OTHER" => {
+    const typeMap: Record<string, "INVOICE" | "RECEIPT" | "CONTRACT" | "PROOF_OF_PAYMENT" | "OTHER"> = {
+      'invoice': 'INVOICE',
+      'receipt': 'RECEIPT',
+      'contract': 'CONTRACT',
+      'proof_of_payment': 'PROOF_OF_PAYMENT',
+      'image': 'RECEIPT',
+      'pdf': 'INVOICE',
+    }
+    return typeMap[type?.toLowerCase()] || 'OTHER'
+  }
+
+  // Helper to get file type from filename
+  const getFileType = (filename: string): "PDF" | "JPG" | "PNG" | "DOC" | "OTHER" => {
+    const ext = filename.split('.').pop()?.toUpperCase()
+    if (ext === "PDF" || ext === "JPG" || ext === "PNG" || ext === "DOC") {
+      return ext as "PDF" | "JPG" | "PNG" | "DOC"
+    }
+    return "OTHER"
+  }
+
+  // Transform subsidy items to activities format with real documents
   const activities = React.useMemo<ActivityItem[]>(() => {
     if (!subsidy || !subsidy.items) return []
 
-    return subsidy.items.map(item => ({
-      id: item.activity_id,
-      name: item.activity_name,
-      budget_amount: item.budget_amount,
-      requested_amount: item.requested_amount,
-      // Documents would need to be fetched separately - for now empty array
-      // TODO: Add documents to subsidy items in the GraphQL query
-      documents: []
-    }))
-  }, [subsidy])
-
-  // Generate status history based on real subsidy data
-  const statusHistory = React.useMemo<StatusHistoryItem[]>(() => {
-    if (!subsidy) return []
-
-    const history: StatusHistoryItem[] = [
-      {
-        id: "hist-1",
-        status: "pending",
-        reason: "Solicitação criada e enviada para análise",
-        changed_by: "Sistema",
-        changed_at: new Date(subsidy.requested_at),
-        isNew: false
+    // Group receipts by activity_id
+    const receiptsByActivity = receipts.reduce((acc, receipt) => {
+      const activityId = receipt.project_activities_id
+      if (!acc[activityId]) {
+        acc[activityId] = []
       }
-    ]
+      acc[activityId].push(receipt)
+      return acc
+    }, {} as Record<string, SubsidyReceipt[]>)
 
-    if (subsidy.status === "in_review" || subsidy.status === "approved" || subsidy.status === "rejected") {
-      history.push({
-        id: "hist-2",
-        status: "in_review",
-        reason: "Documentação em análise pela equipe financeira",
-        changed_by: "Equipe Financeira",
-        changed_at: new Date(new Date(subsidy.requested_at).getTime() + 3 * 24 * 60 * 60 * 1000), // 3 days after request
-        isNew: false
+    return subsidy.items.map(item => {
+      // Get receipts for this activity
+      const activityReceipts = receiptsByActivity[item.activity_id] || []
+
+      // Transform receipts to documents format
+      // Status logic: 
+      // - Pendente: is_validated === false
+      // - Aprovado: is_validated === true && approved === true
+      // - Rejeitado: is_validated === true && approved === false
+      const documents: DocumentItem[] = activityReceipts.map(receipt => {
+        let validationStatus: boolean | undefined
+        if (!receipt.is_validated) {
+          validationStatus = undefined // Pendente
+        } else if (receipt.approved) {
+          validationStatus = true // Aprovado
+        } else {
+          validationStatus = false // Rejeitado
+        }
+
+        return {
+          id: receipt.id,
+          file_name: receipt.filename,
+          file_type: getFileType(receipt.filename),
+          document_type: mapReceiptTypeToDocType(receipt.type),
+          amount: receipt.amount || 0,
+          file_url: receipt.file_url,
+          is_validated: validationStatus,
+          validated_by: receipt.validated_by || undefined,
+          validated_at: receipt.validated_at || undefined,
+          validation_note: undefined, // Not available in current receipt structure
+        }
       })
-    }
 
-    if (subsidy.status === "approved" && subsidy.approved_at) {
-      history.push({
-        id: "hist-3",
-        status: "approved",
-        reason: `Solicitação aprovada. Valor aprovado: ${subsidy.approved_amount || subsidy.requested_amount}`,
-        changed_by: "Equipe Financeira",
-        changed_at: new Date(subsidy.approved_at),
-        isNew: true
-      })
-    }
+      return {
+        id: item.activity_id,
+        name: item.activity_name,
+        budget_amount: item.budget_amount,
+        requested_amount: item.requested_amount,
+        documents: documents
+      }
+    })
+  }, [subsidy, receipts])
 
-    if (subsidy.status === "rejected") {
-      history.push({
-        id: "hist-3",
-        status: "rejected",
-        reason: subsidy.rejection_reason || "Solicitação rejeitada.",
-        changed_by: "Equipe Financeira",
-        changed_at: subsidy.rejected_at ? new Date(subsidy.rejected_at) : new Date(),
-        isNew: true
-      })
+  // Fetch real status history from backend
+  const { data: historyData, loading: historyLoading } = useQuery(
+    GET_SUBSIDY_STATUS_HISTORY,
+    {
+      variables: { subsidyRequestId: subsidy?.id },
+      skip: !subsidy?.id,
     }
+  )
 
-    return history
-  }, [subsidy])
+  // Transform history data from backend to UI format
+  const statusHistory = React.useMemo<StatusHistoryItem[]>(() => {
+    if (!historyData?.getSubsidyStatusHistory) return []
+    
+    return historyData.getSubsidyStatusHistory.map((item: any) => ({
+      id: item.id,
+      status: item.status.name.toLowerCase(),
+      reason: item.reason || '',
+      changed_by: item.user.name,
+      changed_at: new Date(item.changed_at),
+      isNew: false
+    }))
+  }, [historyData])
 
   // Initialize messages when modal opens
   React.useEffect(() => {
@@ -264,7 +387,7 @@ export function ViewSubsidyModal({
     setMentionMode(null)
   }
 
-  const handleValidateDocument = (docId: string, isValid: boolean) => {
+  const handleValidateDocument = async (docId: string, isValid: boolean) => {
     // Buscar informações do documento
     let docName = ''
     for (const act of activities) {
@@ -276,34 +399,31 @@ export function ViewSubsidyModal({
     }
 
     if (isValid) {
-      // Validação direta sem nota
-      const updatedActivities = activities.map(act => ({
-        ...act,
-        documents: act.documents.map(doc => 
-          doc.id === docId 
-            ? { 
-                ...doc, 
-                is_validated: true,
-                validated_by: 'Admin User',
-                validated_at: new Date().toISOString()
-              } 
-            : doc
-        )
-      }))
-      
-      // Adicionar mensagem ao histórico
-      const approvalMessage: StatusHistoryItem = {
-        id: `msg-${Date.now()}`,
-        status: "in_review",
-        reason: `Documento "${docName}" foi validado e aprovado.`,
-        changed_by: "Admin User",
-        changed_at: new Date(),
-        isNew: false
+      // Validação direta sem nota - chamar API
+      try {
+        await validateReceipt(docId)
+        
+        // Adicionar mensagem ao histórico
+        const approvalMessage: StatusHistoryItem = {
+          id: `msg-${Date.now()}`,
+          status: "in_review",
+          reason: `Documento "${docName}" foi validado e aprovado.`,
+          changed_by: "Admin User",
+          changed_at: new Date(),
+          isNew: false
+        }
+        setMessages(prev => [...prev, approvalMessage])
+        
+        toast.success("Documento validado com sucesso")
+        setMentionMode(null)
+
+        // Refetch receipts to update the list
+        const updatedReceipts = await fetchReceipts(subsidy?.id)
+        setReceipts(updatedReceipts || [])
+      } catch (error) {
+        console.error('Error validating document:', error)
+        // Error toast is already shown by the hook
       }
-      setMessages(prev => [...prev, approvalMessage])
-      
-      toast.success("Documento validado com sucesso")
-      setMentionMode(null)
     } else {
       // Rejeição com nota obrigatória
       if (!newMessage.trim()) {
@@ -311,35 +431,32 @@ export function ViewSubsidyModal({
         return
       }
       
-      const updatedActivities = activities.map(act => ({
-        ...act,
-        documents: act.documents.map(doc => 
-          doc.id === docId 
-            ? { 
-                ...doc, 
-                is_validated: false,
-                validated_by: 'Admin User',
-                validated_at: new Date().toISOString(),
-                validation_note: newMessage
-              } 
-            : doc
-        )
-      }))
-      
-      // Adicionar mensagem ao histórico com motivo da rejeição
-      const rejectionMessage: StatusHistoryItem = {
-        id: `msg-${Date.now()}`,
-        status: "rejected",
-        reason: `Documento "${docName}" foi rejeitado. Motivo: ${newMessage}`,
-        changed_by: "Admin User",
-        changed_at: new Date(),
-        isNew: false
+      // Call API to reject document
+      try {
+        await rejectReceipt(docId, newMessage)
+        
+        // Adicionar mensagem ao histórico com motivo da rejeição
+        const rejectionMessage: StatusHistoryItem = {
+          id: `msg-${Date.now()}`,
+          status: "rejected",
+          reason: `Documento "${docName}" foi rejeitado. Motivo: ${newMessage}`,
+          changed_by: "Admin User",
+          changed_at: new Date(),
+          isNew: false
+        }
+        setMessages(prev => [...prev, rejectionMessage])
+        
+        toast.success("Documento rejeitado")
+        setMentionMode(null)
+        setNewMessage("")
+
+        // Refetch receipts to update the list
+        const updatedReceipts = await fetchReceipts(subsidy?.id)
+        setReceipts(updatedReceipts || [])
+      } catch (error) {
+        console.error('Error rejecting document:', error)
+        // Error toast is already shown by the hook
       }
-      setMessages(prev => [...prev, rejectionMessage])
-      
-      toast.success("Documento rejeitado")
-      setMentionMode(null)
-      setNewMessage("")
     }
   }
 
@@ -414,9 +531,14 @@ export function ViewSubsidyModal({
     return <FileText className="w-4 h-4" />
   }
 
-  const handleDownload = (document: DocumentItem) => {
-    // TODO: Implementar download real
-    window.open(document.file_url, '_blank')
+  const handleDownload = async (document: DocumentItem) => {
+    try {
+      // Use the same approach as activity-documents-section
+      await downloadReceipt(document.id, document.file_name)
+    } catch (error) {
+      console.error('Error downloading document:', error)
+      toast.error('Erro ao fazer download do documento')
+    }
   }
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -487,42 +609,89 @@ export function ViewSubsidyModal({
                   <DropdownMenuContent align="start">
                     <DropdownMenuLabel>Alterar Status</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => {
+                    <DropdownMenuItem onClick={async () => {
                       setCurrentSubsidyStatus('pending')
                       setMentionStatus('pending')
                       setNewMessage('Alteração de status para Pendente')
                       chatInputRef.current?.focus()
-                      toast.success('Status alterado para Pendente')
+                      // Update in backend
+                      try {
+                        await updateSubsidyRequest({
+                          variables: {
+                            id: subsidy.id,
+                            data: {
+                              subsidy_status_id: STATUS_IDS.pending
+                            }
+                          }
+                        })
+                      } catch (error) {
+                        console.error('Error updating status:', error)
+                      }
                     }}>
                       <Clock className="mr-2 h-4 w-4 text-amber-500" />
                       Pendente
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {
+                    <DropdownMenuItem onClick={async () => {
                       setCurrentSubsidyStatus('in_review')
                       setMentionStatus('in_review')
                       setNewMessage('Alteração de status para Em Análise')
                       chatInputRef.current?.focus()
-                      toast.success('Status alterado para Em Análise')
+                      // Update in backend
+                      try {
+                        await updateSubsidyRequest({
+                          variables: {
+                            id: subsidy.id,
+                            data: {
+                              subsidy_status_id: STATUS_IDS.in_review
+                            }
+                          }
+                        })
+                      } catch (error) {
+                        console.error('Error updating status:', error)
+                      }
                     }}>
                       <AlertCircle className="mr-2 h-4 w-4 text-blue-500" />
                       Em Análise
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {
+                    <DropdownMenuItem onClick={async () => {
                       setCurrentSubsidyStatus('approved')
                       setMentionStatus('approved')
                       setNewMessage('Alteração de status para Aprovado')
                       chatInputRef.current?.focus()
-                      toast.success('Status alterado para Aprovado')
+                      // Approve subsidy - use specific mutation
+                      try {
+                        await approveSubsidyRequest({
+                          variables: {
+                            id: subsidy.id,
+                            approved_amount: subsidy.requested_amount
+                          }
+                        })
+                      } catch (error) {
+                        console.error('Error approving subsidy:', error)
+                      }
                     }}>
                       <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
                       Aprovado
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {
+                    <DropdownMenuItem onClick={async () => {
                       setCurrentSubsidyStatus('rejected')
                       setMentionStatus('rejected')
-                      setNewMessage('Alteração de status para Rejeitado')
-                      chatInputRef.current?.focus()
-                      toast.success('Status alterado para Rejeitado')
+                      const reason = prompt('Motivo da rejeição:')
+                      if (reason) {
+                        setNewMessage(`Alteração de status para Rejeitado: ${reason}`)
+                        chatInputRef.current?.focus()
+                        // Reject subsidy
+                        try {
+                          await rejectSubsidyRequest({
+                            variables: {
+                              id: subsidy.id,
+                              rejection_reason: reason
+                            }
+                          })
+                        } catch (error) {
+                          console.error('Error rejecting subsidy:', error)
+                        }
+                      }
                     }}>
                       <XCircle className="mr-2 h-4 w-4 text-red-500" />
                       Rejeitado
@@ -745,7 +914,14 @@ export function ViewSubsidyModal({
                     Documentos
                   </h5>
                   
-                  {currentActivity.documents.length === 0 ? (
+                  {loadingDocuments || receiptsLoading ? (
+                    <div className="py-8 text-center">
+                      <div className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                        <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                        <span>Carregando documentos...</span>
+                      </div>
+                    </div>
+                  ) : currentActivity.documents.length === 0 ? (
                     <p className="text-xs text-gray-500 dark:text-gray-400 py-6 text-center border border-dashed border-gray-200 dark:border-gray-800 rounded-md">
                       Nenhum documento anexado
                     </p>

@@ -345,6 +345,42 @@ export function useSubsidyReceipts({
   }
 
   /**
+   * Reject a receipt (admin/manager only)
+   */
+  const rejectReceipt = async (receiptId: string, reason: string) => {
+    try {
+      setValidating(true)
+      const token = getAuthToken()
+      const apiUrl = getApiUrl()
+
+      const response = await fetch(`${apiUrl}/subsidy-receipts/${receiptId}/reject`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify({ reason }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Erro ao rejeitar recibo')
+      }
+
+      toast.success('Recibo rejeitado')
+
+      // Refetch receipts to update the list
+      await fetchReceipts()
+    } catch (error: any) {
+      console.error('Rejection error:', error)
+      toast.error(error.message || 'Erro ao rejeitar recibo')
+      throw error
+    } finally {
+      setValidating(false)
+    }
+  }
+
+  /**
    * Download a receipt using REST endpoint
    */
   const downloadReceipt = async (receiptId: string, filename: string) => {
@@ -397,6 +433,7 @@ export function useSubsidyReceipts({
     uploadMultipleReceipts,
     deleteReceipt,
     validateReceipt,
+    rejectReceipt,
     downloadReceipt,
     fetchReceipts,
   }
