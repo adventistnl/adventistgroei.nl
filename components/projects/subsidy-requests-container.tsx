@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/shared/empty-state"
 import { SubsidyRequestCard, SubsidyRequestCardData } from "./subsidy-request-card"
 import { ViewSubsidyModal } from "@/components/modals/project/view-subsidy-modal"
-import { RequestSubsidyModal } from "@/components/modals/project/request-subsidy-modal"
+import { RequestSubsidyModal, SubsidyRequestData as SubsidyRequestFormData } from "@/components/modals/project/request-subsidy-modal"
+import { useSubsidyReceipts, SubsidyReceipt } from "@/hooks/use-subsidy-receipts"
 import { cn } from "@/lib/utils"
+import type { ProjectActivityData } from "@/components/projects/project-activities-table"
 
 interface SubsidyRequestsContainerProps {
   /** Array of subsidy request data */
@@ -23,6 +25,8 @@ interface SubsidyRequestsContainerProps {
   onViewSubsidy?: (id: string) => void
   /** Callback when a card's duplicate action is triggered */
   onDuplicateSubsidy?: (id: string) => void
+  /** Callback to update a subsidy request */
+  onUpdateSubsidy?: (id: string, data: SubsidyRequestFormData) => Promise<void>
   /** Optional title for the container */
   title?: string
   /** Optional description for the container */
@@ -35,6 +39,8 @@ interface SubsidyRequestsContainerProps {
   emptyStateTitle?: string
   /** Empty state description override */
   emptyStateDescription?: string
+  /** All activities for the project (for adding new items) */
+  allActivities?: ProjectActivityData[]
 }
 
 export function SubsidyRequestsContainer({
@@ -44,18 +50,26 @@ export function SubsidyRequestsContainer({
   onDeleteSubsidy,
   onViewSubsidy,
   onDuplicateSubsidy,
+  onUpdateSubsidy,
   title,
   description,
   gridColSpan = "col-span-12",
   className,
   emptyStateTitle,
   emptyStateDescription,
+  allActivities = [],
 }: SubsidyRequestsContainerProps) {
   const { t } = useTranslation()
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false)
   const [selectedSubsidy, setSelectedSubsidy] = React.useState<SubsidyRequestCardData | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
   const [selectedSubsidyForEdit, setSelectedSubsidyForEdit] = React.useState<SubsidyRequestCardData | null>(null)
+  const [editReceipts, setEditReceipts] = React.useState<SubsidyReceipt[]>([])
+
+  // Hook for fetching receipts
+  const { fetchReceipts } = useSubsidyReceipts({
+    subsidyRequestId: selectedSubsidyForEdit?.id,
+  })
 
   // Usando dados reais passados via props
   const displaySubsidies = subsidies
@@ -114,34 +128,99 @@ export function SubsidyRequestsContainer({
     console.log('Archive subsidy:', id)
   }
 
-  const handleEditSubsidy = (id: string) => {
+  const handleEditSubsidy = async (id: string) => {
     const subsidy = displaySubsidies.find(s => s.id === id)
     if (subsidy) {
       setSelectedSubsidyForEdit(subsidy)
+
+      // Fetch receipts for this subsidy request (pass ID directly since state hasn't updated yet)
+      try {
+        const receipts = await fetchReceipts(subsidy.id)
+        console.log('📄 Loaded receipts for edit:', receipts)
+        setEditReceipts(receipts || [])
+      } catch (error) {
+        console.error('Error fetching receipts:', error)
+        setEditReceipts([])
+      }
+
       setIsEditModalOpen(true)
     }
     if (onEditSubsidy) onEditSubsidy(id)
+  }
+
+  // Helper to get file type from filename
+  const getFileType = (filename: string): "PDF" | "JPG" | "PNG" | "DOC" | "OTHER" => {
+    const ext = filename.split('.').pop()?.toUpperCase()
+    if (ext === "PDF" || ext === "JPG" || ext === "PNG" || ext === "DOC") {
+      return ext as "PDF" | "JPG" | "PNG" | "DOC"
+    }
+    return "OTHER"
+  }
+
+  // Helper to map receipt type to document type
+  const mapReceiptTypeToDocType = (type: string): "INVOICE" | "RECEIPT" | "CONTRACT" | "PROOF_OF_PAYMENT" | "OTHER" => {
+    const typeMap: Record<string, "INVOICE" | "RECEIPT" | "CONTRACT" | "PROOF_OF_PAYMENT" | "OTHER"> = {
+      'invoice': 'INVOICE',
+      'receipt': 'RECEIPT',
+      'contract': 'CONTRACT',
+      'proof_of_payment': 'PROOF_OF_PAYMENT',
+      'image': 'RECEIPT',
+      'pdf': 'INVOICE',
+    }
+    return typeMap[type?.toLowerCase()] || 'OTHER'
   }
 
   // Build initialData for edit modal using real subsidy items
   const editInitialData = React.useMemo(() => {
     if (!selectedSubsidyForEdit) return null
 
+    // Group receipts by activity_id
+    const receiptsByActivity = editReceipts.reduce((acc, receipt) => {
+      const activityId = receipt.project_activities_id
+      if (!acc[activityId]) {
+        acc[activityId] = []
+      }
+      acc[activityId].push(receipt)
+      return acc
+    }, {} as Record<string, SubsidyReceipt[]>)
+
     // Use real items from the subsidy if available
-    const items = selectedSubsidyForEdit.items?.map(item => ({
-      activity_id: item.activity_id,
-      activity_name: item.activity_name,
-      requested_amount: item.requested_amount,
-      budget_amount: item.budget_amount,
-      activity_documents: [], // Documents would need to be loaded separately
-      notes: item.notes || ""
-    })) || []
+    const items = selectedSubsidyForEdit.items?.map(item => {
+      // Get receipts for this activity
+      const activityReceipts = receiptsByActivity[item.activity_id] || []
+
+      // Transform receipts to activity_documents format
+      const activity_documents = activityReceipts.map(receipt => ({
+        id: receipt.id,
+        file_name: receipt.filename,
+        file_type: getFileType(receipt.filename),
+        document_type: mapReceiptTypeToDocType(receipt.type),
+        amount: receipt.amount || 0,
+        file_url: receipt.file_url,
+        isExpanded: false
+      }))
+
+      return {
+        activity_id: item.activity_id,
+        activity_name: item.activity_name,
+        requested_amount: item.requested_amount,
+        budget_amount: item.budget_amount,
+        activity_documents,
+        notes: item.notes || ""
+      }
+    }) || []
 
     console.log('📝 Building editInitialData:', {
+      subsidyId: selectedSubsidyForEdit.id,
       project_id: selectedSubsidyForEdit.project_id,
       institution_id: selectedSubsidyForEdit.institution_id,
       department_id: selectedSubsidyForEdit.department_id,
       church_id: selectedSubsidyForEdit.church_id,
+      rawItemsCount: selectedSubsidyForEdit.items?.length || 0,
+      rawItems: selectedSubsidyForEdit.items,
+      transformedItemsCount: items.length,
+      receiptsCount: editReceipts.length,
+      itemsWithDocs: items.filter(i => i.activity_documents.length > 0).length
     })
 
     return {
@@ -153,7 +232,7 @@ export function SubsidyRequestsContainer({
       notes: selectedSubsidyForEdit.notes || "",
       items,
     }
-  }, [selectedSubsidyForEdit])
+  }, [selectedSubsidyForEdit, editReceipts])
 
   const handleCloseViewModal = () => {
     setIsViewModalOpen(false)
@@ -245,7 +324,7 @@ export function SubsidyRequestsContainer({
       {/* Edit Subsidy (reuses RequestSubsidyModal in edit mode) */}
       <RequestSubsidyModal
         isOpen={isEditModalOpen}
-        onClose={() => { setIsEditModalOpen(false); setSelectedSubsidyForEdit(null) }}
+        onClose={() => { setIsEditModalOpen(false); setSelectedSubsidyForEdit(null); setEditReceipts([]) }}
         selectedActivities={[]}
         projectId={selectedSubsidyForEdit?.project_id || ""}
         institutionId={selectedSubsidyForEdit?.institution_id || ""}
@@ -254,17 +333,25 @@ export function SubsidyRequestsContainer({
         institutionName={selectedSubsidyForEdit?.institution_name || ""}
         departmentName={selectedSubsidyForEdit?.department_name || ""}
         churchName={selectedSubsidyForEdit?.church_name || ""}
+        subsidyRequestId={selectedSubsidyForEdit?.id}
         initialData={editInitialData}
         mode="edit"
-        onSubmit={(data) => {
-          // For now, just close modal and call external callback if provided
+        onSubmit={async (data) => {
+          // Call update callback if provided
+          if (onUpdateSubsidy && selectedSubsidyForEdit) {
+            try {
+              await onUpdateSubsidy(selectedSubsidyForEdit.id, data)
+              console.log('✅ Subsidy updated successfully')
+            } catch (error) {
+              console.error('❌ Error updating subsidy:', error)
+            }
+          }
+
           setIsEditModalOpen(false)
           setSelectedSubsidyForEdit(null)
-          if (onEditSubsidy && selectedSubsidyForEdit) {
-            onEditSubsidy(selectedSubsidyForEdit.id)
-          }
+          setEditReceipts([])
         }}
-        allActivities={[]}
+        allActivities={allActivities}
       />
     </>
   )

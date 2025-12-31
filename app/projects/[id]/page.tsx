@@ -823,10 +823,41 @@ export default function ProjectDetailsPage() {
   const handleEditSubsidyCard = (id: string) => {
     const subsidy = subsidyRequests.find((s: SubsidyRequestCardData) => s.id === id)
     if (subsidy) {
-      // TODO: Convert SubsidyRequestCardData to activities and open RequestSubsidyModal
-      // For now, just show a message
-      toast.success(`✏️ Abrindo edição para: ${subsidy.title}`, { duration: 2000 })
-      // Future implementation: setIsRequestSubsidyModalOpen(true) with prepopulated data
+      console.log('📝 Edit subsidy card:', subsidy.title)
+    }
+  }
+
+  // Handler to update a subsidy request
+  const handleUpdateSubsidyCard = async (id: string, data: SubsidyRequestFormData) => {
+    try {
+      console.log('📋 Updating subsidy request:', { id, data })
+
+      // Transform items to match backend expected format
+      const subsidyItems = data.items.map(item => ({
+        project_activity_id: item.activity_id,
+        requested_amount: item.requested_amount,
+        notes: item.notes || ""
+      }))
+
+      await updateSubsidyRequest({
+        variables: {
+          id,
+          data: {
+            description: data.notes || `Solicitação de subsídio com ${data.items.length} atividade(s)`,
+            total_budget: data.requested_amount,
+            institution_id: data.institution_id,
+            department_id: data.department_id || undefined,
+            church_id: data.church_id || undefined,
+            items: subsidyItems,
+            notes: data.notes
+          }
+        }
+      })
+
+      console.log('✅ Subsidy request updated successfully')
+    } catch (error) {
+      console.error('❌ Error updating subsidy request:', error)
+      throw error
     }
   }
 
@@ -1542,6 +1573,8 @@ export default function ProjectDetailsPage() {
                           onEditSubsidy={handleEditSubsidyCard}
                           onDeleteSubsidy={handleDeleteSubsidyCard}
                           onDuplicateSubsidy={handleDuplicateSubsidyCard}
+                          onUpdateSubsidy={handleUpdateSubsidyCard}
+                          allActivities={allProjectActivities}
                           description="Gerencie as solicitações de subsídio"
                         />
                       </>
