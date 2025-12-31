@@ -319,6 +319,17 @@ export function SubsidyRequestsContainer({
         isOpen={isViewModalOpen}
         onClose={handleCloseViewModal}
         subsidy={selectedSubsidy}
+        onSubsidyUpdated={async () => {
+          // Refetch the subsidy data to show updated status
+          // Don't close the modal
+          if (selectedSubsidy?.id) {
+            // Trigger a refetch by updating the selected subsidy
+            const updated = subsidies.find(s => s.id === selectedSubsidy.id)
+            if (updated) {
+              setSelectedSubsidy({...updated})
+            }
+          }
+        }}
       />
 
       {/* Edit Subsidy (reuses RequestSubsidyModal in edit mode) */}

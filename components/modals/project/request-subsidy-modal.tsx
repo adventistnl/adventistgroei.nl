@@ -63,7 +63,7 @@ interface RequestSubsidyModalProps {
   churchName?: string
   /** Subsidy request ID (required for edit mode to upload files) */
   subsidyRequestId?: string
-  onSubmit: (data: SubsidyRequestData) => void
+  onSubmit: (data: SubsidyRequestData) => Promise<string | void> // Returns subsidy ID in create mode
   allActivities?: ProjectActivityData[]
   /** Optional initial data to populate the form when editing */
   initialData?: Partial<SubsidyRequestData> | null
@@ -522,10 +522,49 @@ export function RequestSubsidyModal({
         setIsSubmitting(false)
       }
     } else {
-      // Create mode - just submit (files will be handled by parent component after subsidy request is created)
-      onSubmit(formData)
-      toast.success(translations.success?.created || "Solicitação criada")
-      onClose()
+      // Create mode - submit and then upload files if subsidy ID is returned
+      setIsSubmitting(true)
+      try {
+        const createdSubsidyId = await onSubmit(formData)
+        
+        if (createdSubsidyId && pendingFiles.size > 0) {
+          console.log('📤 [Create] Uploading files for new subsidy:', createdSubsidyId)
+          
+          // Upload all pending files
+          for (const item of formData.items) {
+            for (const doc of item.activity_documents) {
+              const file = pendingFiles.get(doc.id)
+              if (file) {
+                console.log('📤 [Create] Uploading file:', {
+                  fileName: file.name,
+                  activityId: item.activity_id,
+                  amount: doc.amount,
+                  type: doc.document_type
+                })
+
+                await uploadReceipt(file, createdSubsidyId, item.activity_id, {
+                  type: doc.document_type === 'INVOICE' ? 'invoice' :
+                        doc.document_type === 'RECEIPT' ? 'receipt' :
+                        doc.document_type === 'CONTRACT' ? 'contract' :
+                        doc.document_type === 'PROOF_OF_PAYMENT' ? 'proof_of_payment' : 'other',
+                  amount: doc.amount
+                })
+              }
+            }
+          }
+          
+          console.log('✅ [Create] All files uploaded successfully')
+        }
+        
+        toast.success(translations.success?.created || "Solicitação criada")
+        setPendingFiles(new Map())
+        onClose()
+      } catch (error) {
+        console.error('❌ [Create] Error:', error)
+        toast.error('Erro ao criar solicitação ou enviar arquivos')
+      } finally {
+        setIsSubmitting(false)
+      }
     }
   }
 
