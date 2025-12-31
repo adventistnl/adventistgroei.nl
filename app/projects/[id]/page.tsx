@@ -773,7 +773,7 @@ export default function ProjectDetailsPage() {
     setIsRequestSubsidyModalOpen(true)
   }, [selectedActivities])
 
-  const handleSubsidyRequestSubmit = async (data: SubsidyRequestFormData) => {
+  const handleSubsidyRequestSubmit = async (data: SubsidyRequestFormData): Promise<string | void> => {
     try {
       console.log('📋 Submitting subsidy request:', data)
 
@@ -784,8 +784,8 @@ export default function ProjectDetailsPage() {
         notes: item.notes || ""
       }))
 
-      // Call mutation
-      await createSubsidyRequest({
+      // Call mutation and get the created subsidy ID
+      const result = await createSubsidyRequest({
         variables: {
           data: {
             description: data.notes || `Solicitação de subsídio com ${data.items.length} atividade(s)`,
@@ -794,16 +794,24 @@ export default function ProjectDetailsPage() {
             department_id: data.department_id || undefined,
             church_id: data.church_id || undefined,
             project_id: data.project_id,
+            requester_id: user?.id, // Add current user as requester
             items: subsidyItems,
             notes: data.notes
           }
         }
       })
 
+      const createdSubsidyId = result.data?.createSubsidyRequest?.id
+
+      if (createdSubsidyId) {
+        console.log('✅ Subsidy request created with ID:', createdSubsidyId)
+        return createdSubsidyId // Return ID so modal can upload files
+      }
+
       console.log('✅ Subsidy request created successfully')
     } catch (error) {
       console.error('❌ Error creating subsidy request:', error)
-      // Error is already handled by mutation onError
+      throw error // Re-throw so modal can handle error
     }
   }
 
