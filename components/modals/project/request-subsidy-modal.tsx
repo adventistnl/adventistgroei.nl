@@ -1,14 +1,14 @@
 "use client"
 
 import React, { useState, useMemo, useCallback } from "react"
-import { X, Upload, FileText, DollarSign, Building2, Users, Church, Trash2, Info, AlertCircle, Edit2, Check, Zap, ChevronRight, Plus, ChevronsUpDown } from "lucide-react"
+import { X, Upload, FileText, DollarSign, Building2, Church, Trash2, Info, AlertCircle, Edit2, Check, Zap, ChevronRight, Plus, ChevronsUpDown, Loader2 } from "lucide-react"
+import { useSubsidyReceipts } from "@/hooks/use-subsidy-receipts"
 import { ValidationBadgesCarousel, type ValidationBadgeData } from "@/components/shared/validation-badges-carousel"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
@@ -61,6 +61,8 @@ interface RequestSubsidyModalProps {
   institutionName?: string
   departmentName?: string
   churchName?: string
+  /** Subsidy request ID (required for edit mode to upload files) */
+  subsidyRequestId?: string
   onSubmit: (data: SubsidyRequestData) => void
   allActivities?: ProjectActivityData[]
   /** Optional initial data to populate the form when editing */
@@ -90,6 +92,7 @@ export function RequestSubsidyModal({
   institutionName = "",
   departmentName = "",
   churchName = "",
+  subsidyRequestId,
   onSubmit,
   allActivities = [],
   initialData = null,
@@ -104,6 +107,17 @@ export function RequestSubsidyModal({
   const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set())
   const [isAddActivityModalOpen, setIsAddActivityModalOpen] = useState(false)
   const [availableActivities, setAvailableActivities] = useState<ProjectActivityData[]>([])
+  const [pendingFiles, setPendingFiles] = useState<Map<string, File>>(new Map()) // Files pending upload (create mode)
+  const [isSubmitting, setIsSubmitting] = useState(false) // Loading state for submission
+
+  // Subsidy receipts hook for file uploads (only active in edit mode)
+  const {
+    uploading: uploadingReceipt,
+    uploadReceipt,
+    deleteReceipt,
+  } = useSubsidyReceipts({
+    subsidyRequestId: mode === "edit" ? subsidyRequestId : undefined,
+  })
   
   // Get current translations
   const translations = subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations] || subsidyRequestTranslations.en
@@ -145,8 +159,11 @@ export function RequestSubsidyModal({
 
   // If initialData is provided (edit mode), populate the form with it when opening
   React.useEffect(() => {
+    console.log('🔍 Modal useEffect triggered:', { isOpen, mode, hasInitialData: !!initialData, initialDataItems: initialData?.items?.length || 0 })
+
     if (isOpen && initialData && mode === "edit") {
       console.log('📝 Edit mode - Loading initialData:', initialData)
+      console.log('📝 initialData.items:', initialData.items)
 
       // In edit mode, always use initialData items (even if empty array)
       // Only fall back to selectedActivities if initialData.items is undefined
@@ -327,18 +344,32 @@ export function RequestSubsidyModal({
     }))
   }
 
-  const handleFileUpload = (files: FileList | null) => {
+  const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return
 
-    const newDocuments: UploadedDocument[] = Array.from(files).map((file, idx) => ({
-      id: `temp-${Date.now()}-${idx}`,
-      file_name: file.name,
-      file_type: getFileType(file.name),
-      document_type: "INVOICE",
-      amount: 0,
-      file_url: URL.createObjectURL(file),
-      isExpanded: true
-    }))
+    console.log('📤 handleFileUpload called:', {
+      mode,
+      subsidyRequestId,
+      activityId: currentItem.activity_id,
+      filesCount: files.length,
+    })
+
+    // Always store files locally first - upload happens on save with metadata
+    const newDocuments: UploadedDocument[] = Array.from(files).map((file, idx) => {
+      const tempId = `temp-${Date.now()}-${idx}`
+      // Store file reference for later upload
+      setPendingFiles(prev => new Map(prev).set(tempId, file))
+
+      return {
+        id: tempId,
+        file_name: file.name,
+        file_type: getFileType(file.name),
+        document_type: "INVOICE" as const,
+        amount: 0,
+        file_url: URL.createObjectURL(file),
+        isExpanded: true
+      }
+    })
 
     handleItemChange('activity_documents', [
       ...currentItem.activity_documents,
@@ -356,7 +387,24 @@ export function RequestSubsidyModal({
     return "OTHER"
   }
 
-  const handleRemoveDocument = (docId: string) => {
+  const handleRemoveDocument = async (docId: string) => {
+    // In edit mode with a real document ID (not temp-*), delete from backend
+    if (mode === "edit" && !docId.startsWith('temp-')) {
+      try {
+        await deleteReceipt(docId)
+      } catch (error) {
+        console.error('Error deleting receipt:', error)
+        return // Don't remove from local state if backend delete failed
+      }
+    } else if (docId.startsWith('temp-')) {
+      // Remove from pending files map
+      setPendingFiles(prev => {
+        const newMap = new Map(prev)
+        newMap.delete(docId)
+        return newMap
+      })
+    }
+
     handleItemChange(
       'activity_documents',
       currentItem.activity_documents.filter(doc => doc.id !== docId)
@@ -392,7 +440,7 @@ export function RequestSubsidyModal({
     toast.success(`${activities.length} atividade(s) adicionada(s)`)
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Validation
     if (!formData.institution_id) {
       toast.error(translations.validation.institutionRequired)
@@ -431,13 +479,54 @@ export function RequestSubsidyModal({
       }
     }
 
-    onSubmit(formData)
-    if (mode === "edit") {
-      toast.success(translations.success?.updated || "Solicitação atualizada")
+    // In edit mode, upload pending files before submitting
+    if (mode === "edit" && subsidyRequestId) {
+      setIsSubmitting(true)
+      try {
+        // Upload all pending files with their metadata
+        for (const item of formData.items) {
+          for (const doc of item.activity_documents) {
+            // Only upload documents with temp IDs
+            if (doc.id.startsWith('temp-')) {
+              const file = pendingFiles.get(doc.id)
+              if (file) {
+                console.log('📤 [Submit] Uploading pending file:', {
+                  fileName: file.name,
+                  activityId: item.activity_id,
+                  amount: doc.amount,
+                  type: doc.document_type
+                })
+
+                await uploadReceipt(file, subsidyRequestId, item.activity_id, {
+                  type: doc.document_type === 'INVOICE' ? 'invoice' :
+                        doc.document_type === 'RECEIPT' ? 'receipt' :
+                        doc.document_type === 'CONTRACT' ? 'contract' :
+                        doc.document_type === 'PROOF_OF_PAYMENT' ? 'proof_of_payment' : 'other',
+                  amount: doc.amount
+                })
+              }
+            }
+          }
+        }
+
+        // Clear pending files after successful upload
+        setPendingFiles(new Map())
+
+        toast.success("Solicitação atualizada com sucesso")
+        onSubmit(formData)
+        onClose()
+      } catch (error) {
+        console.error('❌ [Submit] Upload error:', error)
+        toast.error('Erro ao enviar arquivos. Tente novamente.')
+      } finally {
+        setIsSubmitting(false)
+      }
     } else {
+      // Create mode - just submit (files will be handled by parent component after subsidy request is created)
+      onSubmit(formData)
       toast.success(translations.success?.created || "Solicitação criada")
+      onClose()
     }
-    onClose()
   }
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -1011,24 +1100,33 @@ export function RequestSubsidyModal({
             {/* Drop Zone */}
             <div
               className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                dragActive 
-                  ? 'border-gray-400 bg-gray-100' 
-                  : 'border-gray-300 hover:border-gray-400'
+                uploadingReceipt
+                  ? 'border-gray-300 bg-gray-50 opacity-70 cursor-not-allowed'
+                  : dragActive
+                    ? 'border-gray-400 bg-gray-100'
+                    : 'border-gray-300 hover:border-gray-400'
               }`}
-              onDragEnter={(e) => { e.preventDefault(); setDragActive(true) }}
+              onDragEnter={(e) => { e.preventDefault(); if (!uploadingReceipt) setDragActive(true) }}
               onDragLeave={(e) => { e.preventDefault(); setDragActive(false) }}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault()
                 setDragActive(false)
-                handleFileUpload(e.dataTransfer.files)
+                if (!uploadingReceipt) handleFileUpload(e.dataTransfer.files)
               }}
             >
-              <Upload className="w-6 h-6 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-600 mb-1">{translations.documents.dropZone.dragText}</p>
+              {uploadingReceipt ? (
+                <Loader2 className="w-6 h-6 text-gray-400 mx-auto mb-2 animate-spin" />
+              ) : (
+                <Upload className="w-6 h-6 text-gray-400 mx-auto mb-2" />
+              )}
+              <p className="text-sm text-gray-600 mb-1">
+                {uploadingReceipt ? "Enviando arquivo..." : translations.documents.dropZone.dragText}
+              </p>
               <Button
                 variant="outline"
                 size="sm"
+                disabled={uploadingReceipt}
                 onClick={() => {
                   const input = document.createElement('input')
                   input.type = 'file'
@@ -1039,8 +1137,12 @@ export function RequestSubsidyModal({
                 }}
                 className="text-xs h-7 mt-2"
               >
-                <Upload className="w-3 h-3 mr-1" />
-                {translations.documents.dropZone.selectButton}
+                {uploadingReceipt ? (
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                ) : (
+                  <Upload className="w-3 h-3 mr-1" />
+                )}
+                {uploadingReceipt ? "Enviando..." : translations.documents.dropZone.selectButton}
               </Button>
               <p className="text-xs text-gray-500 mt-2">{translations.documents.dropZone.acceptedFormats}</p>
             </div>
@@ -1337,11 +1439,19 @@ export function RequestSubsidyModal({
               <Button
                 onClick={handleSubmit}
                 size="sm"
-                disabled={!validateAllActivities.allComplete}
+                disabled={!validateAllActivities.allComplete || isSubmitting}
                 className="h-9 px-4 bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-50"
               >
-                <DollarSign className="w-4 h-4 mr-1" />
-                {mode === "edit" ? (translations.buttons?.saveChanges || "Salvar alterações") : translations.buttons.submit}
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                ) : (
+                  <DollarSign className="w-4 h-4 mr-1" />
+                )}
+                {isSubmitting
+                  ? "Enviando arquivos..."
+                  : mode === "edit"
+                    ? "Salvar alterações"
+                    : translations.buttons.submit}
               </Button>
             </div>
           </div>
