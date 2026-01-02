@@ -248,7 +248,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
           title: formData.title,
           description: formData.description,
           department_id: formData.department_id,
-          budget: formData.budget,
+          budget: parseFloat(String(formData.budget)),
           type: formData.type,
           start_at: formData.start_at.toISOString(),
           end_at: formData.end_at.toISOString(),
@@ -300,8 +300,8 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">{t.modal.projectInformation}</h3>
-              <p className="text-sm text-muted-foreground">Informações básicas do projeto</p>
+              <h3 className="text-lg font-medium text-foreground">{t.basicInformation}</h3>
+              <p className="text-sm text-muted-foreground">{t.basicInformationDesc}</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
@@ -366,9 +366,9 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0" align="start">
                     <Command>
-                      <CommandInput placeholder="Buscar departamento..." />
+                      <CommandInput placeholder={t.searchDepartment} />
                       <CommandList>
-                        <CommandEmpty>Nenhum departamento encontrado.</CommandEmpty>
+                        <CommandEmpty>{t.noDepartmentFound}</CommandEmpty>
                         <CommandGroup>
                           {departments.map((dept: any) => (
                             <CommandItem
@@ -406,8 +406,8 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">Período do Projeto</h3>
-              <p className="text-sm text-muted-foreground">Defina as datas de início e término</p>
+              <h3 className="text-lg font-medium text-foreground">{t.projectPeriod}</h3>
+              <p className="text-sm text-muted-foreground">{t.projectPeriodDesc}</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
@@ -430,7 +430,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                         {formData.start_at ? (
                           format(formData.start_at, "PPP", { locale: ptBR })
                         ) : (
-                          <span>Selecione a data</span>
+                          <span>{t.selectDate}</span>
                         )}
                       </Button>
                     </PopoverTrigger>
@@ -464,7 +464,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                         {formData.end_at ? (
                           format(formData.end_at, "PPP", { locale: ptBR })
                         ) : (
-                          <span>Selecione a data</span>
+                          <span>{t.selectDate}</span>
                         )}
                       </Button>
                     </PopoverTrigger>
@@ -490,8 +490,8 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">{t.modal.additionalSettings}</h3>
-              <p className="text-sm text-muted-foreground">Configurações adicionais do projeto</p>
+              <h3 className="text-lg font-medium text-foreground">{t.additionalConfig}</h3>
+              <p className="text-sm text-muted-foreground">{t.additionalConfigDesc}</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
@@ -511,15 +511,15 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                     >
                       {formData.language_preference
                         ? languageOptions.find(lang => lang.value === formData.language_preference)?.label
-                        : "Selecione o idioma"}
+                        : t.selectLanguage}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0" align="start">
                     <Command>
-                      <CommandInput placeholder="Buscar idioma..." />
+                      <CommandInput placeholder={t.searchLanguage} />
                       <CommandList>
-                        <CommandEmpty>Nenhum idioma encontrado.</CommandEmpty>
+                        <CommandEmpty>{t.noLanguageFound}</CommandEmpty>
                         <CommandGroup>
                           {languageOptions.map((lang) => (
                             <CommandItem
@@ -550,7 +550,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
               <div className="space-y-2">
                 <Label className="flex items-center gap-2 text-sm">
                   <Building className="w-4 h-4 text-muted-foreground" />
-                  Tipo de Projeto
+                  {t.projectType}
                 </Label>
                 <Popover open={openType} onOpenChange={setOpenType}>
                   <PopoverTrigger asChild>
@@ -562,8 +562,8 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                       disabled={updateLoading}
                     >
                       {formData.type
-                        ? typeOptions.find(type => type.value === formData.type)?.label
-                        : "Selecione o tipo"}
+                        ? (formData.type === "Local" ? t.local : t.global)
+                        : t.selectType}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
@@ -571,24 +571,36 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                     <Command>
                       <CommandList>
                         <CommandGroup>
-                          {typeOptions.map((type) => (
-                            <CommandItem
-                              key={type.value}
-                              value={type.value}
-                              onSelect={(currentValue) => {
-                                handleInputChange('type', currentValue as "Local" | "Global")
-                                setOpenType(false)
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  formData.type === type.value ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {type.label}
-                            </CommandItem>
-                          ))}
+                          <CommandItem
+                            value="Local"
+                            onSelect={() => {
+                              handleInputChange('type', 'Local' as "Local" | "Global")
+                              setOpenType(false)
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.type === "Local" ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {t.local}
+                          </CommandItem>
+                          <CommandItem
+                            value="Global"
+                            onSelect={() => {
+                              handleInputChange('type', 'Global' as "Local" | "Global")
+                              setOpenType(false)
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.type === "Global" ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {t.global}
+                          </CommandItem>
                         </CommandGroup>
                       </CommandList>
                     </Command>
@@ -609,32 +621,6 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                     onCheckedChange={(checked) => handleInputChange('is_private', checked)}
                   />
                 </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="text-base">{t.requestVolunteers}</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {t.requestVolunteersDesc}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.required_volunteers}
-                    onCheckedChange={(checked) => handleInputChange('required_volunteers', checked)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="text-base">Projeto é um Evento</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Marque se este projeto incluirá eventos públicos
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.is_event}
-                    onCheckedChange={(checked) => handleInputChange('is_event', checked)}
-                  />
-                </div>
               </div>
             </div>
           </div>
@@ -651,16 +637,16 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
         <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="text-lg font-semibold flex items-center gap-2">
             <Settings className="w-5 h-5 text-muted-foreground" />
-            {t.modal.editProject}
+            {t.editModalTitle}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Editar informações do projeto: {project.title}
+            {t.editProjectInfo}: {project.title}
           </DialogDescription>
           
           {/* Progress Bar */}
           <div className="mt-4 space-y-2">
             <div className="flex justify-between items-center text-xs text-muted-foreground">
-              <span>Passo {currentStep} de {totalSteps}</span>
+              <span>{t.step} {currentStep} {t.of} {totalSteps}</span>
               <span>{Math.round((currentStep / totalSteps) * 100)}%</span>
             </div>
             <Progress value={(currentStep / totalSteps) * 100} className="h-1" />
@@ -688,7 +674,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                   className="flex items-center gap-1 text-xs"
                 >
                   <ChevronLeft className="w-3 h-3" />
-                  Anterior
+                  {t.previous}
                 </Button>
               )}
               <Button 
@@ -699,7 +685,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                 size="sm"
                 className="text-xs"
               >
-                Cancelar
+                {t.cancel}
               </Button>
             </div>
 
@@ -712,7 +698,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                   size="sm"
                   className="flex items-center gap-1 text-xs bg-gray-900 hover:bg-gray-800 text-white"
                 >
-                  Próximo
+                  {t.next}
                   <ChevronRight className="w-3 h-3" />
                 </Button>
               ) : (
@@ -725,12 +711,12 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                   {updateLoading ? (
                     <>
                       <Save className="w-3 h-3 animate-spin mr-1" />
-                      Salvando...
+                      {t.saving}
                     </>
                   ) : (
                     <>
                       <Save className="w-3 h-3 mr-1" />
-                      Salvar Alterações
+                      {t.saveChanges}
                     </>
                   )}
                 </Button>
