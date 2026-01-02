@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { useQuery } from "@apollo/client"
+import { useQuery, useMutation } from "@apollo/client"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
-import { LanguageSelector } from "@/components/shared/language-selector"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
 import {
   Select,
   SelectContent,
@@ -16,296 +16,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { ProjectsTable, ProjectTableData } from "@/components/projects/projects-table"
-import { useRouter } from "next/navigation"
+import { ProjectTableData } from "@/components/projects/projects-table"
 import { useNavigateWithLoading } from "@/hooks/use-navigation-loading"
 import { projectTranslations } from "@/lib/translations/projects"
 import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { DELETE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
-import { useMutation } from "@apollo/client"
-import {
-  Globe,
-  DollarSign,
-  Users,
-  Plus,
-  RefreshCw,
-  TrendingUp,
-  Building,
-  Activity,
-  Calendar,
-  BarChart3,
-  PieChart,
-  LineChart,
-  Eye,
-  Edit,
-  Trash2,
-  MoreHorizontal
-} from "lucide-react"
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  Line,
-  LineChart as RechartsLineChart,
-  Pie,
-  PieChart as RechartsPieChart,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer
-} from "recharts"
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
-  type ChartConfig,
-} from "@/components/ui/chart"
+import { Globe, Plus, RefreshCw, Building } from "lucide-react"
 import { useInstitution } from "@/contexts/institution-context"
-import { KPICards } from "@/components/shared/kpi-cards-carousel"
+import { useCurrency } from "@/contexts/currency-context"
+import { ProjectsKPIs } from "@/components/projects/projects-kpis"
+import { ProjectsByDepartmentChart } from "@/components/projects/charts/projects-by-department-chart"
+import { ProjectActivitiesChart } from "@/components/projects/charts/project-activities-chart"
+import { ProjectsOverTimeChart } from "@/components/projects/charts/projects-over-time-chart"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { UseTable } from "@/components/ui/use-table"
-import { ColumnDef } from "@tanstack/react-table"
+import { createProjectColumns } from "@/components/projects/projects-table-columns"
+import { EditProjectModal } from "@/components/modals/project/edit-project-modal"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
 
-// Chart configurations with duotone colors
-const projectsChartConfig = {
-  projects: {
-    label: "Projetos",
-    color: "#3b82f6", // Blue
-  },
-  budget: {
-    label: "Orçamento",
-    color: "#10b981", // Green
-  },
-  subsidies: {
-    label: "Subsídios",
-    color: "#f59e0b", // Amber
-  },
-} satisfies ChartConfig
-
-const timelineChartConfig = {
-  created: {
-    label: "Criados",
-    color: "#3b82f6", // Blue
-  },
-  completed: {
-    label: "Concluídos",
-    color: "#10b981", // Green
-  },
-  budget: {
-    label: "Orçamento",
-    color: "#8b5cf6", // Purple
-  },
-} satisfies ChartConfig
-
-const statusChartConfig = {
-  approved: {
-    label: "Aprovado",
-    color: "#22c55e", // Green
-  },
-  pending: {
-    label: "Pendente",
-    color: "#f59e0b", // Amber
-  },
-  analysis: {
-    label: "Em Análise",
-    color: "#3b82f6", // Blue
-  },
-  rejected: {
-    label: "Rejeitado",
-    color: "#ef4444", // Red
-  },
-} satisfies ChartConfig
-
-// Componentes individuais dos gráficos
-const ProjectsByDepartmentChart = ({ data }: { data: any[] }) => {
-  const { i18n } = useTranslation()
-  const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
-
-  return (
-  <Card className="h-full">
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-      <div>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="w-5 h-5" />
-          {t_project.charts.projectsByDepartment}
-        </CardTitle>
-        <CardDescription className="mt-1">
-          {t_project.charts.budgetVsSubsidies}
-        </CardDescription>
-      </div>
-    </CardHeader>
-    <CardContent>
-      <ChartContainer config={projectsChartConfig} className="h-[300px] w-full">
-        <BarChart data={data}>
-          <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey="department"
-            tickLine={false}
-            tickMargin={10}
-            axisLine={false}
-            fontSize={11}
-          />
-          <YAxis
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-            fontSize={11}
-          />
-          <ChartTooltip
-            cursor={false}
-            content={<ChartTooltipContent />}
-          />
-          <Legend />
-          <Bar dataKey="projects" fill="#3b82f6" radius={4} name={t_project.projects} />
-          <Bar dataKey="budget_used" fill="#10b981" radius={4} name={t_project.budget.budgetUsed} />
-          <Bar dataKey="remaining_budget" fill="#e5e7eb" radius={4} name={t_project.budget.remainingBudget} />
-        </BarChart>
-      </ChartContainer>
-    </CardContent>
-  </Card>
-  )
-}
-
-const SubsidyStatusChart = ({ data }: { data: any[] }) => {
-  const { i18n } = useTranslation()
-  const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
-
-  return (
-  <Card className="h-full">
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-      <div>
-        <CardTitle className="flex items-center gap-2">
-          <PieChart className="w-5 h-5" />
-          {t_project.charts.subsidyDistribution}
-        </CardTitle>
-        <CardDescription className="mt-1">
-          {t_project.charts.subsidyStatusBreakdown}
-        </CardDescription>
-      </div>
-    </CardHeader>
-    <CardContent>
-      <ChartContainer config={statusChartConfig} className="h-[300px] w-full">
-        <RechartsPieChart>
-          <ChartTooltip
-            cursor={false}
-            content={<ChartTooltipContent hideLabel />}
-          />
-          <Pie
-            data={data}
-            dataKey="count"
-            nameKey="status"
-            cx="50%"
-            cy="50%"
-            innerRadius={60}
-            outerRadius={120}
-            strokeWidth={2}
-            paddingAngle={2}
-          >
-            {data.map((entry, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={entry.color}
-              />
-            ))}
-          </Pie>
-          <Legend />
-        </RechartsPieChart>
-      </ChartContainer>
-    </CardContent>
-  </Card>
-  )
-}
-
-const ProjectsTimelineChart = ({ data }: { data: any[] }) => {
-  const { i18n } = useTranslation()
-  const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
-
-  return (
-  <Card className="h-full">
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-      <div>
-        <CardTitle className="flex items-center gap-2">
-          <LineChart className="w-5 h-5" />
-          {t_project.charts.projectsTimeline}
-        </CardTitle>
-        <CardDescription className="mt-1">
-          {t_project.charts.monthlyProgress}
-        </CardDescription>
-      </div>
-    </CardHeader>
-    <CardContent>
-      <ChartContainer config={timelineChartConfig} className="h-[300px] w-full">
-        <AreaChart data={data}>
-          <defs>
-            <linearGradient id="fillCreated" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
-            </linearGradient>
-            <linearGradient id="fillCompleted" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey="month"
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-            fontSize={12}
-          />
-          <YAxis
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-            fontSize={12}
-          />
-          <ChartTooltip
-            cursor={false}
-            content={<ChartTooltipContent indicator="dot" />}
-          />
-          <Area
-            dataKey="created"
-            type="natural"
-            fill="url(#fillCreated)"
-            stroke="#3b82f6"
-            stackId="a"
-          />
-          <Area
-            dataKey="completed"
-            type="natural"
-            fill="url(#fillCompleted)"
-            stroke="#10b981"
-            stackId="a"
-          />
-          <Legend />
-        </AreaChart>
-      </ChartContainer>
-    </CardContent>
-  </Card>
-  )
-}
-
 export default function ProjectsPage() {
   const { t, i18n } = useTranslation()
-  const router = useRouter()
   const { navigateWithLoading } = useNavigateWithLoading()
   const { currentInstitutionData } = useInstitution()
+  const { selectedCurrency, formatCurrency } = useCurrency()
   const [refreshing, setRefreshing] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [selectedProject, setSelectedProject] = useState<ProjectTableData | undefined>(undefined)
 
   const institutionId = currentInstitutionData?.id
 
@@ -335,6 +73,13 @@ export default function ProjectsPage() {
   const [selectedDepartment, setSelectedDepartment] = useState("all")
   const [selectedPeriod, setSelectedPeriod] = useState("6m")
   const [chartPeriod, setChartPeriod] = useState("6m")
+  
+  // Year filter states
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const [availableYears, setAvailableYears] = useState<number[]>(() => {
+    const currentYear = new Date().getFullYear()
+    return [currentYear, currentYear - 1, currentYear - 2].sort((a, b) => b - a)
+  })
 
   // Get translations for current language
   const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
@@ -375,6 +120,7 @@ export default function ProjectsPage() {
         required_volunteers: project.required_volunteers,
         start_at: project.start_at,
         end_at: project.end_at,
+        created_at: project.created_at,
         language_preference: project.language_preference,
         institutionId: project.institution_id || project.Institution?.id || '',
         status,
@@ -383,7 +129,11 @@ export default function ProjectsPage() {
         activities: project.activities?.length || 0,
         is_event: !!project.event_id,
         type: project.type as "Local" | "Global" | undefined,
-        eventId: project.event_id || null
+        eventId: project.event_id || null,
+        // Preserve activities data with owners for user avatar display
+        activitiesData: project.activities || [],
+        // Preserve owner data for assigned user column
+        owner: project.owner || null
       }
     })
   }
@@ -394,228 +144,44 @@ export default function ProjectsPage() {
     return transformProjectsData(projectsData.projects)
   }, [projectsData])
 
+  // Filter data based on selected year
+  const projectsByYear = useMemo(() => {
+    return projects.filter(project => {
+      const createdDate = new Date(project.created_at || project.start_at)
+      return createdDate.getFullYear() === selectedYear
+    })
+  }, [projects, selectedYear])
+
   // Filter data based on selected department
   const filteredData = useMemo(() => {
-    if (selectedDepartment === "all") return projects
-    return projects.filter(project => project.department_id === selectedDepartment)
-  }, [selectedDepartment, projects])
+    if (selectedDepartment === "all") return projectsByYear
+    return projectsByYear.filter(project => project.department_id === selectedDepartment)
+  }, [selectedDepartment, projectsByYear])
 
-  // Get KPIs from backend data
+  // Get KPIs from backend data filtered by year
   const kpis = useMemo(() => {
-    if (!kpisData?.projectKPIs) {
-      return {
-        totalProjects: 0,
-        activeProjects: 0,
-        completedProjects: 0,
-        upcomingProjects: 0,
-        totalBudget: 0,
-        totalSubsidyRequests: 0,
-        totalSubsidyAmount: 0,
-        projectsWithVolunteers: 0,
-        averageBudgetPerProject: 0,
-      }
+    // Calculate KPIs based on filtered projects by year
+    const yearProjects = projectsByYear
+    
+    const totalProjects = yearProjects.length
+    const activeProjects = yearProjects.filter(p => p.status === 'active').length
+    const completedProjects = yearProjects.filter(p => p.status === 'completed').length
+    const upcomingProjects = yearProjects.filter(p => p.status === 'upcoming').length
+    const totalBudget = yearProjects.reduce((sum, p) => sum + (p.budget || 0), 0)
+    const averageBudgetPerProject = totalProjects > 0 ? totalBudget / totalProjects : 0
+    
+    return {
+      totalProjects,
+      activeProjects,
+      completedProjects,
+      upcomingProjects,
+      totalBudget,
+      totalSubsidyRequests: 0, // TODO: Will be populated when subsidy data is available
+      totalSubsidyAmount: 0, // TODO: Will be populated when subsidy data is available
+      projectsWithVolunteers: yearProjects.filter(p => p.required_volunteers).length,
+      averageBudgetPerProject,
     }
-    return kpisData.projectKPIs
-  }, [kpisData])
-
-  // Dados para KPI Cards - Métricas mais relevantes
-  const kpiCardsData = useMemo(() => {
-    const completionRate = kpis.totalProjects > 0 
-      ? Math.round((kpis.completedProjects / kpis.totalProjects) * 100) 
-      : 0
-    
-    const budgetUtilization = kpis.totalBudget > 0
-      ? Math.round(((kpis.totalBudget - (kpis.totalBudget * 0.15)) / kpis.totalBudget) * 100) // Mock: 85% utilizado
-      : 0
-    
-    const subsidyApprovalRate = kpis.totalSubsidyRequests > 0
-      ? Math.round((kpis.totalSubsidyRequests * 0.65) / kpis.totalSubsidyRequests * 100) // Mock: 65% aprovado
-      : 0
-
-    return [
-      {
-        id: "total-projects",
-        title: t_project.kpis.totalProjects,
-        value: kpis.totalProjects.toString(),
-        subtitle: `${kpis.activeProjects} ativos | ${kpis.completedProjects} concluídos`,
-        trend: { 
-          value: 12, 
-          isPositive: true,
-          label: "vs mês anterior"
-        },
-        icon: Globe,
-      },
-      {
-        id: "active-projects",
-        title: "Projetos Ativos",
-        value: kpis.activeProjects.toString(),
-        subtitle: `${kpis.upcomingProjects} aguardando início`,
-        trend: { 
-          value: 8, 
-          isPositive: true,
-          label: "novos este mês"
-        },
-        icon: Activity,
-      },
-      {
-        id: "total-budget",
-        title: t_project.kpis.totalBudget,
-        value: `R$ ${(kpis.totalBudget / 1000).toFixed(1)}K`,
-        subtitle: `Média: R$ ${Math.round(kpis.averageBudgetPerProject).toLocaleString()}`,
-        trend: { 
-          value: budgetUtilization, 
-          isPositive: budgetUtilization > 70,
-          label: `${budgetUtilization}% utilizado`
-        },
-        icon: DollarSign,
-      },
-      {
-        id: "completion-rate",
-        title: "Taxa de Conclusão",
-        value: `${completionRate}%`,
-        subtitle: `${kpis.completedProjects} de ${kpis.totalProjects} finalizados`,
-        trend: { 
-          value: 5, 
-          isPositive: true,
-          label: "vs mês anterior"
-        },
-        icon: TrendingUp,
-      },
-      {
-        id: "subsidy-requests",
-        title: "Pedidos de Subsídio",
-        value: kpis.totalSubsidyRequests.toString(),
-        subtitle: `R$ ${(kpis.totalSubsidyAmount / 1000).toFixed(1)}K solicitado`,
-        trend: { 
-          value: subsidyApprovalRate, 
-          isPositive: subsidyApprovalRate > 50,
-          label: `${subsidyApprovalRate}% aprovados`
-        },
-        icon: DollarSign,
-      },
-      {
-        id: "volunteers-projects",
-        title: "Projetos com Voluntários",
-        value: kpis.projectsWithVolunteers.toString(),
-        subtitle: `${Math.round((kpis.projectsWithVolunteers / (kpis.totalProjects || 1)) * 100)}% dos projetos`,
-        trend: { 
-          value: 15, 
-          isPositive: true,
-          label: "engajamento crescente"
-        },
-        icon: Users,
-      },
-    ]
-  }, [kpis, t_project])
-
-  // Colunas para a tabela de projetos
-  const projectColumns: ColumnDef<ProjectTableData>[] = [
-    {
-      id: "mobile-expand",
-      header: "",
-      cell: () => null, // Renderizado pelo UseTable
-    },
-    {
-      accessorKey: "title",
-      header: t_project.table.projectTitle,
-      cell: ({ row }) => (
-        <div className="font-medium">{row.original.title}</div>
-      ),
-    },
-    {
-      accessorKey: "department_id",
-      header: t_project.table.department,
-      cell: ({ row }) => {
-        const dept = departments.find(d => d.id === row.original.department_id)
-        return <span className="text-sm">{dept?.name || "Unknown"}</span>
-      },
-    },
-    {
-      accessorKey: "budget",
-      header: t_project.budget.annualBudget,
-      cell: ({ row }) => (
-        <span className="font-mono">R$ {row.original.budget.toLocaleString()}</span>
-      ),
-    },
-    {
-      accessorKey: "status",
-      header: t_project.table.status,
-      cell: ({ row }) => {
-        const status = row.original.status
-        const statusText = status === "active" ? t_project.active :
-                          status === "completed" ? t_project.completed :
-                          t_project.upcoming
-        const color = status === "active" ? "bg-green-100 text-green-700" : 
-                     status === "completed" ? "bg-blue-100 text-blue-700" : 
-                     "bg-yellow-100 text-yellow-700"
-        return (
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}>
-            {statusText}
-          </span>
-        )
-      },
-    },
-    {
-      accessorKey: "start_at",
-      header: t_project.table.startDate,
-      cell: ({ row }) => {
-        const date = new Date(row.original.start_at)
-        return date.toLocaleDateString()
-      },
-    },
-    {
-      id: "actions",
-      header: t_project.table.actions,
-      cell: ({ row }) => {
-        const project = row.original
-        
-        return (
-          <div data-action-button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleViewProject(project)
-                  }}
-                  className="cursor-pointer"
-                >
-                  <Eye className="mr-2 h-4 w-4" />
-                  {t_project.viewProject}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleEditProject(project)
-                  }}
-                  className="cursor-pointer"
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  {t_project.editProject}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleDeleteProject(project)
-                  }}
-                  className="cursor-pointer text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {t_project.deleteProject}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        )
-      },
-    },
-  ]
+  }, [projectsByYear])
 
   // Show loading/error toasts
   useEffect(() => {
@@ -650,21 +216,43 @@ export default function ProjectsPage() {
     toast.success(t_project.toasts.filterApplied, { duration: 1500 })
   }
 
+  const handleAddYear = () => {
+    const currentYear = new Date().getFullYear()
+    const maxAllowedYear = currentYear + 2
+    const nextYear = Math.max(...availableYears) + 1
+
+    if (nextYear > maxAllowedYear) {
+      toast.error(`Cannot add years beyond ${maxAllowedYear}`)
+      return
+    }
+
+    if (availableYears.includes(nextYear)) {
+      toast.error(`Year ${nextYear} already exists`)
+      return
+    }
+
+    setAvailableYears(prev => [...prev, nextYear].sort((a, b) => b - a))
+    setSelectedYear(nextYear)
+    toast.success(`Year ${nextYear} added successfully`)
+  }
 
   const handleViewProject = (project: ProjectTableData) => {
     navigateWithLoading(`/projects/${project.id}`, {
-      message: `📋 Opening project: ${project.title}...`,
+      message: `Opening ${project.title}`,
       showToast: true,
       delay: 1000
     })
   }
 
   const handleEditProject = (project: ProjectTableData) => {
-    navigateWithLoading(`/projects/new-project?edit=${project.id}`, {
-      message: `✏️ Loading project editor: ${project.title}...`,
-      showToast: true,
-      delay: 1000
-    })
+    setSelectedProject(project)
+    setIsEditModalOpen(true)
+  }
+
+  const handleEditProjectSuccess = () => {
+    refetch()
+    setIsEditModalOpen(false)
+    setSelectedProject(undefined)
   }
 
   const handleDeleteProject = async (project: ProjectTableData) => {
@@ -686,50 +274,67 @@ export default function ProjectsPage() {
     }
   }
 
-  const handleCreateEvent = (project: ProjectTableData) => {
-    toast.success(t_project.toasts.eventCreated)
-    // Navigate to event creation page or handle inline
-  }
+  // Create table columns with handlers
+  const projectColumns = useMemo(() => {
+    return createProjectColumns(departments, t_project, {
+      handleViewProject,
+      handleEditProject,
+      handleDeleteProject,
+    })
+  }, [departments, t_project])
 
-  const handleCreateCommunication = (project: ProjectTableData) => {
-    toast.success(t_project.toasts.communicationCreated)
-    // Navigate to communication creation page or handle inline
-  }
+  // Year Filter Component
+  const YearFilter = ({ showAddButton = true }: { showAddButton?: boolean }) => {
+    const currentYear = new Date().getFullYear()
+    const maxAllowedYear = currentYear + 2
+    const canAddMore = Math.max(...availableYears) < maxAllowedYear
 
-  const handleDuplicateProject = (project: ProjectTableData) => {
-    const duplicatedProject: ProjectTableData = {
-      ...project,
-      id: `duplicate-${Date.now()}`,
-      title: `${project.title} (${i18n.language === 'pt' ? 'Cópia' : i18n.language === 'nl' ? 'Kopie' : 'Copy'})`,
-      status: "upcoming",
-      subsidyRequests: 0,
-      subsidyAmount: 0,
-      activities: 0
-    }
-    
-    setProjects(prev => [duplicatedProject, ...prev])
-    toast.success(`${t_project.actions.duplicateProject}: ${project.title}`, { duration: 3000 })
+    return (
+      <div className="mb-6">
+        <div className="flex items-center gap-3 overflow-x-auto pb-2 scroll-smooth" style={{ scrollbarWidth: 'thin' }}>
+          {availableYears.map((year) => (
+            <Button
+              key={year}
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedYear(year)}
+              className={`
+                flex-shrink-0 min-w-[80px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
+                ${
+                  selectedYear === year 
+                    ? 'bg-primary text-primary-foreground border-primary shadow-md hover:bg-primary/90' 
+                    : 'bg-muted text-muted-foreground border-muted hover:bg-muted/80 hover:text-foreground hover:border-muted-foreground/50'
+                }
+              `}
+            >
+              {year}
+            </Button>
+          ))}
+          
+          {/* Add New Year Button */}
+          {showAddButton && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddYear}
+              disabled={!canAddMore}
+              className={`
+                flex-shrink-0 min-w-[100px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
+                ${
+                  canAddMore 
+                    ? 'border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground hover:border-muted-foreground/60 hover:bg-muted/50' 
+                    : 'opacity-40 cursor-not-allowed border-dashed border-muted-foreground/20 text-muted-foreground/50'
+                }
+              `}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Year
+            </Button>
+          )}
+        </div>
+      </div>
+    )
   }
-
-  // Period selector component
-  const PeriodSelector = ({ value, onChange, options }: {
-    value: string
-    onChange: (value: string) => void
-    options: { value: string; label: string }[]
-  }) => (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-32 h-8 text-xs">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  )
 
   if (isLoading || kpisLoading) {
     return (
@@ -754,106 +359,125 @@ export default function ProjectsPage() {
     )
   }
 
-
   return (
     <AppLayout>
       <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+            <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold text-foreground mb-2">
               {t_project.projectsDashboard}
             </h2>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              Visão completa dos projetos e pedidos de subsídio da organização
+            <p className="text-muted-foreground text-0.875rem sm:text-1rem">
+              Visão completa dos projetos e pedidos de subsídio da organização - {selectedYear}
             </p>
+            {currentInstitutionData && (
+              <div className="flex items-center gap-2 mt-3">
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                  <Building className="w-3 h-3 mr-1" />
+                  {currentInstitutionData.name}
+                </Badge>
+                     <Badge variant="outline" className="text-xs">
+                    {currentInstitutionData.denomination}
+                </Badge>
+              </div>
+            )}
           </div>
           
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
-            <Select value={selectedDepartment} onValueChange={handleDepartmentChange}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Filtrar por departamento" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t_project.filters.allDepartments}</SelectItem>
-                {departments.map((dept) => (
-                  <SelectItem key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
             
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="shrink-0"
-              >
-                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-              </Button>
-              
-              <Button onClick={() => navigateWithLoading('/projects/new-project', {
+            <Button 
+              onClick={() => navigateWithLoading('/projects/new-project', {
                 message: "🚀 Loading project creator...",
                 showToast: true,
                 delay: 800
-              })} className="gap-2 flex-1 sm:flex-none">
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">{t_project.newProject}</span>
-                <span className="sm:hidden">New</span>
-              </Button>
-            </div>
+              })} 
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              {t_project.newProject}
+            </Button>
           </div>
         </div>
 
+        {/* Year Filter */}
+        <YearFilter showAddButton={false} />
+
         {/* KPI Cards */}
-        <KPICards 
-          data={kpiCardsData}
+        <ProjectsKPIs 
+          kpis={kpis}
+          t_project={t_project}
           isLoading={isLoading}
-          minCardsForCarousel={4}
-          showCarousel={true}
+          formatCurrency={formatCurrency}
+          selectedCurrency={selectedCurrency}
         />
 
+        <Separator />
+
         {/* Charts Section */}
-        <div className="space-y-6">
-          <h3 className="text-lg sm:text-xl font-semibold">{t_project.charts.projectsByDepartment}</h3>
-          <ResponsiveGridCarousel autoplayDelay={5000} className="">
-            <ProjectsByDepartmentChart data={kpisData?.projectsByDepartment || []} />
-            <SubsidyStatusChart data={kpisData?.subsidyStatusDistribution || []} />
-            <ProjectsTimelineChart data={kpisData?.projectsTimeline || []} />
-          </ResponsiveGridCarousel>
-        </div>
+        <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
+          <ProjectsOverTimeChart data={projectsByYear} departments={departments} loading={isLoading} selectedYear={selectedYear} />
+          <ProjectsByDepartmentChart data={filteredData} departments={departments} />
+          <ProjectActivitiesChart data={filteredData} />
+        </ResponsiveGridCarousel>
+
+        <Separator />
 
         {/* Projects Table */}
-        <div className="space-y-4">
-          <h3 className="text-lg sm:text-xl font-semibold">{t_project.projectsOverview}</h3>
-          <UseTable
-            columns={projectColumns}
-            data={filteredData}
-            searchKey="title"
-            filters={[
-              {
-                id: "status",
-                title: t_project.table.status,
-                options: [
-                  { label: t_project.active, value: "active" },
-                  { label: t_project.completed, value: "completed" },
-                  { label: t_project.upcoming, value: "upcoming" }
-                ]
-              },
-              {
-                id: "department_id",
-                title: t_project.table.department,
-                options: departments.map(dept => ({
-                  label: dept.name,
-                  value: dept.id
-                }))
-              }
-            ]}
-          />
-        </div>
+        <Card>
+          <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="grid gap-1 flex-1">
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="w-5 h-5" />
+                {t_project.projectsOverview}
+              </CardTitle>
+              <CardDescription>
+                Manage and track all projects across departments
+              </CardDescription>
+            </div>
+            {departments.length > 0 && (
+              <Select value={selectedDepartment} onValueChange={handleDepartmentChange}>
+                <SelectTrigger className="ml-auto h-9 w-[200px] rounded-lg">
+                  <SelectValue placeholder="Filtrar por departamento" />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="all">{t_project.filters.allDepartments}</SelectItem>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </CardHeader>
+          <CardContent className="overflow-hidden">
+            <UseTable
+              columns={projectColumns}
+              data={filteredData}
+              searchKey="title"
+            />
+          </CardContent>
+
+      {/* Edit Project Modal */}
+      <EditProjectModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setSelectedProject(undefined)
+        }}
+        onSuccess={handleEditProjectSuccess}
+        project={selectedProject}
+      />
+        </Card>
 
       </div>
     </AppLayout>
