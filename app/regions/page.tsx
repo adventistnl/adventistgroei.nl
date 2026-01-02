@@ -17,7 +17,8 @@ import {
   Edit,
   Trash2,
   Home,
-  ChevronRight
+  ChevronRight,
+  Navigation
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -31,6 +32,7 @@ import { regionTranslations } from "@/lib/translations/regions"
 import { DataTable } from "@/components/ui/data-table"
 import { AddRegionModal, EditRegionModal, DeleteRegionModal } from "@/components/modals/region"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
+import MapLibre, { NETHERLANDS_CENTER } from "@/components/maps/map-libre-refactored"
 
 import { useRegions } from "@/hooks/use-regions"
 import { WithPermission } from "@/hocs/with-permission"
@@ -52,6 +54,21 @@ export default function RegionsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedRegion, setSelectedRegion] = useState<Regions_regions | null>(null)
+  
+  // Map ref for refocus functionality
+  const [mapInstance, setMapInstance] = useState<any>(null)
+  
+  // Handler para refocus no mapa
+  const handleRefocusMap = () => {
+    if (mapInstance) {
+      mapInstance.flyTo({
+        center: NETHERLANDS_CENTER,
+        zoom: 7,
+        duration: 1500
+      })
+      toast.success(tRegion.map?.refocus_success || 'Map repositioned to Netherlands')
+    }
+  }
   
   // Obter traduções para o idioma atual
   const currentLanguage = i18n?.language || 'en'
@@ -340,6 +357,53 @@ export default function RegionsPage() {
           showCarousel={true}
           minCardsForCarousel={2}
         />
+
+        <Separator />
+
+        {/* MapLibre - Netherlands Overview */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="w-5 h-5" />
+                  {tRegion.map?.title || 'Netherlands Regions Map'}
+                </CardTitle>
+                <CardDescription>
+                  {tRegion.map?.description || 'Interactive geographic visualization'}
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefocusMap}
+                disabled={!mapInstance}
+              >
+                <Navigation className="w-4 h-4 mr-2" />
+                {tRegion.map?.refocus_button || 'Refocus'}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <MapLibre
+              center={NETHERLANDS_CENTER}
+              zoom={7}
+              height="500px"
+              theme="light"
+              showControls={true}
+              showGeolocation={true}
+              showFullscreen={true}
+              showScale={true}
+              onLoad={(map) => {
+                setMapInstance(map)
+                console.log('MapLibre loaded successfully')
+              }}
+              onClick={(e) => {
+                console.log('Map clicked:', e.lngLat)
+              }}
+            />
+          </CardContent>
+        </Card>
 
         <Separator />
 

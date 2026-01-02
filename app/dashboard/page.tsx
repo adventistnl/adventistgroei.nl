@@ -602,36 +602,125 @@ export default function DashboardPage() {
             <Map className="w-5 h-5" />
             Institutional Structure
           </h2>
-          <Card>
-            <CardHeader>
-              <CardTitle>Hierarchical Structure</CardTitle>
-              <CardDescription>
-                The institutional structure follows a clear hierarchy: Institution → Regions → Provinces → Churches → Departments
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="pl-4 border-l-4 border-primary/30">
-                  <div className="font-semibold text-lg mb-2">Institution Level</div>
-                  <div className="text-sm text-muted-foreground">
-                    {kpis.totalInstitutions} institution(s) with {kpis.institutionDepartments} department(s)
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Structure Overview Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="w-5 h-5" />
+                  Structure Overview
+                </CardTitle>
+                <CardDescription>
+                  Quantitative breakdown of organizational structure
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer
+                  config={{
+                    count: {
+                      label: "Count",
+                      color: "#3b82f6"
+                    }
+                  }}
+                  className="h-[300px] w-full"
+                >
+                  <BarChart 
+                    data={[
+                      { name: 'Institutions', count: kpis.totalInstitutions, fill: '#3b82f6' },
+                      { name: 'Regions', count: kpis.totalRegions, fill: '#10b981' },
+                      { name: 'Churches', count: kpis.activeChurches, fill: '#f59e0b' },
+                      { name: 'Inst. Depts', count: kpis.institutionDepartments, fill: '#8b5cf6' },
+                      { name: 'Church Depts', count: kpis.churchDepartments, fill: '#ec4899' },
+                    ]}
+                    layout="vertical"
+                  >
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis type="number" />
+                    <YAxis 
+                      dataKey="name" 
+                      type="category" 
+                      width={100}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar 
+                      dataKey="count" 
+                      radius={[0, 4, 4, 0]}
+                    />
+                  </BarChart>
+                </ChartContainer>
+              </CardContent>
+              <CardFooter>
+                <div className="text-sm text-muted-foreground">
+                  Total entities: {kpis.totalInstitutions + kpis.totalRegions + kpis.activeChurches + kpis.totalDepartments}
+                </div>
+              </CardFooter>
+            </Card>
+
+            {/* Hierarchical Structure Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Map className="w-5 h-5" />
+                  Hierarchical Structure
+                </CardTitle>
+                <CardDescription>
+                  The institutional structure follows a clear hierarchy
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="pl-4 border-l-4 border-primary/30">
+                    <div className="font-semibold text-lg mb-2 flex items-center gap-2">
+                      <Building2 className="w-4 h-4" />
+                      Institution Level
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {kpis.totalInstitutions} institution(s) with {kpis.institutionDepartments} department(s)
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Top-level organizational units managing all operations
+                    </div>
+                  </div>
+                  
+                  <div className="pl-8 border-l-4 border-blue-500/30">
+                    <div className="font-semibold mb-2 flex items-center gap-2">
+                      <Map className="w-4 h-4" />
+                      Regions
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {kpis.totalRegions} region(s) managing {kpis.activeChurches} churches
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Geographic divisions containing provinces and churches
+                    </div>
+                  </div>
+                  
+                  <div className="pl-12 border-l-4 border-green-500/30">
+                    <div className="font-semibold mb-2 flex items-center gap-2">
+                      <Church className="w-4 h-4" />
+                      Churches
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {kpis.activeChurches} active churches with {kpis.churchDepartments} departments
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Local congregations with specialized ministry departments
+                    </div>
+                  </div>
+
+                  <div className="mt-4 p-3 bg-muted/30 rounded-lg">
+                    <div className="text-xs font-medium mb-1">Hierarchy Flow:</div>
+                    <div className="text-xs text-muted-foreground font-mono">
+                      Institution → Regions → Provinces → Churches → Departments
+                    </div>
                   </div>
                 </div>
-                <div className="pl-8 border-l-4 border-blue-500/30">
-                  <div className="font-semibold mb-2">Regions</div>
-                  <div className="text-sm text-muted-foreground">
-                    {kpis.totalRegions} region(s) managing {kpis.activeChurches} churches
-                  </div>
-                </div>
-                <div className="pl-12 border-l-4 border-green-500/30">
-                  <div className="font-semibold mb-2">Churches</div>
-                  <div className="text-sm text-muted-foreground">
-                    {kpis.activeChurches} active churches with {kpis.churchDepartments} departments
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         <Separator />
@@ -747,65 +836,11 @@ export default function DashboardPage() {
             Governance & Compliance
           </h2>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Role Distribution */}
-            <RoleDistributionChart 
-              data={roleDistributionData}
-              loading={rolesLoading}
-            />
-
-            {/* Permissions by Group */}
-            <PermissionsByGroupChart 
-              data={permissionsByGroupData}
-              loading={rolesLoading}
-            />
-          </div>
-
-          {/* Roles & Permissions Summary */}
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lock className="w-5 h-5" />
-                Roles & Permissions Coverage
-              </CardTitle>
-              <CardDescription>
-                Overview of system roles and their permission assignments
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {allRoles.map((role: any) => {
-                  const userCount = role.users?.filter((u: any) => !u.is_deleted).length || 0
-                  const permissionCount = role.permissions?.reduce((sum: number, group: any) => sum + (group.data?.length || 0), 0) || 0
-                  
-                  return (
-                    <div key={role.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: role.color || '#3b82f6' }}
-                        />
-                        <div>
-                          <div className="font-medium">{role.name}</div>
-                          <div className="text-sm text-muted-foreground">{role.description}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Badge variant="outline">
-                          <Users className="w-3 h-3 mr-1" />
-                          {userCount} users
-                        </Badge>
-                        <Badge variant="outline">
-                          <Lock className="w-3 h-3 mr-1" />
-                          {permissionCount} permissions
-                        </Badge>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Role Distribution */}
+          <RoleDistributionChart 
+            data={roleDistributionData}
+            loading={rolesLoading}
+          />
         </div>
       </div>
     </AppLayout>
