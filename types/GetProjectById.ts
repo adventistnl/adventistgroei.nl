@@ -81,10 +81,17 @@ export interface GetProjectById_project_subsidies_institution {
   name: string;
 }
 
+export interface GetProjectById_project_subsidies_department_church {
+  __typename: "Church";
+  id: string;
+  name: string;
+}
+
 export interface GetProjectById_project_subsidies_department {
   __typename: "Department";
   id: string;
   name: string;
+  church: GetProjectById_project_subsidies_department_church | null;
 }
 
 export interface GetProjectById_project_subsidies_church {
@@ -152,6 +159,23 @@ export interface GetProjectById_project_special_projects {
   updated_at: any;
 }
 
+export interface GetProjectById_project_kpis {
+  __typename: "ProjectKPIsDto";
+  totalActivities: number;
+  completedActivities: number;
+  inProgressActivities: number;
+  completionRate: number;
+  projectBudget: number;
+  allocatedBudget: number;
+  budgetUtilization: number;
+  subsidizedActivities: number;
+  subsidyRate: number;
+  subsidyRequestsCount: number;
+  daysRemaining: number;
+  endDate: any;
+  projectStatus: string;
+}
+
 export interface GetProjectById_project {
   __typename: "Project";
   id: string;
@@ -177,6 +201,7 @@ export interface GetProjectById_project {
   activities: GetProjectById_project_activities[] | null;
   subsidies: GetProjectById_project_subsidies[] | null;
   special_projects: GetProjectById_project_special_projects[] | null;
+  kpis: GetProjectById_project_kpis;
 }
 
 export interface GetProjectById {
