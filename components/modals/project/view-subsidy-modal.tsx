@@ -100,6 +100,16 @@ export function ViewSubsidyModal({
   const [loadingDocuments, setLoadingDocuments] = React.useState(false)
   const [receipts, setReceipts] = React.useState<SubsidyReceipt[]>([])
 
+  /* 
+   * Sync local status state when subsidy prop changes
+   * This ensures that if the parent refreshes the data, the modal shows the correct status
+   */
+  React.useEffect(() => {
+    if (subsidy?.status) {
+      setCurrentSubsidyStatus(subsidy.status as any)
+    }
+  }, [subsidy])
+
   // Hook for fetching and managing subsidy receipts
   const {
     fetchReceipts,
@@ -420,6 +430,9 @@ export function ViewSubsidyModal({
         // Refetch receipts to update the list
         const updatedReceipts = await fetchReceipts(subsidy?.id)
         setReceipts(updatedReceipts || [])
+        
+        // Notify parent to refresh subsidy data (status might have changed)
+        onSubsidyUpdated?.()
       } catch (error) {
         console.error('Error validating document:', error)
         // Error toast is already shown by the hook
@@ -453,6 +466,9 @@ export function ViewSubsidyModal({
         // Refetch receipts to update the list
         const updatedReceipts = await fetchReceipts(subsidy?.id)
         setReceipts(updatedReceipts || [])
+        
+        // Notify parent to refresh subsidy data (status might have changed)
+        onSubsidyUpdated?.()
       } catch (error) {
         console.error('Error rejecting document:', error)
         // Error toast is already shown by the hook
