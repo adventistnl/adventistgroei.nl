@@ -6,6 +6,7 @@ export interface ProjectActivity {
   request_subsidy: boolean
   is_subsidized: boolean
   institution_requested_amount?: number
+  assignee_ids?: string[] // Selected users responsible for this activity
   tags: string[]
 }
 
