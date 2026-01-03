@@ -42,6 +42,7 @@ interface SubsidyRequestsContainerProps {
   /** All activities for the project (for adding new items) */
   allActivities?: ProjectActivityData[]
   subsidizedActivityIds?: string[]
+  onRefresh?: () => Promise<void>
 }
 
 export function SubsidyRequestsContainer({
@@ -60,6 +61,7 @@ export function SubsidyRequestsContainer({
   emptyStateDescription,
   allActivities = [],
   subsidizedActivityIds = [],
+  onRefresh,
 }: SubsidyRequestsContainerProps) {
   const { t } = useTranslation()
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false)
@@ -72,6 +74,16 @@ export function SubsidyRequestsContainer({
   const { fetchReceipts } = useSubsidyReceipts({
     subsidyRequestId: selectedSubsidyForEdit?.id,
   })
+
+  // Sync selectedSubsidy when props.subsidies changes (e.g. after refresh)
+  React.useEffect(() => {
+    if (selectedSubsidy) {
+      const updated = subsidies.find(s => s.id === selectedSubsidy.id)
+      if (updated && updated.status !== selectedSubsidy.status) {
+        setSelectedSubsidy({...updated})
+      }
+    }
+  }, [subsidies, selectedSubsidy])
 
   // Usando dados reais passados via props
   const displaySubsidies = subsidies
@@ -322,14 +334,9 @@ export function SubsidyRequestsContainer({
         onClose={handleCloseViewModal}
         subsidy={selectedSubsidy}
         onSubsidyUpdated={async () => {
-          // Refetch the subsidy data to show updated status
-          // Don't close the modal
-          if (selectedSubsidy?.id) {
-            // Trigger a refetch by updating the selected subsidy
-            const updated = subsidies.find(s => s.id === selectedSubsidy.id)
-            if (updated) {
-              setSelectedSubsidy({...updated})
-            }
+          // Trigger a refetch of the data
+          if (onRefresh) {
+            await onRefresh()
           }
         }}
       />
