@@ -41,6 +41,7 @@ interface SubsidyRequestsContainerProps {
   emptyStateDescription?: string
   /** All activities for the project (for adding new items) */
   allActivities?: ProjectActivityData[]
+  subsidizedActivityIds?: string[]
 }
 
 export function SubsidyRequestsContainer({
@@ -58,6 +59,7 @@ export function SubsidyRequestsContainer({
   emptyStateTitle,
   emptyStateDescription,
   allActivities = [],
+  subsidizedActivityIds = [],
 }: SubsidyRequestsContainerProps) {
   const { t } = useTranslation()
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false)
@@ -363,6 +365,7 @@ export function SubsidyRequestsContainer({
           setEditReceipts([])
         }}
         allActivities={allActivities}
+        subsidizedActivityIds={subsidizedActivityIds}
       />
     </>
   )

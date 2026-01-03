@@ -1931,11 +1931,8 @@ function ProjectRegisterContent() {
                               onClick={() => {
                                 const isSpecialCase = isSpecialProject || isChurchPlanting
                                 const maxPercent = isSpecialCase ? 100 : FUNDING_POLICIES.max_institution_percent
-                                const calculatedAmount = (subsidyTotal * maxPercent) / 100
-                                const actualMaxAmount = Math.min(FUNDING_POLICIES.max_institution_amount, calculatedAmount)
-                                const actualMaxPercent = subsidyTotal > 0 ? (actualMaxAmount / subsidyTotal) * 100 : maxPercent
-                                setManualPercentage(actualMaxPercent)
-                                handleManualPercentageChange(actualMaxPercent)
+                                setManualPercentage(maxPercent)
+                                handleManualPercentageChange(maxPercent)
                               }}
                               className="shrink-0 font-mono"
                               title={`Máximo: ${isSpecialProject || isChurchPlanting ? '100' : FUNDING_POLICIES.max_institution_percent}%`}

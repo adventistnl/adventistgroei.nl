@@ -20,6 +20,7 @@ import { useTranslation } from "react-i18next"
 import { subsidyRequestTranslations } from "@/lib/translations/subsidy-request"
 import toast from "react-hot-toast"
 import type { ProjectActivityData } from "@/components/projects/project-activities-table"
+import { SelectActivitiesModal } from "./select-activities-modal"
 
 // Funding policies
 const FUNDING_POLICIES = {
@@ -69,6 +70,8 @@ interface RequestSubsidyModalProps {
   initialData?: Partial<SubsidyRequestData> | null
   /** Mode: create (default) or edit */
   mode?: "create" | "edit"
+  /** IDs of activities that already have subsidies */
+  subsidizedActivityIds?: string[]
 }
 
 export interface SubsidyRequestData {
@@ -97,6 +100,7 @@ export function RequestSubsidyModal({
   allActivities = [],
   initialData = null,
   mode = "create",
+  subsidizedActivityIds = []
 }: RequestSubsidyModalProps) {
   const { formatCurrency } = useCurrency()
   const { t, i18n } = useTranslation()
@@ -228,18 +232,6 @@ export function RequestSubsidyModal({
         act => act.is_subsidized && !selectedIds.includes(act.id)
       )
       setAvailableActivities(available)
-      console.log('📊 Atividades disponíveis para adicionar:', {
-        total: allActivities.length,
-        subsidiadas: allActivities.filter(a => a.is_subsidized).length,
-        jaSelecionadas: selectedIds.length,
-        disponiveis: available.length,
-        lista: available.map(a => ({ id: a.id, nome: a.name, subsidiada: a.is_subsidized }))
-      })
-    } else if (isOpen) {
-      console.log('⚠️ Modal aberto mas sem atividades disponíveis:', {
-        allActivitiesLength: allActivities.length,
-        isOpen
-      })
     }
   }, [isOpen, allActivities, formData.items])
 
@@ -803,8 +795,7 @@ export function RequestSubsidyModal({
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => setIsAddActivityModalOpen(true)}
-                      disabled={availableActivities.length === 0}
-                      className="flex-shrink-0 w-12 h-12 rounded-lg border-2 border-dashed border-gray-300 bg-white hover:border-gray-400 hover:bg-gray-50 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-shrink-0 w-12 h-12 rounded-lg border-2 border-dashed border-gray-300 bg-white hover:border-gray-400 hover:bg-gray-50 transition-all flex items-center justify-center"
                     >
                       <Plus className="w-5 h-5 text-gray-400" />
                     </button>
@@ -1498,136 +1489,18 @@ export function RequestSubsidyModal({
       </div>
 
       {/* Modal de Adicionar Atividades */}
-      <Dialog open={isAddActivityModalOpen} onOpenChange={setIsAddActivityModalOpen}>
-        <DialogContent className="w-[90vw] max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Plus className="w-5 h-5 text-gray-700" />
-              Adicionar Atividades Subsidiadas
-            </DialogTitle>
-            <DialogDescription>
-              Selecione atividades subsidiadas do projeto para adicionar à solicitação de subsídio.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex-1 overflow-y-auto">
-            {availableActivities.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <AlertCircle className="w-12 h-12 text-gray-300 mb-3" />
-                <p className="text-sm font-medium text-gray-900 mb-1">
-                  Nenhuma atividade disponível
-                </p>
-                <p className="text-xs text-gray-500">
-                  Todas as atividades subsidiadas já foram adicionadas.
-                </p>
-              </div>
-            ) : (
-              <AddActivitiesTable
-                activities={availableActivities}
-                onAdd={handleAddActivities}
-                onCancel={() => setIsAddActivityModalOpen(false)}
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <SelectActivitiesModal
+        isOpen={isAddActivityModalOpen}
+        onClose={() => setIsAddActivityModalOpen(false)}
+        activities={availableActivities}
+        onConfirm={handleAddActivities}
+        title="Adicionar Atividades Subsidiadas"
+        description="Selecione atividades subsidiadas do projeto para adicionar à solicitação de subsídio."
+        filterSubsidized={false}
+        subsidizedActivityIds={subsidizedActivityIds}
+      />
     </div>
   )
 }
 
-// Componente interno para tabela de seleção de atividades
-function AddActivitiesTable({ 
-  activities, 
-  onAdd, 
-  onCancel 
-}: { 
-  activities: ProjectActivityData[]
-  onAdd: (activities: ProjectActivityData[]) => void
-  onCancel: () => void
-}) {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const { formatCurrency } = useCurrency()
 
-  const toggleActivity = (id: string) => {
-    setSelectedIds(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(id)) {
-        newSet.delete(id)
-      } else {
-        newSet.add(id)
-      }
-      return newSet
-    })
-  }
-
-  const toggleAll = () => {
-    if (selectedIds.size === activities.length) {
-      setSelectedIds(new Set())
-    } else {
-      setSelectedIds(new Set(activities.map(a => a.id)))
-    }
-  }
-
-  const handleAdd = () => {
-    const selected = activities.filter(a => selectedIds.has(a.id))
-    onAdd(selected)
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between py-2 border-b">
-        <div className="flex items-center gap-2">
-          <Checkbox
-            checked={selectedIds.size === activities.length && activities.length > 0}
-            onCheckedChange={toggleAll}
-          />
-          <span className="text-sm font-medium text-gray-700">
-            Selecionar todas ({selectedIds.size}/{activities.length})
-          </span>
-        </div>
-      </div>
-
-      <div className="space-y-2 max-h-[400px] overflow-y-auto">
-        {activities.map(activity => (
-          <div
-            key={activity.id}
-            onClick={() => toggleActivity(activity.id)}
-            className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-all ${
-              selectedIds.has(activity.id)
-                ? 'border-gray-900 bg-gray-50'
-                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            <Checkbox
-              checked={selectedIds.has(activity.id)}
-              onCheckedChange={() => toggleActivity(activity.id)}
-            />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">{activity.name}</p>
-              <p className="text-xs text-gray-500">{activity.description || 'Sem descrição'}</p>
-            </div>
-            <div className="text-right">
-              <Badge variant="outline" className="font-semibold">
-                {formatCurrency(activity.budget_amount)}
-              </Badge>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex gap-2 justify-end pt-4 border-t">
-        <Button variant="outline" onClick={onCancel}>
-          Cancelar
-        </Button>
-        <Button 
-          onClick={handleAdd} 
-          disabled={selectedIds.size === 0}
-          className="bg-gray-900 hover:bg-gray-800"
-        >
-          <Plus className="w-4 h-4 mr-1" />
-          Adicionar {selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
-        </Button>
-      </div>
-    </div>
-  )
-}
