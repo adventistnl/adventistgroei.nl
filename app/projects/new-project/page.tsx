@@ -699,6 +699,7 @@ function ProjectRegisterContent() {
                 budget_amount: currentActivity.budget_amount!,
                 request_subsidy: currentActivity.request_subsidy!,
                 is_subsidized: currentActivity.request_subsidy!, // Update is_subsidized based on request_subsidy
+                assignee_ids: currentActivity.assignee_ids || [], // Include assignees
                 tags: currentActivity.tags!
               }
             : act
@@ -714,8 +715,11 @@ function ProjectRegisterContent() {
         budget_amount: currentActivity.budget_amount!,
         request_subsidy: currentActivity.request_subsidy!,
         is_subsidized: currentActivity.request_subsidy!, // Default to same as request_subsidy
+        assignee_ids: currentActivity.assignee_ids || [], // Include assignees
         tags: currentActivity.tags!
       }
+      
+      console.log('💾 Saving activity:', newActivity.name, 'with assignee_ids:', newActivity.assignee_ids)
 
       setFormData(prev => ({
         ...prev,
@@ -724,14 +728,18 @@ function ProjectRegisterContent() {
       toast.success(translations.toast.activityAdded)
     }
 
-    // Reset current activity and editing state
-    setCurrentActivity({
+    // Reset current activity and editing state with fresh references
+    const resetActivity = {
       name: "",
       description: "",
       budget_amount: 0,
       request_subsidy: false,
+      assignee_ids: [], // Fresh empty array
       tags: []
-    })
+    }
+    
+    console.log('🔄 Resetting currentActivity, assignee_ids:', resetActivity.assignee_ids)
+    setCurrentActivity(resetActivity)
     setEditingActivityId(null)
   }
 
@@ -744,6 +752,7 @@ function ProjectRegisterContent() {
         description: activity.description,
         budget_amount: activity.budget_amount,
         request_subsidy: activity.is_subsidized, // Use is_subsidized to reflect current group
+        assignee_ids: activity.assignee_ids || [], // Load existing assignees when editing
         tags: activity.tags
       })
       toast.success(translations.toast.editingActivity.replace('{{name}}', activity.name))
@@ -818,19 +827,55 @@ function ProjectRegisterContent() {
         return tagMap[tag] || 'MATERIALS'
       }
 
+
+      // Calculate total subsidy limit: min(5000, 65% of total activities budget)
+      const totalActivitiesBudget = formData.activities.reduce((sum, act) => sum + act.budget_amount, 0)
+      const totalSubsidyLimit = Math.min(5000, totalActivitiesBudget * 0.65)
+      
+      // Calculate how much subsidy to allocate to each subsidized activity
+      const subsidizedActivities = formData.activities.filter(act => act.is_subsidized)
+      const subsidizedActivitiesCount = subsidizedActivities.length
+      
       // Map activities to backend format
       const mappedActivities = formData.activities.map(activity => {
         const activityDeadline = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString() // 60 days from now
+        
+        // Calculate subsidy for this activity proportionally if subsidized
+        let activitySubsidy = 0
+        if (activity.is_subsidized && subsidizedActivitiesCount > 0) {
+          // Use custom amount if provided, otherwise distribute total limit proportionally
+          if (activity.institution_requested_amount) {
+            activitySubsidy = activity.institution_requested_amount
+          } else {
+            // Distribute total subsidy limit proportionally based on activity budget
+            const subsidizedBudgetTotal = subsidizedActivities.reduce((sum, act) => sum + act.budget_amount, 0)
+            activitySubsidy = (activity.budget_amount / subsidizedBudgetTotal) * totalSubsidyLimit
+          }
+        }
+
+        // Determine assignees: use activity-specific assignees if provided, otherwise fallback to project responsible
+        let finalAssigneeIds: string[] = []
+        if (activity.assignee_ids && activity.assignee_ids.length > 0) {
+          // Activity has specific assignees selected
+          finalAssigneeIds = activity.assignee_ids
+        } else if (formData.responsible_id) {
+          // Fallback to project responsible
+          finalAssigneeIds = [formData.responsible_id]
+        }
+        // If both are empty, finalAssigneeIds remains empty array (backend will add creator)
+
+        console.log('Activity:', activity.name, 'assignee_ids:', finalAssigneeIds)
 
         return {
           name: activity.name,
           description: activity.description,
           budget_amount: activity.budget_amount,
           deadline: activityDeadline,
+          assignee_ids: finalAssigneeIds,
           tags: activity.tags.map(mapTagToEnum), // Already sending as array - correct!
           is_subsidized: activity.is_subsidized ?? false, // Include is_subsidized flag
           activity_funding: {
-            entity_contribution_amount: activity.institution_requested_amount || (activity.is_subsidized ? Math.min(5000, activity.budget_amount * 0.65) : 0),
+            entity_contribution_amount: activitySubsidy,
             entity_contribution_percent: activity.is_subsidized ? 65 : 0,
             entity_type: 'INSTITUTION',
             entity_id: institutionId || '',
@@ -1309,6 +1354,81 @@ function ProjectRegisterContent() {
                     </Button>
                   ))}
                 </div>
+              </div>
+
+              {/* Activity Assignees Selector */}
+              <div className="space-y-4">
+                <Label className="flex items-center gap-2 text-base font-medium">
+                  <Users className="w-4 h-4 text-muted-foreground" />
+                  Responsáveis pela Atividade
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="w-full justify-between h-auto min-h-[48px] border-2"
+                    >
+                      <div className="flex flex-wrap gap-1.5">
+                        {(currentActivity.assignee_ids && currentActivity.assignee_ids.length > 0) ? (
+                          currentActivity.assignee_ids.map((userId) => {
+                            const user = users?.find((u: any) => u.id === userId)
+                            return user ? (
+                              <Badge key={userId} variant="secondary" className="text-xs">
+                                {user.name}
+                              </Badge>
+                            ) : null
+                          })
+                        ) : (
+                          <span className="text-muted-foreground">Selecionar responsáveis...</span>
+                        )}
+                      </div>
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Procurar usuários..." />
+                      <CommandEmpty>Nenhum usuário encontrado.</CommandEmpty>
+                      <CommandList>
+                        <CommandGroup>
+                          {users?.map((user: any) => {
+                            const isSelected = currentActivity.assignee_ids?.includes(user.id) || false
+                            return (
+                              <CommandItem
+                                key={user.id}
+                                onSelect={() => {
+                                  const currentAssignees = currentActivity.assignee_ids || []
+                                  const newAssignees = isSelected
+                                    ? currentAssignees.filter(id => id !== user.id)
+                                    : [...currentAssignees, user.id]
+                                  setCurrentActivity({ ...currentActivity, assignee_ids: newAssignees })
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <div className="flex items-center gap-2 flex-1">
+                                  <div className={cn(
+                                    "w-4 h-4 border-2 rounded flex items-center justify-center",
+                                    isSelected ? "bg-primary border-primary" : "border-muted-foreground"
+                                  )}>
+                                    {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                                  </div>
+                                  <span>{user.name}</span>
+                                  {user.email && (
+                                    <span className="text-xs text-muted-foreground ml-auto">{user.email}</span>
+                                  )}
+                                </div>
+                              </CommandItem>
+                            )
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <p className="text-xs text-muted-foreground">
+                  Selecione um ou mais usuários responsáveis por esta atividade
+                </p>
               </div>
 
               <Button 
