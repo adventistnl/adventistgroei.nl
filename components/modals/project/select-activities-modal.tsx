@@ -25,6 +25,7 @@ interface SelectActivitiesModalProps {
   title?: string
   description?: string
   filterSubsidized?: boolean
+  subsidizedActivityIds?: string[]
 }
 
 export function SelectActivitiesModal({
@@ -35,6 +36,7 @@ export function SelectActivitiesModal({
   title = "Selecionar Atividades",
   description = "Selecione as atividades que deseja incluir na solicitação de subsídio.",
   filterSubsidized = true,
+  subsidizedActivityIds = [],
 }: SelectActivitiesModalProps) {
   const { formatCurrency } = useCurrency()
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -66,10 +68,12 @@ export function SelectActivitiesModal({
   }
 
   const toggleAll = () => {
-    if (selectedIds.size === availableActivities.length) {
+    const selectableActivities = availableActivities.filter(a => !subsidizedActivityIds.includes(a.id))
+    
+    if (selectedIds.size === selectableActivities.length && selectedIds.size > 0) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(availableActivities.map(a => a.id)))
+      setSelectedIds(new Set(selectableActivities.map(a => a.id)))
     }
   }
 
@@ -89,6 +93,8 @@ export function SelectActivitiesModal({
       .filter(a => selectedIds.has(a.id))
       .reduce((sum, a) => sum + (a.institution_requested_amount || 0), 0)
   }, [availableActivities, selectedIds])
+
+  const selectableCount = availableActivities.filter(a => !subsidizedActivityIds.includes(a.id)).length
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -123,12 +129,13 @@ export function SelectActivitiesModal({
               <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2">
                   <Checkbox
-                    checked={selectedIds.size === availableActivities.length && availableActivities.length > 0}
+                    checked={selectedIds.size === selectableCount && selectableCount > 0}
                     onCheckedChange={toggleAll}
+                    disabled={selectableCount === 0}
                     className="border-gray-400 dark:border-gray-500 data-[state=checked]:bg-gray-900 dark:data-[state=checked]:bg-gray-100 data-[state=checked]:border-gray-900 dark:data-[state=checked]:border-gray-100"
                   />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Selecionar todas ({selectedIds.size}/{availableActivities.length})
+                    Selecionar todas disponíveis ({selectedIds.size}/{selectableCount})
                   </span>
                 </div>
                 {selectedIds.size > 0 && (
@@ -140,16 +147,21 @@ export function SelectActivitiesModal({
 
               {/* Activities List */}
               <div className="space-y-2">
-                {availableActivities.map(activity => (
-                  <ActivityCard
-                    key={activity.id}
-                    activity={activity}
-                    isSelected={selectedIds.has(activity.id)}
-                    onToggle={toggleActivity}
-                    showCheckbox={true}
-                    compact={true}
-                  />
-                ))}
+                {availableActivities.map(activity => {
+                  const isSubsidized = subsidizedActivityIds.includes(activity.id)
+                  return (
+                    <ActivityCard
+                      key={activity.id}
+                      activity={activity}
+                      isSelected={selectedIds.has(activity.id)}
+                      onToggle={toggleActivity}
+                      showCheckbox={true}
+                      compact={true}
+                      isDisabled={isSubsidized}
+                      disabledReason={isSubsidized ? "Subsídio Solicitado" : undefined}
+                    />
+                  )
+                })}
               </div>
             </div>
           )}
