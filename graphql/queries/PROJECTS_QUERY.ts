@@ -194,6 +194,21 @@ export const GET_PROJECT_BY_ID_QUERY = gql`
         created_at
         updated_at
       }
+      kpis {
+        totalActivities
+        completedActivities
+        inProgressActivities
+        completionRate
+        projectBudget
+        allocatedBudget
+        budgetUtilization
+        subsidizedActivities
+        subsidyRate
+        subsidyRequestsCount
+        daysRemaining
+        endDate
+        projectStatus
+      }
     }
   }
 `;

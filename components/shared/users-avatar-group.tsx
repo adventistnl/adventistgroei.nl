@@ -34,6 +34,7 @@ interface UsersAvatarGroupProps {
   showEmptyState?: boolean
   onAddUser?: () => void
   showAddButton?: boolean
+  onShowAllUsers?: () => void
 }
 
 const sizeConfig = {
@@ -82,7 +83,7 @@ const getInitials = (user: UserAvatarData) => {
  */
 export function UsersAvatarGroup({
   users,
-  maxDisplay = 5,
+  maxDisplay = 3,
   size = "md",
   showLabel = false,
   labelText = "Usuários Registrados",
@@ -90,6 +91,7 @@ export function UsersAvatarGroup({
   showEmptyState = true,
   onAddUser,
   showAddButton = true,
+  onShowAllUsers,
 }: UsersAvatarGroupProps) {
   const config = sizeConfig[size]
   const displayedUsers = users.slice(0, maxDisplay)
@@ -188,9 +190,11 @@ export function UsersAvatarGroup({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Avatar 
+                    onClick={onShowAllUsers}
                     className={cn(
                       config.avatar,
-                      "border-2 border-background cursor-pointer hover:scale-110 transition-transform hover:z-50"
+                      "border-2 border-background cursor-pointer hover:scale-110 transition-transform hover:z-50",
+                      onShowAllUsers && "hover:bg-gray-100 dark:hover:bg-gray-800"
                     )}
                   >
                     <AvatarFallback className={cn(config.fontSize, "font-medium")}>
@@ -199,18 +203,12 @@ export function UsersAvatarGroup({
                   </Avatar>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs" sideOffset={5}>
-                  <div className="space-y-1">
-                    <p className="font-medium">
-                      {remainingCount} usuário{remainingCount > 1 ? 's' : ''} adiciona{remainingCount > 1 ? 'is' : 'l'}
-                    </p>
-                    <div className="space-y-0.5 max-h-32 overflow-y-auto">
-                      {users.slice(maxDisplay).map(user => (
-                        <p key={user.id} className="text-gray-400 text-[10px]">
-                          {user.name}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
+                  <p className="font-medium">
+                    {remainingCount} usuário{remainingCount > 1 ? 's' : ''} adiciona{remainingCount > 1 ? 'is' : 'l'}
+                  </p>
+                  <p className="text-gray-400 text-[10px] mt-1">
+                    Clique para ver todos
+                  </p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
