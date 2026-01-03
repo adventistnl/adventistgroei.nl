@@ -315,6 +315,10 @@ export default function ProjectDetailsPage() {
     }
   })
 
+  const handleRefreshSubsidies = async () => {
+    await refetchProject()
+  }
+
   // Transform backend project to ProjectTableData format
   const transformProjectData = (backendProject: any): ProjectTableData => {
     const now = new Date()
@@ -1618,6 +1622,7 @@ export default function ProjectDetailsPage() {
                           allActivities={allProjectActivities}
                           subsidizedActivityIds={subsidizedActivityIds}
                           description="Gerencie as solicitações de subsídio"
+                          onRefresh={handleRefreshSubsidies}
                         />
                       </>
                  
