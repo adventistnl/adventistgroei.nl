@@ -22,7 +22,7 @@ export interface SubsidyRequestFragment {
   institution_id: string;
   requester_id: string;
   department_id: string;
-  church_id: string;
+  church_id: string | null;
   subsidy_statuses_id: string;
   project_id: string;
 }

@@ -31,6 +31,7 @@ import { projectTranslations } from "@/lib/translations/projects"
 import { ProjectTableData } from "@/components/projects/projects-table"
 import { mockDepartments } from "@/data/mockData"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
+import { UserListModal } from "@/components/shared/user-list-modal"
 
 interface ProjectHeaderMinimalProps {
   project: ProjectTableData
@@ -62,8 +63,8 @@ interface ProjectHeaderMinimalProps {
   }>
   /** Users registered in the project */
   users?: UserAvatarData[]
-  /** Callback when adding new users to the project */
-  onAddUser?: () => void
+  /** Callback when adding new users to the project - REMOVED */
+  // onAddUser?: () => void
 }
 
 export function ProjectHeaderMinimal({
@@ -76,11 +77,12 @@ export function ProjectHeaderMinimal({
   funding,
   fundingPolicies: fundingPoliciesProp,
   users = [],
-  onAddUser,
+  // onAddUser,
 }: ProjectHeaderMinimalProps) {
   const router = useRouter()
   const { i18n } = useTranslation()
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+  const [isUserListModalOpen, setIsUserListModalOpen] = React.useState(false)
 
   // Monochromatic status appearance
   const statusColors: Record<string, string> = {
@@ -225,11 +227,11 @@ export function ProjectHeaderMinimal({
             <div className="flex items-center gap-2">
               <UsersAvatarGroup 
                 users={users}
-                maxDisplay={5}
+                maxDisplay={3}
                 size="md"
                 showLabel={true}
-                showAddButton={true}
-                onAddUser={onAddUser}
+                showAddButton={false}
+                onShowAllUsers={() => setIsUserListModalOpen(true)}
               />
             </div>
           </div>
@@ -283,6 +285,13 @@ export function ProjectHeaderMinimal({
           )}
         </div>
       </div>
+
+      {/* User List Modal */}
+      <UserListModal 
+        isOpen={isUserListModalOpen}
+        onClose={() => setIsUserListModalOpen(false)}
+        users={users}
+      />
     </div>
   )
 }

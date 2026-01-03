@@ -1,14 +1,14 @@
 "use client"
 
 import React, { useState, useMemo, useCallback } from "react"
-import { X, Upload, FileText, DollarSign, Building2, Users, Church, Trash2, Info, AlertCircle, Edit2, Check, Zap, ChevronRight, Plus, ChevronsUpDown } from "lucide-react"
+import { X, Upload, FileText, DollarSign, Building2, Church, Trash2, Info, AlertCircle, Edit2, Check, Zap, ChevronRight, Plus, ChevronsUpDown, Loader2 } from "lucide-react"
+import { useSubsidyReceipts } from "@/hooks/use-subsidy-receipts"
 import { ValidationBadgesCarousel, type ValidationBadgeData } from "@/components/shared/validation-badges-carousel"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
@@ -20,6 +20,7 @@ import { useTranslation } from "react-i18next"
 import { subsidyRequestTranslations } from "@/lib/translations/subsidy-request"
 import toast from "react-hot-toast"
 import type { ProjectActivityData } from "@/components/projects/project-activities-table"
+import { SelectActivitiesModal } from "./select-activities-modal"
 
 // Funding policies
 const FUNDING_POLICIES = {
@@ -57,12 +58,20 @@ interface RequestSubsidyModalProps {
   institutionId?: string
   departmentId?: string
   churchId?: string
-  onSubmit: (data: SubsidyRequestData) => void
+  // Display names
+  institutionName?: string
+  departmentName?: string
+  churchName?: string
+  /** Subsidy request ID (required for edit mode to upload files) */
+  subsidyRequestId?: string
+  onSubmit: (data: SubsidyRequestData) => Promise<string | void> // Returns subsidy ID in create mode
   allActivities?: ProjectActivityData[]
   /** Optional initial data to populate the form when editing */
   initialData?: Partial<SubsidyRequestData> | null
   /** Mode: create (default) or edit */
   mode?: "create" | "edit"
+  /** IDs of activities that already have subsidies */
+  subsidizedActivityIds?: string[]
 }
 
 export interface SubsidyRequestData {
@@ -83,10 +92,15 @@ export function RequestSubsidyModal({
   institutionId = "",
   departmentId = "",
   churchId = "",
+  institutionName = "",
+  departmentName = "",
+  churchName = "",
+  subsidyRequestId,
   onSubmit,
   allActivities = [],
   initialData = null,
   mode = "create",
+  subsidizedActivityIds = []
 }: RequestSubsidyModalProps) {
   const { formatCurrency } = useCurrency()
   const { t, i18n } = useTranslation()
@@ -97,6 +111,17 @@ export function RequestSubsidyModal({
   const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set())
   const [isAddActivityModalOpen, setIsAddActivityModalOpen] = useState(false)
   const [availableActivities, setAvailableActivities] = useState<ProjectActivityData[]>([])
+  const [pendingFiles, setPendingFiles] = useState<Map<string, File>>(new Map()) // Files pending upload (create mode)
+  const [isSubmitting, setIsSubmitting] = useState(false) // Loading state for submission
+
+  // Subsidy receipts hook for file uploads (only active in edit mode)
+  const {
+    uploading: uploadingReceipt,
+    uploadReceipt,
+    deleteReceipt,
+  } = useSubsidyReceipts({
+    subsidyRequestId: mode === "edit" ? subsidyRequestId : undefined,
+  })
   
   // Get current translations
   const translations = subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations] || subsidyRequestTranslations.en
@@ -112,9 +137,10 @@ export function RequestSubsidyModal({
     items: []
   })
 
-  // Update formData when modal opens or selectedActivities change
+  // Update formData when modal opens in CREATE mode with selectedActivities
   React.useEffect(() => {
-    if (isOpen && selectedActivities.length > 0) {
+    if (isOpen && mode === "create" && selectedActivities.length > 0) {
+      console.log('🆕 Create mode - Loading selectedActivities:', selectedActivities.length)
       setFormData({
         institution_id: institutionId,
         department_id: departmentId,
@@ -133,30 +159,48 @@ export function RequestSubsidyModal({
       })
       setCurrentActivityIndex(0)
     }
-  }, [isOpen, selectedActivities, institutionId, departmentId, churchId, projectId])
+  }, [isOpen, mode, selectedActivities, institutionId, departmentId, churchId, projectId])
 
   // If initialData is provided (edit mode), populate the form with it when opening
   React.useEffect(() => {
-    if (isOpen && initialData) {
-      setFormData(prev => ({
+    console.log('🔍 Modal useEffect triggered:', { isOpen, mode, hasInitialData: !!initialData, initialDataItems: initialData?.items?.length || 0 })
+
+    if (isOpen && initialData && mode === "edit") {
+      console.log('📝 Edit mode - Loading initialData:', initialData)
+      console.log('📝 initialData.items:', initialData.items)
+
+      // In edit mode, always use initialData items (even if empty array)
+      // Only fall back to selectedActivities if initialData.items is undefined
+      const itemsToUse = initialData.items !== undefined
+        ? initialData.items.map(item => ({
+            activity_id: item.activity_id,
+            activity_name: item.activity_name,
+            requested_amount: item.requested_amount,
+            budget_amount: item.budget_amount,
+            activity_documents: item.activity_documents || [],
+            notes: item.notes || ""
+          }))
+        : selectedActivities.map(activity => ({
+            activity_id: activity.id,
+            activity_name: activity.name,
+            requested_amount: activity.institution_requested_amount || 0,
+            budget_amount: activity.budget_amount,
+            activity_documents: [],
+            notes: ""
+          }))
+
+      setFormData({
         institution_id: initialData.institution_id || institutionId,
         department_id: initialData.department_id || departmentId,
         church_id: initialData.church_id || churchId,
         project_id: initialData.project_id || projectId,
         requested_amount: initialData.requested_amount || 0,
         notes: initialData.notes || "",
-        items: initialData.items && initialData.items.length > 0 ? initialData.items : (selectedActivities.length > 0 ? selectedActivities.map(activity => ({
-          activity_id: activity.id,
-          activity_name: activity.name,
-          requested_amount: activity.institution_requested_amount || 0,
-          budget_amount: activity.budget_amount,
-          activity_documents: [],
-          notes: ""
-        })) : [])
-      }))
+        items: itemsToUse
+      })
       setCurrentActivityIndex(0)
     }
-  }, [isOpen, initialData, institutionId, departmentId, churchId, projectId, selectedActivities])
+  }, [isOpen, initialData, mode, institutionId, departmentId, churchId, projectId, selectedActivities])
 
   // Calculate total requested amount
   const totalRequestedAmount = useMemo(() => {
@@ -188,18 +232,6 @@ export function RequestSubsidyModal({
         act => act.is_subsidized && !selectedIds.includes(act.id)
       )
       setAvailableActivities(available)
-      console.log('📊 Atividades disponíveis para adicionar:', {
-        total: allActivities.length,
-        subsidiadas: allActivities.filter(a => a.is_subsidized).length,
-        jaSelecionadas: selectedIds.length,
-        disponiveis: available.length,
-        lista: available.map(a => ({ id: a.id, nome: a.name, subsidiada: a.is_subsidized }))
-      })
-    } else if (isOpen) {
-      console.log('⚠️ Modal aberto mas sem atividades disponíveis:', {
-        allActivitiesLength: allActivities.length,
-        isOpen
-      })
     }
   }, [isOpen, allActivities, formData.items])
 
@@ -304,18 +336,32 @@ export function RequestSubsidyModal({
     }))
   }
 
-  const handleFileUpload = (files: FileList | null) => {
+  const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return
 
-    const newDocuments: UploadedDocument[] = Array.from(files).map((file, idx) => ({
-      id: `temp-${Date.now()}-${idx}`,
-      file_name: file.name,
-      file_type: getFileType(file.name),
-      document_type: "INVOICE",
-      amount: 0,
-      file_url: URL.createObjectURL(file),
-      isExpanded: true
-    }))
+    console.log('📤 handleFileUpload called:', {
+      mode,
+      subsidyRequestId,
+      activityId: currentItem.activity_id,
+      filesCount: files.length,
+    })
+
+    // Always store files locally first - upload happens on save with metadata
+    const newDocuments: UploadedDocument[] = Array.from(files).map((file, idx) => {
+      const tempId = `temp-${Date.now()}-${idx}`
+      // Store file reference for later upload
+      setPendingFiles(prev => new Map(prev).set(tempId, file))
+
+      return {
+        id: tempId,
+        file_name: file.name,
+        file_type: getFileType(file.name),
+        document_type: "INVOICE" as const,
+        amount: 0,
+        file_url: URL.createObjectURL(file),
+        isExpanded: true
+      }
+    })
 
     handleItemChange('activity_documents', [
       ...currentItem.activity_documents,
@@ -333,7 +379,24 @@ export function RequestSubsidyModal({
     return "OTHER"
   }
 
-  const handleRemoveDocument = (docId: string) => {
+  const handleRemoveDocument = async (docId: string) => {
+    // In edit mode with a real document ID (not temp-*), delete from backend
+    if (mode === "edit" && !docId.startsWith('temp-')) {
+      try {
+        await deleteReceipt(docId)
+      } catch (error) {
+        console.error('Error deleting receipt:', error)
+        return // Don't remove from local state if backend delete failed
+      }
+    } else if (docId.startsWith('temp-')) {
+      // Remove from pending files map
+      setPendingFiles(prev => {
+        const newMap = new Map(prev)
+        newMap.delete(docId)
+        return newMap
+      })
+    }
+
     handleItemChange(
       'activity_documents',
       currentItem.activity_documents.filter(doc => doc.id !== docId)
@@ -369,7 +432,7 @@ export function RequestSubsidyModal({
     toast.success(`${activities.length} atividade(s) adicionada(s)`)
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Validation
     if (!formData.institution_id) {
       toast.error(translations.validation.institutionRequired)
@@ -408,13 +471,93 @@ export function RequestSubsidyModal({
       }
     }
 
-    onSubmit(formData)
-    if (mode === "edit") {
-      toast.success(translations.success?.updated || "Solicitação atualizada")
+    // In edit mode, upload pending files before submitting
+    if (mode === "edit" && subsidyRequestId) {
+      setIsSubmitting(true)
+      try {
+        // Upload all pending files with their metadata
+        for (const item of formData.items) {
+          for (const doc of item.activity_documents) {
+            // Only upload documents with temp IDs
+            if (doc.id.startsWith('temp-')) {
+              const file = pendingFiles.get(doc.id)
+              if (file) {
+                console.log('📤 [Submit] Uploading pending file:', {
+                  fileName: file.name,
+                  activityId: item.activity_id,
+                  amount: doc.amount,
+                  type: doc.document_type
+                })
+
+                await uploadReceipt(file, subsidyRequestId, item.activity_id, {
+                  type: doc.document_type === 'INVOICE' ? 'invoice' :
+                        doc.document_type === 'RECEIPT' ? 'receipt' :
+                        doc.document_type === 'CONTRACT' ? 'contract' :
+                        doc.document_type === 'PROOF_OF_PAYMENT' ? 'proof_of_payment' : 'other',
+                  amount: doc.amount
+                })
+              }
+            }
+          }
+        }
+
+        // Clear pending files after successful upload
+        setPendingFiles(new Map())
+
+        toast.success("Solicitação atualizada com sucesso")
+        onSubmit(formData)
+        onClose()
+      } catch (error) {
+        console.error('❌ [Submit] Upload error:', error)
+        toast.error('Erro ao enviar arquivos. Tente novamente.')
+      } finally {
+        setIsSubmitting(false)
+      }
     } else {
-      toast.success(translations.success?.created || "Solicitação criada")
+      // Create mode - submit and then upload files if subsidy ID is returned
+      setIsSubmitting(true)
+      try {
+        const createdSubsidyId = await onSubmit(formData)
+        
+        if (createdSubsidyId && pendingFiles.size > 0) {
+          console.log('📤 [Create] Uploading files for new subsidy:', createdSubsidyId)
+          
+          // Upload all pending files
+          for (const item of formData.items) {
+            for (const doc of item.activity_documents) {
+              const file = pendingFiles.get(doc.id)
+              if (file) {
+                console.log('📤 [Create] Uploading file:', {
+                  fileName: file.name,
+                  activityId: item.activity_id,
+                  amount: doc.amount,
+                  type: doc.document_type
+                })
+
+                await uploadReceipt(file, createdSubsidyId, item.activity_id, {
+                  type: doc.document_type === 'INVOICE' ? 'invoice' :
+                        doc.document_type === 'RECEIPT' ? 'receipt' :
+                        doc.document_type === 'CONTRACT' ? 'contract' :
+                        doc.document_type === 'PROOF_OF_PAYMENT' ? 'proof_of_payment' : 'other',
+                  amount: doc.amount
+                })
+              }
+            }
+          }
+          
+          console.log('✅ [Create] All files uploaded successfully')
+        }
+        
+        toast.success(translations.success?.created || "Solicitação criada")
+        setPendingFiles(new Map())
+        onClose()
+      } catch (error) {
+        console.error('❌ [Create] Error:', error)
+        toast.error('Erro ao criar solicitação ou enviar arquivos')
+      } finally {
+        setIsSubmitting(false)
+      }
     }
-    onClose()
   }
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -488,16 +631,33 @@ export function RequestSubsidyModal({
                 <Building2 className="w-4 h-4 text-gray-600" />
                 <div>
                   <p className="text-xs text-gray-500">{translations.summary.institution}</p>
-                  <p className="text-sm font-semibold text-gray-900">União Portuguesa</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {institutionName || "Não informado"}
+                  </p>
                 </div>
               </div>
+
+              {/* Department (if applicable) */}
+              {departmentId && (
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-gray-600" />
+                  <div>
+                    <p className="text-xs text-gray-500">Departamento</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {departmentName || "Não informado"}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Church */}
               <div className="flex items-center gap-2">
                 <Church className="w-4 h-4 text-gray-600" />
                 <div>
                   <p className="text-xs text-gray-500">{translations.summary.church}</p>
-                  <p className="text-sm font-semibold text-gray-900">Igreja Central de Lisboa</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {churchName || (churchId ? "Carregando..." : "Sem igreja registrada")}
+                  </p>
                 </div>
               </div>
             </div>
@@ -635,8 +795,7 @@ export function RequestSubsidyModal({
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => setIsAddActivityModalOpen(true)}
-                      disabled={availableActivities.length === 0}
-                      className="flex-shrink-0 w-12 h-12 rounded-lg border-2 border-dashed border-gray-300 bg-white hover:border-gray-400 hover:bg-gray-50 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-shrink-0 w-12 h-12 rounded-lg border-2 border-dashed border-gray-300 bg-white hover:border-gray-400 hover:bg-gray-50 transition-all flex items-center justify-center"
                     >
                       <Plus className="w-5 h-5 text-gray-400" />
                     </button>
@@ -971,24 +1130,33 @@ export function RequestSubsidyModal({
             {/* Drop Zone */}
             <div
               className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                dragActive 
-                  ? 'border-gray-400 bg-gray-100' 
-                  : 'border-gray-300 hover:border-gray-400'
+                uploadingReceipt
+                  ? 'border-gray-300 bg-gray-50 opacity-70 cursor-not-allowed'
+                  : dragActive
+                    ? 'border-gray-400 bg-gray-100'
+                    : 'border-gray-300 hover:border-gray-400'
               }`}
-              onDragEnter={(e) => { e.preventDefault(); setDragActive(true) }}
+              onDragEnter={(e) => { e.preventDefault(); if (!uploadingReceipt) setDragActive(true) }}
               onDragLeave={(e) => { e.preventDefault(); setDragActive(false) }}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault()
                 setDragActive(false)
-                handleFileUpload(e.dataTransfer.files)
+                if (!uploadingReceipt) handleFileUpload(e.dataTransfer.files)
               }}
             >
-              <Upload className="w-6 h-6 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-600 mb-1">{translations.documents.dropZone.dragText}</p>
+              {uploadingReceipt ? (
+                <Loader2 className="w-6 h-6 text-gray-400 mx-auto mb-2 animate-spin" />
+              ) : (
+                <Upload className="w-6 h-6 text-gray-400 mx-auto mb-2" />
+              )}
+              <p className="text-sm text-gray-600 mb-1">
+                {uploadingReceipt ? "Enviando arquivo..." : translations.documents.dropZone.dragText}
+              </p>
               <Button
                 variant="outline"
                 size="sm"
+                disabled={uploadingReceipt}
                 onClick={() => {
                   const input = document.createElement('input')
                   input.type = 'file'
@@ -999,8 +1167,12 @@ export function RequestSubsidyModal({
                 }}
                 className="text-xs h-7 mt-2"
               >
-                <Upload className="w-3 h-3 mr-1" />
-                {translations.documents.dropZone.selectButton}
+                {uploadingReceipt ? (
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                ) : (
+                  <Upload className="w-3 h-3 mr-1" />
+                )}
+                {uploadingReceipt ? "Enviando..." : translations.documents.dropZone.selectButton}
               </Button>
               <p className="text-xs text-gray-500 mt-2">{translations.documents.dropZone.acceptedFormats}</p>
             </div>
@@ -1297,11 +1469,19 @@ export function RequestSubsidyModal({
               <Button
                 onClick={handleSubmit}
                 size="sm"
-                disabled={!validateAllActivities.allComplete}
+                disabled={!validateAllActivities.allComplete || isSubmitting}
                 className="h-9 px-4 bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-50"
               >
-                <DollarSign className="w-4 h-4 mr-1" />
-                {mode === "edit" ? (translations.buttons?.saveChanges || "Salvar alterações") : translations.buttons.submit}
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                ) : (
+                  <DollarSign className="w-4 h-4 mr-1" />
+                )}
+                {isSubmitting
+                  ? "Enviando arquivos..."
+                  : mode === "edit"
+                    ? "Salvar alterações"
+                    : translations.buttons.submit}
               </Button>
             </div>
           </div>
@@ -1309,136 +1489,18 @@ export function RequestSubsidyModal({
       </div>
 
       {/* Modal de Adicionar Atividades */}
-      <Dialog open={isAddActivityModalOpen} onOpenChange={setIsAddActivityModalOpen}>
-        <DialogContent className="w-[90vw] max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Plus className="w-5 h-5 text-gray-700" />
-              Adicionar Atividades Subsidiadas
-            </DialogTitle>
-            <DialogDescription>
-              Selecione atividades subsidiadas do projeto para adicionar à solicitação de subsídio.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex-1 overflow-y-auto">
-            {availableActivities.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <AlertCircle className="w-12 h-12 text-gray-300 mb-3" />
-                <p className="text-sm font-medium text-gray-900 mb-1">
-                  Nenhuma atividade disponível
-                </p>
-                <p className="text-xs text-gray-500">
-                  Todas as atividades subsidiadas já foram adicionadas.
-                </p>
-              </div>
-            ) : (
-              <AddActivitiesTable
-                activities={availableActivities}
-                onAdd={handleAddActivities}
-                onCancel={() => setIsAddActivityModalOpen(false)}
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <SelectActivitiesModal
+        isOpen={isAddActivityModalOpen}
+        onClose={() => setIsAddActivityModalOpen(false)}
+        activities={availableActivities}
+        onConfirm={handleAddActivities}
+        title="Adicionar Atividades Subsidiadas"
+        description="Selecione atividades subsidiadas do projeto para adicionar à solicitação de subsídio."
+        filterSubsidized={false}
+        subsidizedActivityIds={subsidizedActivityIds}
+      />
     </div>
   )
 }
 
-// Componente interno para tabela de seleção de atividades
-function AddActivitiesTable({ 
-  activities, 
-  onAdd, 
-  onCancel 
-}: { 
-  activities: ProjectActivityData[]
-  onAdd: (activities: ProjectActivityData[]) => void
-  onCancel: () => void
-}) {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const { formatCurrency } = useCurrency()
 
-  const toggleActivity = (id: string) => {
-    setSelectedIds(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(id)) {
-        newSet.delete(id)
-      } else {
-        newSet.add(id)
-      }
-      return newSet
-    })
-  }
-
-  const toggleAll = () => {
-    if (selectedIds.size === activities.length) {
-      setSelectedIds(new Set())
-    } else {
-      setSelectedIds(new Set(activities.map(a => a.id)))
-    }
-  }
-
-  const handleAdd = () => {
-    const selected = activities.filter(a => selectedIds.has(a.id))
-    onAdd(selected)
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between py-2 border-b">
-        <div className="flex items-center gap-2">
-          <Checkbox
-            checked={selectedIds.size === activities.length && activities.length > 0}
-            onCheckedChange={toggleAll}
-          />
-          <span className="text-sm font-medium text-gray-700">
-            Selecionar todas ({selectedIds.size}/{activities.length})
-          </span>
-        </div>
-      </div>
-
-      <div className="space-y-2 max-h-[400px] overflow-y-auto">
-        {activities.map(activity => (
-          <div
-            key={activity.id}
-            onClick={() => toggleActivity(activity.id)}
-            className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-all ${
-              selectedIds.has(activity.id)
-                ? 'border-gray-900 bg-gray-50'
-                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            <Checkbox
-              checked={selectedIds.has(activity.id)}
-              onCheckedChange={() => toggleActivity(activity.id)}
-            />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">{activity.name}</p>
-              <p className="text-xs text-gray-500">{activity.description || 'Sem descrição'}</p>
-            </div>
-            <div className="text-right">
-              <Badge variant="outline" className="font-semibold">
-                {formatCurrency(activity.budget_amount)}
-              </Badge>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex gap-2 justify-end pt-4 border-t">
-        <Button variant="outline" onClick={onCancel}>
-          Cancelar
-        </Button>
-        <Button 
-          onClick={handleAdd} 
-          disabled={selectedIds.size === 0}
-          className="bg-gray-900 hover:bg-gray-800"
-        >
-          <Plus className="w-4 h-4 mr-1" />
-          Adicionar {selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
-        </Button>
-      </div>
-    </div>
-  )
-}

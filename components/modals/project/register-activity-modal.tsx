@@ -597,14 +597,21 @@ function ActivityForm({ formData, errors, onChange, translations, language }: Ac
               value={formData.institution_requested_amount || ""}
               onChange={(e) => {
                 const value = parseFloat(e.target.value) || 0
-                if (value <= (formData.budget_amount || 0)) {
-                  onChange({ institution_requested_amount: value })
-                } else {
+                
+                if (value > 5000) {
+                  toast.error("O valor máximo de subsídio é €5.000")
+                  onChange({ institution_requested_amount: 5000 })
+                } else if (value > (formData.budget_amount || 0)) {
                   toast.error(translations.institutionAmountExceedsBudget)
+                } else {
+                  onChange({ institution_requested_amount: value })
                 }
               }}
               className={cn(errors.institution_requested_amount && "border-red-500")}
             />
+            <p className="text-xs text-muted-foreground px-2">
+              Máximo: €5.000 (limite institucional)
+            </p>
             {formData.budget_amount > 0 && ((formData.institution_requested_amount ?? 0) > 0) && (
               <div className="flex items-center justify-between text-xs text-muted-foreground px-2">
                 <span>

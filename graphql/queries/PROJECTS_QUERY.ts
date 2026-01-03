@@ -132,9 +132,18 @@ export const GET_PROJECT_BY_ID_QUERY = gql`
         id
         description
         total_budget
+        approved_amount
+        rejection_reason
         created_at
         updated_at
+        approved_at
+        created_by
+        updated_by
+        approved_by
         institution_id
+        department_id
+        church_id
+        project_id
         subsidy_status {
           id
           name
@@ -143,6 +152,37 @@ export const GET_PROJECT_BY_ID_QUERY = gql`
         institution {
           id
           name
+        }
+        department {
+          id
+          name
+          church {
+            id
+            name
+          }
+        }
+        church {
+          id
+          name
+        }
+        items {
+          id
+          subsidy_request_id
+          project_activity_id
+          requested_amount
+          approved_amount
+          notes
+          created_at
+          updated_at
+          project_activity {
+            id
+            name
+            description
+            budget_amount
+            status
+            priority
+            is_subsidized
+          }
         }
       }
       special_projects {
@@ -153,6 +193,21 @@ export const GET_PROJECT_BY_ID_QUERY = gql`
         location_church_plant
         created_at
         updated_at
+      }
+      kpis {
+        totalActivities
+        completedActivities
+        inProgressActivities
+        completionRate
+        projectBudget
+        allocatedBudget
+        budgetUtilization
+        subsidizedActivities
+        subsidyRate
+        subsidyRequestsCount
+        daysRemaining
+        endDate
+        projectStatus
       }
     }
   }

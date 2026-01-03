@@ -44,8 +44,12 @@ export interface ProjectTableData {
   required_volunteers: boolean
   start_at: string
   end_at: string
+  created_at?: string
   language_preference: string
   institutionId: string
+  // Names for display
+  institutionName?: string
+  departmentName?: string
   status: "active" | "upcoming" | "completed"
   subsidyRequests?: number
   subsidyAmount?: number

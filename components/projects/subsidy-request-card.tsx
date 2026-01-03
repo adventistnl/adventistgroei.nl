@@ -21,8 +21,41 @@ export interface SubsidyRequestCardData {
   requested_at: string | Date
   status: "pending" | "approved" | "rejected" | "in_review"
   requested_amount: number
+  approved_amount?: number
+  rejection_reason?: string
+  approved_at?: Date
+  rejected_at?: Date
   archived?: boolean
+  // IDs for editing
+  project_id?: string
+  institution_id?: string
+  department_id?: string
+  church_id?: string
+  // Display names
   institution_name?: string
+  church_name?: string
+  department_name?: string
+  activities_count?: number
+  total_budget?: number
+  notes?: string
+  items?: Array<{
+    id: string
+    activity_id: string
+    activity_name: string
+    requested_amount: number
+    approved_amount: number
+    budget_amount: number
+    notes?: string
+    activity?: {
+      id: string
+      name: string
+      description?: string
+      budget_amount: number
+      status?: string
+      priority?: string
+      is_subsidized?: boolean
+    }
+  }>
 }
 
 interface SubsidyRequestCardProps {

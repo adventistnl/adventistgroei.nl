@@ -200,6 +200,14 @@ export const regionTranslations = {
       search_province_city: "Search province or city...",
       selected: "selected",
       cities: "cities"
+    },
+
+    // Map
+    map: {
+      title: "Netherlands Regions Map",
+      description: "Interactive geographic visualization",
+      refocus_button: "Refocus",
+      refocus_success: "Map repositioned to Netherlands"
     }
   },
 
@@ -404,6 +412,14 @@ export const regionTranslations = {
       search_province_city: "Zoek provincie of stad...",
       selected: "geselecteerd",
       cities: "steden"
+    },
+
+    // Map
+    map: {
+      title: "Nederland Regio's Kaart",
+      description: "Interactieve geografische visualisatie",
+      refocus_button: "Herpositioneren",
+      refocus_success: "Kaart herpositioneerd naar Nederland"
     }
   },
 
@@ -607,6 +623,14 @@ export const regionTranslations = {
       search_province_city: "Pesquisar província ou cidade...",
       selected: "selecionada",
       cities: "cidades"
+    },
+
+    // Map
+    map: {
+      title: "Mapa de Regiões - Países Baixos",
+      description: "Visualização geográfica interativa",
+      refocus_button: "Reposicionar",
+      refocus_success: "Mapa reposicionado para os Países Baixos"
     }
   }
 }

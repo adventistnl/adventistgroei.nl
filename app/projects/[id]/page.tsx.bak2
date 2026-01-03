@@ -257,14 +257,13 @@ export default function ProjectDetailsPage() {
   // Subsidy Request Mutations
   const [createSubsidyRequest, { loading: createSubsidyLoading }] = useMutation(CREATE_SUBSIDY_REQUEST, {
     onCompleted: () => {
-      // Don't show toast here - let the modal handle success message
+      toast.success("✅ Solicitação de subsídio criada com sucesso!", { duration: 3000 })
       refetchProject()
       setIsRequestSubsidyModalOpen(false)
       setSelectedActivities([])
     },
     onError: (error) => {
-      const errorMessage = error.graphQLErrors?.[0]?.message || error.message || 'Erro desconhecido'
-      toast.error(errorMessage, { duration: 5000 })
+      toast.error(`Erro ao criar solicitação de subsídio: ${error.message}`)
       console.error("Error creating subsidy request:", error)
     }
   })
@@ -314,10 +313,6 @@ export default function ProjectDetailsPage() {
       console.error("Error deleting subsidy request:", error)
     }
   })
-
-  const handleRefreshSubsidies = async () => {
-    await refetchProject()
-  }
 
   // Transform backend project to ProjectTableData format
   const transformProjectData = (backendProject: any): ProjectTableData => {
@@ -477,7 +472,7 @@ export default function ProjectDetailsPage() {
         description: activity.description,
         budget_amount: Number(activity.budget_amount),
         deadline: activity.deadline,
-        status: statusMap[activity.status?.toUpperCase()] || "todo",
+        status: statusMap[activity.status] || "todo",
         priority: priorityMap[activity.priority] || "medium",
         activity_tag: (activity.activity_tag as ActivityTags) || undefined,
         is_subsidized: activity.is_subsidized || false,
@@ -507,12 +502,18 @@ export default function ProjectDetailsPage() {
   const projectUsers = useMemo(() => {
     if (!usersData?.users) return []
     
-    // Get unique users from activities assignees
-    const allAssignees = allProjectActivities.flatMap(activity => activity.assigned_users || [])
+    // Get unique users from activities
+    const activityOwners = allProjectActivities
+      .filter(activity => activity.owner)
+      .map(activity => ({
+        id: activity.owner!.id,
+        name: activity.owner!.name,
+        email: activity.owner!.email,
+      }))
     
     // Remove duplicates by id
     const uniqueUsers = Array.from(
-      new Map(allAssignees.map(user => [user.id, user])).values()
+      new Map(activityOwners.map(user => [user.id, user])).values()
     )
     
     return uniqueUsers.map(user => ({
@@ -520,50 +521,65 @@ export default function ProjectDetailsPage() {
       name: user.name,
       email: user.email,
       role: 'Colaborador',
-      initials: user.initials
     }))
   }, [usersData, allProjectActivities])
 
-  // Get KPIs from backend (pre-calculated)
+  // Calculate project KPIs
   const projectKPIs = useMemo(() => {
-    if (!projectData?.project?.kpis) return null
+    if (!projectData?.project) return null
 
-    const kpis = projectData.project.kpis
-    const endDate = new Date(kpis.endDate)
+    const activities = allProjectActivities
+    const totalActivities = activities.length
+    const completedActivities = activities.filter(a => a.status === 'completed').length
+    const inProgressActivities = activities.filter(a => a.status === 'in_progress').length
+    const subsidizedActivities = activities.filter(a => a.is_subsidized).length
+    
+    const totalBudgetActivities = activities.reduce((sum, a) => sum + a.budget_amount, 0)
+    const completionRate = totalActivities > 0 ? Math.round((completedActivities / totalActivities) * 100) : 0
+    const subsidyRate = totalActivities > 0 ? Math.round((subsidizedActivities / totalActivities) * 100) : 0
+    
+    // Calculate days until project end
+    const now = new Date()
+    const endDate = new Date(project?.end_at || '')
+    const daysRemaining = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    
+    // Calculate budget utilization
+    const projectBudget = Number(project?.budget || 0)
+    const budgetUtilization = projectBudget > 0 ? Math.round((totalBudgetActivities / projectBudget) * 100) : 0
 
     return [
       {
         id: "total-activities",
         title: "Total de Atividades",
-        value: kpis.totalActivities.toString(),
-        subtitle: `${kpis.completedActivities} concluídas | ${kpis.inProgressActivities} em andamento`,
+        value: totalActivities.toString(),
+        subtitle: `${completedActivities} concluídas | ${inProgressActivities} em andamento`,
         trend: {
-          value: kpis.completionRate,
-          isPositive: kpis.completionRate > 50,
-          label: `${kpis.completionRate}% concluídas`
+          value: completionRate,
+          isPositive: completionRate > 50,
+          label: `${completionRate}% concluídas`
         },
         icon: Activity,
       },
       {
         id: "project-budget",
         title: "Orçamento do Projeto",
-        value: `R$ ${(kpis.projectBudget / 1000).toFixed(1)}K`,
-        subtitle: `R$ ${(kpis.allocatedBudget / 1000).toFixed(1)}K alocado em atividades`,
+        value: `R$ ${(projectBudget / 1000).toFixed(1)}K`,
+        subtitle: `R$ ${(totalBudgetActivities / 1000).toFixed(1)}K alocado em atividades`,
         trend: {
-          value: kpis.budgetUtilization,
-          isPositive: kpis.budgetUtilization <= 100,
-          label: `${kpis.budgetUtilization}% utilizado`
+          value: budgetUtilization,
+          isPositive: budgetUtilization <= 100,
+          label: `${budgetUtilization}% utilizado`
         },
         icon: DollarSign,
       },
       {
         id: "completion-rate",
         title: "Taxa de Conclusão",
-        value: `${kpis.completionRate}%`,
-        subtitle: `${kpis.completedActivities} de ${kpis.totalActivities} finalizadas`,
+        value: `${completionRate}%`,
+        subtitle: `${completedActivities} de ${totalActivities} finalizadas`,
         trend: {
-          value: kpis.completedActivities,
-          isPositive: kpis.completedActivities > 0,
+          value: completedActivities,
+          isPositive: completedActivities > 0,
           label: "atividades completas"
         },
         icon: CheckCircle,
@@ -571,24 +587,24 @@ export default function ProjectDetailsPage() {
       {
         id: "subsidized-activities",
         title: "Atividades Subsidiadas",
-        value: kpis.subsidizedActivities.toString(),
-        subtitle: `${kpis.subsidyRate}% do total de atividades`,
+        value: subsidizedActivities.toString(),
+        subtitle: `${subsidyRate}% do total de atividades`,
         trend: {
-          value: kpis.subsidyRequestsCount,
-          isPositive: kpis.subsidyRequestsCount > 0,
-          label: `${kpis.subsidyRequestsCount} pedidos de subsídio`
+          value: subsidyRequests.length,
+          isPositive: subsidyRequests.length > 0,
+          label: `${subsidyRequests.length} pedidos de subsídio`
         },
         icon: Target,
       },
       {
         id: "project-timeline",
-        title: kpis.daysRemaining > 0 ? "Prazo Restante" : "Projeto Finalizado",
-        value: kpis.daysRemaining > 0 ? `${kpis.daysRemaining} dias` : "Concluído",
+        title: daysRemaining > 0 ? "Prazo Restante" : "Projeto Finalizado",
+        value: daysRemaining > 0 ? `${daysRemaining} dias` : "Concluído",
         subtitle: `Termina em ${endDate.toLocaleDateString('pt-BR')}`,
         trend: {
-          value: Math.abs(kpis.daysRemaining),
-          isPositive: kpis.daysRemaining > 30,
-          label: kpis.daysRemaining > 0 ? "dias restantes" : "dias atrás"
+          value: Math.abs(daysRemaining),
+          isPositive: daysRemaining > 30,
+          label: daysRemaining > 0 ? "dias restantes" : "dias atrás"
         },
         icon: Calendar,
       },
@@ -596,7 +612,7 @@ export default function ProjectDetailsPage() {
         id: "subsidy-amount",
         title: "Valor em Subsídios",
         value: `R$ ${(subsidyRequests.reduce((sum, s) => sum + s.requested_amount, 0) / 1000).toFixed(1)}K`,
-        subtitle: `${kpis.subsidyRequestsCount} solicitações enviadas`,
+        subtitle: `${subsidyRequests.length} solicitações enviadas`,
         trend: {
           value: subsidyRequests.filter(s => s.status === 'approved').length,
           isPositive: true,
@@ -605,7 +621,7 @@ export default function ProjectDetailsPage() {
         icon: TrendingUp,
       },
     ]
-  }, [projectData, subsidyRequests])
+  }, [projectData, allProjectActivities, project, subsidyRequests])
 
 
   usePageTitle({
@@ -752,42 +768,20 @@ export default function ProjectDetailsPage() {
     }
   }, [selectedActivities, batchEditData, batchUpdateActivities])
 
-  // Get list of subsidized activity IDs
-  const subsidizedActivityIds = useMemo(() => {
-    const subsidies = projectData?.project?.subsidies
-    if (!subsidies || subsidies.length === 0) return []
-    
-    return subsidies.flatMap((subsidy: any) => 
-      subsidy.items?.map((item: any) => item.project_activity_id) || []
-    ) as string[]
-  }, [projectData])
-
   // Helper function to check if activity has existing subsidy
   const activityHasSubsidy = useCallback((activityId: string): boolean => {
-    return subsidizedActivityIds.includes(activityId)
-  }, [subsidizedActivityIds])
-
-
+    const subsidies = projectData?.project?.subsidies
+    
+    return subsidies.some((subsidy: any) => 
+      subsidy.items?.some((item: any) => item.project_activity_id === activityId)
+    )
+  }, [projectData])
 
 
   const handleBatchSubsidyRequest = useCallback(() => {
-    // Check if any selected activity already has a subsidy
-    const activitiesWithSubsidy = selectedActivities.filter(activity => 
-      activityHasSubsidy(activity.id)
-    )
-
-    if (activitiesWithSubsidy.length > 0) {
-      const activityNames = activitiesWithSubsidy.map(a => a.name).join(', ')
-      toast.error(
-        `As seguintes atividades já possuem pedido de subsídio: ${activityNames}`,
-        { duration: 5000 }
-      )
-      return
-    }
-
     console.log('🔵 Abrindo modal de subsídio com', selectedActivities.length, 'atividades:', selectedActivities)
     setIsRequestSubsidyModalOpen(true)
-  }, [selectedActivities, activityHasSubsidy])
+  }, [selectedActivities])
 
   const handleSubsidyRequestSubmit = async (data: SubsidyRequestFormData): Promise<string | void> => {
     try {
@@ -1544,7 +1538,7 @@ export default function ProjectDetailsPage() {
           onCreateEvent={handleCreateEvent}
           onCreateCommunication={handleCreateCommunication}
           users={projectUsers}
-
+          onAddUser={handleAddUser}
         />
 
         {/* KPI Cards */}
@@ -1599,9 +1593,7 @@ export default function ProjectDetailsPage() {
                           onDuplicateSubsidy={handleDuplicateSubsidyCard}
                           onUpdateSubsidy={handleUpdateSubsidyCard}
                           allActivities={allProjectActivities}
-                          subsidizedActivityIds={subsidizedActivityIds}
                           description="Gerencie as solicitações de subsídio"
-                          onRefresh={handleRefreshSubsidies}
                         />
                       </>
                  
@@ -1873,7 +1865,6 @@ export default function ProjectDetailsPage() {
           departmentName={project?.departmentName}
           onSubmit={handleSubsidyRequestSubmit}
           allActivities={allProjectActivities}
-          subsidizedActivityIds={subsidizedActivityIds}
         />
 
         {/* Subsidy Request Card Modals - View is handled by SubsidyRequestsContainer */}
@@ -1893,7 +1884,6 @@ export default function ProjectDetailsPage() {
           title="Selecionar Atividades para Subsídio"
           description="Selecione as atividades subsidiadas que deseja incluir na solicitação de subsídio."
           filterSubsidized={true}
-          subsidizedActivityIds={subsidizedActivityIds}
         />
 
         {/* Add User Modal */}
