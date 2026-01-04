@@ -53,24 +53,13 @@ export function RequestsOverTimeChart({
   const [selectedQuarter, setSelectedQuarter] = React.useState<"all" | "q1" | "q2" | "q3" | "q4">("all")
 
   const chartData = React.useMemo(() => {
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-    const currentMonth = new Date().getMonth()
-
-    return months.map((month, index) => {
-      // Simular dados progressivos ao longo do ano
-      const baseApproved = index <= currentMonth ? 8 + Math.floor(Math.random() * 7) : 0
-      const basePending = index <= currentMonth ? 3 + Math.floor(Math.random() * 5) : 0
-      const baseRejected = index <= currentMonth ? 1 + Math.floor(Math.random() * 3) : 0
-
-      return {
-        month,
-        approved: baseApproved,
-        pending: basePending,
-        rejected: baseRejected,
-        quarter: Math.floor(index / 3) + 1 // Q1: 0-2, Q2: 3-5, Q3: 6-8, Q4: 9-11
-      }
-    })
-  }, [selectedYear])
+    // Use data from props if available, otherwise return empty array
+    if (!data || data.length === 0) {
+      return []
+    }
+    
+    return data
+  }, [data])
 
   const filteredData = React.useMemo(() => {
     if (selectedQuarter === "all") return chartData

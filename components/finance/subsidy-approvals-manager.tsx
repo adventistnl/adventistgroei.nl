@@ -348,6 +348,37 @@ export function SubsidyApprovalsManager({
       return monthData
     })
 
+    // Calculate real monthly data by status
+    const monthlyStatusData: Record<string, { approved: number, pending: number, rejected: number, inReview: number }> = {}
+    
+    subsidyRequests.forEach(request => {
+      const requestDate = new Date(request.requested_at)
+      const monthName = format(requestDate, 'MMMM')
+      
+      if (!monthlyStatusData[monthName]) {
+        monthlyStatusData[monthName] = { approved: 0, pending: 0, rejected: 0, inReview: 0 }
+      }
+      
+      if (request.status === 'approved') {
+        monthlyStatusData[monthName].approved++
+      } else if (request.status === 'pending') {
+        monthlyStatusData[monthName].pending++
+      } else if (request.status === 'rejected') {
+        monthlyStatusData[monthName].rejected++
+      } else if (request.status === 'in_review') {
+        monthlyStatusData[monthName].inReview++
+      }
+    })
+    
+    const fullMonthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    const byMonthData = fullMonthNames.slice(0, currentMonth + 1).map(monthName => ({
+      month: monthName,
+      approved: monthlyStatusData[monthName]?.approved || 0,
+      pending: monthlyStatusData[monthName]?.pending || 0,
+      rejected: monthlyStatusData[monthName]?.rejected || 0,
+      quarter: Math.floor(fullMonthNames.indexOf(monthName) / 3) + 1
+    }))
+
     return {
       byStatus: [
         { status: 'Pending', count: kpiData.pendingRequests, fill: '#f59e0b' },
@@ -355,13 +386,7 @@ export function SubsidyApprovalsManager({
         { status: 'Approved', count: kpiData.approvedRequests, fill: '#10b981' },
         { status: 'Rejected', count: kpiData.rejectedRequests, fill: '#ef4444' }
       ],
-      byMonth: [
-        { month: 'Aug', requests: 12, approved: 8 },
-        { month: 'Sep', requests: 15, approved: 11 },
-        { month: 'Oct', requests: 18, approved: 14 },
-        { month: 'Nov', requests: 22, approved: 17 },
-        { month: 'Dec', requests: 28, approved: 21 }
-      ],
+      byMonth: byMonthData,
       byDepartment: byDepartmentData
     }
   }, [kpiData, subsidyRequests])
