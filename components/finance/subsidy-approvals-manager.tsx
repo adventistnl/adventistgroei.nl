@@ -114,6 +114,7 @@ interface SubsidyApprovalsManagerProps {
   showCharts?: boolean
   showKPICards?: boolean
   subsidyData?: any
+  analyticsData?: any
   refetchSubsidies?: () => Promise<any>
 }
 
@@ -125,6 +126,7 @@ export function SubsidyApprovalsManager({
   showCharts = true,
   showKPICards = true,
   subsidyData,
+  analyticsData,
   refetchSubsidies
 }: SubsidyApprovalsManagerProps) {
   const { t } = useTranslation()
@@ -222,33 +224,21 @@ export function SubsidyApprovalsManager({
   }, [subsidyData])
 
   // KPI Data
+  // KPI Data from Backend
   const kpiData = useMemo(() => {
-    const totalRequests = subsidyRequests.length
-    const pendingRequests = subsidyRequests.filter(r => r.status === 'pending').length
-    const inReviewRequests = subsidyRequests.filter(r => r.status === 'in_review').length
-    const approvedRequests = subsidyRequests.filter(r => r.status === 'approved').length
-    const rejectedRequests = subsidyRequests.filter(r => r.status === 'rejected').length
+    const kpis = analyticsData?.subsidyKPIs || {}
     
-    const totalRequested = subsidyRequests.reduce((sum, r) => sum + r.requested_amount, 0)
-    const totalApproved = subsidyRequests
-      .filter(r => r.status === 'approved')
-      .reduce((sum, r) => sum + (r.approved_amount || 0), 0)
-    
-    const approvalRate = totalRequests > 0 
-      ? Math.round((approvedRequests / totalRequests) * 100) 
-      : 0
-
     return {
-      totalRequests,
-      pendingRequests,
-      inReviewRequests,
-      approvedRequests,
-      rejectedRequests,
-      totalRequested,
-      totalApproved,
-      approvalRate
+      totalRequests: kpis.totalRequests || 0,
+      pendingRequests: kpis.pendingRequests || 0,
+      inReviewRequests: kpis.inReviewRequests || 0,
+      approvedRequests: kpis.approvedRequests || 0,
+      rejectedRequests: kpis.rejectedRequests || 0,
+      totalRequested: kpis.totalRequested || 0,
+      totalApproved: kpis.totalApproved || 0,
+      approvalRate: kpis.approvalRate || 0
     }
-  }, [subsidyRequests])
+  }, [analyticsData])
 
   const kpiCardsData: KPICardData[] = useMemo(() => [
     {
@@ -314,82 +304,59 @@ export function SubsidyApprovalsManager({
   ], [kpiData, formatCurrency])
 
   // Chart data
+  // Chart data from Backend returns
   const chartData = useMemo(() => {
-    // Group subsidy requests by department and month
-    const departmentData: Record<string, Record<string, number>> = {}
-    
-    subsidyRequests.forEach(request => {
-      const department = request.department_name || 'Other'
-      const requestDate = new Date(request.requested_at)
-      const month = format(requestDate, 'MMM')
-      
-      if (!departmentData[department]) {
-        departmentData[department] = {}
+    // If no analytics data, return empty structures
+    if (!analyticsData) {
+      return {
+        byStatus: [],
+        byMonth: [],
+        byDepartment: []
       }
-      
-      if (!departmentData[department][month]) {
-        departmentData[department][month] = 0
-      }
-      
-      departmentData[department][month] += request.requested_amount
-    })
+    }
+
+    // Map backend data to frontend chart formats
     
-    // Transform to chart format
+    // 1. By Department (RequestsByDepartmentChart)
+    // Backend returns [{ month, department, amount }]
+    // Frontend needs [{ month: 'Jan', 'Dept A': 100, 'Dept B': 200 }]
+    const byDepartmentData: any[] = []
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    const currentMonth = new Date().getMonth()
     
-    const byDepartmentData = months.slice(0, currentMonth + 1).map(month => {
-      const monthData: any = { month }
+    if (analyticsData.subsidyByDepartment) {
+      // Group by month
+      const groupedByMonth: Record<string, any> = {}
       
-      Object.keys(departmentData).forEach(dept => {
-        monthData[dept] = departmentData[dept][month] || 0
+      analyticsData.subsidyByDepartment.forEach((item: any) => {
+        if (!groupedByMonth[item.month]) {
+          groupedByMonth[item.month] = { month: item.month }
+        }
+        groupedByMonth[item.month][item.department] = item.amount
       })
       
-      return monthData
-    })
+      // Convert to array and sort by month index
+      // Note: Backend returns month abbreviations like 'Jan', 'Feb'
+      byDepartmentData.push(...Object.values(groupedByMonth).sort((a: any, b: any) => {
+        return months.indexOf(a.month) - months.indexOf(b.month)
+      }))
+    }
 
-    // Calculate real monthly data by status
-    const monthlyStatusData: Record<string, { approved: number, pending: number, rejected: number, inReview: number }> = {}
-    
-    subsidyRequests.forEach(request => {
-      const requestDate = new Date(request.requested_at)
-      const monthName = format(requestDate, 'MMMM')
-      
-      if (!monthlyStatusData[monthName]) {
-        monthlyStatusData[monthName] = { approved: 0, pending: 0, rejected: 0, inReview: 0 }
-      }
-      
-      if (request.status === 'approved') {
-        monthlyStatusData[monthName].approved++
-      } else if (request.status === 'pending') {
-        monthlyStatusData[monthName].pending++
-      } else if (request.status === 'rejected') {
-        monthlyStatusData[monthName].rejected++
-      } else if (request.status === 'in_review') {
-        monthlyStatusData[monthName].inReview++
-      }
-    })
-    
-    const fullMonthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-    const byMonthData = fullMonthNames.slice(0, currentMonth + 1).map(monthName => ({
-      month: monthName,
-      approved: monthlyStatusData[monthName]?.approved || 0,
-      pending: monthlyStatusData[monthName]?.pending || 0,
-      rejected: monthlyStatusData[monthName]?.rejected || 0,
-      quarter: Math.floor(fullMonthNames.indexOf(monthName) / 3) + 1
-    }))
+    // 2. By Month (RequestsOverTimeChart)
+    // Backend returns [{ month: 'January', approved, pending, rejected, quarter }]
+    // Frontend expects same structure
+    const byMonthData = analyticsData.subsidyByMonth || []
+
+    // 3. By Status (StatusOverviewChart)
+    // Backend returns [{ status, count, fill }]
+    // Frontend expects same structure, mapped to local colors if needed, but backend sends fill
+    const byStatusData = analyticsData.subsidyByStatus || []
 
     return {
-      byStatus: [
-        { status: 'Pending', count: kpiData.pendingRequests, fill: '#f59e0b' },
-        { status: 'In Review', count: kpiData.inReviewRequests, fill: '#3b82f6' },
-        { status: 'Approved', count: kpiData.approvedRequests, fill: '#10b981' },
-        { status: 'Rejected', count: kpiData.rejectedRequests, fill: '#ef4444' }
-      ],
+      byStatus: byStatusData,
       byMonth: byMonthData,
       byDepartment: byDepartmentData
     }
-  }, [kpiData, subsidyRequests])
+  }, [analyticsData])
 
   // Handlers
   const handleRefresh = async () => {

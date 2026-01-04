@@ -23,6 +23,7 @@ import { WithPermission } from "@/hocs/with-permission"
 import { AccessDenied } from "@/components/access/access-denied"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { GET_ALL_SUBSIDY_REQUESTS } from "@/graphql/queries/SUBSIDY_REQUESTS_QUERY"
+import { GET_SUBSIDY_ANALYTICS } from "@/graphql/queries/SUBSIDY_ANALYTICS_QUERIES"
 
 export default function SubsidyApprovalsPage() {
   const { t } = useTranslation()
@@ -45,8 +46,21 @@ export default function SubsidyApprovalsPage() {
     }
   })
 
+  // Fetch analytics data from backend
+  const { data: analyticsData, loading: analyticsLoading, refetch: refetchAnalytics } = useQuery(GET_SUBSIDY_ANALYTICS, {
+    variables: { institutionId: currentInstitutionData?.id },
+    fetchPolicy: 'network-only',
+    skip: !currentInstitutionData?.id,
+    onCompleted: () => {
+      console.log('✅ Analytics data loaded successfully')
+    },
+    onError: (error) => {
+      console.error('❌ Error loading analytics:', error)
+    }
+  })
+
   // Combined loading state
-  const isLoading = institutionLoading || subsidyLoading
+  const isLoading = institutionLoading || subsidyLoading || analyticsLoading
 
   // Refresh handler
   const handleRefresh = async () => {
@@ -54,7 +68,7 @@ export default function SubsidyApprovalsPage() {
     const refreshToast = toast.loading("Refreshing data...")
     
     try {
-      await refetchSubsidies()
+      await Promise.all([refetchSubsidies(), refetchAnalytics()])
       toast.success("Data refreshed successfully", { duration: 2000 })
     } catch (error) {
       toast.error("Error refreshing data")
@@ -114,7 +128,11 @@ export default function SubsidyApprovalsPage() {
             showCharts={true}
             showKPICards={true}
             subsidyData={subsidyData}
-            refetchSubsidies={refetchSubsidies}
+            analyticsData={analyticsData}
+            refetchSubsidies={async () => {
+              await refetchSubsidies()
+              await refetchAnalytics()
+            }}
           />
         </div>
       </WithPermission>
