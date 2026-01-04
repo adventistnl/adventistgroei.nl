@@ -19,7 +19,7 @@ export interface SubsidyRequestCardData {
   id: string
   title: string
   requested_at: string | Date
-  status: "pending" | "approved" | "rejected" | "in_review"
+  status: "pending" | "approved" | "rejected" | "in_review" | "closed"
   requested_amount: number
   approved_amount?: number
   rejection_reason?: string
@@ -86,6 +86,7 @@ export function SubsidyRequestCard({
     approved: { label: "Aprovado", className: "bg-green-50 text-green-700 border-green-200" },
     rejected: { label: "Rejeitado", className: "bg-red-50 text-red-700 border-red-200" },
     in_review: { label: "Em Análise", className: "bg-blue-50 text-blue-700 border-blue-200" },
+    closed: { label: "Encerrado", className: "bg-gray-50 text-gray-700 border-gray-200" },
   }
 
   const currentStatus = statusConfig[data.status]

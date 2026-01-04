@@ -74,70 +74,26 @@ export function RequestsByDepartmentChart({
 
   // Transform data to show months on X-axis and departments as separate areas
   const chartData = React.useMemo(() => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    const currentMonth = new Date().getMonth()
-    
-    return months.map((month, index) => {
-      // Only show data up to current month
-      if (index > currentMonth) {
-        return {
-          month,
-          education: 0,
-          youthMinistry: 0,
-          evangelism: 0,
-          healthMinistry: 0,
-          communications: 0,
-          sabbathSchool: 0,
-          womensMinistry: 0,
-          adventurers: 0,
-        }
-      }
-      
-      // Generate realistic varying data for each department over time
-      const baseEducation = 12000 + Math.floor(Math.random() * 8000)
-      const baseYouth = 9000 + Math.floor(Math.random() * 6000)
-      const baseEvangelism = 7000 + Math.floor(Math.random() * 5000)
-      const baseHealth = 4000 + Math.floor(Math.random() * 3000)
-      const baseComms = 3000 + Math.floor(Math.random() * 2500)
-      const baseSabbath = 5000 + Math.floor(Math.random() * 4000)
-      const baseWomens = 4500 + Math.floor(Math.random() * 3500)
-      const baseAdventurers = 3500 + Math.floor(Math.random() * 2500)
-      
-      return {
-        month,
-        education: baseEducation,
-        youthMinistry: baseYouth,
-        evangelism: baseEvangelism,
-        healthMinistry: baseHealth,
-        communications: baseComms,
-        sabbathSchool: baseSabbath,
-        womensMinistry: baseWomens,
-        adventurers: baseAdventurers,
-      }
-    })
-  }, [selectedYear])
-
-  const totalByDepartment = React.useMemo(() => {
-    const totals = {
-      education: 0,
-      youthMinistry: 0,
-      evangelism: 0,
-      healthMinistry: 0,
-      communications: 0,
-      sabbathSchool: 0,
-      womensMinistry: 0,
-      adventurers: 0,
+    // If data is provided, use it; otherwise return empty
+    if (!data || data.length === 0) {
+      return []
     }
     
-    chartData.forEach(month => {
-      totals.education += month.education
-      totals.youthMinistry += month.youthMinistry
-      totals.evangelism += month.evangelism
-      totals.healthMinistry += month.healthMinistry
-      totals.communications += month.communications
-      totals.sabbathSchool += month.sabbathSchool
-      totals.womensMinistry += month.womensMinistry
-      totals.adventurers += month.adventurers
+    return data
+  }, [data])
+
+  const totalByDepartment = React.useMemo(() => {
+    const totals: Record<string, number> = {}
+    
+    chartData.forEach(monthData => {
+      Object.keys(monthData).forEach(key => {
+        if (key !== 'month') {
+          if (!totals[key]) {
+            totals[key] = 0
+          }
+          totals[key] += monthData[key] || 0
+        }
+      })
     })
     
     return totals
@@ -145,12 +101,16 @@ export function RequestsByDepartmentChart({
 
   const topDepartment = React.useMemo(() => {
     const entries = Object.entries(totalByDepartment)
+    if (entries.length === 0) {
+      return { name: 'N/A', total: 0 }
+    }
+    
     const top = entries.reduce((max, [dept, total]) => 
       total > max.total ? { dept, total } : max
     , { dept: '', total: 0 })
     
     return {
-      name: chartConfig[top.dept as keyof typeof chartConfig]?.label || top.dept,
+      name: top.dept || 'Unknown',
       total: top.total
     }
   }, [totalByDepartment])

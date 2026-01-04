@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import { useTranslation } from "react-i18next"
+import { useQuery } from "@apollo/client"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
@@ -21,15 +22,31 @@ import { useInstitution } from "@/contexts/institution-context"
 import { WithPermission } from "@/hocs/with-permission"
 import { AccessDenied } from "@/components/access/access-denied"
 import { PermissionResolverName } from "@/types/graphql-global-types"
+import { GET_ALL_SUBSIDY_REQUESTS } from "@/graphql/queries/SUBSIDY_REQUESTS_QUERY"
 
 export default function SubsidyApprovalsPage() {
   const { t } = useTranslation()
-  const { currentInstitutionData, loading: isLoading, refetchInstitutionById } = useInstitution()
+  const { currentInstitutionData, loading: institutionLoading } = useInstitution()
   const [refreshing, setRefreshing] = useState(false)
 
   usePageTitle({
     title: "Subsidy Approvals"
   })
+
+  // Fetch subsidy requests from backend
+  const { data: subsidyData, loading: subsidyLoading, error: subsidyError, refetch: refetchSubsidies } = useQuery(GET_ALL_SUBSIDY_REQUESTS, {
+    fetchPolicy: 'network-only', // Always fetch from server to ensure fresh data
+    onCompleted: () => {
+      console.log('✅ Subsidy requests loaded successfully')
+    },
+    onError: (error) => {
+      console.error('❌ Error loading subsidy requests:', error)
+      toast.error("Error loading subsidy requests")
+    }
+  })
+
+  // Combined loading state
+  const isLoading = institutionLoading || subsidyLoading
 
   // Refresh handler
   const handleRefresh = async () => {
@@ -37,7 +54,7 @@ export default function SubsidyApprovalsPage() {
     const refreshToast = toast.loading("Refreshing data...")
     
     try {
-      await refetchInstitutionById()
+      await refetchSubsidies()
       toast.success("Data refreshed successfully", { duration: 2000 })
     } catch (error) {
       toast.error("Error refreshing data")
@@ -96,6 +113,8 @@ export default function SubsidyApprovalsPage() {
             onRefresh={handleRefresh}
             showCharts={true}
             showKPICards={true}
+            subsidyData={subsidyData}
+            refetchSubsidies={refetchSubsidies}
           />
         </div>
       </WithPermission>
