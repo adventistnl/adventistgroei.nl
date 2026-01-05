@@ -9,6 +9,7 @@ export const GET_SUBSIDY_STATUS_HISTORY = gql`
       id
       status_id
       previous_status_id
+      type
       reason
       changed_by
       changed_at
