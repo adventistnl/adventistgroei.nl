@@ -310,7 +310,9 @@ export default function ProjectDetailsPage() {
       setSelectedSubsidyCard(null)
     },
     onError: (error) => {
-      toast.error(`Erro ao deletar solicitação de subsídio: ${error.message}`)
+      // Extract the specific error message from GraphQL errors
+      const errorMessage = error.graphQLErrors?.[0]?.message || error.message || 'Erro ao deletar solicitação de subsídio'
+      toast.error(errorMessage, { duration: 5000 })
       console.error("Error deleting subsidy request:", error)
     }
   })

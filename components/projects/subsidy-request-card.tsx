@@ -143,33 +143,46 @@ export function SubsidyRequestCard({
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+              size="icon"
+              className="h-8 w-8 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
-              <MoreVertical className="h-3 w-3 text-gray-500" />
+              <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="w-48">
             {onView && (
-              <DropdownMenuItem disabled={!!data.archived} onClick={() => onView(data.id)}>
+              <DropdownMenuItem onClick={() => onView(data.id)}>
                 Visualizar
               </DropdownMenuItem>
             )}
             {onEdit && (
-              <DropdownMenuItem disabled={!!data.archived} onClick={() => onEdit(data.id)}>
+              <DropdownMenuItem onClick={() => onEdit(data.id)}>
                 Editar
               </DropdownMenuItem>
             )}
-            {/* Removed Duplicate action per request */}
-            {(onEdit || onView || onDuplicate) && onDelete && <DropdownMenuSeparator />}
-            {onDelete && (
-              <DropdownMenuItem
-                onClick={() => onDelete(data.id)}
-                className="text-red-600 focus:text-red-600"
-              >
-                Excluir
-              </DropdownMenuItem>
+            
+            {/* Only show delete option if status is not approved or closed */}
+            {onDelete && data.status !== 'approved' && data.status !== 'closed' && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => onDelete(data.id)}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  Excluir
+                </DropdownMenuItem>
+              </>
             )}
+
+            {onDuplicate && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onDuplicate(data.id)}>
+                  Duplicar
+                </DropdownMenuItem>
+              </>
+            )}
+
             {/* Archive / Unarchive action */}
             {onArchive && (
               <>
