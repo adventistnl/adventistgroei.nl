@@ -19,7 +19,7 @@ export interface SubsidyRequestCardData {
   id: string
   title: string
   requested_at: string | Date
-  status: "pending" | "approved" | "rejected" | "in_review"
+  status: "pending" | "approved" | "rejected" | "in_review" | "closed"
   requested_amount: number
   approved_amount?: number
   rejection_reason?: string
@@ -86,6 +86,7 @@ export function SubsidyRequestCard({
     approved: { label: "Aprovado", className: "bg-green-50 text-green-700 border-green-200" },
     rejected: { label: "Rejeitado", className: "bg-red-50 text-red-700 border-red-200" },
     in_review: { label: "Em Análise", className: "bg-blue-50 text-blue-700 border-blue-200" },
+    closed: { label: "Encerrado", className: "bg-gray-50 text-gray-700 border-gray-200" },
   }
 
   const currentStatus = statusConfig[data.status]
@@ -142,33 +143,46 @@ export function SubsidyRequestCard({
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+              size="icon"
+              className="h-8 w-8 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
-              <MoreVertical className="h-3 w-3 text-gray-500" />
+              <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="w-48">
             {onView && (
-              <DropdownMenuItem disabled={!!data.archived} onClick={() => onView(data.id)}>
+              <DropdownMenuItem onClick={() => onView(data.id)}>
                 Visualizar
               </DropdownMenuItem>
             )}
             {onEdit && (
-              <DropdownMenuItem disabled={!!data.archived} onClick={() => onEdit(data.id)}>
+              <DropdownMenuItem onClick={() => onEdit(data.id)}>
                 Editar
               </DropdownMenuItem>
             )}
-            {/* Removed Duplicate action per request */}
-            {(onEdit || onView || onDuplicate) && onDelete && <DropdownMenuSeparator />}
+            
+            
             {onDelete && (
-              <DropdownMenuItem
-                onClick={() => onDelete(data.id)}
-                className="text-red-600 focus:text-red-600"
-              >
-                Excluir
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => onDelete(data.id)}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  Excluir
+                </DropdownMenuItem>
+              </>
             )}
+
+            {onDuplicate && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onDuplicate(data.id)}>
+                  Duplicar
+                </DropdownMenuItem>
+              </>
+            )}
+
             {/* Archive / Unarchive action */}
             {onArchive && (
               <>

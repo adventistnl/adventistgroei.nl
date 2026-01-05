@@ -29,41 +29,6 @@ interface RequestsByDepartmentChartProps {
   selectedYear?: number
 }
 
-const chartConfig = {
-  education: {
-    label: "Education",
-    color: "hsl(210, 100%, 50%)",
-  },
-  youthMinistry: {
-    label: "Youth Ministry",
-    color: "hsl(270, 95%, 60%)",
-  },
-  evangelism: {
-    label: "Evangelism",
-    color: "hsl(142, 71%, 45%)",
-  },
-  healthMinistry: {
-    label: "Health Ministry",
-    color: "hsl(43, 96%, 56%)",
-  },
-  communications: {
-    label: "Communications",
-    color: "hsl(340, 75%, 55%)",
-  },
-  sabbathSchool: {
-    label: "Sabbath School",
-    color: "hsl(160, 60%, 45%)",
-  },
-  womensMinistry: {
-    label: "Women's Ministry",
-    color: "hsl(300, 65%, 55%)",
-  },
-  adventurers: {
-    label: "Adventurers",
-    color: "hsl(30, 80%, 55%)",
-  },
-} satisfies ChartConfig
-
 export function RequestsByDepartmentChart({ 
   data, 
   loading,
@@ -72,72 +37,65 @@ export function RequestsByDepartmentChart({
   const { formatCurrency } = useCurrency()
   const [chartType, setChartType] = React.useState<"area" | "bar">("area")
 
-  // Transform data to show months on X-axis and departments as separate areas
-  const chartData = React.useMemo(() => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    const currentMonth = new Date().getMonth()
+  // Generate dynamic chart config based on actual departments in data
+  const chartConfig = React.useMemo(() => {
+    if (!data || data.length === 0) return {}
     
-    return months.map((month, index) => {
-      // Only show data up to current month
-      if (index > currentMonth) {
-        return {
-          month,
-          education: 0,
-          youthMinistry: 0,
-          evangelism: 0,
-          healthMinistry: 0,
-          communications: 0,
-          sabbathSchool: 0,
-          womensMinistry: 0,
-          adventurers: 0,
+    const departments = new Set<string>()
+    data.forEach(item => {
+      Object.keys(item).forEach(key => {
+        if (key !== 'month') {
+          departments.add(key)
         }
-      }
-      
-      // Generate realistic varying data for each department over time
-      const baseEducation = 12000 + Math.floor(Math.random() * 8000)
-      const baseYouth = 9000 + Math.floor(Math.random() * 6000)
-      const baseEvangelism = 7000 + Math.floor(Math.random() * 5000)
-      const baseHealth = 4000 + Math.floor(Math.random() * 3000)
-      const baseComms = 3000 + Math.floor(Math.random() * 2500)
-      const baseSabbath = 5000 + Math.floor(Math.random() * 4000)
-      const baseWomens = 4500 + Math.floor(Math.random() * 3500)
-      const baseAdventurers = 3500 + Math.floor(Math.random() * 2500)
-      
-      return {
-        month,
-        education: baseEducation,
-        youthMinistry: baseYouth,
-        evangelism: baseEvangelism,
-        healthMinistry: baseHealth,
-        communications: baseComms,
-        sabbathSchool: baseSabbath,
-        womensMinistry: baseWomens,
-        adventurers: baseAdventurers,
+      })
+    })
+    
+    const colors = [
+      "hsl(210, 100%, 50%)",   // Blue
+      "hsl(270, 95%, 60%)",    // Purple
+      "hsl(142, 71%, 45%)",    // Green
+      "hsl(43, 96%, 56%)",     // Yellow
+      "hsl(340, 75%, 55%)",    // Pink
+      "hsl(160, 60%, 45%)",    // Teal
+      "hsl(300, 65%, 55%)",    // Magenta
+      "hsl(30, 80%, 55%)",     // Orange
+      "hsl(190, 70%, 50%)",    // Cyan
+      "hsl(15, 85%, 60%)",     // Red-Orange
+    ]
+    
+    const config: any = {}
+    Array.from(departments).forEach((dept, index) => {
+      config[dept] = {
+        label: dept,
+        color: colors[index % colors.length]
       }
     })
-  }, [selectedYear])
+    
+    return config as ChartConfig
+  }, [data])
 
-  const totalByDepartment = React.useMemo(() => {
-    const totals = {
-      education: 0,
-      youthMinistry: 0,
-      evangelism: 0,
-      healthMinistry: 0,
-      communications: 0,
-      sabbathSchool: 0,
-      womensMinistry: 0,
-      adventurers: 0,
+  // Transform data to show months on X-axis and departments as separate areas
+  const chartData = React.useMemo(() => {
+    // If data is provided, use it; otherwise return empty
+    if (!data || data.length === 0) {
+      return []
     }
     
-    chartData.forEach(month => {
-      totals.education += month.education
-      totals.youthMinistry += month.youthMinistry
-      totals.evangelism += month.evangelism
-      totals.healthMinistry += month.healthMinistry
-      totals.communications += month.communications
-      totals.sabbathSchool += month.sabbathSchool
-      totals.womensMinistry += month.womensMinistry
-      totals.adventurers += month.adventurers
+    return data
+  }, [data])
+
+  const totalByDepartment = React.useMemo(() => {
+    const totals: Record<string, number> = {}
+    
+    chartData.forEach(monthData => {
+      Object.keys(monthData).forEach(key => {
+        if (key !== 'month') {
+          if (!totals[key]) {
+            totals[key] = 0
+          }
+          totals[key] += monthData[key] || 0
+        }
+      })
     })
     
     return totals
@@ -145,12 +103,16 @@ export function RequestsByDepartmentChart({
 
   const topDepartment = React.useMemo(() => {
     const entries = Object.entries(totalByDepartment)
+    if (entries.length === 0) {
+      return { name: 'N/A', total: 0 }
+    }
+    
     const top = entries.reduce((max, [dept, total]) => 
       total > max.total ? { dept, total } : max
     , { dept: '', total: 0 })
     
     return {
-      name: chartConfig[top.dept as keyof typeof chartConfig]?.label || top.dept,
+      name: top.dept || 'Unknown',
       total: top.total
     }
   }, [totalByDepartment])
@@ -258,70 +220,20 @@ export function RequestsByDepartmentChart({
                 />} 
               />
               <ChartLegend content={<ChartLegendContent />} />
-              <Area
-                dataKey="education"
-                type="monotone"
-                fill="var(--color-education)"
-                fillOpacity={0.4}
-                stroke="var(--color-education)"
-                stackId="a"
-              />
-              <Area
-                dataKey="youthMinistry"
-                type="monotone"
-                fill="var(--color-youthMinistry)"
-                fillOpacity={0.4}
-                stroke="var(--color-youthMinistry)"
-                stackId="a"
-              />
-              <Area
-                dataKey="evangelism"
-                type="monotone"
-                fill="var(--color-evangelism)"
-                fillOpacity={0.4}
-                stroke="var(--color-evangelism)"
-                stackId="a"
-              />
-              <Area
-                dataKey="healthMinistry"
-                type="monotone"
-                fill="var(--color-healthMinistry)"
-                fillOpacity={0.4}
-                stroke="var(--color-healthMinistry)"
-                stackId="a"
-              />
-              <Area
-                dataKey="communications"
-                type="monotone"
-                fill="var(--color-communications)"
-                fillOpacity={0.4}
-                stroke="var(--color-communications)"
-                stackId="a"
-              />
-              <Area
-                dataKey="sabbathSchool"
-                type="monotone"
-                fill="var(--color-sabbathSchool)"
-                fillOpacity={0.4}
-                stroke="var(--color-sabbathSchool)"
-                stackId="a"
-              />
-              <Area
-                dataKey="womensMinistry"
-                type="monotone"
-                fill="var(--color-womensMinistry)"
-                fillOpacity={0.4}
-                stroke="var(--color-womensMinistry)"
-                stackId="a"
-              />
-              <Area
-                dataKey="adventurers"
-                type="monotone"
-                fill="var(--color-adventurers)"
-                fillOpacity={0.4}
-                stroke="var(--color-adventurers)"
-                stackId="a"
-              />
+              {Object.keys(chartConfig).map((dept) => {
+                const config = chartConfig[dept as keyof typeof chartConfig]
+                return (
+                  <Area
+                    key={dept}
+                    dataKey={dept}
+                    type="monotone"
+                    fill={config?.color || 'hsl(210, 100%, 50%)'}
+                    fillOpacity={0.4}
+                    stroke={config?.color || 'hsl(210, 100%, 50%)'}
+                    stackId="a"
+                  />
+                )
+              })}
             </AreaChart>
           ) : (
             <BarChart accessibilityLayer data={chartData}>
@@ -344,54 +256,18 @@ export function RequestsByDepartmentChart({
                 />} 
               />
               <ChartLegend content={<ChartLegendContent />} />
-              <Bar
-                dataKey="education"
-                stackId="a"
-                fill="var(--color-education)"
-                radius={[0, 0, 0, 0]}
-              />
-              <Bar
-                dataKey="youthMinistry"
-                stackId="a"
-                fill="var(--color-youthMinistry)"
-                radius={[0, 0, 0, 0]}
-              />
-              <Bar
-                dataKey="evangelism"
-                stackId="a"
-                fill="var(--color-evangelism)"
-                radius={[0, 0, 0, 0]}
-              />
-              <Bar
-                dataKey="healthMinistry"
-                stackId="a"
-                fill="var(--color-healthMinistry)"
-                radius={[0, 0, 0, 0]}
-              />
-              <Bar
-                dataKey="communications"
-                stackId="a"
-                fill="var(--color-communications)"
-                radius={[0, 0, 0, 0]}
-              />
-              <Bar
-                dataKey="sabbathSchool"
-                stackId="a"
-                fill="var(--color-sabbathSchool)"
-                radius={[0, 0, 0, 0]}
-              />
-              <Bar
-                dataKey="womensMinistry"
-                stackId="a"
-                fill="var(--color-womensMinistry)"
-                radius={[0, 0, 0, 0]}
-              />
-              <Bar
-                dataKey="adventurers"
-                stackId="a"
-                fill="var(--color-adventurers)"
-                radius={[4, 4, 0, 0]}
-              />
+              {Object.keys(chartConfig).map((dept, index) => {
+                const config = chartConfig[dept as keyof typeof chartConfig]
+                return (
+                  <Bar
+                    key={dept}
+                    dataKey={dept}
+                    stackId="a"
+                    fill={config?.color || 'hsl(210, 100%, 50%)'}
+                    radius={index === Object.keys(chartConfig).length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                  />
+                )
+              })}
             </BarChart>
           )}
         </ChartContainer>

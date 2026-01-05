@@ -119,6 +119,18 @@ export interface SubsidyReceiptData {
 interface ProjectActivitiesTableProps {
   project: ProjectTableData
   activities?: ProjectActivityData[] // Optional: if provided, use these activities instead of mock data
+  subsidies?: Array<{
+    id: string
+    status: string  // 'pending' | 'approved' | 'rejected' | 'in_review' | 'closed'
+    items?: Array<{
+      id: string
+      activity_id?: string
+      project_activity_id?: string
+      activity?: {
+        id: string
+      }
+    }>
+  }> // Subsidy data to check if activity can be deleted
   filterSubsidized?: boolean
   statusFilter?: string
   priorityFilter?: string
@@ -180,6 +192,7 @@ const mockReceipts: SubsidyReceiptData[] = [
 export function ProjectActivitiesTable({
   project,
   activities,
+  subsidies = [],
   filterSubsidized,
   statusFilter = "all",
   priorityFilter = "all",
@@ -360,6 +373,8 @@ export function ProjectActivitiesTable({
     setIsDeleteModalOpen(true)
   }
 
+
+
   // Table columns
   const columns: ColumnDef<ProjectActivityData>[] = [
     {
@@ -537,6 +552,7 @@ export function ProjectActivitiesTable({
               <Settings className="w-4 h-4 mr-2" />
               {t('activities.table.manage_activity')}
             </DropdownMenuItem>
+            
             <DropdownMenuSeparator />
             <DropdownMenuItem 
               onClick={() => handleDeleteActivity(row.original)}

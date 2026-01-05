@@ -356,6 +356,7 @@ export const GET_SUBSIDY_REQUEST_BY_ID = gql`
       department_id
       church_id
       project_id
+      priority
       subsidy_status {
         id
         name
@@ -392,6 +393,55 @@ export const GET_SUBSIDY_REQUEST_BY_ID = gql`
           is_subsidized
         }
       }
+    }
+  }
+`;
+
+/**
+ * Add a message to subsidy request history
+ */
+export const ADD_SUBSIDY_REQUEST_MESSAGE = gql`
+  mutation AddSubsidyRequestMessage($id: String!, $message: String!) {
+    addSubsidyRequestMessage(id: $id, message: $message) {
+      id
+      subsidy_request_id
+      status_id
+      type
+      reason
+      changed_by
+      changed_at
+      status {
+        id
+        name
+      }
+      user {
+        id
+        name
+      }
+    }
+  }
+`;
+
+/**
+ * Update a subsidy request message
+ */
+export const UPDATE_SUBSIDY_REQUEST_MESSAGE = gql`
+  mutation UpdateSubsidyRequestMessage($id: String!, $message: String!) {
+    updateSubsidyRequestMessage(id: $id, message: $message) {
+      id
+      reason
+      changed_at
+    }
+  }
+`;
+
+/**
+ * Delete a subsidy request message
+ */
+export const DELETE_SUBSIDY_REQUEST_MESSAGE = gql`
+  mutation DeleteSubsidyRequestMessage($id: String!) {
+    deleteSubsidyRequestMessage(id: $id) {
+      id
     }
   }
 `;

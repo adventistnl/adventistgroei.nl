@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useMemo } from "react"
+import { useMutation, useQuery } from "@apollo/client"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
@@ -73,6 +74,8 @@ import {
   Legend,
   ResponsiveContainer
 } from "recharts"
+import { APPROVE_SUBSIDY_REQUEST, REJECT_SUBSIDY_REQUEST, UPDATE_SUBSIDY_REQUEST } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
+import { GET_ALL_SUBSIDY_STATUSES } from "@/graphql/queries/SUBSIDY_STATUS_QUERIES"
 
 interface SubsidyRequest {
   id: string
@@ -89,6 +92,16 @@ interface SubsidyRequest {
   total_budget: number
   priority: "low" | "medium" | "high"
   notes?: string
+  items?: Array<{
+    id: string
+    activity_id: string
+    activity_name: string
+    requested_amount: number
+    approved_amount: number
+    budget_amount: number
+    notes?: string
+  }>
+  department_name?: string
 }
 
 interface SubsidyApprovalsManagerProps {
@@ -100,6 +113,9 @@ interface SubsidyApprovalsManagerProps {
   description?: string
   showCharts?: boolean
   showKPICards?: boolean
+  subsidyData?: any
+  analyticsData?: any
+  refetchSubsidies?: () => Promise<any>
 }
 
 export function SubsidyApprovalsManager({
@@ -108,7 +124,10 @@ export function SubsidyApprovalsManager({
   isLoading = false,
   onRefresh,
   showCharts = true,
-  showKPICards = true
+  showKPICards = true,
+  subsidyData,
+  analyticsData,
+  refetchSubsidies
 }: SubsidyApprovalsManagerProps) {
   const { t } = useTranslation()
   const { formatCurrency } = useCurrency()
@@ -117,117 +136,109 @@ export function SubsidyApprovalsManager({
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table')
 
-  // Mock data para solicitações de subsídio
-  const [subsidyRequests, setSubsidyRequests] = useState<SubsidyRequest[]>([
-    {
-      id: '1',
-      title: 'Reforma do Templo Principal',
-      institution_name: 'União Central Brasileira',
-      church_name: 'Igreja Central de São Paulo',
-      requested_amount: 15000,
-      approved_amount: 12000,
-      status: 'approved',
-      requested_at: '2024-11-15',
-      reviewed_at: '2024-11-20',
-      reviewed_by: 'Carlos Ferreira',
-      activities_count: 5,
-      total_budget: 20000,
-      priority: 'high',
-      notes: 'Aprovado com redução de 20% conforme política institucional'
+  // Fetch all subsidy statuses for ID resolution
+  const { data: statusesData } = useQuery(GET_ALL_SUBSIDY_STATUSES)
+
+  // Mutations for approve/reject
+  const [approveSubsidyMutation] = useMutation(APPROVE_SUBSIDY_REQUEST, {
+    onCompleted: async () => {
+      toast.success("Subsídio aprovado com sucesso")
+      if (refetchSubsidies) {
+        await refetchSubsidies()
+      }
     },
-    {
-      id: '2',
-      title: 'Equipamentos para Escola Sabatina',
-      institution_name: 'União Central Brasileira',
-      church_name: 'Igreja do Jardim Europa',
-      requested_amount: 8000,
-      status: 'in_review',
-      requested_at: '2024-12-01',
-      activities_count: 3,
-      total_budget: 10000,
-      priority: 'medium'
+    onError: (err) => toast.error(`Erro ao aprovar: ${err.message}`)
+  })
+
+  const [rejectSubsidyMutation] = useMutation(REJECT_SUBSIDY_REQUEST, {
+    onCompleted: async () => {
+      toast.success("Subsídio rejeitado")
+      if (refetchSubsidies) {
+        await refetchSubsidies()
+      }
     },
-    {
-      id: '3',
-      title: 'Materiais para Programa de Jovens',
-      institution_name: 'Associação Paulista',
-      church_name: 'Igreja do Brooklin',
-      requested_amount: 5000,
-      status: 'rejected',
-      requested_at: '2024-10-10',
-      reviewed_at: '2024-10-25',
-      reviewed_by: 'Ana Costa',
-      activities_count: 2,
-      total_budget: 6000,
-      priority: 'low',
-      notes: 'Documentação incompleta'
+    onError: (err) => toast.error(`Erro ao rejeitar: ${err.message}`)
+  })
+
+  const [updateSubsidyMutation] = useMutation(UPDATE_SUBSIDY_REQUEST, {
+    onCompleted: async () => {
+      toast.success("Status atualizado com sucesso")
+      if (refetchSubsidies) {
+        await refetchSubsidies()
+      }
     },
-    {
-      id: '4',
-      title: 'Programa Missionário Trimestral',
-      institution_name: 'União Central Brasileira',
-      church_name: 'Igreja Vila Mariana',
-      requested_amount: 12000,
-      status: 'pending',
-      requested_at: '2024-12-20',
-      activities_count: 8,
-      total_budget: 18000,
-      priority: 'high'
-    },
-    {
-      id: '5',
-      title: 'Reforma da Cozinha Comunitária',
-      institution_name: 'Associação Paulista',
-      church_name: 'Igreja do Ipiranga',
-      requested_amount: 7500,
-      status: 'pending',
-      requested_at: '2024-12-18',
-      activities_count: 4,
-      total_budget: 9500,
-      priority: 'medium'
-    },
-    {
-      id: '6',
-      title: 'Material para Classe Bíblica',
-      institution_name: 'União Sul Brasileira',
-      church_name: 'Igreja de Curitiba Central',
-      requested_amount: 3000,
-      status: 'in_review',
-      requested_at: '2024-12-10',
-      activities_count: 2,
-      total_budget: 4000,
-      priority: 'low'
+    onError: (err) => toast.error(`Erro ao atualizar status: ${err.message}`)
+  })
+
+  // Helper function to get status ID by name from the statuses query
+  const getStatusIdByName = (statusName: string): string | null => {
+    if (!statusesData?.subsidyStatuses) return null
+    
+    const status = statusesData.subsidyStatuses.find((s: any) => 
+      s.name?.toUpperCase() === statusName.toUpperCase()
+    )
+    return status?.id || null
+  }
+
+  // Transform backend data to component format
+  const mapBackendStatus = (statusName: string): SubsidyRequest['status'] => {
+    const statusMap: Record<string, SubsidyRequest['status']> = {
+      'PENDING': 'pending',
+      'IN_REVIEW': 'in_review',
+      'APPROVED': 'approved',
+      'REJECTED': 'rejected',
+      'CLOSED': 'closed'
     }
-  ])
+    return statusMap[statusName?.toUpperCase()] || 'pending'
+  }
+
+  const subsidyRequests: SubsidyRequest[] = useMemo(() => {
+    if (!subsidyData?.subsidyRequests) return []
+    
+    return subsidyData.subsidyRequests.map((request: any) => ({
+      id: request.id,
+      title: request.description || request.project?.title || 'Solicitação sem título',
+      institution_name: request.institution?.name || '',
+      church_name: request.church?.name,
+      requested_amount: parseFloat(request.total_budget) || 0,
+      approved_amount: request.approved_amount ? parseFloat(request.approved_amount) : undefined,
+      status: mapBackendStatus(request.subsidy_status?.name),
+      requested_at: request.created_at,
+      reviewed_at: request.approved_at,
+      reviewed_by: request.approved_by,
+      activities_count: request.items?.length || 0,
+      total_budget: parseFloat(request.total_budget) || 0,
+      priority: 'medium' as const, // Default priority
+      notes: request.rejection_reason,
+      items: request.items?.map((item: any) => ({
+        id: item.id,
+        activity_id: item.project_activity_id,
+        activity_name: item.project_activity?.name || 'Unknown',
+        requested_amount: parseFloat(item.requested_amount) || 0,
+        approved_amount: parseFloat(item.approved_amount) || 0,
+        budget_amount: parseFloat(item.project_activity?.budget_amount) || 0,
+        notes: item.notes
+      })) || [],
+      department_name: request.department?.name || 'Other'
+    }))
+  }, [subsidyData])
 
   // KPI Data
+  // KPI Data from Backend
   const kpiData = useMemo(() => {
-    const totalRequests = subsidyRequests.length
-    const pendingRequests = subsidyRequests.filter(r => r.status === 'pending').length
-    const inReviewRequests = subsidyRequests.filter(r => r.status === 'in_review').length
-    const approvedRequests = subsidyRequests.filter(r => r.status === 'approved').length
-    const rejectedRequests = subsidyRequests.filter(r => r.status === 'rejected').length
+    const kpis = analyticsData?.subsidyKPIs || {}
     
-    const totalRequested = subsidyRequests.reduce((sum, r) => sum + r.requested_amount, 0)
-    const totalApproved = subsidyRequests
-      .filter(r => r.status === 'approved')
-      .reduce((sum, r) => sum + (r.approved_amount || 0), 0)
-    
-    const approvalRate = totalRequests > 0 
-      ? Math.round((approvedRequests / totalRequests) * 100) 
-      : 0
-
     return {
-      totalRequests,
-      pendingRequests,
-      inReviewRequests,
-      approvedRequests,
-      rejectedRequests,
-      totalRequested,
-      totalApproved,
-      approvalRate
+      totalRequests: kpis.totalRequests || 0,
+      pendingRequests: kpis.pendingRequests || 0,
+      inReviewRequests: kpis.inReviewRequests || 0,
+      approvedRequests: kpis.approvedRequests || 0,
+      rejectedRequests: kpis.rejectedRequests || 0,
+      totalRequested: kpis.totalRequested || 0,
+      totalApproved: kpis.totalApproved || 0,
+      approvalRate: kpis.approvalRate || 0
     }
-  }, [subsidyRequests])
+  }, [analyticsData])
 
   const kpiCardsData: KPICardData[] = useMemo(() => [
     {
@@ -293,30 +304,59 @@ export function SubsidyApprovalsManager({
   ], [kpiData, formatCurrency])
 
   // Chart data
+  // Chart data from Backend returns
   const chartData = useMemo(() => {
-    return {
-      byStatus: [
-        { status: 'Pending', count: kpiData.pendingRequests, fill: '#f59e0b' },
-        { status: 'In Review', count: kpiData.inReviewRequests, fill: '#3b82f6' },
-        { status: 'Approved', count: kpiData.approvedRequests, fill: '#10b981' },
-        { status: 'Rejected', count: kpiData.rejectedRequests, fill: '#ef4444' }
-      ],
-      byMonth: [
-        { month: 'Aug', requests: 12, approved: 8 },
-        { month: 'Sep', requests: 15, approved: 11 },
-        { month: 'Oct', requests: 18, approved: 14 },
-        { month: 'Nov', requests: 22, approved: 17 },
-        { month: 'Dec', requests: 28, approved: 21 }
-      ],
-      byDepartment: [
-        { department: "Education", q1: 15000, q2: 18000, q3: 20000, q4: 15000 },
-        { department: "Youth Ministry", q1: 12000, q2: 11000, q3: 14000, q4: 10000 },
-        { department: "Evangelism", q1: 9000, q2: 10000, q3: 11000, q4: 8000 },
-        { department: "Health Ministry", q1: 5000, q2: 6000, q3: 6500, q4: 4000 },
-        { department: "Communications", q1: 4000, q2: 4500, q3: 5000, q4: 3500 },
-      ]
+    // If no analytics data, return empty structures
+    if (!analyticsData) {
+      return {
+        byStatus: [],
+        byMonth: [],
+        byDepartment: []
+      }
     }
-  }, [kpiData, subsidyRequests])
+
+    // Map backend data to frontend chart formats
+    
+    // 1. By Department (RequestsByDepartmentChart)
+    // Backend returns [{ month, department, amount }]
+    // Frontend needs [{ month: 'Jan', 'Dept A': 100, 'Dept B': 200 }]
+    const byDepartmentData: any[] = []
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    
+    if (analyticsData.subsidyByDepartment) {
+      // Group by month
+      const groupedByMonth: Record<string, any> = {}
+      
+      analyticsData.subsidyByDepartment.forEach((item: any) => {
+        if (!groupedByMonth[item.month]) {
+          groupedByMonth[item.month] = { month: item.month }
+        }
+        groupedByMonth[item.month][item.department] = item.amount
+      })
+      
+      // Convert to array and sort by month index
+      // Note: Backend returns month abbreviations like 'Jan', 'Feb'
+      byDepartmentData.push(...Object.values(groupedByMonth).sort((a: any, b: any) => {
+        return months.indexOf(a.month) - months.indexOf(b.month)
+      }))
+    }
+
+    // 2. By Month (RequestsOverTimeChart)
+    // Backend returns [{ month: 'January', approved, pending, rejected, quarter }]
+    // Frontend expects same structure
+    const byMonthData = analyticsData.subsidyByMonth || []
+
+    // 3. By Status (StatusOverviewChart)
+    // Backend returns [{ status, count, fill }]
+    // Frontend expects same structure, mapped to local colors if needed, but backend sends fill
+    const byStatusData = analyticsData.subsidyByStatus || []
+
+    return {
+      byStatus: byStatusData,
+      byMonth: byMonthData,
+      byDepartment: byDepartmentData
+    }
+  }, [analyticsData])
 
   // Handlers
   const handleRefresh = async () => {
@@ -324,6 +364,9 @@ export function SubsidyApprovalsManager({
     const refreshToast = toast.loading("Refreshing subsidy requests...")
     
     try {
+      if (refetchSubsidies) {
+        await refetchSubsidies()
+      }
       if (onRefresh) {
         await onRefresh()
       }
@@ -344,58 +387,57 @@ export function SubsidyApprovalsManager({
     }
   }
 
-  const handleApprove = (subsidyId: string) => {
+  const handleApprove = async (subsidyId: string) => {
     const subsidy = subsidyRequests.find(r => r.id === subsidyId)
     if (!subsidy) return
 
-    const updatedRequests = subsidyRequests.map(request =>
-      request.id === subsidyId
-        ? {
-            ...request,
-            status: 'approved' as const,
-            approved_amount: request.requested_amount,
-            reviewed_at: new Date().toISOString(),
-            reviewed_by: 'Admin User'
-          }
-        : request
-    )
-
-    setSubsidyRequests(updatedRequests)
-    toast.success(`Subsidy "${subsidy.title}" approved successfully`)
+    try {
+      await approveSubsidyMutation({
+        variables: {
+          id: subsidyId,
+          approved_amount: subsidy.requested_amount
+        }
+      })
+    } catch (error) {
+      // Error handled by mutation onError
+    }
   }
 
-  const handleReject = (subsidyId: string) => {
+  const handleReject = async (subsidyId: string) => {
     const subsidy = subsidyRequests.find(r => r.id === subsidyId)
     if (!subsidy) return
 
-    const updatedRequests = subsidyRequests.map(request =>
-      request.id === subsidyId
-        ? {
-            ...request,
-            status: 'rejected' as const,
-            reviewed_at: new Date().toISOString(),
-            reviewed_by: 'Admin User',
-            notes: 'Rejected by administrator'
-          }
-        : request
-    )
-
-    setSubsidyRequests(updatedRequests)
-    toast.success(`Subsidy "${subsidy.title}" rejected`)
+    try {
+      await rejectSubsidyMutation({
+        variables: {
+          id: subsidyId,
+          rejection_reason: 'Rejeitado pelo administrador'
+        }
+      })
+    } catch (error) {
+      // Error handled by mutation onError
+    }
   }
 
-  const handleMarkInReview = (subsidyId: string) => {
-    const subsidy = subsidyRequests.find(r => r.id === subsidyId)
-    if (!subsidy) return
-
-    const updatedRequests = subsidyRequests.map(request =>
-      request.id === subsidyId
-        ? { ...request, status: 'in_review' as const }
-        : request
-    )
-
-    setSubsidyRequests(updatedRequests)
-    toast.success(`Subsidy "${subsidy.title}" marked as in review`)
+  const handleMarkInReview = async (subsidyId: string) => {
+    const statusId = getStatusIdByName('IN_REVIEW')
+    if (!statusId) {
+      toast.error('Status "Em Análise" não encontrado')
+      return
+    }
+    
+    try {
+      await updateSubsidyMutation({
+        variables: {
+          id: subsidyId,
+          data: {
+            subsidy_status_id: statusId
+          }
+        }
+      })
+    } catch (error) {
+      // Error handled by mutation onError
+    }
   }
 
   // Status configuration
@@ -510,11 +552,12 @@ export function SubsidyApprovalsManager({
       header: "Status",
       cell: ({ row }) => {
         const config = statusConfig[row.original.status]
-        const dotColors = {
+        const dotColors: Record<SubsidyRequest['status'], string> = {
           pending: 'bg-amber-500',
           in_review: 'bg-blue-500',
           approved: 'bg-green-500',
-          rejected: 'bg-red-500'
+          rejected: 'bg-red-500',
+          closed: 'bg-gray-500'
         }
         return (
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 w-fit">
@@ -640,38 +683,41 @@ export function SubsidyApprovalsManager({
     }
   ]
 
-  const handleKanbanItemMove = (itemId: string, fromGroupId: string, toGroupId: string) => {
-    const statusMap: Record<string, SubsidyRequest["status"]> = {
-      'pending': 'pending',
-      'in_review': 'in_review',
-      'approved': 'approved',
-      'closed': 'closed',
-      'rejected': 'rejected'
-    }
+  const handleKanbanItemMove = async (itemId: string, fromGroupId: string, toGroupId: string) => {
+    const subsidy = subsidyRequests.find(r => r.id === itemId)
+    if (!subsidy) return
 
-    const newStatus = statusMap[toGroupId]
-    if (!newStatus) return
-
-    const updatedRequests = subsidyRequests.map(request =>
-      request.id === itemId
-        ? { 
-            ...request, 
-            status: newStatus,
-            ...(newStatus === 'approved' && { 
-              approved_amount: request.requested_amount,
-              reviewed_at: new Date().toISOString(),
-              reviewed_by: 'Admin User'
-            }),
-            ...(newStatus === 'rejected' && { 
-              reviewed_at: new Date().toISOString(),
-              reviewed_by: 'Admin User'
-            })
+    try {
+      // Handle approve/reject via specific mutations
+      if (toGroupId === 'approved') {
+        await handleApprove(itemId)
+      } else if (toGroupId === 'rejected') {
+        await handleReject(itemId)
+      } else if (toGroupId === 'pending' || toGroupId === 'in_review' || toGroupId === 'closed') {
+        // Get status ID by name
+        const statusName = toGroupId.toUpperCase()
+        const statusId = getStatusIdByName(statusName)
+        
+        if (!statusId) {
+          toast.error(`Status "${toGroupId}" não encontrado`)
+          return
+        }
+        
+        // Use UPDATE_SUBSIDY_REQUEST for other status changes
+        await updateSubsidyMutation({
+          variables: {
+            id: itemId,
+            data: {
+              subsidy_status_id: statusId
+            }
           }
-        : request
-    )
-
-    setSubsidyRequests(updatedRequests)
-    toast.success('Subsidy status updated')
+        })
+      } else {
+        toast.error('Status inválido')
+      }
+    } catch (error) {
+      console.error('Error updating subsidy status:', error)
+    }
   }
 
   // Custom Kanban Item Renderer
@@ -833,9 +879,6 @@ export function SubsidyApprovalsManager({
             <UseTable
               data={subsidyRequests}
               columns={subsidyColumns}
-              searchPlaceholder="Search requests..."
-              enableFiltering
-              enableSorting
             />
           ) : (
             <KanbanBoard
@@ -844,7 +887,6 @@ export function SubsidyApprovalsManager({
               actions={kanbanActions}
               onItemMove={handleKanbanItemMove}
               renderItem={renderKanbanItem}
-              emptyStateMessage="No subsidy requests in this status"
             />
           )}
         </CardContent>
@@ -858,13 +900,11 @@ export function SubsidyApprovalsManager({
             setIsViewModalOpen(false)
             setSelectedSubsidy(null)
           }}
-          subsidy={{
-            id: selectedSubsidy.id,
-            title: selectedSubsidy.title,
-            requested_at: selectedSubsidy.requested_at,
-            status: selectedSubsidy.status,
-            requested_amount: selectedSubsidy.requested_amount,
-            institution_name: selectedSubsidy.institution_name
+          subsidy={selectedSubsidy}
+          onSubsidyUpdated={async () => {
+            if (refetchSubsidies) {
+              await refetchSubsidies()
+            }
           }}
         />
       )}

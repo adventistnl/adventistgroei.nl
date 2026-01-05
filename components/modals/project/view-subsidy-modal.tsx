@@ -27,7 +27,7 @@ import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { useSubsidyReceipts, SubsidyReceipt } from "@/hooks/use-subsidy-receipts"
 import { useMutation, useQuery } from "@apollo/client"
-import { UPDATE_SUBSIDY_REQUEST, APPROVE_SUBSIDY_REQUEST, REJECT_SUBSIDY_REQUEST } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
+import { UPDATE_SUBSIDY_REQUEST, APPROVE_SUBSIDY_REQUEST, REJECT_SUBSIDY_REQUEST, ADD_SUBSIDY_REQUEST_MESSAGE, UPDATE_SUBSIDY_REQUEST_MESSAGE, DELETE_SUBSIDY_REQUEST_MESSAGE } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
 import { GET_SUBSIDY_STATUS_HISTORY } from "@/graphql/queries/SUBSIDY_STATUS_HISTORY_QUERIES"
 
 interface ActivityItem {
@@ -58,6 +58,7 @@ interface StatusHistoryItem {
   changed_by: string
   changed_at: Date
   isNew: boolean
+  type?: "STATUS_CHANGE" | "PRIORITY_CHANGE" | "COMMENT" | "DOCUMENT_ACTION"
 }
 
 interface ViewSubsidyModalProps {
@@ -157,6 +158,30 @@ export function ViewSubsidyModal({
     onError: (error) => {
       toast.error(`Erro ao rejeitar subsídio: ${error.message}`)
       console.error("Error rejecting subsidy:", error)
+    }
+  })
+
+  const [addSubsidyRequestMessage] = useMutation(ADD_SUBSIDY_REQUEST_MESSAGE, {
+    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
+    onError: (error) => {
+      console.error("Error adding message:", error)
+      toast.error("Erro ao enviar mensagem")
+    }
+  })
+
+  const [updateSubsidyRequestMessage] = useMutation(UPDATE_SUBSIDY_REQUEST_MESSAGE, {
+    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
+    onError: (error) => {
+      console.error("Error updating message:", error)
+      toast.error("Erro ao atualizar mensagem")
+    }
+  })
+
+  const [deleteSubsidyRequestMessage] = useMutation(DELETE_SUBSIDY_REQUEST_MESSAGE, {
+    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
+    onError: (error) => {
+      console.error("Error deleting message:", error)
+      toast.error("Erro ao deletar mensagem")
     }
   })
 
@@ -271,10 +296,15 @@ export function ViewSubsidyModal({
   const { data: historyData, loading: historyLoading } = useQuery(
     GET_SUBSIDY_STATUS_HISTORY,
     {
-      variables: { subsidyRequestId: subsidy?.id },
+      variables: {
+        subsidyRequestId: subsidy?.id
+      },
       skip: !subsidy?.id,
     }
   )
+
+  // Mutations
+
 
   // Transform history data from backend to UI format
   const statusHistory = React.useMemo<StatusHistoryItem[]>(() => {
@@ -283,6 +313,7 @@ export function ViewSubsidyModal({
     return historyData.getSubsidyStatusHistory.map((item: any) => ({
       id: item.id,
       status: item.status.name.toLowerCase(),
+      type: item.type,
       reason: item.reason || '',
       changed_by: item.user.name,
       changed_at: new Date(item.changed_at),
@@ -314,19 +345,24 @@ export function ViewSubsidyModal({
     }
   }, [commentingDocument, mentionMode, editingMessage])
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!newMessage.trim()) return
 
     // Handle editing existing message
     if (editingMessage) {
-      setMessages(prev => prev.map(msg => 
-        msg.id === editingMessage 
-          ? { ...msg, reason: newMessage, changed_at: new Date() }
-          : msg
-      ))
-      toast.success("Comentário atualizado")
-      setEditingMessage(null)
-      setNewMessage("")
+      try {
+        await updateSubsidyRequestMessage({
+          variables: {
+            id: editingMessage,
+            message: newMessage
+          }
+        })
+        toast.success("Comentário atualizado")
+        setEditingMessage(null)
+        setNewMessage("")
+      } catch (error) {
+        // Error handled in useMutation
+      }
       return
     }
 
@@ -354,39 +390,53 @@ export function ViewSubsidyModal({
     }
 
     // Handle regular message
-    let messageText = newMessage
-    
-    // Add status mention if present
-    if (mentionStatus) {
-      const statusLabel = statusConfig[mentionStatus].label
-      messageText = `@Status: ${statusLabel} - ${messageText}`
-    }
-    
-    // Add priority mention if present
-    if (mentionPriority) {
-      const priorityLabel = mentionPriority === 'high' ? 'Alta' : mentionPriority === 'medium' ? 'Média' : 'Baixa'
-      messageText = `@Prioridade: ${priorityLabel} - ${messageText}`
-    }
-    
-    const message: StatusHistoryItem = {
-      id: `msg-${Date.now()}`,
-      status: subsidy?.status || "pending",
-      reason: messageText,
-      changed_by: "Você",
-      changed_at: new Date(),
-      isNew: false
+    const sendAsyncMessage = async () => {
+      let messageText = newMessage
+      
+      // Add status mention if present
+      if (mentionStatus) {
+        const statusLabel = statusConfig[mentionStatus].label
+        messageText = `@Status: ${statusLabel} - ${messageText}`
+      }
+      
+      // Add priority mention if present
+      if (mentionPriority) {
+        const priorityLabel = mentionPriority === 'high' ? 'Alta' : mentionPriority === 'medium' ? 'Média' : 'Baixa'
+        messageText = `@Prioridade: ${priorityLabel} - ${messageText}`
+      }
+      
+      try {
+        await addSubsidyRequestMessage({
+          variables: {
+            id: subsidy?.id,
+            message: messageText
+          }
+        })
+        
+        setNewMessage("")
+        setMentionStatus(null)
+        setMentionPriority(null)
+        toast.success("Mensagem enviada")
+      } catch (error) {
+        console.error('Error sending message:', error)
+        toast.error('Erro ao enviar mensagem')
+      }
     }
 
-    setMessages(prev => [...prev, message])
-    setNewMessage("")
-    setMentionStatus(null)
-    setMentionPriority(null)
-    toast.success("Mensagem enviada")
+    sendAsyncMessage()
   }
 
-  const handleDeleteMessage = (messageId: string) => {
-    setMessages(prev => prev.filter(msg => msg.id !== messageId))
-    toast.success("Comentário deletado")
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!confirm("Tem certeza que deseja deletar este comentário?")) return
+
+    try {
+      await deleteSubsidyRequestMessage({
+        variables: { id: messageId }
+      })
+      toast.success("Comentário deletado")
+    } catch (error) {
+      // Error handled in useMutation
+    }
   }
 
   const handleEditMessage = (message: StatusHistoryItem) => {
@@ -502,6 +552,11 @@ export function ViewSubsidyModal({
       icon: AlertCircle,
       className: "text-blue-500"
     },
+    closed: {
+      label: "Fechado",
+      icon: Ban,
+      className: "text-gray-500"
+    }
   }
 
   const currentStatus = statusConfig[currentSubsidyStatus]
@@ -742,32 +797,65 @@ export function ViewSubsidyModal({
                   <DropdownMenuContent align="start">
                     <DropdownMenuLabel>Alterar Prioridade</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => {
+                    <DropdownMenuItem onClick={async () => {
                       setCurrentPriority('high')
                       setMentionPriority('high')
                       setNewMessage('Alteração de prioridade para Alta')
                       chatInputRef.current?.focus()
-                      toast.success('Prioridade alterada para Alta')
+                      try {
+                        await updateSubsidyRequest({
+                          variables: {
+                            id: subsidy.id,
+                            data: { priority: 'HIGH' }
+                          }
+                        })
+                        toast.success('Prioridade alterada para Alta')
+                        onSubsidyUpdated?.()
+                      } catch (error) {
+                        toast.error('Erro ao alterar prioridade')
+                      }
                     }}>
                       <div className="w-2 h-2 rounded-full bg-red-500 mr-2" />
                       Alta
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {
+                    <DropdownMenuItem onClick={async () => {
                       setCurrentPriority('medium')
                       setMentionPriority('medium')
                       setNewMessage('Alteração de prioridade para Média')
                       chatInputRef.current?.focus()
-                      toast.success('Prioridade alterada para Média')
+                      try {
+                        await updateSubsidyRequest({
+                          variables: {
+                            id: subsidy.id,
+                            data: { priority: 'MEDIUM' }
+                          }
+                        })
+                        toast.success('Prioridade alterada para Média')
+                        onSubsidyUpdated?.()
+                      } catch (error) {
+                        toast.error('Erro ao alterar prioridade')
+                      }
                     }}>
                       <div className="w-2 h-2 rounded-full bg-yellow-500 mr-2" />
                       Média
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {
+                    <DropdownMenuItem onClick={async () => {
                       setCurrentPriority('low')
                       setMentionPriority('low')
                       setNewMessage('Alteração de prioridade para Baixa')
                       chatInputRef.current?.focus()
-                      toast.success('Prioridade alterada para Baixa')
+                      try {
+                        await updateSubsidyRequest({
+                          variables: {
+                            id: subsidy.id,
+                            data: { priority: 'LOW' }
+                          }
+                        })
+                        toast.success('Prioridade alterada para Baixa')
+                        onSubsidyUpdated?.()
+                      } catch (error) {
+                        toast.error('Erro ao alterar prioridade')
+                      }
                     }}>
                       <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
                       Baixa
