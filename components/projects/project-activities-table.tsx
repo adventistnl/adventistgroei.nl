@@ -373,33 +373,7 @@ export function ProjectActivitiesTable({
     setIsDeleteModalOpen(true)
   }
 
-  /**
-   * Check if an activity can be deleted
-   * Returns false if activity has subsidies with APPROVED or CLOSED status
-   */
-  const canDeleteActivity = (activityId: string): boolean => {
-    if (!subsidies || subsidies.length === 0) return true
 
-    const blockedStatuses = ['approved', 'closed']
-    
-    // Find subsidies that have items linked to this activity
-    const linkedSubsidies = subsidies.filter(subsidy => {
-      if (!subsidy.items || subsidy.items.length === 0) return false
-      
-      return subsidy.items.some(item => {
-        // Check both possible field names
-        const itemActivityId = item.project_activity_id || item.activity_id || item.activity?.id
-        return itemActivityId === activityId
-      })
-    })
-
-    // Check if any linked subsidy has a blocked status
-    const hasBlockedSubsidy = linkedSubsidies.some(subsidy =>
-      blockedStatuses.includes(subsidy.status?.toLowerCase())
-    )
-
-    return !hasBlockedSubsidy
-  }
 
   // Table columns
   const columns: ColumnDef<ProjectActivityData>[] = [
@@ -579,19 +553,14 @@ export function ProjectActivitiesTable({
               {t('activities.table.manage_activity')}
             </DropdownMenuItem>
             
-            {/* Only show delete if activity can be deleted */}
-            {canDeleteActivity(row.original.id) && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={() => handleDeleteActivity(row.original)}
-                  className="text-red-600 focus:text-red-600"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  {t('activities.table.remove')}
-                </DropdownMenuItem>
-              </>
-            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={() => handleDeleteActivity(row.original)}
+              className="text-red-600 focus:text-red-600"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              {t('activities.table.remove')}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),

@@ -84,6 +84,14 @@ export const projectTranslations = {
       filterApplied: "Filter applied successfully"
     },
     
+    // Error messages
+    errors: {
+      cannotDeleteProjectWithApprovedSubsidies: "Cannot delete project with approved or closed subsidy requests. Please change the status of associated subsidies first.",
+      cannotDeleteActivityWithApprovedSubsidies: "Cannot delete activity with approved or closed subsidy requests. Please change the status first.",
+      cannotDeleteApprovedSubsidy: "Cannot delete approved or closed subsidy requests.",
+      genericDeleteError: "Failed to delete. Please try again."
+    },
+    
     // Steps
     steps: {
       projectInfo: "Project Info",
@@ -337,6 +345,12 @@ export const projectTranslations = {
     viewProject: "View Project",
     editProject: "Edit Project",
     deleteProject: "Delete Project",
+    deleteProjectConfirmTitle: "Delete Project?",
+    deleteProjectConfirmDesc: "Are you sure you want to delete this project? This action cannot be undone.",
+    deleteProjectWarning: "This action cannot be undone",
+    deleteProjectButton: "Delete Permanently",
+    deleteProjectUnderstand: "I understand that this action is permanent and cannot be undone",
+    deleteProjectTypeConfirm: "Type 'delete' to confirm",
     shareProject: "Share Project",
     manageVolunteers: "Manage Volunteers",
     joinAsVolunteer: "Join as Volunteer",
@@ -517,6 +531,14 @@ export const projectTranslations = {
       dataRefreshed: "Data succesvol ververst!",
       errorLoading: "Fout bij laden van projecten data",
       filterApplied: "Filter succesvol toegepast"
+    },
+    
+    // Error messages
+    errors: {
+      cannotDeleteProjectWithApprovedSubsidies: "Kan project niet verwijderen met goedgekeurde of afgesloten subsidie aanvragen. Wijzig eerst de status van de gekoppelde subsidies.",
+      cannotDeleteActivityWithApprovedSubsidies: "Kan activiteit niet verwijderen met goedgekeurde of afgesloten subsidie aanvragen. Wijzig eerst de status.",
+      cannotDeleteApprovedSubsidy: "Kan goedgekeurde of afgesloten subsidie aanvragen niet verwijderen.",
+      genericDeleteError: "Verwijderen mislukt. Probeer het opnieuw."
     },
     
     // Steps
@@ -772,6 +794,12 @@ export const projectTranslations = {
     viewProject: "Bekijk Project",
     editProject: "Bewerk Project",
     deleteProject: "Verwijder Project",
+    deleteProjectConfirmTitle: "Project Verwijderen?",
+    deleteProjectConfirmDesc: "Weet je zeker dat je dit project wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+    deleteProjectWarning: "Deze actie kan niet ongedaan worden gemaakt",
+    deleteProjectButton: "Permanent Verwijderen",
+    deleteProjectUnderstand: "Ik begrijp dat deze actie permanent is en niet ongedaan kan worden gemaakt",
+    deleteProjectTypeConfirm: "Typ 'delete' om te bevestigen",
     shareProject: "Deel Project",
     manageVolunteers: "Beheer Vrijwilligers",
     joinAsVolunteer: "Word Vrijwilliger",
@@ -953,6 +981,14 @@ export const projectTranslations = {
       dataRefreshed: "Dados atualizados com sucesso!",
       errorLoading: "Erro ao carregar dados dos projetos",
       filterApplied: "Filtro aplicado com sucesso"
+    },
+    
+    // Error messages
+    errors: {
+      cannotDeleteProjectWithApprovedSubsidies: "Não é possível excluir projeto com pedidos de subsídio aprovados ou concluídos. Altere o status dos subsídios associados primeiro.",
+      cannotDeleteActivityWithApprovedSubsidies: "Não é possível excluir atividade com pedidos de subsídio aprovados ou concluídos. Altere o status primeiro.",
+      cannotDeleteApprovedSubsidy: "Não é possível excluir pedidos de subsídio aprovados ou concluídos.",
+      genericDeleteError: "Falha ao excluir. Tente novamente."
     },
     
     // Steps
@@ -1208,6 +1244,12 @@ export const projectTranslations = {
     viewProject: "Ver Projeto",
     editProject: "Editar Projeto",
     deleteProject: "Excluir Projeto",
+    deleteProjectConfirmTitle: "Excluir Projeto?",
+    deleteProjectConfirmDesc: "Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.",
+    deleteProjectWarning: "Esta ação não pode ser desfeita",
+    deleteProjectButton: "Excluir Permanentemente",
+    deleteProjectUnderstand: "Eu entendo que esta ação é permanente e não pode ser desfeita",
+    deleteProjectTypeConfirm: "Digite 'delete' para confirmar",
     shareProject: "Compartilhar Projeto",
     manageVolunteers: "Gerenciar Voluntários",
     joinAsVolunteer: "Participar como Voluntário",

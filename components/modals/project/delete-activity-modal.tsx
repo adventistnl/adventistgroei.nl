@@ -14,6 +14,7 @@ import {
 import { DELETE_PROJECT_ACTIVITY } from "@/graphql/mutations/PROJECT_ACTIVITY_MUTATIONS"
 import { GET_PROJECT_BY_ID_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { ActivityTags } from "@/types/graphql-global-types"
+import { projectTranslations } from "@/lib/translations/projects"
 
 import toast from "react-hot-toast"
 
@@ -52,7 +53,7 @@ export function DeleteActivityModal({
   activity,
   onSuccess
 }: DeleteActivityModalProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [understoodConsequences, setUnderstoodConsequences] = useState(false)
   const [finalConfirmation, setFinalConfirmation] = useState('')
@@ -85,10 +86,33 @@ export function DeleteActivityModal({
         onSuccess(activity)
       }
       onOpenChangeAction(false)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting activity:", error)
       toast.dismiss(loadingToast)
-      toast.error(t('activities.toasts.delete_failed'))
+      
+      // Apollo can return errors in different ways
+      let graphQLError = error?.graphQLErrors?.[0]
+      if (!graphQLError && error?.networkError?.result?.errors) {
+        graphQLError = error.networkError.result.errors[0]
+      }
+      
+      const extensions = graphQLError?.extensions
+      const errorCode = extensions?.context?.additional?.errorCode
+      
+      const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+      let errorMessage = t_project.errors?.genericDeleteError || 'Failed to delete activity'
+      
+      if (errorCode === 'ACTIVITY_HAS_APPROVED_SUBSIDIES') {
+        errorMessage = t_project.errors?.cannotDeleteActivityWithApprovedSubsidies || graphQLError?.message
+      } else if (graphQLError?.message) {
+        errorMessage = graphQLError.message
+      } else if (error?.message) {
+        errorMessage = error.message
+      }
+      
+      toast.error(errorMessage, {
+        duration: 5000
+      })
     } finally {
       setIsLoading(false)
     }

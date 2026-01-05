@@ -40,6 +40,7 @@ import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-caro
 import { UseTable } from "@/components/ui/use-table"
 import { createProjectColumns } from "@/components/projects/projects-table-columns"
 import { EditProjectModal } from "@/components/modals/project/edit-project-modal"
+import { DeleteProjectModal } from "@/components/modals/project/delete-project-modal"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
 
@@ -50,6 +51,7 @@ export default function ProjectsPage() {
   const { selectedCurrency, formatCurrency } = useCurrency()
   const [refreshing, setRefreshing] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedProject, setSelectedProject] = useState<ProjectTableData | undefined>(undefined)
 
   const institutionId = currentInstitutionData?.id
@@ -372,23 +374,15 @@ export default function ProjectsPage() {
     setSelectedProject(undefined)
   }
 
-  const handleDeleteProject = async (project: ProjectTableData) => {
-    // Show confirmation before deleting
-    if (window.confirm(`${t_project.deleteProject}: "${project.title}"?`)) {
-      const deleteToast = toast.loading(`Deleting project: ${project.title}...`)
+  const handleDeleteProject = (project: ProjectTableData) => {
+    setSelectedProject(project)
+    setIsDeleteModalOpen(true)
+  }
 
-      try {
-        await deleteProjectMutation({
-          variables: { id: project.id }
-        })
-
-        toast.dismiss(deleteToast)
-        toast.success(t_project.toasts.projectDeleted, { duration: 3000 })
-      } catch (error) {
-        toast.dismiss(deleteToast)
-        toast.error(`Failed to delete project: ${error}`)
-      }
-    }
+  const handleDeleteProjectSuccess = () => {
+    refetch()
+    setIsDeleteModalOpen(false)
+    setSelectedProject(undefined)
   }
 
 
@@ -586,6 +580,17 @@ export default function ProjectsPage() {
         }}
         onSuccess={handleEditProjectSuccess}
         project={selectedProject}
+      />
+
+      {/* Delete Project Modal */}
+      <DeleteProjectModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false)
+          setSelectedProject(undefined)
+        }}
+        onConfirm={handleDeleteProjectSuccess}
+        project={selectedProject || null}
       />
         </Card>
 

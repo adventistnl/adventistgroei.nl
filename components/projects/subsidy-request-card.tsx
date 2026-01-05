@@ -161,8 +161,8 @@ export function SubsidyRequestCard({
               </DropdownMenuItem>
             )}
             
-            {/* Only show delete option if status is not approved or closed */}
-            {onDelete && data.status !== 'approved' && data.status !== 'closed' && (
+            
+            {onDelete && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

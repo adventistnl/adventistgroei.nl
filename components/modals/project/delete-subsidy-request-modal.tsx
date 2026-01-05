@@ -19,11 +19,13 @@ import {
   Calendar
 } from "lucide-react"
 import toast from "react-hot-toast"
+import { useTranslation } from "react-i18next"
 import { SubsidyRequestCardData } from "@/components/projects/subsidy-request-card"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useCurrency } from "@/contexts/currency-context"
 import { DELETE_SUBSIDY_REQUEST } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
+import { projectTranslations } from "@/lib/translations/projects"
 
 export interface DeleteSubsidyRequestModalProps {
   isOpen: boolean
@@ -38,34 +40,20 @@ export function DeleteSubsidyRequestModal({
   subsidy,
   onSuccess
 }: DeleteSubsidyRequestModalProps) {
+  const { i18n } = useTranslation()
   const { formatCurrency } = useCurrency()
   const [consequencesOpen, setConsequencesOpen] = useState(false)
   const [understoodConsequences, setUnderstoodConsequences] = useState(false)
   const [finalConfirmation, setFinalConfirmation] = useState('')
 
-  const [deleteSubsidyRequest, { loading: isLoading }] = useMutation(DELETE_SUBSIDY_REQUEST, {
-    onCompleted: () => {
-      toast.success('✅ Solicitação excluída com sucesso', { duration: 3000 })
-      if (onSuccess && subsidy) {
-        onSuccess(subsidy)
-      }
-      onOpenChangeAction(false)
-      // Reset form state
-      setConsequencesOpen(false)
-      setUnderstoodConsequences(false)
-      setFinalConfirmation('')
-    },
-    onError: (error) => {
-      toast.error(`Erro ao excluir solicitação: ${error.message}`)
-      console.error('Error deleting subsidy request:', error)
-    }
-  })
+  const [deleteSubsidyRequest, { loading: isLoading }] = useMutation(DELETE_SUBSIDY_REQUEST)
 
   const statusConfig: Record<SubsidyRequestCardData["status"], { label: string; className: string }> = {
     pending: { label: "Pendente", className: "bg-amber-50 text-amber-700 border-amber-200" },
     approved: { label: "Aprovado", className: "bg-green-50 text-green-700 border-green-200" },
     rejected: { label: "Rejeitado", className: "bg-red-50 text-red-700 border-red-200" },
-    in_review: { label: "Em Análise", className: "bg-blue-50 text-blue-700 border-blue-200" }
+    in_review: { label: "Em Análise", className: "bg-blue-50 text-blue-700 border-blue-200" },
+    closed: { label: "Fechado", className: "bg-gray-50 text-gray-700 border-gray-200" }
   }
 
   const handleSubmit = async () => {
@@ -75,9 +63,42 @@ export function DeleteSubsidyRequestModal({
       await deleteSubsidyRequest({
         variables: { id: subsidy.id }
       })
-    } catch (error) {
-      // Error already handled by mutation onError
-      console.error('Failed to delete subsidy request:', error)
+      
+      toast.success('✅ Solicitação excluída com sucesso', { duration: 3000 })
+      if (onSuccess) {
+        onSuccess(subsidy)
+      }
+      onOpenChangeAction(false)
+      // Reset form state
+      setConsequencesOpen(false)
+      setUnderstoodConsequences(false)
+      setFinalConfirmation('')
+    } catch (error: any) {
+      console.error('Error deleting subsidy request:', error)
+      
+      // Apollo can return errors in different ways
+      let graphQLError = error?.graphQLErrors?.[0]
+      if (!graphQLError && error?.networkError?.result?.errors) {
+        graphQLError = error.networkError.result.errors[0]
+      }
+      
+      const extensions = graphQLError?.extensions
+      const errorCode = extensions?.context?.additional?.errorCode
+      
+      const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+      let errorMessage = t_project.errors?.genericDeleteError || 'Failed to delete subsidy'
+      
+      if (errorCode === 'SUBSIDY_IS_APPROVED_OR_CLOSED') {
+        errorMessage = t_project.errors?.cannotDeleteApprovedSubsidy || graphQLError?.message
+      } else if (graphQLError?.message) {
+        errorMessage = graphQLError.message
+      } else if (error?.message) {
+        errorMessage = error.message
+      }
+      
+      toast.error(errorMessage, {
+        duration: 5000
+      })
     }
   }
 
