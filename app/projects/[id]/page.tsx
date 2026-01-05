@@ -1684,6 +1684,7 @@ export default function ProjectDetailsPage() {
             <ProjectActivitiesTable
               project={project}
               activities={allProjectActivities}
+              subsidies={subsidyRequests}
               filterSubsidized={subsidyFilter === "all" ? undefined : subsidyFilter === "subsidized"}
               statusFilter={statusFilter}
               priorityFilter={priorityFilter}
