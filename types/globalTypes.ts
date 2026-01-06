@@ -120,6 +120,19 @@ export enum ProjectType {
   Local = "Local",
 }
 
+export enum SubsidyHistoryType {
+  COMMENT = "COMMENT",
+  DOCUMENT_ACTION = "DOCUMENT_ACTION",
+  PRIORITY_CHANGE = "PRIORITY_CHANGE",
+  STATUS_CHANGE = "STATUS_CHANGE",
+}
+
+export enum SubsidyRequestPriority {
+  HIGH = "HIGH",
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+}
+
 export interface ActivityFundingCreateDto {
   entity_contribution_amount: number;
   entity_contribution_percent: number;
@@ -282,6 +295,7 @@ export interface SubsidyRequestUpdateDto {
   approved_amount?: number | null;
   rejection_reason?: string | null;
   notes?: string | null;
+  priority?: SubsidyRequestPriority | null;
 }
 
 export interface UploadActivityDocumentDto {

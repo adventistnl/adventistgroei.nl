@@ -27,6 +27,8 @@ export interface CreateProject_createProject {
   title: string;
   description: string;
   budget: any;
+  subsidized_budget: any;
+  balance: any;
   type: ProjectType;
   is_private: boolean;
   required_volunteers: boolean;
@@ -52,6 +54,8 @@ export interface CreateProjectVariables {
   description: string;
   department_id: string;
   budget: number;
+  subsidized_budget?: number | null;
+  balance?: number | null;
   type: ProjectType;
   start_at: string;
   end_at: string;

@@ -258,8 +258,11 @@ function ProjectRegisterContent() {
     skip: !institutionId
   })
 
-  // Extract data with fallback to empty arrays
-  const departments = departmentsData?.departments || []
+  // Extract data with fallback to empty arrays and filter by current year budget
+  const currentYear = new Date().getFullYear()
+  const departments = (departmentsData?.departments || []).filter((dept: any) => 
+    dept.annual_budgets?.some((budget: any) => budget.year === currentYear)
+  )
   const users = usersData?.users || []
 
   // Get translations for current language - usar o sistema i18n global
@@ -890,6 +893,8 @@ function ProjectRegisterContent() {
         department_id: formData.department_id,
         institution_id: institutionId, // Add institution_id from context
         budget: formData.total_budget,
+        subsidized_budget: formData.institution_contribution,
+        balance: formData.church_contribution,
         type: ProjectType.Local, // Default to Local, adjust based on your needs
         start_at: new Date().toISOString(), // Use current date or get from formData
         end_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now

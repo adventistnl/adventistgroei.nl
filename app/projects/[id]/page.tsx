@@ -208,6 +208,18 @@ export default function ProjectDetailsPage() {
     }
   })
 
+  // DEBUG: Monitor KPIs and Budget
+  useEffect(() => {
+    if (projectData?.project?.kpis) {
+      console.log('📊 Project KPIs:', {
+        kpis: projectData.project.kpis,
+        subsidizedBudget: projectData.project.kpis.subsidizedBudget,
+        budget: projectData.project.budget,
+        raw: projectData.project
+      })
+    }
+  }, [projectData])
+
   // Batch update mutation
   const [batchUpdateActivities, { loading: batchUpdateLoading }] = useMutation(BATCH_UPDATE_PROJECT_ACTIVITIES, {
     onCompleted: () => {
@@ -548,15 +560,22 @@ export default function ProjectDetailsPage() {
       },
       {
         id: "project-budget",
-        title: "Orçamento do Projeto",
+        title: "Investimento Total",
         value: `R$ ${(kpis.projectBudget / 1000).toFixed(1)}K`,
-        subtitle: `R$ ${(kpis.allocatedBudget / 1000).toFixed(1)}K alocado em atividades`,
-        trend: {
-          value: kpis.budgetUtilization,
-          isPositive: kpis.budgetUtilization <= 100,
-          label: `${kpis.budgetUtilization}% utilizado`
-        },
+        subtitle: "Soma de todas as atividades",
         icon: DollarSign,
+      },
+      {
+        id: "subsidized-budget",
+        title: "Orçamento Subsidiado",
+        value: `R$ ${(kpis.subsidizedBudget / 1000).toFixed(1)}K`,
+        subtitle: `R$ ${(kpis.balance / 1000).toFixed(1)}K contribuição local`,
+        trend: {
+          value: kpis.subsidizedBudgetPercentage,
+          isPositive: true,
+          label: "do orçamento total"
+        },
+        icon: TrendingUp,
       },
       {
         id: "completion-rate",
@@ -574,12 +593,7 @@ export default function ProjectDetailsPage() {
         id: "subsidized-activities",
         title: "Atividades Subsidiadas",
         value: kpis.subsidizedActivities.toString(),
-        subtitle: `${kpis.subsidyRate}% do total de atividades`,
-        trend: {
-          value: kpis.subsidyRequestsCount,
-          isPositive: kpis.subsidyRequestsCount > 0,
-          label: `${kpis.subsidyRequestsCount} pedidos de subsídio`
-        },
+        subtitle: `${kpis.subsidyRate}% do total | ${kpis.subsidyRequestsCount} pedidos`,
         icon: Target,
       },
       {
@@ -593,18 +607,6 @@ export default function ProjectDetailsPage() {
           label: kpis.daysRemaining > 0 ? "dias restantes" : "dias atrás"
         },
         icon: Calendar,
-      },
-      {
-        id: "subsidy-amount",
-        title: "Valor em Subsídios",
-        value: `R$ ${(subsidyRequests.reduce((sum, s) => sum + s.requested_amount, 0) / 1000).toFixed(1)}K`,
-        subtitle: `${kpis.subsidyRequestsCount} solicitações enviadas`,
-        trend: {
-          value: subsidyRequests.filter(s => s.status === 'approved').length,
-          isPositive: true,
-          label: "aprovadas"
-        },
-        icon: TrendingUp,
       },
     ]
   }, [projectData, subsidyRequests])
@@ -1604,6 +1606,7 @@ export default function ProjectDetailsPage() {
                           subsidizedActivityIds={subsidizedActivityIds}
                           description="Gerencie as solicitações de subsídio"
                           onRefresh={handleRefreshSubsidies}
+                          projectSubsidizedBudget={projectData?.project?.kpis?.subsidizedBudget || 0}
                         />
                       </>
                  
@@ -1877,6 +1880,11 @@ export default function ProjectDetailsPage() {
           onSubmit={handleSubsidyRequestSubmit}
           allActivities={allProjectActivities}
           subsidizedActivityIds={subsidizedActivityIds}
+          availableBudget={(() => {
+            const used = (subsidyRequests || []).filter(s => s.status !== 'rejected').reduce((sum, s) => sum + Number(s.requested_amount || 0), 0)
+            const available = (projectData?.project?.kpis?.subsidizedBudget || 0) - used
+            return Math.max(0, available)
+          })()}
         />
 
         {/* Subsidy Request Card Modals - View is handled by SubsidyRequestsContainer */}

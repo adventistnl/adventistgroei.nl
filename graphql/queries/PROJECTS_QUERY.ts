@@ -201,10 +201,15 @@ export const GET_PROJECT_BY_ID_QUERY = gql`
         completionRate
         projectBudget
         allocatedBudget
+        subsidizedBudget
+        balance
         budgetUtilization
+        subsidizedBudgetPercentage
         subsidizedActivities
         subsidyRate
         subsidyRequestsCount
+        approvedSubsidyRequestsCount
+        totalSubsidyAmount
         daysRemaining
         endDate
         projectStatus
@@ -221,6 +226,7 @@ export const GET_PROJECT_KPIS_QUERY = gql`
       completedProjects
       upcomingProjects
       totalBudget
+      totalSubsidizedBudget
       totalSubsidyRequests
       totalSubsidyAmount
       projectsWithVolunteers

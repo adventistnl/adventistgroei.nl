@@ -167,7 +167,10 @@ export interface GetProjectById_project_kpis {
   completionRate: number;
   projectBudget: number;
   allocatedBudget: number;
+  subsidizedBudget: number;
+  balance: number;
   budgetUtilization: number;
+  subsidizedBudgetPercentage: number;
   subsidizedActivities: number;
   subsidyRate: number;
   subsidyRequestsCount: number;
