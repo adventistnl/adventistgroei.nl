@@ -18,6 +18,7 @@ interface ProjectsKPIsProps {
     completedProjects: number
     upcomingProjects: number
     totalBudget: number
+    totalSubsidizedBudget: number
     totalSubsidyRequests: number
     totalSubsidyAmount: number
     projectsWithVolunteers: number
@@ -85,6 +86,18 @@ export function ProjectsKPIs({
           label: `${budgetUtilization}% utilizado`
         },
         icon: DollarSign,
+      },
+      {
+        id: "subsidized-budget",
+        title: "Orçamento Subsidiado",
+        value: formatCurrency(kpis.totalSubsidizedBudget, { compact: true }),
+        subtitle: `${formatCurrency(kpis.totalBudget - kpis.totalSubsidizedBudget, { compact: true })} contribuição local`,
+        trend: { 
+          value: kpis.totalBudget > 0 ? Math.round((kpis.totalSubsidizedBudget / kpis.totalBudget) * 100) : 0, 
+          isPositive: true,
+          label: "do orçamento total"
+        },
+        icon: TrendingUp,
       },
       {
         id: "completion-rate",

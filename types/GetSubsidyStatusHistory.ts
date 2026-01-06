@@ -3,6 +3,8 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { SubsidyHistoryType } from "./globalTypes";
+
 // ====================================================
 // GraphQL query operation: GetSubsidyStatusHistory
 // ====================================================
@@ -32,6 +34,7 @@ export interface GetSubsidyStatusHistory_getSubsidyStatusHistory {
   id: string;
   status_id: string;
   previous_status_id: string | null;
+  type: SubsidyHistoryType;
   reason: string | null;
   changed_by: string;
   changed_at: any;

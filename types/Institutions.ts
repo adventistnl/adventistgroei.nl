@@ -115,6 +115,8 @@ export interface Institutions_institutions_projects {
   title: string;
   description: string;
   budget: any;
+  subsidized_budget: any;
+  balance: any;
   language_preference: LanguagePreference;
   type: ProjectType;
   created_at: any;

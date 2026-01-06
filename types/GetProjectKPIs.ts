@@ -14,6 +14,7 @@ export interface GetProjectKPIs_projectKPIs {
   completedProjects: number;
   upcomingProjects: number;
   totalBudget: number;
+  totalSubsidizedBudget: number;
   totalSubsidyRequests: number;
   totalSubsidyAmount: number;
   projectsWithVolunteers: number;

@@ -15,6 +15,8 @@ export interface UpdateProject_updateProject {
   title: string;
   description: string;
   budget: any;
+  subsidized_budget: any;
+  balance: any;
   type: ProjectType;
   is_private: boolean;
   required_volunteers: boolean;
@@ -35,6 +37,8 @@ export interface UpdateProjectVariables {
   description?: string | null;
   department_id?: string | null;
   budget?: number | null;
+  subsidized_budget?: number | null;
+  balance?: number | null;
   type?: ProjectType | null;
   start_at?: string | null;
   end_at?: string | null;

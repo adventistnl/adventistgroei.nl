@@ -73,6 +73,8 @@ export const PROJECT_FRAGMENT = gql`
     title
     description
     budget
+    subsidized_budget
+    balance
     language_preference
     type
     created_at

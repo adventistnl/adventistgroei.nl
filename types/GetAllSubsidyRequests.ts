@@ -3,38 +3,38 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { SubsidyRequestPriority, ActivityStatus, ActivityPriority } from "./globalTypes";
+import { ActivityStatus, ActivityPriority } from "./globalTypes";
 
 // ====================================================
-// GraphQL query operation: GetSubsidyRequestById
+// GraphQL query operation: GetAllSubsidyRequests
 // ====================================================
 
-export interface GetSubsidyRequestById_subsidyRequest_subsidy_status {
+export interface GetAllSubsidyRequests_subsidyRequests_subsidy_status {
   __typename: "SubsidyStatus";
   id: string;
   name: string;
   description: string;
 }
 
-export interface GetSubsidyRequestById_subsidyRequest_institution {
+export interface GetAllSubsidyRequests_subsidyRequests_institution {
   __typename: "Institution";
   id: string;
   name: string;
 }
 
-export interface GetSubsidyRequestById_subsidyRequest_department {
+export interface GetAllSubsidyRequests_subsidyRequests_department {
   __typename: "Department";
   id: string;
   name: string;
 }
 
-export interface GetSubsidyRequestById_subsidyRequest_church {
+export interface GetAllSubsidyRequests_subsidyRequests_church {
   __typename: "Church";
   id: string;
   name: string;
 }
 
-export interface GetSubsidyRequestById_subsidyRequest_items_project_activity {
+export interface GetAllSubsidyRequests_subsidyRequests_items_project_activity {
   __typename: "ProjectActivity";
   id: string;
   name: string;
@@ -45,7 +45,7 @@ export interface GetSubsidyRequestById_subsidyRequest_items_project_activity {
   is_subsidized: boolean;
 }
 
-export interface GetSubsidyRequestById_subsidyRequest_items {
+export interface GetAllSubsidyRequests_subsidyRequests_items {
   __typename: "SubsidyRequestItem";
   id: string;
   subsidy_request_id: string;
@@ -55,10 +55,10 @@ export interface GetSubsidyRequestById_subsidyRequest_items {
   notes: string | null;
   created_at: any;
   updated_at: any;
-  project_activity: GetSubsidyRequestById_subsidyRequest_items_project_activity;
+  project_activity: GetAllSubsidyRequests_subsidyRequests_items_project_activity;
 }
 
-export interface GetSubsidyRequestById_subsidyRequest {
+export interface GetAllSubsidyRequests_subsidyRequests {
   __typename: "SubsidyRequest";
   id: string;
   description: string;
@@ -75,18 +75,13 @@ export interface GetSubsidyRequestById_subsidyRequest {
   department_id: string;
   church_id: string | null;
   project_id: string;
-  priority: SubsidyRequestPriority;
-  subsidy_status: GetSubsidyRequestById_subsidyRequest_subsidy_status;
-  institution: GetSubsidyRequestById_subsidyRequest_institution;
-  department: GetSubsidyRequestById_subsidyRequest_department;
-  church: GetSubsidyRequestById_subsidyRequest_church | null;
-  items: GetSubsidyRequestById_subsidyRequest_items[] | null;
+  subsidy_status: GetAllSubsidyRequests_subsidyRequests_subsidy_status;
+  institution: GetAllSubsidyRequests_subsidyRequests_institution;
+  department: GetAllSubsidyRequests_subsidyRequests_department;
+  church: GetAllSubsidyRequests_subsidyRequests_church | null;
+  items: GetAllSubsidyRequests_subsidyRequests_items[] | null;
 }
 
-export interface GetSubsidyRequestById {
-  subsidyRequest: GetSubsidyRequestById_subsidyRequest | null;
-}
-
-export interface GetSubsidyRequestByIdVariables {
-  id: string;
+export interface GetAllSubsidyRequests {
+  subsidyRequests: GetAllSubsidyRequests_subsidyRequests[];
 }

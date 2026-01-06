@@ -559,6 +559,18 @@ export default function ProjectDetailsPage() {
         icon: DollarSign,
       },
       {
+        id: "subsidized-budget",
+        title: "Orçamento Subsidiado",
+        value: `R$ ${(kpis.subsidizedBudget / 1000).toFixed(1)}K`,
+        subtitle: `R$ ${(kpis.balance / 1000).toFixed(1)}K contribuição local`,
+        trend: {
+          value: kpis.subsidizedBudgetPercentage,
+          isPositive: true,
+          label: "do orçamento total"
+        },
+        icon: TrendingUp,
+      },
+      {
         id: "completion-rate",
         title: "Taxa de Conclusão",
         value: `${kpis.completionRate}%`,

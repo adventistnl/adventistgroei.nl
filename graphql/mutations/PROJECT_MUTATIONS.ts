@@ -6,6 +6,8 @@ export const CREATE_PROJECT_MUTATION = gql`
     $description: String!
     $department_id: String!
     $budget: Float!
+    $subsidized_budget: Float
+    $balance: Float
     $type: ProjectType!
     $start_at: String!
     $end_at: String!
@@ -29,6 +31,8 @@ export const CREATE_PROJECT_MUTATION = gql`
         description: $description
         department_id: $department_id
         budget: $budget
+        subsidized_budget: $subsidized_budget
+        balance: $balance
         type: $type
         start_at: $start_at
         end_at: $end_at
@@ -51,6 +55,8 @@ export const CREATE_PROJECT_MUTATION = gql`
       title
       description
       budget
+      subsidized_budget
+      balance
       type
       is_private
       required_volunteers
@@ -85,6 +91,8 @@ export const UPDATE_PROJECT_MUTATION = gql`
     $description: String
     $department_id: String
     $budget: Float
+    $subsidized_budget: Float
+    $balance: Float
     $type: ProjectType
     $start_at: String
     $end_at: String
@@ -102,6 +110,8 @@ export const UPDATE_PROJECT_MUTATION = gql`
         description: $description
         department_id: $department_id
         budget: $budget
+        subsidized_budget: $subsidized_budget
+        balance: $balance
         type: $type
         start_at: $start_at
         end_at: $end_at
@@ -117,6 +127,8 @@ export const UPDATE_PROJECT_MUTATION = gql`
       title
       description
       budget
+      subsidized_budget
+      balance
       type
       is_private
       required_volunteers
