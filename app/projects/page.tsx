@@ -43,12 +43,17 @@ import { EditProjectModal } from "@/components/modals/project/edit-project-modal
 import { DeleteProjectModal } from "@/components/modals/project/delete-project-modal"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function ProjectsPage() {
   const { t, i18n } = useTranslation()
   const { navigateWithLoading } = useNavigateWithLoading()
   const { currentInstitutionData } = useInstitution()
   const { selectedCurrency, formatCurrency } = useCurrency()
+  const { roles } = useAuth()
+  
+  const canViewFilters = roles.includes('ADMIN') || roles.includes('INSTITUTIONAL_LEADER') || roles.includes('DEV')
+
   const [refreshing, setRefreshing] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -211,7 +216,7 @@ export default function ProjectsPage() {
       accessorKey: "department_id",
       header: t_project.table.department,
       cell: ({ row }) => {
-        const dept = departments.find(d => d.id === row.original.department_id)
+        const dept = departments.find((d: any) => d.id === row.original.department_id)
         return <span className="text-sm">{dept?.name || "Unknown"}</span>
       },
     },
@@ -547,14 +552,14 @@ export default function ProjectsPage() {
                 Manage and track all projects across departments
               </CardDescription>
             </div>
-            {departments.length > 0 && (
+            {departments.length > 0 && canViewFilters && (
               <Select value={selectedDepartment} onValueChange={handleDepartmentChange}>
                 <SelectTrigger className="ml-auto h-9 w-[200px] rounded-lg">
                   <SelectValue placeholder="Filtrar por departamento" />
                 </SelectTrigger>
                 <SelectContent align="end">
                   <SelectItem value="all">{t_project.filters.allDepartments}</SelectItem>
-                  {departments.map((dept) => (
+                  {departments.map((dept: any) => (
                     <SelectItem key={dept.id} value={dept.id}>
                       {dept.name}
                     </SelectItem>
