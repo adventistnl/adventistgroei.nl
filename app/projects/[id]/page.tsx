@@ -560,14 +560,9 @@ export default function ProjectDetailsPage() {
       },
       {
         id: "project-budget",
-        title: "Orçamento do Projeto",
+        title: "Investimento Total",
         value: `R$ ${(kpis.projectBudget / 1000).toFixed(1)}K`,
-        subtitle: `R$ ${(kpis.allocatedBudget / 1000).toFixed(1)}K alocado em atividades`,
-        trend: {
-          value: kpis.budgetUtilization,
-          isPositive: kpis.budgetUtilization <= 100,
-          label: `${kpis.budgetUtilization}% utilizado`
-        },
+        subtitle: "Soma de todas as atividades",
         icon: DollarSign,
       },
       {
@@ -598,12 +593,7 @@ export default function ProjectDetailsPage() {
         id: "subsidized-activities",
         title: "Atividades Subsidiadas",
         value: kpis.subsidizedActivities.toString(),
-        subtitle: `${kpis.subsidyRate}% do total de atividades`,
-        trend: {
-          value: kpis.subsidyRequestsCount,
-          isPositive: kpis.subsidyRequestsCount > 0,
-          label: `${kpis.subsidyRequestsCount} pedidos de subsídio`
-        },
+        subtitle: `${kpis.subsidyRate}% do total | ${kpis.subsidyRequestsCount} pedidos`,
         icon: Target,
       },
       {
@@ -617,18 +607,6 @@ export default function ProjectDetailsPage() {
           label: kpis.daysRemaining > 0 ? "dias restantes" : "dias atrás"
         },
         icon: Calendar,
-      },
-      {
-        id: "subsidy-amount",
-        title: "Valor em Subsídios",
-        value: `R$ ${(kpis.totalSubsidyAmount / 1000).toFixed(1)}K`,
-        subtitle: `${kpis.subsidyRequestsCount} solicitações enviadas`,
-        trend: {
-          value: kpis.approvedSubsidyRequestsCount,
-          isPositive: true,
-          label: "aprovadas"
-        },
-        icon: TrendingUp,
       },
     ]
   }, [projectData, subsidyRequests])

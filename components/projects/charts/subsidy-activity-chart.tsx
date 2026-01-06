@@ -121,9 +121,9 @@ export function SubsidyActivityChart({
       label: "Pendente",
       color: "hsl(45, 93%, 47%)",
     },
-    in_review: {
-      label: "Em Análise",
-      color: "hsl(221, 83%, 53%)",
+    rejected: {
+      label: "Rejeitado",
+      color: "hsl(0, 84.2%, 60.2%)", // Red
     },
   }
 
@@ -135,9 +135,10 @@ export function SubsidyActivityChart({
         approved: acc.approved + month.approved,
         pending: acc.pending + month.pending,
         in_review: acc.in_review + month.in_review,
+        rejected: acc.rejected + month.rejected,
         count: acc.count + month.count,
       }),
-      { total: 0, approved: 0, pending: 0, in_review: 0, count: 0 }
+      { total: 0, approved: 0, pending: 0, in_review: 0, rejected: 0, count: 0 }
     )
   }, [filteredData])
 
@@ -236,6 +237,7 @@ export function SubsidyActivityChart({
                       approved: "Aprovado",
                       pending: "Pendente",
                       in_review: "Em Análise",
+                      rejected: "Rejeitado",
                     }
                     return [
                       `€${Number(value).toFixed(1)}K`,
@@ -268,6 +270,10 @@ export function SubsidyActivityChart({
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-blue-600" />
             <span className="text-gray-600">Em Análise: €{totals.in_review.toFixed(0)}K</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-red-500" />
+            <span className="text-gray-600">Rejeitado: €{totals.rejected.toFixed(0)}K</span>
           </div>
         </div>
       </CardContent>
