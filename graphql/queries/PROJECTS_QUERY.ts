@@ -208,6 +208,8 @@ export const GET_PROJECT_BY_ID_QUERY = gql`
         subsidizedActivities
         subsidyRate
         subsidyRequestsCount
+        approvedSubsidyRequestsCount
+        totalSubsidyAmount
         daysRemaining
         endDate
         projectStatus

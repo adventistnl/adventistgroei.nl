@@ -72,6 +72,7 @@ interface RequestSubsidyModalProps {
   mode?: "create" | "edit"
   /** IDs of activities that already have subsidies */
   subsidizedActivityIds?: string[]
+  availableBudget?: number
 }
 
 export interface SubsidyRequestData {
@@ -100,7 +101,8 @@ export function RequestSubsidyModal({
   allActivities = [],
   initialData = null,
   mode = "create",
-  subsidizedActivityIds = []
+  subsidizedActivityIds = [],
+  availableBudget = 0,
 }: RequestSubsidyModalProps) {
   const { formatCurrency } = useCurrency()
   const { t, i18n } = useTranslation()
@@ -221,8 +223,10 @@ export function RequestSubsidyModal({
       console.log('🟢 Modal de Subsídio aberto!')
       console.log('📋 Atividades recebidas:', selectedActivities.length)
       console.log('💰 Total solicitado:', totalRequestedAmount)
+      console.log('💰 Orçamento Disponível (Prop):', availableBudget)
+      console.log('💰 Orçamento Disponível (Real):', availableBudget + (mode === 'edit' ? initialData?.requested_amount || 0 : 0))
     }
-  }, [isOpen, selectedActivities.length, totalRequestedAmount])
+  }, [isOpen, selectedActivities.length, totalRequestedAmount, availableBudget, mode, initialData])
 
   // Load available subsidized activities
   React.useEffect(() => {
@@ -446,6 +450,11 @@ export function RequestSubsidyModal({
 
     if (totalRequestedAmount <= 0) {
       toast.error(translations.validation.amountPositive)
+      return
+    }
+
+    if (totalRequestedAmount > availableBudget + 0.01) {
+      toast.error(`O valor solicitado (${formatCurrency(totalRequestedAmount)}) excede o orçamento disponível (${formatCurrency(availableBudget)})`)
       return
     }
 
@@ -888,49 +897,12 @@ export function RequestSubsidyModal({
               {isEditingValues ? (
                 // Edit Mode - Focus on Institution Amount
                 <div className="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  {/* Funding Policy Badges */}
+                  {/* Funding Policy Badges - REPLACED with Project Budget Info */}
                   <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-200">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge variant="outline" className="text-xs bg-white border-gray-300 cursor-help">
-                            <Info className="w-3 h-3 mr-1" />
-                            {translations.budget.policies.maxPercent.replace('{{percent}}', FUNDING_POLICIES.max_institution_percent.toString())}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">{translations.budget.policies.maxPercentTooltip.replace('{{percent}}', FUNDING_POLICIES.max_institution_percent.toString())}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge variant="outline" className="text-xs bg-white border-gray-300 cursor-help">
-                            <Info className="w-3 h-3 mr-1" />
-                            {translations.budget.policies.maxAmount.replace('{{amount}}', formatCurrency(FUNDING_POLICIES.max_institution_amount))}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">{translations.budget.policies.maxAmountTooltip.replace('{{amount}}', formatCurrency(FUNDING_POLICIES.max_institution_amount))}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge variant="outline" className="text-xs bg-white border-gray-300 cursor-help">
-                            <Info className="w-3 h-3 mr-1" />
-                            {translations.budget.policies.minChurch.replace('{{percent}}', FUNDING_POLICIES.min_church_percent.toString())}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">{translations.budget.policies.minChurchTooltip.replace('{{percent}}', FUNDING_POLICIES.min_church_percent.toString())}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                     <Badge variant="outline" className="text-xs bg-white border-gray-300">
+                        <Info className="w-3 h-3 mr-1" />
+                        Limite: Orçamento do Projeto
+                      </Badge>
                   </div>
 
                   {/* Institution Value Input with Max Button */}
@@ -950,11 +922,14 @@ export function RequestSubsidyModal({
                         value={tempRequestedAmount}
                         onChange={(e) => {
                           const value = Number(e.target.value) || 0
-                          const maxAllowed = Math.min(
-                            (currentItem.budget_amount * FUNDING_POLICIES.max_institution_percent) / 100,
-                            FUNDING_POLICIES.max_institution_amount
-                          )
-                          if (value <= maxAllowed && value >= 0) {
+                          // New logic: Limit by available project budget (dynamic based on other items)
+                          // value must be <= availableBudget - (currentTotal - currentItemAmount)
+                          const otherItemsTotal = totalRequestedAmount - currentItem.requested_amount
+                          // Fix: Add back the initial amount of this request if we are in edit mode
+                          const effectiveBudgetCap = availableBudget + (mode === 'edit' ? initialData?.requested_amount || 0 : 0)
+                          const maxAllowed = Math.max(0, effectiveBudgetCap - otherItemsTotal)
+                          
+                          if (value <= maxAllowed + 0.01 && value >= 0) {
                             setTempRequestedAmount(value)
                           } else if (value > maxAllowed) {
                             toast.error(translations.validation.maxAllowed.replace('{{amount}}', formatCurrency(maxAllowed)))
@@ -962,10 +937,8 @@ export function RequestSubsidyModal({
                         }}
                         className="h-9 text-sm font-medium flex-1"
                         min={0}
-                        max={Math.min(
-                          (currentItem.budget_amount * FUNDING_POLICIES.max_institution_percent) / 100,
-                          FUNDING_POLICIES.max_institution_amount
-                        )}
+                        min={0}
+                        max={Math.max(0, (availableBudget + (mode === 'edit' ? initialData?.requested_amount || 0 : 0)) - (totalRequestedAmount - currentItem.requested_amount))}
                         placeholder={translations.budget.placeholder}
                       />
                       <TooltipProvider>
@@ -975,12 +948,13 @@ export function RequestSubsidyModal({
                               variant="outline"
                               size="sm"
                               onClick={() => {
-                                const maxAllowed = Math.min(
-                                  (currentItem.budget_amount * FUNDING_POLICIES.max_institution_percent) / 100,
-                                  FUNDING_POLICIES.max_institution_amount
-                                )
-                                setTempRequestedAmount(maxAllowed)
-                                toast.success(`${translations.budget.maxButton}: ${formatCurrency(maxAllowed)}`)
+                          const otherItemsTotal = totalRequestedAmount - currentItem.requested_amount
+                          // Fix: Add back the initial amount of this request if we are in edit mode
+                          const effectiveBudgetCap = availableBudget + (mode === 'edit' ? initialData?.requested_amount || 0 : 0)
+                          const maxAllowed = Math.max(0, effectiveBudgetCap - otherItemsTotal)
+                          
+                          setTempRequestedAmount(maxAllowed)
+                          toast.success(`${translations.budget.maxButton}: ${formatCurrency(maxAllowed)}`)
                               }}
                               className="h-9 px-3"
                             >
@@ -1022,10 +996,9 @@ export function RequestSubsidyModal({
 
                   {/* Info box with limit */}
                   {(() => {
-                    const maxAllowed = Math.min(
-                      (currentItem.budget_amount * FUNDING_POLICIES.max_institution_percent) / 100,
-                      FUNDING_POLICIES.max_institution_amount
-                    )
+                    const otherItemsTotal = totalRequestedAmount - currentItem.requested_amount
+                    const effectiveBudgetCap = availableBudget + (mode === 'edit' ? initialData?.requested_amount || 0 : 0)
+                    const maxAllowed = Math.max(0, effectiveBudgetCap - otherItemsTotal)
                     return (
                       <div className="flex items-start gap-2 text-xs text-gray-500 bg-white p-2 rounded border border-gray-200">
                         <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />

@@ -43,6 +43,7 @@ interface SubsidyRequestsContainerProps {
   allActivities?: ProjectActivityData[]
   subsidizedActivityIds?: string[]
   onRefresh?: () => Promise<void>
+  projectSubsidizedBudget?: number
 }
 
 export function SubsidyRequestsContainer({
@@ -62,6 +63,7 @@ export function SubsidyRequestsContainer({
   allActivities = [],
   subsidizedActivityIds = [],
   onRefresh,
+  projectSubsidizedBudget = 0,
 }: SubsidyRequestsContainerProps) {
   const { t } = useTranslation()
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false)
@@ -320,7 +322,7 @@ export function SubsidyRequestsContainer({
                   style: "currency",
                   currency: "EUR",
                   minimumFractionDigits: 0,
-                }).format(displaySubsidies.reduce((sum, s) => sum + s.requested_amount, 0))}
+                }).format(displaySubsidies.filter(s => s.status !== 'rejected').reduce((sum, s) => sum + s.requested_amount, 0))}
               </span>
             </span>
           </div>
@@ -373,6 +375,18 @@ export function SubsidyRequestsContainer({
         }}
         allActivities={allActivities}
         subsidizedActivityIds={subsidizedActivityIds}
+        availableBudget={(() => {
+          const used = displaySubsidies.filter(s => s.status !== 'rejected').reduce((sum, s) => sum + s.requested_amount, 0)
+          const available = projectSubsidizedBudget - used
+          console.log('💰 Budget Calculation (Container):', { 
+            projectSubsidizedBudget, 
+            used, 
+            available, 
+            subsidies_count: displaySubsidies.length,
+            subs: displaySubsidies.map(s => ({ id: s.id, amount: s.requested_amount, status: s.status }))
+          })
+          return available
+        })()}
       />
     </>
   )
