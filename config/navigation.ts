@@ -30,6 +30,7 @@ export interface NavItem {
   isActive?: boolean
   items?: NavItem[]
   permissions: PermissionResolverName[]
+  translationKey?: string
 }
 
 // Interface for projects/quick access
@@ -54,41 +55,45 @@ const navMainBase: NavItem[] = [
     url: "/dashboard",
     icon: BarChart3,
     permissions: [],
+    translationKey: "sidebar.dashboard"
   },
   {
     title: "Structure & Organization",
     url: "#",
     icon: Building2,
     items: [
-      { title: "Institutions", url: "/institutions", permissions: [PermissionResolverName.Institutions] },
-      { title: "Inst. Departments", url: "/institutional-departments", permissions: [PermissionResolverName.Departments] },
-      { title: "Regions", url: "/regions", permissions: [PermissionResolverName.Regions] },
+      { title: "Institutions", url: "/institutions", permissions: [PermissionResolverName.Institutions], translationKey: "sidebar.institutions" },
+      { title: "Inst. Departments", url: "/institutional-departments", permissions: [PermissionResolverName.Departments], translationKey: "sidebar.instDepartments" },
+      { title: "Regions", url: "/regions", permissions: [PermissionResolverName.Regions], translationKey: "sidebar.regions" },
       // { title: "Regions Example", url: "/regions-example", permissions: [PermissionResolverName.Regions] },
-      { title: "Churches", url: "/churches", permissions: [PermissionResolverName.Churches] },
-      { title: "C. Departments", url: "/church-departments", permissions: [PermissionResolverName.Departments] },
+      { title: "Churches", url: "/churches", permissions: [PermissionResolverName.Churches], translationKey: "sidebar.churches" },
+      { title: "C. Departments", url: "/church-departments", permissions: [PermissionResolverName.Departments], translationKey: "sidebar.churchDepartments" },
     ],
-    permissions:[]
+    permissions:[],
+    translationKey: "sidebar.structureOrganization"
   },
     {
     title: "Finance Management",
     url: "#",
     icon: DollarSign,
     items: [
-      { title: "Annual Budget", url: "/finance/annual-budget", permissions: [PermissionResolverName.Settings] },
+      { title: "Annual Budget", url: "/finance/annual-budget", permissions: [PermissionResolverName.Settings], translationKey: "sidebar.annualBudget" },
       // { title: "Funding Rules", url: "/finance/funding-rules", permissions: [PermissionResolverName.Institutions] },
-      { title: "Subsidy Approvals", url: "/finance/subsidy-approvals", permissions: [PermissionResolverName.Institutions] },
+      { title: "Subsidy Approvals", url: "/finance/subsidy-approvals", permissions: [PermissionResolverName.Institutions], translationKey: "sidebar.subsidyApprovals" },
     ],
-    permissions: []
+    permissions: [],
+    translationKey: "sidebar.financeManagement"
   },
   {
     title: "Users & Access",
     url: "#",
     icon: Users,
     items: [
-      { title: "Users", url: "/users", permissions: [PermissionResolverName.Users] },
-      { title: "Access Management", url: "/access", permissions: [PermissionResolverName.Roles] },
+      { title: "Users", url: "/users", permissions: [PermissionResolverName.Users], translationKey: "sidebar.users" },
+      { title: "Access Management", url: "/access", permissions: [PermissionResolverName.Roles], translationKey: "sidebar.accessManagement" },
     ],
-    permissions:[]
+    permissions:[],
+    translationKey: "sidebar.usersAccess"
   },
   // {
   //   title: "Subsidies",
@@ -114,7 +119,8 @@ const navMainBase: NavItem[] = [
   // },
   { title: "Projects", 
     url: "/projects", 
-    permissions: [PermissionResolverName.Projects] 
+    permissions: [PermissionResolverName.Projects],
+    translationKey: "sidebar.projects" 
   },
 
   // {
