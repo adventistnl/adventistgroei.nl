@@ -18,7 +18,7 @@ import {
   FileText
 } from "lucide-react"
 import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
+import { ptBR, enUS, nl } from "date-fns/locale"
 import { useMutation, useQuery } from "@apollo/client"
 import toast from "react-hot-toast"
 
@@ -88,6 +88,15 @@ interface EditProjectModalProps {
 export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditProjectModalProps) {
   const { i18n } = useTranslation()
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+  
+  const dateLocale = React.useMemo(() => {
+    switch (i18n.language) {
+      case 'pt': return ptBR
+      case 'nl': return nl
+      default: return enUS
+    }
+  }, [i18n.language])
+  
   const { currentInstitutionData } = useInstitution()
 
   const institutionId = currentInstitutionData?.id
@@ -103,14 +112,14 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
   // Update project mutation
   const [updateProject, { loading: updateLoading }] = useMutation(UPDATE_PROJECT_MUTATION, {
     onCompleted: () => {
-      toast.success("Projeto atualizado com sucesso!", { duration: 3000 })
+      toast.success(t.toasts.projectUpdated, { duration: 3000 })
       handleClose()
       if (onSuccess) {
         onSuccess()
       }
     },
     onError: (error) => {
-      toast.error(`Erro ao atualizar projeto: ${error.message}`)
+      toast.error(`${t.errors.updateError}: ${error.message}`)
       console.error("Error updating project:", error)
     }
   })
@@ -160,7 +169,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
 
   const getDepartmentName = (id: string) => {
     const dept = departments.find((d: any) => d.id === id)
-    return dept?.name || "Departamento não encontrado"
+    return dept?.name || t.errors.departmentNotFound
   }
 
   const handleInputChange = React.useCallback((field: keyof EditProjectFormData, value: any) => {
@@ -185,21 +194,21 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
 
     if (step === 1) {
       if (!formData.title.trim()) {
-        newErrors.title = "Title is required"
+        newErrors.title = t.errors.titleRequired
       }
 
       if (!formData.description.trim()) {
-        newErrors.description = "Description is required"
+        newErrors.description = t.errors.descriptionRequired
       }
 
       if (!formData.department_id) {
-        newErrors.department_id = "Department is required"
+        newErrors.department_id = t.errors.departmentRequired
       }
     }
 
     if (step === 2) {
       if (formData.start_at >= formData.end_at) {
-        newErrors.end_at = "End date must be after start date" as any
+        newErrors.end_at = t.errors.endDateAfterStart as any
       }
     }
 
@@ -211,23 +220,23 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
     const newErrors: Partial<EditProjectFormData> = {}
 
     if (!formData.title.trim()) {
-      newErrors.title = "Title is required"
+      newErrors.title = t.errors.titleRequired
     }
 
     if (!formData.description.trim()) {
-      newErrors.description = "Description is required"
+      newErrors.description = t.errors.descriptionRequired
     }
 
     if (!formData.department_id) {
-      newErrors.department_id = "Department is required"
+      newErrors.department_id = t.errors.departmentRequired
     }
 
     if (formData.budget <= 0) {
-      newErrors.budget = "Budget must be greater than 0" as any
+      newErrors.budget = t.errors.budgetPositive as any
     }
 
     if (formData.start_at >= formData.end_at) {
-      newErrors.end_at = "End date must be after start date" as any
+      newErrors.end_at = t.errors.endDateAfterStart as any
     }
 
     setErrors(newErrors)
@@ -428,7 +437,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {formData.start_at ? (
-                          format(formData.start_at, "PPP", { locale: ptBR })
+                          format(formData.start_at, "PPP", { locale: dateLocale })
                         ) : (
                           <span>{t.selectDate}</span>
                         )}
@@ -462,7 +471,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {formData.end_at ? (
-                          format(formData.end_at, "PPP", { locale: ptBR })
+                          format(formData.end_at, "PPP", { locale: dateLocale })
                         ) : (
                           <span>{t.selectDate}</span>
                         )}

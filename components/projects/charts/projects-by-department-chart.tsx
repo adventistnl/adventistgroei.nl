@@ -71,7 +71,7 @@ export function ProjectsByDepartmentChart({ data, departments }: ProjectsByDepar
   const chartConfig: ChartConfig = useMemo(() => {
     const config: Record<string, { label: string; color: string }> = {
       count: {
-        label: "Projects",
+        label: t_project.charts.projects,
         color: "hsl(var(--chart-1))"
       }
     }
@@ -106,10 +106,10 @@ export function ProjectsByDepartmentChart({ data, departments }: ProjectsByDepar
         <div className="grid gap-1 flex-1">
           <CardTitle className="flex items-center gap-2">
             <PieChart className="w-5 h-5" />
-            Projects by Department
+            {t_project.charts.projectsByDepartment}
           </CardTitle>
           <CardDescription>
-            Distribution of projects across departments
+            {t_project.charts.distributionByDepartment}
           </CardDescription>
         </div>
         <Select value={activeDepartment} onValueChange={setActiveDepartment}>
@@ -117,7 +117,7 @@ export function ProjectsByDepartmentChart({ data, departments }: ProjectsByDepar
             className="ml-auto h-7 w-[160px] rounded-lg pl-2.5"
             aria-label="Select a department"
           >
-            <SelectValue placeholder="Select department" />
+            <SelectValue placeholder={t_project.charts.selectDepartment} />
           </SelectTrigger>
           <SelectContent align="end" className="rounded-xl">
             {departmentKeys.map((key) => {
@@ -206,7 +206,7 @@ export function ProjectsByDepartmentChart({ data, departments }: ProjectsByDepar
                           y={(viewBox.cy || 0) + 24}
                           className="fill-muted-foreground"
                         >
-                          Projects
+                          {t_project.charts.projects}
                         </tspan>
                       </text>
                     )
@@ -219,7 +219,7 @@ export function ProjectsByDepartmentChart({ data, departments }: ProjectsByDepar
       </CardContent>
       <CardFooter className="flex-col  items-start gap-2 text-sm">
         <div className="flex gap-2 font-medium leading-none">
-          Total: {totalProjects.toLocaleString()} projects
+          Total: {totalProjects.toLocaleString()} {t_project.charts.projects.toLowerCase()}
         </div>
         <div className="leading-none text-muted-foreground">
           {activeDepartment}: {pieData[activeIndex]?.count || 0} ({Math.round(((pieData[activeIndex]?.count || 0) / totalProjects) * 100)}%)

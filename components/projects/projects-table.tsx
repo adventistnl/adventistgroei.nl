@@ -33,6 +33,9 @@ import { projectTranslations } from "@/lib/translations/projects"
 import { useQuery } from "@apollo/client"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
 import { useInstitution } from "@/contexts/institution-context"
+import { useCurrency } from "@/contexts/currency-context"
+import { format } from "date-fns"
+import { ptBR, enUS, nl } from "date-fns/locale"
 
 export interface ProjectTableData {
   id: string
@@ -80,7 +83,16 @@ export function ProjectsTable({
 }: ProjectsTableProps) {
   const { i18n } = useTranslation()
   const { currentInstitutionData } = useInstitution()
+  const { formatCurrency } = useCurrency()
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+
+  const dateLocale = React.useMemo(() => {
+    switch (i18n.language) {
+      case 'pt': return ptBR
+      case 'nl': return nl
+      default: return enUS
+    }
+  }, [i18n.language])
 
   const institutionId = currentInstitutionData?.id
 
@@ -160,26 +172,26 @@ export function ProjectsTable({
     {
       id: "budget",
       accessorKey: "budget",
-      header: "Orçamento",
+      header: t.table.budget,
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <DollarSign className="w-4 h-4 text-green-600" />
           <span className="font-medium">
-            R$ {row.original.budget.toLocaleString()}
+            {formatCurrency(row.original.budget)}
           </span>
         </div>
       ),
     },
     {
       id: "dates",
-      header: "Período",
+      header: t.table.period,
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-muted-foreground" />
           <div className="text-sm">
-            <div>{new Date(row.original.start_at).toLocaleDateString('pt-BR')}</div>
+            <div>{format(new Date(row.original.start_at), "P", { locale: dateLocale })}</div>
             <div className="text-xs text-muted-foreground">
-              até {new Date(row.original.end_at).toLocaleDateString('pt-BR')}
+              - {format(new Date(row.original.end_at), "P", { locale: dateLocale })}
             </div>
           </div>
         </div>
@@ -194,7 +206,7 @@ export function ProjectsTable({
             {row.original.subsidyRequests || 0}
           </div>
           <div className="text-xs text-muted-foreground">
-            R$ {(row.original.subsidyAmount || 0).toLocaleString()}
+            {formatCurrency(row.original.subsidyAmount || 0)}
           </div>
         </div>
       ),
@@ -207,11 +219,11 @@ export function ProjectsTable({
           {row.original.required_volunteers ? (
             <Badge variant="outline" className="text-purple-600 border-purple-200">
               <Users className="w-3 h-3 mr-1" />
-              Sim
+              {t.table.yes}
             </Badge>
           ) : (
             <Badge variant="outline" className="text-gray-600 border-gray-200">
-              Não
+              {t.table.no}
             </Badge>
           )}
         </div>
@@ -294,6 +306,20 @@ export function ProjectsTable({
           ]
         }
       ]}
+      translations={{
+        search: t.searchProjects,
+        clearFilters: t.table.clearFilters,
+        columns: t.table.columns,
+        rowsPerPage: t.table.rowsPerPage,
+        showingResults: (from, to, total) => t.table.showingResults
+          .replace('{{from}}', from.toString())
+          .replace('{{to}}', to.toString())
+          .replace('{{total}}', total.toString()),
+        previous: t.table.previous,
+        next: t.table.next,
+        noResults: t.table.noResults,
+        all: t.filters?.allDepartments?.split(' ')?.[0] || "All" // "Todos" / "Alle" / "All"
+      }}
     />
   )
 }

@@ -26,6 +26,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { projectTranslations } from "@/lib/translations/projects"
 import { DELETE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
+import { useCurrency } from "@/contexts/currency-context"
 import toast from "react-hot-toast"
 
 // Project Data interface
@@ -52,6 +53,7 @@ export function DeleteProjectModal({
 }: DeleteProjectModalProps) {
   const { i18n } = useTranslation()
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+  const { formatCurrency } = useCurrency()
   const [understoodConsequences, setUnderstoodConsequences] = React.useState(false)
   const [finalConfirmation, setFinalConfirmation] = React.useState('')
 
@@ -66,7 +68,7 @@ export function DeleteProjectModal({
   const handleConfirm = async () => {
     if (!project) return
 
-    const loadingToast = toast.loading(`${t.toasts.projectDeleted.replace('successfully!', '...')}`)
+    const loadingToast = toast.loading(t.toasts.projectDeleting)
     
     try {
       await deleteProject({
@@ -141,13 +143,7 @@ export function DeleteProjectModal({
     return null
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
+
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
@@ -210,7 +206,7 @@ export function DeleteProjectModal({
               {understoodConsequences && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">
-                    Type <span className="font-mono bg-gray-100 px-1 rounded">delete</span> to confirm
+                    {t.deleteProjectTypeConfirm}
                   </label>
                   <Input
                     type="text"
