@@ -104,7 +104,7 @@ export function RequestSubsidyModal({
   subsidizedActivityIds = [],
   availableBudget = 0,
 }: RequestSubsidyModalProps) {
-  const { formatCurrency } = useCurrency()
+  const { formatCurrency, selectedCurrency } = useCurrency()
   const { t, i18n } = useTranslation()
   const [dragActive, setDragActive] = useState(false)
   const [currentActivityIndex, setCurrentActivityIndex] = useState(0)
@@ -267,7 +267,7 @@ export function RequestSubsidyModal({
       {
         id: "requested-amount",
         label: "Valor Definido",
-        value: validation.hasRequestedAmount ? formatCurrency(item.requested_amount) : "€0",
+        value: validation.hasRequestedAmount ? formatCurrency(item.requested_amount) : `${selectedCurrency.symbol}0`,
         isValid: validation.hasRequestedAmount,
         variant: validation.hasRequestedAmount ? "success" : "neutral"
       },
@@ -699,6 +699,14 @@ export function RequestSubsidyModal({
               </div>
             </div>
           </div>
+
+          {/* Validation Badges - Moved here from Activity Navigation */}
+          <ValidationBadgesCarousel
+            badges={getValidationBadges(currentItem)}
+            showCarousel={true}
+            minBadgesForCarousel={4}
+            className="mb-3"
+          />
           
           {/* Activity Navigation */}
           <div className="space-y-3">
@@ -744,14 +752,6 @@ export function RequestSubsidyModal({
                 </Button>
               </div>
             </div>
-
-            {/* Validation Badges - Componente Reutilizável com Carrossel */}
-            <ValidationBadgesCarousel
-              badges={getValidationBadges(currentItem)}
-              showCarousel={true}
-              minBadgesForCarousel={4}
-              className="mb-3"
-            />
 
             {/* Activity Cards */}
             <div className="flex gap-2 overflow-x-auto pb-2">
@@ -837,15 +837,15 @@ export function RequestSubsidyModal({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Label className="text-sm font-medium text-gray-700">Contribuição da Instituição</Label>
+                  <Label className="text-sm font-medium text-gray-700">{translations.budget.title}</Label>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
-                        <p className="text-xs font-medium mb-1">Valor da Solicitação</p>
-                        <p className="text-xs">Este é o valor que a instituição contribuirá. O restante do orçamento será coberto pela igreja.</p>
+                        <p className="text-xs font-medium mb-1">{translations.budget.tooltip.title}</p>
+                        <p className="text-xs">{translations.budget.tooltip.description}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -936,7 +936,6 @@ export function RequestSubsidyModal({
                           }
                         }}
                         className="h-9 text-sm font-medium flex-1"
-                        min={0}
                         min={0}
                         max={Math.max(0, (availableBudget + (mode === 'edit' ? initialData?.requested_amount || 0 : 0)) - (totalRequestedAmount - currentItem.requested_amount))}
                         placeholder={translations.budget.placeholder}

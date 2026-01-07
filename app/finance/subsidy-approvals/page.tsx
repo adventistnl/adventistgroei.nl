@@ -38,10 +38,10 @@ export default function SubsidyApprovalsPage() {
   const { data: subsidyData, loading: subsidyLoading, error: subsidyError, refetch: refetchSubsidies } = useQuery(GET_ALL_SUBSIDY_REQUESTS, {
     fetchPolicy: 'network-only', // Always fetch from server to ensure fresh data
     onCompleted: () => {
-      console.log('✅ Subsidy requests loaded successfully')
+      console.log('Subsidy requests loaded successfully')
     },
     onError: (error) => {
-      console.error('❌ Error loading subsidy requests:', error)
+      console.error('Error loading subsidy requests:', error)
       toast.error("Error loading subsidy requests")
     }
   })
@@ -52,10 +52,10 @@ export default function SubsidyApprovalsPage() {
     fetchPolicy: 'network-only',
     skip: !currentInstitutionData?.id,
     onCompleted: () => {
-      console.log('✅ Analytics data loaded successfully')
+      console.log('Analytics data loaded successfully')
     },
     onError: (error) => {
-      console.error('❌ Error loading analytics:', error)
+      console.error('Error loading analytics:', error)
     }
   })
 

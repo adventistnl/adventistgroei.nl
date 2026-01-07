@@ -272,7 +272,7 @@ export function ProjectDataStep({ formData, errors, departments, users, onChange
             </div>
 
             {/* Register as Event Switch */}
-            <div className="flex items-center justify-between p-3 border border-border rounded-lg hover:border-primary/30 transition-colors">
+            {/* <div className="flex items-center justify-between p-3 border border-border rounded-lg hover:border-primary/30 transition-colors">
               <div className="space-y-1 flex-1">
                 <div className="flex items-center gap-2">
                   <Label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
@@ -304,10 +304,10 @@ export function ProjectDataStep({ formData, errors, departments, users, onChange
                 }}
                 className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-gray-300 disabled:bg-gray-500 disabled:opacity-70"
               />
-            </div>
+            </div> */}
 
             {/* Private Project Switch */}
-            <div className="flex items-center justify-between p-3 border border-border rounded-lg hover:border-primary/30 transition-colors">
+            {/* <div className="flex items-center justify-between p-3 border border-border rounded-lg hover:border-primary/30 transition-colors">
               <div className="space-y-1 flex-1">
                 <div className="flex items-center gap-2">
                   <Label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
@@ -337,7 +337,7 @@ export function ProjectDataStep({ formData, errors, departments, users, onChange
                 }}
                 className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-gray-300 disabled:bg-gray-500 disabled:opacity-70"
               />
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

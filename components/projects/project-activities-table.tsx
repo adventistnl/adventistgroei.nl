@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react"
 import { useTranslation } from "react-i18next"
+import { useCurrency } from "@/contexts/currency-context"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -18,7 +19,12 @@ import {
   Wrench,
   Package,
   GraduationCap,
-  DollarSign
+  DollarSign,
+  Tag,
+  CircleDollarSign,
+  Wallet,
+  Flag,
+  Users
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -213,6 +219,7 @@ export function ProjectActivitiesTable({
   batchSummary
 }: ProjectActivitiesTableProps) {
   const { t } = useTranslation()
+  const { selectedCurrency, formatCurrency } = useCurrency()
   const [isViewActivityModalOpen, setIsViewActivityModalOpen] = useState(false)
   const [selectedActivityForView, setSelectedActivityForView] = useState<ProjectActivityData | null>(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -313,8 +320,7 @@ export function ProjectActivitiesTable({
     switch (statusLower) {
       case "completed": return "success"
       case "in_progress": return "info"
-      case "todo":
-      case "pending": return "warning"
+      case "todo": return "warning"
       case "on_hold": return "neutral"
       default: return "default"
     }
@@ -352,15 +358,6 @@ export function ProjectActivitiesTable({
     return labels[priority.toLowerCase()] || priority
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
-
-
 
   // Event handlers
   const handleManageActivity = (activity: ProjectActivityData) => {
@@ -380,7 +377,12 @@ export function ProjectActivitiesTable({
     {
       id: "name",
       accessorKey: "name",
-      header: t('activities.table.activity'),
+      header: () => (
+        <div className="flex items-center gap-2">
+          <Activity className="w-4 h-4" />
+          <span>{t('activities.table.activity')}</span>
+        </div>
+      ),
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -398,16 +400,30 @@ export function ProjectActivitiesTable({
     {
       id: "tags",
       accessorKey: "tags",
-      header: t('activities.table.category'),
+      header: () => (
+        <div className="flex items-center gap-2">
+          <Tag className="w-4 h-4" />
+          <span>{t('activities.table.category')}</span>
+        </div>
+      ),
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-1">
           {row.original.tags && row.original.tags.length > 0 ? (
-            row.original.tags.map((tag: ActivityTags) => (
-              <Badge key={tag} variant="outline" className={`${getActivityTagColor(tag)} flex items-center gap-1 w-fit`}>
-                {getActivityTagIcon(tag)}
-                <span className="capitalize">{getActivityTagLabel(tag)}</span>
-              </Badge>
-            ))
+            row.original.tags.map((tag: ActivityTags) => {
+              const variant = tag === ActivityTags.Reform ? 'info' :
+                             tag === ActivityTags.Equipment ? 'info' :
+                             tag === ActivityTags.Materials ? 'info' :
+                             tag === ActivityTags.Training ? 'success' : 'neutral'
+              return (
+                <StatusBadge
+                  key={tag}
+                  label={getActivityTagLabel(tag)}
+                  variant={variant}
+                  showDot={true}
+                  size="sm"
+                />
+              )
+            })
           ) : (
             <span className="text-xs text-muted-foreground">Sem categoria</span>
           )}
@@ -416,17 +432,24 @@ export function ProjectActivitiesTable({
     },
     {
       id: "subsidy_status",
-      header: t('activities.table.subsidy_status'),
+      header: () => (
+        <div className="flex items-center gap-2">
+          <CircleDollarSign className="w-4 h-4" />
+          <span>{t('activities.table.subsidy_status')}</span>
+        </div>
+      ),
       cell: ({ row }) => (
         <div className="flex items-center justify-center">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
             row.original.is_subsidized 
-              ? 'bg-green-100 border-2 border-green-300' 
-              : 'bg-gray-100 border-2 border-gray-300'
+              ? 'bg-green-100 border-2 border-green-300 dark:bg-green-950 dark:border-green-800' 
+              : 'bg-gray-100 border-2 border-gray-300 dark:bg-gray-800 dark:border-gray-600'
           }`}>
-            <DollarSign className={`w-4 h-4 ${
-              row.original.is_subsidized ? 'text-green-600' : 'text-gray-400'
-            }`} />
+            <span className={`text-sm font-bold ${
+              row.original.is_subsidized ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'
+            }`}>
+              {selectedCurrency.symbol}
+            </span>
           </div>
         </div>
       ),
@@ -434,7 +457,12 @@ export function ProjectActivitiesTable({
     {
       id: "budget_amount",
       accessorKey: "budget_amount",
-      header: t('activities.table.budget'),
+      header: () => (
+        <div className="flex items-center gap-2">
+          <Wallet className="w-4 h-4" />
+          <span>{t('activities.table.budget')}</span>
+        </div>
+      ),
       cell: ({ row }) => (
         <div className="font-medium">{formatCurrency(row.original.budget_amount)}</div>
       ),
@@ -442,12 +470,17 @@ export function ProjectActivitiesTable({
     {
       id: "status",
       accessorKey: "status",
-      header: t('activities.table.status'),
+      header: () => (
+        <div className="flex items-center gap-2">
+          <CheckCircle className="w-4 h-4" />
+          <span>{t('activities.table.status')}</span>
+        </div>
+      ),
       cell: ({ row }) => (
         <StatusBadge
           label={getStatusLabel(row.original.status)}
           variant={getStatusVariant(row.original.status)}
-          icon={getStatusIcon(row.original.status)}
+          showDot={true}
           size="sm"
         />
       ),
@@ -455,11 +488,17 @@ export function ProjectActivitiesTable({
     {
       id: "priority",
       accessorKey: "priority",
-      header: t('activities.table.priority'),
+      header: () => (
+        <div className="flex items-center gap-2">
+          <Flag className="w-4 h-4" />
+          <span>{t('activities.table.priority')}</span>
+        </div>
+      ),
       cell: ({ row }) => (
         <StatusBadge
           label={getPriorityLabel(row.original.priority)}
           variant={getPriorityVariant(row.original.priority)}
+          icon={Flag}
           showDot={true}
           size="sm"
         />
@@ -467,7 +506,12 @@ export function ProjectActivitiesTable({
     },
     {
       id: "assigned_users",
-      header: "Responsáveis",
+      header: () => (
+        <div className="flex items-center gap-2">
+          <Users className="w-4 h-4" />
+          <span>Responsáveis</span>
+        </div>
+      ),
       cell: ({ row }) => {
         // Prioridade: assignees (nova estrutura) > assigned_users (legacy)
         let assignedUsers: Array<{ id: string; name: string; email?: string; avatar?: string; initials?: string; role?: string }> = []
@@ -507,7 +551,7 @@ export function ProjectActivitiesTable({
                       style={{ zIndex: displayedUsers.length - index }}
                     >
                       <AvatarImage src={user.avatar} alt={user.name} />
-                      <AvatarFallback className="text-[9px] bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                      <AvatarFallback className="text-[9px] bg-muted text-foreground font-medium">
                         {user.initials || user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
                       </AvatarFallback>
                     </Avatar>
@@ -539,7 +583,12 @@ export function ProjectActivitiesTable({
     },
     {
       id: "actions",
-      header: t('activities.table.actions'),
+      header: () => (
+        <div className="flex items-center gap-2">
+          <Settings className="w-4 h-4" />
+          <span>{t('activities.table.actions')}</span>
+        </div>
+      ),
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

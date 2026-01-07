@@ -42,7 +42,7 @@ import { createPrivacyConfig } from "@/config/privacy-roles.config"
 import { InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
 import { PrivacyOverlay } from "@/components/shared/privacy-overlay"
 import { Skeleton } from "@/components/ui/skeleton"
-import { CurrencyConfig, formatCurrency } from "@/types/currency"
+import { useCurrency } from "@/contexts/currency-context"
 
 interface DepartmentSpending {
   departmentId: string
@@ -59,7 +59,6 @@ interface SpendingDataPoint {
 interface SpendingOverTimeChartProps {
   data: SpendingDataPoint[]
   year: number
-  currency: CurrencyConfig
 }
 
 const PRIVACY_CONFIG = createPrivacyConfig(
@@ -83,8 +82,9 @@ const generateColors = (count: number): string[] => {
   return colors
 }
 
-export function SpendingOverTimeChart({ data, year, currency }: SpendingOverTimeChartProps) {
+export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps) {
   const { t } = useTranslation()
+  const { formatCurrency } = useCurrency()
   const [timeRange, setTimeRange] = React.useState("12m")
   const [chartType, setChartType] = React.useState<"area" | "bar">("area")
   const { isHidden } = useComponentPrivacy(PRIVACY_CONFIG)
@@ -198,37 +198,6 @@ export function SpendingOverTimeChart({ data, year, currency }: SpendingOverTime
           </CardDescription>
         </div>
         <div className="flex items-center gap-2">
-          {/* Chart Type Toggle */}
-          <div className="flex items-center border border-border rounded-lg p-1 bg-muted">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setChartType("area")}
-              className={cn(
-                "h-8 px-3 rounded-md transition-all",
-                chartType === "area"
-                  ? "bg-background shadow-sm text-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
-              )}
-            >
-              <Activity className="w-4 h-4 mr-1" />
-              {t("annual_budget.charts.spending_over_time.chart_types.area")}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setChartType("bar")}
-              className={cn(
-                "h-8 px-3 rounded-md transition-all",
-                chartType === "bar"
-                  ? "bg-background shadow-sm text-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
-              )}
-            >
-              <BarChart3 className="w-4 h-4 mr-1" />
-              {t("annual_budget.charts.spending_over_time.chart_types.bar")}
-            </Button>
-          </div>
 
           {/* Time Range Selector */}
           <Select value={timeRange} onValueChange={setTimeRange}>
@@ -301,6 +270,38 @@ export function SpendingOverTimeChart({ data, year, currency }: SpendingOverTime
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* Chart Type Toggle */}
+          <div className="flex items-center border border-border rounded-lg p-1 bg-muted">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setChartType("area")}
+              className={cn(
+                "h-8 px-3 rounded-md transition-all",
+                chartType === "area"
+                  ? "bg-background shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
+              )}
+            >
+              <Activity className="w-4 h-4 mr-1" />
+              {/* {t("annual_budget.charts.spending_over_time.chart_types.area")} */}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setChartType("bar")}
+              className={cn(
+                "h-8 px-3 rounded-md transition-all",
+                chartType === "bar"
+                  ? "bg-background shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
+              )}
+            >
+              <BarChart3 className="w-4 h-4 mr-1" />
+              {/* {t("annual_budget.charts.spending_over_time.chart_types.bar")} */}
+            </Button>
+          </div>
+
           <InlinePrivacyToggle 
             config={PRIVACY_CONFIG} 
             className="privacy-toggle-button-header flex-shrink-0" 
@@ -359,7 +360,7 @@ export function SpendingOverTimeChart({ data, year, currency }: SpendingOverTime
                       <ChartTooltipContent
                         labelFormatter={(value) => `${value} ${year}`}
                         indicator="dot"
-                        formatter={(value) => formatCurrency(typeof value === 'number' ? value : 0, currency)}
+                        formatter={(value) => formatCurrency(typeof value === 'number' ? value : 0)}
                       />
                     }
                   />
@@ -371,7 +372,7 @@ export function SpendingOverTimeChart({ data, year, currency }: SpendingOverTime
                       fill={`url(#fill-${deptId})`}
                       stroke={chartConfig[deptId]?.color || "hsl(0, 0%, 50%)"}
                       fillOpacity={0.4}
-                      name={chartConfig[deptId]?.label}
+                      name={String(chartConfig[deptId]?.label || deptId)}
                     />
                   ))}
                   <ChartLegend content={<ChartLegendContent />} />
@@ -392,7 +393,7 @@ export function SpendingOverTimeChart({ data, year, currency }: SpendingOverTime
                       <ChartTooltipContent
                         labelFormatter={(value) => `${value} ${year}`}
                         indicator="dashed"
-                        formatter={(value) => formatCurrency(typeof value === 'number' ? value : 0, currency)}
+                        formatter={(value) => formatCurrency(typeof value === 'number' ? value : 0)}
                       />
                     }
                   />
@@ -402,7 +403,7 @@ export function SpendingOverTimeChart({ data, year, currency }: SpendingOverTime
                       dataKey={deptId}
                       fill={chartConfig[deptId]?.color || "hsl(0, 0%, 50%)"}
                       radius={4}
-                      name={chartConfig[deptId]?.label}
+                      name={String(chartConfig[deptId]?.label || deptId)}
                     />
                   ))}
                   <ChartLegend content={<ChartLegendContent />} />

@@ -32,6 +32,7 @@ import { ProjectTableData } from "@/components/projects/projects-table"
 import { mockDepartments } from "@/data/mockData"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
 import { UserListModal } from "@/components/shared/user-list-modal"
+import { useCurrency } from "@/contexts/currency-context"
 
 interface ProjectHeaderMinimalProps {
   project: ProjectTableData
@@ -81,6 +82,7 @@ export function ProjectHeaderMinimal({
 }: ProjectHeaderMinimalProps) {
   const router = useRouter()
   const { i18n } = useTranslation()
+  const { formatCurrency } = useCurrency()
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
   const [isUserListModalOpen, setIsUserListModalOpen] = React.useState(false)
 
@@ -151,51 +153,7 @@ export function ProjectHeaderMinimal({
           Voltar
         </Button>
 
-        <div className="flex items-center gap-2">
-          {onEdit && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onEdit}
-              className="gap-2"
-            >
-              <Edit className="h-4 w-4" />
-              {t.actions.editProject}
-            </Button>
-          )}
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {onCreateCommunication && (
-                <DropdownMenuItem onClick={onCreateCommunication}>
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  {t.actions.createCommunication}
-                </DropdownMenuItem>
-              )}
-              {onCreateEvent && (
-                <DropdownMenuItem onClick={onCreateEvent}>
-                  <Calendar className="h-4 w-4 mr-2" />
-                  {t.actions.createEvent}
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              {onDelete && (
-                <DropdownMenuItem
-                  onClick={onDelete}
-                  className="text-red-600"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Excluir
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+
       </div>
 
       {/* Minimalist Project Header */}
@@ -233,6 +191,36 @@ export function ProjectHeaderMinimal({
                 showAddButton={false}
                 onShowAllUsers={() => setIsUserListModalOpen(true)}
               />
+
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {onEdit && (
+                    <DropdownMenuItem onClick={onEdit}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      {t.actions.editProject}
+                    </DropdownMenuItem>
+                  )}
+                  {onDelete && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={onDelete}
+                        className="text-red-600 focus:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir projeto
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
             </div>
           </div>
           
@@ -247,7 +235,7 @@ export function ProjectHeaderMinimal({
               {getDepartmentName(project.department_id)}
             </Badge>
             <Badge variant="outline">
-              R$ {project.budget.toLocaleString()}
+              {formatCurrency(project.budget)}
             </Badge>
           </div>
 
@@ -258,12 +246,12 @@ export function ProjectHeaderMinimal({
               <div className="text-sm text-gray-700">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">Instituição:</span>
-                  <span>R$ {institutionContribution.toLocaleString()}</span>
+                  <span>{formatCurrency(institutionContribution)}</span>
                   <span className="text-xs text-gray-500">({institutionPercent.toFixed(0)}%)</span>
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="font-medium">Orçamento total:</span>
-                  <span>R$ {totalBudget.toLocaleString()}</span>
+                  <span>{formatCurrency(totalBudget)}</span>
                 </div>
               </div>
 

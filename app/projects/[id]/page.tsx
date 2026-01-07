@@ -22,6 +22,7 @@ import { CreateCommunicationModal, CommunicationFormData } from "@/components/mo
 import { AddSubsidyModal, SubsidyFormData } from "@/components/modals/project/add-subsidy-modal"
 import { EditSubsidyModal, EditSubsidyFormData } from "@/components/modals/project/edit-subsidy-modal"
 import { DeleteSubsidyModal } from "@/components/modals/project/delete-subsidy-modal"
+import { DeleteProjectModal } from "@/components/modals/project/delete-project-modal"
 // View subsidy modal is handled internally by SubsidyRequestsContainer
 import { DeleteSubsidyRequestModal } from "@/components/modals/project/delete-subsidy-request-modal"
 import { AddActivityModal, ActivityFormData } from "@/components/modals/project/add-activity-modal"
@@ -73,6 +74,7 @@ import { BATCH_UPDATE_PROJECT_ACTIVITIES, CREATE_PROJECT_ACTIVITY, UPDATE_PROJEC
 import { CREATE_SUBSIDY_REQUEST, UPDATE_SUBSIDY_REQUEST, APPROVE_SUBSIDY_REQUEST, REJECT_SUBSIDY_REQUEST, DELETE_SUBSIDY_REQUEST } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
 import { useAuth } from "@/contexts/auth-context"
 import { useInstitution } from "@/contexts/institution-context"
+import { useCurrency } from "@/contexts/currency-context"
 import { ActivityTags, EntityType, ActivityPriority, ActivityStatus } from "@/types/graphql-global-types"
 
 // Helper functions for ActivityTags
@@ -123,6 +125,7 @@ export default function ProjectDetailsPage() {
   const { i18n } = useTranslation()
   const { user } = useAuth()
   const { currentInstitutionData } = useInstitution()
+  const { formatCurrency } = useCurrency()
   const projectId = params.id as string
   
   // State management
@@ -149,6 +152,7 @@ export default function ProjectDetailsPage() {
   
   // Modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isDeleteProjectModalOpen, setIsDeleteProjectModalOpen] = useState(false)
   const [isEventModalOpen, setIsEventModalOpen] = useState(false)
   const [isCommunicationModalOpen, setIsCommunicationModalOpen] = useState(false)
   const [isAddSubsidyModalOpen, setIsAddSubsidyModalOpen] = useState(false)
@@ -182,7 +186,7 @@ export default function ProjectDetailsPage() {
     skip: !projectId,
     fetchPolicy: 'network-only', // Sempre buscar do servidor para garantir dados atualizados
     onCompleted: () => {
-      toast.success("📋 Project details loaded successfully!", {
+      toast.success("Project details loaded successfully!", {
         duration: 3000
       })
     },
@@ -199,19 +203,19 @@ export default function ProjectDetailsPage() {
     variables: { institution_id: institutionIdForUsers },
     skip: !institutionIdForUsers,
     onCompleted: (data) => {
-      console.log('✅ Users loaded:', data.users)
-      console.log('🏛️ Institution ID used:', institutionIdForUsers)
-      console.log('📍 Source:', projectData?.project?.institution_id ? 'project' : currentInstitutionData?.id ? 'context' : 'user')
+      console.log('Users loaded:', data.users)
+      console.log('Institution ID used:', institutionIdForUsers)
+      console.log('Source:', projectData?.project?.institution_id ? 'project' : currentInstitutionData?.id ? 'context' : 'user')
     },
     onError: (error) => {
-      console.error('❌ Error loading users:', error)
+      console.error('Error loading users:', error)
     }
   })
 
   // DEBUG: Monitor KPIs and Budget
   useEffect(() => {
     if (projectData?.project?.kpis) {
-      console.log('📊 Project KPIs:', {
+      console.log('Project KPIs:', {
         kpis: projectData.project.kpis,
         subsidizedBudget: projectData.project.kpis.subsidizedBudget,
         budget: projectData.project.budget,
@@ -242,7 +246,7 @@ export default function ProjectDetailsPage() {
   // Create activity mutation
   const [createProjectActivity, { loading: createActivityLoading }] = useMutation(CREATE_PROJECT_ACTIVITY, {
     onCompleted: () => {
-      toast.success("✅ Atividade criada com sucesso!", { duration: 3000 })
+      toast.success("Atividade criada com sucesso!", { duration: 3000 })
       refetchProject()
       setIsRegisterActivityModalOpen(false)
     },
@@ -255,7 +259,7 @@ export default function ProjectDetailsPage() {
   // Update activity mutation
   const [updateProjectActivity, { loading: updateActivityLoading }] = useMutation(UPDATE_PROJECT_ACTIVITY, {
     onCompleted: () => {
-      toast.success("✅ Atividade atualizada com sucesso!", { duration: 3000 })
+      toast.success("Atividade atualizada com sucesso!", { duration: 3000 })
       refetchProject()
       setIsEditActivityModalOpen(false)
       setSelectedActivity(undefined)
@@ -561,15 +565,15 @@ export default function ProjectDetailsPage() {
       {
         id: "project-budget",
         title: "Investimento Total",
-        value: `R$ ${(kpis.projectBudget / 1000).toFixed(1)}K`,
+        value: formatCurrency(kpis.projectBudget, { compact: true }),
         subtitle: "Soma de todas as atividades",
         icon: DollarSign,
       },
       {
         id: "subsidized-budget",
         title: "Orçamento Subsidiado",
-        value: `R$ ${(kpis.subsidizedBudget / 1000).toFixed(1)}K`,
-        subtitle: `R$ ${(kpis.balance / 1000).toFixed(1)}K contribuição local`,
+        value: formatCurrency(kpis.subsidizedBudget, { compact: true }),
+        subtitle: `${formatCurrency(kpis.balance, { compact: true })} contribuição local`,
         trend: {
           value: kpis.subsidizedBudgetPercentage,
           isPositive: true,
@@ -625,8 +629,12 @@ export default function ProjectDetailsPage() {
   }
 
   const handleDeleteProject = () => {
-    // TODO: Implement delete confirmation dialog
-    toast.success(`🗑️ Project deleted: ${project?.title}`, { duration: 3000 })
+    setIsDeleteProjectModalOpen(true)
+  }
+
+  const handleDeleteProjectSuccess = () => {
+    setIsDeleteProjectModalOpen(false)
+    toast.success(`🗑️ Projeto deletado com sucesso!`, { duration: 3000 })
     router.push("/projects")
   }
 
@@ -1579,22 +1587,6 @@ export default function ProjectDetailsPage() {
                   {
                     id: "subsidy-cards",
                     component: (
-                      <>
-                        {/* Tabs - Subsídios e Comunicações */}
-
-                        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "subsidies" | "communications")} className="w-full">
-                          <TabsList className="grid w-full grid-cols-1 max-w-md">
-                            <TabsTrigger value="subsidies" className="gap-2">
-                              <DollarSign className="w-4 h-4" />
-                              Subsídios
-                            </TabsTrigger>
-                            {/* <TabsTrigger value="communications" className="gap-2">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
-                              Comunicações
-                            </TabsTrigger> */}
-                          </TabsList>
-                        </Tabs>
-
                         <SubsidyRequestsContainer
                           subsidies={subsidyRequests}
                           onAddSubsidy={handleAddSubsidyFromContainer}
@@ -1608,7 +1600,6 @@ export default function ProjectDetailsPage() {
                           onRefresh={handleRefreshSubsidies}
                           projectSubsidizedBudget={projectData?.project?.kpis?.subsidizedBudget || 0}
                         />
-                      </>
                  
                     ),
                     colSpan: "col-span-12 lg:col-span-4",
@@ -1755,6 +1746,13 @@ export default function ProjectDetailsPage() {
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
           onSuccess={handleProjectUpdateSuccess}
+          project={project}
+        />
+
+        <DeleteProjectModal
+          isOpen={isDeleteProjectModalOpen}
+          onClose={() => setIsDeleteProjectModalOpen(false)}
+          onConfirm={handleDeleteProjectSuccess}
           project={project}
         />
         

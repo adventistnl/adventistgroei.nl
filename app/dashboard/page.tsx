@@ -44,7 +44,14 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { KPICards } from "@/components/shared/kpi-cards-carousel"
+import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
+import { QuickActions, QuickAction } from "@/components/shared/quick-actions"
+import { YearFilter } from "@/components/shared/year-filter"
+import { SectionHeader } from "@/components/shared/section-header"
 import { RoleDistributionChart, PermissionsByGroupChart, UserActivityChart } from "@/components/access/access-charts"
+import { UserStructureGrowthChart } from "@/components/charts/dashboard"
+import { HierarchicalStructureCard } from "@/components/charts/dashboard/hierarchical-structure-card"
+import { StructureBarChart, GrowthLineChart } from "@/components/charts/generic"
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart"
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts"
 
@@ -75,10 +82,15 @@ export default function DashboardPage() {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const [selectedMonth, setSelectedMonth] = useState<string>("all")
   const [selectedRegion, setSelectedRegion] = useState<string>("all")
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [availableYears, setAvailableYears] = useState<number[]>(() => {
     const current = new Date().getFullYear()
     return [current, current - 1, current - 2]
+  })
+
+  // Filter values state for PageFilters component
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({
+    month: "all",
+    region: "all"
   })
 
   // GraphQL Queries
@@ -114,26 +126,28 @@ export default function DashboardPage() {
 
   // Filter data by selected year and month
   const filteredUsers = useMemo(() => {
+    const monthFilter = filterValues.month || selectedMonth
     return allUsers.filter((user: any) => {
       const createdDate = new Date(user.created_at)
       const yearMatch = createdDate.getFullYear() === selectedYear
       
-      if (selectedMonth === "all") return yearMatch
+      if (monthFilter === "all") return yearMatch
       
-      const monthMatch = createdDate.getMonth() === parseInt(selectedMonth)
+      const monthMatch = createdDate.getMonth() === parseInt(monthFilter)
       return yearMatch && monthMatch
     })
-  }, [allUsers, selectedYear, selectedMonth])
+  }, [allUsers, selectedYear, selectedMonth, filterValues.month])
 
   const filteredChurches = useMemo(() => {
+    const regionFilter = filterValues.region || selectedRegion
     let filtered = allChurches.filter((church: any) => !church.is_deleted)
     
-    if (selectedRegion !== "all") {
-      filtered = filtered.filter((church: any) => church.region_id === selectedRegion)
+    if (regionFilter !== "all") {
+      filtered = filtered.filter((church: any) => church.region_id === regionFilter)
     }
     
     return filtered
-  }, [allChurches, selectedRegion])
+  }, [allChurches, selectedRegion, filterValues.region])
 
   // Calculate KPIs
   const kpis = useMemo(() => {
@@ -290,6 +304,60 @@ export default function DashboardPage() {
     toast.success(`Year ${nextYear} added successfully`)
   }
 
+  // Filter configuration for PageFilters component
+  const filterConfigs: FilterConfig[] = useMemo(() => [
+    {
+      id: "month",
+      label: "Month",
+      type: "select",
+      placeholder: "Select month",
+      defaultValue: "all",
+      options: [
+        { label: "All months", value: "all" },
+        ...MONTHS.map((month, index) => ({
+          label: month,
+          value: index.toString()
+        }))
+      ]
+    },
+    {
+      id: "region",
+      label: "Region",
+      type: "select",
+      placeholder: "Select region",
+      icon: MapPin,
+      defaultValue: "all",
+      description: "Filter churches by region",
+      options: [
+        { label: "All regions", value: "all" },
+        ...allRegions.map((region: any) => ({
+          label: region.name,
+          value: region.id
+        }))
+      ]
+    }
+  ], [allRegions])
+
+  // Handle filter changes
+  const handleFilterChange = (filterId: string, value: any) => {
+    setFilterValues(prev => ({ ...prev, [filterId]: value }))
+    
+    // Update legacy state for backward compatibility
+    if (filterId === "month") {
+      setSelectedMonth(value)
+    } else if (filterId === "region") {
+      setSelectedRegion(value)
+    }
+  }
+
+  // Handle clear filters
+  const handleClearFilters = () => {
+    setFilterValues({ month: "all", region: "all" })
+    setSelectedMonth("all")
+    setSelectedRegion("all")
+    toast.success("Filters cleared")
+  }
+
   // KPI Cards Data
   const kpiCardsData = [
     {
@@ -360,52 +428,46 @@ export default function DashboardPage() {
     }
   ]
 
-  // Year Filter Component
-  const YearFilter = () => {
-    const currentYear = new Date().getFullYear()
-    const maxAllowedYear = currentYear + 2
-    const canAddMore = Math.max(...availableYears) < maxAllowedYear
+  // Quick Actions Configuration
+  const quickActions: QuickAction[] = [
+    {
+      id: "new-user",
+      label: "New User",
+      icon: Plus,
+      onClick: () => {
+        toast.info("New User modal - Coming soon")
+      }
+    },
+    {
+      id: "new-project",
+      label: "New Project",
+      icon: Plus,
+      onClick: () => {
+        toast.info("New Project modal - Coming soon")
+      }
+    },
+    {
+      id: "new-institution",
+      label: "New Institution",
+      icon: Building2,
+      onClick: () => {
+        toast.info("New Institution modal - Coming soon")
+      }
+    },
+    {
+      id: "new-church",
+      label: "New Church",
+      icon: Church,
+      onClick: () => {
+        toast.info("New Church modal - Coming soon")
+      }
+    }
+  ]
 
-    return (
-      <div className="flex items-center gap-3 overflow-x-auto pb-2 scroll-smooth" style={{ scrollbarWidth: 'thin' }}>
-        {availableYears.map((year) => (
-          <Button
-            key={year}
-            variant="outline"
-            size="sm"
-            onClick={() => setSelectedYear(year)}
-            className={`
-              flex-shrink-0 min-w-[80px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
-              ${
-                selectedYear === year 
-                  ? 'bg-primary text-primary-foreground border-primary shadow-md hover:bg-primary/90' 
-                  : 'bg-muted text-muted-foreground border-muted hover:bg-muted/80 hover:text-foreground hover:border-muted-foreground/50'
-              }
-            `}
-          >
-            {year}
-          </Button>
-        ))}
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleAddYear}
-          disabled={!canAddMore}
-          className={`
-            flex-shrink-0 min-w-[100px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
-            ${
-              canAddMore 
-                ? 'border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground hover:border-muted-foreground/60 hover:bg-muted/50' 
-                : 'opacity-40 cursor-not-allowed border-dashed border-muted-foreground/20 text-muted-foreground/50'
-            }
-          `}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Year
-        </Button>
-      </div>
-    )
+  // Handle add year
+  const handleAddYearCallback = (newYear: number) => {
+    setAvailableYears(prev => [...prev, newYear].sort((a, b) => b - a))
+    setSelectedYear(newYear)
   }
 
   if (isLoading) {
@@ -455,95 +517,32 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+          <div/>
 
           {/* Year Filter and Action Buttons Row */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             {/* Year Filter - Left Side */}
             <div className="flex-1">
-              <YearFilter />
+              <YearFilter
+                availableYears={availableYears}
+                selectedYear={selectedYear}
+                onYearChange={setSelectedYear}
+                onAddYear={handleAddYearCallback}
+                showAddButton={false}
+              />
             </div>
 
             {/* Action Buttons - Right Side */}
             <div className="flex items-center gap-2">
-              <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                  >
-                    <Filter className="w-4 h-4" />
-                    Filters
-                    {(selectedMonth !== "all" || selectedRegion !== "all") && (
-                      <Badge variant="secondary" className="ml-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                        {(selectedMonth !== "all" ? 1 : 0) + (selectedRegion !== "all" ? 1 : 0)}
-                      </Badge>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80" align="end">
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-medium mb-3 flex items-center gap-2">
-                        <Filter className="w-4 h-4" />
-                        Additional Filters
-                      </h4>
-                    </div>
-
-                    {/* Month Filter */}
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Month</label>
-                      <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select month" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All months</SelectItem>
-                          {MONTHS.map((month, index) => (
-                            <SelectItem key={index} value={index.toString()}>
-                              {month}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Region Filter */}
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Region</label>
-                      <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select region" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All regions</SelectItem>
-                          {allRegions.map((region: any) => (
-                            <SelectItem key={region.id} value={region.id}>
-                              {region.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Clear Filters */}
-                    {(selectedMonth !== "all" || selectedRegion !== "all") && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => {
-                          setSelectedMonth("all")
-                          setSelectedRegion("all")
-                          toast.success("Filters cleared")
-                        }}
-                      >
-                        Clear Filters
-                      </Button>
-                    )}
-                  </div>
-                </PopoverContent>
-              </Popover>
+              <PageFilters
+                filters={filterConfigs}
+                values={filterValues}
+                onChange={handleFilterChange}
+                onClear={handleClearFilters}
+                triggerLabel="Filters"
+                align="end"
+                width={320}
+              />
 
               <Button
                 variant="outline"
@@ -558,35 +557,23 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick Actions - Below */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground">Quick Actions:</span>
-            <Button size="sm" variant="outline">
-              <Plus className="w-4 h-4 mr-1" />
-              New User
-            </Button>
-            <Button size="sm" variant="outline">
-              <Plus className="w-4 h-4 mr-1" />
-              New Project
-            </Button>
-            <Button size="sm" variant="outline">
-              <Building2 className="w-4 h-4 mr-1" />
-              New Institution
-            </Button>
-            <Button size="sm" variant="outline">
-              <Church className="w-4 h-4 mr-1" />
-              New Church
-            </Button>
-          </div>
+          <QuickActions 
+            actions={quickActions}
+            title="Quick Actions:"
+            showTitle={true}
+            size="sm"
+          />
         </div>
 
         <Separator />
 
         {/* Section 1: System Overview KPIs */}
         <div>
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Building2 className="w-5 h-5" />
-            System Overview
-          </h2>
+          <SectionHeader
+            title="System Overview"
+            icon={Building2}
+            description="Key performance indicators and system statistics"
+          />
           <KPICards 
             data={kpiCardsData}
             isLoading={isLoading}
@@ -598,232 +585,134 @@ export default function DashboardPage() {
 
         {/* Section 2: Institutional Structure */}
         <div>
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Map className="w-5 h-5" />
-            Institutional Structure
-          </h2>
+          <SectionHeader
+            title="Institutional Structure"
+            icon={Map}
+            description="Organizational hierarchy and distribution"
+          />
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Structure Overview Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="w-5 h-5" />
-                  Structure Overview
-                </CardTitle>
-                <CardDescription>
-                  Quantitative breakdown of organizational structure
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer
-                  config={{
-                    count: {
-                      label: "Count",
-                      color: "#3b82f6"
-                    }
-                  }}
-                  className="h-[300px] w-full"
-                >
-                  <BarChart 
-                    data={[
-                      { name: 'Institutions', count: kpis.totalInstitutions, fill: '#3b82f6' },
-                      { name: 'Regions', count: kpis.totalRegions, fill: '#10b981' },
-                      { name: 'Churches', count: kpis.activeChurches, fill: '#f59e0b' },
-                      { name: 'Inst. Depts', count: kpis.institutionDepartments, fill: '#8b5cf6' },
-                      { name: 'Church Depts', count: kpis.churchDepartments, fill: '#ec4899' },
-                    ]}
-                    layout="vertical"
-                  >
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                    <XAxis type="number" />
-                    <YAxis 
-                      dataKey="name" 
-                      type="category" 
-                      width={100}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar 
-                      dataKey="count" 
-                      radius={[0, 4, 4, 0]}
-                    />
-                  </BarChart>
-                </ChartContainer>
-              </CardContent>
-              <CardFooter>
-                <div className="text-sm text-muted-foreground">
-                  Total entities: {kpis.totalInstitutions + kpis.totalRegions + kpis.activeChurches + kpis.totalDepartments}
-                </div>
-              </CardFooter>
-            </Card>
+            <StructureBarChart
+              title="Structure Overview"
+              description="Quantitative breakdown of organizational structure"
+              icon={Building2}
+              data={[
+                { name: 'Institutions', count: kpis.totalInstitutions, fill: '#3b82f6' },
+                { name: 'Regions', count: kpis.totalRegions, fill: '#10b981' },
+                { name: 'Churches', count: kpis.activeChurches, fill: '#f59e0b' },
+                { name: 'Inst. Depts', count: kpis.institutionDepartments, fill: '#8b5cf6' },
+                { name: 'Church Depts', count: kpis.churchDepartments, fill: '#ec4899' },
+              ]}
+              loading={isLoading}
+              layout="vertical"
+              footer={`Total entities: ${kpis.totalInstitutions + kpis.totalRegions + kpis.activeChurches + kpis.totalDepartments}`}
+            />
 
             {/* Hierarchical Structure Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Map className="w-5 h-5" />
-                  Hierarchical Structure
-                </CardTitle>
-                <CardDescription>
-                  The institutional structure follows a clear hierarchy
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="pl-4 border-l-4 border-primary/30">
-                    <div className="font-semibold text-lg mb-2 flex items-center gap-2">
-                      <Building2 className="w-4 h-4" />
-                      Institution Level
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {kpis.totalInstitutions} institution(s) with {kpis.institutionDepartments} department(s)
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Top-level organizational units managing all operations
-                    </div>
-                  </div>
-                  
-                  <div className="pl-8 border-l-4 border-blue-500/30">
-                    <div className="font-semibold mb-2 flex items-center gap-2">
-                      <Map className="w-4 h-4" />
-                      Regions
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {kpis.totalRegions} region(s) managing {kpis.activeChurches} churches
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Geographic divisions containing provinces and churches
-                    </div>
-                  </div>
-                  
-                  <div className="pl-12 border-l-4 border-green-500/30">
-                    <div className="font-semibold mb-2 flex items-center gap-2">
-                      <Church className="w-4 h-4" />
-                      Churches
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {kpis.activeChurches} active churches with {kpis.churchDepartments} departments
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Local congregations with specialized ministry departments
-                    </div>
-                  </div>
-
-                  <div className="mt-4 p-3 bg-muted/30 rounded-lg">
-                    <div className="text-xs font-medium mb-1">Hierarchy Flow:</div>
-                    <div className="text-xs text-muted-foreground font-mono">
-                      Institution → Regions → Provinces → Churches → Departments
-                    </div>
+            <HierarchicalStructureCard
+              title="Hierarchical Structure"
+              description="The institutional structure follows a clear hierarchy"
+              icon={Map}
+              loading={isLoading}
+              levels={[
+                {
+                  title: 'Institution Level',
+                  icon: Building2,
+                  description: `${kpis.totalInstitutions} institution(s) with ${kpis.institutionDepartments} department(s)`,
+                  details: 'Top-level organizational units managing all operations',
+                  borderColor: 'border-primary/30',
+                  indent: 0
+                },
+                {
+                  title: 'Regions',
+                  icon: Map,
+                  description: `${kpis.totalRegions} region(s) managing ${kpis.activeChurches} churches`,
+                  details: 'Geographic divisions containing provinces and churches',
+                  borderColor: 'border-blue-500/30',
+                  indent: 1
+                },
+                {
+                  title: 'Churches',
+                  icon: Church,
+                  description: `${kpis.activeChurches} active churches with ${kpis.churchDepartments} departments`,
+                  details: 'Local congregations with specialized ministry departments',
+                  borderColor: 'border-green-500/30',
+                  indent: 2
+                }
+              ]}
+              footer={
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xs font-medium mb-1">Hierarchy Flow:</div>
+                  <div className="text-xs text-muted-foreground font-mono">
+                    Institution → Regions → Provinces → Churches → Departments
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              }
+            />
+          </div>
+
+          {/* User Growth by Structure - Full Width */}
+          <div className="mt-6">
+            <UserStructureGrowthChart
+              loading={isLoading}
+              users={allUsers}
+              departments={allDepartments}
+              regions={allRegions}
+              churches={allChurches}
+              selectedYear={selectedYear}
+            />
           </div>
         </div>
+
+        
 
         <Separator />
 
         {/* Section 3: Users Overview */}
         <div>
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Users Overview
-          </h2>
+          <SectionHeader
+            title="Users Overview"
+            icon={Users}
+            description="User statistics, growth trends and distribution"
+          />
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* User Growth Over Time */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5" />
-                  User Growth Over Time
-                </CardTitle>
-                <CardDescription>
-                  New user registrations throughout {selectedYear}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer
-                  config={{
-                    users: {
-                      label: "Total Users",
-                      color: "#3b82f6"
-                    },
-                    newUsers: {
-                      label: "New Users",
-                      color: "#10b981"
-                    }
-                  }}
-                  className="h-[300px] w-full"
-                >
-                  <LineChart data={userGrowthData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <ChartLegend content={<ChartLegendContent />} />
-                    <Line 
-                      type="monotone" 
-                      dataKey="users" 
-                      stroke="var(--color-users)" 
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="newUsers" 
-                      stroke="var(--color-newUsers)" 
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                    />
-                  </LineChart>
-                </ChartContainer>
-              </CardContent>
-              <CardFooter>
-                <div className="text-sm text-muted-foreground">
-                  <TrendingUp className="w-4 h-4 inline mr-1" />
+            <GrowthLineChart
+              title="User Growth Over Time"
+              description={`New user registrations throughout ${selectedYear}`}
+              icon={TrendingUp}
+              data={userGrowthData}
+              lines={[
+                { dataKey: 'users', label: 'Total Users', color: '#3b82f6' },
+                { dataKey: 'newUsers', label: 'New Users', color: '#10b981' }
+              ]}
+              loading={isLoading}
+              xAxisKey="month"
+              footer={
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="w-4 h-4" />
                   Growth rate: {kpis.userGrowthRate}% compared to previous year
                 </div>
-              </CardFooter>
-            </Card>
+              }
+            />
 
             {/* User Distribution by Structure */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="w-5 h-5" />
-                  User Distribution
-                </CardTitle>
-                <CardDescription>
-                  Users distributed across institutions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer
-                  config={{
-                    users: {
-                      label: "Users",
-                      color: "#f59e0b"
-                    }
-                  }}
-                  className="h-[300px] w-full"
-                >
-                  <BarChart data={userDistributionData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar 
-                      dataKey="users" 
-                      fill="var(--color-users)" 
-                      radius={[8, 8, 0, 0]}
-                    />
-                  </BarChart>
-                </ChartContainer>
-              </CardContent>
-            </Card>
+            <StructureBarChart
+              title="User Distribution"
+              description="Users distributed across institutions"
+              icon={Building2}
+              data={userDistributionData.map(item => ({
+                name: item.name,
+                count: item.users,
+                fill: '#f59e0b'
+              }))}
+              loading={isLoading}
+              layout="horizontal"
+              dataKey="count"
+              dataKeyLabel="Users"
+            />
           </div>
         </div>
 
@@ -831,10 +720,11 @@ export default function DashboardPage() {
 
         {/* Section 4: Governance & Compliance */}
         <div>
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Shield className="w-5 h-5" />
-            Governance & Compliance
-          </h2>
+          <SectionHeader
+            title="Governance & Compliance"
+            icon={Shield}
+            description="Role distribution and permission management"
+          />
           
           {/* Role Distribution */}
           <RoleDistributionChart 

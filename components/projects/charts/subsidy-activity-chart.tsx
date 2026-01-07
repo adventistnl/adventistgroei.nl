@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useTranslation } from "react-i18next"
+import { useCurrency } from "@/contexts/currency-context"
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import {
   Card,
@@ -28,7 +29,7 @@ interface SubsidyRequestChartData {
   title: string
   requested_at: string | Date
   requested_amount: number
-  status: "pending" | "approved" | "rejected" | "in_review"
+  status: "pending" | "approved" | "rejected" | "in_review" | "closed"
 }
 
 interface SubsidyActivityChartProps {
@@ -44,6 +45,7 @@ export function SubsidyActivityChart({
 }: SubsidyActivityChartProps) {
   const [timeRange, setTimeRange] = React.useState("12m")
   const { i18n } = useTranslation()
+  const { formatCurrency, selectedCurrency } = useCurrency()
   const currentLanguage = i18n?.language || 'en'
 
   // Processar dados de subsídios por mês
@@ -217,7 +219,7 @@ export function SubsidyActivityChart({
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              tickFormatter={(value) => `€${value}K`}
+              tickFormatter={(value) => formatCurrency(value * 1000, { compact: true })}
             />
             <ChartTooltip
               cursor={false}
@@ -240,7 +242,7 @@ export function SubsidyActivityChart({
                       rejected: "Rejeitado",
                     }
                     return [
-                      `€${Number(value).toFixed(1)}K`,
+                      formatCurrency(Number(value) * 1000, { compact: true }),
                       labels[name as string] || name
                     ]
                   }}

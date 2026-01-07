@@ -229,9 +229,15 @@ function ProjectRegisterContent() {
   // GraphQL mutation for creating project
   const [createProjectMutation, { loading: creatingProject }] = useMutation(CREATE_PROJECT_MUTATION, {
     onCompleted: (data) => {
+      // Clear draft from sessionStorage on success
+      try {
+        sessionStorage.removeItem(DRAFT_KEY)
+      } catch {
+        // ignore storage errors
+      }
+      
       toast.success(translations.toast.projectCreated, {
-        duration: 3000,
-        icon: '🎉'
+        duration: 3000
       })
       // Navigate back to projects page
       router.push('/projects')
@@ -553,15 +559,11 @@ function ProjectRegisterContent() {
   const subsidizedActivities = formData.activities.filter(a => a.is_subsidized)
   const nonSubsidizedActivities = formData.activities.filter(a => !a.is_subsidized)
 
-  const breadcrumbs = useMemo(() => [
-    { name: "Projects", href: "/projects" },
-    { name: isEditing ? "Edit Project" : "New Project" }
-  ], [isEditing])
 
-  usePageTitle({
-    title: isEditing ? "Edit Project" : "New Project",
-    breadcrumbs
-  })
+    usePageTitle({
+      title: isEditing ? "Edit Project" : "New Project",
+      showBreadcrumbsInHeader: true
+    })
 
   // Calculate totals from activities
   useEffect(() => {

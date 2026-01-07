@@ -49,6 +49,7 @@ import { departmentTranslations } from "@/lib/translations/departments"
 import { DataTable } from "@/components/ui/data-table"
 import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal } from "@/components/modals/department"
 import { useInstitution } from "@/contexts/institution-context"
+import { useCurrency } from "@/contexts/currency-context"
 import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
 import { DepartmentsKPICards, KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
 import { DepartmentActivityChart } from "@/components/institutions/charts/department-activity-chart"
@@ -84,6 +85,7 @@ import { WithPermission } from "@/hocs/with-permission"
  */
 export default function DepartmentsPage() {
   const { currentInstitutionData, refetchInstitutionById } = useInstitution();
+  const { formatCurrency } = useCurrency();
   // Filtrar apenas departamentos INSTITUCIONAIS (sem church_id)
   const allDepartments = currentInstitutionData?.departments || [];
   const departments: DepartmentData[] = allDepartments.filter(dept => !dept.church_id);
@@ -191,7 +193,7 @@ export default function DepartmentsPage() {
     {
       id: "planned_budget",
       title: tDept.common?.planned_budget || "Planned Budget",
-      value: `$${(kpiData.totalPlannedBudget / 1000).toFixed(0)}K`,
+      value: formatCurrency(kpiData.totalPlannedBudget, { compact: true }),
       icon: DollarSign,
       subtitle: `${tDept.fields?.planned_budget || "Planned budget"} ${selectedYear}`,
       trend: {
@@ -203,7 +205,7 @@ export default function DepartmentsPage() {
     {
       id: "allocated_budget",
       title: tDept.common?.allocated_budget || "Allocated Budget",
-      value: `$${(kpiData.totalAllocatedBudget / 1000).toFixed(0)}K`,
+      value: formatCurrency(kpiData.totalAllocatedBudget, { compact: true }),
       icon: Building2,
       subtitle: `${tDept.fields?.allocated_budget || "Allocated budget"} ${selectedYear}`,
       trend: {
@@ -215,7 +217,7 @@ export default function DepartmentsPage() {
     {
       id: "spent_budget",
       title: tDept.common?.spent_budget || "Spent Budget",
-      value: `$${(kpiData.totalSpentBudget / 1000).toFixed(0)}K`,
+      value: formatCurrency(kpiData.totalSpentBudget, { compact: true }),
       icon: TrendingUp,
       subtitle: `${tDept.common?.spent_this_year || "Spent this year"} ${selectedYear}`,
       trend: {
@@ -227,7 +229,7 @@ export default function DepartmentsPage() {
     {
       id: "available_budget",
       title: tDept.common?.available_budget || "Available Budget",
-      value: `$${(kpiData.totalAvailableBudget / 1000).toFixed(0)}K`,
+      value: formatCurrency(kpiData.totalAvailableBudget, { compact: true }),
       icon: Shield,
       subtitle: tDept.common?.available_budget || "Available budget",
       trend: {
@@ -472,7 +474,7 @@ export default function DepartmentsPage() {
         return (
           <div className={`text-center ${!hasBudget ? 'opacity-50' : ''}`}>
             <div className="text-sm font-semibold text-gray-900">
-              {hasBudget ? `$${plannedBudget.toLocaleString()}` : '-'}
+              {hasBudget ? formatCurrency(plannedBudget) : '-'}
             </div>
             {hasBudget && (
               <div className="text-xs text-gray-500">
@@ -502,11 +504,11 @@ export default function DepartmentsPage() {
         return (
           <div className={`text-center ${!hasBudget ? 'opacity-50' : ''}`}>
             <div className="text-sm font-semibold text-gray-900">
-              {hasBudget ? `$${spentAmount.toLocaleString()}` : '-'}
+              {hasBudget ? formatCurrency(spentAmount) : '-'}
             </div>
             {hasBudget && (
               <div className="text-xs text-gray-500">
-                {tDept.common?.spent_of || "of"} ${plannedBudget.toLocaleString()}
+                {tDept.common?.spent_of || "of"} {formatCurrency(plannedBudget)}
               </div>
             )}
           </div>
@@ -860,14 +862,14 @@ export default function DepartmentsPage() {
                 {
                   id: "budget_total",
                   title: tDept.kpi?.budget_total?.title || "Budget Total",
-                  value: `$${plannedBudget.toLocaleString()}`,
+                  value: formatCurrency(plannedBudget),
                   icon: DollarSign,
                   subtitle: tDept.kpi?.budget_total?.subtitle || "Total planned budget",
                 },
                 {
                   id: "spent_amount",
                   title: tDept.kpi?.spent_amount?.title || "Spent Amount",
-                  value: `$${totalExpenses.toLocaleString()}`,
+                  value: formatCurrency(totalExpenses),
                   icon: TrendingUp,
                   subtitle: tDept.kpi?.spent_amount?.subtitle || "Total expenses",
                 },

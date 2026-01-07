@@ -257,8 +257,8 @@ export function SubsidyRequestsContainer({
 
   return (
     <>
-      <div className={cn(gridColSpan, className,"mt-4")}>
-      <div className="h-full flex flex-col space-y-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+      <div className={cn("h-full flex flex-col", gridColSpan, className)}>
+      <div className="flex-1 flex flex-col space-y-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 min-h-0">
         {/* Header */}
         <div className="flex items-start justify-between flex-shrink-0">
           <div className="space-y-0.5">

@@ -33,7 +33,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { CurrencyConfig, SUPPORTED_CURRENCIES, getCurrencyByCode, formatCurrency } from "@/types/currency"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,6 +57,7 @@ import { UsageIndicator } from "@/components/ui/usage-indicator"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { useInstitution } from "@/contexts/institution-context"
+import { useCurrency } from "@/contexts/currency-context"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
 import { WithPermission } from "@/hocs/with-permission"
@@ -100,6 +100,7 @@ import { GetBudgetDashboardData_annualBudgets } from "@/types/GetBudgetDashboard
 export default function AnnualBudgetPage() {
   const { t } = useTranslation()
   const { currentInstitutionData, refetchInstitutionById } = useInstitution()
+  const { formatCurrency: formatCurrencyGlobal, selectedCurrency, setCurrency, availableCurrencies } = useCurrency()
   
   // Privacy configurations for KPIs
   const PRIVACY_CONFIGS = {
@@ -126,10 +127,11 @@ export default function AnnualBudgetPage() {
   const [operationInProgress, setOperationInProgress] = useState(false)
 
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
-  const [selectedCurrency, setSelectedCurrency] = useState<string>('EUR') // Default to EUR
   
-  // Get currency configuration
-  const currencyConfig = useMemo(() => getCurrencyByCode(selectedCurrency), [selectedCurrency])
+  // Currency formatting wrapper to adapt old signature to new context
+  const formatCurrencyCompat = (amount: number, _currencyConfig?: any, options?: any) => {
+    return formatCurrencyGlobal(amount, options)
+  }
   
   // Modal states
   const [isViewEditModalOpen, setIsViewEditModalOpen] = useState(false)
@@ -485,7 +487,7 @@ export default function AnnualBudgetPage() {
       {
         id: "total_budget",
         title: t('annual_budget.kpi_cards.total_institution_budget.title'),
-        value: hasInstitutionBudget ? formatCurrency(kpiData.totalInstitutionBudget, currencyConfig, { compact: true }) : t('annual_budget.kpi_cards.total_institution_budget.not_set'),
+        value: hasInstitutionBudget ? formatCurrencyCompat(kpiData.totalInstitutionBudget, null, { compact: true }) : t('annual_budget.kpi_cards.total_institution_budget.not_set'),
         icon: DollarSign,
         subtitle: hasInstitutionBudget 
           ? t('annual_budget.kpi_cards.total_institution_budget.subtitle', { year: selectedYear })
@@ -529,7 +531,7 @@ export default function AnnualBudgetPage() {
     {
       id: "total_allocated",
       title: t('annual_budget.kpi_cards.total_allocated.title'),
-      value: formatCurrency(kpiData.totalAllocated, currencyConfig, { compact: true }),
+      value: formatCurrencyCompat(kpiData.totalAllocated, null, { compact: true }),
       icon: CheckCircle,
       subtitle: t('annual_budget.kpi_cards.total_allocated.subtitle'),
       trend: {
@@ -551,7 +553,7 @@ export default function AnnualBudgetPage() {
     {
       id: "total_spent",
       title: t('annual_budget.kpi_cards.total_spent.title'),
-      value: formatCurrency(kpiData.totalSpent, currencyConfig, { compact: true }),
+      value: formatCurrencyCompat(kpiData.totalSpent, null, { compact: true }),
       icon: TrendingUp,
       subtitle: t('annual_budget.kpi_cards.total_spent.subtitle'),
       trend: {
@@ -575,7 +577,7 @@ export default function AnnualBudgetPage() {
       title: t('annual_budget.kpi_cards.budget_remaining.title'),
       value: (
         <span className={isDeficit ? 'text-red-600' : 'text-green-600'}>
-          {isDeficit && '-'}{formatCurrency(Math.abs(budgetRemainingValue), currencyConfig, { compact: true })}
+          {isDeficit && '-'}{formatCurrencyCompat(Math.abs(budgetRemainingValue), null, { compact: true })}
         </span>
       ),
       icon: isDeficit ? AlertTriangle : CheckCircle,
@@ -623,7 +625,7 @@ export default function AnnualBudgetPage() {
       ) : undefined
     }
   ]
-  }, [kpiData, selectedYear, hasInstitutionBudget, institutionAnnualBudgets, currencyConfig, handleCreateInstitutionBudget, handleEditInstitutionBudget, handleToggleInstitutionBudgetLock, t])
+  }, [kpiData, selectedYear, hasInstitutionBudget, institutionAnnualBudgets, handleCreateInstitutionBudget, handleEditInstitutionBudget, handleToggleInstitutionBudgetLock, t])
 
   // Chart data from GraphQL
   const chartData = useMemo(() => {
@@ -1114,7 +1116,7 @@ export default function AnnualBudgetPage() {
         return (
           <div className={`text-center ${isDisabled ? 'opacity-50' : ''}`}>
             <div className="text-sm font-semibold text-foreground">
-              {isDisabled ? '-' : formatCurrency(budgetAmount, currencyConfig)}
+              {isDisabled ? '-' : formatCurrencyCompat(budgetAmount, null)}
             </div>
           </div>
         )
@@ -1135,7 +1137,7 @@ export default function AnnualBudgetPage() {
         return (
           <div className={`text-center ${isDisabled ? 'opacity-50' : ''}`}>
             <div className="text-sm font-semibold text-foreground">
-              {isDisabled ? '-' : formatCurrency(allocatedAmount, currencyConfig)}
+              {isDisabled ? '-' : formatCurrencyCompat(allocatedAmount, null)}
             </div>
           </div>
         )
@@ -1155,7 +1157,7 @@ export default function AnnualBudgetPage() {
         return (
           <div className={`text-center ${isDisabled ? 'opacity-50' : ''}`}>
             <div className="text-sm font-semibold text-foreground">
-              {isDisabled ? '-' : formatCurrency(departmentData.spentAmount, currencyConfig)}
+              {isDisabled ? '-' : formatCurrencyCompat(departmentData.spentAmount, null)}
             </div>
           </div>
         )
@@ -1324,12 +1326,12 @@ export default function AnnualBudgetPage() {
         )
       },
     },
-  ], [departmentBudgetData, t, currentInstitutionData, currencyConfig])
+  ], [departmentBudgetData, t, currentInstitutionData])
 
 
 
   // Year Filter Component
-  const YearFilter = () => {
+  const YearFilter = ({ showAddButton = true }: { showAddButton?: boolean }) => {
     const currentYear = new Date().getFullYear()
     const maxAllowedYear = currentYear + 2
     const canAddMore = Math.max(...availableYears) < maxAllowedYear
@@ -1355,23 +1357,25 @@ export default function AnnualBudgetPage() {
             </Button>
           ))}
           
-          {/* Add New Year Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleAddYear}
-            disabled={!canAddMore}
-            className={`
-              flex-shrink-0 min-w-[100px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
-              ${canAddMore 
-                ? 'border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground hover:border-muted-foreground/60 hover:bg-muted/50' 
-                : 'opacity-40 cursor-not-allowed border-dashed border-muted-foreground/20 text-muted-foreground/50'
-              }
-            `}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            {t('annual_budget.buttons.add_year')}
-          </Button>
+          {/* Add New Year Button - Only show if showAddButton is true */}
+          {showAddButton && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddYear}
+              disabled={!canAddMore}
+              className={`
+                flex-shrink-0 min-w-[100px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
+                ${canAddMore 
+                  ? 'border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground hover:border-muted-foreground/60 hover:bg-muted/50' 
+                  : 'opacity-40 cursor-not-allowed border-dashed border-muted-foreground/20 text-muted-foreground/50'
+                }
+              `}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {t('annual_budget.buttons.add_year')}
+            </Button>
+          )}
         </div>
       </div>
     )
@@ -1418,21 +1422,6 @@ export default function AnnualBudgetPage() {
             </div>
             
             <div className="flex items-center gap-3">
-              {/* Currency Selector */}
-              <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-                <SelectTrigger className="w-[140px] h-9">
-                  <Coins className="w-4 h-4 mr-2" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.values(SUPPORTED_CURRENCIES).map((currency) => (
-                    <SelectItem key={currency.code} value={currency.code}>
-                      {currency.symbol} {currency.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
               <Button 
                 variant="outline" 
                 size="icon"
@@ -1461,7 +1450,7 @@ export default function AnnualBudgetPage() {
 
           {/* Charts Section */}
           <div className={`space-y-6 transition-opacity duration-300 ${!hasInstitutionBudget ? 'opacity-40 pointer-events-none' : ''}`}>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center">
               {/* <h3 className="text-xl font-semibold">{t('annual_budget.charts.budget_analytics.title')}</h3>
               {showMockIndicators && (
                 <div className="flex gap-2">
@@ -1480,17 +1469,14 @@ export default function AnnualBudgetPage() {
               <SpendingOverTimeChart 
                 data={chartData.spendingOverTime}
                 year={selectedYear}
-                currency={currencyConfig}
               />
               <DepartmentSpendingChart 
                 data={chartData.departmentSpending}
-                currency={currencyConfig}
               />
               
               <BudgetDistributionChart
                 data={chartData.budgetDistribution}
                 year={selectedYear}
-                currency={currencyConfig}
               />
               
 
@@ -1502,7 +1488,7 @@ export default function AnnualBudgetPage() {
           {/* Budget Requests - Table View */}
           <div className={`transition-opacity duration-300 ${!hasInstitutionBudget ? 'opacity-40 pointer-events-none' : ''}`}>
             <Card className="border-border bg-card">
-              <CardHeader className="border-b border-border">
+              <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2 text-foreground">

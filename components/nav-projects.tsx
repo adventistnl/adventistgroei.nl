@@ -50,7 +50,7 @@ export const NavProjects = React.memo(function NavProjects({ projects, loading }
             variant="ghost"
             size="sm"
             onClick={() => navigateWithLoading('/projects/new-project', {
-              message: "🚀 Creating new project...",
+              message: "Creating new project...",
               showToast: true,
               delay: 700
             })}
@@ -80,7 +80,7 @@ export const NavProjects = React.memo(function NavProjects({ projects, loading }
               <SidebarMenuItem key={project.id}>
                 <SidebarMenuButton
                   onClick={() => navigateWithLoading(`/projects/${project.id}`, {
-                    message: `📋 Opening ${project.title}...`,
+                    message: `Opening ${project.title}...`,
                     showToast: true,
                     delay: 800
                   })}
@@ -106,7 +106,7 @@ export const NavProjects = React.memo(function NavProjects({ projects, loading }
                     align={isMobile ? "end" : "start"}
                   >
                     <DropdownMenuItem onClick={() => navigateWithLoading(`/projects/${project.id}`, {
-                      message: `📋 Opening ${project.title}...`,
+                      message: `Opening ${project.title}...`,
                       showToast: true,
                       delay: 800
                     })}>
