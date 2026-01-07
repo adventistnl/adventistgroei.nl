@@ -6,24 +6,29 @@ import { useMutation } from "@apollo/client"
 import { 
   Trash2,
   AlertTriangle,
-  FolderOpen
+  FolderOpen,
+  ChevronDown,
+  ChevronRight,
+  Users,
+  FileText,
+  Database,
+  DollarSign
 } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
 import { projectTranslations } from "@/lib/translations/projects"
+import { useCurrency } from "@/contexts/currency-context"
 import { DELETE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import toast from "react-hot-toast"
@@ -51,9 +56,14 @@ export function DeleteProjectModal({
   project 
 }: DeleteProjectModalProps) {
   const { i18n } = useTranslation()
+  const { formatCurrency } = useCurrency()
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [consequencesOpen, setConsequencesOpen] = React.useState(false)
   const [understoodConsequences, setUnderstoodConsequences] = React.useState(false)
   const [finalConfirmation, setFinalConfirmation] = React.useState('')
+
+  const confirmationText = 'delete project'
 
   const [deleteProject] = useMutation(DELETE_PROJECT_MUTATION, {
     refetchQueries: [
@@ -66,6 +76,7 @@ export function DeleteProjectModal({
   const handleConfirm = async () => {
     if (!project) return
 
+    setIsLoading(true)
     const loadingToast = toast.loading(`${t.toasts.projectDeleted.replace('successfully!', '...')}`)
     
     try {
@@ -118,90 +129,185 @@ export function DeleteProjectModal({
       toast.error(errorMessage, {
         duration: 5000
       })
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const handleClose = () => {
-    setUnderstoodConsequences(false)
-    setFinalConfirmation('')
-    onClose()
+    if (!isLoading) {
+      setConsequencesOpen(false)
+      setUnderstoodConsequences(false)
+      setFinalConfirmation('')
+      onClose()
+    }
   }
 
   // Reset state when modal opens
   React.useEffect(() => {
     if (isOpen) {
+      setConsequencesOpen(false)
       setUnderstoodConsequences(false)
       setFinalConfirmation('')
     }
   }, [isOpen, project?.id])
 
-  const isDeleteEnabled = understoodConsequences && finalConfirmation.toLowerCase() === 'delete'
+  const isDeleteEnabled = understoodConsequences && finalConfirmation.toLowerCase() === confirmationText.toLowerCase()
 
   if (!project) {
     return null
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
-
   return (
-    <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent className="sm:max-w-[500px]">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2 text-red-600">
-            <Trash2 className="w-5 h-5" />
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="w-[95vw] max-w-lg max-h-[95vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0 pb-4">
+          <DialogTitle className="text-lg mb-2">
             {t.deleteProjectConfirmTitle}
-          </AlertDialogTitle>
-          <AlertDialogDescription className="space-y-4">
-            <p>{t.deleteProjectConfirmDesc}</p>
-            
-            {/* Project Summary */}
-            <Card>
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <FolderOpen className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{project.title}</p>
-                    <p className="text-sm text-muted-foreground truncate">{project.description}</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-2 border-t">
-                  <span className="text-sm font-medium">{t.budget.annualBudget}</span>
-                  <Badge variant="outline">
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
+            {t.deleteProjectConfirmDesc}
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Conteúdo - Scrollable */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="space-y-6 p-1">
+
+            {/* Project Information */}
+            <div className="flex items-start gap-4 p-4 bg-muted/50 rounded-lg border">
+              {/* Ícone */}
+              <div className="w-12 h-12 bg-background rounded-full flex items-center justify-center flex-shrink-0 border">
+                <FolderOpen className="w-6 h-6 text-muted-foreground" />
+              </div>
+              
+              {/* Informações */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-semibold text-foreground mb-1">
+                  {project.title}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {project.description}
+                </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-xs text-muted-foreground">{t.budget.annualBudget}:</span>
+                  <Badge variant="outline" className="text-xs">
                     {formatCurrency(project.budget)}
                   </Badge>
                 </div>
-              </CardContent>
-            </Card>
-
-            <div className="p-3 bg-red-50 rounded-lg border border-red-200">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-600" />
-                <span className="text-sm font-medium text-red-600">
-                  {t.deleteProjectWarning}
-                </span>
               </div>
             </div>
 
-            {/* Two-step verification */}
+            {/* Affected Components */}
             <div className="space-y-4">
-              <div className="flex items-start gap-3">
+              <h4 className="text-sm font-medium text-foreground text-center">
+                {t.deleteProjectAffectedComponents || "Componentes Afetados"}
+              </h4>
+              <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <FileText className="w-4 h-4" />
+                  <span>{t.deleteProjectActivities || "Atividades"}: <strong className="text-foreground">0</strong></span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <DollarSign className="w-4 h-4" />
+                  <span>{t.deleteProjectSubsidies || "Subsídios"}: <strong className="text-foreground">0</strong></span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Users className="w-4 h-4" />
+                  <span>{t.deleteProjectVolunteers || "Voluntários"}: <strong className="text-foreground">0</strong></span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Database className="w-4 h-4" />
+                  <span>{t.deleteProjectDocuments || "Documentos"}: <strong className="text-foreground">0</strong></span>
+                </div>
+              </div>
+            </div>
+
+            {/* Collapsible Consequences */}
+            <Collapsible open={consequencesOpen} onOpenChange={setConsequencesOpen}>
+              <CollapsibleTrigger asChild>
+                <Button variant="outline" className="w-full justify-between" size="sm">
+                  <span className="flex items-center gap-2 text-xs">
+                    {t.deleteProjectViewConsequences || "Ver Consequências"}
+                  </span>
+                  {consequencesOpen ? (
+                    <ChevronDown className="w-4 h-4" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-3 mt-4">
+                {/* Data Deletion Consequence */}
+                <div className="flex items-start gap-3 p-3 border rounded-lg">
+                  <Trash2 className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm text-foreground">
+                      {t.deleteProjectConsequence1 || "Todas as atividades serão removidas"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t.deleteProjectConsequence1Desc || "Todas as atividades associadas ao projeto serão permanentemente deletadas."}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Subsidy Impact Consequence */}
+                <div className="flex items-start gap-3 p-3 border rounded-lg">
+                  <DollarSign className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm text-foreground">
+                      {t.deleteProjectConsequence2 || "Subsídios serão removidos"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t.deleteProjectConsequence2Desc || "Todos os pedidos de subsídio associados ao projeto serão removidos."}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Volunteer Unlinking Consequence */}
+                <div className="flex items-start gap-3 p-3 border rounded-lg">
+                  <Users className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm text-foreground">
+                      {t.deleteProjectConsequence3 || "Voluntários serão desvinculados"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t.deleteProjectConsequence3Desc || "Todos os voluntários vinculados ao projeto perderão acesso."}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Document Deletion Consequence */}
+                <div className="flex items-start gap-3 p-3 border rounded-lg">
+                  <FileText className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm text-foreground">
+                      {t.deleteProjectConsequence4 || "Documentos serão deletados"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t.deleteProjectConsequence4Desc || "Todos os documentos associados ao projeto serão permanentemente removidos."}
+                    </p>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Confirmation Checkbox */}
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-950">
                 <Checkbox
                   id="understand-consequences"
                   checked={understoodConsequences}
                   onCheckedChange={(checked) => setUnderstoodConsequences(checked === true)}
-                  className="mt-0.5 border-gray-400 data-[state=checked]:bg-gray-600 data-[state=checked]:border-gray-600 flex-shrink-0"
+                  className="mt-0.5 border-2 border-gray-400 dark:border-gray-500 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                 />
-                <label htmlFor="understand-consequences" className="text-sm cursor-pointer flex-1">
-                  <span className="font-medium text-gray-900">
+                <label htmlFor="understand-consequences" className="text-sm cursor-pointer">
+                  <span className="font-medium text-foreground">
                     {t.deleteProjectUnderstand}
+                  </span>
+                  <br />
+                  <span className="text-muted-foreground">
+                    {t.deleteProjectAcknowledge || "Eu entendo que esta ação não pode ser desfeita e todos os dados serão permanentemente removidos."}
                   </span>
                 </label>
               </div>
@@ -209,35 +315,57 @@ export function DeleteProjectModal({
               {/* Final Confirmation Input */}
               {understoodConsequences && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Type <span className="font-mono bg-gray-100 px-1 rounded">delete</span> to confirm
+                  <label className="text-sm font-medium text-foreground">
+                    {t.deleteProjectTypeConfirmLabel || "Digite o texto de confirmação para prosseguir"}
                   </label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    {t.deleteProjectConfirmHelp || `Digite "delete project" para confirmar`}
+                  </p>
                   <Input
                     type="text"
                     value={finalConfirmation}
                     onChange={(e) => setFinalConfirmation(e.target.value)}
                     placeholder={t.deleteProjectTypeConfirm}
-                    className="w-full"
+                    className="h-10"
+                    disabled={isLoading}
                   />
                 </div>
               )}
             </div>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleClose}>
-            {t.cancel}
-          </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleConfirm}
-            disabled={!isDeleteEnabled}
-            className="bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            {t.deleteProjectButton}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </div>
+        </div>
+
+        {/* Botões de Ação - Fixos no rodapé */}
+        <div className="flex-shrink-0 border-t pt-4 mt-6">
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={handleClose} disabled={isLoading} size="sm" className="text-xs">
+              {t.cancel}
+            </Button>
+            <Button
+              onClick={handleConfirm}
+              disabled={isLoading || !isDeleteEnabled}
+              size="sm"
+              className={`min-w-[140px] text-xs ${
+                isDeleteEnabled 
+                  ? 'bg-red-600 hover:bg-red-700 text-white' 
+                  : 'bg-red-600/40 text-white/60 cursor-not-allowed hover:bg-red-600/40'
+              }`}
+            >
+              {isLoading ? (
+                <>
+                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1" />
+                  {t.deleteProjectDeleting || "Excluindo..."}
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-3 h-3 mr-1" />
+                  {t.deleteProjectButton}
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
