@@ -46,6 +46,7 @@ import { ViewSubsidyModal } from "@/components/modals/project/view-subsidy-modal
 import { useCurrency } from "@/contexts/currency-context"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { subsidyApprovalsTranslations } from "@/lib/translations/subsidy-approvals"
 
 // Import Charts
 import { 
@@ -129,8 +130,9 @@ export function SubsidyApprovalsManager({
   analyticsData,
   refetchSubsidies
 }: SubsidyApprovalsManagerProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { formatCurrency } = useCurrency()
+  const translations = subsidyApprovalsTranslations[i18n.language as keyof typeof subsidyApprovalsTranslations] || subsidyApprovalsTranslations.en
   const [refreshing, setRefreshing] = useState(false)
   const [selectedSubsidy, setSelectedSubsidy] = useState<SubsidyRequest | null>(null)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
@@ -142,32 +144,32 @@ export function SubsidyApprovalsManager({
   // Mutations for approve/reject
   const [approveSubsidyMutation] = useMutation(APPROVE_SUBSIDY_REQUEST, {
     onCompleted: async () => {
-      toast.success("Subsídio aprovado com sucesso")
+      toast.success(translations.toasts.approveSuccess)
       if (refetchSubsidies) {
         await refetchSubsidies()
       }
     },
-    onError: (err) => toast.error(`Erro ao aprovar: ${err.message}`)
+    onError: (err) => toast.error(translations.toasts.approveError.replace('{{message}}', err.message))
   })
 
   const [rejectSubsidyMutation] = useMutation(REJECT_SUBSIDY_REQUEST, {
     onCompleted: async () => {
-      toast.success("Subsídio rejeitado")
+      toast.success(translations.toasts.rejectSuccess)
       if (refetchSubsidies) {
         await refetchSubsidies()
       }
     },
-    onError: (err) => toast.error(`Erro ao rejeitar: ${err.message}`)
+    onError: (err) => toast.error(translations.toasts.rejectError.replace('{{message}}', err.message))
   })
 
   const [updateSubsidyMutation] = useMutation(UPDATE_SUBSIDY_REQUEST, {
     onCompleted: async () => {
-      toast.success("Status atualizado com sucesso")
+      toast.success(translations.toasts.statusUpdateSuccess)
       if (refetchSubsidies) {
         await refetchSubsidies()
       }
     },
-    onError: (err) => toast.error(`Erro ao atualizar status: ${err.message}`)
+    onError: (err) => toast.error(translations.toasts.statusUpdateError.replace('{{message}}', err.message))
   })
 
   // Helper function to get status ID by name from the statuses query
@@ -197,7 +199,7 @@ export function SubsidyApprovalsManager({
     
     return subsidyData.subsidyRequests.map((request: any) => ({
       id: request.id,
-      title: request.description || request.project?.title || 'Solicitação sem título',
+      title: request.description || request.project?.title || translations.defaults.untitledRequest,
       institution_name: request.institution?.name || '',
       church_name: request.church?.name,
       requested_amount: parseFloat(request.total_budget) || 0,
@@ -219,7 +221,7 @@ export function SubsidyApprovalsManager({
         budget_amount: parseFloat(item.project_activity?.budget_amount) || 0,
         notes: item.notes
       })) || [],
-      department_name: request.department?.name || 'Other'
+      department_name: request.department?.name || translations.defaults.otherDepartment
     }))
   }, [subsidyData])
 
@@ -243,62 +245,62 @@ export function SubsidyApprovalsManager({
   const kpiCardsData: KPICardData[] = useMemo(() => [
     {
       id: "total_requests",
-      title: "Total Requests",
+      title: translations.kpis.totalRequests.title,
       value: kpiData.totalRequests,
       icon: FileText,
-      subtitle: "All subsidy requests",
+      subtitle: translations.kpis.totalRequests.subtitle,
       trend: {
         value: 15,
         isPositive: true,
-        label: "vs. last month"
+        label: translations.kpis.trend.vsLastMonth
       }
     },
     {
       id: "pending_review",
-      title: "Pending Review",
+      title: translations.kpis.pendingReview.title,
       value: kpiData.pendingRequests + kpiData.inReviewRequests,
       icon: Clock,
-      subtitle: "Awaiting approval",
+      subtitle: translations.kpis.pendingReview.subtitle,
       trend: {
         value: 8,
         isPositive: false,
-        label: "vs. last month"
+        label: translations.kpis.trend.vsLastMonth
       }
     },
     {
       id: "total_requested",
-      title: "Total Requested",
+      title: translations.kpis.totalRequested.title,
       value: formatCurrency(kpiData.totalRequested),
       icon: DollarSign,
-      subtitle: "Sum of all requests",
+      subtitle: translations.kpis.totalRequested.subtitle,
       trend: {
         value: 12,
         isPositive: true,
-        label: "vs. last month"
+        label: translations.kpis.trend.vsLastMonth
       }
     },
     {
       id: "total_approved",
-      title: "Total Approved",
+      title: translations.kpis.totalApproved.title,
       value: formatCurrency(kpiData.totalApproved),
       icon: CheckCircle,
-      subtitle: "Approved amount",
+      subtitle: translations.kpis.totalApproved.subtitle,
       trend: {
         value: 10,
         isPositive: true,
-        label: "vs. last month"
+        label: translations.kpis.trend.vsLastMonth
       }
     },
     {
       id: "approval_rate",
-      title: "Approval Rate",
+      title: translations.kpis.approvalRate.title,
       value: `${kpiData.approvalRate}%`,
       icon: TrendingUp,
-      subtitle: "Requests approved",
+      subtitle: translations.kpis.approvalRate.subtitle,
       trend: {
         value: 5,
         isPositive: true,
-        label: "vs. last month"
+        label: translations.kpis.trend.vsLastMonth
       }
     }
   ], [kpiData, formatCurrency])
@@ -361,7 +363,7 @@ export function SubsidyApprovalsManager({
   // Handlers
   const handleRefresh = async () => {
     setRefreshing(true)
-    const refreshToast = toast.loading("Refreshing subsidy requests...")
+    const refreshToast = toast.loading(translations.toasts.refreshing)
     
     try {
       if (refetchSubsidies) {
@@ -370,9 +372,9 @@ export function SubsidyApprovalsManager({
       if (onRefresh) {
         await onRefresh()
       }
-      toast.success("Data refreshed successfully", { duration: 2000 })
+      toast.success(translations.toasts.refreshSuccess, { duration: 2000 })
     } catch (error) {
-      toast.error("Error refreshing data")
+      toast.error(translations.toasts.refreshError)
     } finally {
       toast.dismiss(refreshToast)
       setRefreshing(false)
@@ -411,7 +413,7 @@ export function SubsidyApprovalsManager({
       await rejectSubsidyMutation({
         variables: {
           id: subsidyId,
-          rejection_reason: 'Rejeitado pelo administrador'
+          rejection_reason: translations.defaults.rejectionReason
         }
       })
     } catch (error) {
@@ -422,7 +424,7 @@ export function SubsidyApprovalsManager({
   const handleMarkInReview = async (subsidyId: string) => {
     const statusId = getStatusIdByName('IN_REVIEW')
     if (!statusId) {
-      toast.error('Status "Em Análise" não encontrado')
+      toast.error(translations.toasts.inReviewNotFound)
       return
     }
     
@@ -447,27 +449,27 @@ export function SubsidyApprovalsManager({
     icon: any
   }> = {
     pending: { 
-      label: "Pending", 
+      label: translations.status.pending, 
       variant: "warning",
       icon: Clock
     },
     in_review: { 
-      label: "In Review", 
+      label: translations.status.in_review, 
       variant: "info",
       icon: AlertCircle
     },
     approved: { 
-      label: "Approved", 
+      label: translations.status.approved, 
       variant: "success",
       icon: CheckCircle
     },
     closed: { 
-      label: "Closed", 
+      label: translations.status.closed, 
       variant: "neutral",
       icon: FileText
     },
     rejected: { 
-      label: "Rejected", 
+      label: translations.status.rejected, 
       variant: "error",
       icon: XCircle
     }
@@ -477,9 +479,9 @@ export function SubsidyApprovalsManager({
     label: string
     variant: "success" | "warning" | "error" | "info" | "neutral"
   }> = {
-    low: { label: "Low", variant: "neutral" },
-    medium: { label: "Medium", variant: "info" },
-    high: { label: "High", variant: "error" }
+    low: { label: translations.priority.low, variant: "neutral" },
+    medium: { label: translations.priority.medium, variant: "info" },
+    high: { label: translations.priority.high, variant: "error" }
   }
 
   // Table columns
@@ -487,7 +489,7 @@ export function SubsidyApprovalsManager({
     {
       id: "title",
       accessorKey: "title",
-      header: "Request Title",
+      header: translations.table.requestTitle,
       cell: ({ row }) => (
         <div className="min-w-[200px]">
           <div className="font-medium text-sm text-foreground">
@@ -502,7 +504,7 @@ export function SubsidyApprovalsManager({
     {
       id: "requested_amount",
       accessorKey: "requested_amount",
-      header: "Requested",
+      header: translations.table.requested,
       cell: ({ row }) => (
         <div className="text-sm font-semibold">
           {formatCurrency(row.original.requested_amount)}
@@ -512,7 +514,7 @@ export function SubsidyApprovalsManager({
     {
       id: "activities",
       accessorKey: "activities_count",
-      header: "Activities",
+      header: translations.table.activities,
       cell: ({ row }) => (
         <div className="px-2.5 py-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 w-fit">
           <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
@@ -524,7 +526,7 @@ export function SubsidyApprovalsManager({
     {
       id: "priority",
       accessorKey: "priority",
-      header: "Priority",
+      header: translations.table.priority,
       cell: ({ row }) => {
         const config = priorityConfig[row.original.priority]
         const dotColors = {
@@ -549,7 +551,7 @@ export function SubsidyApprovalsManager({
     {
       id: "status",
       accessorKey: "status",
-      header: "Status",
+      header: translations.table.status,
       cell: ({ row }) => {
         const config = statusConfig[row.original.status]
         const dotColors: Record<SubsidyRequest['status'], string> = {
@@ -566,6 +568,8 @@ export function SubsidyApprovalsManager({
               row.original.status === 'pending' ? 'text-amber-700 dark:text-amber-400' :
               row.original.status === 'in_review' ? 'text-blue-700 dark:text-blue-400' :
               row.original.status === 'approved' ? 'text-green-700 dark:text-green-400' :
+              row.original.status === 'rejected' ? 'text-red-700 dark:text-red-400' :
+              row.original.status === 'closed' ? 'text-gray-700 dark:text-gray-400' :
               'text-red-700 dark:text-red-400'
             }`}>
               {config.label}
@@ -577,7 +581,7 @@ export function SubsidyApprovalsManager({
     {
       id: "requested_at",
       accessorKey: "requested_at",
-      header: "Date",
+      header: translations.table.date,
       cell: ({ row }) => (
         <div className="text-xs text-muted-foreground whitespace-nowrap">
           {format(new Date(row.original.requested_at), "dd MMM yyyy", { locale: ptBR })}
@@ -586,7 +590,7 @@ export function SubsidyApprovalsManager({
     },
     {
       id: "actions",
-      header: () => <div className="text-right">Actions</div>,
+      header: () => <div className="text-right">{translations.table.actions}</div>,
       cell: ({ row }) => (
         <div className="flex justify-end" data-action-button>
           <DropdownMenu>
@@ -598,7 +602,7 @@ export function SubsidyApprovalsManager({
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => handleViewSubsidy(row.original.id)}>
                 <Settings className="mr-2 h-4 w-4" />
-                Manage Subsidy
+                {translations.actions.manageSubsidy}
               </DropdownMenuItem>
               
               {/* Approve/Reject buttons for pending and in_review */}
@@ -610,14 +614,14 @@ export function SubsidyApprovalsManager({
                     className="text-green-600"
                   >
                     <CheckCircle className="mr-2 h-4 w-4" />
-                    Approve
+                    {translations.actions.approve}
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onClick={() => handleReject(row.original.id)}
                     className="text-red-600"
                   >
                     <XCircle className="mr-2 h-4 w-4" />
-                    Reject
+                    {translations.actions.reject}
                   </DropdownMenuItem>
                 </>
               )}
@@ -630,11 +634,11 @@ export function SubsidyApprovalsManager({
 
   // Convert to Kanban format
   const kanbanGroups: KanbanGroup[] = [
-    { id: 'pending', name: 'Pending', color: '#f59e0b' },
-    { id: 'in_review', name: 'In Review', color: '#3b82f6' },
-    { id: 'approved', name: 'Approved', color: '#10b981' },
-    { id: 'closed', name: 'Closed', color: '#6b7280' },
-    { id: 'rejected', name: 'Rejected', color: '#ef4444' }
+    { id: 'pending', name: translations.kanban.groups.pending, color: '#f59e0b' },
+    { id: 'in_review', name: translations.kanban.groups.in_review, color: '#3b82f6' },
+    { id: 'approved', name: translations.kanban.groups.approved, color: '#10b981' },
+    { id: 'closed', name: translations.kanban.groups.closed, color: '#6b7280' },
+    { id: 'rejected', name: translations.kanban.groups.rejected, color: '#ef4444' }
   ]
 
   const kanbanItems: KanbanItem[] = subsidyRequests.map(request => ({
@@ -654,7 +658,7 @@ export function SubsidyApprovalsManager({
   const kanbanActions: KanbanAction[] = [
     {
       id: 'view',
-      label: 'Manage Subsidy',
+      label: translations.actions.manageSubsidy,
       icon: Settings,
       showInItem: true,
       onClick: (group, item) => {
@@ -663,7 +667,7 @@ export function SubsidyApprovalsManager({
     },
     {
       id: 'approve',
-      label: 'Approve',
+      label: translations.actions.approve,
       icon: CheckCircle,
       variant: 'default',
       showInItem: true,
@@ -673,7 +677,7 @@ export function SubsidyApprovalsManager({
     },
     {
       id: 'reject',
-      label: 'Reject',
+      label: translations.actions.reject,
       icon: XCircle,
       variant: 'destructive',
       showInItem: true,
@@ -699,7 +703,7 @@ export function SubsidyApprovalsManager({
         const statusId = getStatusIdByName(statusName)
         
         if (!statusId) {
-          toast.error(`Status "${toGroupId}" não encontrado`)
+          toast.error(translations.toasts.statusNotFound.replace('{{status}}', toGroupId))
           return
         }
         
@@ -713,7 +717,7 @@ export function SubsidyApprovalsManager({
           }
         })
       } else {
-        toast.error('Status inválido')
+        toast.error(translations.toasts.invalidStatus)
       }
     } catch (error) {
       console.error('Error updating subsidy status:', error)
@@ -795,7 +799,7 @@ export function SubsidyApprovalsManager({
         className={viewMode === 'table' ? 'rounded-r-none bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200' : 'rounded-r-none'}
       >
         <List className="h-4 w-4 mr-2" />
-        {/* Table */}
+        {translations.actions.viewToggle.table}
       </Button>
       <Button
         variant={viewMode === 'kanban' ? 'default' : 'ghost'}
@@ -804,7 +808,7 @@ export function SubsidyApprovalsManager({
         className={viewMode === 'kanban' ? 'rounded-l-none bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200' : 'rounded-l-none'}
       >
         <LayoutGrid className="h-4 w-4 mr-2" />
-        {/* Kanban */}
+        {translations.actions.viewToggle.kanban}
       </Button>
     </div>
   )
@@ -841,6 +845,7 @@ export function SubsidyApprovalsManager({
             data={chartData.byDepartment}
             loading={isLoading}
             selectedYear={new Date().getFullYear()}
+            translations={translations.charts.byDepartment}
           />
 
           {/* Requests Over Time Chart */}
@@ -848,12 +853,14 @@ export function SubsidyApprovalsManager({
             data={chartData.byMonth}
             loading={isLoading}
             selectedYear={new Date().getFullYear()}
+            translations={translations.charts.overTime}
           />
 
           {/* Status Overview Chart */}
           <StatusOverviewChart
             data={chartData.byStatus}
             loading={isLoading}
+            translations={translations.charts.statusOverview}
           />
 
         </AnalyticsGridCarousel>
@@ -864,9 +871,9 @@ export function SubsidyApprovalsManager({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Subsidy Requests</CardTitle>
+              <CardTitle>{translations.card.title}</CardTitle>
               <CardDescription>
-                Manage and review all subsidy requests
+                {translations.card.description}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">

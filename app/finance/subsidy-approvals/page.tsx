@@ -24,14 +24,17 @@ import { AccessDenied } from "@/components/access/access-denied"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { GET_ALL_SUBSIDY_REQUESTS } from "@/graphql/queries/SUBSIDY_REQUESTS_QUERY"
 import { GET_SUBSIDY_ANALYTICS } from "@/graphql/queries/SUBSIDY_ANALYTICS_QUERIES"
+import { subsidyApprovalsTranslations } from "@/lib/translations/subsidy-approvals"
 
 export default function SubsidyApprovalsPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { currentInstitutionData, loading: institutionLoading } = useInstitution()
   const [refreshing, setRefreshing] = useState(false)
+  
+  const translations = subsidyApprovalsTranslations[i18n.language as keyof typeof subsidyApprovalsTranslations] || subsidyApprovalsTranslations.en
 
   usePageTitle({
-    title: "Subsidy Approvals"
+    title: translations.pageTitle
   })
 
   // Fetch subsidy requests from backend
@@ -42,7 +45,7 @@ export default function SubsidyApprovalsPage() {
     },
     onError: (error) => {
       console.error('❌ Error loading subsidy requests:', error)
-      toast.error("Error loading subsidy requests")
+      toast.error(translations.toasts.loadingError)
     }
   })
 
@@ -65,13 +68,13 @@ export default function SubsidyApprovalsPage() {
   // Refresh handler
   const handleRefresh = async () => {
     setRefreshing(true)
-    const refreshToast = toast.loading("Refreshing data...")
+    const refreshToast = toast.loading(translations.toasts.refreshing)
     
     try {
       await Promise.all([refetchSubsidies(), refetchAnalytics()])
-      toast.success("Data refreshed successfully", { duration: 2000 })
+      toast.success(translations.toasts.refreshSuccess, { duration: 2000 })
     } catch (error) {
-      toast.error("Error refreshing data")
+      toast.error(translations.toasts.refreshError)
     } finally {
       toast.dismiss(refreshToast)
       setRefreshing(false)
@@ -89,10 +92,10 @@ export default function SubsidyApprovalsPage() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold text-foreground mb-2 flex items-center gap-3">
-                Subsidy Approvals
+                {translations.pageTitle}
               </h2>
               <p className="text-muted-foreground text-0.875rem sm:text-1rem">
-                Review and approve subsidy requests from churches and institutions
+                {translations.pageDescription}
               </p>
               {currentInstitutionData && (
                 <div className="flex items-center gap-2 mt-3">
