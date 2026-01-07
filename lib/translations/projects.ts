@@ -22,7 +22,22 @@ export const projectTranslations = {
       totalSubsidyAmount: "Total Subsidy Amount",
       averageProjectBudget: "Average Project Budget",
       projectsWithVolunteers: "Projects with Volunteers",
-      departmentsInvolved: "Departments Involved"
+      departmentsInvolved: "Departments Involved",
+      vsPreviousMonth: "vs previous month",
+      activeDeactivted: "{{active}} active | {{completed}} completed",
+      waitingToStart: "{{count}} waiting to start",
+      newThisMonth: "new this month",
+      average: "Average",
+      percentUsed: "{{percent}}% used",
+      subsidizedBudget: "Subsidized Budget",
+      localContribution: "{{amount}} local contribution",
+      ofTotalBudget: "of total budget",
+      completionRate: "Completion Rate",
+      finalizedOf: "{{completed}} of {{total}} finalized",
+      requested: "requested",
+      approvedPercent: "{{percent}}% approved",
+      ofProjects: "{{percent}}% of projects",
+      growingEngagement: "growing engagement"
     },
     
     // Charts
@@ -33,7 +48,18 @@ export const projectTranslations = {
       projectsTimeline: "Projects Timeline",
       monthlyProgress: "Monthly Progress",
       departmentBudgets: "Department Budget Analysis",
-      subsidyStatusBreakdown: "Subsidy Status Breakdown"
+      subsidyStatusBreakdown: "Subsidy Status Breakdown",
+      projectsCreatedOverTime: "Projects Created Over Time",
+      monthlyProjectCreation: "Monthly project creation by department",
+      noProjectData: "No project data available",
+      projectsCreatedThisYear: "projects created this year",
+      top: "Top",
+      distributionByDepartment: "Distribution of projects across departments",
+      selectDepartment: "Select department",
+      projectsWithMostActivities: "Projects with Most Activities",
+      top10Activities: "Top 10 projects by number of registered activities",
+      projects: "Projects",
+      activities: "Activities"
     },
     
     // Table columns
@@ -47,7 +73,19 @@ export const projectTranslations = {
       startDate: "Start Date",
       endDate: "End Date",
       volunteers: "Volunteers",
-      actions: "Actions"
+      actions: "Actions",
+      budget: "Budget",
+      period: "Period",
+      yes: "Yes",
+      no: "No",
+      clearFilters: "Clear filters",
+      columns: "Columns",
+      toggleColumns: "Toggle Columns",
+      rowsPerPage: "Rows per page",
+      showingResults: "Showing {{from}} to {{to}} of {{total}} results",
+      previous: "Previous",
+      next: "Next",
+      noResults: "No results found"
     },
     
     // Modal
@@ -68,7 +106,8 @@ export const projectTranslations = {
       last90Days: "Last 90 Days",
       last6Months: "Last 6 Months",
       lastYear: "Last Year",
-      currentYear: "Current Year"
+      currentYear: "Current Year",
+      filterByDepartment: "Filter by department"
     },
     
     // Toast messages
@@ -79,6 +118,9 @@ export const projectTranslations = {
       eventCreated: "Event created successfully!",
       communicationCreated: "Communication created successfully!",
       loadingData: "Loading projects data...",
+      projectUpdating: "Updating project...",
+      projectDeleting: "Deleting project...",
+      dataRefreshing: "Data refreshing...",
       dataRefreshed: "Data refreshed successfully!",
       errorLoading: "Error loading projects data",
       filterApplied: "Filter applied successfully"
@@ -89,7 +131,14 @@ export const projectTranslations = {
       cannotDeleteProjectWithApprovedSubsidies: "Cannot delete project with approved or closed subsidy requests. Please change the status of associated subsidies first.",
       cannotDeleteActivityWithApprovedSubsidies: "Cannot delete activity with approved or closed subsidy requests. Please change the status first.",
       cannotDeleteApprovedSubsidy: "Cannot delete approved or closed subsidy requests.",
-      genericDeleteError: "Failed to delete. Please try again."
+      genericDeleteError: "Failed to delete. Please try again.",
+      updateError: "Error updating project",
+      departmentNotFound: "Department not found",
+      titleRequired: "Title is required",
+      descriptionRequired: "Description is required",
+      departmentRequired: "Department is required",
+      budgetPositive: "Budget must be greater than 0",
+      endDateAfterStart: "End date must be after start date"
     },
     
     // Steps
@@ -165,7 +214,8 @@ export const projectTranslations = {
       createCommunication: "Create Communication",
       viewDetails: "View Details",
       editProject: "Edit Project",
-      duplicateProject: "Duplicate Project"
+      duplicateProject: "Duplicate Project",
+      loadingCreator: "🚀 Loading project creator..."
     },
     
     // Project Details Page
@@ -465,6 +515,26 @@ export const projectTranslations = {
     english: "English",
     dutch: "Nederlands",
     portuguese: "Português",
+
+    // Year Filter
+    yearFilter: {
+      cannotAddBeyond: "Cannot add years beyond {{year}}",
+      yearExists: "Year {{year}} already exists",
+      yearAdded: "Year {{year}} added successfully",
+      addYear: "Add Year"
+    },
+    
+    // Page Header & navigation
+    pageHeader: {
+      subtitle: "Complete overview of projects and subsidy requests for the organization - {{year}}",
+      manageDescription: "Manage and track all projects across departments"
+    },
+    
+    navigation: {
+      openingProject: "Opening {{title}}"
+    },
+
+
   },
   nl: {
     // Navigation
@@ -489,7 +559,22 @@ export const projectTranslations = {
       totalSubsidyAmount: "Totaal Subsidie Bedrag",
       averageProjectBudget: "Gemiddeld Project Budget",
       projectsWithVolunteers: "Projecten met Vrijwilligers",
-      departmentsInvolved: "Betrokken Afdelingen"
+      departmentsInvolved: "Betrokken Afdelingen",
+      vsPreviousMonth: "vs vorige maand",
+      activeDeactivted: "{{active}} actief | {{completed}} voltooid",
+      waitingToStart: "{{count}} wachtend op start",
+      newThisMonth: "nieuw deze maand",
+      average: "Gemiddeld",
+      percentUsed: "{{percent}}% gebruikt",
+      subsidizedBudget: "Gesubsidieerd Budget",
+      localContribution: "{{amount}} lokale bijdrage",
+      ofTotalBudget: "van totaal budget",
+      completionRate: "Voltooiingspercentage",
+      finalizedOf: "{{completed}} van {{total}} voltooid",
+      requested: "aangevraagd",
+      approvedPercent: "{{percent}}% goedgekeurd",
+      ofProjects: "{{percent}}% van projecten",
+      growingEngagement: "groeiende betrokkenheid"
     },
     
     // Charts
@@ -500,7 +585,19 @@ export const projectTranslations = {
       projectsTimeline: "Projecten Tijdlijn",
       monthlyProgress: "Maandelijkse Voortgang",
       departmentBudgets: "Afdeling Budget Analyse",
-      subsidyStatusBreakdown: "Subsidie Status Uitsplitsing"
+      subsidyStatusBreakdown: "Subsidie Status Uitsplitsing",
+      projectsCreatedOverTime: "Projecten door de tijd heen gemaakt",
+      monthlyProjectCreation: "Maandelijkse projectcreatie per afdeling",
+      noProjectData: "Geen projectgegevens beschikbaar",
+      projectsCreatedThisYear: "projecten gemaakt dit jaar",
+      top: "Top",
+
+      distributionByDepartment: "Verdeling van projecten per afdeling",
+      selectDepartment: "Selecteer afdeling",
+      projectsWithMostActivities: "Projecten met meeste activiteiten",
+      top10Activities: "Top 10 projecten op basis van aantal geregistreerde activiteiten",
+      projects: "Projecten",
+      activities: "Activiteiten"
     },
     
     // Table columns
@@ -514,7 +611,19 @@ export const projectTranslations = {
       startDate: "Startdatum",
       endDate: "Einddatum",
       volunteers: "Vrijwilligers",
-      actions: "Acties"
+      actions: "Acties",
+      budget: "Budget",
+      period: "Periode",
+      yes: "Ja",
+      no: "Nee",
+      clearFilters: "Filters wissen",
+      columns: "Kolommen",
+      toggleColumns: "Kolommen in-/uitschakelen",
+      rowsPerPage: "Rijen per pagina",
+      showingResults: "Toont {{from}} tot {{to}} van {{total}} resultaten",
+      previous: "Vorige",
+      next: "Volgende",
+      noResults: "Geen resultaten gevonden"
     },
     
     // Modal
@@ -535,7 +644,8 @@ export const projectTranslations = {
       last90Days: "Laatste 90 Dagen",
       last6Months: "Laatste 6 Maanden",
       lastYear: "Vorig Jaar",
-      currentYear: "Huidig Jaar"
+      currentYear: "Huidig Jaar",
+      filterByDepartment: "Filteren op afdeling"
     },
     
     // Toast messages
@@ -546,6 +656,9 @@ export const projectTranslations = {
       eventCreated: "Evenement succesvol aangemaakt!",
       communicationCreated: "Communicatie succesvol aangemaakt!",
       loadingData: "Projecten data laden...",
+      projectUpdating: "Project bijwerken...",
+      projectDeleting: "Project verwijderen...",
+      dataRefreshing: "Data verversen...",
       dataRefreshed: "Data succesvol ververst!",
       errorLoading: "Fout bij laden van projecten data",
       filterApplied: "Filter succesvol toegepast"
@@ -556,7 +669,14 @@ export const projectTranslations = {
       cannotDeleteProjectWithApprovedSubsidies: "Kan project niet verwijderen met goedgekeurde of afgesloten subsidie aanvragen. Wijzig eerst de status van de gekoppelde subsidies.",
       cannotDeleteActivityWithApprovedSubsidies: "Kan activiteit niet verwijderen met goedgekeurde of afgesloten subsidie aanvragen. Wijzig eerst de status.",
       cannotDeleteApprovedSubsidy: "Kan goedgekeurde of afgesloten subsidie aanvragen niet verwijderen.",
-      genericDeleteError: "Verwijderen mislukt. Probeer het opnieuw."
+      genericDeleteError: "Verwijderen mislukt. Probeer het opnieuw.",
+      updateError: "Fout bij bijwerken project",
+      departmentNotFound: "Afdeling niet gevonden",
+      titleRequired: "Titel is verplicht",
+      descriptionRequired: "Beschrijving is verplicht",
+      departmentRequired: "Afdeling is verplicht",
+      budgetPositive: "Budget moet groter zijn dan 0",
+      endDateAfterStart: "Einddatum moet na startdatum liggen"
     },
     
     // Steps
@@ -632,7 +752,8 @@ export const projectTranslations = {
       createCommunication: "Communicatie Aanmaken",
       viewDetails: "Details Bekijken",
       editProject: "Project Bewerken",
-      duplicateProject: "Project Dupliceren"
+      duplicateProject: "Project Dupliceren",
+      loadingCreator: "🚀 Projectmaker laden..."
     },
     
     // Project Details Page
@@ -816,6 +937,25 @@ export const projectTranslations = {
     deleteProjectConfirmDesc: "Weet je zeker dat je dit project wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
     deleteProjectWarning: "Deze actie kan niet ongedaan worden gemaakt",
     deleteProjectButton: "Permanent Verwijderen",
+    
+    // Year Filter
+    yearFilter: {
+      cannotAddBeyond: "Kan geen jaren toevoegen na {{year}}",
+      yearExists: "Jaar {{year}} bestaat al",
+      yearAdded: "Jaar {{year}} succesvol toegevoegd",
+      addYear: "Jaar Toevoegen"
+    },
+    
+    // Page Header & navigation
+    pageHeader: {
+      subtitle: "Volledig overzicht van projecten en subsidieaanvragen van de organisatie - {{year}}",
+      manageDescription: "Beheer en volg alle projecten over afdelingen heen"
+    },
+    
+    navigation: {
+      openingProject: "Opening {{title}}"
+    },
+
     deleteProjectUnderstand: "Ik begrijp dat deze actie permanent is en niet ongedaan kan worden gemaakt",
     deleteProjectTypeConfirm: "Typ 'delete project' om te bevestigen",
     deleteProjectDeleting: "Verwijderen...",
@@ -957,7 +1097,22 @@ export const projectTranslations = {
       totalSubsidyAmount: "Valor Total de Subsídios",
       averageProjectBudget: "Orçamento Médio por Projeto",
       projectsWithVolunteers: "Projetos com Voluntários",
-      departmentsInvolved: "Departamentos Envolvidos"
+      departmentsInvolved: "Departamentos Envolvidos",
+      vsPreviousMonth: "vs mês anterior",
+      activeDeactivted: "{{active}} ativos | {{completed}} concluídos",
+      waitingToStart: "{{count}} aguardando início",
+      newThisMonth: "novos este mês",
+      average: "Média",
+      percentUsed: "{{percent}}% utilizado",
+      subsidizedBudget: "Orçamento Subsidiado",
+      localContribution: "{{amount}} contribuição local",
+      ofTotalBudget: "do orçamento total",
+      completionRate: "Taxa de Conclusão",
+      finalizedOf: "{{completed}} de {{total}} finalizados",
+      requested: "solicitado",
+      approvedPercent: "{{percent}}% aprovados",
+      ofProjects: "{{percent}}% dos projetos",
+      growingEngagement: "engajamento crescente"
     },
     
     // Charts
@@ -968,7 +1123,18 @@ export const projectTranslations = {
       projectsTimeline: "Linha do Tempo dos Projetos",
       monthlyProgress: "Progresso Mensal",
       departmentBudgets: "Análise de Orçamento por Departamento",
-      subsidyStatusBreakdown: "Detalhamento de Status de Subsídio"
+      subsidyStatusBreakdown: "Detalhamento de Status de Subsídio",
+      projectsCreatedOverTime: "Projetos Criados ao Longo do Tempo",
+      monthlyProjectCreation: "Criação mensal de projetos por departamento",
+      noProjectData: "Nenhum dado de projeto disponível",
+      projectsCreatedThisYear: "projetos criados este ano",
+      top: "Top",
+      distributionByDepartment: "Distribuição de projetos por departamento",
+      selectDepartment: "Selecione o departamento",
+      projectsWithMostActivities: "Projetos com Mais Atividades",
+      top10Activities: "Top 10 projetos por número de atividades registradas",
+      projects: "Projetos",
+      activities: "Atividades"
     },
     
     // Table columns
@@ -982,7 +1148,19 @@ export const projectTranslations = {
       startDate: "Data de Início",
       endDate: "Data de Término",
       volunteers: "Voluntários",
-      actions: "Ações"
+      actions: "Ações",
+      budget: "Orçamento",
+      period: "Período",
+      yes: "Sim",
+      no: "Não",
+      clearFilters: "Limpar filtros",
+      columns: "Colunas",
+      toggleColumns: "Alternar Colunas",
+      rowsPerPage: "Linhas por página",
+      showingResults: "Mostrando {{from}} até {{to}} de {{total}} resultados",
+      previous: "Anterior",
+      next: "Próximo",
+      noResults: "Nenhum resultado encontrado"
     },
     
     // Modal
@@ -1003,7 +1181,8 @@ export const projectTranslations = {
       last90Days: "Últimos 90 Dias",
       last6Months: "Últimos 6 Meses",
       lastYear: "Ano Passado",
-      currentYear: "Ano Atual"
+      currentYear: "Ano Atual",
+      filterByDepartment: "Filtrar por departamento"
     },
     
     // Toast messages
@@ -1014,6 +1193,9 @@ export const projectTranslations = {
       eventCreated: "Evento criado com sucesso!",
       communicationCreated: "Comunicação criada com sucesso!",
       loadingData: "Carregando dados dos projetos...",
+      projectUpdating: "Atualizando projeto...",
+      projectDeleting: "Excluindo projeto...",
+      dataRefreshing: "Atualizando dados...",
       dataRefreshed: "Dados atualizados com sucesso!",
       errorLoading: "Erro ao carregar dados dos projetos",
       filterApplied: "Filtro aplicado com sucesso"
@@ -1024,7 +1206,14 @@ export const projectTranslations = {
       cannotDeleteProjectWithApprovedSubsidies: "Não é possível excluir projeto com pedidos de subsídio aprovados ou concluídos. Altere o status dos subsídios associados primeiro.",
       cannotDeleteActivityWithApprovedSubsidies: "Não é possível excluir atividade com pedidos de subsídio aprovados ou concluídos. Altere o status primeiro.",
       cannotDeleteApprovedSubsidy: "Não é possível excluir pedidos de subsídio aprovados ou concluídos.",
-      genericDeleteError: "Falha ao excluir. Tente novamente."
+      genericDeleteError: "Falha ao excluir. Tente novamente.",
+      updateError: "Erro ao atualizar projeto",
+      departmentNotFound: "Departamento não encontrado",
+      titleRequired: "O título é obrigatório",
+      descriptionRequired: "A descrição é obrigatória",
+      departmentRequired: "O departamento é obrigatório",
+      budgetPositive: "O orçamento deve ser maior que 0",
+      endDateAfterStart: "A data de término deve ser após a data de início"
     },
     
     // Steps
@@ -1100,7 +1289,8 @@ export const projectTranslations = {
       createCommunication: "Criar Comunicação",
       viewDetails: "Ver Detalhes",
       editProject: "Editar Projeto",
-      duplicateProject: "Duplicar Projeto"
+      duplicateProject: "Duplicar Projeto",
+      loadingCreator: "🚀 Carregando criador de projeto..."
     },
     
     // Project Details Page
@@ -1400,5 +1590,23 @@ export const projectTranslations = {
     english: "Inglês",
     dutch: "Holandês",
     portuguese: "Português",
+    
+    // Year Filter
+    yearFilter: {
+      cannotAddBeyond: "Não é possível adicionar anos além de {{year}}",
+      yearExists: "Ano {{year}} já existe",
+      yearAdded: "Ano {{year}} adicionado com sucesso",
+      addYear: "Adicionar Ano"
+    },
+    
+    // Page Header & navigation
+    pageHeader: {
+      subtitle: "Visão completa dos projetos e pedidos de subsídio da organização - {{year}}",
+      manageDescription: "Gerencie e acompanhe todos os projetos entre departamentos"
+    },
+    
+    navigation: {
+      openingProject: "Abrindo {{title}}"
+    }
   }
 }

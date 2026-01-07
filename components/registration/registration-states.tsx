@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { RegistrationLayout } from "./registration-layout"
 
+import { cn } from "@/lib/utils"
+
 interface LoadingStateProps {
   message: string
+  className?: string
 }
 
 interface InvalidInviteStateProps {
@@ -21,9 +24,9 @@ interface InvalidInviteStateProps {
  * Estado de loading inicial
  * Exibe animação de carregamento com ícone da igreja
  */
-export function LoadingState({ message }: LoadingStateProps) {
+export function LoadingState({ message, className }: LoadingStateProps) {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className={cn("min-h-screen bg-background flex items-center justify-center", className)}>
       <div className="text-center">
         <div className="relative">
           <div className="w-16 h-16 border-4 border-muted border-t-primary rounded-full animate-spin mx-auto mb-6"></div>

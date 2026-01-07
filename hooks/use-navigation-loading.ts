@@ -7,7 +7,6 @@ import toast from "react-hot-toast"
 interface NavigateWithLoadingOptions {
   message?: string
   showToast?: boolean
-  delay?: number
 }
 
 export function useNavigateWithLoading() {
@@ -20,33 +19,24 @@ export function useNavigateWithLoading() {
   ) => {
     const { 
       message = "🚀 Redirecting...", 
-      showToast = true,
-      delay = 800 
+      showToast = false // Default to false for cleaner UX
     } = options
 
     try {
-      // Show loading state
+      // 1. Instant feedback via Context (Direct DOM)
       showNavigationLoading(message)
       
+      // 2. Optional Toast
       if (showToast) {
         toast.loading(message, { duration: 1000 })
       }
       
-      // Add delay to show loading state
-      await new Promise(resolve => setTimeout(resolve, delay))
-      
-      // Navigate
+      // 3. Navigate immediately
       router.push(path)
-      
-      // Hide loading after navigation starts
-      setTimeout(() => {
-        hideNavigationLoading()
-      }, 1000)
       
     } catch (error) {
       hideNavigationLoading()
-      toast.error("❌ Navigation failed")
-      console.error("Navigation error:", error)
+
     }
   }
 

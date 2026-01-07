@@ -80,6 +80,18 @@ interface UseTableProps<TData, TValue> {
   batchActions?: BatchAction[] // Ações adicionais do painel
   batchPrimaryAction?: BatchAction // Ação primária do painel
   batchSummary?: React.ReactNode // Sumário customizado
+  translations?: {
+    search?: string
+    columns?: string
+    toggleColumns?: string
+    rowsPerPage?: string
+    showingResults?: (from: number, to: number, total: number) => string
+    previous?: string
+    next?: string
+    noResults?: string
+    all?: string
+    clearFilters?: string
+  }
 }
 
 export function UseTable<TData, TValue>({
@@ -100,6 +112,7 @@ export function UseTable<TData, TValue>({
   batchActions = [],
   batchPrimaryAction,
   batchSummary,
+  translations,
 }: UseTableProps<TData, TValue>) {
   const { t } = useTranslation()
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -292,7 +305,7 @@ export function UseTable<TData, TValue>({
     <div className={`relative ${searchClassName}`}>
       <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       <Input
-        placeholder={t('common.search') || "Search..."}
+        placeholder={translations?.search || t('common.search') || "Search..."}
         value={globalFilter}
         onChange={(e) => setGlobalFilter(e.target.value)}
         className="pl-10 border-2 focus:border-primary"
@@ -345,7 +358,7 @@ export function UseTable<TData, TValue>({
                         <SelectValue placeholder={filter.title} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All {filter.title}</SelectItem>
+                        <SelectItem value="all">{translations?.all || "All"} {filter.title}</SelectItem>
                         {filter.options.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
@@ -363,7 +376,7 @@ export function UseTable<TData, TValue>({
                     size="sm"
                     onClick={clearFilters}
                     className="h-8 w-8 p-0 hover:bg-muted/50 shrink-0"
-                    title="Clear all filters"
+                    title={translations?.clearFilters || "Clear all filters"}
                   >
                     <X className="h-3 w-3" />
                   </Button>
@@ -378,12 +391,12 @@ export function UseTable<TData, TValue>({
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-8 border-2 hover:border-primary/50">
                   <Settings2 className="h-4 w-4 mr-2" />
-                  Columns
+                  {translations?.columns || "Columns"}
                   <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-[200px]">
-                <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
+                <DropdownMenuLabel>{translations?.toggleColumns || "Toggle Columns"}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {table
                   .getAllColumns()
@@ -395,7 +408,7 @@ export function UseTable<TData, TValue>({
                       checked={column.getIsVisible()}
                       onCheckedChange={(value) => column.toggleVisibility(!!value)}
                     >
-                      {column.id}
+                      {typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id}
                     </DropdownMenuCheckboxItem>
                   ))}
               </DropdownMenuContent>
@@ -562,7 +575,7 @@ export function UseTable<TData, TValue>({
                   <TableCell colSpan={columns.length + 1} className="h-24 text-center px-4 py-3">
                     <div className="flex flex-col items-center justify-center space-y-2">
                       <p className="text-muted-foreground">
-                        {emptyMessage || 
+                        {emptyMessage || translations?.noResults ||
                           (emptyEntityName 
                             ? `No data registered for ${emptyEntityName} yet.`
                             : "No results found."
@@ -582,7 +595,7 @@ export function UseTable<TData, TValue>({
       {/* Pagination */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center space-x-2">
-          <p className="text-sm font-medium">Rows per page</p>
+          <p className="text-sm font-medium">{translations?.rowsPerPage || "Rows per page"}</p>
           <Select
             value={`${table.getState().pagination.pageSize}`}
             onValueChange={(value) => table.setPageSize(Number(value))}
@@ -601,12 +614,14 @@ export function UseTable<TData, TValue>({
         </div>
         
         <div className="flex items-center justify-center text-sm font-medium">
-          Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{" "}
-          {Math.min(
-            (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+          {translations?.showingResults ? translations.showingResults(
+            table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1,
+            Math.min(
+              (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+              table.getFilteredRowModel().rows.length
+            ),
             table.getFilteredRowModel().rows.length
-          )}{" "}
-          of {table.getFilteredRowModel().rows.length} results
+          ) : `Showing ${table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to ${Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, table.getFilteredRowModel().rows.length)} of ${table.getFilteredRowModel().rows.length} results`}
         </div>
 
         <div className="flex items-center space-x-2">
@@ -616,7 +631,7 @@ export function UseTable<TData, TValue>({
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            Previous
+            {translations?.previous || "Previous"}
           </Button>
           <Button
             variant="outline"
@@ -624,7 +639,7 @@ export function UseTable<TData, TValue>({
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            Next
+            {translations?.next || "Next"}
           </Button>
         </div>
       </div>

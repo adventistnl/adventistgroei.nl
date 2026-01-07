@@ -1,6 +1,8 @@
 "use client"
 
 import * as React from "react"
+import { useTranslation } from "react-i18next"
+import { projectTranslations } from "@/lib/translations/projects"
 import { TrendingUp, BarChart3, Activity } from "lucide-react"
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import {
@@ -35,6 +37,8 @@ export function ProjectsOverTimeChart({
   loading,
   selectedYear
 }: ProjectsOverTimeChartProps) {
+  const { i18n } = useTranslation()
+  const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
   const [chartType, setChartType] = React.useState<"area" | "bar">("area")
   
   // Use selectedYear if provided, otherwise use current year
@@ -55,7 +59,7 @@ export function ProjectsOverTimeChart({
 
     const config: ChartConfig = {
       count: {
-        label: "Projects",
+        label: t_project.charts.projects,
       }
     }
 
@@ -161,16 +165,16 @@ export function ProjectsOverTimeChart({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building2 className="w-5 h-5" />
-            Projects Created Over Time
+            {t_project.charts.projectsCreatedOverTime}
           </CardTitle>
           <CardDescription>
-            Monthly project creation by department
+            {t_project.charts.monthlyProjectCreation}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex items-center justify-center">
           <div className="text-center text-muted-foreground">
             <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p>No project data available</p>
+            <p>{t_project.charts.noProjectData}</p>
           </div>
         </CardContent>
       </Card>
@@ -184,10 +188,10 @@ export function ProjectsOverTimeChart({
           <div className="flex-1">
             <CardTitle className="flex items-center gap-2 text-sm">
               <Building2 className="w-4 h-4" />
-              Projects Created Over Time
+              {t_project.charts.projectsCreatedOverTime}
             </CardTitle>
             <CardDescription className="text-xs mt-1">
-              Monthly project creation by department - {chartYear}
+              {t_project.charts.monthlyProjectCreation} - {chartYear}
             </CardDescription>
           </div>
           <div className="flex items-center gap-1 border rounded-md p-1">
@@ -281,10 +285,10 @@ export function ProjectsOverTimeChart({
       <CardFooter className="flex-col items-start gap-1 text-xs pt-3 border-t">
         <div className="flex items-center gap-1.5 font-medium">
           <TrendingUp className="h-3 w-3" />
-          {totalProjects} projects created this year
+          {totalProjects} {t_project.charts.projectsCreatedThisYear}
         </div>
         <div className="text-muted-foreground">
-          Top: <span className="font-medium text-foreground">{topDepartment.name}</span> ({topDepartment.total} projects)
+          {t_project.charts.top}: <span className="font-medium text-foreground">{topDepartment.name}</span> ({topDepartment.total} {t_project.charts.projects.toLowerCase()})
         </div>
       </CardFooter>
     </Card>

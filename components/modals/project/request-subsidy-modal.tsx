@@ -925,9 +925,8 @@ export function RequestSubsidyModal({
                           // New logic: Limit by available project budget (dynamic based on other items)
                           // value must be <= availableBudget - (currentTotal - currentItemAmount)
                           const otherItemsTotal = totalRequestedAmount - currentItem.requested_amount
-                          // Fix: Add back the initial amount of this request if we are in edit mode
-                          const effectiveBudgetCap = availableBudget + (mode === 'edit' ? initialData?.requested_amount || 0 : 0)
-                          const maxAllowed = Math.max(0, effectiveBudgetCap - otherItemsTotal)
+                          // availableBudget already includes the current subsidy amount in edit mode (added in container)
+                          const maxAllowed = Math.max(0, availableBudget - otherItemsTotal)
                           
                           if (value <= maxAllowed + 0.01 && value >= 0) {
                             setTempRequestedAmount(value)
@@ -937,7 +936,7 @@ export function RequestSubsidyModal({
                         }}
                         className="h-9 text-sm font-medium flex-1"
                         min={0}
-                        max={Math.max(0, (availableBudget + (mode === 'edit' ? initialData?.requested_amount || 0 : 0)) - (totalRequestedAmount - currentItem.requested_amount))}
+                        max={Math.max(0, availableBudget - (totalRequestedAmount - currentItem.requested_amount))}
                         placeholder={translations.budget.placeholder}
                       />
                       <TooltipProvider>
@@ -948,9 +947,8 @@ export function RequestSubsidyModal({
                               size="sm"
                               onClick={() => {
                           const otherItemsTotal = totalRequestedAmount - currentItem.requested_amount
-                          // Fix: Add back the initial amount of this request if we are in edit mode
-                          const effectiveBudgetCap = availableBudget + (mode === 'edit' ? initialData?.requested_amount || 0 : 0)
-                          const maxAllowed = Math.max(0, effectiveBudgetCap - otherItemsTotal)
+                          // availableBudget already includes the current subsidy amount in edit mode (added in container)
+                          const maxAllowed = Math.max(0, availableBudget - otherItemsTotal)
                           
                           setTempRequestedAmount(maxAllowed)
                           toast.success(`${translations.budget.maxButton}: ${formatCurrency(maxAllowed)}`)
@@ -996,8 +994,8 @@ export function RequestSubsidyModal({
                   {/* Info box with limit */}
                   {(() => {
                     const otherItemsTotal = totalRequestedAmount - currentItem.requested_amount
-                    const effectiveBudgetCap = availableBudget + (mode === 'edit' ? initialData?.requested_amount || 0 : 0)
-                    const maxAllowed = Math.max(0, effectiveBudgetCap - otherItemsTotal)
+                    // availableBudget already includes the current subsidy amount in edit mode (added in container)
+                    const maxAllowed = Math.max(0, availableBudget - otherItemsTotal)
                     return (
                       <div className="flex items-start gap-2 text-xs text-gray-500 bg-white p-2 rounded border border-gray-200">
                         <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />

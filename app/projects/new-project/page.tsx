@@ -118,6 +118,7 @@ import { useMutation, useQuery } from "@apollo/client"
 import { CREATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
 import { GET_ALL_USERS_QUERY } from "@/graphql/queries/GET_USER_QUERY"
+import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { ProjectType, LanguagePreference, EventType } from "@/types/globalTypes"
 import "@/lib/i18n"
 
@@ -228,6 +229,12 @@ function ProjectRegisterContent() {
 
   // GraphQL mutation for creating project
   const [createProjectMutation, { loading: creatingProject }] = useMutation(CREATE_PROJECT_MUTATION, {
+    refetchQueries: [
+      {
+        query: GET_PROJECTS_QUERY,
+        variables: { institutionId }
+      }
+    ],
     onCompleted: (data) => {
       // Clear draft from sessionStorage on success
       try {

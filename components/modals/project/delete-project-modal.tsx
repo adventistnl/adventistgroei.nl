@@ -31,6 +31,7 @@ import { projectTranslations } from "@/lib/translations/projects"
 import { useCurrency } from "@/contexts/currency-context"
 import { DELETE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
+import { useCurrency } from "@/contexts/currency-context"
 import toast from "react-hot-toast"
 
 // Project Data interface
@@ -58,8 +59,7 @@ export function DeleteProjectModal({
   const { i18n } = useTranslation()
   const { formatCurrency } = useCurrency()
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
-  const [isLoading, setIsLoading] = React.useState(false)
-  const [consequencesOpen, setConsequencesOpen] = React.useState(false)
+  const { formatCurrency } = useCurrency()
   const [understoodConsequences, setUnderstoodConsequences] = React.useState(false)
   const [finalConfirmation, setFinalConfirmation] = React.useState('')
 
@@ -76,8 +76,7 @@ export function DeleteProjectModal({
   const handleConfirm = async () => {
     if (!project) return
 
-    setIsLoading(true)
-    const loadingToast = toast.loading(`${t.toasts.projectDeleted.replace('successfully!', '...')}`)
+    const loadingToast = toast.loading(t.toasts.projectDeleting)
     
     try {
       await deleteProject({
@@ -157,6 +156,8 @@ export function DeleteProjectModal({
   if (!project) {
     return null
   }
+
+
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -315,8 +316,8 @@ export function DeleteProjectModal({
               {/* Final Confirmation Input */}
               {understoodConsequences && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">
-                    {t.deleteProjectTypeConfirmLabel || "Digite o texto de confirmação para prosseguir"}
+                  <label className="text-sm font-medium text-gray-700">
+                    {t.deleteProjectTypeConfirm}
                   </label>
                   <p className="text-xs text-muted-foreground mb-2">
                     {t.deleteProjectConfirmHelp || `Digite "delete project" para confirmar`}

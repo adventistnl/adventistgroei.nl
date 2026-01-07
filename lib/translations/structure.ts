@@ -6,13 +6,11 @@ export const structureTranslations = {
     error: "Error loading data",
     
     // Navigation
-    institutions: "Institutions",
-    regions: "Regions",
-    churches: "Churches",
-    departments: "Departments",
-    deleteChurch: "Kerk Verwijderen",
-    editDepartment: "Afdeling Bewerken",
-    deleteDepartment: "Afdeling Verwijderen",// Institutions
+    // institutions: "Institutions",
+    // regions: "Regions", 
+    // churches: "Churches",
+    // departments: "Departments",
+    
     institutionsTitle: "Institutions Management",
     institutionsSubtitle: "Manage religious institutions and their organizational structure",
     createInstitution: "Create Institution",
@@ -81,8 +79,6 @@ export const structureTranslations = {
     manageBudget: "Manage Budget",
     editRegion: "Edit Region",
     deleteRegion: "Delete Region",
-    editChurch: "Edit Church",
-    deleteChurch: "Delete Church",
     editDepartment: "Edit Department",
     deleteDepartment: "Delete Department",
     
@@ -106,6 +102,33 @@ export const structureTranslations = {
     itemCreated: "Item created successfully",
     itemUpdated: "Item updated successfully",
     itemDeleted: "Item deleted successfully",
+
+    // Sidebar
+    sidebar: {
+      dashboard: "Dashboard",
+      structureOrganization: "Structure & Organization",
+      institutions: "Institutions",
+      instDepartments: "Inst. Departments",
+      regions: "Regions",
+      churches: "Churches",
+      churchDepartments: "Church Departments",
+      financeManagement: "Finance Management",
+      annualBudget: "Annual Budget",
+      subsidyApprovals: "Subsidy Approvals",
+      usersAccess: "Users & Access",
+      users: "Users",
+      accessManagement: "Access Management",
+      projects: "Projects",
+    },
+    
+    // Navigation Loading Messages
+    navigationMessages: {
+      opening: "Opening {{title}}...",
+      signingOut: "Signing out...",
+      openingProfile: "Opening profile...",
+      openingNotifications: "Opening notifications...",
+      openingSettings: "Opening settings..."
+    },
 
     // Common fields
     common: {
@@ -229,10 +252,29 @@ export const structureTranslations = {
     error: "Fout bij het laden van gegevens",
     
     // Navigation
-    institutions: "Instellingen",
-    regions: "Regio's",
-    churches: "Kerken",
-    departments: "Afdelingen",
+    // institutions: "Instellingen",
+    // regions: "Regio's",
+    // churches: "Kerken",
+    // departments: "Afdelingen",
+    
+    
+    // Sidebar
+    sidebar: {
+      dashboard: "Dashboard",
+      structureOrganization: "Structuur & Organisatie",
+      institutions: "Instellingen",
+      instDepartments: "Inst. Afdelingen",
+      regions: "Regio's",
+      churches: "Kerken",
+      churchDepartments: "Kerk Afdelingen",
+      financeManagement: "Financieel Beheer",
+      annualBudget: "Jaarlijks Budget",
+      subsidyApprovals: "Subsidie Goedkeuringen",
+      usersAccess: "Gebruikers & Toegang",
+      users: "Gebruikers",
+      accessManagement: "Toegangsbeheer",
+      projects: "Projecten",
+    },
     
     // Institutions
     institutionsTitle: "Instellingen Beheer",
@@ -299,20 +341,6 @@ export const structureTranslations = {
     view: "Bekijken",
     edit: "Bewerken",
     delete: "Verwijderen",
-    viewContact: "Contact Bekijken",
-    manageBudget: "Budget Beheren",
-    editRegion: "Regio Bewerken",
-    deleteRegion: "Regio Verwijderen",
-    editChurch: "Kerk Bewerken",
-    deleteChurch: "Kerk Verwijderen",
-    editDepartment: "Afdeling Bewerken",
-    deleteDepartment: "Afdeling Verwijderen",
-    
-    // Search & Filters
-    searchRegions: "Zoek regio's...",
-    searchChurches: "Zoek kerken...",
-    searchDepartments: "Zoek afdelingen...",
-    filterByRegion: "Filter op Regio",
     filterByChurch: "Filter op Kerk",
     
     // Status
@@ -328,6 +356,15 @@ export const structureTranslations = {
     itemCreated: "Item succesvol aangemaakt",
     itemUpdated: "Item succesvol bijgewerkt",
     itemDeleted: "Item succesvol verwijderd",
+
+    // Navigation Loading Messages
+    navigationMessages: {
+      opening: "{{title}} openen...",
+      signingOut: "Uitloggen...",
+      openingProfile: "Profiel openen...",
+      openingNotifications: "Meldingen openen...",
+      openingSettings: "Instellingen openen..."
+    },
 
     // Common fields
     common: {
@@ -451,10 +488,29 @@ export const structureTranslations = {
     error: "Erro ao carregar dados",
     
     // Navigation
-    institutions: "Instituições",
-    regions: "Regiões",
-    churches: "Igrejas",
-    departments: "Departamentos",
+    // institutions: "Instituições",
+    // regions: "Regiões",
+    // churches: "Igrejas",
+    // departments: "Departamentos",
+    
+    
+    // Sidebar
+    sidebar: {
+      dashboard: "Dashboard",
+      structureOrganization: "Estrutura & Organização",
+      institutions: "Instituições",
+      instDepartments: "Dept. Institucionais",
+      regions: "Regiões",
+      churches: "Igrejas",
+      churchDepartments: "Dept. das Igrejas",
+      financeManagement: "Gestão Financeira",
+      annualBudget: "Orçamento Anual",
+      subsidyApprovals: "Aprovações de Subsídio",
+      usersAccess: "Usuários & Acesso",
+      users: "Usuários",
+      accessManagement: "Gestão de Acesso",
+      projects: "Projetos",
+    },
     
     // Institutions
     institutionsTitle: "Gestão de Instituições",
@@ -550,6 +606,15 @@ export const structureTranslations = {
     itemCreated: "Item criado com sucesso",
     itemUpdated: "Item atualizado com sucesso",
     itemDeleted: "Item excluído com sucesso",
+
+    // Navigation Loading Messages
+    navigationMessages: {
+      opening: "Abrindo {{title}}...",
+      signingOut: "Saindo...",
+      openingProfile: "Abrindo perfil...",
+      openingNotifications: "Abrindo notificações...",
+      openingSettings: "Abrindo configurações..."
+    },
 
     // Common fields
     common: {

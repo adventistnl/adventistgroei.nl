@@ -211,7 +211,7 @@ export function SubsidyRequestsContainer({
         file_name: receipt.filename,
         file_type: getFileType(receipt.filename),
         document_type: mapReceiptTypeToDocType(receipt.type),
-        amount: receipt.amount || 0,
+        amount: receipt.amount ? Number(receipt.amount) : 0, // Convert Decimal to number
         file_url: receipt.file_url,
         isExpanded: false
       }))
@@ -377,10 +377,13 @@ export function SubsidyRequestsContainer({
         subsidizedActivityIds={subsidizedActivityIds}
         availableBudget={(() => {
           const used = displaySubsidies.filter(s => s.status !== 'rejected').reduce((sum, s) => sum + s.requested_amount, 0)
-          const available = projectSubsidizedBudget - used
-          console.log('💰 Budget Calculation (Container):', { 
+          // In edit mode, add back the current subsidy's amount to available budget
+          const currentSubsidyAmount = selectedSubsidyForEdit?.requested_amount || 0
+          const available = projectSubsidizedBudget - used + currentSubsidyAmount
+          console.log('💰 Budget Calculation (Container - Edit Mode):', { 
             projectSubsidizedBudget, 
             used, 
+            currentSubsidyAmount,
             available, 
             subsidies_count: displaySubsidies.length,
             subs: displaySubsidies.map(s => ({ id: s.id, amount: s.requested_amount, status: s.status }))
