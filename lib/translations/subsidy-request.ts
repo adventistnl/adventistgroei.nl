@@ -154,6 +154,65 @@ export const subsidyRequestTranslations = {
     // Success messages
     success: {
       created: "Subsidy request created successfully"
+    },
+    
+    // Validation badges
+    validationBadges: {
+      valueDefined: "Value Defined",
+      documents: "Documents",
+      valuesOk: "Values OK",
+      totalDocs: "Total Docs",
+      files: "file(s)"
+    },
+    
+    // Toast messages
+    toasts: {
+      filesAdded: "{{count}} file(s) added",
+      documentRemoved: "Document removed",
+      activitiesAdded: "{{count}} activity(ies) added",
+      budgetExceeded: "The requested amount ({{requested}}) exceeds the available budget ({{available}})",
+      documentAmountMismatch: "{{activity}}: Requested amount ({{requested}}) must equal the total of documents ({{total}})",
+      documentsNeedAmount: "{{activity}}: All documents must have an amount filled in",
+      requestUpdated: "Request updated successfully",
+      uploadError: "Error uploading files. Please try again.",
+      createError: "Error creating request or uploading files",
+      maxValueSet: "{{label}}: {{amount}}"
+    },
+    
+    // Status labels
+    status: {
+      notInformed: "Not informed",
+      loading: "Loading...",
+      noChurchRegistered: "No church registered",
+      activitiesAvailable: "{{count}} subsidized activity(ies) available",
+      noActivitiesAvailable: "No subsidized activities available",
+      pendingValue: "Pending value",
+      completed: "Completed",
+      readyToSubmit: "Ready to submit",
+      pendingValidation: "Pending validation",
+      uploadingFile: "Uploading file...",
+      uploading: "Uploading...",
+      uploadingFiles: "Uploading files...",
+      savingChanges: "Save changes"
+    },
+    
+    // Labels
+    labels: {
+      department: "Department",
+      institutionContribution: "Institution Contribution",
+      projectBudgetLimit: "Limit: Project Budget",
+      selectType: "Select type",
+      searchType: "Search type...",
+      noTypeFound: "No type found",
+      totalDocuments: "Total documents:",
+      requestedValue: "Requested value:",
+      difference: "Difference:"
+    },
+    
+    // Modal titles
+    modals: {
+      addActivitiesTitle: "Add Subsidized Activities",
+      addActivitiesDescription: "Select subsidized activities from the project to add to the subsidy request."
     }
   },
   
@@ -312,6 +371,65 @@ export const subsidyRequestTranslations = {
     // Success messages
     success: {
       created: "Solicitação de subsídio criada com sucesso"
+    },
+    
+    // Validation badges
+    validationBadges: {
+      valueDefined: "Valor Definido",
+      documents: "Documentos",
+      valuesOk: "Valores OK",
+      totalDocs: "Total Docs",
+      files: "arquivo(s)"
+    },
+    
+    // Toast messages
+    toasts: {
+      filesAdded: "{{count}} arquivo(s) adicionado(s)",
+      documentRemoved: "Documento removido",
+      activitiesAdded: "{{count}} atividade(s) adicionada(s)",
+      budgetExceeded: "O valor solicitado ({{requested}}) excede o orçamento disponível ({{available}})",
+      documentAmountMismatch: "{{activity}}: Valor solicitado ({{requested}}) deve ser igual ao total dos documentos ({{total}})",
+      documentsNeedAmount: "{{activity}}: Todos os documentos devem ter um valor preenchido",
+      requestUpdated: "Solicitação atualizada com sucesso",
+      uploadError: "Erro ao enviar arquivos. Tente novamente.",
+      createError: "Erro ao criar solicitação ou enviar arquivos",
+      maxValueSet: "{{label}}: {{amount}}"
+    },
+    
+    // Status labels
+    status: {
+      notInformed: "Não informado",
+      loading: "Carregando...",
+      noChurchRegistered: "Sem igreja registrada",
+      activitiesAvailable: "{{count}} atividade(s) subsidiada(s) disponível(is)",
+      noActivitiesAvailable: "Nenhuma atividade subsidiada disponível",
+      pendingValue: "Valor pendente",
+      completed: "Completas",
+      readyToSubmit: "Pronto para enviar",
+      pendingValidation: "Pendente validação",
+      uploadingFile: "Enviando arquivo...",
+      uploading: "Enviando...",
+      uploadingFiles: "Enviando arquivos...",
+      savingChanges: "Salvar alterações"
+    },
+    
+    // Labels
+    labels: {
+      department: "Departamento",
+      institutionContribution: "Contribuição da Instituição",
+      projectBudgetLimit: "Limite: Orçamento do Projeto",
+      selectType: "Selecionar tipo",
+      searchType: "Buscar tipo...",
+      noTypeFound: "Nenhum tipo encontrado",
+      totalDocuments: "Total documentos:",
+      requestedValue: "Valor solicitado:",
+      difference: "Diferença:"
+    },
+    
+    // Modal titles
+    modals: {
+      addActivitiesTitle: "Adicionar Atividades Subsidiadas",
+      addActivitiesDescription: "Selecione atividades subsidiadas do projeto para adicionar à solicitação de subsídio."
     }
   },
   
@@ -470,6 +588,65 @@ export const subsidyRequestTranslations = {
     // Success messages
     success: {
       created: "Subsidieaanvraag succesvol aangemaakt"
+    },
+    
+    // Validation badges
+    validationBadges: {
+      valueDefined: "Waarde Gedefinieerd",
+      documents: "Documenten",
+      valuesOk: "Waarden OK",
+      totalDocs: "Totaal Docs",
+      files: "bestand(en)"
+    },
+    
+    // Toast messages
+    toasts: {
+      filesAdded: "{{count}} bestand(en) toegevoegd",
+      documentRemoved: "Document verwijderd",
+      activitiesAdded: "{{count}} activiteit(en) toegevoegd",
+      budgetExceeded: "Het aangevraagde bedrag ({{requested}}) overschrijdt het beschikbare budget ({{available}})",
+      documentAmountMismatch: "{{activity}}: Aangevraagd bedrag ({{requested}}) moet gelijk zijn aan het totaal van documenten ({{total}})",
+      documentsNeedAmount: "{{activity}}: Alle documenten moeten een bedrag hebben ingevuld",
+      requestUpdated: "Aanvraag succesvol bijgewerkt",
+      uploadError: "Fout bij uploaden van bestanden. Probeer het opnieuw.",
+      createError: "Fout bij aanmaken van aanvraag of uploaden van bestanden",
+      maxValueSet: "{{label}}: {{amount}}"
+    },
+    
+    // Status labels
+    status: {
+      notInformed: "Niet opgegeven",
+      loading: "Laden...",
+      noChurchRegistered: "Geen kerk geregistreerd",
+      activitiesAvailable: "{{count}} gesubsidieerde activiteit(en) beschikbaar",
+      noActivitiesAvailable: "Geen gesubsidieerde activiteiten beschikbaar",
+      pendingValue: "Bedrag in behandeling",
+      completed: "Voltooid",
+      readyToSubmit: "Klaar om in te dienen",
+      pendingValidation: "Validatie in behandeling",
+      uploadingFile: "Bestand uploaden...",
+      uploading: "Uploaden...",
+      uploadingFiles: "Bestanden uploaden...",
+      savingChanges: "Wijzigingen opslaan"
+    },
+    
+    // Labels
+    labels: {
+      department: "Afdeling",
+      institutionContribution: "Bijdrage Instelling",
+      projectBudgetLimit: "Limiet: Projectbudget",
+      selectType: "Type selecteren",
+      searchType: "Type zoeken...",
+      noTypeFound: "Geen type gevonden",
+      totalDocuments: "Totaal documenten:",
+      requestedValue: "Aangevraagde waarde:",
+      difference: "Verschil:"
+    },
+    
+    // Modal titles
+    modals: {
+      addActivitiesTitle: "Gesubsidieerde Activiteiten Toevoegen",
+      addActivitiesDescription: "Selecteer gesubsidieerde activiteiten uit het project om toe te voegen aan de subsidieaanvraag."
     }
   }
 }

@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { projectTranslations } from "@/lib/translations/projects"
 import {
   ChartContainer,
   ChartTooltip,
@@ -28,7 +29,7 @@ interface SubsidyRequestChartData {
   title: string
   requested_at: string | Date
   requested_amount: number
-  status: "pending" | "approved" | "rejected" | "in_review"
+  status: "pending" | "approved" | "rejected" | "in_review" | "closed"
 }
 
 interface SubsidyActivityChartProps {
@@ -45,6 +46,7 @@ export function SubsidyActivityChart({
   const [timeRange, setTimeRange] = React.useState("12m")
   const { i18n } = useTranslation()
   const currentLanguage = i18n?.language || 'en'
+  const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
 
   // Processar dados de subsídios por mês
   const chartData = React.useMemo(() => {
@@ -110,19 +112,19 @@ export function SubsidyActivityChart({
 
   const chartConfig = {
     total: {
-      label: "Total Solicitado",
+      label: t.charts.subsidyActivity.totalRequested,
       color: "hsl(var(--chart-1))",
     },
     approved: {
-      label: "Aprovado",
+      label: t.charts.legend.accepted,
       color: "hsl(142, 76%, 36%)",
     },
     pending: {
-      label: "Pendente",
+      label: t.charts.legend.pending,
       color: "hsl(45, 93%, 47%)",
     },
     rejected: {
-      label: "Rejeitado",
+      label: t.charts.legend.rejected,
       color: "hsl(0, 84.2%, 60.2%)", // Red
     },
   }
@@ -160,9 +162,9 @@ export function SubsidyActivityChart({
     <Card className="h-full flex flex-col">
       <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
         <div className="grid flex-1 gap-1">
-          <CardTitle>Atividade de Solicitações de Subsídio</CardTitle>
+          <CardTitle>{t.charts.subsidyActivity.title}</CardTitle>
           <CardDescription>
-            Valores solicitados ao longo dos meses - {totals.count} solicitações totalizando €{totals.total.toFixed(0)}K
+            {t.charts.subsidyActivity.description.replace('{{count}}', String(totals.count)).replace('{{total}}', totals.total.toFixed(0))}
           </CardDescription>
         </div>
         <Select value={timeRange} onValueChange={setTimeRange}>
@@ -170,17 +172,17 @@ export function SubsidyActivityChart({
             className="w-[160px] rounded-lg sm:ml-auto"
             aria-label="Selecionar período"
           >
-            <SelectValue placeholder="Últimos 12 meses" />
+            <SelectValue placeholder={t.charts.subsidyActivity.last12Months} />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
             <SelectItem value="12m" className="rounded-lg">
-              Últimos 12 meses
+              {t.charts.subsidyActivity.last12Months}
             </SelectItem>
             <SelectItem value="6m" className="rounded-lg">
-              Últimos 6 meses
+              {t.charts.subsidyActivity.last6Months}
             </SelectItem>
             <SelectItem value="3m" className="rounded-lg">
-              Últimos 3 meses
+              {t.charts.subsidyActivity.last3Months}
             </SelectItem>
           </SelectContent>
         </Select>
@@ -227,17 +229,17 @@ export function SubsidyActivityChart({
                   labelFormatter={(value, payload) => {
                     if (payload && payload[0]) {
                       const data = payload[0].payload
-                      return `${data.month} - ${data.count} solicitaç${data.count === 1 ? 'ão' : 'ões'}`
+                      return `${data.month} - ${data.count} ${t.charts.tooltip.requests}`
                     }
                     return value
                   }}
                   formatter={(value, name) => {
                     const labels: Record<string, string> = {
-                      total: "Total",
-                      approved: "Aprovado",
-                      pending: "Pendente",
-                      in_review: "Em Análise",
-                      rejected: "Rejeitado",
+                      total: t.charts.subsidyActivity.totalRequested,
+                      approved: t.charts.legend.accepted,
+                      pending: t.charts.legend.pending,
+                      in_review: t.charts.legend.inReview,
+                      rejected: t.charts.legend.rejected,
                     }
                     return [
                       `€${Number(value).toFixed(1)}K`,
@@ -261,19 +263,19 @@ export function SubsidyActivityChart({
         <div className="flex flex-wrap gap-4 justify-center mt-4 text-xs">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-green-600" />
-            <span className="text-gray-600">Aprovado: €{totals.approved.toFixed(0)}K</span>
+            <span className="text-gray-600">{t.charts.legend.accepted}: €{totals.approved.toFixed(0)}K</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-amber-500" />
-            <span className="text-gray-600">Pendente: €{totals.pending.toFixed(0)}K</span>
+            <span className="text-gray-600">{t.charts.legend.pending}: €{totals.pending.toFixed(0)}K</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-blue-600" />
-            <span className="text-gray-600">Em Análise: €{totals.in_review.toFixed(0)}K</span>
+            <span className="text-gray-600">{t.charts.legend.inReview}: €{totals.in_review.toFixed(0)}K</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-red-500" />
-            <span className="text-gray-600">Rejeitado: €{totals.rejected.toFixed(0)}K</span>
+            <span className="text-gray-600">{t.charts.legend.rejected}: €{totals.rejected.toFixed(0)}K</span>
           </div>
         </div>
       </CardContent>

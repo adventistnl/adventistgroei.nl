@@ -65,7 +65,7 @@ export function SubsidyRequestsContainer({
   onRefresh,
   projectSubsidizedBudget = 0,
 }: SubsidyRequestsContainerProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false)
   const [selectedSubsidy, setSelectedSubsidy] = React.useState<SubsidyRequestCardData | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
@@ -91,9 +91,9 @@ export function SubsidyRequestsContainer({
   const displaySubsidies = subsidies
 
   // Default translations
-  const defaultTitle = title || t("subsidy.requests", "Solicitações de Subsídio")
-  const defaultEmptyTitle = emptyStateTitle || t("subsidy.noRequests", "Nenhuma solicitação de subsídio")
-  const defaultEmptyDescription = emptyStateDescription || t("subsidy.noRequestsDescription", "Comece criando uma nova solicitação.")
+  const defaultTitle = title || t("subsidy.requestsTitle")
+  const defaultEmptyTitle = emptyStateTitle || t("subsidy.noRequests")
+  const defaultEmptyDescription = emptyStateDescription || t("subsidy.noRequestsDescription")
 
   // Handlers
   const handleViewSubsidy = (id: string) => {
@@ -257,7 +257,7 @@ export function SubsidyRequestsContainer({
 
   return (
     <>
-      <div className={cn(gridColSpan, className,"mt-4")}>
+      <div className={cn(gridColSpan, className)}>
       <div className="h-full flex flex-col space-y-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
         {/* Header */}
         <div className="flex items-start justify-between flex-shrink-0">
@@ -274,7 +274,7 @@ export function SubsidyRequestsContainer({
               className="gap-2 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 dark:text-gray-900"
             >
               <Plus className="h-4 w-4" />
-              {t("common.add", "Adicionar")}
+              {t("common.add")}
             </Button>
           )}
         </div>
@@ -310,17 +310,14 @@ export function SubsidyRequestsContainer({
         {displaySubsidies.length > 0 && (
           <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-2 text-[10px] text-gray-500 dark:text-gray-400 flex-shrink-0">
             <span>
-              {displaySubsidies.length} {t("subsidy.requestCount", { 
-                count: displaySubsidies.length,
-                defaultValue: displaySubsidies.length === 1 ? "solicitação" : "solicitações" 
-              })}
+              {t("subsidy.requestCount", { count: displaySubsidies.length })}
             </span>
             <span>
-              {t("common.total", "Total")}:{" "}
+              {t("common.total")}:{" "}
               <span className="font-semibold text-gray-700 dark:text-gray-300">
-                {new Intl.NumberFormat("pt-BR", {
+                {new Intl.NumberFormat(i18n.language === 'en' ? 'en-US' : i18n.language === 'nl' ? 'nl-NL' : 'pt-BR', {
                   style: "currency",
-                  currency: "EUR",
+                  currency: i18n.language === 'en' ? 'USD' : i18n.language === 'nl' ? 'EUR' : 'BRL',
                   minimumFractionDigits: 0,
                 }).format(displaySubsidies.filter(s => s.status !== 'rejected').reduce((sum, s) => sum + s.requested_amount, 0))}
               </span>

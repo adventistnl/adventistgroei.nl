@@ -1,11 +1,13 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import { projectRegisterTranslations } from './translations/project-register'
+import { projectTranslations } from './translations/projects'
 
 // Recursos de tradução
 const resources = {
   en: {
     translation: {
+      ...projectTranslations.en,
       dashboard: {
         title: "General Dashboard",
         subtitle: "Overview of key system metrics",
@@ -149,6 +151,7 @@ const resources = {
         event_participation: "Event Participation"
       },
       common: {
+        ...projectTranslations.en.common,
         language: "Language",
         english: "English",
         dutch: "Dutch",
@@ -188,7 +191,14 @@ const resources = {
         dark_mode: "Dark",
         theme_light_activated: "Light mode activated",
         theme_dark_activated: "Dark mode activated",
-        invite: "Invite"
+        invite: "Invite",
+        add: "Add",
+        create: "Create",
+        total: "Total",
+        apply: "Apply",
+        irreversible: "This action cannot be undone",
+        deletePermanently: "Delete Permanently",
+        registeredUsers: "Registered Users"
       },
       kanban: {
         dropItemHere: "Drop item here",
@@ -207,14 +217,23 @@ const resources = {
         items: "items"
       },
       actions: {
-        add_member: "Add Member",
+        ...projectTranslations.pt.actions,
+        add_member: "Adicionar Membro",
         create_event: "Create Event",
         manage_subsidies: "Manage Subsidies",
         view_reports: "View Reports",
         send_communication: "Send Communication",
         manage_departments: "Manage Departments",
         view_details: "View Details",
-        create_institution: "Create Institution"
+        create_institution: "Create Institution",
+        view: "View",
+        edit: "Edit",
+        delete: "Delete",
+        duplicate: "Duplicate",
+        archive: "Archive",
+        unarchive: "Unarchive",
+        editProject: "Edit Project",
+        duplicateProject: "Duplicate Project"
       },
       institutions: {
         title: "Institutions",
@@ -1804,6 +1823,7 @@ const resources = {
   },
   nl: {
     translation: {
+      ...projectTranslations.nl,
       dashboard: {
         title: "Algemeen Dashboard",
         subtitle: "Overzicht van belangrijke systeemstatistieken",
@@ -1947,6 +1967,7 @@ const resources = {
         event_participation: "Evenementdeelname"
       },
       common: {
+        ...projectTranslations.nl.common,
         language: "Taal",
         english: "Engels",
         dutch: "Nederlands",
@@ -1986,7 +2007,14 @@ const resources = {
         dark_mode: "Donker",
         theme_light_activated: "Lichte modus geactiveerd",
         theme_dark_activated: "Donkere modus geactiveerd",
-        invite: "Uitnodigen"
+        invite: "Uitnodigen",
+        add: "Toevoegen",
+        create: "Aanmaken",
+        total: "Totaal",
+        apply: "Toepassen",
+        irreversible: "Deze actie kan niet ongedaan worden gemaakt",
+        deletePermanently: "Definitief Verwijderen",
+        registeredUsers: "Geregistreerde Gebruikers"
       },
       kanban: {
         dropItemHere: "Item hier neerzetten",
@@ -2005,6 +2033,7 @@ const resources = {
         items: "items"
       },
       actions: {
+        ...projectTranslations.nl.actions,
         add_member: "Lid Toevoegen",
         create_event: "Evenement Maken",
         manage_subsidies: "Subsidies Beheren",
@@ -3427,7 +3456,9 @@ const resources = {
   },
   pt: {
     translation: {
+      ...projectTranslations.pt,
       common: {
+        ...projectTranslations.pt.common,
         language: "Idioma",
         profile: "Perfil",
         loading: "Carregando...",

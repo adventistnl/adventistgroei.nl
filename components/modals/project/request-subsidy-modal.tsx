@@ -220,11 +220,7 @@ export function RequestSubsidyModal({
   // Log when modal opens
   React.useEffect(() => {
     if (isOpen) {
-      console.log('🟢 Modal de Subsídio aberto!')
-      console.log('📋 Atividades recebidas:', selectedActivities.length)
-      console.log('💰 Total solicitado:', totalRequestedAmount)
-      console.log('💰 Orçamento Disponível (Prop):', availableBudget)
-      console.log('💰 Orçamento Disponível (Real):', availableBudget + (mode === 'edit' ? initialData?.requested_amount || 0 : 0))
+      // Logs preserved for debugging
     }
   }, [isOpen, selectedActivities.length, totalRequestedAmount, availableBudget, mode, initialData])
 
@@ -266,28 +262,28 @@ export function RequestSubsidyModal({
     return [
       {
         id: "requested-amount",
-        label: "Valor Definido",
+        label: translations.validationBadges.valueDefined,
         value: validation.hasRequestedAmount ? formatCurrency(item.requested_amount) : "€0",
         isValid: validation.hasRequestedAmount,
         variant: validation.hasRequestedAmount ? "success" : "neutral"
       },
       {
         id: "documents",
-        label: "Documentos",
-        value: `${item.activity_documents.length} arquivo(s)`,
+        label: translations.validationBadges.documents,
+        value: `${item.activity_documents.length} ${translations.validationBadges.files}`,
         isValid: validation.hasDocuments,
         variant: validation.hasDocuments ? "success" : "neutral"
       },
       {
         id: "document-amounts",
-        label: "Valores OK",
+        label: translations.validationBadges.valuesOk,
         value: `${item.activity_documents.filter(d => d.amount > 0).length}/${item.activity_documents.length}`,
         isValid: validation.hasValidDocumentAmounts,
         variant: validation.hasValidDocumentAmounts ? "success" : "neutral"
       },
       {
         id: "total-valid",
-        label: "Total Docs",
+        label: translations.validationBadges.totalDocs,
         value: formatCurrency(validation.docTotal),
         isValid: validation.documentsMatchOrExceedRequest,
         variant: validation.documentsMatchOrExceedRequest ? "success" : (validation.hasDocuments ? "warning" : "neutral")
@@ -372,7 +368,7 @@ export function RequestSubsidyModal({
       ...newDocuments
     ])
 
-    toast.success(`${newDocuments.length} arquivo(s) adicionado(s)`)
+    toast.success(translations.toasts.filesAdded.replace('{{count}}', newDocuments.length.toString()))
   }
 
   const getFileType = (filename: string): "PDF" | "JPG" | "PNG" | "DOC" | "OTHER" => {
@@ -405,7 +401,7 @@ export function RequestSubsidyModal({
       'activity_documents',
       currentItem.activity_documents.filter(doc => doc.id !== docId)
     )
-    toast.success("Documento removido")
+    toast.success(translations.toasts.documentRemoved)
   }
 
   const handleDocumentChange = (docId: string, field: keyof UploadedDocument, value: any) => {
@@ -433,7 +429,7 @@ export function RequestSubsidyModal({
     }))
     
     setIsAddActivityModalOpen(false)
-    toast.success(`${activities.length} atividade(s) adicionada(s)`)
+    toast.success(translations.toasts.activitiesAdded.replace('{{count}}', activities.length.toString()))
   }
 
   const handleSubmit = async () => {
@@ -454,7 +450,9 @@ export function RequestSubsidyModal({
     }
 
     if (totalRequestedAmount > availableBudget + 0.01) {
-      toast.error(`O valor solicitado (${formatCurrency(totalRequestedAmount)}) excede o orçamento disponível (${formatCurrency(availableBudget)})`)
+      toast.error(translations.toasts.budgetExceeded
+        .replace('{{requested}}', formatCurrency(totalRequestedAmount))
+        .replace('{{available}}', formatCurrency(availableBudget)))
       return
     }
 
@@ -469,13 +467,16 @@ export function RequestSubsidyModal({
     for (const item of formData.items) {
       const docTotal = item.activity_documents.reduce((sum, doc) => sum + (doc.amount || 0), 0)
       if (Math.abs(item.requested_amount - docTotal) > 0.01) {
-        toast.error(`${item.activity_name}: Valor solicitado (${formatCurrency(item.requested_amount)}) deve ser igual ao total dos documentos (${formatCurrency(docTotal)})`)
+        toast.error(translations.toasts.documentAmountMismatch
+          .replace('{{activity}}', item.activity_name)
+          .replace('{{requested}}', formatCurrency(item.requested_amount))
+          .replace('{{total}}', formatCurrency(docTotal)))
         return
       }
       // Check if all documents have amount > 0
       const docsWithoutAmount = item.activity_documents.filter(doc => !doc.amount || doc.amount <= 0)
       if (docsWithoutAmount.length > 0) {
-        toast.error(`${item.activity_name}: Todos os documentos devem ter um valor preenchido`)
+        toast.error(translations.toasts.documentsNeedAmount.replace('{{activity}}', item.activity_name))
         return
       }
     }
@@ -513,12 +514,12 @@ export function RequestSubsidyModal({
         // Clear pending files after successful upload
         setPendingFiles(new Map())
 
-        toast.success("Solicitação atualizada com sucesso")
+        toast.success(translations.toasts.requestUpdated)
         onSubmit(formData)
         onClose()
       } catch (error) {
         console.error('❌ [Submit] Upload error:', error)
-        toast.error('Erro ao enviar arquivos. Tente novamente.')
+        toast.error(translations.toasts.uploadError)
       } finally {
         setIsSubmitting(false)
       }
@@ -562,7 +563,7 @@ export function RequestSubsidyModal({
         onClose()
       } catch (error) {
         console.error('❌ [Create] Error:', error)
-        toast.error('Erro ao criar solicitação ou enviar arquivos')
+        toast.error(translations.toasts.createError)
       } finally {
         setIsSubmitting(false)
       }
@@ -641,7 +642,7 @@ export function RequestSubsidyModal({
                 <div>
                   <p className="text-xs text-gray-500">{translations.summary.institution}</p>
                   <p className="text-sm font-semibold text-gray-900">
-                    {institutionName || "Não informado"}
+                    {institutionName || translations.status.notInformed}
                   </p>
                 </div>
               </div>
@@ -651,9 +652,9 @@ export function RequestSubsidyModal({
                 <div className="flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-gray-600" />
                   <div>
-                    <p className="text-xs text-gray-500">Departamento</p>
+                    <p className="text-xs text-gray-500">{translations.labels.department}</p>
                     <p className="text-sm font-semibold text-gray-900">
-                      {departmentName || "Não informado"}
+                      {departmentName || translations.status.notInformed}
                     </p>
                   </div>
                 </div>
@@ -665,7 +666,7 @@ export function RequestSubsidyModal({
                 <div>
                   <p className="text-xs text-gray-500">{translations.summary.church}</p>
                   <p className="text-sm font-semibold text-gray-900">
-                    {churchName || (churchId ? "Carregando..." : "Sem igreja registrada")}
+                    {churchName || (churchId ? translations.status.loading : translations.status.noChurchRegistered)}
                   </p>
                 </div>
               </div>
@@ -812,8 +813,8 @@ export function RequestSubsidyModal({
                   <TooltipContent>
                     <p className="text-xs">
                       {availableActivities.length > 0 
-                        ? `${availableActivities.length} atividade(s) subsidiada(s) disponível(is)`
-                        : 'Nenhuma atividade subsidiada disponível'
+                        ? translations.status.activitiesAvailable.replace('{{count}}', availableActivities.length.toString())
+                        : translations.status.noActivitiesAvailable
                       }
                     </p>
                   </TooltipContent>
@@ -837,15 +838,15 @@ export function RequestSubsidyModal({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Label className="text-sm font-medium text-gray-700">Contribuição da Instituição</Label>
+                  <Label className="text-sm font-medium text-gray-700">{translations.labels.institutionContribution}</Label>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
-                        <p className="text-xs font-medium mb-1">Valor da Solicitação</p>
-                        <p className="text-xs">Este é o valor que a instituição contribuirá. O restante do orçamento será coberto pela igreja.</p>
+                        <p className="text-xs font-medium mb-1">{translations.budget.tooltip.title}</p>
+                        <p className="text-xs">{translations.budget.tooltip.description}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -901,7 +902,7 @@ export function RequestSubsidyModal({
                   <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-200">
                      <Badge variant="outline" className="text-xs bg-white border-gray-300">
                         <Info className="w-3 h-3 mr-1" />
-                        Limite: Orçamento do Projeto
+                        {translations.labels.projectBudgetLimit}
                       </Badge>
                   </div>
 
@@ -951,7 +952,9 @@ export function RequestSubsidyModal({
                           const maxAllowed = Math.max(0, availableBudget - otherItemsTotal)
                           
                           setTempRequestedAmount(maxAllowed)
-                          toast.success(`${translations.budget.maxButton}: ${formatCurrency(maxAllowed)}`)
+                          toast.success(translations.toasts.maxValueSet
+                            .replace('{{label}}', translations.budget.maxButton)
+                            .replace('{{amount}}', formatCurrency(maxAllowed)))
                               }}
                               className="h-9 px-3"
                             >
@@ -1121,7 +1124,7 @@ export function RequestSubsidyModal({
                 <Upload className="w-6 h-6 text-gray-400 mx-auto mb-2" />
               )}
               <p className="text-sm text-gray-600 mb-1">
-                {uploadingReceipt ? "Enviando arquivo..." : translations.documents.dropZone.dragText}
+                {uploadingReceipt ? translations.status.uploadingFile : translations.documents.dropZone.dragText}
               </p>
               <Button
                 variant="outline"
@@ -1142,7 +1145,7 @@ export function RequestSubsidyModal({
                 ) : (
                   <Upload className="w-3 h-3 mr-1" />
                 )}
-                {uploadingReceipt ? "Enviando..." : translations.documents.dropZone.selectButton}
+                {uploadingReceipt ? translations.status.uploading : translations.documents.dropZone.selectButton}
               </Button>
               <p className="text-xs text-gray-500 mt-2">{translations.documents.dropZone.acceptedFormats}</p>
             </div>
@@ -1190,7 +1193,7 @@ export function RequestSubsidyModal({
                           )}
                           {!isValidAmount && (
                             <Badge variant="outline" className="text-xs text-red-600 border-red-300">
-                              Valor pendente
+                              {translations.status.pendingValue}
                             </Badge>
                           )}
                         </div>
@@ -1222,15 +1225,15 @@ export function RequestSubsidyModal({
                                   >
                                     {doc.document_type
                                       ? getDocumentTypeLabel(doc.document_type)
-                                      : "Selecionar tipo"}
+                                      : translations.labels.selectType}
                                     <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                                   </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-full p-0" align="start">
                                   <Command>
-                                    <CommandInput placeholder="Buscar tipo..." className="h-9" />
+                                    <CommandInput placeholder={translations.labels.searchType} className="h-9" />
                                     <CommandList>
-                                      <CommandEmpty>Nenhum tipo encontrado</CommandEmpty>
+                                      <CommandEmpty>{translations.labels.noTypeFound}</CommandEmpty>
                                       <CommandGroup>
                                         <CommandItem
                                           value="INVOICE"
@@ -1324,14 +1327,14 @@ export function RequestSubsidyModal({
                             <Info className="w-3.5 h-3.5 text-gray-500 mt-0.5 flex-shrink-0" />
                             <div className="text-gray-600 space-y-1">
                               <p>
-                                <span className="font-medium">Total documentos:</span> {formatCurrency(docTotal)}
+                                <span className="font-medium">{translations.labels.totalDocuments}</span> {formatCurrency(docTotal)}
                               </p>
                               <p>
-                                <span className="font-medium">Valor solicitado:</span> {formatCurrency(currentItem.requested_amount)}
+                                <span className="font-medium">{translations.labels.requestedValue}</span> {formatCurrency(currentItem.requested_amount)}
                               </p>
                               {Math.abs(currentItem.requested_amount - docTotal) > 0.01 && (
                                 <p className="text-amber-600 font-medium">
-                                  Diferença: {formatCurrency(Math.abs(currentItem.requested_amount - docTotal))}
+                                  {translations.labels.difference} {formatCurrency(Math.abs(currentItem.requested_amount - docTotal))}
                                 </p>
                               )}
                             </div>
@@ -1399,10 +1402,10 @@ export function RequestSubsidyModal({
                   <p className={`text-xs font-semibold ${
                     validateAllActivities.allComplete ? 'text-green-700' : 'text-amber-700'
                   }`}>
-                    {validateAllActivities.completedCount}/{validateAllActivities.totalCount} Completas
+                    {validateAllActivities.completedCount}/{validateAllActivities.totalCount} {translations.status.completed}
                   </p>
                   <p className="text-xs text-gray-600">
-                    {validateAllActivities.allComplete ? 'Pronto para enviar' : 'Pendente validação'}
+                    {validateAllActivities.allComplete ? translations.status.readyToSubmit : translations.status.pendingValidation}
                   </p>
                 </div>
               </div>
@@ -1448,9 +1451,9 @@ export function RequestSubsidyModal({
                   <DollarSign className="w-4 h-4 mr-1" />
                 )}
                 {isSubmitting
-                  ? "Enviando arquivos..."
+                  ? translations.status.uploadingFiles
                   : mode === "edit"
-                    ? "Salvar alterações"
+                    ? translations.status.savingChanges
                     : translations.buttons.submit}
               </Button>
             </div>
@@ -1464,8 +1467,8 @@ export function RequestSubsidyModal({
         onClose={() => setIsAddActivityModalOpen(false)}
         activities={availableActivities}
         onConfirm={handleAddActivities}
-        title="Adicionar Atividades Subsidiadas"
-        description="Selecione atividades subsidiadas do projeto para adicionar à solicitação de subsídio."
+        title={translations.modals.addActivitiesTitle}
+        description={translations.modals.addActivitiesDescription}
         filterSubsidized={false}
         subsidizedActivityIds={subsidizedActivityIds}
       />

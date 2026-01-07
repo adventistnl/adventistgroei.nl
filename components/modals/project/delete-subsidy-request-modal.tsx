@@ -48,12 +48,14 @@ export function DeleteSubsidyRequestModal({
 
   const [deleteSubsidyRequest, { loading: isLoading }] = useMutation(DELETE_SUBSIDY_REQUEST)
 
+  const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+  
   const statusConfig: Record<SubsidyRequestCardData["status"], { label: string; className: string }> = {
-    pending: { label: "Pendente", className: "bg-amber-50 text-amber-700 border-amber-200" },
-    approved: { label: "Aprovado", className: "bg-green-50 text-green-700 border-green-200" },
-    rejected: { label: "Rejeitado", className: "bg-red-50 text-red-700 border-red-200" },
-    in_review: { label: "Em Análise", className: "bg-blue-50 text-blue-700 border-blue-200" },
-    closed: { label: "Fechado", className: "bg-gray-50 text-gray-700 border-gray-200" }
+    pending: { label: t_project.subsidy.deleteRequest.statusLabels.pending, className: "bg-amber-50 text-amber-700 border-amber-200" },
+    approved: { label: t_project.subsidy.deleteRequest.statusLabels.approved, className: "bg-green-50 text-green-700 border-green-200" },
+    rejected: { label: t_project.subsidy.deleteRequest.statusLabels.rejected, className: "bg-red-50 text-red-700 border-red-200" },
+    in_review: { label: t_project.subsidy.deleteRequest.statusLabels.in_review, className: "bg-blue-50 text-blue-700 border-blue-200" },
+    closed: { label: t_project.subsidy.deleteRequest.statusLabels.closed, className: "bg-gray-50 text-gray-700 border-gray-200" }
   }
 
   const handleSubmit = async () => {
@@ -64,7 +66,7 @@ export function DeleteSubsidyRequestModal({
         variables: { id: subsidy.id }
       })
       
-      toast.success('✅ Solicitação excluída com sucesso', { duration: 3000 })
+      toast.success(t_project.subsidy.deleteRequest.successMessage, { duration: 3000 })
       if (onSuccess) {
         onSuccess(subsidy)
       }
@@ -85,8 +87,7 @@ export function DeleteSubsidyRequestModal({
       const extensions = graphQLError?.extensions
       const errorCode = extensions?.context?.additional?.errorCode
       
-      const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
-      let errorMessage = t_project.errors?.genericDeleteError || 'Failed to delete subsidy'
+      let errorMessage = t_project.errors?.genericDeleteError || t_project.subsidy.deleteRequest.errorMessage
       
       if (errorCode === 'SUBSIDY_IS_APPROVED_OR_CLOSED') {
         errorMessage = t_project.errors?.cannotDeleteApprovedSubsidy || graphQLError?.message
@@ -130,10 +131,10 @@ export function DeleteSubsidyRequestModal({
       <DialogContent className="w-[95vw] max-w-lg max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="text-lg mb-2">
-            Excluir Solicitação de Subsídio
+            {t_project.subsidy.deleteRequest.title}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Esta ação não pode ser desfeita. A solicitação e todos os dados relacionados serão permanentemente excluídos.
+            {t_project.subsidy.deleteRequest.description}
           </DialogDescription>
         </DialogHeader>
         
@@ -182,10 +183,10 @@ export function DeleteSubsidyRequestModal({
               <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-500 mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-red-900 dark:text-red-200">
-                  Ação Irreversível
+                  {t_project.subsidy.deleteRequest.warning.title}
                 </p>
                 <p className="text-xs text-red-700 dark:text-red-300 mt-1">
-                  Uma vez excluída, esta solicitação não poderá ser recuperada. Certifique-se de que deseja prosseguir.
+                  {t_project.subsidy.deleteRequest.warning.description}
                 </p>
               </div>
             </div>
@@ -195,7 +196,7 @@ export function DeleteSubsidyRequestModal({
               <CollapsibleTrigger asChild>
                 <Button variant="outline" className="w-full justify-between" size="sm">
                   <span className="flex items-center gap-2 text-xs">
-                    Ver Consequências da Exclusão
+                    {t_project.subsidy.deleteRequest.consequences.toggleButton}
                   </span>
                   {consequencesOpen ? (
                     <ChevronDown className="w-4 h-4" />
@@ -209,9 +210,9 @@ export function DeleteSubsidyRequestModal({
                 <div className="flex items-start gap-3 p-3 border rounded-lg">
                   <Database className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-foreground">Perda de Dados</p>
+                    <p className="font-medium text-sm text-foreground">{t_project.subsidy.deleteRequest.consequences.dataLoss.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      Todos os dados relacionados a esta solicitação, incluindo documentos anexados e histórico, serão permanentemente excluídos.
+                      {t_project.subsidy.deleteRequest.consequences.dataLoss.description}
                     </p>
                   </div>
                 </div>
@@ -220,9 +221,9 @@ export function DeleteSubsidyRequestModal({
                 <div className="flex items-start gap-3 p-3 border rounded-lg">
                   <DollarSign className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-foreground">Registros Financeiros</p>
+                    <p className="font-medium text-sm text-foreground">{t_project.subsidy.deleteRequest.consequences.financialRecords.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      O valor de {formatCurrency(subsidy.requested_amount)} será removido dos registros. Certifique-se de que isso não afetará relatórios ou auditorias.
+                      {t_project.subsidy.deleteRequest.consequences.financialRecords.description.replace('{{amount}}', formatCurrency(subsidy.requested_amount))}
                     </p>
                   </div>
                 </div>
@@ -231,9 +232,9 @@ export function DeleteSubsidyRequestModal({
                 <div className="flex items-start gap-3 p-3 border rounded-lg">
                   <Building className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-foreground">Comunicação Institucional</p>
+                    <p className="font-medium text-sm text-foreground">{t_project.subsidy.deleteRequest.consequences.institutionalCommunication.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      Se esta solicitação já foi comunicada à instituição, você precisará informá-los sobre a exclusão.
+                      {t_project.subsidy.deleteRequest.consequences.institutionalCommunication.description}
                     </p>
                   </div>
                 </div>
@@ -243,9 +244,9 @@ export function DeleteSubsidyRequestModal({
                   <div className="flex items-start gap-3 p-3 border-2 border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/30 rounded-lg">
                     <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-500 mt-0.5 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-sm text-red-900 dark:text-red-200">Solicitação Aprovada</p>
+                      <p className="font-medium text-sm text-red-900 dark:text-red-200">{t_project.subsidy.deleteRequest.consequences.approvedStatus.title}</p>
                       <p className="text-xs text-red-700 dark:text-red-300">
-                        Esta solicitação foi aprovada. A exclusão pode impactar o orçamento aprovado e processos financeiros em andamento.
+                        {t_project.subsidy.deleteRequest.consequences.approvedStatus.description}
                       </p>
                     </div>
                   </div>
@@ -264,11 +265,11 @@ export function DeleteSubsidyRequestModal({
                 />
                 <label htmlFor="understand-consequences" className="text-sm cursor-pointer">
                   <span className="font-medium text-foreground">
-                    Eu compreendo as consequências
+                    {t_project.subsidy.deleteRequest.confirmation.checkboxLabel}
                   </span>
                   <br />
                   <span className="text-muted-foreground">
-                    Confirmo que li e entendo que esta ação é irreversível e resultará na perda permanente de todos os dados relacionados.
+                    {t_project.subsidy.deleteRequest.confirmation.checkboxDescription}
                   </span>
                 </label>
               </div>
@@ -277,18 +278,18 @@ export function DeleteSubsidyRequestModal({
               {understoodConsequences && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">
-                    Digite <span className="font-mono font-bold">delete subsidy</span> para confirmar
+                    {t_project.subsidy.deleteRequest.confirmation.inputLabel.replace('{{text}}', '')} <span className="font-mono font-bold">{t_project.subsidy.deleteRequest.confirmation.inputPlaceholder}</span> {t_project.subsidy.deleteRequest.confirmation.inputLabel.includes('para') ? 'para confirmar' : 'to confirm'}
                   </label>
                   <Input
                     type="text"
                     value={finalConfirmation}
                     onChange={(e) => setFinalConfirmation(e.target.value)}
-                    placeholder="delete subsidy"
+                    placeholder={t_project.subsidy.deleteRequest.confirmation.inputPlaceholder}
                     className="h-10 font-mono"
                     disabled={isLoading}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Digite exatamente "delete subsidy" (em letras minúsculas) para habilitar a exclusão
+                    {t_project.subsidy.deleteRequest.confirmation.inputHint}
                   </p>
                 </div>
               )}
@@ -306,7 +307,7 @@ export function DeleteSubsidyRequestModal({
               size="sm" 
               className="text-xs"
             >
-              Cancelar
+              {t_project.subsidy.deleteRequest.buttons.cancel}
             </Button>
             <Button
               onClick={handleSubmit}
@@ -321,12 +322,12 @@ export function DeleteSubsidyRequestModal({
               {isLoading ? (
                 <>
                   <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1" />
-                  Excluindo...
+                  {t_project.subsidy.deleteRequest.buttons.deleting}
                 </>
               ) : (
                 <>
                   <Trash2 className="w-3 h-3 mr-1" />
-                  Excluir Solicitação
+                  {t_project.subsidy.deleteRequest.buttons.delete}
                 </>
               )}
             </Button>
