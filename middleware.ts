@@ -121,8 +121,20 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Redirecionar root para login apenas se necessário
+  // Redirecionar root baseado no status de autenticação
   if (pathname === '/') {
+    const token = req.cookies.get('auth-token');
+    if (token) {
+      try {
+        const isTokenValid = validateToken(token.value);
+        if (isTokenValid) {
+          return NextResponse.redirect(new URL('/dashboard', req.url));
+        }
+      } catch {
+        // Token inválido, redirecionar para login
+        return NextResponse.redirect(new URL('/login', req.url));
+      }
+    }
     return NextResponse.redirect(new URL('/login', req.url));
   }
 

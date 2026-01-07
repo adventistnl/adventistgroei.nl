@@ -29,6 +29,7 @@ import { useSubsidyReceipts, SubsidyReceipt } from "@/hooks/use-subsidy-receipts
 import { useMutation, useQuery } from "@apollo/client"
 import { UPDATE_SUBSIDY_REQUEST, APPROVE_SUBSIDY_REQUEST, REJECT_SUBSIDY_REQUEST, ADD_SUBSIDY_REQUEST_MESSAGE, UPDATE_SUBSIDY_REQUEST_MESSAGE, DELETE_SUBSIDY_REQUEST_MESSAGE } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
 import { GET_SUBSIDY_STATUS_HISTORY } from "@/graphql/queries/SUBSIDY_STATUS_HISTORY_QUERIES"
+import { GET_ALL_SUBSIDY_STATUSES } from "@/graphql/queries/SUBSIDY_STATUS_QUERIES"
 
 interface ActivityItem {
   id: string
@@ -95,11 +96,12 @@ export function ViewSubsidyModal({
   const [chatFilterActivity, setChatFilterActivity] = React.useState<string | null>(null)
   const [currentSubsidyStatus, setCurrentSubsidyStatus] = React.useState(subsidy?.status || "pending")
   const [currentPriority, setCurrentPriority] = React.useState<"low" | "medium" | "high">("medium")
-  const [mentionStatus, setMentionStatus] = React.useState<"pending" | "in_review" | "approved" | "rejected" | null>(null)
+  const [mentionStatus, setMentionStatus] = React.useState<"pending" | "in_review" | "approved" | "rejected" | "closed" | null>(null)
   const [mentionPriority, setMentionPriority] = React.useState<"low" | "medium" | "high" | null>(null)
   const chatInputRef = React.useRef<HTMLInputElement>(null)
   const [loadingDocuments, setLoadingDocuments] = React.useState(false)
   const [receipts, setReceipts] = React.useState<SubsidyReceipt[]>([])
+  const [subsidyStatuses, setSubsidyStatuses] = React.useState<Array<{id: string, name: string, description: string}>>([])
 
   /* 
    * Sync local status state when subsidy prop changes
@@ -125,6 +127,7 @@ export function ViewSubsidyModal({
 
   // Mutations for updating subsidy status
   const [updateSubsidyRequest] = useMutation(UPDATE_SUBSIDY_REQUEST, {
+    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
     awaitRefetchQueries: true,
     onCompleted: () => {
       toast.success("Status atualizado com sucesso!")
@@ -138,6 +141,7 @@ export function ViewSubsidyModal({
   })
 
   const [approveSubsidyRequest] = useMutation(APPROVE_SUBSIDY_REQUEST, {
+    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
     awaitRefetchQueries: true,
     onCompleted: () => {
       toast.success("Subsídio aprovado com sucesso!")
@@ -150,6 +154,7 @@ export function ViewSubsidyModal({
   })
 
   const [rejectSubsidyRequest] = useMutation(REJECT_SUBSIDY_REQUEST, {
+    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
     awaitRefetchQueries: true,
     onCompleted: () => {
       toast.success("Subsídio rejeitado")
@@ -185,12 +190,22 @@ export function ViewSubsidyModal({
     }
   })
 
-  // Status ID mapping (from database)
-  const STATUS_IDS = {
-    pending: 'e91a39fa-08d2-4900-ba0b-6cd5cbcb0a1d',
-    approved: 'eb9dfcc0-752c-4cfe-a8db-7e7171a4e965',
-    rejected: '2898eb33-ab05-4fdf-bf46-732c1e41a870',
-    in_review: '5f037eb0-8b5e-4156-b3fc-2c2e327e79f5',
+  // Fetch subsidy statuses
+  const { data: statusesData } = useQuery(GET_ALL_SUBSIDY_STATUSES, {
+    onCompleted: (data) => {
+      if (data?.subsidyStatuses) {
+        setSubsidyStatuses(data.subsidyStatuses)
+      }
+    },
+    onError: (error) => {
+      console.error('Error fetching subsidy statuses:', error)
+    }
+  })
+
+  // Helper function to get status ID by name
+  const getStatusIdByName = (statusName: string): string | null => {
+    const status = subsidyStatuses.find(s => s.name === statusName)
+    return status?.id || null
   }
 
   // Fetch receipts when modal opens
@@ -683,6 +698,11 @@ export function ViewSubsidyModal({
                     <DropdownMenuLabel>Alterar Status</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={async () => {
+                      const statusId = getStatusIdByName('PENDING')
+                      if (!statusId) {
+                        toast.error('Status não encontrado')
+                        return
+                      }
                       setCurrentSubsidyStatus('pending')
                       setMentionStatus('pending')
                       setNewMessage('Alteração de status para Pendente')
@@ -693,7 +713,7 @@ export function ViewSubsidyModal({
                           variables: {
                             id: subsidy.id,
                             data: {
-                              subsidy_status_id: STATUS_IDS.pending
+                              subsidy_status_id: statusId
                             }
                           }
                         })
@@ -705,6 +725,11 @@ export function ViewSubsidyModal({
                       Pendente
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={async () => {
+                      const statusId = getStatusIdByName('IN_REVIEW')
+                      if (!statusId) {
+                        toast.error('Status não encontrado')
+                        return
+                      }
                       setCurrentSubsidyStatus('in_review')
                       setMentionStatus('in_review')
                       setNewMessage('Alteração de status para Em Análise')
@@ -715,7 +740,7 @@ export function ViewSubsidyModal({
                           variables: {
                             id: subsidy.id,
                             data: {
-                              subsidy_status_id: STATUS_IDS.in_review
+                              subsidy_status_id: statusId
                             }
                           }
                         })
@@ -768,6 +793,33 @@ export function ViewSubsidyModal({
                     }}>
                       <XCircle className="mr-2 h-4 w-4 text-red-500" />
                       Rejeitado
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={async () => {
+                      const statusId = getStatusIdByName('CLOSED')
+                      if (!statusId) {
+                        toast.error('Status não encontrado')
+                        return
+                      }
+                      setCurrentSubsidyStatus('closed')
+                      setMentionStatus(null)
+                      setNewMessage('Alteração de status para Encerrado')
+                      chatInputRef.current?.focus()
+                      // Update in backend
+                      try {
+                        await updateSubsidyRequest({
+                          variables: {
+                            id: subsidy.id,
+                            data: {
+                              subsidy_status_id: statusId
+                            }
+                          }
+                        })
+                      } catch (error) {
+                        console.error('Error updating status:', error)
+                      }
+                    }}>
+                      <Ban className="mr-2 h-4 w-4 text-gray-500" />
+                      Encerrado
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

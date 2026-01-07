@@ -25,21 +25,6 @@ import {
 import { BarChart3 } from "lucide-react"
 import { projectTranslations } from "@/lib/translations/projects"
 
-const projectsChartConfig = {
-  projects: {
-    label: "Projetos",
-    color: "#3b82f6", // Blue
-  },
-  budget: {
-    label: "Orçamento",
-    color: "#10b981", // Green
-  },
-  subsidies: {
-    label: "Subsídios",
-    color: "#f59e0b", // Amber
-  },
-} satisfies ChartConfig
-
 interface ProjectActivitiesChartProps {
   data: any[]
 }
@@ -47,6 +32,21 @@ interface ProjectActivitiesChartProps {
 export function ProjectActivitiesChart({ data }: ProjectActivitiesChartProps) {
   const { i18n } = useTranslation()
   const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+
+  const projectsChartConfig = useMemo(() => ({
+    projects: {
+      label: t_project.charts.projects,
+      color: "#3b82f6", // Blue
+    },
+    budget: {
+      label: t_project.kpis.totalBudget,
+      color: "#10b981", // Green
+    },
+    subsidies: {
+      label: "Subsídios", // This key 'subsidies' isn't used in data mapping below, but good to keep consistent.
+      color: "#f59e0b", // Amber
+    },
+  }) satisfies ChartConfig, [t_project])
 
   // Ordenar projetos por quantidade de atividades (top 10)
   const chartData = useMemo(() => {
@@ -65,10 +65,10 @@ export function ProjectActivitiesChart({ data }: ProjectActivitiesChartProps) {
         <div>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5" />
-            Projects with Most Activities
+            {t_project.charts.projectsWithMostActivities}
           </CardTitle>
           <CardDescription className="mt-1">
-            Top 10 projects by number of registered activities
+            {t_project.charts.top10Activities}
           </CardDescription>
         </div>
       </CardHeader>
@@ -93,7 +93,7 @@ export function ProjectActivitiesChart({ data }: ProjectActivitiesChartProps) {
               dataKey="activities" 
               fill="#3b82f6" 
               radius={[0, 4, 4, 0]}
-              name="Activities"
+              name={t_project.charts.activities}
             />
           </BarChart>
         </ChartContainer>

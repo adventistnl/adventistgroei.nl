@@ -204,6 +204,7 @@ export default function ProjectsPage() {
       id: "mobile-expand",
       header: "",
       cell: () => null, // Renderizado pelo UseTable
+      enableHiding: false,
     },
     {
       accessorKey: "title",
@@ -317,7 +318,7 @@ export default function ProjectsPage() {
   const handleRefresh = async () => {
     setRefreshing(true)
 
-    const refreshToast = toast.loading(t_project.toasts.dataRefreshed.replace("successfully!", "..."))
+    const refreshToast = toast.loading(t_project.toasts.dataRefreshing)
 
     try {
       await refetch()
@@ -346,23 +347,23 @@ export default function ProjectsPage() {
     const nextYear = Math.max(...availableYears) + 1
 
     if (nextYear > maxAllowedYear) {
-      toast.error(`Cannot add years beyond ${maxAllowedYear}`)
+      toast.error(t_project.yearFilter.cannotAddBeyond.replace('{{year}}', maxAllowedYear.toString()))
       return
     }
 
     if (availableYears.includes(nextYear)) {
-      toast.error(`Year ${nextYear} already exists`)
+      toast.error(t_project.yearFilter.yearExists.replace('{{year}}', nextYear.toString()))
       return
     }
 
     setAvailableYears(prev => [...prev, nextYear].sort((a, b) => b - a))
     setSelectedYear(nextYear)
-    toast.success(`Year ${nextYear} added successfully`)
+    toast.success(t_project.yearFilter.yearAdded.replace('{{year}}', nextYear.toString()))
   }
 
   const handleViewProject = (project: ProjectTableData) => {
     navigateWithLoading(`/projects/${project.id}`, {
-      message: `Opening ${project.title}`,
+      message: t_project.navigation.openingProject.replace('{{title}}', project.title),
       showToast: true,
       delay: 1000
     })
@@ -437,7 +438,7 @@ export default function ProjectsPage() {
               `}
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Year
+              {t_project.yearFilter.addYear}
             </Button>
           )}
         </div>
@@ -478,7 +479,7 @@ export default function ProjectsPage() {
               {t_project.projectsDashboard}
             </h2>
             <p className="text-muted-foreground text-0.875rem sm:text-1rem">
-              Visão completa dos projetos e pedidos de subsídio da organização - {selectedYear}
+              {t_project.pageHeader.subtitle.replace('{{year}}', selectedYear.toString())}
             </p>
             {currentInstitutionData && (
               <div className="flex items-center gap-2 mt-3">
@@ -505,7 +506,7 @@ export default function ProjectsPage() {
             
             <Button 
               onClick={() => navigateWithLoading('/projects/new-project', {
-                message: "🚀 Loading project creator...",
+                message: t_project.actions.loadingCreator,
                 showToast: true,
                 delay: 800
               })} 
@@ -549,13 +550,13 @@ export default function ProjectsPage() {
                 {t_project.projectsOverview}
               </CardTitle>
               <CardDescription>
-                Manage and track all projects across departments
+                {t_project.pageHeader.manageDescription}
               </CardDescription>
             </div>
             {departments.length > 0 && canViewFilters && (
               <Select value={selectedDepartment} onValueChange={handleDepartmentChange}>
                 <SelectTrigger className="ml-auto h-9 w-[200px] rounded-lg">
-                  <SelectValue placeholder="Filtrar por departamento" />
+                  <SelectValue placeholder={t_project.filters.filterByDepartment} />
                 </SelectTrigger>
                 <SelectContent align="end">
                   <SelectItem value="all">{t_project.filters.allDepartments}</SelectItem>
@@ -573,6 +574,21 @@ export default function ProjectsPage() {
               columns={projectColumns}
               data={filteredData}
               searchKey="title"
+              translations={{
+                search: t_project.searchProjects,
+                clearFilters: t_project.table.clearFilters,
+                columns: t_project.table.columns,
+                toggleColumns: t_project.table.toggleColumns,
+                rowsPerPage: t_project.table.rowsPerPage,
+                showingResults: (from, to, total) => t_project.table.showingResults
+                  .replace('{{from}}', from.toString())
+                  .replace('{{to}}', to.toString())
+                  .replace('{{total}}', total.toString()),
+                previous: t_project.table.previous,
+                next: t_project.table.next,
+                noResults: t_project.table.noResults,
+                all: t_project.filters?.allDepartments?.split(' ')?.[0] || "All"
+              }}
             />
           </CardContent>
 

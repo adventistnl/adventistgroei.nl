@@ -55,23 +55,25 @@ export function ProjectsKPIs({
         id: "total-projects",
         title: t_project.kpis.totalProjects,
         value: kpis.totalProjects.toString(),
-        subtitle: `${kpis.activeProjects} ativos | ${kpis.completedProjects} concluídos`,
+        subtitle: t_project.kpis.activeDeactivted
+          .replace('{{active}}', kpis.activeProjects.toString())
+          .replace('{{completed}}', kpis.completedProjects.toString()),
         trend: { 
           value: 12, 
           isPositive: true,
-          label: "vs mês anterior"
+          label: t_project.kpis.vsPreviousMonth
         },
         icon: Globe,
       },
       {
         id: "active-projects",
-        title: "Projetos Ativos",
+        title: t_project.kpis.activeProjects,
         value: kpis.activeProjects.toString(),
-        subtitle: `${kpis.upcomingProjects} aguardando início`,
+        subtitle: t_project.kpis.waitingToStart.replace('{{count}}', kpis.upcomingProjects.toString()),
         trend: { 
           value: 8, 
           isPositive: true,
-          label: "novos este mês"
+          label: t_project.kpis.newThisMonth
         },
         icon: Activity,
       },
@@ -79,59 +81,59 @@ export function ProjectsKPIs({
         id: "total-budget",
         title: t_project.kpis.totalBudget,
         value: formatCurrency(kpis.totalBudget, { compact: true }),
-        subtitle: `Média: ${formatCurrency(kpis.averageBudgetPerProject)}`,
+        subtitle: `${t_project.kpis.average}: ${formatCurrency(kpis.averageBudgetPerProject)}`,
         trend: { 
           value: budgetUtilization, 
           isPositive: budgetUtilization > 70,
-          label: `${budgetUtilization}% utilizado`
+          label: t_project.kpis.percentUsed.replace('{{percent}}', budgetUtilization.toString())
         },
         icon: DollarSign,
       },
       {
         id: "subsidized-budget",
-        title: "Orçamento Subsidiado",
+        title: t_project.kpis.subsidizedBudget,
         value: formatCurrency(kpis.totalSubsidizedBudget, { compact: true }),
-        subtitle: `${formatCurrency(kpis.totalBudget - kpis.totalSubsidizedBudget, { compact: true })} contribuição local`,
+        subtitle: t_project.kpis.localContribution.replace('{{amount}}', formatCurrency(kpis.totalBudget - kpis.totalSubsidizedBudget, { compact: true })),
         trend: { 
           value: kpis.totalBudget > 0 ? Math.round((kpis.totalSubsidizedBudget / kpis.totalBudget) * 100) : 0, 
           isPositive: true,
-          label: "do orçamento total"
+          label: t_project.kpis.ofTotalBudget
         },
         icon: TrendingUp,
       },
       {
         id: "completion-rate",
-        title: "Taxa de Conclusão",
+        title: t_project.kpis.completionRate,
         value: `${completionRate}%`,
-        subtitle: `${kpis.completedProjects} de ${kpis.totalProjects} finalizados`,
+        subtitle: t_project.kpis.finalizedOf.replace('{{completed}}', kpis.completedProjects.toString()).replace('{{total}}', kpis.totalProjects.toString()),
         trend: { 
           value: 5, 
           isPositive: true,
-          label: "vs mês anterior"
+          label: t_project.kpis.vsPreviousMonth
         },
         icon: TrendingUp,
       },
       {
         id: "subsidy-requests",
-        title: "Pedidos de Subsídio",
+        title: t_project.kpis.totalSubsidyRequests,
         value: kpis.totalSubsidyRequests.toString(),
-        subtitle: `${formatCurrency(kpis.totalSubsidyAmount, { compact: true })} solicitado`,
+        subtitle: `${formatCurrency(kpis.totalSubsidyAmount, { compact: true })} ${t_project.kpis.requested}`,
         trend: { 
           value: subsidyApprovalRate, 
           isPositive: subsidyApprovalRate > 50,
-          label: `${subsidyApprovalRate}% aprovados`
+          label: t_project.kpis.approvedPercent.replace('{{percent}}', subsidyApprovalRate.toString())
         },
         icon: DollarSign,
       },
       {
         id: "volunteers-projects",
-        title: "Projetos com Voluntários",
+        title: t_project.kpis.volunteersProjects,
         value: kpis.projectsWithVolunteers.toString(),
-        subtitle: `${Math.round((kpis.projectsWithVolunteers / (kpis.totalProjects || 1)) * 100)}% dos projetos`,
+        subtitle: t_project.kpis.ofProjects.replace('{{percent}}', Math.round((kpis.projectsWithVolunteers / (kpis.totalProjects || 1)) * 100).toString()),
         trend: { 
           value: 15, 
           isPositive: true,
-          label: "engajamento crescente"
+          label: t_project.kpis.growingEngagement
         },
         icon: Users,
       },
