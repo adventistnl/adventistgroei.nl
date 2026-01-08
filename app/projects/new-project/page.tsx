@@ -49,6 +49,7 @@ import {
 import { 
   Globe, 
   Building, 
+  Building2,
   DollarSign, 
   Settings,
   CheckCircle,
@@ -119,6 +120,7 @@ import { CREATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
 import { GET_ALL_USERS_QUERY } from "@/graphql/queries/GET_USER_QUERY"
 import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
+import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
 import { ProjectType, LanguagePreference, EventType } from "@/types/globalTypes"
 import "@/lib/i18n"
 
@@ -271,12 +273,19 @@ function ProjectRegisterContent() {
     skip: !institutionId
   })
 
+  // Fetch churches from database filtered by institution
+  const { data: churchesData, loading: loadingChurches } = useQuery(GET_CHURCHES_QUERY, {
+    variables: { institution_id: institutionId },
+    skip: !institutionId
+  })
+
   // Extract data with fallback to empty arrays and filter by current year budget
   const currentYear = new Date().getFullYear()
   const departments = (departmentsData?.departments || []).filter((dept: any) => 
     dept.annual_budgets?.some((budget: any) => budget.year === currentYear)
   )
   const users = usersData?.users || []
+  const churches = churchesData?.churches || []
 
   // Get translations for current language - usar o sistema i18n global
   const getCurrentTranslation = (key: string) => {
@@ -599,6 +608,9 @@ function ProjectRegisterContent() {
         if (!formData.description.trim()) newErrors.description = translations.validation.projectDescriptionRequired
         if (!formData.department_id) newErrors.department_id = translations.validation.departmentRequired
         if (!formData.responsible_id) newErrors.responsible_id = translations.validation.responsiblePersonRequired
+        if (formData.project_responsible_type === 'church' && !formData.church_id) {
+          newErrors.church_id = (translations as any).validation?.churchRequired || "Selecione a igreja"
+        }
         break
       
       case 2:
@@ -917,6 +929,7 @@ function ProjectRegisterContent() {
         special_case_reason: isChurchPlanting ? churchPlantingJustification : specialProjectJustification,
         location_church_plant: formData.location_church_plant,
         special_budget: formData.special_budget,
+        church_id: formData.church_id,
       }
 
       // Add event data if registering as event
@@ -961,6 +974,7 @@ function ProjectRegisterContent() {
             errors={errors}
             departments={departments}
             users={users}
+            churches={churches}
             onChange={(updates) => setFormData({ ...formData, ...updates })}
           />
         )
@@ -2438,7 +2452,7 @@ function ProjectRegisterContent() {
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">{translations.fields.department}</p>
                       <p className="text-base text-foreground">
-                        {departments.find(d => d.id === formData.department_id)?.name}
+                        {departments.find((d: any) => d.id === formData.department_id)?.name}
                       </p>
                     </div>
                   </div>
@@ -2448,7 +2462,7 @@ function ProjectRegisterContent() {
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Responsável</p>
                       <p className="text-base text-foreground">
-                        {users.find(u => u.id === formData.responsible_id)?.name || "Não selecionado"}
+                        {users.find((u: any) => u.id === formData.responsible_id)?.name || "Não selecionado"}
                       </p>
                     </div>
                   </div>
@@ -2506,8 +2520,8 @@ function ProjectRegisterContent() {
                       <TrendingUp className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">Percentual máximo</span>
                     </div>
-                    <Badge variant={institutionContribution <= totalBudget * (FUNDING_POLICIES.max_institution_percent / 100) ? "default" : "destructive"}>
-                      {institutionContribution <= totalBudget * (FUNDING_POLICIES.max_institution_percent / 100) ? "✓ Conforme" : "✗ Excedido"}
+                    <Badge variant={isChurchPlanting || isSpecialProject || institutionContribution <= totalBudget * (FUNDING_POLICIES.max_institution_percent / 100) ? "default" : "destructive"}>
+                      {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? "✓ Especial" : institutionContribution <= totalBudget * (FUNDING_POLICIES.max_institution_percent / 100) ? "✓ Conforme" : "✗ Excedido"}
                     </Badge>
                   </div>
 
@@ -2516,8 +2530,8 @@ function ProjectRegisterContent() {
                       <Banknote className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">Valor máximo</span>
                     </div>
-                    <Badge variant={institutionContribution <= FUNDING_POLICIES.max_institution_amount ? "default" : "destructive"}>
-                      {institutionContribution <= FUNDING_POLICIES.max_institution_amount ? "✓ Conforme" : "✗ Excedido"}
+                    <Badge variant={isChurchPlanting || isSpecialProject || institutionContribution <= FUNDING_POLICIES.max_institution_amount ? "default" : "destructive"}>
+                       {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? "✓ Especial" : institutionContribution <= FUNDING_POLICIES.max_institution_amount ? "✓ Conforme" : "✗ Excedido"}
                     </Badge>
                   </div>
 
@@ -2526,8 +2540,8 @@ function ProjectRegisterContent() {
                       <Home className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">Igreja mínima</span>
                     </div>
-                    <Badge variant={churchContribution >= totalBudget * (FUNDING_POLICIES.min_church_percent / 100) ? "default" : "destructive"}>
-                      {churchContribution >= totalBudget * (FUNDING_POLICIES.min_church_percent / 100) ? "✓ Conforme" : "✗ Insuficiente"}
+                    <Badge variant={isChurchPlanting || isSpecialProject || churchContribution >= totalBudget * (FUNDING_POLICIES.min_church_percent / 100) ? "default" : "destructive"}>
+                       {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? "✓ Especial" : churchContribution >= totalBudget * (FUNDING_POLICIES.min_church_percent / 100) ? "✓ Conforme" : "✗ Insuficiente"}
                     </Badge>
                   </div>
                 </div>
@@ -2535,12 +2549,12 @@ function ProjectRegisterContent() {
                 <div className="pt-4 border-t">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Capacidade máxima instituição ({FUNDING_POLICIES.max_institution_percent}%):</span>
-                      <span className="font-medium">€ {(totalBudget * (FUNDING_POLICIES.max_institution_percent / 100)).toLocaleString()}</span>
+                      <span className="text-muted-foreground">Capacidade máxima instituição ({(isChurchPlanting || isSpecialProject) ? '100' : FUNDING_POLICIES.max_institution_percent}%):</span>
+                      <span className="font-medium">€ {((isChurchPlanting || isSpecialProject) ? totalBudget : (totalBudget * (FUNDING_POLICIES.max_institution_percent / 100))).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Limite por projeto:</span>
-                      <span className="font-medium">€ {FUNDING_POLICIES.max_institution_amount.toLocaleString()}</span>
+                      <span className="font-medium">{(isChurchPlanting || isSpecialProject) ? "Ilimitado" : `€ ${FUNDING_POLICIES.max_institution_amount.toLocaleString()}`}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Subsídio solicitado:</span>
@@ -2548,7 +2562,12 @@ function ProjectRegisterContent() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Capacidade restante:</span>
-                      <span className="font-medium">€ {Math.max(0, Math.min(FUNDING_POLICIES.max_institution_amount, totalBudget * (FUNDING_POLICIES.max_institution_percent / 100)) - institutionContribution).toLocaleString()}</span>
+                      <span className="font-medium">
+                        € {Math.max(0, 
+                            ((isChurchPlanting || isSpecialProject) ? totalBudget : Math.min(FUNDING_POLICIES.max_institution_amount, totalBudget * (FUNDING_POLICIES.max_institution_percent / 100))) 
+                            - institutionContribution
+                          ).toLocaleString()}
+                      </span>
                     </div>
                   </div>
                 </div>

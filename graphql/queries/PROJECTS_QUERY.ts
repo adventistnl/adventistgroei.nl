@@ -28,8 +28,16 @@ export const GET_PROJECTS_QUERY = gql`
       department {
         id
         name
+        church {
+          id
+          name
+        }
       }
       Institution {
+        id
+        name
+      }
+      Church {
         id
         name
       }
@@ -94,8 +102,16 @@ export const GET_PROJECT_BY_ID_QUERY = gql`
       department {
         id
         name
+        church {
+          id
+          name
+        }
       }
       Institution {
+        id
+        name
+      }
+      Church {
         id
         name
       }

@@ -18,6 +18,7 @@ export interface ProjectFormData {
   project_responsible_type: "personal" | "institutional" | "church" | "region" | "department"
   register_as_event: boolean
   is_private: boolean
+  church_id?: string
   activities: ProjectActivity[]
   total_budget: number
   church_contribution: number
@@ -43,6 +44,7 @@ export interface ProjectFormData {
     subscription_expires_at?: Date
     target_type: "institution" | "region" | "department" | "church" | "user"
     target_id?: string
+    location?: string
   }
   communication?: {
     title: string

@@ -69,7 +69,9 @@ export const projectRegisterTranslations = {
       communicationTitle: "Communication Title",
       communicationContent: "Communication Content",
       communicationType: "Communication Type",
-      schedule: "Schedule"
+      schedule: "Schedule",
+      isChurchProject: "Is this a church project?",
+      selectChurch: "Select Church"
     },
     responsibilityTypes: {
       personal: "Personal",
@@ -108,7 +110,8 @@ export const projectRegisterTranslations = {
       specialCase: "Override funding policies for special circumstances",
       eventLanguage: "Select the primary language for the event",
       communicationType: "Choose the type of communication to send",
-      scheduleDate: "When to send the communication (leave empty for immediate)"
+      scheduleDate: "When to send the communication (leave empty for immediate)",
+      churchProject: "Enable if this project is linked to a specific church"
     },
     placeholders: {
       enterProjectTitle: "Enter project title",
@@ -128,7 +131,9 @@ export const projectRegisterTranslations = {
       enterCommunicationTitle: "Enter communication title",
       writeCommunicationContent: "Write your communication content here",
       selectCommunicationType: "Select communication type",
-      selectScheduleDate: "Select schedule date"
+      selectScheduleDate: "Select schedule date",
+      selectChurch: "Select church...",
+      searchChurch: "Search church..."
     },
     buttons: {
       addActivity: "Add Activity",
@@ -291,6 +296,12 @@ export const projectRegisterTranslations = {
       infoSpecialBody: "Special projects can request up to 100% funding when there is strategic justification.",
       infoSpecialDetails: "When enabled, the calculator allows adjusting the subsidy up to 100%.",
       gotIt: "Got it"
+    },
+    info: {
+      churchProjectDescription: "This will link the project directly to a local church"
+    },
+    noResults: {
+      church: "No church found."
     }
   },
   pt: {
@@ -363,7 +374,9 @@ export const projectRegisterTranslations = {
       communicationTitle: "Título da Comunicação",
       communicationContent: "Conteúdo da Comunicação",
       communicationType: "Tipo de Comunicação",
-      schedule: "Agendamento"
+      schedule: "Agendamento",
+      isChurchProject: "É um projeto de igreja?",
+      selectChurch: "Selecione a Igreja"
     },
     responsibilityTypes: {
       personal: "Pessoal",
@@ -402,7 +415,8 @@ export const projectRegisterTranslations = {
       specialCase: "Sobrepor políticas de financiamento para circunstâncias especiais",
       eventLanguage: "Selecionar o idioma principal do evento",
       communicationType: "Escolher o tipo de comunicação a enviar",
-      scheduleDate: "Quando enviar a comunicação (deixe vazio para imediato)"
+      scheduleDate: "Quando enviar a comunicação (deixe vazio para imediato)",
+      churchProject: "Ative se este projeto for vinculado a uma igreja específica"
     },
     placeholders: {
       enterProjectTitle: "Digite o título do projeto",
@@ -422,7 +436,9 @@ export const projectRegisterTranslations = {
       enterCommunicationTitle: "Digite o título da comunicação",
       writeCommunicationContent: "Escreva o conteúdo da sua comunicação aqui",
       selectCommunicationType: "Selecione o tipo de comunicação",
-      selectScheduleDate: "Selecione a data de agendamento"
+      selectScheduleDate: "Selecione a data de agendamento",
+      selectChurch: "Selecione a igreja...",
+      searchChurch: "Buscar igreja..."
     },
     buttons: {
       addActivity: "Adicionar Atividade",
@@ -585,6 +601,12 @@ export const projectRegisterTranslations = {
       infoSpecialBody: "Projetos especiais podem solicitar até 100% de funding quando houver justificativa estratégica.",
       infoSpecialDetails: "Ao habilitar, a calculadora permite ajustar o subsídio até 100%.",
       gotIt: "Entendi"
+    },
+    info: {
+      churchProjectDescription: "Isso vinculará o projeto diretamente a uma igreja local"
+    },
+    noResults: {
+      church: "Nenhuma igreja encontrada."
     }
   },
   nl: {
@@ -642,7 +664,12 @@ export const projectRegisterTranslations = {
       fundingType: "Financieringstype",
       fundingDistribution: "Financieringsverdeling",
       churchContribution: "Kerkbijdrage",
-      activityTags: "Activiteitstags"
+      activityTags: "Activiteitstags",
+      isChurchProject: "Is dit een kerkproject?",
+      selectChurch: "Selecteer Kerk"
+    },
+    tooltips: {
+      churchProject: "Schakel in als dit project aan een specifieke kerk is gekoppeld"
     },
     placeholders: {
       enterProjectTitle: "Voer projecttitel in",
@@ -653,7 +680,9 @@ export const projectRegisterTranslations = {
       enterActivityName: "Voer activiteitsnaam in",
       describeActivity: "Beschrijf de activiteitsdoelstellingen",
       selectResponsible: "Selecteer verantwoordelijke",
-      selectDate: "Selecteer datum"
+      selectDate: "Selecteer datum",
+      selectChurch: "Selecteer kerk...",
+      searchChurch: "Zoek kerk..."
     },
     buttons: {
       addActivity: "Activiteit Toevoegen",
@@ -764,6 +793,12 @@ export const projectRegisterTranslations = {
       dragToCalculate: "Sleep activiteiten om financiering te berekenen",
       recalculateAutomatically: "Waarden herberekenen automatisch",
       fundingRules: "Financieringsregels"
+    },
+    info: {
+      churchProjectDescription: "Dit koppelt het project direct aan een lokale kerk"
+    },
+    noResults: {
+      church: "Geen kerk gevonden."
     }
   }
 }
