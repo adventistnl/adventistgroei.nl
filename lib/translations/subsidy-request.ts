@@ -31,7 +31,8 @@ export const subsidyRequestTranslations = {
       next: "Next",
       ofTotal: "{{current}} of {{total}}",
       documents: "doc",
-      documents_plural: "docs"
+      documents_plural: "docs",
+      addMore: "Add more activities"
     },
     
     // Budget distribution
@@ -248,7 +249,8 @@ export const subsidyRequestTranslations = {
       next: "Próxima",
       ofTotal: "{{current}} de {{total}}",
       documents: "doc",
-      documents_plural: "docs"
+      documents_plural: "docs",
+      addMore: "Adicionar mais atividades"
     },
     
     // Budget distribution

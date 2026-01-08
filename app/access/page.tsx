@@ -27,7 +27,8 @@ import {
   Settings,
   Crown,
   Activity,
-  Users
+  Users,
+  Building
 } from "lucide-react"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
@@ -48,10 +49,12 @@ import { usePermissions } from "@/hooks/use-permissions"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
+import { useInstitution } from "@/contexts/institution-context"
 
 export default function AccessManagementPage() {
   const { t } = useTranslation()
   const { roles, refetchAllRoles } = useRoles();
+  const { currentInstitutionData, loading: institutionLoading } = useInstitution()
   const { permissions } = usePermissions();
 
   const [isLoading, setIsLoading] = useState(true)
@@ -391,6 +394,17 @@ export default function AccessManagementPage() {
               <p className="text-muted-foreground text-0.875rem sm:text-1rem">
                 {t('access.subtitle')}
               </p>
+              {currentInstitutionData && (
+                <div className="flex items-center gap-2 mt-3">
+                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                    <Building className="w-3 h-3 mr-1" />
+                    {currentInstitutionData.name}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    {currentInstitutionData.denomination}
+                  </Badge>
+                </div>
+              )}
             </div>
           </div>
 

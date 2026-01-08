@@ -147,8 +147,19 @@ const navMainBase: NavItem[] = [
 export function getNavMainWithActiveState(pathname: string): NavItem[] {
   // Usar memo interno para evitar recriação desnecessária
   return navMainBase.map(item => {
-    const isDirectActive = item.url !== "#" && pathname === item.url
-    const hasActiveChild = item.items?.some(subItem => pathname === subItem.url) || false
+    // Verifica se é uma rota direta ou se o pathname começa com o URL do item
+    // Isso permite que /projects/123 ative o item /projects
+    const isDirectActive = item.url !== "#" && (
+      pathname === item.url || 
+      (item.url !== "/" && pathname.startsWith(item.url + "/"))
+    )
+    
+    // Verifica se algum subitem está ativo
+    const hasActiveChild = item.items?.some(subItem => 
+      pathname === subItem.url || 
+      (subItem.url !== "/" && pathname.startsWith(subItem.url + "/"))
+    ) || false
+    
     const isItemActive = isDirectActive || hasActiveChild
     
     return {
@@ -156,7 +167,8 @@ export function getNavMainWithActiveState(pathname: string): NavItem[] {
       isActive: isItemActive,
       items: item.items?.map(subItem => ({
         ...subItem,
-        isActive: pathname === subItem.url
+        isActive: pathname === subItem.url || 
+          (subItem.url !== "/" && pathname.startsWith(subItem.url + "/"))
       }))
     }
   })

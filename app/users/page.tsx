@@ -227,7 +227,7 @@ export default function UsersPage() {
         const user = row.original
         return (
           <div className="flex items-center gap-3">
-            <Avatar className="w-9 h-9">
+            <Avatar className="w-9 h-9 border-2 border-border">
               <AvatarImage src="/placeholder-user.jpg" />
               <AvatarFallback>
                 {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
@@ -252,9 +252,15 @@ export default function UsersPage() {
           <span>{t('users.table.church')}</span>
         </div>
       ),
-      cell: ({ row }) => (
-        <div className="text-sm max-w-xs truncate">{row.original.church?.name  || 'N/A'}</div>
-      ),
+      cell: ({ row }) => {
+        const churchName = row.original.church?.name
+        
+        if (!churchName) {
+          return <StatusBadge label={t('users.table.no_church') || "No Church"} variant="neutral" size="sm" />
+        }
+        
+        return <StatusBadge label={churchName} variant="info" size="sm" icon={Building2} />
+      },
     },
     {
       id: "department_type",
@@ -284,11 +290,14 @@ export default function UsersPage() {
         const user = row.original
         const deptInfo = getDepartmentInfo(user)
         
-        return (
-          <div className="text-sm">
-            {deptInfo.departmentName}
-          </div>
-        )
+        if (deptInfo.type === 'No Departmental' || deptInfo.departmentName === '-') {
+          return <StatusBadge label={t('users.table.no_department') || "No Department"} variant="neutral" size="sm" />
+        }
+        
+        // Usar ícone diferente dependendo do tipo de departamento
+        const icon = deptInfo.type === 'Church Departmental' ? Building2 : Building
+        
+        return <StatusBadge label={deptInfo.departmentName} variant="default" size="sm" icon={icon} />
       },
     },
     {
@@ -405,12 +414,23 @@ export default function UsersPage() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h2 className="text-3xl font-bold text-foreground mb-2">
+              <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold text-foreground mb-2 flex items-center gap-3">
                 {t('users.title')}
               </h2>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-0.875rem sm:text-1rem">
                 {t('users.subtitle')}
               </p>
+               {currentInstitutionData && (
+                  <div className="flex items-center gap-2 mt-3">
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                      <Building className="w-3 h-3 mr-1" />
+                      {currentInstitutionData.name}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {currentInstitutionData.denomination}
+                    </Badge>
+                  </div>
+                )}
             </div>
             
             <div className="flex items-center gap-3">

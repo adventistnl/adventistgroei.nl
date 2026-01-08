@@ -47,14 +47,14 @@ export function ProjectsOverTimeChart({
   // Generate dynamic chart config based on departments
   const chartConfig: ChartConfig = React.useMemo(() => {
     const colors = [
-      "hsl(210, 100%, 50%)",
-      "hsl(270, 95%, 60%)",
-      "hsl(142, 71%, 45%)",
-      "hsl(43, 96%, 56%)",
-      "hsl(340, 75%, 55%)",
-      "hsl(160, 60%, 45%)",
-      "hsl(300, 65%, 55%)",
-      "hsl(30, 80%, 55%)",
+      "hsl(var(--chart-1))",
+      "hsl(var(--chart-2))",
+      "hsl(var(--chart-3))",
+      "hsl(var(--chart-4))",
+      "hsl(var(--chart-5))",
+      "hsl(var(--chart-1))",
+      "hsl(var(--chart-2))",
+      "hsl(var(--chart-3))",
     ]
 
     const config: ChartConfig = {

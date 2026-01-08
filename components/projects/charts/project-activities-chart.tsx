@@ -13,6 +13,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -59,8 +60,18 @@ export function ProjectActivitiesChart({ data }: ProjectActivitiesChartProps) {
       }))
   }, [data])
 
+  // Total de atividades
+  const totalActivities = useMemo(() => {
+    return chartData.reduce((sum, item) => sum + item.activities, 0)
+  }, [chartData])
+
+  // Projeto com mais atividades
+  const topProject = useMemo(() => {
+    return chartData.length > 0 ? chartData[0] : null
+  }, [chartData])
+
   return (
-    <Card className="h-full">
+    <Card className="h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <div>
           <CardTitle className="flex items-center gap-2">
@@ -72,9 +83,9 @@ export function ProjectActivitiesChart({ data }: ProjectActivitiesChartProps) {
           </CardDescription>
         </div>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={projectsChartConfig} className="h-[300px] w-full">
-          <BarChart data={chartData} layout="vertical">
+      <CardContent className="flex-1 pb-0">
+        <ChartContainer config={projectsChartConfig} className="h-full min-h-[300px] w-full">
+          <BarChart data={chartData} layout="vertical" margin={{ left: 0, right: 20 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" />
             <YAxis 
@@ -91,13 +102,23 @@ export function ProjectActivitiesChart({ data }: ProjectActivitiesChartProps) {
             />
             <Bar 
               dataKey="activities" 
-              fill="#3b82f6" 
+              fill="hsl(var(--chart-1))" 
               radius={[0, 4, 4, 0]}
               name={t_project.charts.activities}
             />
           </BarChart>
         </ChartContainer>
       </CardContent>
+      <CardFooter className="flex-col items-start gap-2 text-sm pt-4">
+        <div className="flex gap-2 font-medium leading-none">
+          Total: {totalActivities.toLocaleString()} activities
+        </div>
+        {topProject && (
+          <div className="leading-none text-muted-foreground">
+            Top: {topProject.name} with {topProject.activities} activities
+          </div>
+        )}
+      </CardFooter>
     </Card>
   )
 }

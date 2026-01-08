@@ -470,7 +470,7 @@ export function UseTable<TData, TValue>({
                       } ${
                         expandedRows[row.id] ? "bg-muted/30" : ""
                       } ${
-                        row.getIsSelected() ? "bg-blue-50 dark:bg-blue-950/20 border-l-2 border-blue-500" : ""
+                        row.getIsSelected() ? "bg-muted dark:bg-muted/50 border-l-4 border-gray-700 dark:border-gray-400" : ""
                       } transition-all duration-150 group relative`}
                       onClick={(e) => {
                         // Don't do anything if clicking on action buttons or checkbox

@@ -51,6 +51,12 @@ export interface UserMultiSelectorProps {
 
   /** Número máximo de usuários selecionáveis (opcional) */
   maxSelections?: number
+
+  /** Nome ou descrição da atividade */
+  activityName?: string
+
+  /** Tipo de atividade */
+  activityType?: string
 }
 
 export function UserMultiSelector({
@@ -62,6 +68,8 @@ export function UserMultiSelector({
   searchPlaceholder = "Buscar usuário...",
   disabled = false,
   maxSelections,
+  activityName,
+  activityType,
 }: UserMultiSelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -139,128 +147,174 @@ export function UserMultiSelector({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogTitle className="text-lg font-medium">{dialogTitle}</DialogTitle>
+          {(activityName || activityType) && (
+            <div className="mt-2 pt-2 border-t">
+              {activityType && (
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                  {activityType}
+                </p>
+              )}
+              {activityName && (
+                <p className="text-sm font-medium mt-1">
+                  {activityName}
+                </p>
+              )}
+            </div>
+          )}
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Selected Users Chips */}
+          {/* Selected Users Section */}
           {tempSelectedUsers.length > 0 && (
-            <div className="flex flex-wrap gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              {tempSelectedUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-gray-700 rounded-full border border-gray-200 dark:border-gray-600"
-                >
-                  <Avatar className="h-5 w-5">
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback className="text-[8px] bg-gradient-to-br from-blue-500 to-purple-500 text-white">
-                      {getInitials(user.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-xs font-medium text-gray-900 dark:text-gray-100">
-                    {user.name.split(" ")[0]}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveUser(user.id)}
-                    className="p-0.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full"
-                  >
-                    <X className="w-3 h-3 text-gray-500" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Search Input */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              type="text"
-              placeholder={searchPlaceholder}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          {/* Users List */}
-          <div className="max-h-[300px] overflow-y-auto space-y-1">
-            {filteredUsers.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {searchQuery
-                    ? "Nenhum usuário encontrado"
-                    : "Nenhum usuário disponível"}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Selecionados ({tempSelectedUsers.length})
                 </p>
               </div>
-            ) : (
-              filteredUsers.map((user) => {
-                const isSelected = tempSelectedUsers.some(u => u.id === user.id)
-                const canSelect = !maxSelections || tempSelectedUsers.length < maxSelections || isSelected
-
-                return (
-                  <button
+              <div className="space-y-1.5 p-3 border rounded-lg bg-muted/30">
+                {tempSelectedUsers.map((user) => (
+                  <div
                     key={user.id}
-                    type="button"
-                    onClick={() => handleUserToggle(user)}
-                    disabled={!canSelect}
-                    className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-lg transition-colors",
-                      "hover:bg-gray-100 dark:hover:bg-gray-800",
-                      isSelected && "bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800",
-                      !canSelect && "opacity-50 cursor-not-allowed"
-                    )}
+                    className="flex items-center gap-3 p-2 bg-background rounded border hover:bg-muted/50 transition-colors"
                   >
-                    <Avatar className="h-10 w-10 border-2 border-gray-200 dark:border-gray-700">
+                    <Avatar className="h-8 w-8 border">
                       <AvatarImage src={user.avatar} alt={user.name} />
-                      <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                      <AvatarFallback className="text-xs bg-muted text-foreground font-medium">
                         {getInitials(user.name)}
                       </AvatarFallback>
                     </Avatar>
-
-                    <div className="flex-1 text-left min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
                         {user.name}
                       </p>
                       {(user.email || user.role) && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        <p className="text-xs text-muted-foreground truncate">
                           {user.role || user.email}
                         </p>
                       )}
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveUser(user.id)}
+                      className="p-1 hover:bg-muted rounded transition-colors"
+                    >
+                      <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-                    <div className={cn(
-                      "w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0",
-                      isSelected 
-                        ? "bg-blue-600 border-blue-600" 
-                        : "border-gray-300 dark:border-gray-600"
-                    )}>
-                      {isSelected && (
-                        <Check className="w-3 h-3 text-white" />
+          {/* Search Input */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Buscar Usuário
+            </p>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder={searchPlaceholder}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          {/* Users List */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Usuários Disponíveis
+            </p>
+            <div className="max-h-[280px] overflow-y-auto space-y-1 p-2 border rounded-lg">
+              {filteredUsers.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-sm text-muted-foreground">
+                    {searchQuery
+                      ? "Nenhum usuário encontrado"
+                      : "Nenhum usuário disponível"}
+                  </p>
+                </div>
+              ) : (
+                filteredUsers.map((user) => {
+                  const isSelected = tempSelectedUsers.some(u => u.id === user.id)
+                  const canSelect = !maxSelections || tempSelectedUsers.length < maxSelections || isSelected
+
+                  return (
+                    <button
+                      key={user.id}
+                      type="button"
+                      onClick={() => handleUserToggle(user)}
+                      disabled={!canSelect}
+                      className={cn(
+                        "w-full flex items-center gap-3 p-2.5 rounded-md transition-all",
+                        "hover:bg-muted",
+                        isSelected && "bg-muted border border-border",
+                        !canSelect && "opacity-40 cursor-not-allowed"
                       )}
-                    </div>
-                  </button>
-                )
-              })
-            )}
+                    >
+                      <Avatar className="h-9 w-9 border">
+                        <AvatarImage src={user.avatar} alt={user.name} />
+                        <AvatarFallback className="text-xs bg-muted text-foreground font-medium">
+                          {getInitials(user.name)}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {user.name}
+                        </p>
+                        {(user.email || user.role) && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {user.role || user.email}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className={cn(
+                        "w-4 h-4 rounded-sm border flex items-center justify-center flex-shrink-0 transition-colors",
+                        isSelected 
+                          ? "bg-foreground border-foreground" 
+                          : "border-muted-foreground/30"
+                      )}>
+                        {isSelected && (
+                          <Check className="w-3 h-3 text-background" strokeWidth={3} />
+                        )}
+                      </div>
+                    </button>
+                  )
+                })
+              )}
+            </div>
           </div>
 
           {/* Selection count */}
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            {tempSelectedUsers.length} usuário(s) selecionado(s)
-            {maxSelections && ` (máximo: ${maxSelections})`}
-          </div>
+          {maxSelections && (
+            <div className="text-xs text-muted-foreground text-center pt-1 border-t">
+              {tempSelectedUsers.length} de {maxSelections} usuário(s) selecionado(s)
+            </div>
+          )}
         </div>
 
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={handleCancel}>
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button 
+            variant="ghost" 
+            onClick={handleCancel}
+            className="flex-1 sm:flex-none"
+          >
             Cancelar
           </Button>
-          <Button onClick={handleConfirm}>
-            Confirmar
+          <Button 
+            onClick={handleConfirm}
+            className="flex-1 sm:flex-none bg-foreground text-background hover:bg-foreground/90"
+          >
+            Confirmar ({tempSelectedUsers.length})
           </Button>
         </DialogFooter>
       </DialogContent>

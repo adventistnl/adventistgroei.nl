@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react"
 import { useTranslation } from "react-i18next"
+import { useCurrency } from "@/contexts/currency-context"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -18,7 +19,12 @@ import {
   Wrench,
   Package,
   GraduationCap,
-  DollarSign
+  DollarSign,
+  Tag,
+  CircleDollarSign,
+  Wallet,
+  Flag,
+  Users
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -302,8 +308,7 @@ export function ProjectActivitiesTable({
     switch (statusLower) {
       case "completed": return "success"
       case "in_progress": return "info"
-      case "todo":
-      case "pending": return "warning"
+      case "todo": return "warning"
       case "on_hold": return "neutral"
       default: return "default"
     }
@@ -394,12 +399,21 @@ export function ProjectActivitiesTable({
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-1">
           {row.original.tags && row.original.tags.length > 0 ? (
-            row.original.tags.map((tag: ActivityTags) => (
-              <Badge key={tag} variant="outline" className={`${getActivityTagColor(tag)} flex items-center gap-1 w-fit`}>
-                {getActivityTagIcon(tag)}
-                <span className="capitalize">{getActivityTagLabel(tag)}</span>
-              </Badge>
-            ))
+            row.original.tags.map((tag: ActivityTags) => {
+              const variant = tag === ActivityTags.Reform ? 'info' :
+                             tag === ActivityTags.Equipment ? 'info' :
+                             tag === ActivityTags.Materials ? 'info' :
+                             tag === ActivityTags.Training ? 'success' : 'neutral'
+              return (
+                <StatusBadge
+                  key={tag}
+                  label={getActivityTagLabel(tag)}
+                  variant={variant}
+                  showDot={true}
+                  size="sm"
+                />
+              )
+            })
           ) : (
             <span className="text-xs text-muted-foreground">{pt.filters.sem_categoria}</span>
           )}
@@ -413,12 +427,14 @@ export function ProjectActivitiesTable({
         <div className="flex items-center justify-center">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
             row.original.is_subsidized 
-              ? 'bg-green-100 border-2 border-green-300' 
-              : 'bg-gray-100 border-2 border-gray-300'
+              ? 'bg-green-100 border-2 border-green-300 dark:bg-green-950 dark:border-green-800' 
+              : 'bg-gray-100 border-2 border-gray-300 dark:bg-gray-800 dark:border-gray-600'
           }`}>
-            <DollarSign className={`w-4 h-4 ${
-              row.original.is_subsidized ? 'text-green-600' : 'text-gray-400'
-            }`} />
+            <span className={`text-sm font-bold ${
+              row.original.is_subsidized ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'
+            }`}>
+              {selectedCurrency.symbol}
+            </span>
           </div>
         </div>
       ),
@@ -439,7 +455,7 @@ export function ProjectActivitiesTable({
         <StatusBadge
           label={getStatusLabel(row.original.status)}
           variant={getStatusVariant(row.original.status)}
-          icon={getStatusIcon(row.original.status)}
+          showDot={true}
           size="sm"
         />
       ),
@@ -452,6 +468,7 @@ export function ProjectActivitiesTable({
         <StatusBadge
           label={getPriorityLabel(row.original.priority)}
           variant={getPriorityVariant(row.original.priority)}
+          icon={Flag}
           showDot={true}
           size="sm"
         />
@@ -499,7 +516,7 @@ export function ProjectActivitiesTable({
                       style={{ zIndex: displayedUsers.length - index }}
                     >
                       <AvatarImage src={user.avatar} alt={user.name} />
-                      <AvatarFallback className="text-[9px] bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                      <AvatarFallback className="text-[9px] bg-muted text-foreground font-medium">
                         {user.initials || user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
                       </AvatarFallback>
                     </Avatar>

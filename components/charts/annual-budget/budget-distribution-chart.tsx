@@ -33,7 +33,7 @@ import { createPrivacyConfig } from "@/config/privacy-roles.config"
 import { useComponentPrivacy } from "@/contexts/privacy-context"
 import { PrivacyOverlay } from "@/components/shared/privacy-overlay"
 import { Skeleton } from "@/components/ui/skeleton"
-import { CurrencyConfig, formatCurrency } from "@/types/currency"
+import { useCurrency } from "@/contexts/currency-context"
 
 interface BudgetDistributionData {
   total: number
@@ -46,7 +46,6 @@ interface BudgetDistributionData {
 interface BudgetDistributionChartProps {
   data: BudgetDistributionData
   year: number
-  currency: CurrencyConfig
 }
 
 // Department/Entity data for Pie Chart
@@ -77,7 +76,8 @@ const PRIVACY_CONFIG = createPrivacyConfig(
   'FINANCIAL_DATA' // Uses DEV, ADMIN, FINANCE_MANAGER automatically
 )
 
-export function BudgetDistributionChart({ data, year, currency }: BudgetDistributionChartProps) {
+export function BudgetDistributionChart({ data, year }: BudgetDistributionChartProps) {
+  const { formatCurrency } = useCurrency()
   const { t } = useTranslation()
   const [chartType, setChartType] = useState<"radial" | "pie">("radial")
   const { isHidden } = useComponentPrivacy(PRIVACY_CONFIG)
@@ -131,10 +131,12 @@ export function BudgetDistributionChart({ data, year, currency }: BudgetDistribu
 
   const [activeEntity, setActiveEntity] = useState<string>("")
 
-  // Set initial active entity when data loads
+  // Set initial active entity when data loads - prefer "Available" as default
   React.useEffect(() => {
     if (pieChartData.length > 0 && !activeEntity) {
-      setActiveEntity(pieChartData[0].name)
+      // Try to find "Available" first, otherwise use the first item
+      const availableItem = pieChartData.find(item => item.name === "Available")
+      setActiveEntity(availableItem ? availableItem.name : pieChartData[0].name)
     }
   }, [pieChartData, activeEntity])
 
@@ -167,7 +169,6 @@ export function BudgetDistributionChart({ data, year, currency }: BudgetDistribu
                 )}
               >
                 <Target className="w-3.5 h-3.5 mr-1" />
-                Radial
               </Button>
               <Button
                 variant="ghost"
@@ -181,7 +182,6 @@ export function BudgetDistributionChart({ data, year, currency }: BudgetDistribu
                 )}
               >
                 <PieChartIcon className="w-3.5 h-3.5 mr-1" />
-                Pie
               </Button>
             </div>
             <InlinePrivacyToggle 
@@ -267,7 +267,7 @@ export function BudgetDistributionChart({ data, year, currency }: BudgetDistribu
                     content={
                       <ChartTooltipContent
                         hideLabel
-                        formatter={(value: any) => [formatCurrency(typeof value === 'number' ? value : 0, currency), '']}
+                        formatter={(value: any) => [formatCurrency(typeof value === 'number' ? value : 0), '']}
                       />
                     }
                   />
@@ -298,7 +298,7 @@ export function BudgetDistributionChart({ data, year, currency }: BudgetDistribu
                                 y={(viewBox.cy || 0) + 20}
                                 className="fill-muted-foreground text-xs font-medium"
                               >
-                                {formatCurrency(data.spent + data.allocated, currency, { compact: true })} / {formatCurrency(data.total, currency, { compact: true })}
+                                {formatCurrency(data.spent + data.allocated, { compact: true })} / {formatCurrency(data.total, { compact: true })}
                               </tspan>
                             </text>
                           )
@@ -385,7 +385,7 @@ export function BudgetDistributionChart({ data, year, currency }: BudgetDistribu
                                 y={viewBox.cy}
                                 className="fill-foreground text-3xl font-bold"
                               >
-                                {formatCurrency(activeData.amount, currency, { compact: true })}
+                                {formatCurrency(activeData.amount, { compact: true })}
                               </tspan>
                               <tspan
                                 x={viewBox.cx}
@@ -414,7 +414,7 @@ export function BudgetDistributionChart({ data, year, currency }: BudgetDistribu
                 </span>
               </div>
               <span className="font-semibold text-foreground">
-                {formatCurrency(data.total, currency)}
+                {formatCurrency(data.total)}
               </span>
             </div>
             
@@ -426,7 +426,7 @@ export function BudgetDistributionChart({ data, year, currency }: BudgetDistribu
                     <span className="text-muted-foreground">Spent (Used)</span>
                   </div>
                   <span className="font-medium text-red-600">
-                    {formatCurrency(data.spent, currency)}
+                    {formatCurrency(data.spent)}
                   </span>
                 </div>
                 <div className="w-full flex items-center justify-between text-xs">
@@ -435,7 +435,7 @@ export function BudgetDistributionChart({ data, year, currency }: BudgetDistribu
                     <span className="text-muted-foreground">Allocated (Reserved)</span>
                   </div>
                   <span className="font-medium text-yellow-600">
-                    {formatCurrency(data.allocated, currency)}
+                    {formatCurrency(data.allocated)}
                   </span>
                 </div>
                 <div className="w-full flex items-center justify-between text-xs">
@@ -444,7 +444,7 @@ export function BudgetDistributionChart({ data, year, currency }: BudgetDistribu
                     <span className="text-muted-foreground">Available</span>
                   </div>
                   <span className="font-medium text-green-600">
-                    {formatCurrency(data.available, currency)}
+                    {formatCurrency(data.available)}
                   </span>
                 </div>
               </>
@@ -464,7 +464,7 @@ export function BudgetDistributionChart({ data, year, currency }: BudgetDistribu
                   </span>
                 </div>
                 <span className="font-medium">
-                  {formatCurrency(pieChartData[activeIndex]?.amount || 0, currency)}
+                  {formatCurrency(pieChartData[activeIndex]?.amount || 0)}
                   <span className="text-muted-foreground ml-1">
                     ({pieChartData[activeIndex]?.percentage}%)
                   </span>

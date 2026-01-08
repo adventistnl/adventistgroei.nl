@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
+import { useCurrency } from "@/contexts/currency-context"
 import {
   Dialog,
   DialogContent,
@@ -91,6 +92,7 @@ export function AnnualBudgetViewEditModal({
   defaultYear
 }: AnnualBudgetViewEditModalProps) {
   const { t } = useTranslation()
+  const { formatCurrency } = useCurrency()
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
@@ -348,14 +350,6 @@ export function AnnualBudgetViewEditModal({
       month: '2-digit',
       year: 'numeric'
     })
-  }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount)
   }
 
   const copyToClipboard = async (text: string, field: string) => {

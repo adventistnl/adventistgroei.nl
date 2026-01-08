@@ -29,7 +29,7 @@ import { projectTranslations } from "@/lib/translations/projects"
 import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { DELETE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
-import { Globe, Plus, RefreshCw, Building, MoreHorizontal, Eye, Edit, Trash2, Activity, TrendingUp, Users, DollarSign } from "lucide-react"
+import { Globe, Plus, RefreshCw, Building, MoreHorizontal, Eye, Edit, Trash2, Activity, TrendingUp, Users, DollarSign, Folder, ArrowRight, Calendar, Building2, Clock, CheckCircle2 } from "lucide-react"
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
 import { ProjectsKPIs } from "@/components/projects/projects-kpis"
@@ -208,29 +208,133 @@ export default function ProjectsPage() {
     },
     {
       accessorKey: "title",
-      header: t_project.table.projectTitle,
-      cell: ({ row }) => (
-        <div className="font-medium">{row.original.title}</div>
+      header: () => (
+        <div className="flex items-center gap-2 pl-0">
+          <Folder className="w-4 h-4 text-muted-foreground" />
+          <span>{t_project.table.projectTitle}</span>
+        </div>
       ),
+      cell: ({ row }) => (
+        <div className="flex items-center justify-between gap-3 pl-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Folder className="w-4 h-4 text-primary" />
+            </div>
+            <div className="font-medium">{row.original.title}</div>
+          </div>
+        </div>
+      ),
+      meta: {
+        className: "pl-0"
+      }
     },
     {
       accessorKey: "department_id",
-      header: t_project.table.department,
+      header: () => (
+        <div className="flex items-center gap-2">
+          <Building2 className="w-4 h-4 text-muted-foreground" />
+          <span>{t_project.table.department}</span>
+        </div>
+      ),
       cell: ({ row }) => {
         const dept = departments.find((d: any) => d.id === row.original.department_id)
-        return <span className="text-sm">{dept?.name || "Unknown"}</span>
+        return (
+          <Badge variant="outline" className="font-normal">
+            {dept?.name || "Unknown"}
+          </Badge>
+        )
       },
     },
     {
-      accessorKey: "budget",
-      header: t_project.budget.annualBudget,
-      cell: ({ row }) => (
-        <span className="font-mono">R$ {row.original.budget.toLocaleString()}</span>
+      id: "timeline",
+      header: () => (
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-muted-foreground" />
+          <span>Timeline</span>
+        </div>
       ),
+      cell: ({ row }) => {
+        const startDate = new Date(row.original.start_at)
+        const endDate = new Date(row.original.end_at)
+        const today = new Date()
+        
+        const formatDate = (date: Date) => {
+          return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+        }
+        
+        // Calculate progress percentage
+        const totalDuration = endDate.getTime() - startDate.getTime()
+        const elapsed = today.getTime() - startDate.getTime()
+        const progressPercent = Math.min(Math.max((elapsed / totalDuration) * 100, 0), 100)
+        
+        return (
+          <div className="space-y-1.5 min-w-[140px]">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>{formatDate(startDate)}</span>
+              <ArrowRight className="w-3 h-3" />
+              <span>{formatDate(endDate)}</span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+              <div 
+                className="bg-primary h-full rounded-full transition-all duration-300"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+        )
+      },
+    },
+    {
+      id: "days_left",
+      header: () => (
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4 text-muted-foreground" />
+          <span>Days Left</span>
+        </div>
+      ),
+      cell: ({ row }) => {
+        const endDate = new Date(row.original.end_at)
+        const today = new Date()
+        const daysLeft = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+        
+        let badgeColor = "bg-green-100 text-green-700"
+        let dotColor = "bg-green-500"
+        
+        if (daysLeft < 0) {
+          badgeColor = "bg-red-100 text-red-700"
+          dotColor = "bg-red-500"
+        } else if (daysLeft <= 7) {
+          badgeColor = "bg-orange-100 text-orange-700"
+          dotColor = "bg-orange-500"
+        } else if (daysLeft <= 30) {
+          badgeColor = "bg-yellow-100 text-yellow-700"
+          dotColor = "bg-yellow-500"
+        }
+        
+        const displayText = daysLeft < 0 
+          ? `${Math.abs(daysLeft)}d overdue` 
+          : daysLeft === 0 
+            ? "Today" 
+            : `${daysLeft}d`
+        
+        return (
+          <div className="flex items-center gap-2">
+            <div className={`w-1.5 h-1.5 rounded-full ${dotColor}`}></div>
+            <span className={`text-xs font-medium px-2 py-0.5 rounded ${badgeColor}`}>
+              {displayText}
+            </span>
+          </div>
+        )
+      },
     },
     {
       accessorKey: "status",
-      header: t_project.table.status,
+      header: () => (
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
+          <span>{t_project.table.status}</span>
+        </div>
+      ),
       cell: ({ row }) => {
         const status = row.original.status
         const statusText = status === "active" ? t_project.active :
@@ -244,14 +348,6 @@ export default function ProjectsPage() {
             {statusText}
           </span>
         )
-      },
-    },
-    {
-      accessorKey: "start_at",
-      header: t_project.table.startDate,
-      cell: ({ row }) => {
-        const date = new Date(row.original.start_at)
-        return date.toLocaleDateString()
       },
     },
     {

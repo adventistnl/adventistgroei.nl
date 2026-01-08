@@ -28,7 +28,7 @@ export function ActivityCard({
   isDisabled = false,
   disabledReason
 }: ActivityCardProps) {
-  const { formatCurrency } = useCurrency()
+  const { formatCurrency, selectedCurrency } = useCurrency()
 
   const handleClick = () => {
     if (onToggle && !isDisabled) {
@@ -49,6 +49,21 @@ export function ActivityCard({
         className
       )}
     >
+      {/* Subsidy Status Icon - Extrema Esquerda */}
+      <div className="flex-shrink-0">
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+          activity.is_subsidized 
+            ? 'bg-green-100 border-2 border-green-300 dark:bg-green-950 dark:border-green-800' 
+            : 'bg-gray-100 border-2 border-gray-300 dark:bg-gray-800 dark:border-gray-600'
+        }`}>
+          <span className={`text-sm font-bold ${
+            activity.is_subsidized ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'
+          }`}>
+            {selectedCurrency.symbol}
+          </span>
+        </div>
+      </div>
+
       {showCheckbox && (
         <Checkbox
           checked={isSelected}
@@ -63,14 +78,6 @@ export function ActivityCard({
           <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
             {activity.name}
           </p>
-          {activity.is_subsidized && (
-            <Badge 
-              variant="outline" 
-              className="text-xs border-green-600 dark:border-green-500 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30"
-            >
-              Subsidiada
-            </Badge>
-          )}
         </div>
       </div>
 

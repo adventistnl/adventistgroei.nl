@@ -714,7 +714,7 @@ export function ActivityDetailsModal({
                           style={{ zIndex: 3 - index }}
                         >
                           <AvatarImage src={user.avatar} alt={user.name} />
-                          <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                          <AvatarFallback className="text-xs bg-muted text-foreground font-medium">
                             {user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>

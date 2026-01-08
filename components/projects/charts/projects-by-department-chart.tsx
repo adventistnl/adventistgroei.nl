@@ -38,8 +38,17 @@ export function ProjectsByDepartmentChart({ data, departments }: ProjectsByDepar
   const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
   const id = "projects-by-department"
 
-  // Cores para o gráfico PIE
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
+  // Cores para o gráfico PIE - adaptáveis ao tema
+  const COLORS = [
+    'hsl(var(--chart-1))',
+    'hsl(var(--chart-2))',
+    'hsl(var(--chart-3))',
+    'hsl(var(--chart-4))',
+    'hsl(var(--chart-5))',
+    'hsl(var(--chart-1))',
+    'hsl(var(--chart-2))',
+    'hsl(var(--chart-3))'
+  ]
 
   // Transformar dados para o PIE chart
   const pieData = useMemo(() => {
