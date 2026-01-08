@@ -30,7 +30,7 @@ import { Badge } from "@/components/ui/badge"
 import { projectTranslations } from "@/lib/translations/projects"
 import { useCurrency } from "@/contexts/currency-context"
 import { DELETE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
-import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
+import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY, GET_PROJECT_BY_ID_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import toast from "react-hot-toast"
 
 // Project Data interface
@@ -68,7 +68,8 @@ export function DeleteProjectModal({
   const [deleteProject] = useMutation(DELETE_PROJECT_MUTATION, {
     refetchQueries: [
       { query: GET_PROJECTS_QUERY },
-      { query: GET_PROJECT_KPIS_QUERY }
+      { query: GET_PROJECT_KPIS_QUERY },
+      ...(project?.id ? [{ query: GET_PROJECT_BY_ID_QUERY, variables: { id: project.id } }] : [])
     ],
     awaitRefetchQueries: true
   })
