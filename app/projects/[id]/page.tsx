@@ -1828,10 +1828,12 @@ export default function ProjectDetailsPage() {
           }}
           selectedActivities={selectedActivities}
           projectId={projectId}
-          institutionId={project?.institutionId || currentInstitutionData?.id || ""}
-          departmentId={project?.department_id}
-          institutionName={project?.institutionName}
-          departmentName={project?.departmentName}
+          institutionId={projectData?.project?.institution_id || currentInstitutionData?.id || ""}
+          departmentId={projectData?.project?.department_id}
+          institutionName={projectData?.project?.Institution?.name}
+          departmentName={projectData?.project?.department?.name}
+          churchId={projectData?.project?.Church?.id || projectData?.project?.department?.church?.id}
+          churchName={projectData?.project?.Church?.name || projectData?.project?.department?.church?.name}
           onSubmit={handleSubsidyRequestSubmit}
           allActivities={allProjectActivities}
           subsidizedActivityIds={subsidizedActivityIds}

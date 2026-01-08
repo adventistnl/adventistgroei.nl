@@ -60,6 +60,36 @@ export interface ProjectTableData {
   is_event?: boolean
   type?: "Local" | "Global"
   eventId?: string | null
+  // Relations
+  Institution?: {
+    id: string
+    name: string
+  }
+  institution?: {
+    id: string
+    name: string
+  }
+  department?: {
+    id: string
+    name: string
+    church?: {
+      id: string
+      name: string
+    }
+  }
+  Church?: {
+    id: string
+    name: string
+  }
+  church?: {
+    id: string
+    name: string
+  }
+  owner?: {
+    id: string
+    name: string
+    email: string
+  }
 }
 
 interface ProjectsTableProps {
