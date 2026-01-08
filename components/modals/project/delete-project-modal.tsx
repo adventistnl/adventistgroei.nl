@@ -31,7 +31,6 @@ import { projectTranslations } from "@/lib/translations/projects"
 import { useCurrency } from "@/contexts/currency-context"
 import { DELETE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
-import { useCurrency } from "@/contexts/currency-context"
 import toast from "react-hot-toast"
 
 // Project Data interface
@@ -59,9 +58,10 @@ export function DeleteProjectModal({
   const { i18n } = useTranslation()
   const { formatCurrency } = useCurrency()
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
-  const { formatCurrency } = useCurrency()
   const [understoodConsequences, setUnderstoodConsequences] = React.useState(false)
   const [finalConfirmation, setFinalConfirmation] = React.useState('')
+  const [consequencesOpen, setConsequencesOpen] = React.useState(false)
+  const [isLoading, setIsLoading] = React.useState(false)
 
   const confirmationText = 'delete project'
 
@@ -76,6 +76,7 @@ export function DeleteProjectModal({
   const handleConfirm = async () => {
     if (!project) return
 
+    setIsLoading(true)
     const loadingToast = toast.loading(t.toasts.projectDeleting)
     
     try {

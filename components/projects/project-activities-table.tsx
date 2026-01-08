@@ -220,6 +220,7 @@ export function ProjectActivitiesTable({
   batchSummary
 }: ProjectActivitiesTableProps) {
   const { t, i18n } = useTranslation()
+  const { selectedCurrency, formatCurrency } = useCurrency()
   const langKey = i18n.language as keyof typeof projectTranslations
   const pt = projectTranslations[langKey] || projectTranslations.en
   
@@ -345,19 +346,6 @@ export function ProjectActivitiesTable({
     }
     return labels[priority.toLowerCase()] || priority
   }
-
-  const formatCurrency = (amount: number) => {
-    const locale = i18n.language === 'en' ? 'en-US' : i18n.language === 'nl' ? 'nl-NL' : 'pt-BR'
-    const currency = i18n.language === 'en' ? 'USD' : i18n.language === 'nl' ? 'EUR' : 'BRL'
-    
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
-
-
 
   // Event handlers
   const handleManageActivity = (activity: ProjectActivityData) => {
