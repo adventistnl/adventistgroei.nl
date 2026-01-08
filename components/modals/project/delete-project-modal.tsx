@@ -31,7 +31,6 @@ import { projectTranslations } from "@/lib/translations/projects"
 import { useCurrency } from "@/contexts/currency-context"
 import { DELETE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
-import { useCurrency } from "@/contexts/currency-context"
 import toast from "react-hot-toast"
 
 // Project Data interface
@@ -41,6 +40,10 @@ interface ProjectData {
   description: string
   budget: number
   status?: string
+  activities?: number
+  subsidyRequests?: number
+  volunteers?: number
+  documents?: number
 }
 
 export interface DeleteProjectModalProps {
@@ -59,7 +62,8 @@ export function DeleteProjectModal({
   const { i18n } = useTranslation()
   const { formatCurrency } = useCurrency()
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
-  const { formatCurrency } = useCurrency()
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [consequencesOpen, setConsequencesOpen] = React.useState(false)
   const [understoodConsequences, setUnderstoodConsequences] = React.useState(false)
   const [finalConfirmation, setFinalConfirmation] = React.useState('')
 
@@ -76,6 +80,7 @@ export function DeleteProjectModal({
   const handleConfirm = async () => {
     if (!project) return
 
+    setIsLoading(true)
     const loadingToast = toast.loading(t.toasts.projectDeleting)
     
     try {
@@ -86,7 +91,6 @@ export function DeleteProjectModal({
       toast.dismiss(loadingToast)
       toast.success(t.toasts.projectDeleted, {
         duration: 3000,
-        icon: '🗑️'
       })
       
       if (onConfirm) {
@@ -207,19 +211,15 @@ export function DeleteProjectModal({
               <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <FileText className="w-4 h-4" />
-                  <span>{t.deleteProjectActivities || "Atividades"}: <strong className="text-foreground">0</strong></span>
+                  <span>{t.deleteProjectActivities || "Atividades"}: <strong className="text-foreground">{project.activities || 0}</strong></span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <DollarSign className="w-4 h-4" />
-                  <span>{t.deleteProjectSubsidies || "Subsídios"}: <strong className="text-foreground">0</strong></span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Users className="w-4 h-4" />
-                  <span>{t.deleteProjectVolunteers || "Voluntários"}: <strong className="text-foreground">0</strong></span>
+                  <span>{t.deleteProjectSubsidies || "Subsídios"}: <strong className="text-foreground">{project.subsidyRequests || 0}</strong></span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Database className="w-4 h-4" />
-                  <span>{t.deleteProjectDocuments || "Documentos"}: <strong className="text-foreground">0</strong></span>
+                  <span>{t.deleteProjectDocuments || "Documentos"}: <strong className="text-foreground">{project.documents || 0}</strong></span>
                 </div>
               </div>
             </div>

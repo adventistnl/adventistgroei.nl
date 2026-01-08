@@ -10,6 +10,8 @@ import {
   Lock,
   type LucideIcon,
 } from "lucide-react"
+import toast from "react-hot-toast"
+import { DeleteProjectModal } from "@/components/modals/project/delete-project-modal"
 
 import {
   DropdownMenu,
@@ -40,6 +42,33 @@ export const NavProjects = React.memo(function NavProjects({ projects, loading }
   const { isMobile } = useSidebar()
   const router = useRouter()
   const { navigateWithLoading } = useNavigateWithLoading()
+  
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false)
+  const [selectedProject, setSelectedProject] = React.useState<any>(null)
+
+  const handleDeleteProject = React.useCallback((project: any) => {
+    setSelectedProject(project)
+    setIsDeleteModalOpen(true)
+  }, [])
+
+  const handleShareProject = React.useCallback((project: any) => {
+    const projectUrl = `${window.location.origin}/projects/${project.id}`
+    navigator.clipboard.writeText(projectUrl).then(() => {
+      toast.success(`Link do projeto copiado!`, {
+        duration: 2000
+      })
+    }).catch(() => {
+      toast.error('Erro ao copiar link')
+    })
+  }, [])
+
+  const handleDeleteSuccess = React.useCallback(() => {
+    setIsDeleteModalOpen(false)
+    setSelectedProject(null)
+    toast.success('Projeto deletado com sucesso!', {
+      duration: 3000
+    })
+  }, [])
 
   return (
     <>
@@ -51,8 +80,7 @@ export const NavProjects = React.memo(function NavProjects({ projects, loading }
             size="sm"
             onClick={() => navigateWithLoading('/projects/new-project', {
               message: "Creating new project...",
-              showToast: true,
-              delay: 700
+              showToast: true
             })}
             className="h-6 w-6 p-0 hover:bg-sidebar-accent"
           >
@@ -81,8 +109,7 @@ export const NavProjects = React.memo(function NavProjects({ projects, loading }
                 <SidebarMenuButton
                   onClick={() => navigateWithLoading(`/projects/${project.id}`, {
                     message: `Opening ${project.title}...`,
-                    showToast: true,
-                    delay: 800
+                    showToast: true
                   })}
                 >
                   <div className="flex items-center gap-2 w-full">
@@ -107,18 +134,23 @@ export const NavProjects = React.memo(function NavProjects({ projects, loading }
                   >
                     <DropdownMenuItem onClick={() => navigateWithLoading(`/projects/${project.id}`, {
                       message: `Opening ${project.title}...`,
-                      showToast: true,
-                      delay: 800
+                      showToast: true
                     })}>
                       <Folder className="text-muted-foreground" />
                       <span>View Project</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation()
+                      handleShareProject(project)
+                    }}>
                       <Forward className="text-muted-foreground" />
                       <span>Share Project</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation()
+                      handleDeleteProject(project)
+                    }}>
                       <Trash2 className="text-muted-foreground" />
                       <span>Delete Project</span>
                     </DropdownMenuItem>
@@ -129,6 +161,25 @@ export const NavProjects = React.memo(function NavProjects({ projects, loading }
           )}
         </SidebarMenu>
       </SidebarGroup>
+
+      <DeleteProjectModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false)
+          setSelectedProject(null)
+        }}
+        onConfirm={handleDeleteSuccess}
+        project={selectedProject ? {
+          id: selectedProject.id,
+          title: selectedProject.title,
+          description: selectedProject.description || '',
+          budget: selectedProject.budget || 0,
+          activities: selectedProject.activities?.length || 0,
+          subsidyRequests: selectedProject.subsidies?.length || 0,
+          volunteers: 0,
+          documents: 0
+        } : null}
+      />
     </>
   )
 })

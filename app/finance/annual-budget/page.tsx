@@ -1553,6 +1553,7 @@ export default function AnnualBudgetPage() {
                 }
               }}
               defaultYear={selectedYear}
+              availableBudget={kpiData.budgetRemaining > 0 ? kpiData.budgetRemaining : undefined}
             />
           )}
 
@@ -1579,6 +1580,7 @@ export default function AnnualBudgetPage() {
                 }
               }}
               defaultYear={selectedYear}
+              availableBudget={undefined}
             />
           )}
 

@@ -138,8 +138,8 @@ export default function ProjectsPage() {
         language_preference: project.language_preference,
         institutionId: project.institution_id || project.Institution?.id || '',
         status,
-        subsidyRequests: 0, // TODO: Will be populated when subsidy data is available
-        subsidyAmount: 0, // TODO: Will be populated when subsidy data is available
+        subsidyRequests: project.subsidies?.length || 0,
+        subsidyAmount: project.subsidies?.reduce((sum: number, s: any) => sum + (s.requested_amount || 0), 0) || 0,
         activities: project.activities?.length || 0,
         is_event: !!project.event_id,
         type: project.type as "Local" | "Global" | undefined,
@@ -240,7 +240,7 @@ export default function ProjectsPage() {
         const dept = departments.find((d: any) => d.id === row.original.department_id)
         return (
           <Badge variant="outline" className="font-normal">
-            {dept?.name || "Unknown"}
+            {dept?.name || t_project.unknown}
           </Badge>
         )
       },
@@ -250,7 +250,7 @@ export default function ProjectsPage() {
       header: () => (
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-muted-foreground" />
-          <span>Timeline</span>
+          <span>{t_project.table.timeline}</span>
         </div>
       ),
       cell: ({ row }) => {
@@ -289,7 +289,7 @@ export default function ProjectsPage() {
       header: () => (
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-muted-foreground" />
-          <span>Days Left</span>
+          <span>{t_project.table.daysLeft}</span>
         </div>
       ),
       cell: ({ row }) => {
@@ -312,10 +312,10 @@ export default function ProjectsPage() {
         }
         
         const displayText = daysLeft < 0 
-          ? `${Math.abs(daysLeft)}d overdue` 
+          ? t_project.table.daysOverdue.replace('{{days}}', Math.abs(daysLeft).toString())
           : daysLeft === 0 
-            ? "Today" 
-            : `${daysLeft}d`
+            ? t_project.table.today
+            : t_project.table.daysRemaining.replace('{{days}}', daysLeft.toString())
         
         return (
           <div className="flex items-center gap-2">
@@ -361,7 +361,7 @@ export default function ProjectsPage() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
+                  <span className="sr-only">{t_project.table.openMenu}</span>
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -460,8 +460,7 @@ export default function ProjectsPage() {
   const handleViewProject = (project: ProjectTableData) => {
     navigateWithLoading(`/projects/${project.id}`, {
       message: t_project.navigation.openingProject.replace('{{title}}', project.title),
-      showToast: true,
-      delay: 1000
+      showToast: true
     })
   }
 
@@ -603,8 +602,7 @@ export default function ProjectsPage() {
             <Button 
               onClick={() => navigateWithLoading('/projects/new-project', {
                 message: t_project.actions.loadingCreator,
-                showToast: true,
-                delay: 800
+                showToast: true
               })} 
               className="gap-2"
             >
