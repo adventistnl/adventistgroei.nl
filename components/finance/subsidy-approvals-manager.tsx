@@ -27,7 +27,8 @@ import {
   User,
   Calendar,
   TrendingUp,
-  Settings
+  Settings,
+  Info
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -223,22 +224,37 @@ export function SubsidyApprovalsManager({
     }))
   }, [subsidyData])
 
-  // KPI Data
-  // KPI Data from Backend
+  // KPI Data - Calculated directly from subsidyRequests (same source as table/kanban)
   const kpiData = useMemo(() => {
-    const kpis = analyticsData?.subsidyKPIs || {}
+    // Calculate from actual subsidy requests
+    const totalRequests = subsidyRequests.length
+    const pendingRequests = subsidyRequests.filter(r => r.status === 'pending').length
+    const inReviewRequests = subsidyRequests.filter(r => r.status === 'in_review').length
+    const approvedRequests = subsidyRequests.filter(r => r.status === 'approved').length
+    const closedRequests = subsidyRequests.filter(r => r.status === 'closed').length
+    const rejectedRequests = subsidyRequests.filter(r => r.status === 'rejected').length
+    
+    const totalRequested = subsidyRequests.reduce((sum, r) => sum + r.requested_amount, 0)
+    const totalApproved = subsidyRequests
+      .filter(r => r.status === 'approved' || r.status === 'closed')
+      .reduce((sum, r) => sum + (r.approved_amount || r.requested_amount), 0)
+    
+    const approvalRate = totalRequests > 0 
+      ? Math.round(((approvedRequests + closedRequests) / totalRequests) * 100) 
+      : 0
     
     return {
-      totalRequests: kpis.totalRequests || 0,
-      pendingRequests: kpis.pendingRequests || 0,
-      inReviewRequests: kpis.inReviewRequests || 0,
-      approvedRequests: kpis.approvedRequests || 0,
-      rejectedRequests: kpis.rejectedRequests || 0,
-      totalRequested: kpis.totalRequested || 0,
-      totalApproved: kpis.totalApproved || 0,
-      approvalRate: kpis.approvalRate || 0
+      totalRequests,
+      pendingRequests,
+      inReviewRequests,
+      approvedRequests,
+      closedRequests,
+      rejectedRequests,
+      totalRequested,
+      totalApproved,
+      approvalRate
     }
-  }, [analyticsData])
+  }, [subsidyRequests])
 
   const kpiCardsData: KPICardData[] = useMemo(() => [
     {
@@ -303,60 +319,108 @@ export function SubsidyApprovalsManager({
     }
   ], [kpiData, formatCurrency])
 
-  // Chart data
-  // Chart data from Backend returns
+  // Chart data - Calculated directly from subsidyRequests (same source as table/kanban)
   const chartData = useMemo(() => {
-    // If no analytics data, return empty structures
-    if (!analyticsData) {
-      return {
-        byStatus: [],
-        byMonth: [],
-        byDepartment: []
+    // 1. By Status (StatusOverviewChart)
+    const statusColorMap: Record<string, string> = {
+      'pending': '#f59e0b',
+      'in_review': '#3b82f6',
+      'approved': '#10b981',
+      'closed': '#059669',
+      'rejected': '#ef4444'
+    }
+    
+    const statusLabelMap: Record<string, string> = {
+      'pending': 'Pending',
+      'in_review': 'In Review',
+      'approved': 'Approved',
+      'closed': 'Closed',
+      'rejected': 'Rejected'
+    }
+    
+    // Count requests by status from actual data
+    const statusCounts: Record<string, number> = {
+      'pending': 0,
+      'in_review': 0,
+      'approved': 0,
+      'closed': 0,
+      'rejected': 0
+    }
+    
+    subsidyRequests.forEach(request => {
+      if (statusCounts[request.status] !== undefined) {
+        statusCounts[request.status]++
       }
-    }
-
-    // Map backend data to frontend chart formats
+    })
     
-    // 1. By Department (RequestsByDepartmentChart)
-    // Backend returns [{ month, department, amount }]
-    // Frontend needs [{ month: 'Jan', 'Dept A': 100, 'Dept B': 200 }]
-    const byDepartmentData: any[] = []
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    
-    if (analyticsData.subsidyByDepartment) {
-      // Group by month
-      const groupedByMonth: Record<string, any> = {}
-      
-      analyticsData.subsidyByDepartment.forEach((item: any) => {
-        if (!groupedByMonth[item.month]) {
-          groupedByMonth[item.month] = { month: item.month }
-        }
-        groupedByMonth[item.month][item.department] = item.amount
-      })
-      
-      // Convert to array and sort by month index
-      // Note: Backend returns month abbreviations like 'Jan', 'Feb'
-      byDepartmentData.push(...Object.values(groupedByMonth).sort((a: any, b: any) => {
-        return months.indexOf(a.month) - months.indexOf(b.month)
-      }))
-    }
+    const byStatusData = Object.keys(statusColorMap).map(statusKey => ({
+      status: statusLabelMap[statusKey],
+      count: statusCounts[statusKey] || 0,
+      fill: statusColorMap[statusKey]
+    }))
 
     // 2. By Month (RequestsOverTimeChart)
-    // Backend returns [{ month: 'January', approved, pending, rejected, quarter }]
-    // Frontend expects same structure
-    const byMonthData = analyticsData.subsidyByMonth || []
+    // Group requests by month from created_at
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                        'July', 'August', 'September', 'October', 'November', 'December']
+    const monthData: Record<string, any> = {}
+    
+    // Initialize all months with 0 counts
+    monthNames.forEach((month, index) => {
+      const quarter = Math.floor(index / 3) + 1
+      monthData[month] = {
+        month,
+        pending: 0,
+        in_review: 0,
+        approved: 0,
+        closed: 0,
+        rejected: 0,
+        quarter
+      }
+    })
+    
+    // Count requests by month and status
+    subsidyRequests.forEach(request => {
+      const date = new Date(request.requested_at)
+      const monthName = monthNames[date.getMonth()]
+      if (monthData[monthName] && request.status) {
+        const statusKey = request.status as 'pending' | 'in_review' | 'approved' | 'closed' | 'rejected'
+        monthData[monthName][statusKey]++
+      }
+    })
+    
+    const byMonthData = Object.values(monthData)
 
-    // 3. By Status (StatusOverviewChart)
-    // Backend returns [{ status, count, fill }]
-    // Frontend expects same structure, mapped to local colors if needed, but backend sends fill
-    const byStatusData = analyticsData.subsidyByStatus || []
+    // 3. By Department (RequestsByDepartmentChart)
+    // Group by department and month
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const departmentMonthData: Record<string, any> = {}
+    
+    // Initialize all months
+    months.forEach(month => {
+      departmentMonthData[month] = { month }
+    })
+    
+    // Aggregate amounts by department and month
+    subsidyRequests.forEach(request => {
+      const date = new Date(request.requested_at)
+      const monthAbbr = months[date.getMonth()]
+      const dept = request.department_name || 'Other'
+      
+      if (!departmentMonthData[monthAbbr][dept]) {
+        departmentMonthData[monthAbbr][dept] = 0
+      }
+      departmentMonthData[monthAbbr][dept] += request.requested_amount
+    })
+    
+    const byDepartmentData = Object.values(departmentMonthData)
 
     return {
       byStatus: byStatusData,
       byMonth: byMonthData,
       byDepartment: byDepartmentData
     }
-  }, [analyticsData])
+  }, [subsidyRequests])
 
   // Handlers
   const handleRefresh = async () => {
@@ -490,11 +554,18 @@ export function SubsidyApprovalsManager({
       header: "Request Title",
       cell: ({ row }) => (
         <div className="min-w-[200px]">
-          <div className="font-medium text-sm text-foreground">
-            {row.original.title}
-          </div>
-          <div className="text-xs text-muted-foreground mt-0.5">
-            {row.original.church_name || row.original.institution_name}
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+              <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <div className="font-medium text-sm text-foreground">
+                {row.original.title}
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                {row.original.church_name || row.original.institution_name}
+              </div>
+            </div>
           </div>
         </div>
       ),
@@ -527,19 +598,19 @@ export function SubsidyApprovalsManager({
       header: "Priority",
       cell: ({ row }) => {
         const config = priorityConfig[row.original.priority]
-        const dotColors = {
-          high: 'bg-red-500',
-          medium: 'bg-yellow-500',
-          low: 'bg-green-500'
+        const bgColors = {
+          high: 'bg-red-100 dark:bg-red-900/30 border-red-200 dark:border-red-800',
+          medium: 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800',
+          low: 'bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-800'
+        }
+        const textColors = {
+          high: 'text-red-700 dark:text-red-400',
+          medium: 'text-yellow-700 dark:text-yellow-400',
+          low: 'text-green-700 dark:text-green-400'
         }
         return (
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 w-fit">
-            <div className={`w-2 h-2 rounded-full ${dotColors[row.original.priority]}`} />
-            <span className={`text-xs font-medium ${
-              row.original.priority === 'high' ? 'text-red-700 dark:text-red-400' :
-              row.original.priority === 'medium' ? 'text-yellow-700 dark:text-yellow-400' :
-              'text-green-700 dark:text-green-400'
-            }`}>
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border w-fit ${bgColors[row.original.priority]}`}>
+            <span className={`text-xs font-medium ${textColors[row.original.priority]}`}>
               {config.label}
             </span>
           </div>
@@ -552,22 +623,23 @@ export function SubsidyApprovalsManager({
       header: "Status",
       cell: ({ row }) => {
         const config = statusConfig[row.original.status]
-        const dotColors: Record<SubsidyRequest['status'], string> = {
-          pending: 'bg-amber-500',
-          in_review: 'bg-blue-500',
-          approved: 'bg-green-500',
-          rejected: 'bg-red-500',
-          closed: 'bg-gray-500'
+        const bgColors: Record<SubsidyRequest['status'], string> = {
+          pending: 'bg-amber-100 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800',
+          in_review: 'bg-blue-100 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800',
+          approved: 'bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-800',
+          closed: 'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800',
+          rejected: 'bg-red-100 dark:bg-red-900/30 border-red-200 dark:border-red-800'
+        }
+        const textColors: Record<SubsidyRequest['status'], string> = {
+          pending: 'text-amber-700 dark:text-amber-400',
+          in_review: 'text-blue-700 dark:text-blue-400',
+          approved: 'text-green-700 dark:text-green-400',
+          closed: 'text-emerald-700 dark:text-emerald-400',
+          rejected: 'text-red-700 dark:text-red-400'
         }
         return (
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 w-fit">
-            <div className={`w-2 h-2 rounded-full ${dotColors[row.original.status]}`} />
-            <span className={`text-xs font-medium ${
-              row.original.status === 'pending' ? 'text-amber-700 dark:text-amber-400' :
-              row.original.status === 'in_review' ? 'text-blue-700 dark:text-blue-400' :
-              row.original.status === 'approved' ? 'text-green-700 dark:text-green-400' :
-              'text-red-700 dark:text-red-400'
-            }`}>
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border w-fit ${bgColors[row.original.status]}`}>
+            <span className={`text-xs font-medium ${textColors[row.original.status]}`}>
               {config.label}
             </span>
           </div>
@@ -630,11 +702,36 @@ export function SubsidyApprovalsManager({
 
   // Convert to Kanban format
   const kanbanGroups: KanbanGroup[] = [
-    { id: 'pending', name: 'Pending', color: '#f59e0b' },
-    { id: 'in_review', name: 'In Review', color: '#3b82f6' },
-    { id: 'approved', name: 'Approved', color: '#10b981' },
-    { id: 'closed', name: 'Closed', color: '#6b7280' },
-    { id: 'rejected', name: 'Rejected', color: '#ef4444' }
+    { 
+      id: 'pending', 
+      name: 'Pending', 
+      color: '#f59e0b',
+      description: 'Requests awaiting initial review'
+    },
+    { 
+      id: 'in_review', 
+      name: 'In Review', 
+      color: '#3b82f6',
+      description: 'Requests currently being analyzed by the team'
+    },
+    { 
+      id: 'approved', 
+      name: 'Approved', 
+      color: '#10b981',
+      description: 'Requests approved and ready for disbursement'
+    },
+    { 
+      id: 'closed', 
+      name: 'Closed', 
+      color: '#059669',
+      description: 'Requests completed and archived'
+    },
+    { 
+      id: 'rejected', 
+      name: 'Rejected', 
+      color: '#ef4444',
+      description: 'Requests that did not meet approval criteria'
+    }
   ]
 
   const kanbanItems: KanbanItem[] = subsidyRequests.map(request => ({

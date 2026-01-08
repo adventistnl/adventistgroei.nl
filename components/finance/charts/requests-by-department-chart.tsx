@@ -19,9 +19,17 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Building2 } from "lucide-react"
 import { useCurrency } from "@/contexts/currency-context"
+import { useChartColors } from "@/lib/chart-colors"
 
 interface RequestsByDepartmentChartProps {
   data?: any[]
@@ -36,6 +44,8 @@ export function RequestsByDepartmentChart({
 }: RequestsByDepartmentChartProps) {
   const { formatCurrency } = useCurrency()
   const [chartType, setChartType] = React.useState<"area" | "bar">("area")
+  const [timeRange, setTimeRange] = React.useState("12m")
+  const { generatePalette } = useChartColors()
 
   // Generate dynamic chart config based on actual departments in data
   const chartConfig = React.useMemo(() => {
@@ -50,29 +60,18 @@ export function RequestsByDepartmentChart({
       })
     })
     
-    const colors = [
-      "hsl(210, 100%, 50%)",   // Blue
-      "hsl(270, 95%, 60%)",    // Purple
-      "hsl(142, 71%, 45%)",    // Green
-      "hsl(43, 96%, 56%)",     // Yellow
-      "hsl(340, 75%, 55%)",    // Pink
-      "hsl(160, 60%, 45%)",    // Teal
-      "hsl(300, 65%, 55%)",    // Magenta
-      "hsl(30, 80%, 55%)",     // Orange
-      "hsl(190, 70%, 50%)",    // Cyan
-      "hsl(15, 85%, 60%)",     // Red-Orange
-    ]
+    const palette = generatePalette(departments.size)
     
     const config: any = {}
     Array.from(departments).forEach((dept, index) => {
       config[dept] = {
         label: dept,
-        color: colors[index % colors.length]
+        color: palette[index]
       }
     })
     
     return config as ChartConfig
-  }, [data])
+  }, [data, generatePalette])
 
   // Transform data to show months on X-axis and departments as separate areas
   const chartData = React.useMemo(() => {
@@ -84,10 +83,19 @@ export function RequestsByDepartmentChart({
     return data
   }, [data])
 
+  const filteredData = React.useMemo(() => {
+    if (timeRange === "6m") {
+      return chartData.slice(-6)
+    } else if (timeRange === "3m") {
+      return chartData.slice(-3)
+    }
+    return chartData
+  }, [timeRange, chartData])
+
   const totalByDepartment = React.useMemo(() => {
     const totals: Record<string, number> = {}
     
-    chartData.forEach(monthData => {
+    filteredData.forEach(monthData => {
       Object.keys(monthData).forEach(key => {
         if (key !== 'month') {
           if (!totals[key]) {
@@ -99,7 +107,7 @@ export function RequestsByDepartmentChart({
     })
     
     return totals
-  }, [chartData])
+  }, [filteredData])
 
   const topDepartment = React.useMemo(() => {
     const entries = Object.entries(totalByDepartment)
@@ -164,17 +172,40 @@ export function RequestsByDepartmentChart({
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="space-y-0">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <Building2 className="w-4 h-4" />
-              Requests Over Time by Department
-            </CardTitle>
-            <CardDescription className="text-xs mt-1">
-              Monthly subsidy requests by all departments - {selectedYear}
-            </CardDescription>
-          </div>
+      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+        <div className="grid flex-1 gap-1">
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-gray-600" />
+            Requests by Department
+          </CardTitle>
+          <CardDescription>
+            Monthly subsidy requests by department - {selectedYear}
+          </CardDescription>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {/* Time Range Selector */}
+          <Select value={timeRange} onValueChange={setTimeRange}>
+            <SelectTrigger
+              className="w-[160px] rounded-lg"
+              aria-label="Select time range"
+            >
+              <SelectValue placeholder="Last 12 months" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              <SelectItem value="12m" className="rounded-lg">
+                Last 12 months
+              </SelectItem>
+              <SelectItem value="6m" className="rounded-lg">
+                Last 6 months
+              </SelectItem>
+              <SelectItem value="3m" className="rounded-lg">
+                Last 3 months
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Chart Type Toggle */}
           <div className="flex items-center gap-1 border rounded-md p-1">
             <Button
               variant={chartType === "area" ? "default" : "ghost"}
@@ -183,7 +214,6 @@ export function RequestsByDepartmentChart({
               className="h-7 px-3 text-xs"
             >
               <Activity className="w-3 h-3 mr-1" />
-              {/* Area */}
             </Button>
             <Button
               variant={chartType === "bar" ? "default" : "ghost"}
@@ -192,21 +222,32 @@ export function RequestsByDepartmentChart({
               className="h-7 px-3 text-xs"
             >
               <BarChart3 className="w-3 h-3 mr-1" />
-              {/* Bar */}
             </Button>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 pt-6">
-        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+      <CardContent className="flex-1 px-2 pt-4 sm:px-6 sm:pt-6">
+        <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
           {chartType === "area" ? (
-            <AreaChart accessibilityLayer data={chartData}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+            <AreaChart accessibilityLayer data={filteredData}>
+              <defs>
+                {Object.keys(chartConfig).map((dept) => {
+                  const config = chartConfig[dept as keyof typeof chartConfig]
+                  return (
+                    <linearGradient key={dept} id={`fill${dept}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={config?.color} stopOpacity={0.8} />
+                      <stop offset="95%" stopColor={config?.color} stopOpacity={0.1} />
+                    </linearGradient>
+                  )
+                })}
+              </defs>
+              <CartesianGrid vertical={false} />
               <XAxis
                 dataKey="month"
                 tickLine={false}
-                tickMargin={10}
+                tickMargin={8}
                 axisLine={false}
+                minTickGap={32}
               />
               <YAxis 
                 tickFormatter={(value) => formatCurrency(value, { compact: true })}
@@ -214,35 +255,34 @@ export function RequestsByDepartmentChart({
                 axisLine={false}
               />
               <ChartTooltip 
+                cursor={false}
                 content={<ChartTooltipContent 
                   hideLabel={false}
+                  indicator="dot"
                   formatter={(value: any) => formatCurrency(typeof value === 'number' ? value : 0)}
                 />} 
               />
               <ChartLegend content={<ChartLegendContent />} />
-              {Object.keys(chartConfig).map((dept) => {
-                const config = chartConfig[dept as keyof typeof chartConfig]
-                return (
-                  <Area
-                    key={dept}
-                    dataKey={dept}
-                    type="monotone"
-                    fill={config?.color || 'hsl(210, 100%, 50%)'}
-                    fillOpacity={0.4}
-                    stroke={config?.color || 'hsl(210, 100%, 50%)'}
-                    stackId="a"
-                  />
-                )
-              })}
+              {Object.keys(chartConfig).map((dept) => (
+                <Area
+                  key={dept}
+                  dataKey={dept}
+                  type="natural"
+                  fill={`url(#fill${dept})`}
+                  stroke={chartConfig[dept as keyof typeof chartConfig]?.color}
+                  stackId="a"
+                />
+              ))}
             </AreaChart>
           ) : (
-            <BarChart accessibilityLayer data={chartData}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+            <BarChart accessibilityLayer data={filteredData}>
+              <CartesianGrid vertical={false} />
               <XAxis
                 dataKey="month"
                 tickLine={false}
-                tickMargin={10}
+                tickMargin={8}
                 axisLine={false}
+                minTickGap={32}
               />
               <YAxis 
                 tickFormatter={(value) => formatCurrency(value, { compact: true })}

@@ -4,13 +4,19 @@ import React from "react"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { CardTitle, CardDescription } from "@/components/ui/card"
-import { MoreHorizontal } from "lucide-react"
+import { MoreHorizontal, Info } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { KanbanGroup, KanbanAction } from "./kanban-board"
 
 export interface KanbanGroupHeaderProps {
@@ -43,6 +49,24 @@ export function KanbanGroupHeader({
             size="sm"
             className="flex-shrink-0"
           />
+          {group.description && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-5 w-5 p-0 flex-shrink-0 hover:bg-muted"
+                  >
+                    <Info className="w-3.5 h-3.5 text-muted-foreground" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  <p className="text-xs">{group.description}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
         
         <div className="flex items-center gap-1 flex-shrink-0">
@@ -78,12 +102,6 @@ export function KanbanGroupHeader({
           )}
         </div>
       </div>
-      
-      {group.description && (
-        <CardDescription className="text-xs line-clamp-2">
-          {group.description}
-        </CardDescription>
-      )}
     </div>
   )
 }

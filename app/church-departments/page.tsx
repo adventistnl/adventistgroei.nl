@@ -330,7 +330,12 @@ export default function ChurchDepartmentsPage() {
     {
       id: "name",
       accessorKey: "name",
-      header: t.labels?.name || "Name",
+      header: () => (
+        <div className="flex items-center gap-2">
+          <Layers className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-gray-900">{t.labels?.name || "Name"}</span>
+        </div>
+      ),
       cell: ({ row }) => (
         <div className="flex items-center gap-3 max-w-[300px]">
           <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
@@ -355,8 +360,10 @@ export default function ChurchDepartmentsPage() {
         const church = churches.find((c: ChurchData) => c.id === row.original.church_id)
         return (
           <div className="flex items-center justify-center gap-2">
-            <Home className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">{church ? church.name : '-'}</span>
+            <Badge variant="outline" className="flex items-center gap-1.5 px-2.5 py-1">
+              <Home className="h-3.5 w-3.5" />
+              <span>{church ? church.name : '-'}</span>
+            </Badge>
           </div>
         )
       },
@@ -369,42 +376,51 @@ export default function ChurchDepartmentsPage() {
       id: "members",
       accessorKey: "members_count",
       header: () => (
-        <div className="text-center font-medium text-gray-900">
-          {t.stats?.members || "Members"}
+        <div className="flex items-center justify-center gap-2">
+          <Users className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-gray-900">{t.stats?.members || "Members"}</span>
         </div>
       ),
       cell: ({ row }) => (
-        <div className="flex items-center justify-center gap-2">
-          <Users className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.users?.length || 0}</span>
+        <div className="flex items-center justify-center">
+          <Badge variant="secondary" className="flex items-center gap-1.5 px-2.5 py-1">
+            <Users className="w-3.5 h-3.5" />
+            <span className="font-semibold">{row.original.users?.length || 0}</span>
+          </Badge>
         </div>
       ),
     },
     {
       id: "open_projects",
       header: () => (
-        <div className="text-center font-medium text-gray-900">
-          {t.stats?.projects || "Projects"} (Open)
+        <div className="flex items-center justify-center gap-2">
+          <FileText className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-gray-900">{t.stats?.projects || "Projects"} (Open)</span>
         </div>
       ),
       cell: ({ row }) => (
-        <div className="flex items-center justify-center gap-2">
-          <FileText className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.open_projects || 0}</span>
+        <div className="flex items-center justify-center">
+          <Badge variant="outline" className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-700 border-blue-200">
+            <FileText className="w-3.5 h-3.5" />
+            <span className="font-semibold">{row.original.open_projects || 0}</span>
+          </Badge>
         </div>
       ),
     },
     {
       id: "completed_projects",
       header: () => (
-        <div className="text-center font-medium text-gray-900">
-          {t.stats?.projects || "Projects"} (Completed)
+        <div className="flex items-center justify-center gap-2">
+          <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-gray-900">{t.stats?.projects || "Projects"} (Completed)</span>
         </div>
       ),
       cell: ({ row }) => (
-        <div className="flex items-center justify-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.completed_projects || 0}</span>
+        <div className="flex items-center justify-center">
+          <Badge variant="outline" className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-700 border-green-200">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span className="font-semibold">{row.original.completed_projects || 0}</span>
+          </Badge>
         </div>
       ),
     },
@@ -412,8 +428,9 @@ export default function ChurchDepartmentsPage() {
       id: "status",
       accessorKey: "is_deleted",
       header: () => (
-        <div className="text-center font-medium text-gray-900">
-          {t.common?.status || "Status"}
+        <div className="flex items-center justify-center gap-2">
+          <Shield className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-gray-900">{t.common?.status || "Status"}</span>
         </div>
       ),
       cell: ({ row }) => {
@@ -443,7 +460,12 @@ export default function ChurchDepartmentsPage() {
     // },
     {
       id: "actions",
-      header: t.common?.actions || "Actions",
+      header: () => (
+        <div className="flex items-center justify-center gap-2">
+          <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-gray-900">{t.common?.actions || "Actions"}</span>
+        </div>
+      ),
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
