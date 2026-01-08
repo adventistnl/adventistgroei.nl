@@ -295,13 +295,157 @@ export const projectRegisterTranslations = {
       infoSpecialTitle: "Special Project",
       infoSpecialBody: "Special projects can request up to 100% funding when there is strategic justification.",
       infoSpecialDetails: "When enabled, the calculator allows adjusting the subsidy up to 100%.",
-      gotIt: "Got it"
+      gotIt: "Got it",
+      maxInstitutionCapacity: "Maximum institution capacity (100%):",
+      subsidyRequested: "Subsidy requested:",
+      limitPerProject: "Limit per project:",
+      unlimited: "Unlimited",
+      remainingCapacity: "Remaining capacity:",
+      activitiesCount: "{{count}} activities",
+      activitiesCount_one: "{{count}} activity",
+      subsidizedSubtotal: "Subsidized Subtotal:"
     },
     info: {
       churchProjectDescription: "This will link the project directly to a local church"
     },
     noResults: {
-      church: "No church found."
+      church: "No church found.",
+      department: "No department found.",
+      user: "No user found."
+    },
+    eventRegistration: {
+      header: "Event Registration",
+      subtitle: "Configure the event associated with the project",
+      description: "Define the event details that will be created to publicize and organize the project activities."
+    },
+    communication: {
+      header: "Communication",
+      subtitle: "Configure project communication",
+      description: "Create communications to promote the project, recruit volunteers or inform about progress.",
+      titlePrefix: "Communication:",
+      contentPlaceholder: "Write your communication content here..."
+    },
+    activityForm: {
+      editTitle: "Edit Activity",
+      addTitle: "Add Activity",
+      cancelEdit: "Cancel Edit",
+      activityName: "Activity Name",
+      activityNamePlaceholder: "Enter activity name",
+      budgetValue: "Budget Amount",
+      activityDescription: "Activity Description",
+      activityDescriptionPlaceholder: "Describe the activity in detail",
+      requestSubsidy: "Request Subsidy?",
+      requestSubsidyDescription: "Does this activity need institutional subsidy?",
+      activityTags: "Activity Tags",
+      activityResponsibles: "Activity Responsibles",
+      selectResponsibles: "Select responsibles...",
+      searchUsers: "Search users...",
+      noUsersFound: "No users found.",
+      responsiblesDescription: "Select one or more users responsible for this activity",
+      updateActivity: "Update Activity",
+      addActivity: "Add Activity",
+      quickActivitySelected: "Quick Activity selected: \"{{name}}\""
+    },
+    quickActivities: {
+      templeRenovation: {
+        name: "Temple Renovation",
+        description: "General temple renovation including painting, flooring and lighting"
+      },
+      soundEquipment: {
+        name: "Sound Equipment Purchase",
+        description: "Acquisition of complete sound system for the temple"
+      },
+      missionaryTrip: {
+        name: "Missionary Trip",
+        description: "Trip for evangelism in underserved communities"
+      },
+      leadershipTraining: {
+        name: "Leadership Training",
+        description: "Training course for church leaders"
+      },
+      evangelismEvent: {
+        name: "Evangelism Event",
+        description: "Public event for community evangelization"
+      }
+    },
+    tags: {
+      reform: "Reform",
+      equipment: "Equipment",
+      travel: "Travel",
+      events: "Events",
+      materials: "Materials",
+      training: "Training",
+      marketing: "Marketing",
+      food: "Food",
+      transport: "Transport",
+      accommodation: "Accommodation",
+      technology: "Technology",
+      maintenance: "Maintenance",
+      supplies: "Supplies"
+    },
+    fundingDistribution: {
+      financialAnalysis: "Project financial analysis",
+      totalProjectCost: "Total Project Cost",
+      subsidizedActivities: "Subsidized Activities",
+      nonSubsidizedActivities: "Non-Subsidized Activities",
+      responsibilityDistribution: "Responsibility Distribution",
+      church: "Church",
+      institution: "Institution",
+      churchPlanting: "Church Planting",
+      churchPlantingInfoTitle: "Church Planting - Special Information",
+      specialProjectInfoTitle: "Special Project - Additional Information",
+      specialFundingRules: "Special Funding Rules",
+      subsidyUpTo100: "Subsidy up to 100%",
+      noValueLimit: "No value limit",
+      justificationAnalysis: "Justification analysis",
+      missionaryPriority: "Missionary priority",
+      churchPlantingDetails: "Church Planting Details",
+      specialProjectJustification: "Special Project Justification",
+      plantingLocation: "Planting Location",
+      locationPlaceholder: "City, region or specific address...",
+      plantingDescriptionPlaceholder: "Describe the location, target community, planting strategy, necessary resources...",
+      specialJustificationPlaceholder: "Explain the strategic importance, social or missionary impact that justifies special funding...",
+      institutionContributionValue: "Institution Contribution Amount",
+      contributionPercentage: "Contribution Percentage",
+      appliedOver: "Applied over",
+      maximum: "Maximum",
+      noSubsidy: "No Subsidy",
+      specialProject: "Special Project",
+      regularMaximum: "Regular Maximum",
+      churchContribution: "Church Contribution",
+      institutionContribution: "Institution Contribution",
+      churchResponsibilityTooltip: "Total amount the church will be responsible for financing",
+      includesNonSubsidized: "Includes all non-subsidized activities + church portion in subsidized ones",
+      subsidyCalculatedOver: "Subsidy calculated over",
+      calculationBase: "Calculation base",
+      distributionByActivities: "Distribution by Activities",
+      dragToRecalculate: "Drag activities between groups to recalculate automatically",
+      maxAllowedError: "Maximum allowed: {{percent}}%. Use Special Project or Church Planting for higher values.",
+      percentExceeded: "⚠️ PERCENTAGE EXCEEDED: Maximum {{percent}}% allowed",
+      limitExceeded: "LIMIT EXCEEDED",
+      limitReachedMessage: "This is the maximum the institution can grant",
+      ofTotalBudget: "of total budget",
+      overSubsidizedActivities: "over subsidized activities",
+      inSubsidizedActivities: "in subsidized activities",
+      churchPlantingDetailsRequired: "Details are required for Church Planting",
+      statusCompliant: "✓ Compliant",
+      statusExceeded: "✗ Exceeded",
+      statusInsufficient: "✗ Insufficient",
+      statusSpecial: "✓ Special",
+      minimumChurch: "Minimum church",
+      maxPercentageLabel: "Maximum percentage",
+      maxValueLabel: "Maximum value"
+    },
+    review: {
+      totalBudget: "Total Budget",
+      church: "Church",
+      institution: "Institution",
+      activities: "Activities",
+      totalActivities: "Total Activities",
+      subsidized: "Subsidized",
+      nonSubsidized: "Non-Subsidized",
+      specialProject: "Special Project",
+      activitiesRegistered: "activities registered"
     }
   },
   pt: {
@@ -600,13 +744,157 @@ export const projectRegisterTranslations = {
       infoSpecialTitle: "Projeto Especial",
       infoSpecialBody: "Projetos especiais podem solicitar até 100% de funding quando houver justificativa estratégica.",
       infoSpecialDetails: "Ao habilitar, a calculadora permite ajustar o subsídio até 100%.",
-      gotIt: "Entendi"
+      gotIt: "Entendi",
+      maxInstitutionCapacity: "Capacidade máxima instituição (100%):",
+      subsidyRequested: "Subsídio solicitado:",
+      limitPerProject: "Limite por projeto:",
+      unlimited: "Ilimitado",
+      remainingCapacity: "Capacidade restante:",
+      activitiesCount: "{{count}} atividades",
+      activitiesCount_one: "{{count}} atividade",
+      subsidizedSubtotal: "Subtotal Subsidiadas:"
     },
     info: {
       churchProjectDescription: "Isso vinculará o projeto diretamente a uma igreja local"
     },
     noResults: {
-      church: "Nenhuma igreja encontrada."
+      church: "Nenhuma igreja encontrada.",
+      department: "Nenhum departamento encontrado.",
+      user: "Nenhum usuário encontrado."
+    },
+    eventRegistration: {
+      header: "Registro de Evento",
+      subtitle: "Configure o evento associado ao projeto",
+      description: "Defina os detalhes do evento que será criado para divulgar e organizar as atividades do projeto."
+    },
+    communication: {
+      header: "Comunicação",
+      subtitle: "Configure a comunicação do projeto",
+      description: "Crie comunicações para divulgar o projeto, recrutar voluntários ou informar sobre progresso.",
+      titlePrefix: "Comunicação:",
+      contentPlaceholder: "Escreva o conteúdo da sua comunicação aqui..."
+    },
+    activityForm: {
+      editTitle: "Editar Atividade",
+      addTitle: "Adicionar Atividade",
+      cancelEdit: "Cancelar Edição",
+      activityName: "Nome da Atividade",
+      activityNamePlaceholder: "Digite o nome da atividade",
+      budgetValue: "Valor do Orçamento",
+      activityDescription: "Descrição da Atividade",
+      activityDescriptionPlaceholder: "Descreva a atividade detalhadamente",
+      requestSubsidy: "Solicitar Subsídio?",
+      requestSubsidyDescription: "Esta atividade precisa de subsídio da instituição?",
+      activityTags: "Tags da Atividade",
+      activityResponsibles: "Responsáveis pela Atividade",
+      selectResponsibles: "Selecionar responsáveis...",
+      searchUsers: "Procurar usuários...",
+      noUsersFound: "Nenhum usuário encontrado.",
+      responsiblesDescription: "Selecione um ou mais usuários responsáveis por esta atividade",
+      updateActivity: "Atualizar Atividade",
+      addActivity: "Adicionar Atividade",
+      quickActivitySelected: "Quick Activity selecionada: \"{{name}}\""
+    },
+    quickActivities: {
+      templeRenovation: {
+        name: "Reforma do Templo",
+        description: "Reforma geral do templo incluindo pintura, piso e iluminação"
+      },
+      soundEquipment: {
+        name: "Compra de Equipamentos de Som",
+        description: "Aquisição de sistema de som completo para o templo"
+      },
+      missionaryTrip: {
+        name: "Viagem Missionária",
+        description: "Viagem para evangelismo em comunidades carentes"
+      },
+      leadershipTraining: {
+        name: "Treinamento de Liderança",
+        description: "Curso de capacitação para líderes da igreja"
+      },
+      evangelismEvent: {
+        name: "Evento de Evangelismo",
+        description: "Evento público para evangelização da comunidade"
+      }
+    },
+    tags: {
+      reform: "Reforma",
+      equipment: "Equipamentos",
+      travel: "Viagens",
+      events: "Eventos",
+      materials: "Materiais",
+      training: "Treinamento",
+      marketing: "Marketing",
+      food: "Alimentação",
+      transport: "Transporte",
+      accommodation: "Hospedagem",
+      technology: "Tecnologia",
+      maintenance: "Manutenção",
+      supplies: "Suprimentos"
+    },
+    fundingDistribution: {
+      financialAnalysis: "Análise financeira do projeto",
+      totalProjectCost: "Custo Total do Projeto",
+      subsidizedActivities: "Atividades Subsidiadas",
+      nonSubsidizedActivities: "Atividades Não Subsidiadas",
+      responsibilityDistribution: "Distribuição de Responsabilidade",
+      church: "Igreja",
+      institution: "Instituição",
+      churchPlanting: "Church Planting",
+      churchPlantingInfoTitle: "Church Planting - Informações Especiais",
+      specialProjectInfoTitle: "Projeto Especial - Informações Adicionais",
+      specialFundingRules: "Regras de Funding Especial",
+      subsidyUpTo100: "Subsídio até 100%",
+      noValueLimit: "Sem limite de valor",
+      justificationAnalysis: "Análise de justificativa",
+      missionaryPriority: "Prioridade missionária",
+      churchPlantingDetails: "Detalhes da Plantação de Igreja",
+      specialProjectJustification: "Justificativa do Projeto Especial",
+      plantingLocation: "Localização da Plantação",
+      locationPlaceholder: "Cidade, região ou endereço específico...",
+      plantingDescriptionPlaceholder: "Descreva a localização, comunidade alvo, estratégia de plantação, recursos necessários...",
+      specialJustificationPlaceholder: "Explique a importância estratégica, impacto social ou missionário que justifica o funding especial...",
+      institutionContributionValue: "Valor de Contribuição da Instituição",
+      contributionPercentage: "Porcentagem de Contribuição",
+      appliedOver: "Aplicado sobre",
+      maximum: "Máximo",
+      noSubsidy: "Sem Subsídio",
+      specialProject: "Projeto Especial",
+      regularMaximum: "Máximo Regular",
+      churchContribution: "Contribuição da Igreja",
+      institutionContribution: "Contribuição da Instituição",
+      churchResponsibilityTooltip: "Valor total que a igreja será responsável por financiar",
+      includesNonSubsidized: "Inclui todas as atividades não-subsidiadas + parte da igreja nas subsidiadas",
+      subsidyCalculatedOver: "Subsídio calculado sobre",
+      calculationBase: "Base de cálculo",
+      distributionByActivities: "Distribuição por Atividades",
+      dragToRecalculate: "Arraste atividades entre grupos para recalcular automaticamente",
+      maxAllowedError: "Máximo permitido: {{percent}}%. Use Projeto Especial ou Church Planting para valores maiores.",
+      percentExceeded: "⚠️ PORCENTAGEM EXCEDIDA: Máximo {{percent}}% permitido",
+      limitExceeded: "LIMITE EXCEDIDO",
+      limitReachedMessage: "Este é o máximo que a instituição pode conceder",
+      ofTotalBudget: "do orçamento total",
+      overSubsidizedActivities: "sobre atividades subsidiadas",
+      inSubsidizedActivities: "em atividades subsidiadas",
+      churchPlantingDetailsRequired: "Detalhes são obrigatórios para Church Planting",
+      statusCompliant: "✓ Conforme",
+      statusExceeded: "✗ Excedido",
+      statusInsufficient: "✗ Insuficiente",
+      statusSpecial: "✓ Especial",
+      minimumChurch: "Igreja mínima",
+      maxPercentageLabel: "Percentual máximo",
+      maxValueLabel: "Valor máximo"
+    },
+    review: {
+      totalBudget: "Orçamento Total",
+      church: "Igreja",
+      institution: "Instituição",
+      activities: "Atividades",
+      totalActivities: "Total de Atividades",
+      subsidized: "Subsidiadas",
+      nonSubsidized: "Não Subsidiadas",
+      specialProject: "Projeto Especial",
+      activitiesRegistered: "atividades registradas"
     }
   },
   nl: {
@@ -792,13 +1080,164 @@ export const projectRegisterTranslations = {
       nonSubsidizedActivities: "Niet-gesubsidieerde Activiteiten",
       dragToCalculate: "Sleep activiteiten om financiering te berekenen",
       recalculateAutomatically: "Waarden herberekenen automatisch",
-      fundingRules: "Financieringsregels"
+      fundingRules: "Financieringsregels",
+      infoChurchPlantingTitle: "Church Planting",
+      infoChurchPlantingBody: "Church planting projecten kunnen tot 100% financiering van de instelling aanvragen vanwege hun missionaire impact.",
+      infoChurchPlantingDetails: "Gebruik deze optie wanneer het project het starten van een nieuwe gemeente omvat. De subsidielimiet wordt 100%.",
+      infoSpecialTitle: "Speciaal Project",
+      infoSpecialBody: "Speciale projecten kunnen tot 100% financiering aanvragen. Gebruik wanneer er relevante strategische of sociale rechtvaardiging is.",
+      infoSpecialDetails: "Bij activering kan de calculator de subsidie tot 100% aanpassen.",
+      gotIt: "Begrepen",
+      maxInstitutionCapacity: "Maximale capaciteit instelling (100%):",
+      subsidyRequested: "Aangevraagde subsidie:",
+      limitPerProject: "Limiet per project:",
+      unlimited: "Onbeperkt",
+      remainingCapacity: "Resterende capaciteit:",
+      activitiesCount: "{{count}} activiteiten",
+      activitiesCount_one: "{{count}} activiteit",
+      subsidizedSubtotal: "Subtotaal Gesubsidieerd:"
     },
     info: {
       churchProjectDescription: "Dit koppelt het project direct aan een lokale kerk"
     },
     noResults: {
-      church: "Geen kerk gevonden."
+      church: "Geen kerk gevonden.",
+      department: "Geen afdeling gevonden.",
+      user: "Geen gebruiker gevonden."
+    },
+    eventRegistration: {
+      header: "Evenement Registratie",
+      subtitle: "Configureer het evenement gekoppeld aan het project",
+      description: "Definieer de evenementdetails die worden gemaakt om de projectactiviteiten te promoten en organiseren."
+    },
+    communication: {
+      header: "Communicatie",
+      subtitle: "Configureer projectcommunicatie",
+      description: "Maak communicaties om het project te promoten, vrijwilligers te werven of te informeren over de voortgang.",
+      titlePrefix: "Communicatie:",
+      contentPlaceholder: "Schrijf hier uw communicatie-inhoud..."
+    },
+    activityForm: {
+      editTitle: "Activiteit Bewerken",
+      addTitle: "Activiteit Toevoegen",
+      cancelEdit: "Bewerking Annuleren",
+      activityName: "Activiteitsnaam",
+      activityNamePlaceholder: "Voer activiteitsnaam in",
+      budgetValue: "Budgetbedrag",
+      activityDescription: "Activiteitsbeschrijving",
+      activityDescriptionPlaceholder: "Beschrijf de activiteit in detail",
+      requestSubsidy: "Subsidie Aanvragen?",
+      requestSubsidyDescription: "Heeft deze activiteit institutionele subsidie nodig?",
+      activityTags: "Activiteitstags",
+      activityResponsibles: "Activiteitsverantwoordelijken",
+      selectResponsibles: "Selecteer verantwoordelijken...",
+      searchUsers: "Zoek gebruikers...",
+      noUsersFound: "Geen gebruikers gevonden.",
+      responsiblesDescription: "Selecteer één of meer gebruikers die verantwoordelijk zijn voor deze activiteit",
+      updateActivity: "Activiteit Bijwerken",
+      addActivity: "Activiteit Toevoegen",
+      quickActivitySelected: "Snelle activiteit geselecteerd: \"{{name}}\""
+    },
+    quickActivities: {
+      templeRenovation: {
+        name: "Tempelrenovatie",
+        description: "Algemene tempelrenovatie inclusief schilderwerk, vloeren en verlichting"
+      },
+      soundEquipment: {
+        name: "Aankoop Geluidsapparatuur",
+        description: "Aanschaf van compleet geluidssysteem voor de tempel"
+      },
+      missionaryTrip: {
+        name: "Missionaire Reis",
+        description: "Reis voor evangelisatie in achtergestelde gemeenschappen"
+      },
+      leadershipTraining: {
+        name: "Leiderschapstraining",
+        description: "Trainingscursus voor kerkleiders"
+      },
+      evangelismEvent: {
+        name: "Evangelisatie Evenement",
+        description: "Openbaar evenement voor gemeenschapsevangelisatie"
+      }
+    },
+    tags: {
+      reform: "Renovatie",
+      equipment: "Apparatuur",
+      travel: "Reizen",
+      events: "Evenementen",
+      materials: "Materialen",
+      training: "Training",
+      marketing: "Marketing",
+      food: "Voedsel",
+      transport: "Transport",
+      accommodation: "Accommodatie",
+      technology: "Technologie",
+      maintenance: "Onderhoud",
+      supplies: "Benodigdheden"
+    },
+    fundingDistribution: {
+      financialAnalysis: "Financiële projectanalyse",
+      totalProjectCost: "Totale Projectkosten",
+      subsidizedActivities: "Gesubsidieerde Activiteiten",
+      nonSubsidizedActivities: "Niet-gesubsidieerde Activiteiten",
+      responsibilityDistribution: "Verantwoordelijkheidsverdeling",
+      church: "Kerk",
+      institution: "Instelling",
+      churchPlanting: "Church Planting",
+      churchPlantingInfoTitle: "Church Planting - Speciale Informatie",
+      specialProjectInfoTitle: "Speciaal Project - Aanvullende Informatie",
+      specialFundingRules: "Speciale Financieringsregels",
+      subsidyUpTo100: "Subsidie tot 100%",
+      noValueLimit: "Geen waardelimiet",
+      justificationAnalysis: "Rechtvaardigingsanalyse",
+      missionaryPriority: "Missionaire prioriteit",
+      churchPlantingDetails: "Church Planting Details",
+      specialProjectJustification: "Speciaal Project Rechtvaardiging",
+      plantingLocation: "Plantingslocatie",
+      locationPlaceholder: "Stad, regio of specifiek adres...",
+      plantingDescriptionPlaceholder: "Beschrijf de locatie, doelgroep, plantingsstrategie, benodigde middelen...",
+      specialJustificationPlaceholder: "Leg het strategische belang, sociale of missionaire impact uit die speciale financiering rechtvaardigt...",
+      institutionContributionValue: "Instellingsbijdragebedrag",
+      contributionPercentage: "Bijdragepercentage",
+      appliedOver: "Toegepast op",
+      maximum: "Maximum",
+      noSubsidy: "Geen Subsidie",
+      specialProject: "Speciaal Project",
+      regularMaximum: "Regulier Maximum",
+      churchContribution: "Kerkbijdrage",
+      institutionContribution: "Instellingsbijdrage",
+      churchResponsibilityTooltip: "Totaalbedrag waarvoor de kerk verantwoordelijk zal zijn voor financiering",
+      includesNonSubsidized: "Omvat alle niet-gesubsidieerde activiteiten + kerkgedeelte in gesubsidieerde",
+      subsidyCalculatedOver: "Subsidie berekend over",
+      calculationBase: "Berekeningsbasis",
+      distributionByActivities: "Verdeling per Activiteiten",
+      dragToRecalculate: "Sleep activiteiten tussen groepen om automatisch opnieuw te berekenen",
+      maxAllowedError: "Maximum toegestaan: {{percent}}%. Gebruik Speciaal Project of Church Planting voor hogere waarden.",
+      percentExceeded: "⚠️ PERCENTAGE OVERSCHREDEN: Maximum {{percent}}% toegestaan",
+      limitExceeded: "LIMIET OVERSCHREDEN",
+      limitReachedMessage: "Dit is het maximum dat de instelling kan verstrekken",
+      ofTotalBudget: "van totaal budget",
+      overSubsidizedActivities: "over gesubsidieerde activiteiten",
+      inSubsidizedActivities: "in gesubsidieerde activiteiten",
+      churchPlantingDetailsRequired: "Details zijn verplicht voor Church Planting",
+      statusCompliant: "✓ Conform",
+      statusExceeded: "✗ Overschreden",
+      statusInsufficient: "✗ Onvoldoende",
+      statusSpecial: "✓ Speciaal",
+      minimumChurch: "Minimum kerk",
+      maxPercentageLabel: "Maximum percentage",
+      maxValueLabel: "Maximum waarde"
+    },
+    review: {
+      totalBudget: "Totaal Budget",
+      church: "Kerk",
+      institution: "Instelling",
+      activities: "Activiteiten",
+      totalActivities: "Totaal Activiteiten",
+      subsidized: "Gesubsidieerd",
+      nonSubsidized: "Niet-gesubsidieerd",
+      specialProject: "Speciaal Project",
+      activitiesRegistered: "activiteiten geregistreerd"
     }
   }
 }
