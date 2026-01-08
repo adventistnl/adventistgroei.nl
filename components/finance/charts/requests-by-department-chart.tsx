@@ -27,12 +27,25 @@ interface RequestsByDepartmentChartProps {
   data?: any[]
   loading?: boolean
   selectedYear?: number
+  translations?: {
+    title: string
+    description: string
+    descriptionWithYear: string
+    noData: string
+    departmentsTracked: string
+    top: string
+    chartTypes: {
+      area: string
+      bar: string
+    }
+  }
 }
 
 export function RequestsByDepartmentChart({ 
   data, 
   loading,
-  selectedYear = new Date().getFullYear()
+  selectedYear = new Date().getFullYear(),
+  translations
 }: RequestsByDepartmentChartProps) {
   const { formatCurrency } = useCurrency()
   const [chartType, setChartType] = React.useState<"area" | "bar">("area")
@@ -146,16 +159,16 @@ export function RequestsByDepartmentChart({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building2 className="w-5 h-5" />
-            Requests Over Time by Department
+            {translations?.title || "Requests Over Time by Department"}
           </CardTitle>
           <CardDescription>
-            Monthly subsidy requests by all departments
+            {translations?.description || "Monthly subsidy requests by all departments"}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex items-center justify-center">
           <div className="text-center text-muted-foreground">
             <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p>No department data available</p>
+            <p>{translations?.noData || "No department data available"}</p>
           </div>
         </CardContent>
       </Card>
@@ -169,10 +182,10 @@ export function RequestsByDepartmentChart({
           <div className="flex-1">
             <CardTitle className="flex items-center gap-2 text-sm">
               <Building2 className="w-4 h-4" />
-              Requests Over Time by Department
+              {translations?.title || "Requests Over Time by Department"}
             </CardTitle>
             <CardDescription className="text-xs mt-1">
-              Monthly subsidy requests by all departments - {selectedYear}
+              {translations?.descriptionWithYear.replace('{{year}}', selectedYear.toString()) || `Monthly subsidy requests by all departments - ${selectedYear}`}
             </CardDescription>
           </div>
           <div className="flex items-center gap-1 border rounded-md p-1">
@@ -183,7 +196,7 @@ export function RequestsByDepartmentChart({
               className="h-7 px-3 text-xs"
             >
               <Activity className="w-3 h-3 mr-1" />
-              {/* Area */}
+              {translations?.chartTypes.area || "Area"}
             </Button>
             <Button
               variant={chartType === "bar" ? "default" : "ghost"}
@@ -192,7 +205,7 @@ export function RequestsByDepartmentChart({
               className="h-7 px-3 text-xs"
             >
               <BarChart3 className="w-3 h-3 mr-1" />
-              {/* Bar */}
+              {translations?.chartTypes.bar || "Bar"}
             </Button>
           </div>
         </div>
@@ -275,10 +288,10 @@ export function RequestsByDepartmentChart({
       <CardFooter className="flex-col items-start gap-1 text-xs pt-3 border-t">
         <div className="flex items-center gap-1.5 font-medium">
           <TrendingUp className="h-3 w-3" />
-          {Object.keys(chartConfig).length} departments tracked
+          {translations?.departmentsTracked.replace('{{count}}', Object.keys(chartConfig).length.toString()) || `${Object.keys(chartConfig).length} departments tracked`}
         </div>
         <div className="text-muted-foreground">
-          Top: <span className="font-medium text-foreground">{topDepartment.name}</span> ({formatCurrency(topDepartment.total)})
+          {translations?.top || "Top"}: <span className="font-medium text-foreground">{topDepartment.name}</span> ({formatCurrency(topDepartment.total)})
         </div>
       </CardFooter>
     </Card>

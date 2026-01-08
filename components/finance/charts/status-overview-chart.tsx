@@ -25,22 +25,69 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react"
+import { Clock, CheckCircle, XCircle, AlertCircle, FileText } from "lucide-react"
 
 interface StatusOverviewChartProps {
   data?: Array<{ status: string; count: number; fill: string }>
   loading?: boolean
+  translations?: {
+    title: string
+    description: string
+    selectStatus: string
+    selectLabel: string
+    requests: string
+    total: string
+    statusLabels: {
+      pending: string
+      in_review: string
+      approved: string
+      rejected: string
+      closed: string
+    }
+  }
 }
 
-export function StatusOverviewChart({ data, loading }: StatusOverviewChartProps) {
+export function StatusOverviewChart({ data, loading, translations }: StatusOverviewChartProps) {
   const id = "status-overview"
 
-  const chartData = data || [
-    { status: 'Pending', count: 8, fill: '#f59e0b' },
-    { status: 'In Review', count: 5, fill: '#3b82f6' },
-    { status: 'Approved', count: 12, fill: '#10b981' },
-    { status: 'Rejected', count: 3, fill: '#ef4444' }
+  // Define all possible statuses with their default colors
+  const allStatuses = [
+    { status: 'Pending', fill: '#f59e0b' },
+    { status: 'In Review', fill: '#3b82f6' },
+    { status: 'Approved', fill: '#10b981' },
+    { status: 'Rejected', fill: '#ef4444' },
+    { status: 'Closed', fill: '#6b7280' }
   ]
+
+  // Merge backend data with all statuses, ensuring all statuses appear
+  const chartData = React.useMemo(() => {
+    if (!data || data.length === 0) {
+      // No backend data, use defaults with sample counts
+      return [
+        { status: 'Pending', count: 8, fill: '#f59e0b' },
+        { status: 'In Review', count: 5, fill: '#3b82f6' },
+        { status: 'Approved', count: 12, fill: '#10b981' },
+        { status: 'Rejected', count: 3, fill: '#ef4444' },
+        { status: 'Closed', count: 2, fill: '#6b7280' }
+      ]
+    }
+
+    // Backend data exists, merge with all statuses
+    return allStatuses.map(statusDef => {
+      // Try to find backend data with case-insensitive and format-flexible matching
+      const backendData = data.find(d => {
+        const backendStatus = d.status?.toLowerCase().replace(/[_\s]/g, '')
+        const defStatus = statusDef.status.toLowerCase().replace(/[_\s]/g, '')
+        return backendStatus === defStatus
+      })
+      
+      return {
+        status: statusDef.status,
+        count: backendData?.count || 0,
+        fill: backendData?.fill || statusDef.fill
+      }
+    })
+  }, [data])
 
   const hasData = chartData.length > 0
 
@@ -48,28 +95,40 @@ export function StatusOverviewChart({ data, loading }: StatusOverviewChartProps)
     'Pending': Clock,
     'In Review': AlertCircle,
     'Approved': CheckCircle,
-    'Rejected': XCircle
+    'Rejected': XCircle,
+    'Closed': FileText
   }
 
   // Generate chart config dynamically
   const chartConfig: ChartConfig = React.useMemo(() => {
     const config: Record<string, { label: string; color: string; icon?: React.ComponentType<any> }> = {
       count: {
-        label: "Requests",
+        label: translations?.requests || "Requests",
+        color: "hsl(var(--chart-1))"
       }
     }
     
     chartData.forEach((item) => {
       const statusKey = item.status.toLowerCase().replace(' ', '_')
+      
+      // Map status to translation key
+      let translatedLabel = item.status
+      if (translations?.statusLabels) {
+        const labelKey = statusKey as keyof typeof translations.statusLabels
+        if (translations.statusLabels[labelKey]) {
+          translatedLabel = translations.statusLabels[labelKey]
+        }
+      }
+      
       config[statusKey] = {
-        label: item.status,
+        label: translatedLabel,
         color: item.fill,
         icon: statusIcons[item.status as keyof typeof statusIcons]
       }
     })
     
     return config
-  }, [chartData])
+  }, [chartData, translations])
 
   const [activeStatus, setActiveStatus] = React.useState(hasData ? chartData[0].status : "")
 
@@ -105,18 +164,18 @@ export function StatusOverviewChart({ data, loading }: StatusOverviewChartProps)
         <div className="grid gap-1 flex-1">
           <CardTitle className="flex items-center gap-2">
             <CheckCircle className="w-5 h-5 text-gray-600" />
-            Status Overview
+            {translations?.title || "Status Overview"}
           </CardTitle>
           <CardDescription>
-            Distribution of requests by current status
+            {translations?.description || "Distribution of requests by current status"}
           </CardDescription>
         </div>
         <Select value={activeStatus} onValueChange={setActiveStatus}>
           <SelectTrigger
             className="ml-auto h-7 w-[160px] rounded-lg pl-2.5"
-            aria-label="Select a status"
+            aria-label={translations?.selectLabel || "Select a status"}
           >
-            <SelectValue placeholder="Select status" />
+            <SelectValue placeholder={translations?.selectStatus || "Select status"} />
           </SelectTrigger>
           <SelectContent align="end" className="rounded-xl">
             {statusKeys.map((key) => {
@@ -204,7 +263,7 @@ export function StatusOverviewChart({ data, loading }: StatusOverviewChartProps)
                           y={(viewBox.cy || 0) + 24}
                           className="fill-muted-foreground"
                         >
-                          Requests
+                          {translations?.requests || "Requests"}
                         </tspan>
                       </text>
                     )
@@ -217,10 +276,10 @@ export function StatusOverviewChart({ data, loading }: StatusOverviewChartProps)
       </CardContent>
       <CardFooter className="flex-col gap-2 text-sm">
         <div className="flex items-center gap-2 font-medium leading-none">
-          Total: {totalRequests.toLocaleString()} requests
+          {translations?.total || "Total"}: {totalRequests.toLocaleString()} {translations?.requests.toLowerCase() || "requests"}
         </div>
         <div className="leading-none text-muted-foreground">
-          {activeStatus}: {chartData[activeIndex]?.count || 0} ({Math.round(((chartData[activeIndex]?.count || 0) / totalRequests) * 100)}%)
+          {chartConfig[activeStatus.toLowerCase().replace(' ', '_') as keyof typeof chartConfig]?.label || activeStatus}: {chartData[activeIndex]?.count || 0} ({totalRequests > 0 ? Math.round(((chartData[activeIndex]?.count || 0) / totalRequests) * 100) : 0}%)
         </div>
       </CardFooter>
     </Card>

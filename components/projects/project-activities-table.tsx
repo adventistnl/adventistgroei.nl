@@ -51,6 +51,7 @@ import { mockProjectActivities, getActivitiesByProjectId } from "@/data/mockData
 import { ActivityDetailsModal } from "@/components/modals/project/activity-details-modal"
 import { DeleteActivityModal } from "@/components/modals/project/delete-activity-modal"
 import { ActivityTags } from "@/types/graphql-global-types"
+import { projectTranslations } from "@/lib/translations/projects"
 
 // Schema-based interfaces
 export interface ProjectActivityData {
@@ -218,8 +219,11 @@ export function ProjectActivitiesTable({
   batchPrimaryAction,
   batchSummary
 }: ProjectActivitiesTableProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { selectedCurrency, formatCurrency } = useCurrency()
+  const langKey = i18n.language as keyof typeof projectTranslations
+  const pt = projectTranslations[langKey] || projectTranslations.en
+  
   const [isViewActivityModalOpen, setIsViewActivityModalOpen] = useState(false)
   const [selectedActivityForView, setSelectedActivityForView] = useState<ProjectActivityData | null>(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -262,34 +266,19 @@ export function ProjectActivitiesTable({
 
   const getActivityTagLabel = (tag?: ActivityTags) => {
     if (!tag) return ''
-
-    const labels: Record<ActivityTags, string> = {
-      [ActivityTags.Reform]: 'Reforma',
-      [ActivityTags.Equipment]: 'Equipamento',
-      [ActivityTags.Materials]: 'Material',
-      [ActivityTags.Training]: 'Treinamento',
-      [ActivityTags.Travel]: 'Viagem',
-      [ActivityTags.Event]: 'Evento',
-      [ActivityTags.Transport]: 'Transporte',
-      [ActivityTags.Marketing]: 'Marketing',
-      [ActivityTags.Services]: 'Serviços',
-      [ActivityTags.Feeding]: 'Alimentação',
-      [ActivityTags.Accommodation]: 'Acomodação',
-    }
-
-    return labels[tag] || tag
+    return pt.activityTags[tag] || tag
   }
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
-      "TODO": "Pendente",
-      "todo": "Pendente",
-      "IN_PROGRESS": "Em Andamento",
-      "in_progress": "Em Andamento",
-      "COMPLETED": "Concluído",
-      "completed": "Concluído",
-      "ON_HOLD": "Em Espera",
-      "on_hold": "Em Espera"
+      "TODO": pt.filters.pending,
+      "todo": pt.filters.pending,
+      "IN_PROGRESS": pt.filters.inProgress,
+      "in_progress": pt.filters.inProgress,
+      "COMPLETED": pt.filters.completed,
+      "completed": pt.filters.completed,
+      "ON_HOLD": pt.filters.onHold,
+      "on_hold": pt.filters.onHold
     }
 
     return labels[status] || status
@@ -350,14 +339,13 @@ export function ProjectActivitiesTable({
   }
   const getPriorityLabel = (priority: string) => {
     const labels: Record<string, string> = {
-      "urgent": "Urgente",
-      "high": "Alta",
-      "medium": "Média",
-      "low": "Baixa"
+      "urgent": pt.filters.urgent,
+      "high": pt.filters.high,
+      "medium": pt.filters.medium,
+      "low": pt.filters.low
     }
     return labels[priority.toLowerCase()] || priority
   }
-
 
   // Event handlers
   const handleManageActivity = (activity: ProjectActivityData) => {
@@ -377,12 +365,7 @@ export function ProjectActivitiesTable({
     {
       id: "name",
       accessorKey: "name",
-      header: () => (
-        <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4" />
-          <span>{t('activities.table.activity')}</span>
-        </div>
-      ),
+      header: pt.activitiesTable.activity,
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -400,12 +383,7 @@ export function ProjectActivitiesTable({
     {
       id: "tags",
       accessorKey: "tags",
-      header: () => (
-        <div className="flex items-center gap-2">
-          <Tag className="w-4 h-4" />
-          <span>{t('activities.table.category')}</span>
-        </div>
-      ),
+      header: pt.activitiesTable.category,
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-1">
           {row.original.tags && row.original.tags.length > 0 ? (
@@ -425,19 +403,14 @@ export function ProjectActivitiesTable({
               )
             })
           ) : (
-            <span className="text-xs text-muted-foreground">Sem categoria</span>
+            <span className="text-xs text-muted-foreground">{pt.filters.sem_categoria}</span>
           )}
         </div>
       ),
     },
     {
       id: "subsidy_status",
-      header: () => (
-        <div className="flex items-center gap-2">
-          <CircleDollarSign className="w-4 h-4" />
-          <span>{t('activities.table.subsidy_status')}</span>
-        </div>
-      ),
+      header: pt.activitiesTable.subsidy_status,
       cell: ({ row }) => (
         <div className="flex items-center justify-center">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -457,12 +430,7 @@ export function ProjectActivitiesTable({
     {
       id: "budget_amount",
       accessorKey: "budget_amount",
-      header: () => (
-        <div className="flex items-center gap-2">
-          <Wallet className="w-4 h-4" />
-          <span>{t('activities.table.budget')}</span>
-        </div>
-      ),
+      header: pt.activitiesTable.budget,
       cell: ({ row }) => (
         <div className="font-medium">{formatCurrency(row.original.budget_amount)}</div>
       ),
@@ -470,12 +438,7 @@ export function ProjectActivitiesTable({
     {
       id: "status",
       accessorKey: "status",
-      header: () => (
-        <div className="flex items-center gap-2">
-          <CheckCircle className="w-4 h-4" />
-          <span>{t('activities.table.status')}</span>
-        </div>
-      ),
+      header: pt.activitiesTable.status,
       cell: ({ row }) => (
         <StatusBadge
           label={getStatusLabel(row.original.status)}
@@ -488,12 +451,7 @@ export function ProjectActivitiesTable({
     {
       id: "priority",
       accessorKey: "priority",
-      header: () => (
-        <div className="flex items-center gap-2">
-          <Flag className="w-4 h-4" />
-          <span>{t('activities.table.priority')}</span>
-        </div>
-      ),
+      header: pt.activitiesTable.priority,
       cell: ({ row }) => (
         <StatusBadge
           label={getPriorityLabel(row.original.priority)}
@@ -506,12 +464,7 @@ export function ProjectActivitiesTable({
     },
     {
       id: "assigned_users",
-      header: () => (
-        <div className="flex items-center gap-2">
-          <Users className="w-4 h-4" />
-          <span>Responsáveis</span>
-        </div>
-      ),
+      header: pt.filters.assignees,
       cell: ({ row }) => {
         // Prioridade: assignees (nova estrutura) > assigned_users (legacy)
         let assignedUsers: Array<{ id: string; name: string; email?: string; avatar?: string; initials?: string; role?: string }> = []
@@ -535,7 +488,7 @@ export function ProjectActivitiesTable({
         if (assignedUsers.length === 0) {
           return (
             <span className="text-xs text-gray-400 dark:text-gray-500">
-              Nenhum
+              {pt.filters.none}
             </span>
           )
         }
@@ -583,12 +536,7 @@ export function ProjectActivitiesTable({
     },
     {
       id: "actions",
-      header: () => (
-        <div className="flex items-center gap-2">
-          <Settings className="w-4 h-4" />
-          <span>{t('activities.table.actions')}</span>
-        </div>
-      ),
+      header: pt.activitiesTable.actions,
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -599,7 +547,7 @@ export function ProjectActivitiesTable({
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem onClick={() => handleManageActivity(row.original)}>
               <Settings className="w-4 h-4 mr-2" />
-              {t('activities.table.manage_activity')}
+              {pt.activitiesTable.manage_activity}
             </DropdownMenuItem>
             
             <DropdownMenuSeparator />
@@ -608,7 +556,7 @@ export function ProjectActivitiesTable({
               className="text-red-600 focus:text-red-600"
             >
               <Trash2 className="w-4 h-4 mr-2" />
-              {t('activities.table.remove')}
+              {pt.activitiesTable.remove}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -634,11 +582,11 @@ export function ProjectActivitiesTable({
         emptyMessage={
           filterSubsidized 
             ? (statusFilter !== "all" || priorityFilter !== "all" || tagFilter !== "all" || searchQuery !== ""
-                ? t('activities.table.adjust_filters')
-                : t('activities.table.create_first_subsidized'))
+                ? pt.activitiesTable.adjust_filters
+                : pt.activitiesTable.create_first_subsidized)
             : (statusFilter !== "all" || priorityFilter !== "all" || tagFilter !== "all" || searchQuery !== ""
-                ? t('activities.table.adjust_filters')
-                : t('activities.table.create_first_non_subsidized'))
+                ? pt.activitiesTable.adjust_filters
+                : pt.activitiesTable.create_first_non_subsidized)
         }
       />
 

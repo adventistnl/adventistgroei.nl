@@ -3,6 +3,20 @@ export const projectTranslations = {
     // Navigation
     projects: "Projects",
     reportsAndProjects: "Reports & Projects",
+
+    common: {
+      add: "Add",
+      cancel: "Cancel",
+      save: "Save",
+      delete: "Delete",
+      edit: "Edit",
+      create: "Create",
+      total: "Total",
+      apply: "Apply",
+      irreversible: "This action cannot be undone",
+      deletePermanently: "Delete Permanently",
+      registeredUsers: "Registered Users"
+    },
     
     // Page titles
     projectsPage: "Projects",
@@ -42,6 +56,23 @@ export const projectTranslations = {
     
     // Charts
     charts: {
+      subsidyActivity: {
+        title: "Subsidy Request Activity",
+        description: "Requested values over months - {{count}} requests totaling {{total}}K",
+        totalRequested: "Total Requested",
+        last12Months: "Last 12 Months",
+        last6Months: "Last 6 Months",
+        last3Months: "Last 3 Months"
+      },
+      legend: {
+        accepted: "Accepted",
+        pending: "Pending",
+        inReview: "In Review",
+        rejected: "Rejected"
+      },
+      tooltip: {
+        requests: "requests"
+      },
       projectsByDepartment: "Projects by Department",
       subsidyDistribution: "Subsidy Status Distribution",
       budgetVsSubsidies: "Budget vs Subsidies by Department",
@@ -60,6 +91,21 @@ export const projectTranslations = {
       top10Activities: "Top 10 projects by number of registered activities",
       projects: "Projects",
       activities: "Activities"
+    },
+
+    // Activity Tags
+    activityTags: {
+      REFORM: "Reform",
+      EQUIPMENT: "Equipment",
+      MATERIALS: "Materials",
+      TRAINING: "Training",
+      TRAVEL: "Travel",
+      EVENT: "Event",
+      TRANSPORT: "Transport",
+      MARKETING: "Marketing",
+      SERVICES: "Services",
+      FEEDING: "Feeding",
+      ACCOMMODATION: "Accommodation"
     },
     
     // Table columns
@@ -107,7 +153,58 @@ export const projectTranslations = {
       last6Months: "Last 6 Months",
       lastYear: "Last Year",
       currentYear: "Current Year",
-      filterByDepartment: "Filter by department"
+      filterByDepartment: "Filter by department",
+      searchActivities: "Search activities...",
+      status: "Status",
+      priority: "Priority",
+      type: "Type",
+      category: "Category",
+      clear: "Clear",
+      newActivity: "New Activity",
+      allActivities: "All Activities",
+      subsidized: "Subsidized",
+      nonSubsidized: "Non-Subsidized",
+      pending: "Pending",
+      inProgress: "In Progress",
+      completed: "Completed",
+      high: "High",
+      medium: "Medium",
+      low: "Low",
+      urgent: "Urgent",
+      onHold: "On Hold",
+      assignees: "Assignees",
+      none: "None",
+      sem_categoria: "Uncategorized"
+    },
+    
+    // Header
+    header: {
+      back: "Back",
+      delete: "Delete",
+      institution: "Institution",
+      totalBudgetLabel: "Total Budget",
+      policy: {
+        exceedsLimit: "Institution limit exceeded",
+        percentExceeds: "Percentage exceeds limit",
+        ok: "Policy OK",
+        churchBelowMin: "Church below minimum"
+      }
+    },
+
+    // Activities Table
+    activitiesTable: {
+      activity: "Activity",
+      category: "Category",
+      subsidy_status: "Subsidy Status",
+      budget: "Budget",
+      status: "Status",
+      priority: "Priority",
+      actions: "Actions",
+      manage_activity: "Manage Activity",
+      remove: "Remove",
+      adjust_filters: "Try adjusting filter to see results",
+      create_first_subsidized: "Create your first subsidized activity",
+      create_first_non_subsidized: "Create your first activity"
     },
     
     // Toast messages
@@ -123,11 +220,26 @@ export const projectTranslations = {
       dataRefreshing: "Data refreshing...",
       dataRefreshed: "Data refreshed successfully!",
       errorLoading: "Error loading projects data",
-      filterApplied: "Filter applied successfully"
+      filterApplied: "Filter applied successfully",
+      projectDetailsLoaded: "Project details loaded successfully!",
+      statusUpdated: "Status updated successfully!",
+      statusUpdateError: "Error updating status: {{error}}",
+      approveError: "Error approving subsidy: {{error}}",
+      rejectError: "Error rejecting subsidy: {{error}}",
+      messageSentError: "Error sending message",
+      messageUpdateError: "Error updating message",
+      messageDeleteError: "Error deleting message",
+      documentsLoadError: "Error loading documents",
+      commentUpdated: "Comment updated",
+      commentAdded: "Comment added",
+      documentCommentPrefix: "Comment on document \"{{name}}\": "
     },
     
     // Error messages
     errors: {
+      selectFieldEdit: "Select at least one field to edit",
+      selectActivity: "Select at least one activity",
+      activitiesHaveSubsidy: "The following activities already have a subsidy request: {{names}}",
       cannotDeleteProjectWithApprovedSubsidies: "Cannot delete project with approved or closed subsidy requests. Please change the status of associated subsidies first.",
       cannotDeleteActivityWithApprovedSubsidies: "Cannot delete activity with approved or closed subsidy requests. Please change the status first.",
       cannotDeleteApprovedSubsidy: "Cannot delete approved or closed subsidy requests.",
@@ -215,6 +327,12 @@ export const projectTranslations = {
       viewDetails: "View Details",
       editProject: "Edit Project",
       duplicateProject: "Duplicate Project",
+      view: "View",
+      edit: "Edit",
+      delete: "Delete",
+      duplicate: "Duplicate",
+      archive: "Archive",
+      unarchive: "Unarchive",
       loadingCreator: "🚀 Loading project creator..."
     },
     
@@ -251,11 +369,37 @@ export const projectTranslations = {
       completionRate: "Completion Rate",
       projectDuration: "Project Duration",
       daysRemaining: "Days Remaining",
-      daysElapsed: "Days Elapsed"
+      daysElapsed: "Days Elapsed",
+      totalActivities: "Total Activities",
+      activitiesStats: "{{completed}} completed | {{inProgress}} in progress",
+      totalInvestment: "Total Investment",
+      sumOfActivities: "Sum of all activities",
+      subsidizedBudgetTitle: "Subsidized Budget",
+      localContribution: "{{amount}} local contribution",
+      subsidizedBudgetSubtitle: "of total budget",
+      completionSubtitle: "{{completed}} of {{total}} finalized",
+      subsidizedActivitiesTitle: "Subsidized Activities",
+      subsidizedStats: "{{percent}}% of total | {{count}} requests",
+      timeRemaining: "Time Remaining",
+      projectFinalized: "Project Finalized",
+      daysRemainingCount: "{{days}} days",
+      concluded: "Concluded",
+      endsIn: "Ends on {{date}}",
+      daysPositiveLabel: "days remaining",
+      daysNegativeLabel: "days ago"
     },
     
     // Subsidy Management
     subsidy: {
+      requestsTitle: "Subsidy Requests",
+      noRequests: "No subsidy requests",
+      noRequestsDescription: "Start by creating a new request.",
+      requestCount_one: "request",
+      requestCount_other: "requests",
+      requestedOn: "Requested on:",
+      closed: "Closed",
+      requestSubsidy: "Request Subsidy",
+      manageRequests: "Manage subsidy requests",
       subsidyRequests: "Subsidy Requests",
       addSubsidy: "Add Subsidy",
       editSubsidy: "Edit Subsidy",
@@ -289,8 +433,131 @@ export const projectTranslations = {
       subsidyUpdated: "Subsidy request updated successfully!",
       subsidyDeleted: "Subsidy request deleted successfully!",
       subsidyApproved: "Subsidy request approved!",
-      subsidyRejected: "Subsidy request rejected!"
+      subsidyRejected: "Subsidy request rejected!",
+      requestLabel: "Subsidy Request",
+      activitiesLower: "activities",
+      receiptsLower: "receipts",
+      approvedLower: "approved",
+      changeStatus: "Change Status",
+      reasonRejection: "Rejection Reason",
+      documentValidated: "Document validated successfully",
+      documentRejected: "Document rejected",
+      addRejectionReason: "Add a reason for rejection",
+      messageSent: "Message sent",
+      commentDeleted: "Comment deleted",
+      deleteCommentConfirm: "Are you sure you want to delete this comment?",
+      statusChangePrefix: "Status changed to {{status}}",
+      statusChangeReasonPrefix: "Status changed to {{status}}: {{reason}}",
+      activities: "Activities",
+      documents: "Documents",
+      noDocuments: "No documents attached",
+      loadingDocuments: "Loading documents...",
+      documentApproved: "Document Approved",
+      documentComment: "Comment",
+      statusUpdate: "Status Update",
+      history: "History",
+      filterByActivity: "Filter by Activity",
+      all: "All",
+      mention: "Mention",
+      currentStatus: "Current Status",
+      currentPriority: "Current Priority",
+      placeholders: {
+        editComment: "Edit your comment...",
+        documentComment: "Type your comment on the document...",
+        rejectReason: "Type the reason for rejection...",
+        addComment: "Add comment..."
+      },
+      close: "Close",
+      priority: {
+        change: "Change Priority",
+        high: "High",
+        medium: "Medium",
+        low: "Low",
+        changedTo: "Priority changed to {{priority}}",
+        error: "Error changing priority"
+      },
+      editingComment: "Editing comment",
+      rejectingDocument: "Rejecting document",
+      commentOn: "Comment on",
+      editComment: "Edit comment",
+      deleteComment: "Delete comment",
+      approveDocument: "Approve document",
+      rejectDocument: "Reject document",
+      downloadDocument: "Download document",
+      downloadDisabled: "Download disabled after validation",
+      addComment: "Add comment",
+      documentTypes: {
+        INVOICE: "Invoice",
+        RECEIPT: "Receipt",
+        CONTRACT: "Contract",
+        PROOF_OF_PAYMENT: "Proof of Payment",
+        OTHER: "Other"
+      },
+      validatedBy: "By {{user}} on {{date}}",
+      newBadge: "New",
+      
+      // Delete Subsidy Request Modal
+      deleteRequest: {
+        title: "Delete Subsidy Request",
+        description: "This action cannot be undone. The request and all related data will be permanently deleted.",
+        successMessage: "✅ Request deleted successfully",
+        errorMessage: "Failed to delete subsidy",
+        
+        // Status labels
+        statusLabels: {
+          pending: "Pending",
+          approved: "Approved",
+          rejected: "Rejected",
+          in_review: "In Review",
+          closed: "Closed"
+        },
+        
+        // Warning
+        warning: {
+          title: "Irreversible Action",
+          description: "Once deleted, this request cannot be recovered. Make sure you want to proceed."
+        },
+        
+        // Consequences
+        consequences: {
+          toggleButton: "View Deletion Consequences",
+          dataLoss: {
+            title: "Data Loss",
+            description: "All data related to this request, including attached documents and history, will be permanently deleted."
+          },
+          financialRecords: {
+            title: "Financial Records",
+            description: "The amount of {{amount}} will be removed from records. Make sure this won't affect reports or audits."
+          },
+          institutionalCommunication: {
+            title: "Institutional Communication",
+            description: "If this request has already been communicated to the institution, you will need to inform them about the deletion."
+          },
+          approvedStatus: {
+            title: "Approved Request",
+            description: "This request has been approved. Deletion may impact the approved budget and ongoing financial processes."
+          }
+        },
+        
+        // Confirmation
+        confirmation: {
+          checkboxLabel: "I understand the consequences",
+          checkboxDescription: "I confirm that I have read and understand that this action is irreversible and will result in permanent loss of all related data.",
+          inputLabel: "Type {{text}} to confirm",
+          inputPlaceholder: "delete subsidy",
+          inputHint: "Type exactly \"delete subsidy\" (in lowercase) to enable deletion"
+        },
+        
+        // Buttons
+        buttons: {
+          cancel: "Cancel",
+          delete: "Delete Request",
+          deleting: "Deleting..."
+        }
+      }
     },
+
+
     
     // Activity Management
     activity: {
@@ -540,6 +807,20 @@ export const projectTranslations = {
     // Navigation
     projects: "Projecten",
     reportsAndProjects: "Rapporten & Projecten",
+
+    common: {
+      add: "Toevoegen",
+      cancel: "Annuleren",
+      save: "Opslaan",
+      delete: "Verwijderen",
+      edit: "Bewerken",
+      create: "Aanmaken",
+      total: "Totaal",
+      apply: "Toepassen",
+      irreversible: "Deze actie kan niet ongedaan worden gemaakt",
+      deletePermanently: "Definitief Verwijderen",
+      registeredUsers: "Geregistreerde Gebruikers"
+    },
     
     // Page titles
     projectsPage: "Projecten",
@@ -579,6 +860,23 @@ export const projectTranslations = {
     
     // Charts
     charts: {
+      subsidyActivity: {
+        title: "Subsidie Aanvraag Activiteit",
+        description: "Aangevraagde waarden over maanden - {{count}} aanvragen in totaal {{total}}K",
+        totalRequested: "Totaal Aangevraagd",
+        last12Months: "Laatste 12 Maanden",
+        last6Months: "Laatste 6 Maanden",
+        last3Months: "Laatste 3 Maanden"
+      },
+      legend: {
+        accepted: "Geaccepteerd",
+        pending: "In Behandeling",
+        inReview: "In Beoordeling",
+        rejected: "Afgewezen"
+      },
+      tooltip: {
+        requests: "aanvragen"
+      },
       projectsByDepartment: "Projecten per Afdeling",
       subsidyDistribution: "Subsidie Status Verdeling",
       budgetVsSubsidies: "Budget vs Subsidies per Afdeling",
@@ -598,6 +896,21 @@ export const projectTranslations = {
       top10Activities: "Top 10 projecten op basis van aantal geregistreerde activiteiten",
       projects: "Projecten",
       activities: "Activiteiten"
+    },
+
+    // Activity Tags
+    activityTags: {
+      REFORM: "Renovatie",
+      EQUIPMENT: "Apparatuur",
+      MATERIALS: "Materialen",
+      TRAINING: "Training",
+      TRAVEL: "Reizen",
+      EVENT: "Evenement",
+      TRANSPORT: "Transport",
+      MARKETING: "Marketing",
+      SERVICES: "Diensten",
+      FEEDING: "Voeding",
+      ACCOMMODATION: "Accommodatie"
     },
     
     // Table columns
@@ -645,7 +958,58 @@ export const projectTranslations = {
       last6Months: "Laatste 6 Maanden",
       lastYear: "Vorig Jaar",
       currentYear: "Huidig Jaar",
-      filterByDepartment: "Filteren op afdeling"
+      filterByDepartment: "Filteren op afdeling",
+      searchActivities: "Zoek activiteiten...",
+      status: "Status",
+      priority: "Prioriteit",
+      type: "Type",
+      category: "Categorie",
+      clear: "Wissen",
+      newActivity: "Nieuwe Activiteit",
+      allActivities: "Alle Activiteiten",
+      subsidized: "Gesubsidieerd",
+      nonSubsidized: "Niet-gesubsidieerd",
+      pending: "In Afwachting",
+      inProgress: "Bezig",
+      completed: "Voltooid",
+      high: "Hoog",
+      medium: "Gemiddeld",
+      low: "Laag",
+      urgent: "Dringend",
+      onHold: "In de wacht",
+      assignees: "Verantwoordelijken",
+      none: "Geen",
+      sem_categoria: "Geen categorie"
+    },
+    
+    // Header
+    header: {
+      back: "Terug",
+      delete: "Verwijderen",
+      institution: "Instituut",
+      totalBudgetLabel: "Totaal Budget",
+      policy: {
+        exceedsLimit: "Limiet instituut overschreden",
+        percentExceeds: "Percentage overschrijdt limiet",
+        ok: "Beleid OK",
+        churchBelowMin: "Kerk onder minimum"
+      }
+    },
+
+    // Activities Table
+    activitiesTable: {
+      activity: "Activiteit",
+      category: "Categorie",
+      subsidy_status: "Subsidie Status",
+      budget: "Budget",
+      status: "Status",
+      priority: "Prioriteit",
+      actions: "Acties",
+      manage_activity: "Beheer Activiteit",
+      remove: "Verwijderen",
+      adjust_filters: "Probeer filters aan te passen",
+      create_first_subsidized: "Maak uw eerste gesubsidieerde activiteit",
+      create_first_non_subsidized: "Maak uw eerste activiteit"
     },
     
     // Toast messages
@@ -661,11 +1025,26 @@ export const projectTranslations = {
       dataRefreshing: "Data verversen...",
       dataRefreshed: "Data succesvol ververst!",
       errorLoading: "Fout bij laden van projecten data",
-      filterApplied: "Filter succesvol toegepast"
+      filterApplied: "Filter succesvol toegepast",
+      projectDetailsLoaded: "Projectdetails succesvol geladen!",
+      statusUpdated: "Status succesvol bijgewerkt!",
+      statusUpdateError: "Fout bij bijwerken status: {{error}}",
+      approveError: "Fout bij goedkeuren subsidie: {{error}}",
+      rejectError: "Fout bij afwijzen subsidie: {{error}}",
+      messageSentError: "Fout bij verzenden bericht",
+      messageUpdateError: "Fout bij bijwerken bericht",
+      messageDeleteError: "Fout bij verwijderen bericht",
+      documentsLoadError: "Fout bij laden documenten",
+      commentUpdated: "Opmerking bijgewerkt",
+      commentAdded: "Opmerking toegevoegd",
+      documentCommentPrefix: "Opmerking bij document \"{{name}}\": "
     },
     
     // Error messages
     errors: {
+      selectFieldEdit: "Selecteer ten minste één veld om te bewerken",
+      selectActivity: "Selecteer ten minste één activiteit",
+      activitiesHaveSubsidy: "De volgende activiteiten hebben al een subsidieaanvraag: {{names}}",
       cannotDeleteProjectWithApprovedSubsidies: "Kan project niet verwijderen met goedgekeurde of afgesloten subsidie aanvragen. Wijzig eerst de status van de gekoppelde subsidies.",
       cannotDeleteActivityWithApprovedSubsidies: "Kan activiteit niet verwijderen met goedgekeurde of afgesloten subsidie aanvragen. Wijzig eerst de status.",
       cannotDeleteApprovedSubsidy: "Kan goedgekeurde of afgesloten subsidie aanvragen niet verwijderen.",
@@ -751,6 +1130,12 @@ export const projectTranslations = {
       createEvent: "Evenement Aanmaken",
       createCommunication: "Communicatie Aanmaken",
       viewDetails: "Details Bekijken",
+      view: "Bekijken",
+      edit: "Bewerken",
+      delete: "Verwijderen",
+      duplicate: "Dupliceren",
+      archive: "Archiveren",
+      unarchive: "Dearchiveren",
       editProject: "Project Bewerken",
       duplicateProject: "Project Dupliceren",
       loadingCreator: "🚀 Projectmaker laden..."
@@ -789,11 +1174,37 @@ export const projectTranslations = {
       completionRate: "Voltooiingspercentage",
       projectDuration: "Project Duur",
       daysRemaining: "Resterende Dagen",
-      daysElapsed: "Verstreken Dagen"
+      daysElapsed: "Verstreken Dagen",
+      totalActivities: "Totaal Activiteiten",
+      activitiesStats: "{{completed}} voltooid | {{inProgress}} bezig",
+      totalInvestment: "Totale Investering",
+      sumOfActivities: "Som van alle activiteiten",
+      subsidizedBudgetTitle: "Gesubsidieerd Budget",
+      localContribution: "{{amount}} lokale bijdrage",
+      subsidizedBudgetSubtitle: "van totaal budget",
+      completionSubtitle: "{{completed}} van {{total}} voltooid",
+      subsidizedActivitiesTitle: "Gesubsidieerde Activiteiten",
+      subsidizedStats: "{{percent}}% van totaal | {{count}} aanvragen",
+      timeRemaining: "Resterende Tijd",
+      projectFinalized: "Project Voltooid",
+      daysRemainingCount: "{{days}} dagen",
+      concluded: "Voltooid",
+      endsIn: "Eindigt op {{date}}",
+      daysPositiveLabel: "dagen resterend",
+      daysNegativeLabel: "dagen geleden"
     },
     
     // Subsidy Management
     subsidy: {
+      requestsTitle: "Subsidie Aanvragen",
+      noRequests: "Geen subsidie aanvragen",
+      noRequestsDescription: "Begin met het maken van een nieuwe aanvraag.",
+      requestCount_one: "aanvraag",
+      requestCount_other: "aanvragen",
+      requestedOn: "Aangevraagd op:",
+      closed: "Gesloten",
+      requestSubsidy: "Subsidie Aanvragen",
+      manageRequests: "Beheer subsidie aanvragen",
       subsidyRequests: "Subsidie Aanvragen",
       addSubsidy: "Subsidie Toevoegen",
       editSubsidy: "Subsidie Bewerken",
@@ -827,8 +1238,131 @@ export const projectTranslations = {
       subsidyUpdated: "Subsidie aanvraag succesvol bijgewerkt!",
       subsidyDeleted: "Subsidie aanvraag succesvol verwijderd!",
       subsidyApproved: "Subsidie aanvraag goedgekeurd!",
-      subsidyRejected: "Subsidie aanvraag afgewezen!"
+      subsidyRejected: "Subsidie aanvraag afgewezen!",
+      requestLabel: "Subsidieaanvraag",
+      activitiesLower: "activiteiten",
+      receiptsLower: "bonnen",
+      approvedLower: "goedgekeurd",
+      changeStatus: "Status Wijzigen",
+      reasonRejection: "Reden van Afwijzing",
+      documentValidated: "Document succesvol gevalideerd",
+      documentRejected: "Document afgewezen",
+      addRejectionReason: "Voeg een reden toe voor afwijzing",
+      messageSent: "Bericht verzonden",
+      commentDeleted: "Opmerking verwijderd",
+      deleteCommentConfirm: "Weet u zeker dat u deze opmerking wilt verwijderen?",
+      statusChangePrefix: "Status gewijzigd naar {{status}}",
+      statusChangeReasonPrefix: "Status gewijzigd naar {{status}}: {{reason}}",
+      activities: "Activiteiten",
+      documents: "Documenten",
+      noDocuments: "Geen documenten bijgevoegd",
+      loadingDocuments: "Documenten laden...",
+      documentApproved: "Document Goedgekeurd",
+      documentComment: "Opmerking",
+      statusUpdate: "Statusupdate",
+      history: "Geschiedenis",
+      filterByActivity: "Filter op Activiteit",
+      all: "Alle",
+      mention: "Vermeld",
+      currentStatus: "Huidige Status",
+      currentPriority: "Huidige Prioriteit",
+      placeholders: {
+        editComment: "Bewerk uw opmerking...",
+        documentComment: "Typ uw opmerking over het document...",
+        rejectReason: "Typ de reden van afwijzing...",
+        addComment: "Opmerking toevoegen..."
+      },
+      close: "Sluiten",
+      priority: {
+        change: "Prioriteit Wijzigen",
+        high: "Hoog",
+        medium: "Gemiddeld",
+        low: "Laag",
+        changedTo: "Prioriteit gewijzigd naar {{priority}}",
+        error: "Fout bij wijzigen prioriteit"
+      },
+      editingComment: "Opmerking bewerken",
+      rejectingDocument: "Document afwijzen",
+      commentOn: "Opmerking over",
+      editComment: "Opmerking bewerken",
+      deleteComment: "Opmerking verwijderen",
+      approveDocument: "Document goedkeuren",
+      rejectDocument: "Document afwijzen",
+      downloadDocument: "Document downloaden",
+      downloadDisabled: "Download uitgeschakeld na validatie",
+      addComment: "Opmerking toevoegen",
+      documentTypes: {
+        INVOICE: "Factuur",
+        RECEIPT: "Ontvangstbewijs",
+        CONTRACT: "Contract",
+        PROOF_OF_PAYMENT: "Betalingsbewijs",
+        OTHER: "Overig"
+      },
+      validatedBy: "Door {{user}} op {{date}}",
+      newBadge: "Nieuw",
+      
+      // Delete Subsidy Request Modal
+      deleteRequest: {
+        title: "Subsidie Aanvraag Verwijderen",
+        description: "Deze actie kan niet ongedaan worden gemaakt. De aanvraag en alle gerelateerde gegevens worden permanent verwijderd.",
+        successMessage: "✅ Aanvraag succesvol verwijderd",
+        errorMessage: "Kan subsidie niet verwijderen",
+        
+        // Status labels
+        statusLabels: {
+          pending: "In Behandeling",
+          approved: "Goedgekeurd",
+          rejected: "Afgewezen",
+          in_review: "In Beoordeling",
+          closed: "Gesloten"
+        },
+        
+        // Warning
+        warning: {
+          title: "Onomkeerbare Actie",
+          description: "Eenmaal verwijderd, kan deze aanvraag niet worden hersteld. Zorg ervoor dat u wilt doorgaan."
+        },
+        
+        // Consequences
+        consequences: {
+          toggleButton: "Gevolgen van Verwijdering Bekijken",
+          dataLoss: {
+            title: "Gegevensverlies",
+            description: "Alle gegevens met betrekking tot deze aanvraag, inclusief bijgevoegde documenten en geschiedenis, worden permanent verwijderd."
+          },
+          financialRecords: {
+            title: "Financiële Gegevens",
+            description: "Het bedrag van {{amount}} wordt uit de administratie verwijderd. Zorg ervoor dat dit geen invloed heeft op rapporten of audits."
+          },
+          institutionalCommunication: {
+            title: "Institutionele Communicatie",
+            description: "Als deze aanvraag al aan de instelling is gecommuniceerd, moet u hen op de hoogte stellen van de verwijdering."
+          },
+          approvedStatus: {
+            title: "Goedgekeurde Aanvraag",
+            description: "Deze aanvraag is goedgekeurd. Verwijdering kan invloed hebben op het goedgekeurde budget en lopende financiële processen."
+          }
+        },
+        
+        // Confirmation
+        confirmation: {
+          checkboxLabel: "Ik begrijp de gevolgen",
+          checkboxDescription: "Ik bevestig dat ik heb gelezen en begrijp dat deze actie onomkeerbaar is en zal resulteren in permanent verlies van alle gerelateerde gegevens.",
+          inputLabel: "Typ {{text}} om te bevestigen",
+          inputPlaceholder: "delete subsidy",
+          inputHint: "Typ exact \"delete subsidy\" (in kleine letters) om verwijdering mogelijk te maken"
+        },
+        
+        // Buttons
+        buttons: {
+          cancel: "Annuleren",
+          delete: "Aanvraag Verwijderen",
+          deleting: "Verwijderen..."
+        }
+      }
     },
+    
+
     
     // Activity Management
     activity: {
@@ -1078,6 +1612,20 @@ export const projectTranslations = {
     // Navigation
     projects: "Projetos",
     reportsAndProjects: "Relatórios & Projetos",
+
+    common: {
+      add: "Adicionar",
+      cancel: "Cancelar",
+      save: "Salvar",
+      delete: "Excluir",
+      edit: "Editar",
+      create: "Criar",
+      total: "Total",
+      apply: "Aplicar",
+      irreversible: "Esta ação não pode ser desfeita",
+      deletePermanently: "Excluir Permanentemente",
+      registeredUsers: "Usuários Registrados"
+    },
     
     // Page titles
     projectsPage: "Projetos",
@@ -1117,6 +1665,23 @@ export const projectTranslations = {
     
     // Charts
     charts: {
+      subsidyActivity: {
+        title: "Atividade de Solicitações de Subsídio",
+        description: "Valores solicitados ao longo dos meses - {{count}} solicitações totalizando {{total}}K",
+        totalRequested: "Total Solicitado",
+        last12Months: "Últimos 12 Meses",
+        last6Months: "Últimos 6 Meses",
+        last3Months: "Últimos 3 Meses"
+      },
+      legend: {
+        accepted: "Aceito",
+        pending: "Pendente",
+        inReview: "Em Análise",
+        rejected: "Rejeitado"
+      },
+      tooltip: {
+        requests: "solicitações"
+      },
       projectsByDepartment: "Projetos por Departamento",
       subsidyDistribution: "Distribuição de Status de Subsídio",
       budgetVsSubsidies: "Orçamento vs Subsídios por Departamento",
@@ -1135,6 +1700,21 @@ export const projectTranslations = {
       top10Activities: "Top 10 projetos por número de atividades registradas",
       projects: "Projetos",
       activities: "Atividades"
+    },
+
+    // Activity Tags
+    activityTags: {
+      REFORM: "Reforma",
+      EQUIPMENT: "Equipamento",
+      MATERIALS: "Material",
+      TRAINING: "Treinamento",
+      TRAVEL: "Viagem",
+      EVENT: "Evento",
+      TRANSPORT: "Transporte",
+      MARKETING: "Marketing",
+      SERVICES: "Serviços",
+      FEEDING: "Alimentação",
+      ACCOMMODATION: "Acomodação"
     },
     
     // Table columns
@@ -1182,7 +1762,58 @@ export const projectTranslations = {
       last6Months: "Últimos 6 Meses",
       lastYear: "Ano Passado",
       currentYear: "Ano Atual",
-      filterByDepartment: "Filtrar por departamento"
+      filterByDepartment: "Filtrar por departamento",
+      searchActivities: "Buscar atividades...",
+      status: "Status",
+      priority: "Prioridade",
+      type: "Tipo",
+      category: "Categoria",
+      clear: "Limpar",
+      newActivity: "Nova Atividade",
+      allActivities: "Todas Atividades",
+      subsidized: "Subsidiadas",
+      nonSubsidized: "Não Subsidiadas",
+      pending: "Pendente",
+      inProgress: "Em Andamento",
+      completed: "Concluída",
+      high: "Alta",
+      medium: "Média",
+      low: "Baixa",
+      urgent: "Urgente",
+      onHold: "Em Espera",
+      assignees: "Responsáveis",
+      none: "Nenhum",
+      sem_categoria: "Sem categoria"
+    },
+    
+    // Header
+    header: {
+      back: "Voltar",
+      delete: "Excluir",
+      institution: "Instituição",
+      totalBudgetLabel: "Orçamento total",
+      policy: {
+        exceedsLimit: "Limite instituição excedido",
+        percentExceeds: "Percentual excede limite",
+        ok: "Política OK",
+        churchBelowMin: "Igreja abaixo do mínimo"
+      }
+    },
+
+    // Activities Table
+    activitiesTable: {
+      activity: "Atividade",
+      category: "Categoria",
+      subsidy_status: "Status do Subsídio",
+      budget: "Orçamento",
+      status: "Status",
+      priority: "Prioridade",
+      actions: "Ações",
+      manage_activity: "Gerenciar Atividade",
+      remove: "Remover",
+      adjust_filters: "Tente ajustar os filtros para ver resultados",
+      create_first_subsidized: "Crie sua primeira atividade subsidiada",
+      create_first_non_subsidized: "Crie sua primeira atividade"
     },
     
     // Toast messages
@@ -1198,11 +1829,26 @@ export const projectTranslations = {
       dataRefreshing: "Atualizando dados...",
       dataRefreshed: "Dados atualizados com sucesso!",
       errorLoading: "Erro ao carregar dados dos projetos",
-      filterApplied: "Filtro aplicado com sucesso"
+      filterApplied: "Filtro aplicado com sucesso",
+      projectDetailsLoaded: "Detalhes do projeto carregados com sucesso!",
+      statusUpdated: "Status atualizado com sucesso!",
+      statusUpdateError: "Erro ao atualizar status: {{error}}",
+      approveError: "Erro ao aprovar subsídio: {{error}}",
+      rejectError: "Erro ao rejeitar subsídio: {{error}}",
+      messageSentError: "Erro ao enviar mensagem",
+      messageUpdateError: "Erro ao atualizar mensagem",
+      messageDeleteError: "Erro ao deletar mensagem",
+      documentsLoadError: "Erro ao carregar documentos",
+      commentUpdated: "Comentário atualizado",
+      commentAdded: "Comentário adicionado",
+      documentCommentPrefix: "Comentário sobre documento \"{{name}}\": "
     },
     
     // Error messages
     errors: {
+      selectFieldEdit: "Selecione pelo menos um campo para editar",
+      selectActivity: "Selecione pelo menos uma atividade",
+      activitiesHaveSubsidy: "As seguintes atividades já possuem pedido de subsídio: {{names}}",
       cannotDeleteProjectWithApprovedSubsidies: "Não é possível excluir projeto com pedidos de subsídio aprovados ou concluídos. Altere o status dos subsídios associados primeiro.",
       cannotDeleteActivityWithApprovedSubsidies: "Não é possível excluir atividade com pedidos de subsídio aprovados ou concluídos. Altere o status primeiro.",
       cannotDeleteApprovedSubsidy: "Não é possível excluir pedidos de subsídio aprovados ou concluídos.",
@@ -1290,6 +1936,12 @@ export const projectTranslations = {
       viewDetails: "Ver Detalhes",
       editProject: "Editar Projeto",
       duplicateProject: "Duplicar Projeto",
+      view: "Visualizar",
+      edit: "Editar",
+      delete: "Excluir",
+      duplicate: "Duplicar",
+      archive: "Arquivar",
+      unarchive: "Desarquivar",
       loadingCreator: "🚀 Carregando criador de projeto..."
     },
     
@@ -1326,11 +1978,37 @@ export const projectTranslations = {
       completionRate: "Taxa de Conclusão",
       projectDuration: "Duração do Projeto",
       daysRemaining: "Dias Restantes",
-      daysElapsed: "Dias Decorridos"
+      daysElapsed: "Dias Decorridos",
+      totalActivities: "Total de Atividades",
+      activitiesStats: "{{completed}} concluídas | {{inProgress}} em andamento",
+      totalInvestment: "Investimento Total",
+      sumOfActivities: "Soma de todas as atividades",
+      subsidizedBudgetTitle: "Orçamento Subsidiado",
+      localContribution: "{{amount}} contribuição local",
+      subsidizedBudgetSubtitle: "do orçamento total",
+      completionSubtitle: "{{completed}} de {{total}} finalizadas",
+      subsidizedActivitiesTitle: "Atividades Subsidiadas",
+      subsidizedStats: "{{percent}}% do total | {{count}} pedidos",
+      timeRemaining: "Prazo Restante",
+      projectFinalized: "Projeto Finalizado",
+      daysRemainingCount: "{{days}} dias",
+      concluded: "Concluído",
+      endsIn: "Termina em {{date}}",
+      daysPositiveLabel: "dias restantes",
+      daysNegativeLabel: "dias atrás"
     },
     
     // Subsidy Management
     subsidy: {
+      requestsTitle: "Solicitações de Subsídio",
+      noRequests: "Nenhuma solicitação de subsídio",
+      noRequestsDescription: "Comece criando uma nova solicitação.",
+      requestCount_one: "solicitação",
+      requestCount_other: "solicitações",
+      requestedOn: "Solicitado em:",
+      closed: "Encerrado",
+      requestSubsidy: "Solicitar Subsídio",
+      manageRequests: "Gerencie as solicitações de subsídio",
       subsidyRequests: "Pedidos de Subsídio",
       addSubsidy: "Adicionar Subsídio",
       editSubsidy: "Editar Subsídio",
@@ -1364,8 +2042,84 @@ export const projectTranslations = {
       subsidyUpdated: "Pedido de subsídio atualizado com sucesso!",
       subsidyDeleted: "Pedido de subsídio excluído com sucesso!",
       subsidyApproved: "Pedido de subsídio aprovado!",
-      subsidyRejected: "Pedido de subsídio rejeitado!"
+      subsidyRejected: "Pedido de subsídio rejeitado!",
+      requestLabel: "Pedido de Subsídio",
+      activitiesLower: "atividades",
+      receiptsLower: "recibos",
+      approvedLower: "aprovado",
+      changeStatus: "Alterar Status",
+      reasonRejection: "Motivo da Rejeição",
+      documentValidated: "Documento validado com sucesso",
+      documentRejected: "Documento rejeitado",
+      addRejectionReason: "Adicione um motivo para a rejeição",
+      messageSent: "Mensagem enviada",
+      commentDeleted: "Comentário deletado",
+      deleteCommentConfirm: "Tem certeza que deseja deletar este comentário?",
+      statusChangePrefix: "Alteração de status para {{status}}",
+      statusChangeReasonPrefix: "Alteração de status para {{status}}: {{reason}}",
+      
+      // Delete Subsidy Request Modal
+      deleteRequest: {
+        title: "Excluir Solicitação de Subsídio",
+        description: "Esta ação não pode ser desfeita. A solicitação e todos os dados relacionados serão permanentemente excluídos.",
+        successMessage: "✅ Solicitação excluída com sucesso",
+        errorMessage: "Falha ao excluir subsídio",
+        
+        // Status labels
+        statusLabels: {
+          pending: "Pendente",
+          approved: "Aprovado",
+          rejected: "Rejeitado",
+          in_review: "Em Análise",
+          closed: "Fechado"
+        },
+        
+        // Warning
+        warning: {
+          title: "Ação Irreversível",
+          description: "Uma vez excluída, esta solicitação não poderá ser recuperada. Certifique-se de que deseja prosseguir."
+        },
+        
+        // Consequences
+        consequences: {
+          toggleButton: "Ver Consequências da Exclusão",
+          dataLoss: {
+            title: "Perda de Dados",
+            description: "Todos os dados relacionados a esta solicitação, incluindo documentos anexados e histórico, serão permanentemente excluídos."
+          },
+          financialRecords: {
+            title: "Registros Financeiros",
+            description: "O valor de {{amount}} será removido dos registros. Certifique-se de que isso não afetará relatórios ou auditorias."
+          },
+          institutionalCommunication: {
+            title: "Comunicação Institucional",
+            description: "Se esta solicitação já foi comunicada à instituição, você precisará informá-los sobre a exclusão."
+          },
+          approvedStatus: {
+            title: "Solicitação Aprovada",
+            description: "Esta solicitação foi aprovada. A exclusão pode impactar o orçamento aprovado e processos financeiros em andamento."
+          }
+        },
+        
+        // Confirmation
+        confirmation: {
+          checkboxLabel: "Eu compreendo as consequências",
+          checkboxDescription: "Confirmo que li e entendo que esta ação é irreversível e resultará na perda permanente de todos os dados relacionados.",
+          inputLabel: "Digite {{text}} para confirmar",
+          inputPlaceholder: "delete subsidy",
+          inputHint: "Digite exatamente \"delete subsidy\" (em letras minúsculas) para habilitar a exclusão"
+        },
+        
+        // Buttons
+        buttons: {
+          cancel: "Cancelar",
+          delete: "Excluir Solicitação",
+          deleting: "Excluindo..."
+        }
+      }
     },
+
+
     
     // Activity Management
     activity: {

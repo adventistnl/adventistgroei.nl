@@ -27,30 +27,54 @@ interface RequestsOverTimeChartProps {
   data?: any[]
   loading?: boolean
   selectedYear?: number
+  translations?: {
+    title: string
+    description: string
+    quarterFilters: {
+      all: string
+      q1: string
+      q2: string
+      q3: string
+      q4: string
+    }
+    footer: {
+      approvalRate: string
+      totalRequests: string
+      approved: string
+      pending: string
+      rejected: string
+    }
+    statusLabels: {
+      approved: string
+      pending: string
+      rejected: string
+    }
+  }
 }
-
-const chartConfig = {
-  approved: {
-    label: "Approved",
-    color: "hsl(142, 71%, 45%)",
-  },
-  pending: {
-    label: "Pending",
-    color: "hsl(43, 96%, 56%)",
-  },
-  rejected: {
-    label: "Rejected",
-    color: "hsl(0, 84%, 60%)",
-  },
-} satisfies ChartConfig
 
 export function RequestsOverTimeChart({ 
   data, 
   loading, 
-  selectedYear = new Date().getFullYear() 
+  selectedYear = new Date().getFullYear(),
+  translations
 }: RequestsOverTimeChartProps) {
   const { formatCurrency } = useCurrency()
   const [selectedQuarter, setSelectedQuarter] = React.useState<"all" | "q1" | "q2" | "q3" | "q4">("all")
+
+  const chartConfig = {
+    approved: {
+      label: translations?.statusLabels.approved || "Approved",
+      color: "hsl(142, 71%, 45%)",
+    },
+    pending: {
+      label: translations?.statusLabels.pending || "Pending",
+      color: "hsl(43, 96%, 56%)",
+    },
+    rejected: {
+      label: translations?.statusLabels.rejected || "Rejected",
+      color: "hsl(0, 84%, 60%)",
+    },
+  } satisfies ChartConfig
 
   const chartData = React.useMemo(() => {
     // Use data from props if available, otherwise return empty array
@@ -100,10 +124,10 @@ export function RequestsOverTimeChart({
         <div className="grid flex-1 gap-1">
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="w-5 h-5 text-gray-600" />
-            Requests Over Time
+            {translations?.title || "Requests Over Time"}
           </CardTitle>
           <CardDescription>
-            Monthly subsidy request status - {selectedYear}
+            {translations?.description.replace('{{year}}', selectedYear.toString()) || `Monthly subsidy request status - ${selectedYear}`}
           </CardDescription>
         </div>
         
@@ -115,7 +139,7 @@ export function RequestsOverTimeChart({
             onClick={() => setSelectedQuarter('all')}
             className="h-7 px-3 text-xs"
           >
-            All
+            {translations?.quarterFilters.all || "All"}
           </Button>
           <Button
             variant={selectedQuarter === 'q1' ? 'default' : 'ghost'}
@@ -123,7 +147,7 @@ export function RequestsOverTimeChart({
             onClick={() => setSelectedQuarter('q1')}
             className="h-7 px-3 text-xs"
           >
-            Q1
+            {translations?.quarterFilters.q1 || "Q1"}
           </Button>
           <Button
             variant={selectedQuarter === 'q2' ? 'default' : 'ghost'}
@@ -131,7 +155,7 @@ export function RequestsOverTimeChart({
             onClick={() => setSelectedQuarter('q2')}
             className="h-7 px-3 text-xs"
           >
-            Q2
+            {translations?.quarterFilters.q2 || "Q2"}
           </Button>
           <Button
             variant={selectedQuarter === 'q3' ? 'default' : 'ghost'}
@@ -139,7 +163,7 @@ export function RequestsOverTimeChart({
             onClick={() => setSelectedQuarter('q3')}
             className="h-7 px-3 text-xs"
           >
-            Q3
+            {translations?.quarterFilters.q3 || "Q3"}
           </Button>
           <Button
             variant={selectedQuarter === 'q4' ? 'default' : 'ghost'}
@@ -147,7 +171,7 @@ export function RequestsOverTimeChart({
             onClick={() => setSelectedQuarter('q4')}
             className="h-7 px-3 text-xs"
           >
-            Q4
+            {translations?.quarterFilters.q4 || "Q4"}
           </Button>
         </div>
       </CardHeader>
@@ -187,10 +211,10 @@ export function RequestsOverTimeChart({
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 text-sm">
         <div className="flex gap-2 leading-none font-medium">
-          Approval rate: {approvalRate}% <TrendingUp className="h-4 w-4" />
+          {translations?.footer.approvalRate || "Approval rate"}: {approvalRate}% <TrendingUp className="h-4 w-4" />
         </div>
         <div className="leading-none text-muted-foreground">
-          Total requests: {totals.total} ({totals.approved} approved, {totals.pending} pending, {totals.rejected} rejected)
+          {translations?.footer.totalRequests || "Total requests"}: {totals.total} ({totals.approved} {translations?.footer.approved || "approved"}, {totals.pending} {translations?.footer.pending || "pending"}, {totals.rejected} {translations?.footer.rejected || "rejected"})
         </div>
       </CardFooter>
     </Card>
