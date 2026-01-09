@@ -117,7 +117,8 @@ export const subsidyRequestTranslations = {
       },
       
       // Warning
-      warningNoDocuments: "It is necessary to attach at least one supporting document for each activity"
+      warningNoDocuments: "It is necessary to attach at least one supporting document for each activity",
+      amountCannotBeEdited: "Amount cannot be edited"
     },
     
     // General notes
@@ -335,7 +336,8 @@ export const subsidyRequestTranslations = {
       },
       
       // Warning
-      warningNoDocuments: "É necessário anexar pelo menos um documento comprobatório para cada atividade"
+      warningNoDocuments: "É necessário anexar pelo menos um documento comprobatório para cada atividade",
+      amountCannotBeEdited: "Valor não pode ser editado"
     },
     
     // General notes
@@ -552,7 +554,8 @@ export const subsidyRequestTranslations = {
       },
       
       // Warning
-      warningNoDocuments: "Het is noodzakelijk om minimaal één ondersteunend document voor elke activiteit toe te voegen"
+      warningNoDocuments: "Het is noodzakelijk om minimaal één ondersteunend document voor elke activiteit toe te voegen",
+      amountCannotBeEdited: "Bedrag kan niet worden bewerkt"
     },
     
     // General notes
