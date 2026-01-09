@@ -839,11 +839,11 @@ export function SubsidyApprovalsManager({
 
   // Convert to Kanban format
   const kanbanGroups: KanbanGroup[] = [
-    { id: 'pending', name: translations.kanban.groups.pending, color: '#f59e0b' },
-    { id: 'in_review', name: translations.kanban.groups.in_review, color: '#3b82f6' },
-    { id: 'approved', name: translations.kanban.groups.approved, color: '#10b981' },
-    { id: 'closed', name: translations.kanban.groups.closed, color: '#059669' },
-    { id: 'rejected', name: translations.kanban.groups.rejected, color: '#ef4444' }
+    { id: 'pending', name: translations.kanban.groups.pending, color: '#f59e0b', tooltip: translations.statusRules.pending },
+    { id: 'in_review', name: translations.kanban.groups.in_review, color: '#3b82f6', tooltip: translations.statusRules.in_review },
+    { id: 'approved', name: translations.kanban.groups.approved, color: '#10b981', tooltip: translations.statusRules.approved },
+    { id: 'rejected', name: translations.kanban.groups.rejected, color: '#ef4444', tooltip: translations.statusRules.rejected },
+    { id: 'closed', name: translations.kanban.groups.closed, color: '#059669', tooltip: translations.statusRules.closed }
   ]
 
   const kanbanItems: KanbanItem[] = subsidyRequests.map(request => ({
