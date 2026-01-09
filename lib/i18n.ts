@@ -2,6 +2,7 @@ import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import { projectRegisterTranslations } from './translations/project-register'
 import { projectTranslations } from './translations/projects'
+import { subsidyManagementTranslations } from './translations/subsidy-management'
 
 // Recursos de tradução
 const resources = {
@@ -272,6 +273,13 @@ const resources = {
         loading: "Loading...",
         error: "An error occurred",
         success: "Success",
+        confirm: "Confirm",
+        impact: "Action Impact",
+        consequences: "Consequences of this action",
+        undone: "This action cannot be undone",
+        riskAware: "You are aware of the risks",
+        approve: "Approve",
+        reject: "Reject",
         cancel: "Cancel",
         save: "Save",
         edit: "Edit",
@@ -1939,6 +1947,7 @@ const resources = {
           }
         }
       },
+      subsidy: subsidyManagementTranslations.en,
       projectRegister: projectRegisterTranslations.en
     }
   },
@@ -2209,6 +2218,13 @@ const resources = {
         loading: "Laden...",
         error: "Er is een fout opgetreden",
         success: "Succes",
+        confirm: "Bevestigen",
+        impact: "Impact van actie",
+        consequences: "Gevolgen van deze actie",
+        undone: "Deze actie kan niet ongedaan worden gemaakt",
+        riskAware: "U bent zich bewust van de risico's",
+        approve: "Goedkeuren",
+        reject: "Afwijzen",
         cancel: "Annuleren",
         save: "Opslaan",
         edit: "Bewerken",
@@ -3693,6 +3709,7 @@ const resources = {
           }
         }
       },
+      subsidy: subsidyManagementTranslations.nl,
       projectRegister: projectRegisterTranslations.nl
     }
   },
@@ -3706,6 +3723,13 @@ const resources = {
         loading: "Carregando...",
         error: "Erro",
         success: "Sucesso",
+        confirm: "Confirmar",
+        impact: "Impacto da Ação",
+        consequences: "Consequências desta ação",
+        undone: "Esta ação não pode ser desfeita",
+        riskAware: "Você está ciente dos riscos",
+        approve: "Aprovar",
+        reject: "Rejeitar",
         cancel: "Cancelar",
         save: "Salvar",
         edit: "Editar",
@@ -4511,8 +4535,9 @@ const resources = {
           deleting_role: "Rol verwijderen...",
           role_create_failed: "Kon rol niet aanmaken"
         }
-      }
-      ,
+      },
+
+      subsidy: subsidyManagementTranslations.pt,
       projectRegister: projectRegisterTranslations.pt
     }
   }

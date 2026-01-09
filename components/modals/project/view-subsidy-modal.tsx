@@ -30,6 +30,8 @@ import { useMutation, useQuery } from "@apollo/client"
 import { UPDATE_SUBSIDY_REQUEST, APPROVE_SUBSIDY_REQUEST, REJECT_SUBSIDY_REQUEST, ADD_SUBSIDY_REQUEST_MESSAGE, UPDATE_SUBSIDY_REQUEST_MESSAGE, DELETE_SUBSIDY_REQUEST_MESSAGE } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
 import { GET_SUBSIDY_STATUS_HISTORY } from "@/graphql/queries/SUBSIDY_STATUS_HISTORY_QUERIES"
 import { GET_ALL_SUBSIDY_STATUSES } from "@/graphql/queries/SUBSIDY_STATUS_QUERIES"
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface ActivityItem {
   id: string
@@ -102,6 +104,15 @@ export function ViewSubsidyModal({
   const [loadingDocuments, setLoadingDocuments] = React.useState(false)
   const [receipts, setReceipts] = React.useState<SubsidyReceipt[]>([])
   const [subsidyStatuses, setSubsidyStatuses] = React.useState<Array<{id: string, name: string, description: string}>>([])
+  
+  // Dialog states for replacing browser alerts
+  const [deleteCommentDialog, setDeleteCommentDialog] = React.useState<{ isOpen: boolean; messageId: string | null }>({ isOpen: false, messageId: null })
+  const [rejectionDialog, setRejectionDialog] = React.useState<{ isOpen: boolean; reason: string }>({ isOpen: false, reason: "" })
+  const [statusConfirmationDialog, setStatusConfirmationDialog] = React.useState<{ 
+    isOpen: boolean; 
+    status: "approved" | "rejected" | "closed" | null; 
+    statusId?: string 
+  }>({ isOpen: false, status: null })
 
   /* 
    * Sync local status state when subsidy prop changes
@@ -135,7 +146,22 @@ export function ViewSubsidyModal({
       onSubsidyUpdated?.()
     },
     onError: (error) => {
-      toast.error(t('toasts.statusUpdateError', { error: error.message }))
+      let ext = (error.graphQLErrors?.[0]?.extensions as any);
+      if (!ext && (error.networkError as any)?.result?.errors?.[0]?.extensions) {
+        ext = (error.networkError as any).result.errors[0].extensions;
+      }
+      const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
+      if (errorCode === 'STATUS_IS_CLOSED') {
+          toast.error("O subsídio já está fechado e não pode ser alterado.");
+      } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
+          toast.error("Não é possível fechar um subsídio em revisão. É necessário aprovar ou rejeitar primeiro.");
+      } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
+          toast.error("Subsídios aprovados ou rejeitados só podem ser fechados.");
+      } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
+          toast.error(t('toasts.documentsPending') || "All documents must be validated first");
+      } else {
+          toast.error(t('toasts.statusUpdateError', { error: error.message }))
+      }
       console.error("Error updating subsidy:", error)
     }
   })
@@ -148,7 +174,22 @@ export function ViewSubsidyModal({
       onSubsidyUpdated?.()
     },
     onError: (error) => {
-      toast.error(t('toasts.approveError', { error: error.message }))
+      let ext = (error.graphQLErrors?.[0]?.extensions as any);
+      if (!ext && (error.networkError as any)?.result?.errors?.[0]?.extensions) {
+        ext = (error.networkError as any).result.errors[0].extensions;
+      }
+      const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
+      if (errorCode === 'STATUS_IS_CLOSED') {
+          toast.error("O subsídio já está fechado e não pode ser alterado.");
+      } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
+          toast.error("Não é possível fechar um subsídio em revisão. É necessário aprovar ou rejeitar primeiro.");
+      } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
+          toast.error("Subsídios aprovados ou rejeitados só podem ser fechados.");
+      } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
+          toast.error(t('toasts.documentsPending') || "All documents must be validated first");
+      } else {
+          toast.error(t('toasts.approveError', { error: error.message }))
+      }
       console.error("Error approving subsidy:", error)
     }
   })
@@ -161,7 +202,22 @@ export function ViewSubsidyModal({
       onSubsidyUpdated?.()
     },
     onError: (error) => {
-      toast.error(t('toasts.rejectError', { error: error.message }))
+      let ext = (error.graphQLErrors?.[0]?.extensions as any);
+      if (!ext && (error.networkError as any)?.result?.errors?.[0]?.extensions) {
+        ext = (error.networkError as any).result.errors[0].extensions;
+      }
+      const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
+      if (errorCode === 'STATUS_IS_CLOSED') {
+          toast.error("O subsídio já está fechado e não pode ser alterado.");
+      } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
+          toast.error("Não é possível fechar um subsídio em revisão. É necessário aprovar ou rejeitar primeiro.");
+      } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
+          toast.error("Subsídios aprovados ou rejeitados só podem ser fechados.");
+      } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
+          toast.error(t('toasts.documentsPending') || "All documents must be validated first");
+      } else {
+          toast.error(t('toasts.rejectError', { error: error.message }))
+      }
       console.error("Error rejecting subsidy:", error)
     }
   })
@@ -208,7 +264,129 @@ export function ViewSubsidyModal({
     return status?.id || null
   }
 
-  // Fetch receipts when modal opens
+  // Validate status transition
+  const canChangeStatus = (to: string) => {
+    const from = currentSubsidyStatus
+
+    // Rule: Closed status cannot be changed to anything else
+    if (from === 'closed') return false
+    
+    // Rule: To Closed is allowed from Approved or Rejected only (not In Review)
+    if (to === 'closed') {
+      if (from === 'in_review') return false
+      // Only allowed from approved or rejected
+      return from === 'approved' || from === 'rejected'
+    }
+    
+    // Rule: If Approved or Rejected, can ONLY go to Closed
+    if (from === 'approved' || from === 'rejected') {
+      return to === 'closed'
+    }
+    
+    return true
+  }
+
+  // Handle status change request
+  const handleStatusChangeRequest = (statusName: string) => {
+    const normalizedStatus = statusName.toLowerCase()
+    
+    // Check validation first
+    if (!canChangeStatus(normalizedStatus)) {
+        toast.error(t('toasts.statusChangeNotAllowed'))
+        return
+    }
+
+    // Check document validation
+    if (['approved', 'closed', 'rejected'].includes(normalizedStatus)) {
+        const hasPending = (receipts || []).some((r: any) => !r.is_validated && !r.is_deleted);
+        if (hasPending) {
+             toast.error(t('toasts.documentsPending') || "All documents must be validated first");
+             return;
+        }
+    }
+
+    // For Rejected, we have a specific dialog with reason input
+    if (normalizedStatus === 'rejected') {
+      setRejectionDialog({ isOpen: true, reason: "" })
+      return
+    }
+
+    // For Approved or Closed, we show the confirmation dialog
+    if (normalizedStatus === 'approved' || normalizedStatus === 'closed') {
+      setStatusConfirmationDialog({
+        isOpen: true,
+        status: normalizedStatus as any,
+        statusId: getStatusIdByName(statusName.toUpperCase()) || undefined
+      })
+      return
+    }
+    
+    // For other statuses (Pending, In Review), execute immediately
+    executeStatusChange(normalizedStatus)
+  }
+
+  // Execute status change after confirmation
+  const confirmStatusChangeAction = async () => {
+    const { status, statusId } = statusConfirmationDialog
+    if (!status) return
+
+    try {
+      if (status === 'approved') {
+        setCurrentSubsidyStatus('approved')
+        setMentionStatus('approved')
+        setNewMessage(t('subsidy.statusChangePrefix', { status: t('charts.legend.accepted') }))
+        
+        await approveSubsidyRequest({
+          variables: {
+            id: subsidy.id,
+            approved_amount: subsidy.requested_amount
+          }
+        })
+      } else if (status === 'closed') {
+        const id = statusId || getStatusIdByName('CLOSED')
+        if (id) {
+           setCurrentSubsidyStatus('closed')
+           setMentionStatus('closed')
+           setNewMessage(t('subsidy.statusChangePrefix', { status: t('charts.legend.closed') }))
+           
+           await updateSubsidyRequest({
+             variables: {
+               id: subsidy.id,
+               data: { subsidy_status_id: id }
+             }
+           })
+        }
+      }
+    } catch (error) {
+      console.error(`Error changing status to ${status}:`, error)
+    }
+    setStatusConfirmationDialog({ isOpen: false, status: null })
+  }
+
+  // Helper to execute immediate status changes
+  const executeStatusChange = async (status: string) => {
+     const statusId = getStatusIdByName(status.toUpperCase())
+     if (!statusId) {
+       toast.error(t('filters.status') + ' ' + t('common.notFound'))
+       return
+     }
+     
+     setCurrentSubsidyStatus(status as any)
+     setMentionStatus(status as any)
+     setNewMessage(t('subsidy.statusChangePrefix', { status: t(`filters.${status}`) || status }))
+     chatInputRef.current?.focus()
+     
+     try {
+       await updateSubsidyRequest({
+         variables: {
+           id: subsidy.id,
+           data: { subsidy_status_id: statusId }
+         }
+       })
+     } catch (error) {
+       console.error('Error updating status:', error)
+     }
+  }
   React.useEffect(() => {
     if (isOpen && subsidy?.id) {
       setLoadingDocuments(true)
@@ -443,15 +621,43 @@ export function ViewSubsidyModal({
   }
 
   const handleDeleteMessage = async (messageId: string) => {
-    if (!confirm(t('subsidy.deleteCommentConfirm'))) return
+    setDeleteCommentDialog({ isOpen: true, messageId })
+  }
+
+  const confirmDeleteMessage = async () => {
+    if (!deleteCommentDialog.messageId) return
 
     try {
       await deleteSubsidyRequestMessage({
-        variables: { id: messageId }
+        variables: { id: deleteCommentDialog.messageId }
       })
       toast.success(t('subsidy.commentDeleted'))
+      setDeleteCommentDialog({ isOpen: false, messageId: null })
     } catch (error) {
       // Error handled in useMutation
+    }
+  }
+
+  const confirmRejection = async () => {
+    if (!rejectionDialog.reason) {
+      toast.error(t('subsidy.addRejectionReason'))
+      return
+    }
+
+    setNewMessage(t('subsidy.statusChangeReasonPrefix', { status: t('charts.legend.rejected'), reason: rejectionDialog.reason }))
+    chatInputRef.current?.focus()
+    
+    // Reject subsidy
+    try {
+      await rejectSubsidyRequest({
+        variables: {
+          id: subsidy.id,
+          rejection_reason: rejectionDialog.reason
+        }
+      })
+      setRejectionDialog({ isOpen: false, reason: "" })
+    } catch (error) {
+      console.error('Error rejecting subsidy:', error)
     }
   }
 
@@ -692,127 +898,42 @@ export function ViewSubsidyModal({
                   <DropdownMenuContent align="start">
                     <DropdownMenuLabel>{t('subsidy.changeStatus')}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={async () => {
-                      const statusId = getStatusIdByName('PENDING')
-                      if (!statusId) {
-                        toast.error(t('filters.status') + ' ' + t('common.notFound')) // Assuming simple concat or add new key if needed
-                        return
-                      }
-                      setCurrentSubsidyStatus('pending')
-                      setMentionStatus('pending')
-                      setNewMessage(t('subsidy.statusChangePrefix', { status: t('filters.pending') }))
-                      chatInputRef.current?.focus()
-                      // Update in backend
-                      try {
-                        await updateSubsidyRequest({
-                          variables: {
-                            id: subsidy.id,
-                            data: {
-                              subsidy_status_id: statusId
-                            }
-                          }
-                        })
-                      } catch (error) {
-                        console.error('Error updating status:', error)
-                      }
-                    }}>
+                    <DropdownMenuItem 
+                        onClick={() => handleStatusChangeRequest('PENDING')}
+                        disabled={!canChangeStatus('pending')}
+                    >
                       <Clock className="mr-2 h-4 w-4 text-amber-500" />
                       {t('filters.pending')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={async () => {
-                      const statusId = getStatusIdByName('IN_REVIEW')
-                      if (!statusId) {
-                        toast.error(t('filters.status') + ' ' + 'not found')
-                        return
-                      }
-                      setCurrentSubsidyStatus('in_review')
-                      setMentionStatus('in_review')
-                      setNewMessage(t('subsidy.statusChangePrefix', { status: t('charts.legend.inReview') }))
-                      chatInputRef.current?.focus()
-                      // Update in backend
-                      try {
-                        await updateSubsidyRequest({
-                          variables: {
-                            id: subsidy.id,
-                            data: {
-                              subsidy_status_id: statusId
-                            }
-                          }
-                        })
-                      } catch (error) {
-                        console.error('Error updating status:', error)
-                      }
-                    }}>
+
+                    <DropdownMenuItem 
+                        onClick={() => handleStatusChangeRequest('IN_REVIEW')}
+                        disabled={!canChangeStatus('in_review')}
+                    >
                       <AlertCircle className="mr-2 h-4 w-4 text-blue-500" />
                       {t('charts.legend.inReview')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={async () => {
-                      setCurrentSubsidyStatus('approved')
-                      setMentionStatus('approved')
-                      setNewMessage(t('subsidy.statusChangePrefix', { status: t('charts.legend.accepted') }))
-                      chatInputRef.current?.focus()
-                      // Approve subsidy - use specific mutation
-                      try {
-                        await approveSubsidyRequest({
-                          variables: {
-                            id: subsidy.id,
-                            approved_amount: subsidy.requested_amount
-                          }
-                        })
-                      } catch (error) {
-                        console.error('Error approving subsidy:', error)
-                      }
-                    }}>
+                    
+                    <DropdownMenuItem 
+                        onClick={() => handleStatusChangeRequest('APPROVED')}
+                         disabled={!canChangeStatus('approved')}
+                    >
                       <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
                       {t('charts.legend.accepted')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={async () => {
-                      setCurrentSubsidyStatus('rejected')
-                      setMentionStatus('rejected')
-                      const reason = prompt(t('subsidy.reasonRejection') + ':')
-                      if (reason) {
-                        setNewMessage(t('subsidy.statusChangeReasonPrefix', { status: t('charts.legend.rejected'), reason }))
-                        chatInputRef.current?.focus()
-                        // Reject subsidy
-                        try {
-                          await rejectSubsidyRequest({
-                            variables: {
-                              id: subsidy.id,
-                              rejection_reason: reason
-                            }
-                          })
-                        } catch (error) {
-                          console.error('Error rejecting subsidy:', error)
-                        }
-                      }
-                    }}>
+                    
+                    <DropdownMenuItem 
+                        onClick={() => handleStatusChangeRequest('REJECTED')}
+                        disabled={!canChangeStatus('rejected')}
+                    >
                       <XCircle className="mr-2 h-4 w-4 text-red-500" />
                       {t('charts.legend.rejected')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={async () => {
-                      const statusId = getStatusIdByName('CLOSED')
-                      if (!statusId) {
-                        toast.error(t('filters.status') + ' ' + t('common.notFound'))
-                        return
-                      }
-                      setCurrentSubsidyStatus('closed')
-                      setMentionStatus(null)
-                      setNewMessage(t('subsidy.statusChangePrefix', { status: t('subsidy.closed') }))
-                      chatInputRef.current?.focus()
-                      // Update in backend
-                      try {
-                        await updateSubsidyRequest({
-                          variables: {
-                            id: subsidy.id,
-                            data: {
-                              subsidy_status_id: statusId
-                            }
-                          }
-                        })
-                      } catch (error) {
-                        console.error('Error updating status:', error)
-                      }
-                    }}>
+
+                     <DropdownMenuItem 
+                        onClick={() => handleStatusChangeRequest('CLOSED')}
+                        disabled={!canChangeStatus('closed')}
+                    >
                       <Ban className="mr-2 h-4 w-4 text-gray-500" />
                       {t('subsidy.closed')}
                     </DropdownMenuItem>
@@ -822,7 +943,12 @@ export function ViewSubsidyModal({
                 {/* Priority Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-auto p-0 hover:bg-transparent">
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-auto p-0 hover:bg-transparent"
+                        disabled={currentSubsidyStatus === 'closed'}
+                    >
                       <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 cursor-pointer min-w-[140px] justify-between">
                         <div className="flex items-center gap-2">
                           <div className={cn(
@@ -1147,7 +1273,7 @@ export function ViewSubsidyModal({
                             <div className="flex items-center gap-1">
                               {/* Finance Management Actions - Hidden by default, shown on hover */}
                               <WithPermission requiredPermissions={[PermissionResolverName.Institutions]} partialPermissionCheck>
-                                {doc.is_validated === undefined && (
+                                {doc.is_validated === undefined && currentSubsidyStatus !== 'closed' && (
                                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <Tooltip>
                                       <TooltipTrigger asChild>
@@ -1437,7 +1563,7 @@ export function ViewSubsidyModal({
                             </div>
                             
                             {/* Edit/Delete Actions - Only for user's messages */}
-                            {canEdit && (
+                            {canEdit && currentSubsidyStatus !== 'closed' && (
                               <div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -1598,7 +1724,7 @@ export function ViewSubsidyModal({
                   <div className="flex gap-2 items-center">
                     {/* Mention Buttons */}
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
+                      <DropdownMenuTrigger asChild disabled={currentSubsidyStatus === 'closed'}>
                         <Button variant="outline" size="sm" className="h-9 px-2">
                           <AtSign className="w-3.5 h-3.5" />
                         </Button>
@@ -1628,6 +1754,7 @@ export function ViewSubsidyModal({
                           ? t('subsidy.placeholders.rejectReason')
                           : t('subsidy.placeholders.addComment')
                       }
+                      disabled={currentSubsidyStatus === 'closed'}
                       className={cn(
                         "flex-1 h-9 text-xs transition-all",
                         editingMessage && "border-amber-500 dark:border-amber-500 ring-2 ring-amber-200 dark:ring-amber-900",
@@ -1638,9 +1765,9 @@ export function ViewSubsidyModal({
                     />
                     <Button
                       onClick={handleSendMessage}
-                      disabled={!newMessage.trim()}
+                      disabled={!newMessage.trim() || currentSubsidyStatus === 'closed'}
                       size="sm"
-                      className="h-9 px-3 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 dark:text-gray-900"
+                      className="h-9 px-3 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 dark:text-gray-900 disabled:opacity-50"
                     >
                       <Send className="w-3.5 h-3.5" />
                     </Button>
@@ -1668,6 +1795,85 @@ export function ViewSubsidyModal({
           </div>
         </div>
       </div>
+      {/* Confirmation Dialogs */}
+      <ConfirmationDialog
+        isOpen={deleteCommentDialog.isOpen}
+        onClose={() => setDeleteCommentDialog({ isOpen: false, messageId: null })}
+        onConfirm={confirmDeleteMessage}
+        title={t('subsidy.deleteCommentTitle') || 'Excluir Comentário'}
+        description={t('subsidy.deleteCommentConfirm') || 'Tem certeza que deseja excluir este comentário?'}
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
+        severity="high"
+      />
+
+      {/* Rejection Dialog */}
+      <Dialog open={rejectionDialog.isOpen} onOpenChange={(open) => !open && setRejectionDialog({ isOpen: false, reason: "" })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+                <AlertCircle className="w-5 h-5" />
+                {t('subsidy.rejectTitle')}
+            </DialogTitle>
+            <DialogDescription>
+              {t('subsidy.reasonRejection')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:border-red-800">
+                <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-2 text-justify">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    {t('subsidy.statusChange.warning.rejected')}
+                </p>
+            </div>
+            <Textarea
+              value={rejectionDialog.reason}
+              onChange={(e) => setRejectionDialog(prev => ({ ...prev, reason: e.target.value }))}
+              placeholder={t('subsidy.placeholders.rejectReason')}
+              className="resize-none"
+              rows={4}
+            />
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setRejectionDialog({ isOpen: false, reason: "" })} className="w-full sm:w-auto">
+              {t('common.cancel')}
+            </Button>
+            <div className="flex flex-col gap-2 w-full sm:w-auto">
+                <Button variant="destructive" onClick={confirmRejection} className="w-full">
+                <AlertCircle className="w-4 h-4 mr-2" />
+                {t('common.reject')}
+                </Button>
+                <p className="text-xs text-center text-red-600">
+                    {t('common.riskAware')}
+                </p>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Status Confirmation Dialog */}
+       <ConfirmationDialog
+        isOpen={statusConfirmationDialog.isOpen}
+        onClose={() => setStatusConfirmationDialog({ isOpen: false, status: null })}
+        onConfirm={confirmStatusChangeAction}
+        title={t('subsidy.statusChange.title')}
+        description={
+            statusConfirmationDialog.status === 'approved' 
+            ? t('subsidy.statusChange.warning.approved')
+            : statusConfirmationDialog.status === 'closed'
+                ? t('subsidy.statusChange.warning.closed')
+                : t('subsidy.statusChange.warning.generic')
+        }
+        confirmText={t('common.confirm')}
+        cancelText={t('common.cancel')}
+        severity="high"
+        warnings={[
+            {
+                icon: AlertCircle,
+                text: t('subsidy.irreversibleActionWarning')
+            }
+        ]}
+      />
     </div>
   )
 }

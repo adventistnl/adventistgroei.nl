@@ -238,7 +238,8 @@ export const projectTranslations = {
       documentsLoadError: "Error loading documents",
       commentUpdated: "Comment updated",
       commentAdded: "Comment added",
-      documentCommentPrefix: "Comment on document \"{{name}}\": "
+      documentCommentPrefix: "Comment on document \"{{name}}\": ",
+      documentsPending: "All documents must be validated first"
     },
     
     // Error messages
@@ -1050,7 +1051,8 @@ export const projectTranslations = {
       documentsLoadError: "Fout bij laden documenten",
       commentUpdated: "Opmerking bijgewerkt",
       commentAdded: "Opmerking toegevoegd",
-      documentCommentPrefix: "Opmerking bij document \"{{name}}\": "
+      documentCommentPrefix: "Opmerking bij document \"{{name}}\": ",
+      documentsPending: "Alle documenten moeten eerst worden gevalideerd"
     },
     
     // Error messages
@@ -1861,7 +1863,8 @@ export const projectTranslations = {
       documentsLoadError: "Erro ao carregar documentos",
       commentUpdated: "Comentário atualizado",
       commentAdded: "Comentário adicionado",
-      documentCommentPrefix: "Comentário sobre documento \"{{name}}\": "
+      documentCommentPrefix: "Comentário sobre documento \"{{name}}\": ",
+      documentsPending: "Todos os documentos devem ser validados antes de prosseguir"
     },
     
     // Error messages

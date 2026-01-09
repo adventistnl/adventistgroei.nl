@@ -294,7 +294,16 @@ export default function ProjectDetailsPage() {
       refetchProject()
     },
     onError: (error) => {
-      toast.error(`${t.errors.updateError}: ${error.message}`)
+      let ext = (error.graphQLErrors?.[0]?.extensions as any);
+      if (!ext && (error.networkError as any)?.result?.errors?.[0]?.extensions) {
+        ext = (error.networkError as any).result.errors[0].extensions;
+      }
+      const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
+      if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
+          toast.error(t.toasts.documentsPending || "All documents must be validated first", { duration: 5000 });
+      } else {
+          toast.error(`${t.errors.updateError}: ${error.message}`)
+      }
       console.error("Error updating subsidy request:", error)
     }
   })
@@ -305,7 +314,19 @@ export default function ProjectDetailsPage() {
       refetchProject()
     },
     onError: (error) => {
-      toast.error(`${t.errors.updateError}: ${error.message}`)
+      console.log('❌ Page Subsidy Error (Full):', JSON.stringify(error, null, 2));
+      let ext = (error.graphQLErrors?.[0]?.extensions as any);
+      if (!ext && (error.networkError as any)?.result?.errors?.[0]?.extensions) {
+        ext = (error.networkError as any).result.errors[0].extensions;
+      }
+      console.log('❌ Page Subsidy Error (Extensions):', ext);
+      const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
+      console.log('❌ Extracted Error Code:', errorCode);
+      if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
+          toast.error(t.toasts.documentsPending || "All documents must be validated first", { duration: 5000 });
+      } else {
+          toast.error(`${t.errors.updateError}: ${error.message}`)
+      }
       console.error("Error approving subsidy request:", error)
     }
   })
@@ -316,7 +337,12 @@ export default function ProjectDetailsPage() {
       refetchProject()
     },
     onError: (error) => {
-      toast.error(`${t.errors.updateError}: ${error.message}`)
+      const errorCode = (error.graphQLErrors?.[0]?.extensions as any)?.additional?.errorCode;
+      if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
+          toast.error(t.toasts.documentsPending || "All documents must be validated first", { duration: 5000 });
+      } else {
+          toast.error(`${t.errors.updateError}: ${error.message}`)
+      }
       console.error("Error rejecting subsidy request:", error)
     }
   })
