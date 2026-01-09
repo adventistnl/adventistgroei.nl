@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { AppLayout } from "@/components/layouts/app-layout"
@@ -145,7 +145,7 @@ export default function AnnualBudgetPage() {
 
   // GraphQL Queries
   const { data: dashboardData, loading: loadingDashboard, refetch: refetchDashboard } = useBudgetDashboardData(selectedYear)
-  const { data: availableYearsData, loading: loadingYears } = useAvailableYears()
+  const { data: availableYearsData, loading: loadingYears, refetch: refetchYears } = useAvailableYears()
   const { data: kpisData, loading: loadingKPIs, refetch: refetchKPIs } = useAnnualBudgetKPIs({
     skip: !currentInstitutionData?.id,
     variables:{
@@ -679,7 +679,8 @@ export default function AnnualBudgetPage() {
       await Promise.all([
         refetchKPIs(),
         refetchDashboard(),
-        refetchInstitutionById()
+        refetchInstitutionById(),
+        refetchYears()
       ])
       
       if (showNotification) {
@@ -697,6 +698,12 @@ export default function AnnualBudgetPage() {
       setRefreshing(false)
     }
   }
+
+  // Refetch data when page is opened
+  useEffect(() => {
+    handleRefresh()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleAddYear = () => {
     const currentYear = new Date().getFullYear()
