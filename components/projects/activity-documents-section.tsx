@@ -61,11 +61,11 @@ export function ActivityDocumentsSection({
 
       if (validFiles.length > 0) {
         setUploadedFiles(prev => [...prev, ...validFiles])
-        toast.success(`${validFiles.length} arquivo(s) adicionado(s)`)
+        toast.success(t('activities.documents.files_added', { count: validFiles.length }))
       }
 
       if (validFiles.length !== droppedFiles.length) {
-        toast.error("Alguns arquivos foram rejeitados (apenas PDF e imagens até 10MB)")
+        toast.error(t('activities.documents.files_rejected'))
       }
     }
   }
@@ -87,7 +87,7 @@ export function ActivityDocumentsSection({
 
         if (validFiles.length > 0) {
           setUploadedFiles(prev => [...prev, ...validFiles])
-          toast.success(`${validFiles.length} arquivo(s) adicionado(s)`)
+          toast.success(t('activities.documents.files_added', { count: validFiles.length }))
         }
       }
     }
@@ -106,7 +106,7 @@ export function ActivityDocumentsSection({
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('pt-BR', {
+    return new Date(dateString).toLocaleString('en-US', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -118,7 +118,7 @@ export function ActivityDocumentsSection({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Arquivos Anexados</h3>
+        <h3 className="text-lg font-semibold text-gray-900">{t('activities.documents.title')}</h3>
         {uploadedFiles.length > 0 && (
           <Button
             onClick={handleUploadFiles}
@@ -127,7 +127,10 @@ export function ActivityDocumentsSection({
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
             <Upload className="w-3 h-3 mr-2" />
-            {uploading ? 'Enviando...' : `Enviar ${uploadedFiles.length} arquivo(s)`}
+            {uploading 
+              ? t('activities.documents.uploading') 
+              : t('activities.documents.upload_files', { count: uploadedFiles.length })
+            }
           </Button>
         )}
       </div>
@@ -146,7 +149,7 @@ export function ActivityDocumentsSection({
       >
         <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
         <p className="text-sm text-gray-600 mb-1">
-          Arraste arquivos aqui ou clique para selecionar
+          {t('activities.documents.drag_or_click')}
         </p>
         <Button
           variant="outline"
@@ -157,14 +160,14 @@ export function ActivityDocumentsSection({
           {t('common.upload')}
         </Button>
         <p className="text-xs text-gray-500 mt-2">
-          Formatos suportados: JPG, PNG, PDF (máx. 10MB)
+          {t('activities.documents.supported_formats')}
         </p>
       </div>
 
       {/* Pending Files to Upload */}
       {uploadedFiles.length > 0 && (
         <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700">Arquivos pendentes de envio:</p>
+          <p className="text-sm font-medium text-gray-700">{t('activities.documents.pending_upload')}</p>
           <div className="flex flex-wrap gap-2">
             {uploadedFiles.map((file, index) => (
               <div
@@ -197,11 +200,13 @@ export function ActivityDocumentsSection({
       {/* Existing Documents */}
       {loading ? (
         <div className="text-center py-4 text-gray-500">
-          <p>Carregando documentos...</p>
+          <p>{t('activities.documents.loading')}</p>
         </div>
       ) : documents.length > 0 ? (
         <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700">Documentos enviados ({documents.length}):</p>
+          <p className="text-sm font-medium text-gray-700">
+            {t('activities.documents.uploaded_documents', { count: documents.length })}
+          </p>
           <div className="space-y-2">
             {documents.map((doc) => (
               <div
@@ -220,21 +225,21 @@ export function ActivityDocumentsSection({
                       {doc.filename}
                     </p>
                     <p className="text-xs text-gray-500">
-                      Enviado em {formatDate(doc.created_at)}
+                      {t('activities.documents.uploaded_on')} {formatDate(doc.created_at)}
                     </p>
                   </div>
 
                   <div className="flex items-center gap-2">
                     {doc.is_validated ? (
                       <TagBadge
-                        label="Validado"
+                        label={t('activities.documents.validated')}
                         variant="green"
                         icon={CheckCircle}
                         size="xs"
                       />
                     ) : (
                       <TagBadge
-                        label="Pendente"
+                        label={t('activities.documents.pending')}
                         variant="yellow"
                         icon={Clock}
                         size="xs"
@@ -249,7 +254,7 @@ export function ActivityDocumentsSection({
                     size="sm"
                     onClick={() => downloadDocument(doc.id, doc.filename)}
                     className="h-7 w-7 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-100"
-                    title="Baixar documento"
+                    title={t('activities.documents.download_document')}
                   >
                     <Download className="w-3 h-3" />
                   </Button>
@@ -260,7 +265,7 @@ export function ActivityDocumentsSection({
                       size="sm"
                       onClick={() => validateDocument(doc.id)}
                       className="h-7 w-7 p-0 text-green-600 hover:text-green-800 hover:bg-green-100"
-                      title="Validar documento"
+                      title={t('activities.documents.validate_document')}
                     >
                       <Check className="w-3 h-3" />
                     </Button>
@@ -270,12 +275,12 @@ export function ActivityDocumentsSection({
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      if (confirm('Tem certeza que deseja excluir este documento?')) {
+                      if (confirm(t('activities.documents.delete_confirm'))) {
                         deleteDocument(doc.id)
                       }
                     }}
                     className="h-7 w-7 p-0 text-red-600 hover:text-red-800 hover:bg-red-100"
-                    title="Excluir documento"
+                    title={t('activities.documents.delete_document')}
                   >
                     <Trash2 className="w-3 h-3" />
                   </Button>
@@ -287,8 +292,8 @@ export function ActivityDocumentsSection({
       ) : (
         <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
           <File className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-          <p className="text-sm">Nenhum documento anexado ainda</p>
-          <p className="text-xs mt-1">Arraste arquivos ou clique em "Upload" para adicionar</p>
+          <p className="text-sm">{t('activities.documents.no_documents')}</p>
+          <p className="text-xs mt-1">{t('activities.documents.drag_to_add')}</p>
         </div>
       )}
     </div>

@@ -55,8 +55,48 @@ const resources = {
             status: "Current activity status",
             priority: "Activity urgency level", 
             category: "Type of activity",
-            subsidy: "Whether this activity is subsidized or not"
+            subsidy: "Whether this activity is subsidized or not",
+            total_requested_amount: "Total amount requested for this activity"
           },
+          status_labels: {
+            planning: "Planning",
+            in_progress: "In Progress",
+            completed: "Completed",
+            pending_approval: "Pending Approval",
+            cancelled: "Cancelled"
+          },
+          priority_labels: {
+            urgent: "Urgent",
+            high: "High",
+            medium: "Medium",
+            low: "Low"
+          },
+          tag_labels: {
+            reform: "Reform",
+            equipment: "Equipment",
+            materials: "Materials",
+            training: "Training",
+            travel: "Travel",
+            event: "Event",
+            transport: "Transport",
+            marketing: "Marketing",
+            services: "Services",
+            feeding: "Feeding",
+            accommodation: "Accommodation"
+          },
+          total_requested_amount: "Total Requested Amount",
+          press_enter_to_save: "Press Enter or click outside to save",
+          done: "Done",
+          no_category: "No category",
+          assignees: "Assignees",
+          assignees_count: "{{count}} assignees",
+          select_assignees: "Select Assignees",
+          search_user: "Search user...",
+          click_to_add_description: "Click here to add a description...",
+          metadata: "Metadata",
+          history: "History",
+          technical_details: "Technical details and activity metadata",
+          change_history: "Activity change history",
           status_options: {
             todo: "To Do",
             in_progress: "In Progress", 
@@ -138,6 +178,79 @@ const resources = {
           new_activity: "New Activity",
           clear_filters: "Clear Filters",
           filters_cleared: "Filters cleared"
+        },
+        logs: {
+          no_history: "No change history found",
+          fields: {
+            status: "Status",
+            priority: "Priority",
+            name: "Name",
+            description: "Description",
+            budget_amount: "Budget",
+            deadline: "Deadline",
+            owner_id: "Assignee",
+            is_subsidized: "Subsidized",
+            activity_tag: "Category (Legacy)",
+            tags: "Categories",
+            custom_tags: "Custom Tags"
+          },
+          values: {
+            yes: "Yes",
+            no: "No"
+          },
+          actions: {
+            created: "{{user}} created the activity",
+            deleted: "{{user}} removed the activity",
+            status_changed: "{{user}} changed status from",
+            priority_changed: "{{user}} changed priority from",
+            budget_updated: "{{user}} updated budget from",
+            subsidized_marked: "{{user}} marked as subsidized",
+            subsidized_unmarked: "{{user}} unmarked as subsidized",
+            field_updated: "{{user}} updated {{field}}",
+            from: "from",
+            to: "to",
+            generic_action: "{{user}} performed an action: {{action}}"
+          },
+          time: {
+            just_now: "Just now",
+            minutes_ago: "{{count}}m ago",
+            hours_ago: "{{count}}h ago",
+            days_ago: "{{count}}d ago"
+          }
+        },
+        user_selector: {
+          add_assignees: "Add Assignees",
+          select_assignees: "Select Assignees",
+          search_user: "Search user...",
+          selected: "Selected",
+          search_label: "Search User",
+          available_users: "Available Users",
+          no_user_found: "No user found",
+          no_user_available: "No user available",
+          selection_count: "{{selected}} of {{max}} user(s) selected",
+          cancel: "Cancel",
+          confirm: "Confirm ({{count}})"
+        },
+        documents: {
+          title: "Attached Files",
+          uploading: "Uploading...",
+          upload_files: "Upload {{count}} file(s)",
+          files_added: "{{count}} file(s) added",
+          files_rejected: "Some files were rejected (only PDF and images up to 10MB)",
+          drag_or_click: "Drag files here or click to select",
+          supported_formats: "Supported formats: JPG, PNG, PDF (max. 10MB)",
+          pending_upload: "Pending upload files:",
+          loading: "Loading documents...",
+          uploaded_documents: "Uploaded documents ({{count}}):",
+          uploaded_on: "Uploaded on",
+          validated: "Validated",
+          pending: "Pending",
+          download_document: "Download document",
+          validate_document: "Validate document",
+          delete_confirm: "Are you sure you want to delete this document?",
+          delete_document: "Delete document",
+          no_documents: "No documents attached yet",
+          drag_to_add: "Drag files or click \"Upload\" to add"
         }
       },
       metrics: {
@@ -1879,8 +1992,48 @@ const resources = {
             status: "Huidige activiteitstatus",
             priority: "Urgentieniveau van activiteit", 
             category: "Type activiteit",
-            subsidy: "Of deze activiteit gesubsidieerd is of niet"
+            subsidy: "Of deze activiteit gesubsidieerd is of niet",
+            total_requested_amount: "Totaal aangevraagd bedrag voor deze activiteit"
           },
+          status_labels: {
+            planning: "Planning",
+            in_progress: "In Uitvoering",
+            completed: "Voltooid",
+            pending_approval: "In Afwachting van Goedkeuring",
+            cancelled: "Geannuleerd"
+          },
+          priority_labels: {
+            urgent: "Urgent",
+            high: "Hoog",
+            medium: "Gemiddeld",
+            low: "Laag"
+          },
+          tag_labels: {
+            reform: "Hervorming",
+            equipment: "Apparatuur",
+            materials: "Materialen",
+            training: "Training",
+            travel: "Reizen",
+            event: "Evenement",
+            transport: "Transport",
+            marketing: "Marketing",
+            services: "Diensten",
+            feeding: "Voeding",
+            accommodation: "Accommodatie"
+          },
+          total_requested_amount: "Totaal Aangevraagd Bedrag",
+          press_enter_to_save: "Druk op Enter of klik buiten om op te slaan",
+          done: "Klaar",
+          no_category: "Geen categorie",
+          assignees: "Verantwoordelijken",
+          assignees_count: "{{count}} verantwoordelijken",
+          select_assignees: "Selecteer Verantwoordelijken",
+          search_user: "Zoek gebruiker...",
+          click_to_add_description: "Klik hier om een beschrijving toe te voegen...",
+          metadata: "Metadata",
+          history: "Geschiedenis",
+          technical_details: "Technische details en activiteitsmetadata",
+          change_history: "Wijzigingsgeschiedenis van activiteit",
           status_options: {
             todo: "Te Doen",
             in_progress: "In Uitvoering", 
@@ -1962,6 +2115,79 @@ const resources = {
           new_activity: "Nieuwe Activiteit",
           clear_filters: "Filters Wissen",
           filters_cleared: "Filters gewist"
+        },
+        logs: {
+          no_history: "Geen wijzigingsgeschiedenis gevonden",
+          fields: {
+            status: "Status",
+            priority: "Prioriteit",
+            name: "Naam",
+            description: "Beschrijving",
+            budget_amount: "Budget",
+            deadline: "Deadline",
+            owner_id: "Verantwoordelijke",
+            is_subsidized: "Gesubsidieerd",
+            activity_tag: "Categorie (Verouderd)",
+            tags: "Categorieën",
+            custom_tags: "Aangepaste Tags"
+          },
+          values: {
+            yes: "Ja",
+            no: "Nee"
+          },
+          actions: {
+            created: "{{user}} heeft de activiteit aangemaakt",
+            deleted: "{{user}} heeft de activiteit verwijderd",
+            status_changed: "{{user}} heeft de status gewijzigd van",
+            priority_changed: "{{user}} heeft de prioriteit gewijzigd van",
+            budget_updated: "{{user}} heeft het budget bijgewerkt van",
+            subsidized_marked: "{{user}} heeft gemarkeerd als gesubsidieerd",
+            subsidized_unmarked: "{{user}} heeft de subsidie verwijderd",
+            field_updated: "{{user}} heeft {{field}} bijgewerkt",
+            from: "van",
+            to: "naar",
+            generic_action: "{{user}} heeft een actie uitgevoerd: {{action}}"
+          },
+          time: {
+            just_now: "Zojuist",
+            minutes_ago: "{{count}}m geleden",
+            hours_ago: "{{count}}u geleden",
+            days_ago: "{{count}}d geleden"
+          }
+        },
+        user_selector: {
+          add_assignees: "Verantwoordelijken Toevoegen",
+          select_assignees: "Selecteer Verantwoordelijken",
+          search_user: "Zoek gebruiker...",
+          selected: "Geselecteerd",
+          search_label: "Zoek Gebruiker",
+          available_users: "Beschikbare Gebruikers",
+          no_user_found: "Geen gebruiker gevonden",
+          no_user_available: "Geen gebruiker beschikbaar",
+          selection_count: "{{selected}} van {{max}} gebruiker(s) geselecteerd",
+          cancel: "Annuleren",
+          confirm: "Bevestigen ({{count}})"
+        },
+        documents: {
+          title: "Bijgevoegde Bestanden",
+          uploading: "Uploaden...",
+          upload_files: "Upload {{count}} bestand(en)",
+          files_added: "{{count}} bestand(en) toegevoegd",
+          files_rejected: "Sommige bestanden zijn afgewezen (alleen PDF en afbeeldingen tot 10MB)",
+          drag_or_click: "Sleep bestanden hier of klik om te selecteren",
+          supported_formats: "Ondersteunde formaten: JPG, PNG, PDF (max. 10MB)",
+          pending_upload: "Bestanden in afwachting van upload:",
+          loading: "Documenten laden...",
+          uploaded_documents: "Geüploade documenten ({{count}}):",
+          uploaded_on: "Geüpload op",
+          validated: "Gevalideerd",
+          pending: "In Afwachting",
+          download_document: "Document downloaden",
+          validate_document: "Document valideren",
+          delete_confirm: "Weet u zeker dat u dit document wilt verwijderen?",
+          delete_document: "Document verwijderen",
+          no_documents: "Nog geen documenten bijgevoegd",
+          drag_to_add: "Sleep bestanden of klik op \\\"Upload\\\" om toe te voegen"
         }
       },
       metrics: {
@@ -3505,7 +3731,8 @@ const resources = {
         see_all_churches: "Ver Todas as Igrejas",
         all_members_associated_with: "Todos os membros associados com",
         all_departments_within: "Todos os departamentos dentro de",
-        view_contact: "Ver Contato"
+        view_contact: "Ver Contato",
+        add: "Adicionar"
       },
       privacy: {
         protected_content: "Conteúdo Protegido",
