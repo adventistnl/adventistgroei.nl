@@ -44,17 +44,19 @@ export function ProjectsOverTimeChart({
   // Use selectedYear if provided, otherwise use current year
   const chartYear = selectedYear || new Date().getFullYear()
 
-  // Generate dynamic chart config based on departments
+  // Generate dynamic chart config based on departments - HSL colors for light/dark mode
   const chartConfig: ChartConfig = React.useMemo(() => {
     const colors = [
-      "hsl(var(--chart-1))",
-      "hsl(var(--chart-2))",
-      "hsl(var(--chart-3))",
-      "hsl(var(--chart-4))",
-      "hsl(var(--chart-5))",
-      "hsl(var(--chart-1))",
-      "hsl(var(--chart-2))",
-      "hsl(var(--chart-3))",
+      "hsl(217, 91%, 60%)",  // Deep Blue
+      "hsl(142, 76%, 36%)",  // Deep Green
+      "hsl(32, 95%, 44%)",   // Deep Orange
+      "hsl(271, 91%, 65%)",  // Deep Purple
+      "hsl(330, 81%, 60%)",  // Deep Pink
+      "hsl(189, 94%, 43%)",  // Deep Cyan
+      "hsl(14, 100%, 57%)",  // Deep Coral
+      "hsl(250, 95%, 63%)",  // Deep Indigo
+      "hsl(173, 80%, 40%)",  // Deep Teal
+      "hsl(346, 77%, 50%)",  // Deep Rose
     ]
 
     const config: ChartConfig = {
@@ -72,7 +74,7 @@ export function ProjectsOverTimeChart({
     })
 
     return config
-  }, [departments])
+  }, [departments, t_project])
 
   // Transform data to show months on X-axis and departments as separate areas/bars
   const chartData = React.useMemo(() => {
@@ -241,8 +243,9 @@ export function ProjectsOverTimeChart({
                     dataKey={deptKey}
                     type="monotone"
                     fill={`var(--color-${deptKey})`}
-                    fillOpacity={0.4}
+                    fillOpacity={0.2}
                     stroke={`var(--color-${deptKey})`}
+                    strokeWidth={2}
                     stackId="a"
                   />
                 )

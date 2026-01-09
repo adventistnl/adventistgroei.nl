@@ -1419,6 +1419,17 @@ export default function AnnualBudgetPage() {
               <p className="text-muted-foreground text-sm sm:text-base">
                 {t('annual_budget.subtitle')}
               </p>
+                {currentInstitutionData && (
+                  <div className="flex items-center gap-2 mt-3">
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                      <Building className="w-3 h-3 mr-1" />
+                      {currentInstitutionData.name}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {currentInstitutionData.denomination}
+                    </Badge>
+                  </div>
+                )}
             </div>
             
             <div className="flex items-center gap-3">
@@ -1553,6 +1564,7 @@ export default function AnnualBudgetPage() {
                 }
               }}
               defaultYear={selectedYear}
+              availableBudget={kpiData.budgetRemaining > 0 ? kpiData.budgetRemaining : undefined}
             />
           )}
 
@@ -1579,6 +1591,7 @@ export default function AnnualBudgetPage() {
                 }
               }}
               defaultYear={selectedYear}
+              availableBudget={undefined}
             />
           )}
 

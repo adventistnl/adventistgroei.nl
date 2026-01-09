@@ -78,6 +78,7 @@ export interface AnnualBudgetViewEditModalProps {
   readonly?: boolean
   isLocked?: boolean
   defaultYear?: number // Year to pre-populate when creating new budget
+  availableBudget?: number // Available budget from institution (real API data)
 }
 
 export function AnnualBudgetViewEditModal({
@@ -89,7 +90,8 @@ export function AnnualBudgetViewEditModal({
   onSave,
   readonly = false,
   isLocked = false,
-  defaultYear
+  defaultYear,
+  availableBudget
 }: AnnualBudgetViewEditModalProps) {
   const { t } = useTranslation()
   const { formatCurrency } = useCurrency()
@@ -213,6 +215,9 @@ export function AnnualBudgetViewEditModal({
           newErrors.planned_budget = t("annual_budget.modals.validation.planned_budget_invalid")
         } else if (budgetAmount <= 0) {
           newErrors.planned_budget = t("annual_budget.modals.validation.planned_budget_min")
+        } else if (entityType?.toLowerCase() !== 'institution' && availableBudget !== undefined && budgetAmount > availableBudget) {
+          newErrors.planned_budget = t("annual_budget.modals.validation.exceeds_available_budget", 
+            { available: formatCurrency(availableBudget) }) || `Exceeds available budget: ${formatCurrency(availableBudget)}`
         }
       }
 
@@ -697,24 +702,37 @@ export function AnnualBudgetViewEditModal({
                 {/* Quick Amount Selection Tags - Horizontal Scroll */}
                 <div className="overflow-x-auto scrollbar-thin pb-2 mb-3">
                   <div className="flex gap-2 min-w-max">
-                    {[100000, 250000, 500000, 750000, 1000000, 1500000, 2000000, 2500000].map((amount) => (
-                      <Button
-                        key={amount}
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleInputChange('planned_budget', amount.toString())}
-                        disabled={isLoading}
-                        className={cn(
-                          "h-8 text-xs font-medium transition-all hover:bg-primary hover:text-primary-foreground border-2 flex-shrink-0",
-                          formData.planned_budget === amount.toString() 
-                            ? "bg-primary text-primary-foreground border-primary" 
-                            : "border-border text-foreground"
-                        )}
-                      >
-                        ${(amount / 1000)}K
-                      </Button>
-                    ))}
+                    {[100000, 250000, 500000, 750000, 1000000, 1500000, 2000000, 2500000]
+                      .filter((amount) => {
+                        // Se for departamento e houver orçamento disponível, filtrar valores que excedem
+                        if (entityType?.toLowerCase() !== 'institution' && availableBudget !== undefined) {
+                          return amount <= availableBudget
+                        }
+                        return true
+                      })
+                      .map((amount) => {
+                        const isDisabled = isLoading || (entityType?.toLowerCase() !== 'institution' && availableBudget !== undefined && amount > availableBudget)
+                        return (
+                          <Button
+                            key={amount}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleInputChange('planned_budget', amount.toString())}
+                            disabled={isDisabled}
+                            className={cn(
+                              "h-8 text-xs font-medium transition-all hover:bg-primary hover:text-primary-foreground border-2 flex-shrink-0",
+                              formData.planned_budget === amount.toString() 
+                                ? "bg-primary text-primary-foreground border-primary" 
+                                : isDisabled
+                                  ? "border-border text-muted-foreground opacity-50 cursor-not-allowed"
+                                  : "border-border text-foreground"
+                            )}
+                          >
+                            ${(amount / 1000)}K
+                          </Button>
+                        )
+                      })}
                   </div>
                 </div>
                 
@@ -730,6 +748,11 @@ export function AnnualBudgetViewEditModal({
                 />
                 {errors.planned_budget && (
                   <p className="text-sm text-red-600">{errors.planned_budget}</p>
+                )}
+                {entityType?.toLowerCase() !== 'institution' && availableBudget !== undefined && (
+                   <p className="text-xs text-muted-foreground mt-1">
+                    {t('annual_budget.modals.fields.available_budget_hint', 'Available budget')}: {formatCurrency(availableBudget)}
+                  </p>
                 )}
               </div>
             </div>

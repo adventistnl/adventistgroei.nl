@@ -38,16 +38,18 @@ export function ProjectsByDepartmentChart({ data, departments }: ProjectsByDepar
   const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
   const id = "projects-by-department"
 
-  // Cores para o gráfico PIE - adaptáveis ao tema
+  // Cores para o gráfico PIE - HSL para light/dark mode
   const COLORS = [
-    'hsl(var(--chart-1))',
-    'hsl(var(--chart-2))',
-    'hsl(var(--chart-3))',
-    'hsl(var(--chart-4))',
-    'hsl(var(--chart-5))',
-    'hsl(var(--chart-1))',
-    'hsl(var(--chart-2))',
-    'hsl(var(--chart-3))'
+    'hsl(217, 91%, 60%)',  // Deep Blue
+    'hsl(142, 76%, 36%)',  // Deep Green
+    'hsl(32, 95%, 44%)',   // Deep Orange
+    'hsl(271, 91%, 65%)',  // Deep Purple
+    'hsl(330, 81%, 60%)',  // Deep Pink
+    'hsl(189, 94%, 43%)',  // Deep Cyan
+    'hsl(14, 100%, 57%)',  // Deep Coral
+    'hsl(250, 95%, 63%)',  // Deep Indigo
+    'hsl(173, 80%, 40%)',  // Deep Teal
+    'hsl(346, 77%, 50%)',  // Deep Rose
   ]
 
   // Transformar dados para o PIE chart
@@ -121,7 +123,7 @@ export function ProjectsByDepartmentChart({ data, departments }: ProjectsByDepar
             {t_project.charts.distributionByDepartment}
           </CardDescription>
         </div>
-        <Select value={activeDepartment} onValueChange={setActiveDepartment}>
+        {/* <Select value={activeDepartment} onValueChange={setActiveDepartment}>
           <SelectTrigger
             className="ml-auto h-7 w-[160px] rounded-lg pl-2.5"
             aria-label="Select a department"
@@ -153,7 +155,7 @@ export function ProjectsByDepartmentChart({ data, departments }: ProjectsByDepar
               )
             })}
           </SelectContent>
-        </Select>
+        </Select> */}
       </CardHeader>
       <CardContent className="flex flex-1 justify-center pb-0">
         <ChartContainer

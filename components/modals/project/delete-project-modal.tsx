@@ -40,6 +40,10 @@ interface ProjectData {
   description: string
   budget: number
   status?: string
+  activities?: number
+  subsidyRequests?: number
+  volunteers?: number
+  documents?: number
 }
 
 export interface DeleteProjectModalProps {
@@ -88,7 +92,6 @@ export function DeleteProjectModal({
       toast.dismiss(loadingToast)
       toast.success(t.toasts.projectDeleted, {
         duration: 3000,
-        icon: '🗑️'
       })
       
       if (onConfirm) {
@@ -209,19 +212,15 @@ export function DeleteProjectModal({
               <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <FileText className="w-4 h-4" />
-                  <span>{t.deleteProjectActivities || "Atividades"}: <strong className="text-foreground">0</strong></span>
+                  <span>{t.deleteProjectActivities || "Atividades"}: <strong className="text-foreground">{project.activities || 0}</strong></span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <DollarSign className="w-4 h-4" />
-                  <span>{t.deleteProjectSubsidies || "Subsídios"}: <strong className="text-foreground">0</strong></span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Users className="w-4 h-4" />
-                  <span>{t.deleteProjectVolunteers || "Voluntários"}: <strong className="text-foreground">0</strong></span>
+                  <span>{t.deleteProjectSubsidies || "Subsídios"}: <strong className="text-foreground">{project.subsidyRequests || 0}</strong></span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Database className="w-4 h-4" />
-                  <span>{t.deleteProjectDocuments || "Documentos"}: <strong className="text-foreground">0</strong></span>
+                  <span>{t.deleteProjectDocuments || "Documentos"}: <strong className="text-foreground">{project.documents || 0}</strong></span>
                 </div>
               </div>
             </div>

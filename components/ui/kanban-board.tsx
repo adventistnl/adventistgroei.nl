@@ -229,7 +229,6 @@ export function KanbanBoard({
       
       toast.success(`${pendingChanges.length} change${pendingChanges.length > 1 ? 's' : ''} saved successfully!`, {
         duration: 2000,
-        icon: '✅'
       })
       
       setPendingChanges([])

@@ -122,6 +122,11 @@ export const projectTranslations = {
       actions: "Actions",
       budget: "Budget",
       period: "Period",
+      timeline: "Timeline",
+      daysLeft: "Days Left",
+      daysOverdue: "{{days}}d overdue",
+      daysRemaining: "{{days}}d",
+      today: "Today",
       yes: "Yes",
       no: "No",
       clearFilters: "Clear filters",
@@ -131,7 +136,8 @@ export const projectTranslations = {
       showingResults: "Showing {{from}} to {{to}} of {{total}} results",
       previous: "Previous",
       next: "Next",
-      noResults: "No results found"
+      noResults: "No results found",
+      openMenu: "Open menu"
     },
     
     // Modal
@@ -705,6 +711,7 @@ export const projectTranslations = {
     describeProject: "Describe your project goals, activities, and expected outcomes",
     selectDepartment: "Select department",
     selectLanguage: "Select language",
+    unknown: "Unknown",
     
     // Form descriptions
     privateProjectDesc: "Only visible to authorized users",
@@ -927,6 +934,11 @@ export const projectTranslations = {
       actions: "Acties",
       budget: "Budget",
       period: "Periode",
+      timeline: "Tijdlijn",
+      daysLeft: "Dagen Over",
+      daysOverdue: "{{days}}d achterstallig",
+      daysRemaining: "{{days}}d",
+      today: "Vandaag",
       yes: "Ja",
       no: "Nee",
       clearFilters: "Filters wissen",
@@ -936,7 +948,8 @@ export const projectTranslations = {
       showingResults: "Toont {{from}} tot {{to}} van {{total}} resultaten",
       previous: "Vorige",
       next: "Volgende",
-      noResults: "Geen resultaten gevonden"
+      noResults: "Geen resultaten gevonden",
+      openMenu: "Menu openen"
     },
     
     // Modal
@@ -1529,6 +1542,7 @@ export const projectTranslations = {
     describeProject: "Beschrijf uw projectdoelen, activiteiten en verwachte resultaten",
     selectDepartment: "Selecteer afdeling",
     selectLanguage: "Selecteer taal",
+    unknown: "Onbekend",
     
     // Form descriptions
     privateProjectDesc: "Alleen zichtbaar voor geautoriseerde gebruikers",
@@ -1731,6 +1745,11 @@ export const projectTranslations = {
       actions: "Ações",
       budget: "Orçamento",
       period: "Período",
+      timeline: "Cronograma",
+      daysLeft: "Dias Restantes",
+      daysOverdue: "{{days}}d atrasado",
+      daysRemaining: "{{days}}d",
+      today: "Hoje",
       yes: "Sim",
       no: "Não",
       clearFilters: "Limpar filtros",
@@ -1740,7 +1759,8 @@ export const projectTranslations = {
       showingResults: "Mostrando {{from}} até {{to}} de {{total}} resultados",
       previous: "Anterior",
       next: "Próximo",
-      noResults: "Nenhum resultado encontrado"
+      noResults: "Nenhum resultado encontrado",
+      openMenu: "Abrir menu"
     },
     
     // Modal
@@ -2267,6 +2287,7 @@ export const projectTranslations = {
     describeProject: "Descreva os objetivos, atividades e resultados esperados do projeto",
     selectDepartment: "Selecione o departamento",
     selectLanguage: "Selecione o idioma",
+    unknown: "Desconhecido",
     
     // Form descriptions
     privateProjectDesc: "Visível apenas para usuários autorizados",

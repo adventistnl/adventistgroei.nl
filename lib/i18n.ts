@@ -192,6 +192,10 @@ const resources = {
         theme_light_activated: "Light mode activated",
         theme_dark_activated: "Dark mode activated",
         invite: "Invite",
+        see_all_churches: "See All Churches",
+        all_members_associated_with: "All members associated with",
+        all_departments_within: "All departments within",
+        view_contact: "View Contact",
         add: "Add",
         create: "Create",
         total: "Total",
@@ -1517,7 +1521,8 @@ const resources = {
             notes_placeholder: "Additional notes or comments about this budget...",
             no_notes: "No notes provided",
             approved_by: "Approved By",
-            approved_by_placeholder: "Select approving user"
+            approved_by_placeholder: "Select approving user",
+            available_budget_hint: "Available budget"
           },
           status_options: {
             planned: "Planned",
@@ -1533,8 +1538,11 @@ const resources = {
             planned_budget_required: "Planned budget is required",
             planned_budget_invalid: "Please enter a valid budget amount",
             planned_budget_min: "Planned budget must be greater than 0",
+            exceeds_available_budget: "Budget exceeds available amount: {{available}}",
             total_expenses_invalid: "Please enter a valid expense amount",
             total_expenses_negative: "Total expenses cannot be negative",
+            reserved_invalid: "Please enter a valid reserved amount",
+            reserved_negative: "Reserved amount cannot be negative",
             status_required: "Budget status is required",
             fix_errors: "Please fix the errors before continuing"
           },
@@ -2008,6 +2016,10 @@ const resources = {
         theme_light_activated: "Lichte modus geactiveerd",
         theme_dark_activated: "Donkere modus geactiveerd",
         invite: "Uitnodigen",
+        see_all_churches: "Bekijk Alle Kerken",
+        all_members_associated_with: "Alle leden verbonden aan",
+        all_departments_within: "Alle afdelingen binnen",
+        view_contact: "Contact Bekijken",
         add: "Toevoegen",
         create: "Aanmaken",
         total: "Totaal",
@@ -3325,7 +3337,8 @@ const resources = {
             notes_placeholder: "Aanvullende opmerkingen of commentaren over deze begroting...",
             no_notes: "Geen opmerkingen verstrekt",
             approved_by: "Goedgekeurd Door",
-            approved_by_placeholder: "Selecteer goedkeurende gebruiker"
+            approved_by_placeholder: "Selecteer goedkeurende gebruiker",
+            available_budget_hint: "Beschikbaar budget"
           },
           status_options: {
             planned: "Gepland",
@@ -3341,8 +3354,11 @@ const resources = {
             planned_budget_required: "Geplande begroting is verplicht",
             planned_budget_invalid: "Voer een geldig begrotingsbedrag in",
             planned_budget_min: "Geplande begroting moet groter zijn dan 0",
+            exceeds_available_budget: "Begroting overschrijdt beschikbaar bedrag: {{available}}",
             total_expenses_invalid: "Voer een geldig uitgavenbedrag in",
             total_expenses_negative: "Totale uitgaven kunnen niet negatief zijn",
+            reserved_invalid: "Voer een geldig gereserveerd bedrag in",
+            reserved_negative: "Gereserveerd bedrag kan niet negatief zijn",
             status_required: "Begrotingsstatus is verplicht",
             fix_errors: "Los de fouten op voordat u doorgaat"
           },
@@ -3485,7 +3501,11 @@ const resources = {
         invite: "Convidar",
         structure_organization: "Estrutura Organizacional",
         annual_budget: "Orçamento Anual",
-        data_loaded: "Dados carregados com sucesso"
+        data_loaded: "Dados carregados com sucesso",
+        see_all_churches: "Ver Todas as Igrejas",
+        all_members_associated_with: "Todos os membros associados com",
+        all_departments_within: "Todos os departamentos dentro de",
+        view_contact: "Ver Contato"
       },
       privacy: {
         protected_content: "Conteúdo Protegido",
@@ -3643,7 +3663,8 @@ const resources = {
             notes_placeholder: "Observações ou comentários adicionais sobre este orçamento...",
             no_notes: "Nenhuma observação fornecida",
             approved_by: "Aprovado Por",
-            approved_by_placeholder: "Selecione o usuário aprovador"
+            approved_by_placeholder: "Selecione o usuário aprovador",
+            available_budget_hint: "Orçamento disponível"
           },
           status_options: {
             planned: "Planejado",
@@ -3659,8 +3680,11 @@ const resources = {
             planned_budget_required: "Orçamento planejado é obrigatório",
             planned_budget_invalid: "Digite um valor de orçamento válido",
             planned_budget_min: "Orçamento planejado deve ser maior que 0",
+            exceeds_available_budget: "Orçamento excede o valor disponível: {{available}}",
             total_expenses_invalid: "Digite um valor de despesa válido",
             total_expenses_negative: "Total de despesas não pode ser negativo",
+            reserved_invalid: "Digite um valor reservado válido",
+            reserved_negative: "Valor reservado não pode ser negativo",
             status_required: "Status do orçamento é obrigatório",
             fix_errors: "Corrija os erros antes de continuar"
           },

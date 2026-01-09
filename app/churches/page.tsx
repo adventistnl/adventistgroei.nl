@@ -714,7 +714,7 @@ export default function ChurchesPage() {
     {
       id: "name",
       accessorKey: "name",
-      header: tStructure.name,
+      header: tChurch.table.name,
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -729,7 +729,7 @@ export default function ChurchesPage() {
     {
       id: "region",
       accessorKey: "region_name",
-      header: tStructure.region,
+      header: tChurch.table.region,
       cell: ({ row }) => {
         const region = row.original.region
         
@@ -738,7 +738,7 @@ export default function ChurchesPage() {
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-muted-foreground" />
               <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-border">
-                No Region
+                {tChurch.table.no_region}
               </Badge>
             </div>
           )
@@ -762,7 +762,7 @@ export default function ChurchesPage() {
     {
       id: "members",
       accessorKey: "members_count",
-      header: tStructure.members,
+      header: tChurch.table.members,
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-muted-foreground" />
@@ -773,7 +773,7 @@ export default function ChurchesPage() {
     {
       id: "departments",
       accessorKey: "departments_count",
-      header: tStructure.departments,
+      header: tChurch.table.departments,
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-muted-foreground" />
@@ -814,7 +814,7 @@ export default function ChurchesPage() {
     },
     {
       id: "actions",
-      header: t('common.actions'),
+      header: tChurch.table.actions,
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -833,11 +833,11 @@ export default function ChurchesPage() {
             </DropdownMenuItem> */}
             <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
               <Edit className="w-4 h-4 mr-2" />
-              {tStructure.editChurch}
+              {tChurch.messages.edit_church}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
               <Trash2 className="w-4 h-4 mr-2" />
-              {tStructure.deleteChurch}
+              {tChurch.messages.delete_church}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -850,7 +850,7 @@ export default function ChurchesPage() {
     {
       id: "name",
       accessorKey: "name",
-      header: "Department Name",
+      header: tChurch.table.department_name,
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -859,7 +859,7 @@ export default function ChurchesPage() {
           <div>
             <div className="font-medium">{row.original.name}</div>
             <div className="text-xs text-muted-foreground max-w-xs truncate line-clamp-2">
-              {row.original.description || 'No description'}
+              {row.original.description || tChurch.table.no_description}
             </div>
           </div>
         </div>
@@ -867,7 +867,7 @@ export default function ChurchesPage() {
     },
     {
       id: "members",
-      header: "Members",
+      header: tChurch.table.members,
       cell: ({ row }) => {
         const membersCount = row.original.users?.length || 0;
         return (
@@ -880,7 +880,7 @@ export default function ChurchesPage() {
     },
     {
       id: "projects",
-      header: "Projects",
+      header: tChurch.table.projects,
       cell: ({ row }) => {
         const projectsCount = row.original.projects?.length || 0;
         return (
@@ -894,7 +894,7 @@ export default function ChurchesPage() {
     {
       id: "status",
       accessorKey: "is_deleted",
-      header: "Status",
+      header: tChurch.table.status,
       cell: ({ row }) => (
         <StatusBadge 
           label={row.original.is_deleted === true ? t('common.inactive') : t('common.active')}
@@ -957,7 +957,7 @@ export default function ChurchesPage() {
   const memberColumns: ColumnDef<any>[] = [
     {
       id: "avatar",
-      header: "Avatar",
+      header: tChurch.table.avatar,
       cell: ({ row }) => {
         const user = row.original
         return (
@@ -979,14 +979,14 @@ export default function ChurchesPage() {
     {
       id: "name",
       accessorKey: "name",
-      header: "Name",
+      header: tChurch.table.name,
       cell: ({ row }) => {
         const user = row.original
         return (
           <div>
             <div className="font-medium">{user.name}</div>
             <div className="text-xs text-muted-foreground">
-              {user.email || 'No email'}
+              {user.email || tChurch.table.no_email}
             </div>
           </div>
         )
@@ -997,7 +997,7 @@ export default function ChurchesPage() {
       accessorKey: "language_preference",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          Language
+          {tChurch.table.language}
         </div>
       ),
       cell: ({ row }) => (
@@ -1012,7 +1012,7 @@ export default function ChurchesPage() {
       id: "roles",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          Roles
+          {tChurch.table.roles}
         </div>
       ),
       cell: ({ row }) => {
@@ -1029,7 +1029,7 @@ export default function ChurchesPage() {
                 {role.role.key_code === 'ADMIN' && <Crown className="w-3 h-3 mr-1" />}
                 {role.role.name}
               </Badge>
-            )) || <span className="text-xs text-muted-foreground">No roles</span>}
+            )) || <span className="text-xs text-muted-foreground">{tChurch.table.no_roles}</span>}
           </div>
         )
       },
@@ -1039,7 +1039,7 @@ export default function ChurchesPage() {
       accessorKey: "gender",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          Gender
+          {tChurch.table.gender}
         </div>
       ),
       cell: ({ row }) => {
@@ -1059,7 +1059,7 @@ export default function ChurchesPage() {
       accessorKey: "is_deleted",
       header: () => (
         <div className="text-center font-medium text-gray-900">
-          Status
+          {tChurch.table.status}
         </div>
       ),
       cell: ({ row }) => {
@@ -1067,7 +1067,7 @@ export default function ChurchesPage() {
         return (
           <div className="flex justify-center">
             <StatusBadge
-              label={isActive ? "Active" : "Inactive"}
+              label={isActive ? t('common.active') : t('common.inactive')}
               variant={isActive ? "success" : "error"}
               showDot
             />
@@ -1175,7 +1175,7 @@ export default function ChurchesPage() {
                   }}
                   className="cursor-pointer hover:text-foreground"
                 >
-                  See All Churches
+                  {t('common.see_all_churches')}
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
@@ -1245,7 +1245,7 @@ export default function ChurchesPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Home className="w-5 h-5" />
-              {tStructure.churches}
+              {tChurch.page.title}
             </CardTitle>
             <CardDescription>Lista completa de igrejas com ações de gerenciamento</CardDescription>
           </CardHeader>
@@ -1257,11 +1257,11 @@ export default function ChurchesPage() {
               filters={[
                 {
                   id: "region",
-                  title: tStructure.region,
+                  title: tChurch.table.region,
                   options: [
                     // Adicionar opção para igrejas órfãs
                     ...(churches.some((c: any) => !c.region) ? [{
-                      label: "No Region",
+                      label: tChurch.table.no_region,
                       value: "__orphaned__"
                     }] : []),
                     // Adicionar opções de regiões
@@ -1273,7 +1273,7 @@ export default function ChurchesPage() {
                 },
                 {
                   id: "status",
-                  title: "Status",
+                  title: tChurch.table.status,
                   options: [
                     { label: t('common.active'), value: "false" },
                     { label: t('common.inactive'), value: "true" },
@@ -1281,7 +1281,7 @@ export default function ChurchesPage() {
                 },
                 {
                   id: "type",
-                  title: "Type",
+                  title: tChurch.table.type,
                   options: [
                     { label: "Standard", value: "STANDARD" },
                     { label: "Church Plant", value: "PLANT" },
@@ -1317,7 +1317,7 @@ export default function ChurchesPage() {
                 },
                 {
                   id: "church-departments",
-                  title: tStructure.departments,
+                  title: tChurch.table.departments,
                   value: churchDepartments,
                   icon: Layers,
                   subtitle: "Active departments"
@@ -1377,17 +1377,17 @@ export default function ChurchesPage() {
                       ]}
                       actions={[
                         {
-                          label: tStructure.editChurch,
+                          label: tChurch.messages.edit_church,
                           icon: Edit,
                           onClick: () => handleEdit(selectedChurchDetail.id)
                         },
                         {
-                          label: tStructure.viewContact,
+                          label: t('common.view_contact'),
                           icon: ContactRound,
                           onClick: () => handleViewContact(selectedChurchDetail.id)
                         },
                         {
-                          label: tStructure.deleteChurch,
+                          label: tChurch.messages.delete_church,
                           icon: Trash2,
                           onClick: () => handleDelete(selectedChurchDetail.id, selectedChurchDetail.name),
                           variant: "destructive",
@@ -1466,10 +1466,10 @@ export default function ChurchesPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Users className="w-5 h-5" />
-                      Church Members
+                      {tChurch.table.church_members}
                     </CardTitle>
                     <CardDescription>
-                      All members associated with {selectedChurchDetail?.name}
+                      {t('common.all_members_associated_with')} {selectedChurchDetail?.name}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">
@@ -1480,10 +1480,10 @@ export default function ChurchesPage() {
                       filters={[
                         {
                           id: "is_deleted",
-                          title: "Status",
+                          title: tChurch.table.status,
                           options: [
-                            { label: "Active", value: "true" },
-                            { label: "Inactive", value: "false" },
+                            { label: t('common.active'), value: "true" },
+                            { label: t('common.inactive'), value: "false" },
                           ]
                         }
                       ]}
@@ -1499,10 +1499,10 @@ export default function ChurchesPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Layers className="w-5 h-5" />
-                      Church Departments
+                      {tChurch.table.church_departments}
                     </CardTitle>
                     <CardDescription>
-                      All departments within {selectedChurchDetail?.name}
+                      {t('common.all_departments_within')} {selectedChurchDetail?.name}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">
@@ -1513,10 +1513,10 @@ export default function ChurchesPage() {
                       filters={[
                         {
                           id: "is_deleted",
-                          title: "Status",
+                          title: tChurch.table.status,
                           options: [
-                            { label: "Active", value: "false" },
-                            { label: "Inactive", value: "true" },
+                            { label: t('common.active'), value: "false" },
+                            { label: t('common.inactive'), value: "true" },
                           ]
                         }
                       ]}

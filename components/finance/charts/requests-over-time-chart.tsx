@@ -43,6 +43,7 @@ interface RequestsOverTimeChartProps {
       approved: string
       pending: string
       rejected: string
+      in_review: string
     }
     statusLabels: {
       approved: string
@@ -52,6 +53,29 @@ interface RequestsOverTimeChartProps {
   }
 }
 
+const chartConfig = {
+  pending: {
+    label: "Pending",
+    color: "hsl(43, 96%, 56%)",
+  },
+  in_review: {
+    label: "In Review",
+    color: "hsl(217, 91%, 60%)",
+  },
+  approved: {
+    label: "Approved",
+    color: "hsl(142, 71%, 45%)",
+  },
+  closed: {
+    label: "Closed",
+    color: "hsl(158, 64%, 52%)",
+  },
+  rejected: {
+    label: "Rejected",
+    color: "hsl(0, 84%, 60%)",
+  },
+} satisfies ChartConfig
+
 export function RequestsOverTimeChart({ 
   data, 
   loading, 
@@ -60,21 +84,6 @@ export function RequestsOverTimeChart({
 }: RequestsOverTimeChartProps) {
   const { formatCurrency } = useCurrency()
   const [selectedQuarter, setSelectedQuarter] = React.useState<"all" | "q1" | "q2" | "q3" | "q4">("all")
-
-  const chartConfig = {
-    approved: {
-      label: translations?.statusLabels.approved || "Approved",
-      color: "hsl(142, 71%, 45%)",
-    },
-    pending: {
-      label: translations?.statusLabels.pending || "Pending",
-      color: "hsl(43, 96%, 56%)",
-    },
-    rejected: {
-      label: translations?.statusLabels.rejected || "Rejected",
-      color: "hsl(0, 84%, 60%)",
-    },
-  } satisfies ChartConfig
 
   const chartData = React.useMemo(() => {
     // Use data from props if available, otherwise return empty array
@@ -93,11 +102,13 @@ export function RequestsOverTimeChart({
 
   const totals = React.useMemo(() => {
     return filteredData.reduce((acc, month) => ({
-      approved: acc.approved + month.approved,
-      pending: acc.pending + month.pending,
-      rejected: acc.rejected + month.rejected,
-      total: acc.total + month.approved + month.pending + month.rejected
-    }), { approved: 0, pending: 0, rejected: 0, total: 0 })
+      pending: acc.pending + (month.pending || 0),
+      in_review: acc.in_review + (month.in_review || 0),
+      approved: acc.approved + (month.approved || 0),
+      closed: acc.closed + (month.closed || 0),
+      rejected: acc.rejected + (month.rejected || 0),
+      total: acc.total + (month.pending || 0) + (month.in_review || 0) + (month.approved || 0) + (month.closed || 0) + (month.rejected || 0)
+    }), { pending: 0, in_review: 0, approved: 0, closed: 0, rejected: 0, total: 0 })
   }, [filteredData])
 
   const approvalRate = totals.total > 0 
@@ -189,15 +200,27 @@ export function RequestsOverTimeChart({
             <ChartTooltip content={<ChartTooltipContent hideLabel />} />
             <ChartLegend content={<ChartLegendContent />} />
             <Bar
+              dataKey="pending"
+              stackId="a"
+              fill="var(--color-pending)"
+              radius={[0, 0, 0, 0]}
+            />
+            <Bar
+              dataKey="in_review"
+              stackId="a"
+              fill="var(--color-in_review)"
+              radius={[0, 0, 0, 0]}
+            />
+            <Bar
               dataKey="approved"
               stackId="a"
               fill="var(--color-approved)"
               radius={[0, 0, 0, 0]}
             />
             <Bar
-              dataKey="pending"
+              dataKey="closed"
               stackId="a"
-              fill="var(--color-pending)"
+              fill="var(--color-closed)"
               radius={[0, 0, 0, 0]}
             />
             <Bar
@@ -214,7 +237,7 @@ export function RequestsOverTimeChart({
           {translations?.footer.approvalRate || "Approval rate"}: {approvalRate}% <TrendingUp className="h-4 w-4" />
         </div>
         <div className="leading-none text-muted-foreground">
-          {translations?.footer.totalRequests || "Total requests"}: {totals.total} ({totals.approved} {translations?.footer.approved || "approved"}, {totals.pending} {translations?.footer.pending || "pending"}, {totals.rejected} {translations?.footer.rejected || "rejected"})
+          {translations?.footer.totalRequests || "Total requests"}: {totals.total} ({totals.pending} {translations?.footer.pending || "pending"}, {totals.in_review} {translations?.footer.in_review || "in review"}, {totals.approved} {translations?.footer.approved || "approved"}, {totals.closed} closed, {totals.rejected} {translations?.footer.rejected || "rejected"})
         </div>
       </CardFooter>
     </Card>

@@ -125,12 +125,12 @@ export function HierarchicalStructureCard({
 }: HierarchicalStructureCardProps) {
   if (loading) {
     return (
-      <Card className={className}>
+      <Card className={`h-full flex flex-col ${className}`}>
         <CardHeader>
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-4 w-64 mt-2" />
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1">
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
               <Skeleton key={i} className="h-24 w-full" />
@@ -152,7 +152,7 @@ export function HierarchicalStructureCard({
   }
 
   return (
-    <Card className={className}>
+    <Card className={`h-full flex flex-col ${className}`}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Icon className="w-5 h-5" />
@@ -160,7 +160,7 @@ export function HierarchicalStructureCard({
         </CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1">
         <div className="space-y-4">
           {levels.map((level, index) => (
             <div 

@@ -22,6 +22,38 @@ import { useQuery } from "@apollo/client"
 import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { useInstitution } from "@/contexts/institution-context"
 
+/**
+ * Filters projects to show only those where the user is registered in activities
+ * @param projects - All projects from API
+ * @param userId - Current user ID
+ * @returns Filtered projects where user is assigned to at least one activity
+ */
+function filterUserProjects(projects: any[], userId: string | undefined): any[] {
+  if (!userId || !projects || projects.length === 0) {
+    return []
+  }
+
+  return projects.filter(project => {
+    // Check if project has activities
+    if (!project.activities || project.activities.length === 0) {
+      return false
+    }
+
+    // Check if user is assigned to any activity in this project
+    const isUserInProject = project.activities.some((activity: any) => {
+      // Check if user is in assignees
+      if (activity.assignees && activity.assignees.length > 0) {
+        return activity.assignees.some((assignee: any) => 
+          assignee.user?.id === userId
+        )
+      }
+      return false
+    })
+
+    return isUserInProject
+  })
+}
+
 // Prepare data structure for sidebar components
 function useSidebarData() {
   const { user } = useAuth()
@@ -48,10 +80,11 @@ function useSidebarData() {
     // TODO: Implement actual project creation logic
   }, [])
 
-  // Memoize projects from API
+  // Filter projects to show only where user is registered in activities
   const projects = React.useMemo(() => {
-    return projectsData?.projects || []
-  }, [projectsData])
+    const allProjects = projectsData?.projects || []
+    return filterUserProjects(allProjects, user?.id)
+  }, [projectsData, user?.id])
 
   // Memoize entire data structure
   return React.useMemo(() => ({

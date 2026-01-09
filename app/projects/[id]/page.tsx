@@ -1710,7 +1710,13 @@ export default function ProjectDetailsPage() {
           isOpen={isDeleteProjectModalOpen}
           onClose={() => setIsDeleteProjectModalOpen(false)}
           onConfirm={handleDeleteProjectSuccess}
-          project={project}
+          project={project ? {
+            ...project,
+            activities: allProjectActivities.length,
+            subsidyRequests: subsidyRequests.length,
+            volunteers: projectUsers.length,
+            documents: 0 // TODO: Adicionar contagem de documentos quando disponível
+          } : null}
         />
         
         <CreateEventModal

@@ -33,6 +33,7 @@ interface StatusOverviewChartProps {
   translations?: {
     title: string
     description: string
+    allDescription: string
     selectStatus: string
     selectLabel: string
     requests: string
@@ -64,11 +65,11 @@ export function StatusOverviewChart({ data, loading, translations }: StatusOverv
     if (!data || data.length === 0) {
       // No backend data, use defaults with sample counts
       return [
-        { status: 'Pending', count: 8, fill: '#f59e0b' },
-        { status: 'In Review', count: 5, fill: '#3b82f6' },
-        { status: 'Approved', count: 12, fill: '#10b981' },
-        { status: 'Rejected', count: 3, fill: '#ef4444' },
-        { status: 'Closed', count: 2, fill: '#6b7280' }
+        { status: 'Pending', count: 0, fill: '#f59e0b' },
+        { status: 'In Review', count: 0, fill: '#3b82f6' },
+        { status: 'Approved', count: 0, fill: '#10b981' },
+        { status: 'Closed', count: 0, fill: '#059669' },
+        { status: 'Rejected', count: 0, fill: '#ef4444' }
       ]
     }
 
@@ -95,16 +96,16 @@ export function StatusOverviewChart({ data, loading, translations }: StatusOverv
     'Pending': Clock,
     'In Review': AlertCircle,
     'Approved': CheckCircle,
-    'Rejected': XCircle,
-    'Closed': FileText
+    'Closed': CheckCircle,
+    'Rejected': XCircle
   }
 
   // Generate chart config dynamically
-  const chartConfig: ChartConfig = React.useMemo(() => {
-    const config: Record<string, { label: string; color: string; icon?: React.ComponentType<any> }> = {
+  const chartConfig = React.useMemo(() => {
+    const config: ChartConfig = {
       count: {
+        color: "hsl(0, 0%, 50%)",
         label: translations?.requests || "Requests",
-        color: "hsl(var(--chart-1))"
       }
     }
     
@@ -127,13 +128,13 @@ export function StatusOverviewChart({ data, loading, translations }: StatusOverv
       }
     })
     
-    return config
-  }, [chartData, translations])
+    return config satisfies ChartConfig
+  }, [chartData])
 
-  const [activeStatus, setActiveStatus] = React.useState(hasData ? chartData[0].status : "")
+  const [activeStatus, setActiveStatus] = React.useState("All")
 
   const activeIndex = React.useMemo(
-    () => hasData ? chartData.findIndex((item) => item.status === activeStatus) : 0,
+    () => activeStatus === "All" ? -1 : (hasData ? chartData.findIndex((item) => item.status === activeStatus) : 0),
     [activeStatus, chartData, hasData]
   )
 
@@ -178,6 +179,15 @@ export function StatusOverviewChart({ data, loading, translations }: StatusOverv
             <SelectValue placeholder={translations?.selectStatus || "Select status"} />
           </SelectTrigger>
           <SelectContent align="end" className="rounded-xl">
+            <SelectItem
+              value="All"
+              className="rounded-lg [&_span]:flex"
+            >
+              <div className="flex items-center gap-2 text-xs">
+                <span className="flex h-3 w-3 shrink-0 rounded-xs bg-gradient-to-r from-amber-500 via-green-500 to-blue-500" />
+                All Status
+              </div>
+            </SelectItem>
             {statusKeys.map((key) => {
               const config = chartConfig[key.toLowerCase().replace(' ', '_') as keyof typeof chartConfig]
               if (!config) return null
@@ -220,13 +230,13 @@ export function StatusOverviewChart({ data, loading, translations }: StatusOverv
               nameKey="status"
               innerRadius={60}
               strokeWidth={5}
-              activeIndex={activeIndex}
+              activeIndex={activeStatus === "All" ? undefined : activeIndex}
               onClick={(data) => {
                 if (data && data.status) {
                   setActiveStatus(data.status)
                 }
               }}
-              activeShape={({
+              activeShape={activeStatus === "All" ? undefined : ({
                 outerRadius = 0,
                 ...props
               }: PieSectorDataItem) => (
@@ -243,7 +253,10 @@ export function StatusOverviewChart({ data, loading, translations }: StatusOverv
               <Label
                 content={({ viewBox }) => {
                   if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                    const activeData = chartData?.[activeIndex]
+                    const activeData = activeStatus === "All" ? null : chartData?.[activeIndex]
+                    const displayValue = activeStatus === "All" ? totalRequests : (activeData?.count || 0)
+                    const displayLabel = activeStatus === "All" ? translations?.total || "Total" : translations?.requests || "Requests"
+                    
                     return (
                       <text
                         x={viewBox.cx}
@@ -256,14 +269,14 @@ export function StatusOverviewChart({ data, loading, translations }: StatusOverv
                           y={viewBox.cy}
                           className="fill-foreground text-3xl font-bold"
                         >
-                          {activeData?.count.toLocaleString() || 0}
+                          {displayValue.toLocaleString()}
                         </tspan>
                         <tspan
                           x={viewBox.cx}
                           y={(viewBox.cy || 0) + 24}
                           className="fill-muted-foreground"
                         >
-                          {translations?.requests || "Requests"}
+                          {displayLabel}
                         </tspan>
                       </text>
                     )
@@ -278,9 +291,15 @@ export function StatusOverviewChart({ data, loading, translations }: StatusOverv
         <div className="flex items-center gap-2 font-medium leading-none">
           {translations?.total || "Total"}: {totalRequests.toLocaleString()} {translations?.requests.toLowerCase() || "requests"}
         </div>
-        <div className="leading-none text-muted-foreground">
-          {chartConfig[activeStatus.toLowerCase().replace(' ', '_') as keyof typeof chartConfig]?.label || activeStatus}: {chartData[activeIndex]?.count || 0} ({totalRequests > 0 ? Math.round(((chartData[activeIndex]?.count || 0) / totalRequests) * 100) : 0}%)
-        </div>
+        {activeStatus === "All" ? (
+          <div className="leading-none text-muted-foreground">
+            {translations?.allDescription || "Showing all status distributions"}
+          </div>
+        ) : (
+          <div className="leading-none text-muted-foreground">
+            {chartConfig[activeStatus.toLowerCase().replace(' ', '_') as keyof typeof chartConfig]?.label || activeStatus}: {chartData[activeIndex]?.count || 0} ({totalRequests > 0 ? Math.round(((chartData[activeIndex]?.count || 0) / totalRequests) * 100) : 0}%)
+          </div>
+        )}
       </CardFooter>
     </Card>
   )

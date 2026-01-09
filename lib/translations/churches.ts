@@ -200,8 +200,21 @@ export const churchTranslations = {
       members: "Members",
       departments: "Departments",
       action: "Action",
+      actions: "Actions",
       orphaned: "Orphaned",
-      orphaned_label: "Orphaned (No Region)"
+      orphaned_label: "Orphaned (No Region)",
+      no_region: "No Region",
+      no_email: "No email",
+      no_roles: "No roles",
+      no_description: "No description",
+      avatar: "Avatar",
+      language: "Language",
+      roles: "Roles",
+      gender: "Gender",
+      projects: "Projects",
+      department_name: "Department Name",
+      church_members: "Church Members",
+      church_departments: "Church Departments"
     },
 
     // Messages
@@ -418,8 +431,21 @@ export const churchTranslations = {
       members: "Leden",
       departments: "Afdelingen",
       action: "Actie",
-      orphaned: "Weesgedeeld",
-      orphaned_label: "Weesgedeeld (Geen Regio)"
+      actions: "Acties",
+      orphaned: "Wees",
+      orphaned_label: "Wees (Geen Regio)",
+      no_region: "Geen Regio",
+      no_email: "Geen email",
+      no_roles: "Geen rollen",
+      no_description: "Geen beschrijving",
+      avatar: "Avatar",
+      language: "Taal",
+      roles: "Rollen",
+      gender: "Geslacht",
+      projects: "Projecten",
+      department_name: "Afdeling Naam",
+      church_members: "Kerkleden",
+      church_departments: "Kerkafdelingen"
     },
 
     // Messages
@@ -636,8 +662,21 @@ export const churchTranslations = {
       members: "Membros",
       departments: "Departamentos",
       action: "Ação",
-      orphaned: "Órfã",
-      orphaned_label: "Órfã (Sem Região)"
+      actions: "Ações",
+      orphaned: "Órfão",
+      orphaned_label: "Órfão (Sem Região)",
+      no_region: "Sem Região",
+      no_email: "Sem email",
+      no_roles: "Sem funções",
+      no_description: "Sem descrição",
+      avatar: "Avatar",
+      language: "Idioma",
+      roles: "Funções",
+      gender: "Gênero",
+      projects: "Projetos",
+      department_name: "Nome do Departamento",
+      church_members: "Membros da Igreja",
+      church_departments: "Departamentos da Igreja"
     },
 
     // Messages

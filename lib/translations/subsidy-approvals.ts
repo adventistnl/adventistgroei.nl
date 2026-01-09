@@ -139,7 +139,8 @@ export const subsidyApprovalsTranslations = {
           totalRequests: "Total requests",
           approved: "approved",
           pending: "pending",
-          rejected: "rejected"
+          rejected: "rejected",
+          in_review: "in review"
         },
         statusLabels: {
           approved: "Approved",
@@ -150,6 +151,7 @@ export const subsidyApprovalsTranslations = {
       statusOverview: {
         title: "Status Overview",
         description: "Distribution of requests by current status",
+        allDescription: "Showing all status distributions",
         selectStatus: "Select status",
         selectLabel: "Select a status",
         requests: "Requests",
@@ -305,7 +307,8 @@ export const subsidyApprovalsTranslations = {
           totalRequests: "Totaal aanvragen",
           approved: "goedgekeurd",
           pending: "in behandeling",
-          rejected: "afgewezen"
+          rejected: "afgewezen",
+          in_review: "in beoordeling"
         },
         statusLabels: {
           approved: "Goedgekeurd",
@@ -316,6 +319,7 @@ export const subsidyApprovalsTranslations = {
       statusOverview: {
         title: "Status Overzicht",
         description: "Verdeling van aanvragen per huidige status",
+        allDescription: "Alle status verdelingen weergegeven",
         selectStatus: "Selecteer status",
         selectLabel: "Selecteer een status",
         requests: "Aanvragen",
