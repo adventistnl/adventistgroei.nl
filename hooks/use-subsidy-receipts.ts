@@ -194,8 +194,8 @@ export function useSubsidyReceipts({
         formData.append('subsidy_request_item_id', options.subsidyRequestItemId)
       }
 
-      // Determine type based on file mime type
-      const type = options?.type || (file.type.startsWith('image/') ? 'image' : 'pdf')
+      // Determine type - use provided type or default to 'receipt'
+      const type = options?.type || 'receipt'
       formData.append('type', type)
 
       if (options?.amount !== undefined) {
