@@ -40,7 +40,8 @@ import {
   Building,
   Map,
   Church,
-  Filter
+  Filter,
+  DollarSign
 } from "lucide-react"
 import { toast } from "sonner"
 import { KPICards } from "@/components/shared/kpi-cards-carousel"
@@ -48,8 +49,9 @@ import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
 import { QuickActions, QuickAction } from "@/components/shared/quick-actions"
 import { YearFilter } from "@/components/shared/year-filter"
 import { SectionHeader } from "@/components/shared/section-header"
+import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { RoleDistributionChart, PermissionsByGroupChart, UserActivityChart } from "@/components/access/access-charts"
-import { UserStructureGrowthChart } from "@/components/charts/dashboard"
+import { UserStructureGrowthChart, UsersByStructureOverviewChart } from "@/components/charts/dashboard"
 import { HierarchicalStructureCard } from "@/components/charts/dashboard/hierarchical-structure-card"
 import { StructureBarChart, GrowthLineChart } from "@/components/charts/generic"
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart"
@@ -64,6 +66,8 @@ import { GET_ALL_USERS_QUERY } from "@/graphql/queries/GET_USER_QUERY"
 import { GET_ALL_ROLES_QUERY } from "@/graphql/queries/GET_ROLES_QUERY"
 
 import { structureTranslations } from "@/lib/translations/structure"
+import { GridContainer } from "@/components/shared/grid-container"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 // Month names
 const MONTHS = [
@@ -82,6 +86,7 @@ export default function DashboardPage() {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const [selectedMonth, setSelectedMonth] = useState<string>("all")
   const [selectedRegion, setSelectedRegion] = useState<string>("all")
+  const [activeTab, setActiveTab] = useState<string>("structure-chart")
   const [availableYears, setAvailableYears] = useState<number[]>(() => {
     const current = new Date().getFullYear()
     return [current, current - 1, current - 2]
@@ -590,79 +595,100 @@ export default function DashboardPage() {
             icon={Map}
             description="Organizational hierarchy and distribution"
           />
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Structure Overview Chart */}
-            <StructureBarChart
-              title="Structure Overview"
-              description="Quantitative breakdown of organizational structure"
-              icon={Building2}
-              data={[
-                { name: 'Institutions', count: kpis.totalInstitutions, fill: '#3b82f6' },
-                { name: 'Regions', count: kpis.totalRegions, fill: '#10b981' },
-                { name: 'Churches', count: kpis.activeChurches, fill: '#f59e0b' },
-                { name: 'Inst. Depts', count: kpis.institutionDepartments, fill: '#8b5cf6' },
-                { name: 'Church Depts', count: kpis.churchDepartments, fill: '#ec4899' },
-              ]}
-              loading={isLoading}
-              layout="vertical"
-              footer={`Total entities: ${kpis.totalInstitutions + kpis.totalRegions + kpis.activeChurches + kpis.totalDepartments}`}
-            />
 
-            {/* Hierarchical Structure Info */}
-            <HierarchicalStructureCard
-              title="Hierarchical Structure"
-              description="The institutional structure follows a clear hierarchy"
-              icon={Map}
-              loading={isLoading}
-              levels={[
-                {
-                  title: 'Institution Level',
-                  icon: Building2,
-                  description: `${kpis.totalInstitutions} institution(s) with ${kpis.institutionDepartments} department(s)`,
-                  details: 'Top-level organizational units managing all operations',
-                  borderColor: 'border-primary/30',
-                  indent: 0
-                },
-                {
-                  title: 'Regions',
-                  icon: Map,
-                  description: `${kpis.totalRegions} region(s) managing ${kpis.activeChurches} churches`,
-                  details: 'Geographic divisions containing provinces and churches',
-                  borderColor: 'border-blue-500/30',
-                  indent: 1
-                },
-                {
-                  title: 'Churches',
-                  icon: Church,
-                  description: `${kpis.activeChurches} active churches with ${kpis.churchDepartments} departments`,
-                  details: 'Local congregations with specialized ministry departments',
-                  borderColor: 'border-green-500/30',
-                  indent: 2
-                }
-              ]}
-              footer={
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <div className="text-xs font-medium mb-1">Hierarchy Flow:</div>
-                  <div className="text-xs text-muted-foreground font-mono">
-                    Institution → Regions → Provinces → Churches → Departments
+          <GridContainer
+            items={[
+              {
+                id: "UserStructureGrowthChart-full-width",
+                component: (
+                  <UserStructureGrowthChart
+                    loading={isLoading}
+                    users={allUsers}
+                    departments={allDepartments}
+                    regions={allRegions}
+                    churches={allChurches}
+                    selectedYear={selectedYear}
+                  />
+                ),
+                colSpan: "col-span-12 lg:col-span-8",
+              },
+              {
+                id: "structure-tabs-panel",
+                component: (
+                  <div className="space-y-4">
+                    {/* Tabs - Chart vs Info */}
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="structure-chart" className="gap-2">
+                          <Building2 className="w-4 h-4" />
+                          Chart
+                        </TabsTrigger>
+                        <TabsTrigger value="structure-info" className="gap-2">
+                          <Map className="w-4 h-4" />
+                          Info
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+
+                    {/* Content based on active tab */}
+                    {activeTab === "structure-chart" ? (
+                      <UsersByStructureOverviewChart
+                        loading={isLoading}
+                        users={allUsers}
+                        institutions={allInstitutions}
+                        departments={allDepartments}
+                        regions={allRegions}
+                        churches={allChurches}
+                      />
+                    ) : (
+                      <HierarchicalStructureCard
+                        title="Hierarchical Structure"
+                        description="The institutional structure follows a clear hierarchy"
+                        icon={Map}
+                        loading={isLoading}
+                        levels={[
+                          {
+                            title: 'Institution Level',
+                            icon: Building2,
+                            description: `${kpis.totalInstitutions} institution(s) with ${kpis.institutionDepartments} department(s)`,
+                            details: 'Top-level organizational units managing all operations',
+                            borderColor: 'border-primary/30',
+                            indent: 0
+                          },
+                          {
+                            title: 'Regions',
+                            icon: Map,
+                            description: `${kpis.totalRegions} region(s) managing ${kpis.activeChurches} churches`,
+                            details: 'Geographic divisions containing provinces and churches',
+                            borderColor: 'border-blue-500/30',
+                            indent: 1
+                          },
+                          {
+                            title: 'Churches',
+                            icon: Church,
+                            description: `${kpis.activeChurches} active churches with ${kpis.churchDepartments} departments`,
+                            details: 'Local congregations with specialized ministry departments',
+                            borderColor: 'border-green-500/30',
+                            indent: 2
+                          }
+                        ]}
+                        footer={
+                          <div className="p-3 bg-muted/30 rounded-lg">
+                            <div className="text-xs font-medium mb-1">Hierarchy Flow:</div>
+                            <div className="text-xs text-muted-foreground font-mono">
+                              Institution → Regions → Provinces → Churches → Departments
+                            </div>
+                          </div>
+                        }
+                      />
+                    )}
                   </div>
-                </div>
-              }
-            />
-          </div>
-
-          {/* User Growth by Structure - Full Width */}
-          <div className="mt-6">
-            <UserStructureGrowthChart
-              loading={isLoading}
-              users={allUsers}
-              departments={allDepartments}
-              regions={allRegions}
-              churches={allChurches}
-              selectedYear={selectedYear}
-            />
-          </div>
+                ),
+                colSpan: "col-span-12 lg:col-span-4",
+              },
+            ]}
+            gap="lg"
+          />
         </div>
 
         
@@ -677,7 +703,10 @@ export default function DashboardPage() {
             description="User statistics, growth trends and distribution"
           />
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ResponsiveGridCarousel
+            enableAutoplay={false}
+            gap="gap-6"
+          >
             {/* User Growth Over Time */}
             <GrowthLineChart
               title="User Growth Over Time"
@@ -713,7 +742,7 @@ export default function DashboardPage() {
               dataKey="count"
               dataKeyLabel="Users"
             />
-          </div>
+          </ResponsiveGridCarousel>
         </div>
 
         <Separator />

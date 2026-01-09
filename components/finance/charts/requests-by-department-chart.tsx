@@ -267,9 +267,19 @@ export function RequestsByDepartmentChart({
                 <Area
                   key={dept}
                   dataKey={dept}
-                  type="natural"
+                  type="monotone"
                   fill={`url(#fill${dept})`}
                   stroke={chartConfig[dept as keyof typeof chartConfig]?.color}
+                  strokeWidth={2}
+                  dot={{
+                    fill: chartConfig[dept as keyof typeof chartConfig]?.color,
+                    strokeWidth: 2,
+                    r: 4,
+                  }}
+                  activeDot={{
+                    r: 6,
+                    strokeWidth: 2,
+                  }}
                   stackId="a"
                 />
               ))}

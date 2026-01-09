@@ -110,8 +110,9 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
           className={cn(
             "rounded-full",
             sizeClass.dot,
-            dotColor || defaultDotColor
-          )} 
+            !dotColor && defaultDotColor
+          )}
+          style={dotColor ? { backgroundColor: dotColor } : undefined}
         />
       )}
       {Icon && <Icon className={sizeClass.icon} />}

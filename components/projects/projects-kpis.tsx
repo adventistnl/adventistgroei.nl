@@ -124,19 +124,7 @@ export function ProjectsKPIs({
           label: t_project.kpis.approvedPercent.replace('{{percent}}', subsidyApprovalRate.toString())
         },
         icon: DollarSign,
-      },
-      {
-        id: "volunteers-projects",
-        title: t_project.kpis.volunteersProjects,
-        value: kpis.projectsWithVolunteers.toString(),
-        subtitle: t_project.kpis.ofProjects.replace('{{percent}}', Math.round((kpis.projectsWithVolunteers / (kpis.totalProjects || 1)) * 100).toString()),
-        trend: { 
-          value: 15, 
-          isPositive: true,
-          label: t_project.kpis.growingEngagement
-        },
-        icon: Users,
-      },
+      }
     ]
   }, [kpis, t_project, formatCurrency, selectedCurrency])
 

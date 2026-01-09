@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/ui/status-badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { 
@@ -28,7 +29,8 @@ import {
   Calendar,
   TrendingUp,
   Settings,
-  Info
+  Info,
+  Flag
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -42,7 +44,6 @@ import { UseTable } from "@/components/ui/use-table"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { AnalyticsGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { KanbanBoard, KanbanGroup, KanbanItem, KanbanAction } from "@/components/ui/kanban-board"
-import { StatusBadge } from "@/components/ui/status-badge"
 import { ViewSubsidyModal } from "@/components/modals/project/view-subsidy-modal"
 import { useCurrency } from "@/contexts/currency-context"
 import { format } from "date-fns"
@@ -598,6 +599,11 @@ export function SubsidyApprovalsManager({
       header: "Priority",
       cell: ({ row }) => {
         const config = priorityConfig[row.original.priority]
+        const flagColors = {
+          high: 'text-red-500',
+          medium: 'text-yellow-500',
+          low: 'text-green-500'
+        }
         const bgColors = {
           high: 'bg-red-100 dark:bg-red-900/30 border-red-200 dark:border-red-800',
           medium: 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800',
@@ -609,7 +615,8 @@ export function SubsidyApprovalsManager({
           low: 'text-green-700 dark:text-green-400'
         }
         return (
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border w-fit ${bgColors[row.original.priority]}`}>
+          <div className={`flex items-center gap-2 px-2.5 py-1 rounded-md border w-fit ${bgColors[row.original.priority]}`}>
+            <Flag className={`w-3.5 h-3.5 fill-current ${flagColors[row.original.priority]}`} />
             <span className={`text-xs font-medium ${textColors[row.original.priority]}`}>
               {config.label}
             </span>
@@ -623,26 +630,28 @@ export function SubsidyApprovalsManager({
       header: "Status",
       cell: ({ row }) => {
         const config = statusConfig[row.original.status]
-        const bgColors: Record<SubsidyRequest['status'], string> = {
-          pending: 'bg-amber-100 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800',
-          in_review: 'bg-blue-100 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800',
-          approved: 'bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-800',
-          closed: 'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800',
-          rejected: 'bg-red-100 dark:bg-red-900/30 border-red-200 dark:border-red-800'
+        const variantMap: Record<SubsidyRequest['status'], "success" | "warning" | "error" | "info" | "neutral"> = {
+          pending: 'warning',
+          in_review: 'info',
+          approved: 'success',
+          closed: 'success',
+          rejected: 'error'
         }
-        const textColors: Record<SubsidyRequest['status'], string> = {
-          pending: 'text-amber-700 dark:text-amber-400',
-          in_review: 'text-blue-700 dark:text-blue-400',
-          approved: 'text-green-700 dark:text-green-400',
-          closed: 'text-emerald-700 dark:text-emerald-400',
-          rejected: 'text-red-700 dark:text-red-400'
+        const dotColorMap: Record<SubsidyRequest['status'], string> = {
+          pending: 'bg-amber-500',
+          in_review: 'bg-blue-500',
+          approved: 'bg-green-500',
+          closed: 'bg-emerald-600',
+          rejected: 'bg-red-500'
         }
         return (
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border w-fit ${bgColors[row.original.status]}`}>
-            <span className={`text-xs font-medium ${textColors[row.original.status]}`}>
-              {config.label}
-            </span>
-          </div>
+          <StatusBadge
+            label={config.label}
+            variant={variantMap[row.original.status]}
+            showDot
+            dotColor={dotColorMap[row.original.status]}
+            size="sm"
+          />
         )
       },
     },

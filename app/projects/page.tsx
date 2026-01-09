@@ -29,7 +29,8 @@ import { projectTranslations } from "@/lib/translations/projects"
 import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { DELETE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
-import { Globe, Plus, RefreshCw, Building, MoreHorizontal, Eye, Edit, Trash2, Activity, TrendingUp, Users, DollarSign, Folder, ArrowRight, Calendar, Building2, Clock, CheckCircle2 } from "lucide-react"
+import { Globe, Plus, RefreshCw, Building, MoreHorizontal, Eye, Edit, Trash2, Activity, TrendingUp, Users, DollarSign, Folder, ArrowRight, Calendar, Building2, Clock, CheckCircle2, ListChecks } from "lucide-react"
+import { StatusBadge } from "@/components/ui/status-badge"
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
 import { ProjectsKPIs } from "@/components/projects/projects-kpis"
@@ -38,6 +39,7 @@ import { ProjectActivitiesChart } from "@/components/projects/charts/project-act
 import { ProjectsOverTimeChart } from "@/components/projects/charts/projects-over-time-chart"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { UseTable } from "@/components/ui/use-table"
+import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
 import { createProjectColumns } from "@/components/projects/projects-table-columns"
 import { EditProjectModal } from "@/components/modals/project/edit-project-modal"
 import { DeleteProjectModal } from "@/components/modals/project/delete-project-modal"
@@ -83,10 +85,10 @@ export default function ProjectsPage() {
     refetchQueries: [{ query: GET_PROJECTS_QUERY }, { query: GET_PROJECT_KPIS_QUERY }]
   })
 
-  // Filter states
-  const [selectedDepartment, setSelectedDepartment] = useState("all")
-  const [selectedPeriod, setSelectedPeriod] = useState("6m")
-  const [chartPeriod, setChartPeriod] = useState("6m")
+  // Filter states - usando objeto para PageFilters
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({
+    department: "all"
+  })
   
   // Year filter states
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
@@ -168,22 +170,55 @@ export default function ProjectsPage() {
 
   // Filter data based on selected department
   const filteredData = useMemo(() => {
+    const selectedDepartment = filterValues.department
     if (selectedDepartment === "all") return projectsByYear
     return projectsByYear.filter(project => project.department_id === selectedDepartment)
-  }, [selectedDepartment, projectsByYear])
+  }, [filterValues.department, projectsByYear])
 
-
-
-  // Get KPIs from backend data filtered by year
-  const kpis = useMemo(() => {
-    if (kpisData?.projectKPIs) {
-      return kpisData.projectKPIs
-    }
+  // Configure PageFilters
+  const pageFilters: FilterConfig[] = useMemo(() => {
+    if (departments.length === 0) return []
     
-    // Fallback calculation if backend data is missing
-    const yearProjects = projectsByYear
+    return [
+      {
+        id: "department",
+        label: t_project.filters?.filterByDepartment || "Department",
+        type: "select",
+        placeholder: t_project.filters?.allDepartments || "All Departments",
+        icon: Building2,
+        options: [
+          {
+            label: t_project.filters?.allDepartments || "All Departments",
+            value: "all"
+          },
+          ...departments.map((dept: any) => ({
+            label: dept.name,
+            value: dept.id
+          }))
+        ],
+        defaultValue: "all"
+      }
+    ]
+  }, [departments, t_project])
+
+
+
+  // Get KPIs from backend data filtered by year AND department
+  const kpis = useMemo(() => {
+    // Use filteredData to include both year and department filtering
+    const yearProjects = filteredData
     const totalProjects = yearProjects.length
     const totalBudget = yearProjects.reduce((sum, p) => sum + (p.budget || 0), 0)
+    
+    // Calculate subsidy-related metrics from projects data
+    const totalSubsidyRequests = yearProjects.reduce((sum, p) => sum + (p.subsidyRequests || 0), 0)
+    const totalSubsidyAmount = yearProjects.reduce((sum, p) => sum + (p.subsidyAmount || 0), 0)
+    
+    // Calculate projects with subsidized budgets (projects that have subsidy requests)
+    const projectsWithSubsidies = yearProjects.filter(p => (p.subsidyRequests || 0) > 0).length
+    const totalSubsidizedBudget = yearProjects
+      .filter(p => (p.subsidyRequests || 0) > 0)
+      .reduce((sum, p) => sum + (p.budget || 0), 0)
     
     return {
       totalProjects,
@@ -191,21 +226,16 @@ export default function ProjectsPage() {
       completedProjects: yearProjects.filter(p => p.status === 'completed').length,
       upcomingProjects: yearProjects.filter(p => p.status === 'upcoming').length,
       totalBudget,
-      totalSubsidyRequests: 0,
-      totalSubsidyAmount: 0,
+      totalSubsidizedBudget,
+      totalSubsidyRequests,
+      totalSubsidyAmount,
       projectsWithVolunteers: yearProjects.filter(p => p.required_volunteers).length,
       averageBudgetPerProject: totalProjects > 0 ? totalBudget / totalProjects : 0,
     }
-  }, [kpisData, projectsByYear])
+  }, [filteredData])
 
   // Colunas para a tabela de projetos
   const projectColumns: ColumnDef<ProjectTableData>[] = [
-    {
-      id: "mobile-expand",
-      header: "",
-      cell: () => null, // Renderizado pelo UseTable
-      enableHiding: false,
-    },
     {
       accessorKey: "title",
       header: () => (
@@ -239,9 +269,11 @@ export default function ProjectsPage() {
       cell: ({ row }) => {
         const dept = departments.find((d: any) => d.id === row.original.department_id)
         return (
-          <Badge variant="outline" className="font-normal">
-            {dept?.name || t_project.unknown}
-          </Badge>
+          <StatusBadge
+            label={dept?.name || t_project.unknown}
+            variant="neutral"
+            size="sm"
+          />
         )
       },
     },
@@ -256,16 +288,31 @@ export default function ProjectsPage() {
       cell: ({ row }) => {
         const startDate = new Date(row.original.start_at)
         const endDate = new Date(row.original.end_at)
-        const today = new Date()
+        const now = new Date()
         
         const formatDate = (date: Date) => {
           return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
         }
         
-        // Calculate progress percentage
+        // Calculate progress percentage with precision (includes hours/minutes)
         const totalDuration = endDate.getTime() - startDate.getTime()
-        const elapsed = today.getTime() - startDate.getTime()
-        const progressPercent = Math.min(Math.max((elapsed / totalDuration) * 100, 0), 100)
+        const elapsed = now.getTime() - startDate.getTime()
+        
+        // Calculate percentage - will be exactly 100% when now >= endDate
+        let progressPercent = totalDuration > 0 ? (elapsed / totalDuration) * 100 : 0
+        
+        // Clamp between 0 and 100
+        progressPercent = Math.min(Math.max(progressPercent, 0), 100)
+        
+        // Determine color based on progress and time left
+        let progressBarColor = "bg-primary"
+        if (progressPercent >= 100) {
+          progressBarColor = "bg-red-500"
+        } else if (progressPercent >= 90) {
+          progressBarColor = "bg-orange-500"
+        } else if (progressPercent >= 75) {
+          progressBarColor = "bg-yellow-500"
+        }
         
         return (
           <div className="space-y-1.5 min-w-[140px]">
@@ -276,8 +323,8 @@ export default function ProjectsPage() {
             </div>
             <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
               <div 
-                className="bg-primary h-full rounded-full transition-all duration-300"
-                style={{ width: `${progressPercent}%` }}
+                className={`${progressBarColor} h-full rounded-full transition-all duration-300`}
+                style={{ width: `${progressPercent.toFixed(2)}%` }}
               />
             </div>
           </div>
@@ -297,18 +344,18 @@ export default function ProjectsPage() {
         const today = new Date()
         const daysLeft = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
         
-        let badgeColor = "bg-green-100 text-green-700"
-        let dotColor = "bg-green-500"
+        let variant: "success" | "warning" | "error" = "success"
+        let dotColor = "#10b981" // Green
         
         if (daysLeft < 0) {
-          badgeColor = "bg-red-100 text-red-700"
-          dotColor = "bg-red-500"
+          variant = "error"
+          dotColor = "#ef4444" // Red
         } else if (daysLeft <= 7) {
-          badgeColor = "bg-orange-100 text-orange-700"
-          dotColor = "bg-orange-500"
+          variant = "error"
+          dotColor = "#f97316" // Orange
         } else if (daysLeft <= 30) {
-          badgeColor = "bg-yellow-100 text-yellow-700"
-          dotColor = "bg-yellow-500"
+          variant = "warning"
+          dotColor = "#f59e0b" // Yellow
         }
         
         const displayText = daysLeft < 0 
@@ -318,12 +365,13 @@ export default function ProjectsPage() {
             : t_project.table.daysRemaining.replace('{{days}}', daysLeft.toString())
         
         return (
-          <div className="flex items-center gap-2">
-            <div className={`w-1.5 h-1.5 rounded-full ${dotColor}`}></div>
-            <span className={`text-xs font-medium px-2 py-0.5 rounded ${badgeColor}`}>
-              {displayText}
-            </span>
-          </div>
+          <StatusBadge
+            label={displayText}
+            variant={variant}
+            showDot={true}
+            dotColor={dotColor}
+            size="sm"
+          />
         )
       },
     },
@@ -340,13 +388,38 @@ export default function ProjectsPage() {
         const statusText = status === "active" ? t_project.active :
                           status === "completed" ? t_project.completed :
                           t_project.upcoming
-        const color = status === "active" ? "bg-green-100 text-green-700" : 
-                     status === "completed" ? "bg-blue-100 text-blue-700" : 
-                     "bg-yellow-100 text-yellow-700"
+        
+        let dotColor = "#10b981" // Green for active
+        if (status === "completed") dotColor = "#3b82f6" // Blue
+        if (status === "upcoming") dotColor = "#f59e0b" // Amber
+        
         return (
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}>
-            {statusText}
-          </span>
+          <StatusBadge
+            label={statusText}
+            variant={status === "active" ? "success" : status === "completed" ? "info" : "warning"}
+            showDot={true}
+            dotColor={dotColor}
+            size="sm"
+          />
+        )
+      },
+    },
+    {
+      id: "activities",
+      header: () => (
+        <div className="flex items-center gap-2">
+          <ListChecks className="w-4 h-4 text-muted-foreground" />
+          <span>{t_project.table.activities || "Activities"}</span>
+        </div>
+      ),
+      cell: ({ row }) => {
+        const activitiesCount = row.original.activities || 0
+        return (
+          <StatusBadge
+            label={activitiesCount.toString()}
+            variant="default"
+            size="sm"
+          />
         )
       },
     },
@@ -411,6 +484,22 @@ export default function ProjectsPage() {
     }
   }, [error, t_project])
 
+  const handleFilterChange = (filterId: string, value: any) => {
+    setFilterValues(prev => ({
+      ...prev,
+      [filterId]: value
+    }))
+    
+    if (filterId === "department") {
+      toast.success(t_project.toasts.filterApplied, { duration: 1500 })
+    }
+  }
+
+  const handleClearFilters = () => {
+    setFilterValues({ department: "all" })
+    toast.success("Filters cleared", { duration: 1500 })
+  }
+
   const handleRefresh = async () => {
     setRefreshing(true)
 
@@ -430,11 +519,6 @@ export default function ProjectsPage() {
     } finally {
       setRefreshing(false)
     }
-  }
-
-  const handleDepartmentChange = (value: string) => {
-    setSelectedDepartment(value)
-    toast.success(t_project.toasts.filterApplied, { duration: 1500 })
   }
 
   const handleAddYear = () => {
@@ -582,14 +666,30 @@ export default function ProjectsPage() {
                   <Building className="w-3 h-3 mr-1" />
                   {currentInstitutionData.name}
                 </Badge>
-                     <Badge variant="outline" className="text-xs">
-                    {currentInstitutionData.denomination}
+                <Badge variant="outline" className="text-xs">
+                  {currentInstitutionData.denomination}
                 </Badge>
               </div>
             )}
           </div>
           
           <div className="flex items-center gap-3">
+
+          {/* Department Filter */}
+            {canViewFilters && pageFilters.length > 0 && (
+              <div className="flex items-center gap-2">
+                <PageFilters
+                  filters={pageFilters}
+                  values={filterValues}
+                  onChange={handleFilterChange}
+                  onClear={handleClearFilters}
+                  triggerLabel={"Filters"}
+                  align="end"
+                  width={320}
+                  showClearButton={true}
+                />
+              </div>
+            )}
             <Button 
               variant="outline" 
               size="icon"
@@ -612,8 +712,13 @@ export default function ProjectsPage() {
           </div>
         </div>
 
-        {/* Year Filter */}
-        <YearFilter showAddButton={false} />
+        {/* Filters Section */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          {/* Year Filter */}
+          <div className="flex-1 w-full">
+            <YearFilter showAddButton={false} />
+          </div>
+        </div>
 
         {/* KPI Cards */}
         <ProjectsKPIs 
@@ -626,42 +731,32 @@ export default function ProjectsPage() {
 
         <Separator />
 
-        {/* Charts Section */}
+        {/* Charts Section - Using filteredData for all charts */}
         <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
-          <ProjectsOverTimeChart data={projectsByYear} departments={departments} loading={isLoading} selectedYear={selectedYear} />
+          <ProjectsOverTimeChart data={filteredData} departments={departments} loading={isLoading} selectedYear={selectedYear} />
           <ProjectsByDepartmentChart data={filteredData} departments={departments} />
-          <ProjectActivitiesChart data={filteredData} />
+          <ProjectActivitiesChart data={filteredData} loading={isLoading} selectedYear={selectedYear} />
         </ResponsiveGridCarousel>
 
         <Separator />
 
         {/* Projects Table */}
         <Card>
-          <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="grid gap-1 flex-1">
+          <CardHeader>
+            <div className="grid gap-1">
               <CardTitle className="flex items-center gap-2">
                 <Globe className="w-5 h-5" />
                 {t_project.projectsOverview}
               </CardTitle>
               <CardDescription>
                 {t_project.pageHeader.manageDescription}
+                {filterValues.department !== "all" && (
+                  <span className="ml-2">
+                    • Filtered by: {departments.find((d: any) => d.id === filterValues.department)?.name}
+                  </span>
+                )}
               </CardDescription>
             </div>
-            {departments.length > 0 && canViewFilters && (
-              <Select value={selectedDepartment} onValueChange={handleDepartmentChange}>
-                <SelectTrigger className="ml-auto h-9 w-[200px] rounded-lg">
-                  <SelectValue placeholder={t_project.filters.filterByDepartment} />
-                </SelectTrigger>
-                <SelectContent align="end">
-                  <SelectItem value="all">{t_project.filters.allDepartments}</SelectItem>
-                  {departments.map((dept: any) => (
-                    <SelectItem key={dept.id} value={dept.id}>
-                      {dept.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
           </CardHeader>
           <CardContent className="overflow-hidden">
             <UseTable
@@ -686,27 +781,27 @@ export default function ProjectsPage() {
             />
           </CardContent>
 
-      {/* Edit Project Modal */}
-      <EditProjectModal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false)
-          setSelectedProject(undefined)
-        }}
-        onSuccess={handleEditProjectSuccess}
-        project={selectedProject}
-      />
+          {/* Edit Project Modal */}
+          <EditProjectModal
+            isOpen={isEditModalOpen}
+            onClose={() => {
+              setIsEditModalOpen(false)
+              setSelectedProject(undefined)
+            }}
+            onSuccess={handleEditProjectSuccess}
+            project={selectedProject}
+          />
 
-      {/* Delete Project Modal */}
-      <DeleteProjectModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => {
-          setIsDeleteModalOpen(false)
-          setSelectedProject(undefined)
-        }}
-        onConfirm={handleDeleteProjectSuccess}
-        project={selectedProject || null}
-      />
+          {/* Delete Project Modal */}
+          <DeleteProjectModal
+            isOpen={isDeleteModalOpen}
+            onClose={() => {
+              setIsDeleteModalOpen(false)
+              setSelectedProject(undefined)
+            }}
+            onConfirm={handleDeleteProjectSuccess}
+            project={selectedProject || null}
+          />
         </Card>
 
       </div>

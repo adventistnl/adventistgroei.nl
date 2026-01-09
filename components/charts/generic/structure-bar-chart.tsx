@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from "recharts"
 import { LucideIcon } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -102,20 +102,20 @@ export function StructureBarChart({
 }: StructureBarChartProps) {
   if (loading) {
     return (
-      <Card>
+      <Card className="h-full flex flex-col">
         <CardHeader>
           <Skeleton className="h-6 w-48" />
           {description && <Skeleton className="h-4 w-64 mt-2" />}
         </CardHeader>
-        <CardContent>
-          <Skeleton className={`h-[${height}px] w-full`} />
+        <CardContent className="flex-1">
+          <Skeleton className="h-full w-full" />
         </CardContent>
       </Card>
     )
   }
 
   return (
-    <Card>
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           {Icon && <Icon className="w-5 h-5" />}
@@ -123,55 +123,72 @@ export function StructureBarChart({
         </CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1">
         <ChartContainer
           config={{
             [dataKey]: {
               label: dataKeyLabel,
-              color: "#3b82f6"
+              color: "var(--chart-2)"
+            },
+            label: {
+              color: "var(--background)"
             }
           }}
-          className={`h-[${height}px] w-full`}
+          className="h-full w-full"
         >
           <BarChart 
             data={data}
-            layout={layout}
+            layout="vertical"
+            margin={{
+              right: 16,
+            }}
+            accessibilityLayer
           >
-            <CartesianGrid 
-              strokeDasharray="3 3" 
-              horizontal={layout === "vertical"}
-              vertical={layout === "horizontal"}
+            <CartesianGrid horizontal={false} />
+            <YAxis
+              dataKey="name"
+              type="category"
+              tickLine={false}
+              tickMargin={10}
+              axisLine={false}
+              hide
             />
-            {layout === "vertical" ? (
-              <>
-                <XAxis type="number" />
-                <YAxis 
-                  dataKey="name" 
-                  type="category" 
-                  width={100}
-                  tickLine={false}
-                  axisLine={false}
-                />
-              </>
-            ) : (
-              <>
-                <XAxis dataKey="name" />
-                <YAxis />
-              </>
-            )}
-            <ChartTooltip content={<ChartTooltipContent />} />
+            <XAxis 
+              dataKey={dataKey} 
+              type="number" 
+              hide 
+            />
+            <ChartTooltip
+              cursor={false}
+              content={<ChartTooltipContent indicator="line" />}
+            />
             <Bar 
               dataKey={dataKey}
-              radius={layout === "vertical" ? [0, 4, 4, 0] : [4, 4, 0, 0]}
-            />
+              layout="vertical"
+              fill={`var(--color-${dataKey})`}
+              radius={4}
+            >
+              <LabelList
+                dataKey="name"
+                position="insideLeft"
+                offset={8}
+                className="fill-[--color-label]"
+                fontSize={12}
+              />
+              <LabelList
+                dataKey={dataKey}
+                position="right"
+                offset={8}
+                className="fill-foreground"
+                fontSize={12}
+              />
+            </Bar>
           </BarChart>
         </ChartContainer>
       </CardContent>
       {footer && (
-        <CardFooter>
-          <div className="text-sm text-muted-foreground w-full">
-            {footer}
-          </div>
+        <CardFooter className="flex-col items-start gap-2 text-sm">
+          {footer}
         </CardFooter>
       )}
     </Card>
