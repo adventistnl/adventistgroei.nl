@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
+import { ptBR, enUS, nl } from "date-fns/locale"
+import { useTranslation } from "react-i18next"
 
 export interface SubsidyRequestCardData {
   id: string
@@ -77,32 +78,35 @@ export function SubsidyRequestCard({
   onArchive,
   className,
 }: SubsidyRequestCardProps) {
+  const { t, i18n } = useTranslation()
   const contentDisabledClass = data.archived ? "opacity-60 pointer-events-none" : ""
+  
   const statusConfig: Record<
     SubsidyRequestCardData["status"],
     { label: string; className: string }
   > = {
-    pending: { label: "Pendente", className: "bg-amber-50 text-amber-700 border-amber-200" },
-    approved: { label: "Aprovado", className: "bg-green-50 text-green-700 border-green-200" },
-    rejected: { label: "Rejeitado", className: "bg-red-50 text-red-700 border-red-200" },
-    in_review: { label: "Em Análise", className: "bg-blue-50 text-blue-700 border-blue-200" },
-    closed: { label: "Encerrado", className: "bg-gray-50 text-gray-700 border-gray-200" },
+    pending: { label: t('subsidy.pending'), className: "bg-amber-50 text-amber-700 border-amber-200" },
+    approved: { label: t('subsidy.approved'), className: "bg-green-50 text-green-700 border-green-200" },
+    rejected: { label: t('subsidy.rejected'), className: "bg-red-50 text-red-700 border-red-200" },
+    in_review: { label: t('subsidy.inReview'), className: "bg-blue-50 text-blue-700 border-blue-200" },
+    closed: { label: t('subsidy.closed'), className: "bg-gray-50 text-gray-700 border-gray-200" },
   }
 
   const currentStatus = statusConfig[data.status]
 
   const formattedDate = React.useMemo(() => {
     const date = typeof data.requested_at === "string" ? new Date(data.requested_at) : data.requested_at
-    return format(date, "dd MMM yyyy", { locale: ptBR })
-  }, [data.requested_at])
+    const locale = i18n.language === 'en' ? enUS : i18n.language === 'nl' ? nl : ptBR
+    return format(date, "dd MMM yyyy", { locale })
+  }, [data.requested_at, i18n.language])
 
   const formattedAmount = React.useMemo(() => {
-    return new Intl.NumberFormat("pt-BR", {
+    return new Intl.NumberFormat(i18n.language === 'en' ? 'en-US' : i18n.language === 'nl' ? 'nl-NL' : 'pt-BR', {
       style: "currency",
-      currency: "EUR",
+      currency: i18n.language === 'en' ? 'USD' : i18n.language === 'nl' ? 'EUR' : 'BRL',
       minimumFractionDigits: 0,
     }).format(data.requested_amount)
-  }, [data.requested_amount])
+  }, [data.requested_amount, i18n.language])
 
   return (
     <div
@@ -152,12 +156,12 @@ export function SubsidyRequestCard({
           <DropdownMenuContent align="end" className="w-48">
             {onView && (
               <DropdownMenuItem onClick={() => onView(data.id)}>
-                Visualizar
+                {t('actions.view')}
               </DropdownMenuItem>
             )}
             {onEdit && (
               <DropdownMenuItem onClick={() => onEdit(data.id)}>
-                Editar
+                {t('actions.edit')}
               </DropdownMenuItem>
             )}
             
@@ -169,7 +173,7 @@ export function SubsidyRequestCard({
                   onClick={() => onDelete(data.id)}
                   className="text-red-600 focus:text-red-600"
                 >
-                  Excluir
+                  {t('actions.delete')}
                 </DropdownMenuItem>
               </>
             )}
@@ -178,7 +182,7 @@ export function SubsidyRequestCard({
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onDuplicate(data.id)}>
-                  Duplicar
+                  {t('actions.duplicate')}
                 </DropdownMenuItem>
               </>
             )}
@@ -189,7 +193,7 @@ export function SubsidyRequestCard({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onArchive && onArchive(data.id)}>
                   <Archive className="w-3 h-3 mr-2" />
-                  {data.archived ? "Desarquivar" : "Arquivar"}
+                  {data.archived ? t('actions.unarchive') : t('actions.archive')}
                 </DropdownMenuItem>
               </>
             )}
@@ -201,7 +205,7 @@ export function SubsidyRequestCard({
       <div className={cn("space-y-2", contentDisabledClass)}>
         {/* Date */}
         <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-          <span>Solicitado:</span>
+          <span>{t("subsidy.requestedOn")}</span>
           <span className="font-medium text-gray-700">{formattedDate}</span>
         </div>
 

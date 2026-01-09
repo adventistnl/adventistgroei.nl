@@ -130,12 +130,12 @@ export function ViewSubsidyModal({
     refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
     awaitRefetchQueries: true,
     onCompleted: () => {
-      toast.success("Status atualizado com sucesso!")
+      toast.success(t('toasts.statusUpdated'))
       // Trigger callback to refresh data in parent
       onSubsidyUpdated?.()
     },
     onError: (error) => {
-      toast.error(`Erro ao atualizar status: ${error.message}`)
+      toast.error(t('toasts.statusUpdateError', { error: error.message }))
       console.error("Error updating subsidy:", error)
     }
   })
@@ -144,11 +144,11 @@ export function ViewSubsidyModal({
     refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
     awaitRefetchQueries: true,
     onCompleted: () => {
-      toast.success("Subsídio aprovado com sucesso!")
+      toast.success(t('toasts.subsidyApproved'))
       onSubsidyUpdated?.()
     },
     onError: (error) => {
-      toast.error(`Erro ao aprovar subsídio: ${error.message}`)
+      toast.error(t('toasts.approveError', { error: error.message }))
       console.error("Error approving subsidy:", error)
     }
   })
@@ -157,11 +157,11 @@ export function ViewSubsidyModal({
     refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
     awaitRefetchQueries: true,
     onCompleted: () => {
-      toast.success("Subsídio rejeitado")
+      toast.success(t('toasts.subsidyRejected'))
       onSubsidyUpdated?.()
     },
     onError: (error) => {
-      toast.error(`Erro ao rejeitar subsídio: ${error.message}`)
+      toast.error(t('toasts.rejectError', { error: error.message }))
       console.error("Error rejecting subsidy:", error)
     }
   })
@@ -170,7 +170,7 @@ export function ViewSubsidyModal({
     refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
     onError: (error) => {
       console.error("Error adding message:", error)
-      toast.error("Erro ao enviar mensagem")
+      toast.error(t('toasts.messageSentError'))
     }
   })
 
@@ -178,7 +178,7 @@ export function ViewSubsidyModal({
     refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
     onError: (error) => {
       console.error("Error updating message:", error)
-      toast.error("Erro ao atualizar mensagem")
+      toast.error(t('toasts.messageUpdateError'))
     }
   })
 
@@ -186,7 +186,7 @@ export function ViewSubsidyModal({
     refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
     onError: (error) => {
       console.error("Error deleting message:", error)
-      toast.error("Erro ao deletar mensagem")
+      toast.error(t('toasts.messageDeleteError'))
     }
   })
 
@@ -219,7 +219,7 @@ export function ViewSubsidyModal({
         })
         .catch((error) => {
           console.error('Error fetching receipts:', error)
-          toast.error('Erro ao carregar documentos')
+          toast.error(t('toasts.documentsLoadError'))
         })
         .finally(() => {
           setLoadingDocuments(false)
@@ -372,7 +372,7 @@ export function ViewSubsidyModal({
             message: newMessage
           }
         })
-        toast.success("Comentário atualizado")
+        toast.success(t('toasts.commentUpdated'))
         setEditingMessage(null)
         setNewMessage("")
       } catch (error) {
@@ -386,13 +386,13 @@ export function ViewSubsidyModal({
       const message: StatusHistoryItem = {
         id: `msg-${Date.now()}`,
         status: "in_review",
-        reason: `Comentário sobre documento "${commentingDocument.name}": ${newMessage}`,
+        reason: `${t('toasts.documentCommentPrefix', { name: commentingDocument.name })}${newMessage}`,
         changed_by: "Admin User",
         changed_at: new Date(),
         isNew: false
       }
       setMessages(prev => [...prev, message])
-      toast.success("Comentário adicionado")
+      toast.success(t('toasts.commentAdded'))
       setCommentingDocument(null)
       setNewMessage("")
       return
@@ -428,13 +428,14 @@ export function ViewSubsidyModal({
           }
         })
         
+        
         setNewMessage("")
         setMentionStatus(null)
         setMentionPriority(null)
-        toast.success("Mensagem enviada")
+        toast.success(t('subsidy.messageSent'))
       } catch (error) {
         console.error('Error sending message:', error)
-        toast.error('Erro ao enviar mensagem')
+        toast.error(t('toasts.messageSentError'))
       }
     }
 
@@ -442,13 +443,13 @@ export function ViewSubsidyModal({
   }
 
   const handleDeleteMessage = async (messageId: string) => {
-    if (!confirm("Tem certeza que deseja deletar este comentário?")) return
+    if (!confirm(t('subsidy.deleteCommentConfirm'))) return
 
     try {
       await deleteSubsidyRequestMessage({
         variables: { id: messageId }
       })
-      toast.success("Comentário deletado")
+      toast.success(t('subsidy.commentDeleted'))
     } catch (error) {
       // Error handled in useMutation
     }
@@ -482,14 +483,14 @@ export function ViewSubsidyModal({
         const approvalMessage: StatusHistoryItem = {
           id: `msg-${Date.now()}`,
           status: "in_review",
-          reason: `Documento "${docName}" foi validado e aprovado.`,
+          reason: t('subsidy.documentValidated'),
           changed_by: "Admin User",
           changed_at: new Date(),
           isNew: false
         }
         setMessages(prev => [...prev, approvalMessage])
         
-        toast.success("Documento validado com sucesso")
+        toast.success(t('subsidy.documentValidated'))
         setMentionMode(null)
 
         // Refetch receipts to update the list
@@ -505,7 +506,7 @@ export function ViewSubsidyModal({
     } else {
       // Rejeição com nota obrigatória
       if (!newMessage.trim()) {
-        toast.error("Adicione um motivo para a rejeição")
+        toast.error(t('subsidy.addRejectionReason'))
         return
       }
       
@@ -517,14 +518,14 @@ export function ViewSubsidyModal({
         const rejectionMessage: StatusHistoryItem = {
           id: `msg-${Date.now()}`,
           status: "rejected",
-          reason: `Documento "${docName}" foi rejeitado. Motivo: ${newMessage}`,
+          reason: `${t('subsidy.documentRejected')}: ${newMessage}`,
           changed_by: "Admin User",
           changed_at: new Date(),
           isNew: false
         }
         setMessages(prev => [...prev, rejectionMessage])
         
-        toast.success("Documento rejeitado")
+        toast.success(t('subsidy.documentRejected'))
         setMentionMode(null)
         setNewMessage("")
 
@@ -548,27 +549,27 @@ export function ViewSubsidyModal({
     { label: string; icon: React.ElementType; className: string }
   > = {
     pending: { 
-      label: "Pendente",
+      label: t('filters.pending'),
       icon: Clock,
       className: "text-yellow-500"
     },
     approved: { 
-      label: "Aprovado",
+      label: t('charts.legend.accepted'),
       icon: CheckCircle2,
       className: "text-green-600"
     },
     rejected: { 
-      label: "Rejeitado",
+      label: t('charts.legend.rejected'),
       icon: XCircle,
       className: "text-red-600"
     },
     in_review: { 
-      label: "Em Análise",
+      label: t('charts.legend.inReview'),
       icon: AlertCircle,
       className: "text-blue-500"
     },
     closed: {
-      label: "Fechado",
+      label: t('subsidy.closed'),
       icon: Ban,
       className: "text-gray-500"
     }
@@ -605,14 +606,8 @@ export function ViewSubsidyModal({
 
 
   const getDocumentTypeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      INVOICE: "Fatura",
-      RECEIPT: "Recibo",
-      CONTRACT: "Contrato",
-      PROOF_OF_PAYMENT: "Comprovante",
-      OTHER: "Outro"
-    }
-    return labels[type] || type
+    const typeKey = type as keyof typeof t
+    return t(`subsidy.documentTypes.${type}` as any) || type
   }
 
   const getFileIcon = (fileType: string) => {
@@ -652,7 +647,7 @@ export function ViewSubsidyModal({
                 </h2>
                 <div className="flex items-center gap-2 mt-1.5">
                   <span className="text-xs text-gray-600 dark:text-gray-400">
-                    Solicitado em {format(new Date(subsidy.requested_at), "dd/MM/yyyy", { locale: ptBR })}
+                    {t('subsidy.requestedOn')} {format(new Date(subsidy.requested_at), "dd/MM/yyyy")}
                   </span>
                 </div>
               </div>
@@ -695,17 +690,17 @@ export function ViewSubsidyModal({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
-                    <DropdownMenuLabel>Alterar Status</DropdownMenuLabel>
+                    <DropdownMenuLabel>{t('subsidy.changeStatus')}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={async () => {
                       const statusId = getStatusIdByName('PENDING')
                       if (!statusId) {
-                        toast.error('Status não encontrado')
+                        toast.error(t('filters.status') + ' ' + t('common.notFound')) // Assuming simple concat or add new key if needed
                         return
                       }
                       setCurrentSubsidyStatus('pending')
                       setMentionStatus('pending')
-                      setNewMessage('Alteração de status para Pendente')
+                      setNewMessage(t('subsidy.statusChangePrefix', { status: t('filters.pending') }))
                       chatInputRef.current?.focus()
                       // Update in backend
                       try {
@@ -722,17 +717,17 @@ export function ViewSubsidyModal({
                       }
                     }}>
                       <Clock className="mr-2 h-4 w-4 text-amber-500" />
-                      Pendente
+                      {t('filters.pending')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={async () => {
                       const statusId = getStatusIdByName('IN_REVIEW')
                       if (!statusId) {
-                        toast.error('Status não encontrado')
+                        toast.error(t('filters.status') + ' ' + 'not found')
                         return
                       }
                       setCurrentSubsidyStatus('in_review')
                       setMentionStatus('in_review')
-                      setNewMessage('Alteração de status para Em Análise')
+                      setNewMessage(t('subsidy.statusChangePrefix', { status: t('charts.legend.inReview') }))
                       chatInputRef.current?.focus()
                       // Update in backend
                       try {
@@ -749,12 +744,12 @@ export function ViewSubsidyModal({
                       }
                     }}>
                       <AlertCircle className="mr-2 h-4 w-4 text-blue-500" />
-                      Em Análise
+                      {t('charts.legend.inReview')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={async () => {
                       setCurrentSubsidyStatus('approved')
                       setMentionStatus('approved')
-                      setNewMessage('Alteração de status para Aprovado')
+                      setNewMessage(t('subsidy.statusChangePrefix', { status: t('charts.legend.accepted') }))
                       chatInputRef.current?.focus()
                       // Approve subsidy - use specific mutation
                       try {
@@ -769,14 +764,14 @@ export function ViewSubsidyModal({
                       }
                     }}>
                       <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
-                      Aprovado
+                      {t('charts.legend.accepted')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={async () => {
                       setCurrentSubsidyStatus('rejected')
                       setMentionStatus('rejected')
-                      const reason = prompt('Motivo da rejeição:')
+                      const reason = prompt(t('subsidy.reasonRejection') + ':')
                       if (reason) {
-                        setNewMessage(`Alteração de status para Rejeitado: ${reason}`)
+                        setNewMessage(t('subsidy.statusChangeReasonPrefix', { status: t('charts.legend.rejected'), reason }))
                         chatInputRef.current?.focus()
                         // Reject subsidy
                         try {
@@ -792,17 +787,17 @@ export function ViewSubsidyModal({
                       }
                     }}>
                       <XCircle className="mr-2 h-4 w-4 text-red-500" />
-                      Rejeitado
+                      {t('charts.legend.rejected')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={async () => {
                       const statusId = getStatusIdByName('CLOSED')
                       if (!statusId) {
-                        toast.error('Status não encontrado')
+                        toast.error(t('filters.status') + ' ' + t('common.notFound'))
                         return
                       }
                       setCurrentSubsidyStatus('closed')
                       setMentionStatus(null)
-                      setNewMessage('Alteração de status para Encerrado')
+                      setNewMessage(t('subsidy.statusChangePrefix', { status: t('subsidy.closed') }))
                       chatInputRef.current?.focus()
                       // Update in backend
                       try {
@@ -819,7 +814,7 @@ export function ViewSubsidyModal({
                       }
                     }}>
                       <Ban className="mr-2 h-4 w-4 text-gray-500" />
-                      Encerrado
+                      {t('subsidy.closed')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -837,9 +832,9 @@ export function ViewSubsidyModal({
                             currentPriority === 'low' && "bg-green-500"
                           )} />
                           <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                            {currentPriority === 'high' && 'Alta'}
-                            {currentPriority === 'medium' && 'Média'}
-                            {currentPriority === 'low' && 'Baixa'}
+                            {currentPriority === 'high' && t('subsidy.priority.high')}
+                            {currentPriority === 'medium' && t('subsidy.priority.medium')}
+                            {currentPriority === 'low' && t('subsidy.priority.low')}
                           </span>
                         </div>
                         <ChevronDown className="w-3 h-3 text-gray-500" />
@@ -847,12 +842,12 @@ export function ViewSubsidyModal({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
-                    <DropdownMenuLabel>Alterar Prioridade</DropdownMenuLabel>
+                    <DropdownMenuLabel>{t('subsidy.priority.change')}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={async () => {
                       setCurrentPriority('high')
                       setMentionPriority('high')
-                      setNewMessage('Alteração de prioridade para Alta')
+                      setNewMessage(t('subsidy.priority.changedTo', { priority: t('subsidy.priority.high') }))
                       chatInputRef.current?.focus()
                       try {
                         await updateSubsidyRequest({
@@ -861,19 +856,19 @@ export function ViewSubsidyModal({
                             data: { priority: 'HIGH' }
                           }
                         })
-                        toast.success('Prioridade alterada para Alta')
+                        toast.success(t('subsidy.priority.changedTo', { priority: t('subsidy.priority.high') }))
                         onSubsidyUpdated?.()
                       } catch (error) {
-                        toast.error('Erro ao alterar prioridade')
+                        toast.error(t('subsidy.priority.error'))
                       }
                     }}>
                       <div className="w-2 h-2 rounded-full bg-red-500 mr-2" />
-                      Alta
+                      {t('subsidy.priority.high')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={async () => {
                       setCurrentPriority('medium')
                       setMentionPriority('medium')
-                      setNewMessage('Alteração de prioridade para Média')
+                      setNewMessage(t('subsidy.priority.changedTo', { priority: t('subsidy.priority.medium') }))
                       chatInputRef.current?.focus()
                       try {
                         await updateSubsidyRequest({
@@ -882,19 +877,19 @@ export function ViewSubsidyModal({
                             data: { priority: 'MEDIUM' }
                           }
                         })
-                        toast.success('Prioridade alterada para Média')
+                        toast.success(t('subsidy.priority.changedTo', { priority: t('subsidy.priority.medium') }))
                         onSubsidyUpdated?.()
                       } catch (error) {
-                        toast.error('Erro ao alterar prioridade')
+                        toast.error(t('subsidy.priority.error'))
                       }
                     }}>
                       <div className="w-2 h-2 rounded-full bg-yellow-500 mr-2" />
-                      Média
+                      {t('subsidy.priority.medium')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={async () => {
                       setCurrentPriority('low')
                       setMentionPriority('low')
-                      setNewMessage('Alteração de prioridade para Baixa')
+                      setNewMessage(t('subsidy.priority.changedTo', { priority: t('subsidy.priority.low') }))
                       chatInputRef.current?.focus()
                       try {
                         await updateSubsidyRequest({
@@ -903,14 +898,14 @@ export function ViewSubsidyModal({
                             data: { priority: 'LOW' }
                           }
                         })
-                        toast.success('Prioridade alterada para Baixa')
+                        toast.success(t('subsidy.priority.changedTo', { priority: t('subsidy.priority.low') }))
                         onSubsidyUpdated?.()
                       } catch (error) {
-                        toast.error('Erro ao alterar prioridade')
+                        toast.error(t('subsidy.priority.error'))
                       }
                     }}>
                       <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
-                      Baixa
+                      {t('subsidy.priority.low')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -988,7 +983,7 @@ export function ViewSubsidyModal({
             {/* Activities Navigation */}
             <div className="space-y-3">
               <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                Atividades
+                {t('subsidy.activities')}
               </h3>
               
               <div className="flex gap-2 overflow-x-auto pb-2">
@@ -1046,20 +1041,20 @@ export function ViewSubsidyModal({
                     {currentActivity.name}
                   </h4>
                   <Badge variant="outline" className="text-xs border-gray-300 dark:border-gray-700">
-                    {currentActivity.documents.length} documento(s)
+                    {currentActivity.documents.length} {t('subsidy.documents').toLowerCase()}
                   </Badge>
                 </div>
 
                 {/* Activity Values */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 rounded-md bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Orçamento</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('table.budget')}</p>
                     <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                       {formatCurrency(currentActivity.budget_amount)}
                     </p>
                   </div>
                   <div className="p-3 rounded-md bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Solicitado</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('charts.subsidyActivity.totalRequested')}</p>
                     <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                       {formatCurrency(currentActivity.requested_amount)}
                     </p>
@@ -1069,19 +1064,19 @@ export function ViewSubsidyModal({
                 {/* Documents */}
                 <div className="space-y-2">
                   <h5 className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                    Documentos
+                    {t('subsidy.documents')}
                   </h5>
                   
                   {loadingDocuments || receiptsLoading ? (
-                    <div className="py-8 text-center">
+                      <div className="py-8 text-center">
                       <div className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                         <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
-                        <span>Carregando documentos...</span>
+                        <span>{t('subsidy.loadingDocuments')}</span>
                       </div>
                     </div>
                   ) : currentActivity.documents.length === 0 ? (
                     <p className="text-xs text-gray-500 dark:text-gray-400 py-6 text-center border border-dashed border-gray-200 dark:border-gray-800 rounded-md">
-                      Nenhum documento anexado
+                      {t('subsidy.noDocuments')}
                     </p>
                   ) : (
                     <div className="space-y-2">
@@ -1115,17 +1110,17 @@ export function ViewSubsidyModal({
                                 {/* Status Badge Minimalista */}
                                 {doc.is_validated === true && (
                                   <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-100 dark:bg-green-950/50 border-green-400 text-green-700 dark:text-green-400">
-                                    Aprovado
+                                    {t('charts.legend.accepted')}
                                   </Badge>
                                 )}
                                 {doc.is_validated === false && (
                                   <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-red-100 dark:bg-red-950/50 border-red-400 text-red-700 dark:text-red-400">
-                                    Rejeitado
+                                    {t('charts.legend.rejected')}
                                   </Badge>
                                 )}
                                 {doc.is_validated === undefined && (
                                   <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-100 dark:bg-amber-950/50 border-amber-400 text-amber-700 dark:text-amber-400">
-                                    Pendente
+                                    {t('filters.pending')}
                                   </Badge>
                                 )}
                               </div>
@@ -1166,7 +1161,7 @@ export function ViewSubsidyModal({
                                         </Button>
                                       </TooltipTrigger>
                                       <TooltipContent side="top">
-                                        <p className="text-xs">Aprovar documento</p>
+                                        <p className="text-xs">{t('subsidy.approveDocument')}</p>
                                       </TooltipContent>
                                     </Tooltip>
                                     
@@ -1185,7 +1180,7 @@ export function ViewSubsidyModal({
                                         </Button>
                                       </TooltipTrigger>
                                       <TooltipContent side="top">
-                                        <p className="text-xs">Rejeitar documento</p>
+                                        <p className="text-xs">{t('subsidy.rejectDocument')}</p>
                                       </TooltipContent>
                                     </Tooltip>
                                     
@@ -1204,7 +1199,7 @@ export function ViewSubsidyModal({
                                         </Button>
                                       </TooltipTrigger>
                                       <TooltipContent side="top">
-                                        <p className="text-xs">Adicionar comentário</p>
+                                        <p className="text-xs">{t('subsidy.addComment')}</p>
                                       </TooltipContent>
                                     </Tooltip>
                                   </div>
@@ -1229,7 +1224,7 @@ export function ViewSubsidyModal({
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent side="top">
-                                  <p className="text-xs">{doc.is_validated !== undefined ? 'Download desabilitado' : 'Download documento'}</p>
+                                  <p className="text-xs">{doc.is_validated !== undefined ? t('subsidy.downloadDisabled') : t('subsidy.downloadDocument')}</p>
                                 </TooltipContent>
                               </Tooltip>
                             </div>
@@ -1246,7 +1241,7 @@ export function ViewSubsidyModal({
                                   </p>
                                   {doc.validated_by && doc.validated_at && (
                                     <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1">
-                                      Por {doc.validated_by} em {format(new Date(doc.validated_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                                      {t('subsidy.validatedBy', { user: doc.validated_by, date: format(new Date(doc.validated_at), "dd/MM/yyyy HH:mm", { locale: ptBR }) })}
                                     </p>
                                   )}
                                 </div>
@@ -1254,8 +1249,8 @@ export function ViewSubsidyModal({
                             </div>
                           )}
                         </div>
-                      )}
-                      )}
+                      )})}
+
                     </div>
                   )}
                 </div>
@@ -1276,7 +1271,7 @@ export function ViewSubsidyModal({
                     <div className="flex items-center gap-2">
                       <MessageCircle className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                       <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                        Histórico
+                        {t('subsidy.history')}
                       </h3>
                       {newMessagesCount > 0 && (
                         <Badge variant="default" className="h-5 min-w-5 flex items-center justify-center text-[10px] bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900">
@@ -1296,12 +1291,12 @@ export function ViewSubsidyModal({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Filtrar por Atividade</DropdownMenuLabel>
+                        <DropdownMenuLabel>{t('subsidy.filterByActivity')}</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => setChatFilterActivity(null)}>
                           <div className="flex items-center gap-2">
                             {!chatFilterActivity && <Check className="h-3 w-3" />}
-                            <span className={!chatFilterActivity ? "font-semibold" : ""}>Todas</span>
+                            <span className={!chatFilterActivity ? "font-semibold" : ""}>{t('subsidy.all')}</span>
                           </div>
                         </DropdownMenuItem>
                         {activities.map(activity => (
@@ -1412,14 +1407,14 @@ export function ViewSubsidyModal({
                                     ? "text-gray-300 dark:text-gray-600" 
                                     : "text-gray-600 dark:text-gray-400"
                                 )}>
-                                  {isDocumentValidation && 'Documento Aprovado'}
-                                  {isDocumentRejection && 'Documento Rejeitado'}
-                                  {isDocumentComment && 'Comentário'}
-                                  {isStatusChange && 'Atualização de Status'}
+                                  {isDocumentValidation && t('subsidy.documentApproved')}
+                                  {isDocumentRejection && t('subsidy.documentRejected')}
+                                  {isDocumentComment && t('subsidy.documentComment')}
+                                  {isStatusChange && t('subsidy.statusUpdate')}
                                 </span>
                                 {item.isNew && (
                                   <Badge variant="default" className="text-[9px] bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-1.5 py-0">
-                                    Nova
+                                    {t('subsidy.newBadge')}
                                   </Badge>
                                 )}
                               </div>
@@ -1453,11 +1448,11 @@ export function ViewSubsidyModal({
                                       className="h-6 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30"
                                     >
                                       <Pencil className="w-3 h-3 mr-1" />
-                                      <span className="text-[10px]">Editar</span>
+                                      <span className="text-[10px]">{t('actions.edit')}</span>
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent side="top">
-                                    <p className="text-xs">Editar comentário</p>
+                                    <p className="text-xs">{t('subsidy.editComment')}</p>
                                   </TooltipContent>
                                 </Tooltip>
                                 
@@ -1470,11 +1465,11 @@ export function ViewSubsidyModal({
                                       className="h-6 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
                                     >
                                       <Trash2 className="w-3 h-3 mr-1" />
-                                      <span className="text-[10px]">Deletar</span>
+                                      <span className="text-[10px]">{t('actions.delete')}</span>
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent side="top">
-                                    <p className="text-xs">Deletar comentário</p>
+                                    <p className="text-xs">{t('subsidy.deleteComment')}</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </div>
@@ -1517,7 +1512,7 @@ export function ViewSubsidyModal({
                             mentionPriority === 'medium' && "bg-yellow-500",
                             mentionPriority === 'low' && "bg-green-500"
                           )} />
-                          <span>Prioridade: {mentionPriority === 'high' ? 'Alta' : mentionPriority === 'medium' ? 'Média' : 'Baixa'}</span>
+                          <span>{t('filters.priority')}: {mentionPriority === 'high' ? t('subsidy.priority.high') : mentionPriority === 'medium' ? t('subsidy.priority.medium') : t('subsidy.priority.low')}</span>
                           <button onClick={() => setMentionPriority(null)} className="hover:opacity-70">
                             <X className="w-3 h-3" />
                           </button>
@@ -1533,7 +1528,7 @@ export function ViewSubsidyModal({
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <Pencil className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
                           <p className="text-xs font-medium text-amber-900 dark:text-amber-200 truncate">
-                            Editando comentário
+                            {t('subsidy.editingComment')}
                           </p>
                         </div>
                         <Button
@@ -1557,7 +1552,7 @@ export function ViewSubsidyModal({
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                           <p className="text-xs font-medium text-blue-900 dark:text-blue-200 truncate">
-                            Comentário: {commentingDocument.name}
+                            {t('subsidy.commentOn')}{commentingDocument.name}
                           </p>
                         </div>
                         <Button
@@ -1581,7 +1576,7 @@ export function ViewSubsidyModal({
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <Ban className="w-3.5 h-3.5 text-red-600 dark:text-red-400 flex-shrink-0" />
                           <p className="text-xs font-medium text-red-900 dark:text-red-200 truncate">
-                            Rejeitar documento: {activities.flatMap(a => a.documents).find(d => d.id === mentionMode)?.file_name}
+                            {t('subsidy.rejectingDocument')}: {activities.flatMap(a => a.documents).find(d => d.id === mentionMode)?.file_name}
                           </p>
                         </div>
                         <Button
@@ -1609,13 +1604,13 @@ export function ViewSubsidyModal({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start">
-                        <DropdownMenuLabel>Mencionar</DropdownMenuLabel>
+                        <DropdownMenuLabel>{t('subsidy.mention')}</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => setMentionStatus(currentSubsidyStatus)}>
-                          Status Atual
+                          {t('subsidy.currentStatus')}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setMentionPriority(currentPriority)}>
-                          Prioridade Atual
+                          {t('subsidy.currentPriority')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -1626,12 +1621,12 @@ export function ViewSubsidyModal({
                       onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                       placeholder={
                         editingMessage
-                          ? "Edite seu comentário..."
+                          ? t('subsidy.placeholders.editComment')
                           : commentingDocument 
-                          ? "Digite seu comentário sobre o documento..."
+                          ? t('subsidy.placeholders.documentComment')
                           : mentionMode 
-                          ? "Digite o motivo da rejeição..."
-                          : "Adicionar comentário..."
+                          ? t('subsidy.placeholders.rejectReason')
+                          : t('subsidy.placeholders.addComment')
                       }
                       className={cn(
                         "flex-1 h-9 text-xs transition-all",
@@ -1668,7 +1663,7 @@ export function ViewSubsidyModal({
               </div>
             )}
             <Button variant="outline" onClick={onClose} className="ml-auto">
-              Fechar
+              {t('subsidy.close')}
             </Button>
           </div>
         </div>

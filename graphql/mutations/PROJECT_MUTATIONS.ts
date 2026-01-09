@@ -24,6 +24,7 @@ export const CREATE_PROJECT_MUTATION = gql`
     $special_case_reason: String
     $location_church_plant: String
     $special_budget: Float
+    $church_id: String
   ) {
     createProject(
       data: {
@@ -41,6 +42,7 @@ export const CREATE_PROJECT_MUTATION = gql`
         required_volunteers: $required_volunteers
         is_event: $is_event
         institution_id: $institution_id
+        church_id: $church_id
         owner_id: $owner_id
         deadline: $deadline
         event: $event
@@ -100,6 +102,7 @@ export const UPDATE_PROJECT_MUTATION = gql`
     $is_private: Boolean
     $required_volunteers: Boolean
     $institution_id: String
+    $church_id: String
     $owner_id: String
     $deadline: String
   ) {
@@ -119,6 +122,7 @@ export const UPDATE_PROJECT_MUTATION = gql`
         is_private: $is_private
         required_volunteers: $required_volunteers
         institution_id: $institution_id
+        church_id: $church_id
         owner_id: $owner_id
         deadline: $deadline
       }
