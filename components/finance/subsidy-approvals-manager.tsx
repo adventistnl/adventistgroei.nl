@@ -45,6 +45,9 @@ import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { AnalyticsGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { KanbanBoard, KanbanGroup, KanbanItem, KanbanAction } from "@/components/ui/kanban-board"
 import { ViewSubsidyModal } from "@/components/modals/project/view-subsidy-modal"
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
 import { useCurrency } from "@/contexts/currency-context"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -105,6 +108,10 @@ interface SubsidyRequest {
     notes?: string
   }>
   department_name?: string
+  receipts?: Array<{
+    id: string
+    is_validated: boolean
+  }>
 }
 
 interface SubsidyApprovalsManagerProps {
@@ -151,7 +158,24 @@ export function SubsidyApprovalsManager({
         await refetchSubsidies()
       }
     },
-    onError: (err) => toast.error(translations.toasts.approveError.replace('{{message}}', err.message))
+    onError: (err) => {
+      let ext = (err.graphQLErrors?.[0]?.extensions as any);
+      if (!ext && (err.networkError as any)?.result?.errors?.[0]?.extensions) {
+        ext = (err.networkError as any).result.errors[0].extensions;
+      }
+      const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
+      if (errorCode === 'STATUS_IS_CLOSED') {
+          toast.error("O subsídio já está fechado e não pode ser alterado.");
+      } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
+          toast.error("Não é possível fechar um subsídio em revisão.");
+      } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
+          toast.error("Subsídios aprovados ou rejeitados só podem ser fechados.");
+      } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
+          toast.error(translations.toasts?.documentsPending || "Todos os documentos devem ser validados antes de prosseguir.");
+      } else {
+        toast.error(translations.toasts.approveError.replace('{{message}}', err.message))
+      }
+    }
   })
 
   const [rejectSubsidyMutation] = useMutation(REJECT_SUBSIDY_REQUEST, {
@@ -161,7 +185,24 @@ export function SubsidyApprovalsManager({
         await refetchSubsidies()
       }
     },
-    onError: (err) => toast.error(translations.toasts.rejectError.replace('{{message}}', err.message))
+    onError: (err) => {
+      let ext = (err.graphQLErrors?.[0]?.extensions as any);
+      if (!ext && (err.networkError as any)?.result?.errors?.[0]?.extensions) {
+        ext = (err.networkError as any).result.errors[0].extensions;
+      }
+      const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
+      if (errorCode === 'STATUS_IS_CLOSED') {
+          toast.error("O subsídio já está fechado e não pode ser alterado.");
+      } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
+          toast.error("Não é possível fechar um subsídio em revisão.");
+      } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
+          toast.error("Subsídios aprovados ou rejeitados só podem ser fechados.");
+      } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
+          toast.error(translations.toasts?.documentsPending || "Todos os documentos devem ser validados antes de prosseguir.");
+      } else {
+        toast.error(translations.toasts.rejectError.replace('{{message}}', err.message))
+      }
+    }
   })
 
   const [updateSubsidyMutation] = useMutation(UPDATE_SUBSIDY_REQUEST, {
@@ -171,7 +212,24 @@ export function SubsidyApprovalsManager({
         await refetchSubsidies()
       }
     },
-    onError: (err) => toast.error(translations.toasts.statusUpdateError.replace('{{message}}', err.message))
+    onError: (err) => {
+      let ext = (err.graphQLErrors?.[0]?.extensions as any);
+      if (!ext && (err.networkError as any)?.result?.errors?.[0]?.extensions) {
+        ext = (err.networkError as any).result.errors[0].extensions;
+      }
+      const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
+      if (errorCode === 'STATUS_IS_CLOSED') {
+          toast.error("O subsídio já está fechado e não pode ser alterado.");
+      } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
+          toast.error("Não é possível fechar um subsídio em revisão.");
+      } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
+          toast.error("Subsídios aprovados ou rejeitados só podem ser fechados.");
+      } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
+          toast.error(translations.toasts?.documentsPending || "Todos os documentos devem ser validados antes de prosseguir.");
+      } else {
+        toast.error(translations.toasts.statusUpdateError.replace('{{message}}', err.message))
+      }
+    }
   })
 
   // Helper function to get status ID by name from the statuses query
@@ -182,6 +240,49 @@ export function SubsidyApprovalsManager({
       s.name?.toUpperCase() === statusName.toUpperCase()
     )
     return status?.id || null
+  }
+
+  // States for confirmation dialogs
+  const [confirmationDialog, setConfirmationDialog] = useState<{ 
+      isOpen: boolean; 
+      action: 'approve' | 'reject' | 'close' | 'status_change'; 
+      itemId: string;
+      status?: string 
+  }>({ isOpen: false, action: 'status_change', itemId: '' })
+  
+  const [rejectionDialog, setRejectionDialog] = useState<{ 
+      isOpen: boolean; 
+      itemId: string; 
+      reason: string 
+  }>({ isOpen: false, itemId: '', reason: '' })
+
+  const getStatusChangeError = (subsidy: SubsidyRequest, to: string): string | null => {
+    const from = subsidy.status
+
+    // Rule: Closed status cannot be changed to anything else
+    if (from === 'closed') return translations.toasts?.statusClosed || "Status Closed cannot be changed"
+    
+    // Rule: To Closed is allowed from Approved or Rejected only (not In Review)
+    if (to === 'closed') {
+      if (from === 'in_review') return translations.toasts?.inReviewToClosed || "Cannot close In Review requests"
+      // Only allowed from approved or rejected
+      if (from !== 'approved' && from !== 'rejected') return translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close"
+    }
+    
+    // Rule: If Approved or Rejected, can ONLY go to Closed
+    if (from === 'approved' || from === 'rejected') {
+      if (to !== 'closed') return translations.toasts?.finalState || "Can only change to Closed"
+    }
+
+    // Rule: Cannot change to Approved, Closed, Rejected unless all documents are validated
+    if (['approved', 'closed', 'rejected'].includes(to)) {
+       const hasPending = (subsidy.receipts || []).some(r => !r.is_validated);
+       if (hasPending) {
+           return translations.toasts?.documentsPending || "All documents must be validated first"
+       }
+    }
+    
+    return null
   }
 
   // Transform backend data to component format
@@ -454,56 +555,81 @@ export function SubsidyApprovalsManager({
     }
   }
 
-  const handleApprove = async (subsidyId: string) => {
-    const subsidy = subsidyRequests.find(r => r.id === subsidyId)
+  // Executors
+  const executeApprove = async (id: string) => {
+    const subsidy = subsidyRequests.find(r => r.id === id)
     if (!subsidy) return
-
     try {
-      await approveSubsidyMutation({
-        variables: {
-          id: subsidyId,
-          approved_amount: subsidy.requested_amount
-        }
-      })
-    } catch (error) {
-      // Error handled by mutation onError
+        await approveSubsidyMutation({ variables: { id, approved_amount: subsidy.requested_amount } })
+    } catch (e) {}
+  }
+
+  const executeReject = async (id: string, reason: string) => {
+      try {
+          await rejectSubsidyMutation({ variables: { id, rejection_reason: reason } })
+      } catch (e) {}
+  }
+
+  const executeStatusUpdate = async (id: string, status: string) => {
+      const statusId = getStatusIdByName(status.toUpperCase())
+      if (!statusId) return
+      try {
+          await updateSubsidyMutation({ variables: { id, data: { subsidy_status_id: statusId } } })
+      } catch (e) {}
+  }
+
+  const handleApprove = async (subsidyId: string) => {
+    const request = subsidyRequests.find(r => r.id === subsidyId)
+    if (!request) return
+    
+    const error = getStatusChangeError(request, 'approved')
+    if (error) {
+         toast.error(error)
+         return
     }
+    setConfirmationDialog({ isOpen: true, action: 'approve', itemId: subsidyId })
   }
 
   const handleReject = async (subsidyId: string) => {
-    const subsidy = subsidyRequests.find(r => r.id === subsidyId)
-    if (!subsidy) return
-
-    try {
-      await rejectSubsidyMutation({
-        variables: {
-          id: subsidyId,
-          rejection_reason: translations.defaults.rejectionReason
-        }
-      })
-    } catch (error) {
-      // Error handled by mutation onError
+    const request = subsidyRequests.find(r => r.id === subsidyId)
+    if (!request) return
+    
+    const error = getStatusChangeError(request, 'rejected')
+    if (error) {
+         toast.error(error)
+         return
     }
+    setRejectionDialog({ isOpen: true, itemId: subsidyId, reason: translations.defaults.rejectionReason || '' })
   }
 
   const handleMarkInReview = async (subsidyId: string) => {
-    const statusId = getStatusIdByName('IN_REVIEW')
-    if (!statusId) {
-      toast.error(translations.toasts.inReviewNotFound)
-      return
+     handleKanbanItemMove(subsidyId, 'pending', 'in_review')
+  }
+
+  // Refactored Kanban Move Handler
+  const handleKanbanItemMove = async (itemId: string, fromGroupId: string, toGroupId: string) => {
+    const request = subsidyRequests.find(r => r.id === itemId)
+    if (!request) return
+
+    // Validar regras de negócio
+    const error = getStatusChangeError(request, toGroupId)
+    if (error) {
+        toast.error(error)
+        // Note: Kanban might have optimistically moved the item. A refresh usually fixes this, 
+        // or a library specific revert. Since we don't have direct revert access here easily without library specifics,
+        // we rely on the component re-render from props/refresh.
+        return
     }
-    
-    try {
-      await updateSubsidyMutation({
-        variables: {
-          id: subsidyId,
-          data: {
-            subsidy_status_id: statusId
-          }
-        }
-      })
-    } catch (error) {
-      // Error handled by mutation onError
+
+    if (toGroupId === 'approved') {
+        setConfirmationDialog({ isOpen: true, action: 'approve', itemId })
+    } else if (toGroupId === 'rejected') {
+        setRejectionDialog({ isOpen: true, itemId, reason: '' })
+    } else if (toGroupId === 'closed') {
+        setConfirmationDialog({ isOpen: true, action: 'close', itemId })
+    } else {
+        // Direct update for statuses that don't need confirmation (like Pending <-> In Review)
+        executeStatusUpdate(itemId, toGroupId)
     }
   }
 
@@ -766,42 +892,7 @@ export function SubsidyApprovalsManager({
     }
   ]
 
-  const handleKanbanItemMove = async (itemId: string, fromGroupId: string, toGroupId: string) => {
-    const subsidy = subsidyRequests.find(r => r.id === itemId)
-    if (!subsidy) return
 
-    try {
-      // Handle approve/reject via specific mutations
-      if (toGroupId === 'approved') {
-        await handleApprove(itemId)
-      } else if (toGroupId === 'rejected') {
-        await handleReject(itemId)
-      } else if (toGroupId === 'pending' || toGroupId === 'in_review' || toGroupId === 'closed') {
-        // Get status ID by name
-        const statusName = toGroupId.toUpperCase()
-        const statusId = getStatusIdByName(statusName)
-        
-        if (!statusId) {
-          toast.error(translations.toasts.statusNotFound.replace('{{status}}', toGroupId))
-          return
-        }
-        
-        // Use UPDATE_SUBSIDY_REQUEST for other status changes
-        await updateSubsidyMutation({
-          variables: {
-            id: itemId,
-            data: {
-              subsidy_status_id: statusId
-            }
-          }
-        })
-      } else {
-        toast.error(translations.toasts.invalidStatus)
-      }
-    } catch (error) {
-      console.error('Error updating subsidy status:', error)
-    }
-  }
 
   // Custom Kanban Item Renderer
   const renderKanbanItem = (item: KanbanItem, group: KanbanGroup, dragHandlers?: any) => {
@@ -994,6 +1085,84 @@ export function SubsidyApprovalsManager({
           }}
         />
       )}
+      
+       {/* Confirmation Dialog */}
+       <ConfirmationDialog
+        isOpen={confirmationDialog.isOpen}
+        onClose={() => setConfirmationDialog({ ...confirmationDialog, isOpen: false })}
+        onConfirm={async () => {
+            if (confirmationDialog.action === 'approve') {
+                await executeApprove(confirmationDialog.itemId)
+            } else if (confirmationDialog.action === 'close') {
+                await executeStatusUpdate(confirmationDialog.itemId, 'closed')
+            }
+            setConfirmationDialog({ ...confirmationDialog, isOpen: false })
+        }}
+        title={t('subsidy.statusChange.title')}
+        description={
+             confirmationDialog.action === 'approve' 
+             ? t('subsidy.statusChange.warning.approved')
+             : confirmationDialog.action === 'close'
+                ? t('subsidy.statusChange.warning.closed')
+                : t('subsidy.statusChange.warning.generic')
+        }
+        confirmText={t('common.confirm')}
+        cancelText={t('common.cancel')}
+        severity="high"
+        warnings={[
+            {
+                icon: AlertCircle,
+                text: t('subsidy.irreversibleActionWarning')
+            }
+        ]}
+      />
+
+      {/* Rejection Dialog */}
+      <Dialog open={rejectionDialog.isOpen} onOpenChange={(open) => !open && setRejectionDialog({ ...rejectionDialog, isOpen: false })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+                <AlertCircle className="w-5 h-5" />
+                {t('subsidy.rejectTitle')}
+            </DialogTitle>
+            <DialogDescription>
+              {t('subsidy.reasonRejection')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:border-red-800">
+                <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-2 text-justify">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    {t('subsidy.statusChange.warning.rejected')}
+                </p>
+            </div>
+            <Textarea
+              value={rejectionDialog.reason}
+              onChange={(e) => setRejectionDialog(prev => ({ ...prev, reason: e.target.value }))}
+              placeholder={t('subsidy.placeholders.rejectReason')}
+              className="resize-none"
+              rows={4}
+            />
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setRejectionDialog({ ...rejectionDialog, isOpen: false })} className="w-full sm:w-auto">
+              {t('common.cancel')}
+            </Button>
+            <div className="flex flex-col gap-2 w-full sm:w-auto">
+                <Button variant="destructive" onClick={async () => {
+                    await executeReject(rejectionDialog.itemId, rejectionDialog.reason)
+                    setRejectionDialog({ ...rejectionDialog, isOpen: false })
+                }} className="w-full">
+                <AlertCircle className="w-4 h-4 mr-2" />
+                {t('common.reject')}
+                </Button>
+                <p className="text-xs text-center text-red-600">
+                    {t('common.riskAware')}
+                </p>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

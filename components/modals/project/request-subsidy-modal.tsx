@@ -38,6 +38,11 @@ interface SubsidyRequestItem {
   budget_amount: number
   activity_documents: UploadedDocument[]
   notes: string
+  existing_receipt_updates?: {
+    receipt_id: string
+    amount: number
+    type: string
+  }[]
 }
 
 interface UploadedDocument {
@@ -48,6 +53,7 @@ interface UploadedDocument {
   amount: number
   file_url: string
   isExpanded?: boolean
+  origin?: 'NEW' | 'ACTIVITY' | 'EXISTING_RECEIPT'
 }
 
 interface RequestSubsidyModalProps {
@@ -179,7 +185,10 @@ export function RequestSubsidyModal({
             activity_name: item.activity_name,
             requested_amount: item.requested_amount,
             budget_amount: item.budget_amount,
-            activity_documents: item.activity_documents || [],
+            activity_documents: (item.activity_documents || []).map(doc => ({
+              ...doc,
+              origin: doc.origin || 'EXISTING_RECEIPT'
+            })),
             notes: item.notes || ""
           }))
         : selectedActivities.map(activity => ({
@@ -511,11 +520,22 @@ export function RequestSubsidyModal({
           }
         }
 
+        const finalData = {
+          ...formData,
+          items: formData.items.map(item => ({
+             ...item,
+             // Ensure we don't send existing_receipt_updates as requested
+             existing_receipt_updates: undefined,
+             // Also ensure we don't inadvertently send full documents as DTO might not expect them in some fields
+             // The backend DTO for UpdateSubsidyRequestItemInput only expects specific fields.
+          }))
+        }
+
         // Clear pending files after successful upload
         setPendingFiles(new Map())
 
         toast.success(translations.toasts.requestUpdated)
-        onSubmit(formData)
+        onSubmit(finalData)
         onClose()
       } catch (error) {
         console.error('❌ [Submit] Upload error:', error)
@@ -1318,8 +1338,8 @@ export function RequestSubsidyModal({
                                 }}
                                 className={`h-9 text-xs ${!isValidAmount ? 'border-red-300' : ''}`}
                                 placeholder="0.00"
-                                min={0}
-                                step="0.01"
+                                disabled={!doc.id.startsWith('temp-')}
+                                title={!doc.id.startsWith('temp-') ? "Valor não pode ser editado" : ""}
                               />
                             </div>
                           </div>

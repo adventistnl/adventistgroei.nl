@@ -143,6 +143,14 @@ export const GET_PROJECT_BY_ID_QUERY = gql`
           entity_type
           entity_id
         }
+        activity_documents {
+          id
+          file_url
+          filename
+          type
+          is_validated
+          drive_file_id
+        }
       }
       subsidies {
         id

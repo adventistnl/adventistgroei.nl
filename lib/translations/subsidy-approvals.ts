@@ -18,7 +18,12 @@ export const subsidyApprovalsTranslations = {
       statusUpdateError: "Error updating status: {{message}}",
       statusNotFound: "Status \"{{status}}\" not found",
       invalidStatus: "Invalid status",
-      inReviewNotFound: "Status \"In Review\" not found"
+      inReviewNotFound: "Status \"In Review\" not found",
+      statusClosed: "Status Closed cannot be changed",
+      inReviewToClosed: "Cannot close In Review requests",
+      mustBeFinal: "Must be Approved or Rejected to Close",
+      finalState: "Can only change to Closed",
+      documentsPending: "All documents must be validated first"
     },
     
     // Default values
@@ -186,7 +191,12 @@ export const subsidyApprovalsTranslations = {
       statusUpdateError: "Fout bij bijwerken status: {{message}}",
       statusNotFound: "Status \"{{status}}\" niet gevonden",
       invalidStatus: "Ongeldige status",
-      inReviewNotFound: "Status \"In Beoordeling\" niet gevonden"
+      inReviewNotFound: "Status \"In Beoordeling\" niet gevonden",
+      statusClosed: "Status Gesloten kan niet worden gewijzigd",
+      inReviewToClosed: "Kan aanvragen In Beoordeling niet sluiten",
+      mustBeFinal: "Moet Goedgekeurd of Afgewezen zijn om te sluiten",
+      finalState: "Kan alleen wijzigen naar Gesloten",
+      documentsPending: "Alle documenten moeten eerst worden gevalideerd"
     },
     
     // Default values

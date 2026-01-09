@@ -19,6 +19,7 @@ export const GET_DEPARTMENTS_QUERY = gql`
       annual_budgets {
         id
         year
+        is_locked
         allocated_amount
         total_expenses
       }

@@ -107,7 +107,11 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
     skip: !institutionId
   })
 
-  const departments = departmentsData?.departments || []
+  // Filter departments: only show those with locked annual budget for current year
+  const currentYear = new Date().getFullYear()
+  const departments = (departmentsData?.departments || []).filter((dept: any) => 
+    dept.annual_budgets?.some((budget: any) => budget.year === currentYear && budget.is_locked === true)
+  )
 
   // Update project mutation
   const [updateProject, { loading: updateLoading }] = useMutation(UPDATE_PROJECT_MUTATION, {
@@ -144,7 +148,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
   const [openLanguage, setOpenLanguage] = useState(false)
   const [openType, setOpenType] = useState(false)
   
-  const totalSteps = 3
+  const totalSteps = 2
 
   // Load project data when project changes
   useEffect(() => {
@@ -490,145 +494,57 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                     <p className="text-sm text-red-500">{String(errors.end_at)}</p>
                   )}
                 </div>
-              </div>
-            </div>
-          </div>
-        )
 
-      case 3:
-        return (
-          <div className="space-y-6 animate-in fade-in-0 duration-300">
-            <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">{t.additionalConfig}</h3>
-              <p className="text-sm text-muted-foreground">{t.additionalConfigDesc}</p>
-            </div>
-            
-            <div className="space-y-4 max-w-md mx-auto">
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-sm">
-                  <Globe className="w-4 h-4 text-muted-foreground" />
-                  {t.languagePreference}
-                </Label>
-                <Popover open={openLanguage} onOpenChange={setOpenLanguage}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openLanguage}
-                      className="w-full h-12 text-base justify-between font-normal"
-                      disabled={updateLoading}
-                    >
-                      {formData.language_preference
-                        ? languageOptions.find(lang => lang.value === formData.language_preference)?.label
-                        : t.selectLanguage}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder={t.searchLanguage} />
-                      <CommandList>
-                        <CommandEmpty>{t.noLanguageFound}</CommandEmpty>
-                        <CommandGroup>
-                          {languageOptions.map((lang) => (
-                            <CommandItem
-                              key={lang.value}
-                              value={lang.value}
-                              onSelect={(currentValue) => {
-                                handleInputChange('language_preference', currentValue)
-                                setOpenLanguage(false)
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  formData.language_preference === lang.value ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
-                              {lang.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-sm">
-                  <Building className="w-4 h-4 text-muted-foreground" />
-                  {t.projectType}
-                </Label>
-                <Popover open={openType} onOpenChange={setOpenType}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openType}
-                      className="w-full h-12 text-base justify-between font-normal"
-                      disabled={updateLoading}
-                    >
-                      {formData.type
-                        ? (formData.type === "Local" ? t.local : t.global)
-                        : t.selectType}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandList>
-                        <CommandGroup>
-                          <CommandItem
-                            value="Local"
-                            onSelect={() => {
-                              handleInputChange('type', 'Local' as "Local" | "Global")
-                              setOpenType(false)
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                formData.type === "Local" ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {t.local}
-                          </CommandItem>
-                          <CommandItem
-                            value="Global"
-                            onSelect={() => {
-                              handleInputChange('type', 'Global' as "Local" | "Global")
-                              setOpenType(false)
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                formData.type === "Global" ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {t.global}
-                          </CommandItem>
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-4 pt-2">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="text-base">{t.privateProject}</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {t.privateProjectDesc}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.is_private}
-                    onCheckedChange={(checked) => handleInputChange('is_private', checked)}
-                  />
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 text-sm">
+                    <Globe className="w-4 h-4 text-muted-foreground" />
+                    {t.languagePreference}
+                  </Label>
+                  <Popover open={openLanguage} onOpenChange={setOpenLanguage}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openLanguage}
+                        className="w-full h-12 text-base justify-between font-normal"
+                        disabled={updateLoading}
+                      >
+                        {formData.language_preference
+                          ? languageOptions.find(lang => lang.value === formData.language_preference)?.label
+                          : t.selectLanguage}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder={t.searchLanguage} />
+                        <CommandList>
+                          <CommandEmpty>{t.noLanguageFound}</CommandEmpty>
+                          <CommandGroup>
+                            {languageOptions.map((lang) => (
+                              <CommandItem
+                                key={lang.value}
+                                value={lang.value}
+                                onSelect={(currentValue) => {
+                                  handleInputChange('language_preference', currentValue)
+                                  setOpenLanguage(false)
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    formData.language_preference === lang.value ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
+                                {lang.label}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             </div>
@@ -712,7 +628,8 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                 </Button>
               ) : (
                 <Button 
-                  type="submit"
+                  type="button"
+                  onClick={handleSubmit}
                   disabled={updateLoading}
                   size="sm"
                   className="min-w-[100px] text-xs bg-gray-900 hover:bg-gray-800 text-white"

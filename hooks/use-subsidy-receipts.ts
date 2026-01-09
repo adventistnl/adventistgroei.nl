@@ -422,6 +422,45 @@ export function useSubsidyReceipts({
     }
   }
 
+  /**
+   * Update an existing receipt (amount, type, etc.)
+   */
+  const updateReceipt = async (
+    receiptId: string,
+    data: {
+      amount?: number
+      type?: 'invoice' | 'receipt' | 'contract' | 'proof_of_payment' | 'other'
+    }
+  ) => {
+    try {
+      const response = await fetch(`${getApiUrl()}/subsidy-receipts/${receiptId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getAuthToken()}`,
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Erro ao atualizar recibo')
+      }
+
+      const result = await response.json()
+      console.log('✅ [Hook] Receipt updated:', result)
+
+      // Refetch receipts to update the list
+      await fetchReceipts()
+
+      toast.success('Recibo atualizado com sucesso!')
+      return result
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao atualizar recibo')
+      throw error
+    }
+  }
+
   return {
     receipts: receipts.filter(r => !r.is_deleted),
     loading,
@@ -431,6 +470,7 @@ export function useSubsidyReceipts({
     uploadProgress,
     uploadReceipt,
     uploadMultipleReceipts,
+    updateReceipt,
     deleteReceipt,
     validateReceipt,
     rejectReceipt,
