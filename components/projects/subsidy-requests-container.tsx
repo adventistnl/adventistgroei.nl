@@ -213,7 +213,8 @@ export function SubsidyRequestsContainer({
         document_type: mapReceiptTypeToDocType(receipt.type),
         amount: receipt.amount ? Number(receipt.amount) : 0, // Convert Decimal to number
         file_url: receipt.file_url,
-        isExpanded: false
+        isExpanded: false,
+        origin: 'EXISTING_RECEIPT' as const // Mark as existing receipt (already saved in subsidy)
       }))
 
       return {

@@ -1,6 +1,10 @@
 export const subsidyManagementTranslations = {
   en: {
     history: "History",
+    requestsTitle: "Subsidy Requests",
+    noRequests: "No existing requests",
+    noRequestsDescription: "There are no subsidy requests for this project yet.",
+    requestCount: "Total requests: {{count}}",
     activities: "Activities",
     documents: "Documents",
     close: "Close",
@@ -60,6 +64,10 @@ export const subsidyManagementTranslations = {
   },
   nl: {
     history: "Geschiedenis",
+    requestsTitle: "Subsidieaanvragen",
+    noRequests: "Geen bestaande aanvragen",
+    noRequestsDescription: "Er zijn nog geen subsidieaanvragen voor dit project.",
+    requestCount: "Totaal aanvragen: {{count}}",
     activities: "Activiteiten",
     documents: "Documenten",
     close: "Sluiten",
@@ -119,6 +127,10 @@ export const subsidyManagementTranslations = {
   },
   pt: {
     history: "Histórico",
+    requestsTitle: "Solicitações de Subsídio",
+    noRequests: "Nenhuma solicitação",
+    noRequestsDescription: "Ainda não há solicitações de subsídio para este projeto.",
+    requestCount: "Total de solicitações: {{count}}",
     activities: "Atividades",
     documents: "Documentos",
     close: "Fechar",
