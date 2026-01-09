@@ -355,7 +355,7 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
             </div>
 
             {/* Responsibility Type */}
-            <div className="space-y-4">
+            {/* <div className="space-y-4">
               <Label className="flex items-center gap-2 text-base font-medium">
                 <Home className="w-4 h-4 text-muted-foreground" />
                 {t('projectRegister.fields.projectResponsibleType')}
@@ -378,7 +378,7 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
                   </div>
                 ))}
               </div>
-            </div>
+            </div> */}
 
             {/* Register as Event Switch */}
             {/* <div className="flex items-center justify-between p-3 border border-border rounded-lg hover:border-primary/30 transition-colors">
