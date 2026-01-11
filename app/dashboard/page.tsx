@@ -51,7 +51,7 @@ import { YearFilter } from "@/components/shared/year-filter"
 import { SectionHeader } from "@/components/shared/section-header"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { RoleDistributionChart, PermissionsByGroupChart, UserActivityChart } from "@/components/access/access-charts"
-import { UserStructureGrowthChart, UsersByStructureOverviewChart } from "@/components/charts/dashboard"
+import { UserStructureGrowthChart, UsersByStructureOverviewChart, UserDistributionBarChart } from "@/components/charts/dashboard"
 import { HierarchicalStructureCard } from "@/components/charts/dashboard/hierarchical-structure-card"
 import { StructureBarChart, GrowthLineChart } from "@/components/charts/generic"
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart"
@@ -615,7 +615,7 @@ export default function DashboardPage() {
               {
                 id: "structure-tabs-panel",
                 component: (
-                  <div className="space-y-4">
+                  <div className="space-y-4 h-full flex flex-col">
                     {/* Tabs - Chart vs Info */}
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                       <TabsList className="grid w-full grid-cols-2">
@@ -631,22 +631,23 @@ export default function DashboardPage() {
                     </Tabs>
 
                     {/* Content based on active tab */}
-                    {activeTab === "structure-chart" ? (
-                      <UsersByStructureOverviewChart
-                        loading={isLoading}
-                        users={allUsers}
-                        institutions={allInstitutions}
-                        departments={allDepartments}
-                        regions={allRegions}
-                        churches={allChurches}
-                      />
-                    ) : (
-                      <HierarchicalStructureCard
-                        title="Hierarchical Structure"
-                        description="The institutional structure follows a clear hierarchy"
-                        icon={Map}
-                        loading={isLoading}
-                        levels={[
+                    <div className="flex-1 min-h-0">
+                      {activeTab === "structure-chart" ? (
+                        <UsersByStructureOverviewChart
+                          loading={isLoading}
+                          users={allUsers}
+                          institutions={allInstitutions}
+                          departments={allDepartments}
+                          regions={allRegions}
+                          churches={allChurches}
+                        />
+                      ) : (
+                        <HierarchicalStructureCard
+                          title="Hierarchical Structure"
+                          description="The institutional structure follows a clear hierarchy"
+                          icon={Map}
+                          loading={isLoading}
+                          levels={[
                           {
                             title: 'Institution Level',
                             icon: Building2,
@@ -682,6 +683,7 @@ export default function DashboardPage() {
                         }
                       />
                     )}
+                    </div>
                   </div>
                 ),
                 colSpan: "col-span-12 lg:col-span-4",
@@ -728,19 +730,12 @@ export default function DashboardPage() {
             />
 
             {/* User Distribution by Structure */}
-            <StructureBarChart
+            <UserDistributionBarChart
               title="User Distribution"
               description="Users distributed across institutions"
               icon={Building2}
-              data={userDistributionData.map(item => ({
-                name: item.name,
-                count: item.users,
-                fill: '#f59e0b'
-              }))}
+              data={userDistributionData}
               loading={isLoading}
-              layout="horizontal"
-              dataKey="count"
-              dataKeyLabel="Users"
             />
           </ResponsiveGridCarousel>
         </div>
