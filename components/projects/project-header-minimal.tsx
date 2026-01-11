@@ -150,10 +150,54 @@ export function ProjectHeaderMinimal({
           className="gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          Voltar
+          {t.header.back}
         </Button>
 
-
+        <div className="flex items-center gap-2">
+          {onEdit && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onEdit}
+              className="gap-2"
+            >
+              <Edit className="h-4 w-4" />
+              {t.actions.editProject}
+            </Button>
+          )}
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {onCreateCommunication && (
+                <DropdownMenuItem onClick={onCreateCommunication}>
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  {t.actions.createCommunication}
+                </DropdownMenuItem>
+              )}
+              {onCreateEvent && (
+                <DropdownMenuItem onClick={onCreateEvent}>
+                  <Calendar className="h-4 w-4 mr-2" />
+                  {t.actions.createEvent}
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              {onDelete && (
+                <DropdownMenuItem
+                  onClick={onDelete}
+                  className="text-red-600"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {t.header.delete}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Minimalist Project Header */}
@@ -188,6 +232,7 @@ export function ProjectHeaderMinimal({
                 maxDisplay={3}
                 size="md"
                 showLabel={true}
+                labelText={t.common.registeredUsers}
                 showAddButton={false}
                 onShowAllUsers={() => setIsUserListModalOpen(true)}
               />
@@ -245,28 +290,28 @@ export function ProjectHeaderMinimal({
               <div className={cn("w-3 h-3 rounded-full", variantAvatarBg)} aria-hidden />
               <div className="text-sm text-gray-700">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">Instituição:</span>
+                  <span className="font-medium">{t.header.institution}:</span>
                   <span>{formatCurrency(institutionContribution)}</span>
                   <span className="text-xs text-gray-500">({institutionPercent.toFixed(0)}%)</span>
                 </div>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="font-medium">Orçamento total:</span>
+                  <span className="font-medium">{t.header.totalBudgetLabel}:</span>
                   <span>{formatCurrency(totalBudget)}</span>
                 </div>
               </div>
 
               <div className="ml-2 flex items-center gap-2">
                 {exceedsInstitutionAmount && (
-                  <Badge variant="outline" className="text-red-600 border-red-200">Limite instituição excedido</Badge>
+                  <Badge variant="outline" className="text-red-600 border-red-200">{t.header.policy.exceedsLimit}</Badge>
                 )}
                 {!exceedsInstitutionAmount && exceedsInstitutionPercent && (
-                  <Badge variant="outline" className="text-amber-700 border-amber-200">Percentual excede limite</Badge>
+                  <Badge variant="outline" className="text-amber-700 border-amber-200">{t.header.policy.percentExceeds}</Badge>
                 )}
                 {!exceedsInstitutionAmount && !exceedsInstitutionPercent && (
-                  <Badge variant="outline" className="text-green-700 border-green-200">Política OK</Badge>
+                  <Badge variant="outline" className="text-green-700 border-green-200">{t.header.policy.ok}</Badge>
                 )}
                 {belowMinChurchPercent && (
-                  <Badge variant="outline" className="text-amber-700 border-amber-200">Igreja abaixo do mínimo</Badge>
+                  <Badge variant="outline" className="text-amber-700 border-amber-200">{t.header.policy.churchBelowMin}</Badge>
                 )}
               </div>
             </div>

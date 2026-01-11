@@ -19,6 +19,7 @@ interface ProjectDataStepProps {
   errors: Record<string, string>
   departments: Array<{ id: string; name: string; annual_budget?: number }>
   users: Array<{ id: string; name: string; email: string }>
+  churches: Array<{ id: string; name: string }>
   onChange: (data: Partial<ProjectFormData>) => void
 }
 
@@ -31,10 +32,11 @@ const TYPE_ICONS = {
   department: Settings
 }
 
-export function ProjectDataStep({ formData, errors, departments, users, onChange }: ProjectDataStepProps) {
+export function ProjectDataStep({ formData, errors, departments, users, churches, onChange }: ProjectDataStepProps) {
   const { t } = useTranslation()
   const [openDepartment, setOpenDepartment] = useState(false)
   const [openResponsible, setOpenResponsible] = useState(false)
+  const [openChurch, setOpenChurch] = useState(false)
 
   const ResponsibilityTypeButton = ({ 
     type, 
@@ -106,6 +108,113 @@ export function ProjectDataStep({ formData, errors, departments, users, onChange
                 className={`min-h-[120px] text-base border-2 ${errors.description ? 'border-red-500' : 'border-border'}`}
               />
               {errors.description && <p className="text-sm text-red-600">{errors.description}</p>}
+            </div>
+
+            {/* Church Project Switch and Selector */}
+            <div className="space-y-4 pt-2 border-t border-border">
+              <div 
+                className="flex items-center justify-between p-3 border border-border rounded-lg hover:border-primary/30 transition-colors cursor-pointer"
+                onClick={(e) => {
+                   // Prevent toggle if clicking on tooltip trigger or switch directly
+                   if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('[role="switch"]')) return;
+                   
+                   const isChecked = formData.project_responsible_type === 'church';
+                   onChange(!isChecked 
+                     ? { project_responsible_type: 'church' }
+                     : { church_id: undefined, project_responsible_type: 'personal' }
+                   )
+                }}
+              >
+                <div className="space-y-1 flex-1">
+                  <div className="flex items-center gap-2">
+                    <Label className="flex items-center gap-2 text-sm font-medium cursor-pointer pointer-events-none">
+                      <Home className="w-4 h-4 text-muted-foreground" />
+                      {t('projectRegister.fields.isChurchProject')}
+                    </Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button type="button" className="flex items-center justify-center">
+                          <Info className="w-3 h-3 text-muted-foreground cursor-help" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">{t('projectRegister.tooltips.churchProject')}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('projectRegister.info.churchProjectDescription')}
+                  </p>
+                </div>
+                <Switch
+                  checked={formData.project_responsible_type === 'church'}
+                  onCheckedChange={(checked) => {
+                    onChange(checked 
+                      ? { project_responsible_type: 'church' }
+                      : { church_id: undefined, project_responsible_type: 'personal' }
+                    )
+                  }}
+                  className="data-[state=checked]:bg-primary"
+                />
+              </div>
+
+              {/* Church Selector */}
+              {formData.project_responsible_type === 'church' ? (
+                <div className="animate-in fade-in-0 slide-in-from-top-2 duration-200">
+                  <Label htmlFor="church" className="flex items-center gap-2 text-base font-medium mb-2">
+                    <Building className="w-4 h-4 text-muted-foreground" />
+                    {t('projectRegister.fields.selectChurch')} *
+                  </Label>
+                  <Popover open={openChurch} onOpenChange={setOpenChurch}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openChurch}
+                        className={`h-12 w-full justify-between border-2 ${errors.church_id ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors`}
+                      >
+                        {formData.church_id
+                          ? churches.find((church) => church.id === formData.church_id)?.name
+                          : t('projectRegister.placeholders.selectChurch')}
+                        <Building className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder={t('projectRegister.placeholders.searchChurch')} />
+                        <CommandList>
+                          <CommandEmpty>{t('projectRegister.noResults.church')}</CommandEmpty>
+                          <CommandGroup>
+                            {churches.map((church) => (
+                              <CommandItem
+                                key={church.id}
+                                value={church.name}
+                                onSelect={() => {
+                                  onChange({ church_id: church.id, project_responsible_type: 'church' })
+                                  setOpenChurch(false)
+                                }}
+                              >
+                                <div className="flex items-center gap-3 w-full">
+                                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                                    <Home className="w-4 h-4 text-primary" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <span className="font-medium">{church.name}</span>
+                                  </div>
+                                  {formData.church_id === church.id && (
+                                    <Check className="ml-auto h-4 w-4" />
+                                  )}
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {errors.church_id && <p className="text-sm text-red-600">{errors.church_id}</p>}
+                </div>
+              ) : null}
             </div>
 
             {/* Department and Responsible */}

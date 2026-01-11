@@ -128,6 +128,9 @@ export default function ProjectDetailsPage() {
   const { formatCurrency } = useCurrency()
   const projectId = params.id as string
   
+  const locale = i18n.language === 'en' ? 'en-US' : i18n.language === 'nl' ? 'nl-NL' : 'pt-BR'
+  const currency = i18n.language === 'en' ? 'USD' : i18n.language === 'nl' ? 'EUR' : 'BRL'
+  
   // State management
   const [project, setProject] = useState<ProjectTableData | null>(null)
   const [selectedActivities, setSelectedActivities] = useState<ProjectActivityData[]>([])
@@ -186,12 +189,12 @@ export default function ProjectDetailsPage() {
     skip: !projectId,
     fetchPolicy: 'network-only', // Sempre buscar do servidor para garantir dados atualizados
     onCompleted: () => {
-      toast.success("Project details loaded successfully!", {
+      toast.success(t.toasts.projectDetailsLoaded, {
         duration: 3000
       })
     },
     onError: (error) => {
-      toast.error("Erro ao carregar detalhes do projeto")
+      toast.error(t.toasts.errorLoading)
       console.error("Error loading project:", error)
     }
   })
@@ -227,7 +230,7 @@ export default function ProjectDetailsPage() {
   // Batch update mutation
   const [batchUpdateActivities, { loading: batchUpdateLoading }] = useMutation(BATCH_UPDATE_PROJECT_ACTIVITIES, {
     onCompleted: () => {
-      toast.success("Atividades atualizadas com sucesso!", { duration: 3000 })
+      toast.success(t.activity.activityUpdated, { duration: 3000 })
       refetchProject()
       setSelectedActivities([])
       setBatchEditData({
@@ -238,7 +241,7 @@ export default function ProjectDetailsPage() {
       })
     },
     onError: (error) => {
-      toast.error(`Erro ao atualizar atividades: ${error.message}`)
+      toast.error(`${t.errors.updateError}: ${error.message}`)
       console.error("Error updating activities:", error)
     }
   })
@@ -246,12 +249,12 @@ export default function ProjectDetailsPage() {
   // Create activity mutation
   const [createProjectActivity, { loading: createActivityLoading }] = useMutation(CREATE_PROJECT_ACTIVITY, {
     onCompleted: () => {
-      toast.success("Atividade criada com sucesso!", { duration: 3000 })
+      toast.success(t.activity.activityCreated, { duration: 3000 })
       refetchProject()
       setIsRegisterActivityModalOpen(false)
     },
     onError: (error) => {
-      toast.error(`Erro ao criar atividade: ${error.message}`)
+      toast.error(`${t.errors.updateError}: ${error.message}`)
       console.error("Error creating activity:", error)
     }
   })
@@ -259,13 +262,13 @@ export default function ProjectDetailsPage() {
   // Update activity mutation
   const [updateProjectActivity, { loading: updateActivityLoading }] = useMutation(UPDATE_PROJECT_ACTIVITY, {
     onCompleted: () => {
-      toast.success("Atividade atualizada com sucesso!", { duration: 3000 })
+      toast.success(t.activity.activityUpdated, { duration: 3000 })
       refetchProject()
       setIsEditActivityModalOpen(false)
       setSelectedActivity(undefined)
     },
     onError: (error) => {
-      toast.error(`Erro ao atualizar atividade: ${error.message}`)
+      toast.error(`${t.errors.updateError}: ${error.message}`)
       console.error("Error updating activity:", error)
     }
   })
@@ -287,40 +290,40 @@ export default function ProjectDetailsPage() {
 
   const [updateSubsidyRequest, { loading: updateSubsidyLoading }] = useMutation(UPDATE_SUBSIDY_REQUEST, {
     onCompleted: () => {
-      toast.success("✅ Solicitação de subsídio atualizada com sucesso!", { duration: 3000 })
+      toast.success(t.subsidy.subsidyUpdated, { duration: 3000 })
       refetchProject()
     },
     onError: (error) => {
-      toast.error(`Erro ao atualizar solicitação de subsídio: ${error.message}`)
+      toast.error(`${t.errors.updateError}: ${error.message}`)
       console.error("Error updating subsidy request:", error)
     }
   })
 
   const [approveSubsidyRequest, { loading: approveSubsidyLoading }] = useMutation(APPROVE_SUBSIDY_REQUEST, {
     onCompleted: () => {
-      toast.success("✅ Solicitação de subsídio aprovada!", { duration: 3000 })
+      toast.success(t.subsidy.subsidyApproved, { duration: 3000 })
       refetchProject()
     },
     onError: (error) => {
-      toast.error(`Erro ao aprovar solicitação de subsídio: ${error.message}`)
+      toast.error(`${t.errors.updateError}: ${error.message}`)
       console.error("Error approving subsidy request:", error)
     }
   })
 
   const [rejectSubsidyRequest, { loading: rejectSubsidyLoading }] = useMutation(REJECT_SUBSIDY_REQUEST, {
     onCompleted: () => {
-      toast.success("Solicitação de subsídio rejeitada", { duration: 3000 })
+      toast.success(t.subsidy.subsidyRejected, { duration: 3000 })
       refetchProject()
     },
     onError: (error) => {
-      toast.error(`Erro ao rejeitar solicitação de subsídio: ${error.message}`)
+      toast.error(`${t.errors.updateError}: ${error.message}`)
       console.error("Error rejecting subsidy request:", error)
     }
   })
 
   const [deleteSubsidyRequest, { loading: deleteSubsidyLoading }] = useMutation(DELETE_SUBSIDY_REQUEST, {
     onCompleted: () => {
-      toast.success("🗑️ Solicitação de subsídio deletada", { duration: 3000 })
+      toast.success(t.subsidy.subsidyDeleted, { duration: 3000 })
       refetchProject()
       setIsDeleteSubsidyRequestModalOpen(false)
       setSelectedSubsidyCard(null)
@@ -552,63 +555,69 @@ export default function ProjectDetailsPage() {
     return [
       {
         id: "total-activities",
-        title: "Total de Atividades",
+        title: t.details.totalActivities,
         value: kpis.totalActivities.toString(),
-        subtitle: `${kpis.completedActivities} concluídas | ${kpis.inProgressActivities} em andamento`,
+        subtitle: t.details.activitiesStats
+            .replace('{{completed}}', kpis.completedActivities.toString())
+            .replace('{{inProgress}}', kpis.inProgressActivities.toString()),
         trend: {
           value: kpis.completionRate,
           isPositive: kpis.completionRate > 50,
-          label: `${kpis.completionRate}% concluídas`
+          label: `${kpis.completionRate}%`
         },
         icon: Activity,
       },
       {
         id: "project-budget",
-        title: "Investimento Total",
+        title: t.details.totalInvestment,
+        subtitle: t.details.sumOfActivities,
         value: formatCurrency(kpis.projectBudget, { compact: true }),
-        subtitle: "Soma de todas as atividades",
         icon: DollarSign,
       },
       {
         id: "subsidized-budget",
-        title: "Orçamento Subsidiado",
         value: formatCurrency(kpis.subsidizedBudget, { compact: true }),
-        subtitle: `${formatCurrency(kpis.balance, { compact: true })} contribuição local`,
+        title: t.details.subsidizedBudgetTitle,
+        subtitle: t.details.localContribution.replace('{{amount}}', `${formatCurrency(kpis.balance, { compact: true })}`),
         trend: {
           value: kpis.subsidizedBudgetPercentage,
           isPositive: true,
-          label: "do orçamento total"
+          label: t.details.subsidizedBudgetSubtitle
         },
         icon: TrendingUp,
       },
       {
         id: "completion-rate",
-        title: "Taxa de Conclusão",
+        title: t.details.completionRate,
         value: `${kpis.completionRate}%`,
-        subtitle: `${kpis.completedActivities} de ${kpis.totalActivities} finalizadas`,
+        subtitle: t.details.completionSubtitle
+            .replace('{{completed}}', kpis.completedActivities.toString())
+            .replace('{{total}}', kpis.totalActivities.toString()),
         trend: {
           value: kpis.completedActivities,
           isPositive: kpis.completedActivities > 0,
-          label: "atividades completas"
+          label: t.details.totalActivities
         },
         icon: CheckCircle,
       },
       {
         id: "subsidized-activities",
-        title: "Atividades Subsidiadas",
+        title: t.details.subsidizedActivitiesTitle,
         value: kpis.subsidizedActivities.toString(),
-        subtitle: `${kpis.subsidyRate}% do total | ${kpis.subsidyRequestsCount} pedidos`,
+        subtitle: t.details.subsidizedStats
+            .replace('{{percent}}', kpis.subsidyRate.toString())
+            .replace('{{count}}', kpis.subsidyRequestsCount.toString()),
         icon: Target,
       },
       {
         id: "project-timeline",
-        title: kpis.daysRemaining > 0 ? "Prazo Restante" : "Projeto Finalizado",
-        value: kpis.daysRemaining > 0 ? `${kpis.daysRemaining} dias` : "Concluído",
-        subtitle: `Termina em ${endDate.toLocaleDateString('pt-BR')}`,
+        title: kpis.daysRemaining > 0 ? t.details.timeRemaining : t.details.projectFinalized,
+        value: kpis.daysRemaining > 0 ? t.details.daysRemainingCount.replace('{{days}}', kpis.daysRemaining.toString()) : t.details.concluded,
+        subtitle: t.details.endsIn.replace('{{date}}', endDate.toLocaleDateString(i18n.language === 'pt' ? 'pt-BR' : i18n.language === 'nl' ? 'nl-NL' : 'en-US')),
         trend: {
           value: Math.abs(kpis.daysRemaining),
           isPositive: kpis.daysRemaining > 30,
-          label: kpis.daysRemaining > 0 ? "dias restantes" : "dias atrás"
+          label: kpis.daysRemaining > 0 ? t.details.daysPositiveLabel : t.details.daysNegativeLabel
         },
         icon: Calendar,
       },
@@ -617,7 +626,7 @@ export default function ProjectDetailsPage() {
 
 
   usePageTitle({
-    title: project?.title || "Detalhes do Projeto",
+    title: project?.title || t.details.projectDetails,
     showBreadcrumbsInHeader: true
   })
 
@@ -628,13 +637,9 @@ export default function ProjectDetailsPage() {
     setIsEditModalOpen(true)
   }
 
-  const handleDeleteProject = () => {
-    setIsDeleteProjectModalOpen(true)
-  }
-
   const handleDeleteProjectSuccess = () => {
     setIsDeleteProjectModalOpen(false)
-    toast.success(`🗑️ Projeto deletado com sucesso!`, { duration: 3000 })
+    toast.success(`${t.toasts.projectDeleted} ${project?.title}`, { duration: 3000 })
     router.push("/projects")
   }
 
@@ -648,7 +653,7 @@ export default function ProjectDetailsPage() {
 
   const handleDuplicateProject = () => {
     // TODO: Implement project duplication
-    toast.success(`📋 Project duplicated: ${project?.title}`, { duration: 3000 })
+    toast.success(`${t.actions.duplicateProject}: ${project?.title}`, { duration: 3000 })
   }
 
   const handleCreateReport = () => {
@@ -711,12 +716,12 @@ export default function ProjectDetailsPage() {
     })
 
     if (!hasChanges) {
-      toast.error('Selecione pelo menos um campo para editar')
+      toast.error(t.errors.selectFieldEdit)
       return
     }
 
     if (selectedActivities.length === 0) {
-      toast.error('Selecione pelo menos uma atividade')
+      toast.error(t.errors.selectActivity)
       return
     }
 
@@ -791,7 +796,7 @@ export default function ProjectDetailsPage() {
     if (activitiesWithSubsidy.length > 0) {
       const activityNames = activitiesWithSubsidy.map(a => a.name).join(', ')
       toast.error(
-        `As seguintes atividades já possuem pedido de subsídio: ${activityNames}`,
+        t.errors.activitiesHaveSubsidy.replace('{{names}}', activityNames),
         { duration: 5000 }
       )
       return
@@ -1552,7 +1557,7 @@ export default function ProjectDetailsPage() {
         <ProjectHeaderMinimal
           project={project}
           onEdit={handleEditProject}
-          onDelete={handleDeleteProject}
+          onDelete={handleDeleteProjectSuccess}
           onCreateEvent={handleCreateEvent}
           onCreateCommunication={handleCreateCommunication}
           users={projectUsers}
@@ -1571,9 +1576,7 @@ export default function ProjectDetailsPage() {
 
         {/* Grid Container - Chart + Subsidy Cards OR Communications */}
         <GridContainer
-          items={
-            activeTab === "subsidies"
-              ? [
+          items={[
                   {
                     id: "subsidy-chart",
                     component: (
@@ -1596,59 +1599,13 @@ export default function ProjectDetailsPage() {
                           onUpdateSubsidy={handleUpdateSubsidyCard}
                           allActivities={allProjectActivities}
                           subsidizedActivityIds={subsidizedActivityIds}
-                          description="Gerencie as solicitações de subsídio"
+                          description={t.subsidy.manageRequests}
                           onRefresh={handleRefreshSubsidies}
                           projectSubsidizedBudget={projectData?.project?.kpis?.subsidizedBudget || 0}
                         />
-                 
                     ),
                     colSpan: "col-span-12 lg:col-span-4",
                   },
-                ]
-              : [ 
-                  // {
-                  //   id: "subsidy-chart",
-                  //   component: (
-                  //     <SubsidyActivityChart
-                  //       data={subsidyRequests}
-                  //       selectedYear={new Date().getFullYear()}
-                  //     />
-                  //   ),
-                  //   colSpan: "col-span-12 lg:col-span-8",
-                  // },
-                  // {
-                  //   id: "communications",
-                  //   component: (
-                  //     <>
-                  //          {/* Tabs - Subsídios e Comunicações */}
-                        
-                  //       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "subsidies" | "communications")} className="w-full">
-                  //         <TabsList className="grid w-full grid-cols-2 max-w-md">
-                  //           <TabsTrigger value="subsidies" className="gap-2">
-                  //             <DollarSign className="w-4 h-4" />
-                  //             Subsídios
-                  //           </TabsTrigger>
-                  //           <TabsTrigger value="communications" className="gap-2">
-                  //             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
-                  //             Comunicações
-                  //           </TabsTrigger>
-                  //         </TabsList>
-                  //       </Tabs>
-
-                  //        <CommunicationsContainer
-                  //         communications={communications}
-                  //         onAddCommunication={handleAddCommunication}
-                  //         onViewCommunication={handleViewCommunication}
-                  //         onEditCommunication={handleEditCommunication}
-                  //         onDeleteCommunication={handleDeleteCommunication}
-                  //         onDuplicateCommunication={handleDuplicateCommunication}
-                  //         description="Comunicações do projeto"
-                  //       />
-                  //     </>
-                     
-                  //   ),
-                  //    colSpan: "col-span-12 lg:col-span-4",
-                  // },
                 ]
           }
           gap="lg"
@@ -1697,7 +1654,7 @@ export default function ProjectDetailsPage() {
               batchActions={[
                 {
                   id: 'apply',
-                  label: 'Aplicar',
+                  label: t.common.apply,
                   icon: <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
                   onClick: handleBatchEdit,
                   variant: 'outline'
@@ -1705,7 +1662,7 @@ export default function ProjectDetailsPage() {
               ]}
               batchPrimaryAction={{
                 id: 'request-subsidy',
-                label: 'Solicitar Subsídio',
+                label: t.subsidy.requestSubsidy,
                 icon: <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
                 onClick: handleBatchSubsidyRequest,
                 variant: 'default',
@@ -1714,18 +1671,18 @@ export default function ProjectDetailsPage() {
               batchSummary={
                 <div className="flex items-center gap-3 text-xs">
                   <div>
-                    <span className="text-gray-500 dark:text-gray-500">Total: </span>
+                    <span className="text-gray-500 dark:text-gray-500">{t.common.total}: </span>
                     <span className="font-medium text-gray-700 dark:text-gray-400">
-                      {new Intl.NumberFormat('pt-BR', {
+                      {new Intl.NumberFormat(locale, {
                         style: 'currency',
-                        currency: 'BRL',
+                        currency: currency,
                         minimumFractionDigits: 0,
                       }).format(selectedActivities.reduce((sum, act) => sum + act.budget_amount, 0))}
                     </span>
                   </div>
                   <span className="text-gray-400">•</span>
                   <div>
-                    <span className="text-gray-500 dark:text-gray-500">Subsidiadas: </span>
+                    <span className="text-gray-500 dark:text-gray-500">{t.filters.subsidized}: </span>
                     <span className="font-medium text-gray-700 dark:text-gray-400">
                       {selectedActivities.filter(act => act.is_subsidized).length}
                     </span>
@@ -1877,10 +1834,12 @@ export default function ProjectDetailsPage() {
           }}
           selectedActivities={selectedActivities}
           projectId={projectId}
-          institutionId={project?.institutionId || currentInstitutionData?.id || ""}
-          departmentId={project?.department_id}
-          institutionName={project?.institutionName}
-          departmentName={project?.departmentName}
+          institutionId={projectData?.project?.institution_id || currentInstitutionData?.id || ""}
+          departmentId={projectData?.project?.department_id}
+          institutionName={projectData?.project?.Institution?.name}
+          departmentName={projectData?.project?.department?.name}
+          churchId={projectData?.project?.Church?.id || projectData?.project?.department?.church?.id}
+          churchName={projectData?.project?.Church?.name || projectData?.project?.department?.church?.name}
           onSubmit={handleSubsidyRequestSubmit}
           allActivities={allProjectActivities}
           subsidizedActivityIds={subsidizedActivityIds}
