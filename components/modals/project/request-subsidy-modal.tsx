@@ -38,6 +38,11 @@ interface SubsidyRequestItem {
   budget_amount: number
   activity_documents: UploadedDocument[]
   notes: string
+  existing_receipt_updates?: {
+    receipt_id: string
+    amount: number
+    type: string
+  }[]
 }
 
 interface UploadedDocument {
@@ -48,6 +53,7 @@ interface UploadedDocument {
   amount: number
   file_url: string
   isExpanded?: boolean
+  origin?: 'NEW' | 'ACTIVITY' | 'EXISTING_RECEIPT'
 }
 
 interface RequestSubsidyModalProps {
@@ -128,6 +134,15 @@ export function RequestSubsidyModal({
   // Get current translations
   const translations = subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations] || subsidyRequestTranslations.en
   
+  // Helper function to get file type from filename
+  const getFileType = (filename: string): "PDF" | "JPG" | "PNG" | "DOC" | "OTHER" => {
+    const ext = filename.split('.').pop()?.toUpperCase()
+    if (ext === "PDF" || ext === "JPG" || ext === "PNG" || ext === "DOC") {
+      return ext as "PDF" | "JPG" | "PNG" | "DOC"
+    }
+    return "OTHER"
+  }
+  
   // Form data - initialize with selected activities
   const [formData, setFormData] = useState<SubsidyRequestData>({
     institution_id: institutionId,
@@ -150,14 +165,31 @@ export function RequestSubsidyModal({
         project_id: projectId,
         requested_amount: 0,
         notes: "",
-        items: selectedActivities.map(activity => ({
-          activity_id: activity.id,
-          activity_name: activity.name,
-          requested_amount: activity.institution_requested_amount || 0,
-          budget_amount: activity.budget_amount,
-          activity_documents: [],
-          notes: ""
-        }))
+        items: selectedActivities.map(activity => {
+          // Map existing activity documents
+          const existingDocs: UploadedDocument[] = (activity.activity_documents || []).map(doc => ({
+            id: doc.id,
+            file_name: doc.filename,
+            file_type: getFileType(doc.filename),
+            document_type: (doc.type === 'invoice' ? 'INVOICE' : 
+                           doc.type === 'receipt' ? 'RECEIPT' : 
+                           doc.type === 'contract' ? 'CONTRACT' : 
+                           doc.type === 'proof_of_payment' ? 'PROOF_OF_PAYMENT' : 'OTHER'),
+            amount: 0, // Activity docs usually don't have amount for subsidy yet
+            file_url: doc.file_url,
+            isExpanded: false,
+            origin: 'ACTIVITY'
+          }))
+
+          return {
+            activity_id: activity.id,
+            activity_name: activity.name,
+            requested_amount: activity.institution_requested_amount || 0,
+            budget_amount: activity.budget_amount,
+            activity_documents: existingDocs,
+            notes: ""
+          }
+        })
       })
       setCurrentActivityIndex(0)
     }
@@ -179,7 +211,10 @@ export function RequestSubsidyModal({
             activity_name: item.activity_name,
             requested_amount: item.requested_amount,
             budget_amount: item.budget_amount,
-            activity_documents: item.activity_documents || [],
+            activity_documents: (item.activity_documents || []).map(doc => ({
+              ...doc,
+              origin: doc.origin || 'EXISTING_RECEIPT'
+            })),
             notes: item.notes || ""
           }))
         : selectedActivities.map(activity => ({
@@ -371,13 +406,7 @@ export function RequestSubsidyModal({
     toast.success(translations.toasts.filesAdded.replace('{{count}}', newDocuments.length.toString()))
   }
 
-  const getFileType = (filename: string): "PDF" | "JPG" | "PNG" | "DOC" | "OTHER" => {
-    const ext = filename.split('.').pop()?.toUpperCase()
-    if (ext === "PDF" || ext === "JPG" || ext === "PNG" || ext === "DOC") {
-      return ext as "PDF" | "JPG" | "PNG" | "DOC"
-    }
-    return "OTHER"
-  }
+
 
   const handleRemoveDocument = async (docId: string) => {
     // In edit mode with a real document ID (not temp-*), delete from backend
@@ -511,11 +540,22 @@ export function RequestSubsidyModal({
           }
         }
 
+        const finalData = {
+          ...formData,
+          items: formData.items.map(item => ({
+             ...item,
+             // Ensure we don't send existing_receipt_updates as requested
+             existing_receipt_updates: undefined,
+             // Also ensure we don't inadvertently send full documents as DTO might not expect them in some fields
+             // The backend DTO for UpdateSubsidyRequestItemInput only expects specific fields.
+          }))
+        }
+
         // Clear pending files after successful upload
         setPendingFiles(new Map())
 
         toast.success(translations.toasts.requestUpdated)
-        onSubmit(formData)
+        onSubmit(finalData)
         onClose()
       } catch (error) {
         console.error('❌ [Submit] Upload error:', error)
@@ -577,14 +617,14 @@ export function RequestSubsidyModal({
   }
 
   const getDocumentTypeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      INVOICE: "Fatura",
-      RECEIPT: "Recibo",
-      CONTRACT: "Contrato",
-      PROOF_OF_PAYMENT: "Comprovante",
-      OTHER: "Outro"
+    const typeMap: Record<string, string> = {
+      INVOICE: translations.documents.types.invoice,
+      RECEIPT: translations.documents.types.receipt,
+      CONTRACT: translations.documents.types.contract,
+      PROOF_OF_PAYMENT: translations.documents.types.proofOfPayment,
+      OTHER: translations.documents.types.other
     }
-    return labels[type] || type
+    return typeMap[type] || type
   }
 
   return (
@@ -1318,8 +1358,8 @@ export function RequestSubsidyModal({
                                 }}
                                 className={`h-9 text-xs ${!isValidAmount ? 'border-red-300' : ''}`}
                                 placeholder="0.00"
-                                min={0}
-                                step="0.01"
+                                disabled={mode === "edit" && !doc.id.startsWith('temp-')}
+                                title={mode === "edit" && !doc.id.startsWith('temp-') ? translations.documents.amountCannotBeEdited : ""}
                               />
                             </div>
                           </div>

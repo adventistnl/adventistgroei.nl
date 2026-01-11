@@ -18,7 +18,12 @@ export const subsidyApprovalsTranslations = {
       statusUpdateError: "Error updating status: {{message}}",
       statusNotFound: "Status \"{{status}}\" not found",
       invalidStatus: "Invalid status",
-      inReviewNotFound: "Status \"In Review\" not found"
+      inReviewNotFound: "Status \"In Review\" not found",
+      statusClosed: "Status Closed cannot be changed",
+      inReviewToClosed: "Cannot close In Review requests",
+      mustBeFinal: "Must be Approved or Rejected to Close",
+      finalState: "Can only change to Closed",
+      documentsPending: "All documents must be validated first"
     },
     
     // Default values
@@ -104,6 +109,15 @@ export const subsidyApprovalsTranslations = {
       }
     },
     
+    // Status Rules (tooltips)
+    statusRules: {
+      pending: "Initial status. Also used when there are pending items, such as needing to send a new receipt. Can transition to In Review, Approved, or Rejected, but never directly to Closed.",
+      in_review: "Document under review. Indicates the request is being reviewed. Can return to Pending or move to Approved or Rejected, but never directly to Closed.",
+      approved: "Subsidy has been approved and is released for payment. This is an irreversible action and can only transition to Closed. Updates to the subsidy or files are still possible.",
+      rejected: "Subsidy has been rejected and will not be subsidized for some reason. This is an irreversible action and can only transition to Closed. Updates to the subsidy or files are still possible.",
+      closed: "Final status, indicating that all necessary actions for the subsidy have been completed. From here, no update or deletion actions can be performed on the subsidy or files."
+    },
+    
     // Card Header
     card: {
       title: "Subsidy Requests",
@@ -186,7 +200,12 @@ export const subsidyApprovalsTranslations = {
       statusUpdateError: "Fout bij bijwerken status: {{message}}",
       statusNotFound: "Status \"{{status}}\" niet gevonden",
       invalidStatus: "Ongeldige status",
-      inReviewNotFound: "Status \"In Beoordeling\" niet gevonden"
+      inReviewNotFound: "Status \"In Beoordeling\" niet gevonden",
+      statusClosed: "Status Gesloten kan niet worden gewijzigd",
+      inReviewToClosed: "Kan aanvragen In Beoordeling niet sluiten",
+      mustBeFinal: "Moet Goedgekeurd of Afgewezen zijn om te sluiten",
+      finalState: "Kan alleen wijzigen naar Gesloten",
+      documentsPending: "Alle documenten moeten eerst worden gevalideerd"
     },
     
     // Default values
@@ -270,6 +289,15 @@ export const subsidyApprovalsTranslations = {
         closed: "Gesloten",
         rejected: "Afgewezen"
       }
+    },
+    
+    // Status Rules (tooltips)
+    statusRules: {
+      pending: "Initiële status. Ook gebruikt wanneer er openstaande items zijn, zoals het verzenden van een nieuwe kwitantie. Kan overgaan naar In Beoordeling, Goedgekeurd of Afgewezen, maar nooit direct naar Gesloten.",
+      in_review: "Document in beoordeling. Geeft aan dat de aanvraag wordt beoordeeld. Kan teruggaan naar In Behandeling of overgaan naar Goedgekeurd of Afgewezen, maar nooit direct naar Gesloten.",
+      approved: "Subsidie is goedgekeurd en vrijgegeven voor betaling. Dit is een onomkeerbare actie en kan alleen overgaan naar Gesloten. Updates aan de subsidie of bestanden zijn nog mogelijk.",
+      rejected: "Subsidie is afgewezen en zal om een bepaalde reden niet worden gesubsidieerd. Dit is een onomkeerbare actie en kan alleen overgaan naar Gesloten. Updates aan de subsidie of bestanden zijn nog mogelijk.",
+      closed: "Eindstatus, wat aangeeft dat alle noodzakelijke acties voor de subsidie zijn voltooid. Vanaf hier kunnen geen update- of verwijderacties meer worden uitgevoerd op de subsidie of bestanden."
     },
     
     // Card Header

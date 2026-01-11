@@ -58,6 +58,10 @@ export const GET_ALL_SUBSIDY_REQUESTS = gql`
           is_subsidized
         }
       }
+      receipts: subsidy_receipts {
+         id
+         is_validated
+      }
     }
   }
 `;

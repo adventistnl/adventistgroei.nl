@@ -86,6 +86,13 @@ export interface ProjectActivityData {
     entity_type: string
     entity_id: string
   }>
+  activity_documents?: Array<{
+    id: string
+    file_url: string
+    filename: string
+    type: string
+    drive_file_id?: string
+  }>
   // Múltiplos responsáveis via tabela de relacionamento
   assignees?: Array<{
     id: string
@@ -387,14 +394,14 @@ export function ProjectActivitiesTable({
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-1">
           {row.original.tags && row.original.tags.length > 0 ? (
-            row.original.tags.map((tag: ActivityTags) => {
+            row.original.tags.map((tag: ActivityTags, index: number) => {
               const variant = tag === ActivityTags.Reform ? 'info' :
                              tag === ActivityTags.Equipment ? 'info' :
                              tag === ActivityTags.Materials ? 'info' :
                              tag === ActivityTags.Training ? 'success' : 'neutral'
               return (
                 <StatusBadge
-                  key={tag}
+                  key={`${tag}-${index}`}
                   label={getActivityTagLabel(tag)}
                   variant={variant}
                   showDot={true}

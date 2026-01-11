@@ -294,7 +294,16 @@ export default function ProjectDetailsPage() {
       refetchProject()
     },
     onError: (error) => {
-      toast.error(`${t.errors.updateError}: ${error.message}`)
+      let ext = (error.graphQLErrors?.[0]?.extensions as any);
+      if (!ext && (error.networkError as any)?.result?.errors?.[0]?.extensions) {
+        ext = (error.networkError as any).result.errors[0].extensions;
+      }
+      const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
+      if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
+          toast.error(t.toasts.documentsPending || "All documents must be validated first", { duration: 5000 });
+      } else {
+          toast.error(`${t.errors.updateError}: ${error.message}`)
+      }
       console.error("Error updating subsidy request:", error)
     }
   })
@@ -305,7 +314,19 @@ export default function ProjectDetailsPage() {
       refetchProject()
     },
     onError: (error) => {
-      toast.error(`${t.errors.updateError}: ${error.message}`)
+      console.log('❌ Page Subsidy Error (Full):', JSON.stringify(error, null, 2));
+      let ext = (error.graphQLErrors?.[0]?.extensions as any);
+      if (!ext && (error.networkError as any)?.result?.errors?.[0]?.extensions) {
+        ext = (error.networkError as any).result.errors[0].extensions;
+      }
+      console.log('❌ Page Subsidy Error (Extensions):', ext);
+      const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
+      console.log('❌ Extracted Error Code:', errorCode);
+      if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
+          toast.error(t.toasts.documentsPending || "All documents must be validated first", { duration: 5000 });
+      } else {
+          toast.error(`${t.errors.updateError}: ${error.message}`)
+      }
       console.error("Error approving subsidy request:", error)
     }
   })
@@ -316,7 +337,12 @@ export default function ProjectDetailsPage() {
       refetchProject()
     },
     onError: (error) => {
-      toast.error(`${t.errors.updateError}: ${error.message}`)
+      const errorCode = (error.graphQLErrors?.[0]?.extensions as any)?.additional?.errorCode;
+      if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
+          toast.error(t.toasts.documentsPending || "All documents must be validated first", { duration: 5000 });
+      } else {
+          toast.error(`${t.errors.updateError}: ${error.message}`)
+      }
       console.error("Error rejecting subsidy request:", error)
     }
   })
@@ -471,11 +497,7 @@ export default function ProjectDetailsPage() {
   const allProjectActivities = useMemo(() => {
     if (!projectData?.project?.activities) return []
     
-    // Debug: Log raw activities data
-    console.log('🔍 Raw activities from API:', projectData.project.activities)
-    console.log('🔍 First activity assignees:', projectData.project.activities[0]?.assignees)
-    
-    return projectData.project.activities.map((activity: any) => {
+    const transformed = projectData.project.activities.map((activity: any) => {
       // Map backend enum values to frontend values
       const statusMap: Record<string, string> = {
         'TODO': 'todo',
@@ -490,6 +512,8 @@ export default function ProjectDetailsPage() {
         'MEDIUM': 'medium',
         'LOW': 'low'
       }
+
+      const docs = activity.activity_documents || []
 
       return {
         id: activity.id,
@@ -520,8 +544,11 @@ export default function ProjectDetailsPage() {
         tags: activity.tags || [],
         custom_tags: activity.custom_tags || [],
         activity_funding: activity.activity_funding || [],
+        // Include activity documents for subsidy modal
+        activity_documents: activity.activity_documents || [],
       }
     }) as ProjectActivityData[]
+    return transformed
   }, [projectData, projectId])
 
   // Transform users data for UsersAvatarGroup
@@ -811,11 +838,19 @@ export default function ProjectDetailsPage() {
       console.log('📋 Submitting subsidy request:', data)
 
       // Transform items to match backend expected format
-      const subsidyItems = data.items.map(item => ({
-        project_activity_id: item.activity_id,
-        requested_amount: item.requested_amount,
-        notes: item.notes || ""
-      }))
+      const subsidyItems = data.items.map(item => {
+        const activityDocs = item.activity_documents?.filter(doc => doc.origin === 'ACTIVITY') || [];
+        
+        return {
+          project_activity_id: item.activity_id,
+          requested_amount: item.requested_amount,
+          notes: item.notes || "",
+          // Include linked activity document IDs if any
+          linked_activity_document_ids: activityDocs.map(doc => doc.id),
+          // Include corresponding amounts for each document
+          linked_document_amounts: activityDocs.map(doc => doc.amount || 0)
+        };
+      })
 
       // Call mutation and get the created subsidy ID
       const result = await createSubsidyRequest({
@@ -874,11 +909,19 @@ export default function ProjectDetailsPage() {
       console.log('📋 Updating subsidy request:', { id, data })
 
       // Transform items to match backend expected format
-      const subsidyItems = data.items.map(item => ({
-        project_activity_id: item.activity_id,
-        requested_amount: item.requested_amount,
-        notes: item.notes || ""
-      }))
+      const subsidyItems = data.items.map(item => {
+        const activityDocs = item.activity_documents?.filter(doc => doc.origin === 'ACTIVITY') || [];
+        
+        return {
+          project_activity_id: item.activity_id,
+          requested_amount: item.requested_amount,
+          notes: item.notes || "",
+          // Include linked activity document IDs if any
+          linked_activity_document_ids: activityDocs.map(doc => doc.id),
+          // Include corresponding amounts for each document
+          linked_document_amounts: activityDocs.map(doc => doc.amount || 0)
+        };
+      })
 
       await updateSubsidyRequest({
         variables: {

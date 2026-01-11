@@ -26,8 +26,6 @@ import {
   Image,
   PanelRight,
   Flag,
-  Building2,
-  Church,
   UserPlus,
   History
 } from "lucide-react"
@@ -115,7 +113,7 @@ export function ActivityDetailsModal({
         id: assignee.user.id,
         name: assignee.user.name,
         email: assignee.user.email,
-        role: 'Responsável'
+        role: 'Assignee'
       }))
     }
     return []
@@ -127,14 +125,8 @@ export function ActivityDetailsModal({
     name: user.name,
     email: user.email,
     avatar: user.avatar,
-    role: user.role || 'Membro'
+    role: user.role || 'Member'
   }))
-
-  // Debug: Log available users
-  useEffect(() => {
-    console.log('📊 Institution Users:', institutionUsers)
-    console.log('👥 Available Users:', availableUsers)
-  }, [institutionUsers, availableUsers])
   
   // Converte valores antigos (português/minúsculo) para os valores corretos do enum
   const normalizeActivityTag = (tag?: string): string => {
@@ -175,16 +167,6 @@ export function ActivityDetailsModal({
     institution_requested_amount: activity?.institution_requested_amount || 0
   })
 
-  // Funding rules configuration
-  const FUNDING_POLICIES = {
-    max_institution_percent: 65,
-    max_institution_amount: 5000,
-    min_church_percent: 35,
-    default_church_percent: 35,
-    default_institution_percent: 65
-  }
-
-
   // Update form data when activity changes
   useEffect(() => {
     if (activity) {
@@ -205,7 +187,7 @@ export function ActivityDetailsModal({
           id: assignee.user.id,
           name: assignee.user.name,
           email: assignee.user.email,
-          role: 'Responsável'
+          role: 'Assignee'
         })))
       } else {
         setAssignedUsers([])
@@ -213,24 +195,6 @@ export function ActivityDetailsModal({
     }
   }, [activity])
 
-  // Recalculate institution amount when budget changes to prevent negative values
-  useEffect(() => {
-    if (formData.is_subsidized && formData.budget_amount > 0) {
-      const maxAllowed = (formData.budget_amount * FUNDING_POLICIES.max_institution_percent) / 100
-      
-      // If current institution amount exceeds new maximum, adjust it
-      if (formData.institution_requested_amount > maxAllowed) {
-        setFormData(prev => ({
-          ...prev,
-          institution_requested_amount: maxAllowed
-        }))
-        toast(`Valor da instituição ajustado para ${formatCurrencyGlobal(maxAllowed)} (máximo permitido)`, {
-          icon: 'ℹ️',
-          duration: 3000,
-        })
-      }
-    }
-  }, [formData.budget_amount, formData.is_subsidized])
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -293,41 +257,41 @@ export function ActivityDetailsModal({
     }
   }
 
-  // Helper functions
+  // Helper functions - moved here to access t() hook
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
-      planning: "Planejamento",
-      in_progress: "Em Andamento",
-      completed: "Concluída",
-      pending_approval: "Pendente Aprovação",
-      cancelled: "Cancelada"
+      planning: t('activities.modal.status_labels.planning'),
+      in_progress: t('activities.modal.status_labels.in_progress'),
+      completed: t('activities.modal.status_labels.completed'),
+      pending_approval: t('activities.modal.status_labels.pending_approval'),
+      cancelled: t('activities.modal.status_labels.cancelled')
     }
     return labels[status] || status
   }
 
   const getPriorityLabel = (priority: string) => {
     const labels: Record<string, string> = {
-      urgent: "Urgente",
-      high: "Alta", 
-      medium: "Média",
-      low: "Baixa"
+      urgent: t('activities.modal.priority_labels.urgent'),
+      high: t('activities.modal.priority_labels.high'), 
+      medium: t('activities.modal.priority_labels.medium'),
+      low: t('activities.modal.priority_labels.low')
     }
     return labels[priority] || priority
   }
 
   const getTagLabel = (tag: string) => {
     const labels: Record<string, string> = {
-      [ActivityTags.Reform]: "Reforma",
-      [ActivityTags.Equipment]: "Equipamento",
-      [ActivityTags.Materials]: "Material",
-      [ActivityTags.Training]: "Treinamento",
-      [ActivityTags.Travel]: "Viagem",
-      [ActivityTags.Event]: "Evento",
-      [ActivityTags.Transport]: "Transporte",
-      [ActivityTags.Marketing]: "Marketing",
-      [ActivityTags.Services]: "Serviços",
-      [ActivityTags.Feeding]: "Alimentação",
-      [ActivityTags.Accommodation]: "Acomodação"
+      [ActivityTags.Reform]: t('activities.modal.tag_labels.reform'),
+      [ActivityTags.Equipment]: t('activities.modal.tag_labels.equipment'),
+      [ActivityTags.Materials]: t('activities.modal.tag_labels.materials'),
+      [ActivityTags.Training]: t('activities.modal.tag_labels.training'),
+      [ActivityTags.Travel]: t('activities.modal.tag_labels.travel'),
+      [ActivityTags.Event]: t('activities.modal.tag_labels.event'),
+      [ActivityTags.Transport]: t('activities.modal.tag_labels.transport'),
+      [ActivityTags.Marketing]: t('activities.modal.tag_labels.marketing'),
+      [ActivityTags.Services]: t('activities.modal.tag_labels.services'),
+      [ActivityTags.Feeding]: t('activities.modal.tag_labels.feeding'),
+      [ActivityTags.Accommodation]: t('activities.modal.tag_labels.accommodation')
     }
     return labels[tag] || tag
   }
@@ -405,8 +369,6 @@ export function ActivityDetailsModal({
         tags: formData.tags.map(tag => normalizeActivityTag(tag) as ActivityTags),
         assignee_ids: assignedUsers.map(u => u.id), // Enviar todos os responsáveis
       }
-      console.log('💾 Saving activity with data:', dataToSave)
-      console.log('👥 Assignees being sent:', dataToSave.assignee_ids)
       onSave(dataToSave)
       toast.success(t('common.success'))
       setHasChanges(false)
@@ -447,11 +409,11 @@ export function ActivityDetailsModal({
         
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-1">
             <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
               <Activity className="w-4 h-4 text-gray-600" />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               {editingField === 'name' ? (
                 <Input
                   value={formData.name}
@@ -462,30 +424,77 @@ export function ActivityDetailsModal({
                 />
               ) : (
                 <div className="flex items-center gap-2">
-                  <h1 className="text-lg font-semibold text-gray-900">{formData.name}</h1>
+                  <h1 className="text-lg font-semibold text-gray-900 truncate">{formData.name}</h1>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setEditingField('name')}
-                    className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                    className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600 flex-shrink-0"
                   >
                     <Edit3 className="w-3 h-3" />
                   </Button>
                 </div>
               )}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mt-1">
                 <p className="text-sm text-gray-500">ID: {activity.id}</p>
                 {project && (
                   <>
                     <span className="text-gray-300">•</span>
-                    <p className="text-sm text-gray-500">{project.name}</p>
+                    <p className="text-sm text-gray-500 truncate">{project.name}</p>
                   </>
                 )}
               </div>
             </div>
           </div>
+
+          {/* Budget Amount in Header */}
+          <div className="flex items-center gap-3 ml-4">
+            <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+              <DollarSign className="w-4 h-4 text-gray-600 flex-shrink-0" />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2">
+                      {editingField === 'budget' ? (
+                        <Input
+                          type="number"
+                          value={formData.budget_amount}
+                          onChange={(e) => handleInputChange('budget_amount', Number(e.target.value))}
+                          onBlur={() => setEditingField(null)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              setEditingField(null)
+                            }
+                          }}
+                          className="text-base font-semibold h-8 w-40"
+                          autoFocus
+                        />
+                      ) : (
+                        <>
+                          <span className="text-base font-semibold text-gray-900">
+                            {formatCurrency(formData.budget_amount)}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingField('budget')}
+                            className="h-5 w-5 p-0 text-gray-400 hover:text-gray-600"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">{t('activities.modal.tooltips.total_requested_amount')}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-3">
             <Button
               variant="ghost"
               size="sm"
@@ -666,7 +675,7 @@ export function ActivityDetailsModal({
                       className="h-7 text-xs"
                     >
                       <Check className="w-3 h-3 mr-1" />
-                      Concluir
+                      {t('activities.modal.done')}
                     </Button>
                   </div>
                 ) : (
@@ -683,7 +692,7 @@ export function ActivityDetailsModal({
                           />
                         ))
                       ) : (
-                        <span className="text-xs text-gray-400">Nenhuma categoria</span>
+                        <span className="text-xs text-gray-400">{t('activities.modal.no_category')}</span>
                       )}
                     </div>
                     <Button
@@ -701,7 +710,7 @@ export function ActivityDetailsModal({
               {/* Assigned Users - Multiple */}
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Responsáveis:
+                  {t('activities.modal.assignees')}:
                 </span>
                 {assignedUsers.length > 0 && (
                   <div className="flex items-center gap-1">
@@ -732,7 +741,7 @@ export function ActivityDetailsModal({
                     )}
                     {assignedUsers.length > 1 && (
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {assignedUsers.length} responsáveis
+                        {t('activities.modal.assignees_count', { count: assignedUsers.length })}
                       </span>
                     )}
                   </div>
@@ -741,9 +750,9 @@ export function ActivityDetailsModal({
                   availableUsers={availableUsers}
                   selectedUsers={assignedUsers}
                   onUsersChange={handleUsersChange}
-                  buttonLabel={assignedUsers.length > 0 ? "Editar" : "Adicionar"}
-                  dialogTitle="Selecionar Responsáveis"
-                  searchPlaceholder="Buscar usuário..."
+                  buttonLabel={assignedUsers.length > 0 ? t('common.edit') : t('common.add')}
+                  dialogTitle={t('activities.modal.select_assignees')}
+                  searchPlaceholder={t('activities.modal.search_user')}
                 />
               </div>
             </div>
@@ -784,210 +793,6 @@ export function ActivityDetailsModal({
               </Button>
             </div>
           </div>
-
-          {/* Budget Section - KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {/* Total Budget Card */}
-            <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-white dark:bg-gray-900">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-                  <Label className="text-xs font-medium text-gray-600 dark:text-gray-300">Orçamento Total</Label>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="text-xs">Valor total do orçamento desta atividade</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setEditingField('budget')}
-                  className="h-5 w-5 p-0 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                >
-                  <Edit3 className="w-3 h-3" />
-                </Button>
-              </div>
-              {editingField === 'budget' ? (
-                <Input
-                  type="number"
-                  value={formData.budget_amount}
-                  onChange={(e) => handleInputChange('budget_amount', Number(e.target.value))}
-                  onBlur={() => setEditingField(null)}
-                  className="text-lg font-bold h-8 border-0 p-0 focus-visible:ring-0 bg-transparent dark:text-white"
-                  autoFocus
-                />
-              ) : (
-                <div className="text-lg font-bold text-gray-900 dark:text-white">
-                  {formatCurrency(formData.budget_amount)}
-                </div>
-              )}
-            </div>
-
-            {/* Institution Requested Amount Card - Only if subsidized */}
-            {formData.is_subsidized && (
-              <div className="rounded-lg border border-gray-300 dark:border-gray-600 p-3 bg-gray-50 dark:bg-gray-800 relative">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="w-3.5 h-3.5 text-gray-600 dark:text-gray-300" />
-                    <Label className="text-xs font-medium text-gray-700 dark:text-gray-200">Instituição</Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">Valor solicitado à instituição (máximo {FUNDING_POLICIES.max_institution_percent}% do orçamento)</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {editingField === 'institution_amount' ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setEditingField(null)
-                          toast.success('Valor atualizado com sucesso')
-                        }}
-                        className="h-5 w-5 p-0 text-grey-400 hover:text-grey-600 hover:bg-grey-60 dark:text-grey-600 dark:hover:text-grey-600"
-                        title="Confirmar alteração"
-                      >
-                      <Check className="w-3.5 h-3.5" />
-                      {/* <span>save</span> */}
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditingField('institution_amount')}
-                        className="h-5 w-5 p-0 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                      >
-                        <Edit3 className="w-3 h-3" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                {editingField === 'institution_amount' ? (
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400">
-                          {formatCurrency(0).replace(/[\d.,\s]/g, '')}
-                        </span>
-                        <Input
-                          type="number"
-                          value={formData.institution_requested_amount || ''}
-                          placeholder="0"
-                          onChange={(e) => {
-                            const value = e.target.value === '' ? 0 : Number(e.target.value)
-                            // Calculate max allowed based on funding rules
-                            const maxAllowed = (formData.budget_amount * FUNDING_POLICIES.max_institution_percent) / 100
-                            if (value <= maxAllowed) {
-                              handleInputChange('institution_requested_amount', value)
-                            } else {
-                              toast.error(`Valor máximo permitido: ${formatCurrency(maxAllowed)} (${FUNDING_POLICIES.max_institution_percent}% do orçamento)`)
-                            }
-                          }}
-                          className="text-lg font-bold h-8 border-0 pl-6 pr-2 py-0 focus-visible:ring-0 bg-transparent dark:text-white"
-                          autoFocus
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          // Calculate max allowed based on funding rules
-                          const maxAllowed = (formData.budget_amount * FUNDING_POLICIES.max_institution_percent) / 100
-                          handleInputChange('institution_requested_amount', maxAllowed)
-                        }}
-                        className="h-8 px-3 text-xs font-mono shrink-0"
-                        title="Aplicar máximo permitido (65% do orçamento)"
-                      >
-                        MAX
-                      </Button>
-                    </div>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                      Máximo: {formatCurrency((formData.budget_amount * FUNDING_POLICIES.max_institution_percent) / 100)} ({FUNDING_POLICIES.max_institution_percent}% do orçamento)
-                    </p>
-                  </div>
-                ) : (
-                  <div className="text-lg font-bold text-gray-800 dark:text-gray-100">
-                    {formatCurrency(formData.institution_requested_amount || 0)}
-                  </div>
-                )}
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  {formData.budget_amount > 0 
-                    ? `${Math.round(((formData.institution_requested_amount || 0) / formData.budget_amount) * 100)}% do total`
-                    : '0% do total'
-                  }
-                </p>
-              </div>
-            )}
-
-            {/* Church Contribution Card */}
-            <div className="rounded-lg border border-gray-400 dark:border-gray-500 p-3 bg-gray-100 dark:bg-gray-700">
-              <div className="flex items-center gap-2 mb-2">
-                <Church className="w-3.5 h-3.5 text-gray-700 dark:text-gray-200" />
-                <Label className="text-xs font-medium text-gray-800 dark:text-gray-100">Igreja</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-xs">Contribuição da igreja (mínimo {FUNDING_POLICIES.min_church_percent}% do orçamento)</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <div className="text-lg font-bold text-gray-900 dark:text-white">
-                {formatCurrency(
-                  formData.is_subsidized 
-                    ? formData.budget_amount - (formData.institution_requested_amount || 0)
-                    : formData.budget_amount
-                )}
-              </div>
-              <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                {formData.is_subsidized && formData.budget_amount > 0
-                  ? `${Math.round(((formData.budget_amount - (formData.institution_requested_amount || 0)) / formData.budget_amount) * 100)}% do total`
-                  : '100% do total'
-                }
-              </p>
-            </div>
-          </div>
-
-          {/* Funding Rules Badges */}
-          {formData.is_subsidized && (
-            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Regras de Financiamento:</span>
-                <TagBadge
-                  label={`Máx. Instituição: ${FUNDING_POLICIES.max_institution_percent}%`}
-                  variant="blue"
-                  size="xs"
-                />
-                <TagBadge
-                  label={`Mín. Igreja: ${FUNDING_POLICIES.min_church_percent}%`}
-                  variant="green"
-                  size="xs"
-                />
-                <TagBadge
-                  label={`Limite: ${formatCurrency(FUNDING_POLICIES.max_institution_amount)}`}
-                  variant="purple"
-                  size="xs"
-                />
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Main Content with Drawer */}
@@ -1092,13 +897,13 @@ export function ActivityDetailsModal({
                     <div className="text-sm text-gray-400 italic flex items-center justify-center h-full">
                       <div className="text-center">
                         <Edit3 className="w-5 h-5 mx-auto mb-2 opacity-50" />
-                        Clique aqui para adicionar uma descrição...
+                        {t('activities.modal.click_to_add_description')}
                       </div>
                     </div>
                   )}
                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-500 shadow-sm">
-                      Clique para editar
+                      {t('activities.modal.click_to_edit')}
                     </div>
                   </div>
                 </div>
@@ -1141,7 +946,7 @@ export function ActivityDetailsModal({
                   }`}
                 >
                   <Info className="w-4 h-4 inline-block mr-1.5" />
-                  Metadados
+                  {t('activities.modal.metadata')}
                   {systemInfoTab === 'metadata' && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900" />
                   )}
@@ -1155,7 +960,7 @@ export function ActivityDetailsModal({
                   }`}
                 >
                   <History className="w-4 h-4 inline-block mr-1.5" />
-                  Histórico
+                  {t('activities.modal.history')}
                   {systemInfoTab === 'logs' && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900" />
                   )}
@@ -1166,7 +971,7 @@ export function ActivityDetailsModal({
               <div className="flex-1 overflow-y-auto p-4">
                 {systemInfoTab === 'metadata' ? (
                   <div className="space-y-4">
-                    <p className="text-sm text-gray-600 mb-4">Detalhes técnicos e metadados da atividade</p>
+                    <p className="text-sm text-gray-600 mb-4">{t('activities.modal.technical_details')}</p>
 
                     <div className="bg-white rounded-lg p-3 border border-gray-200">
                       <p className="text-xs font-medium text-gray-500 mb-1">{t('activities.modal.activity_id')}</p>
@@ -1195,7 +1000,7 @@ export function ActivityDetailsModal({
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <p className="text-sm text-gray-600 mb-4">Histórico de alterações da atividade</p>
+                    <p className="text-sm text-gray-600 mb-4">{t('activities.modal.change_history')}</p>
                     <ActivityLogs
                       logs={logsData?.projectActivityLogs || []}
                       isLoading={logsLoading}

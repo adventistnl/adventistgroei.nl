@@ -38,6 +38,7 @@ interface ProjectActivityData {
   is_subsidized: boolean
   subsidy_amount?: number
   spent_amount?: number
+  deadline: string
 }
 
 export interface DeleteActivityModalProps {

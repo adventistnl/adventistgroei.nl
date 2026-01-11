@@ -17,6 +17,7 @@ import {
   Settings
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useTranslation } from "react-i18next"
 
 export interface ActivityLog {
   id: string
@@ -41,6 +42,8 @@ interface ActivityLogsProps {
 }
 
 export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
+  const { t } = useTranslation()
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -63,7 +66,7 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
     return (
       <div className="text-center py-8 text-gray-500">
         <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-        <p className="text-sm">Nenhum histórico de alterações encontrado</p>
+        <p className="text-sm">{t('activities.logs.no_history')}</p>
       </div>
     )
   }
@@ -127,20 +130,7 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
   }
 
   const formatFieldName = (fieldName: string) => {
-    const fieldNames: Record<string, string> = {
-      'status': 'Status',
-      'priority': 'Prioridade',
-      'name': 'Nome',
-      'description': 'Descrição',
-      'budget_amount': 'Orçamento',
-      'deadline': 'Prazo',
-      'owner_id': 'Responsável',
-      'is_subsidized': 'Subsidiado',
-      'activity_tag': 'Categoria (Antigo)',
-      'tags': 'Categorias',
-      'custom_tags': 'Tags Personalizadas'
-    }
-    return fieldNames[fieldName] || fieldName
+    return t(`activities.logs.fields.${fieldName}`, fieldName)
   }
 
   const formatValue = (value: string, fieldName?: string) => {
@@ -154,33 +144,17 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
     } catch {
       // Status translations
       if (fieldName === 'status') {
-        const statusLabels: Record<string, string> = {
-          'TODO': 'Pendente',
-          'todo': 'Pendente',
-          'IN_PROGRESS': 'Em Andamento',
-          'in_progress': 'Em Andamento',
-          'COMPLETED': 'Concluído',
-          'completed': 'Concluído',
-          'ON_HOLD': 'Em Espera',
-          'on_hold': 'Em Espera'
-        }
-        return statusLabels[value] || value
+        return t(`activities.modal.status_labels.${value}`, value)
       }
 
       // Priority translations
       if (fieldName === 'priority') {
-        const priorityLabels: Record<string, string> = {
-          'urgent': 'Urgente',
-          'high': 'Alta',
-          'medium': 'Média',
-          'low': 'Baixa'
-        }
-        return priorityLabels[value] || value
+        return t(`activities.modal.priority_labels.${value}`, value)
       }
 
       // Boolean values
-      if (value === 'true') return 'Sim'
-      if (value === 'false') return 'Não'
+      if (value === 'true') return t('activities.logs.values.yes')
+      if (value === 'false') return t('activities.logs.values.no')
 
       return value
     }
@@ -191,19 +165,19 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
 
     switch (log.action) {
       case 'CREATED':
-        return `${userName} criou a atividade`
+        return t('activities.logs.actions.created', { user: userName })
 
       case 'DELETED':
-        return `${userName} removeu a atividade`
+        return t('activities.logs.actions.deleted', { user: userName })
 
       case 'STATUS_CHANGED':
         return (
           <span>
-            {userName} alterou o status de{' '}
+            {t('activities.logs.actions.status_changed', { user: userName })}{' '}
             <span className="font-semibold text-gray-700">
               {log.old_value ? formatValue(log.old_value, 'status') : '—'}
             </span>
-            {' '}para{' '}
+            {' '}{t('activities.logs.actions.to')}{' '}
             <span className="font-semibold text-gray-700">
               {log.new_value ? formatValue(log.new_value, 'status') : '—'}
             </span>
@@ -213,11 +187,11 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
       case 'PRIORITY_CHANGED':
         return (
           <span>
-            {userName} alterou a prioridade de{' '}
+            {t('activities.logs.actions.priority_changed', { user: userName })}{' '}
             <span className="font-semibold text-gray-700">
               {log.old_value ? formatValue(log.old_value, 'priority') : '—'}
             </span>
-            {' '}para{' '}
+            {' '}{t('activities.logs.actions.to')}{' '}
             <span className="font-semibold text-gray-700">
               {log.new_value ? formatValue(log.new_value, 'priority') : '—'}
             </span>
@@ -227,11 +201,11 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
       case 'BUDGET_UPDATED':
         return (
           <span>
-            {userName} atualizou o orçamento de{' '}
+            {t('activities.logs.actions.budget_updated', { user: userName })}{' '}
             <span className="font-semibold text-gray-700">
               {log.old_value || '—'}
             </span>
-            {' '}para{' '}
+            {' '}{t('activities.logs.actions.to')}{' '}
             <span className="font-semibold text-gray-700">
               {log.new_value || '—'}
             </span>
@@ -239,24 +213,25 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
         )
 
       case 'SUBSIDIZED_CHANGED':
-        return (
-          <span>
-            {userName} {log.new_value === 'true' ? 'marcou' : 'desmarcou'} como subsidiado
-          </span>
-        )
+        return log.new_value === 'true' 
+          ? t('activities.logs.actions.subsidized_marked', { user: userName })
+          : t('activities.logs.actions.subsidized_unmarked', { user: userName })
 
       case 'UPDATED':
         if (log.field_name) {
           return (
             <span>
-              {userName} atualizou {formatFieldName(log.field_name)}
+              {t('activities.logs.actions.field_updated', { 
+                user: userName, 
+                field: formatFieldName(log.field_name) 
+              })}
               {log.old_value && log.new_value && (
                 <>
-                  {' '}de{' '}
+                  {' '}{t('activities.logs.actions.from')}{' '}
                   <span className="font-semibold text-gray-700">
                     {formatValue(log.old_value, log.field_name)}
                   </span>
-                  {' '}para{' '}
+                  {' '}{t('activities.logs.actions.to')}{' '}
                   <span className="font-semibold text-gray-700">
                     {formatValue(log.new_value, log.field_name)}
                   </span>
@@ -265,10 +240,16 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
             </span>
           )
         }
-        return `${userName} atualizou a atividade`
+        return t('activities.logs.actions.field_updated', { 
+          user: userName, 
+          field: 'activity' 
+        })
 
       default:
-        return `${userName} realizou uma ação: ${log.action}`
+        return t('activities.logs.actions.generic_action', { 
+          user: userName, 
+          action: log.action 
+        })
     }
   }
 
@@ -280,12 +261,12 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
 
-    if (diffMins < 1) return 'Agora mesmo'
-    if (diffMins < 60) return `${diffMins} min atrás`
-    if (diffHours < 24) return `${diffHours}h atrás`
-    if (diffDays < 7) return `${diffDays}d atrás`
+    if (diffMins < 1) return t('activities.logs.time.just_now')
+    if (diffMins < 60) return t('activities.logs.time.minutes_ago', { count: diffMins })
+    if (diffHours < 24) return t('activities.logs.time.hours_ago', { count: diffHours })
+    if (diffDays < 7) return t('activities.logs.time.days_ago', { count: diffDays })
 
-    return date.toLocaleDateString('pt-BR', {
+    return date.toLocaleDateString('en-US', {
       day: '2-digit',
       month: 'short',
       year: diffDays > 365 ? 'numeric' : undefined
@@ -293,7 +274,7 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
   }
 
   const formatFullDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('pt-BR', {
+    return new Date(dateString).toLocaleString('en-US', {
       day: '2-digit',
       month: 'long',
       year: 'numeric',

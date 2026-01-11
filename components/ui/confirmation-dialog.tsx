@@ -23,6 +23,8 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 
+import { useTranslation } from "react-i18next"
+
 export interface ConfirmationDialogProps {
   isOpen: boolean
   onClose: () => void
@@ -32,6 +34,8 @@ export interface ConfirmationDialogProps {
   confirmText?: string
   cancelText?: string
   severity?: "low" | "medium" | "high"
+  titleIcon?: React.ComponentType<any>
+  actionIcon?: React.ComponentType<any>
   itemSummary?: {
     title: string
     subtitle?: string
@@ -59,14 +63,20 @@ export function ConfirmationDialog({
   onConfirm,
   title,
   description,
-  confirmText = "Confirmar",
-  cancelText = "Cancelar",
+  confirmText,
+  cancelText,
   severity = "medium",
+  titleIcon: TitleIcon,
+  actionIcon: ActionIcon,
   itemSummary,
   warnings = [],
   effects = [],
   additionalWarning
 }: ConfirmationDialogProps) {
+  const { t } = useTranslation()
+  
+  const finalConfirmText = confirmText || t('common.confirm')
+  const finalCancelText = cancelText || t('common.cancel')
 
   const getSeverityColor = () => {
     switch (severity) {
@@ -83,6 +93,14 @@ export function ConfirmationDialog({
       default: return <Info className="w-5 h-5 text-gray-600" />
     }
   }
+  
+  const DefaultTitleIcon = severity === 'high' ? AlertTriangle : (severity === 'medium' ? AlertTriangle : Info)
+  const FinalTitleIcon = TitleIcon || DefaultTitleIcon
+  
+  const DefaultActionIcon = severity === 'high' ? AlertTriangle : CheckCircle
+  const FinalActionIcon = ActionIcon || DefaultActionIcon
+
+  const titleIconClass = severity === 'high' ? "text-red-600" : (severity === 'medium' ? "text-yellow-600" : "text-gray-600")
 
   const getConfirmButtonClass = () => {
     switch (severity) {
@@ -96,8 +114,8 @@ export function ConfirmationDialog({
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent className="sm:max-w-[500px]">
         <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2 text-red-600">
-            <Trash2 className="w-5 h-5" />
+          <AlertDialogTitle className={`flex items-center gap-2 ${titleIconClass}`}>
+            <FinalTitleIcon className="w-5 h-5" />
             {title}
           </AlertDialogTitle>
           <AlertDialogDescription className="space-y-4">
@@ -128,7 +146,7 @@ export function ConfirmationDialog({
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center gap-2">
                     {getSeverityIcon()}
-                    <span className="text-sm font-medium">Impacto da Ação</span>
+                    <span className="text-sm font-medium">{t('common.impact')}</span>
                   </div>
                   
                   <div className="space-y-2">
@@ -154,7 +172,7 @@ export function ConfirmationDialog({
             {/* Effects */}
             {effects.length > 0 && (
               <div className="space-y-3">
-                <p className="text-sm font-medium text-red-600">Consequências desta ação:</p>
+                <p className="text-sm font-medium text-red-600">{t('common.consequences')}</p>
                 <div className="space-y-2">
                   {effects.map((effect, index) => {
                     const Icon = effect.icon
@@ -198,7 +216,7 @@ export function ConfirmationDialog({
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-red-600" />
                 <span className="text-sm font-medium text-red-600">
-                  Esta ação não pode ser desfeita
+                  {t('common.undone')}
                 </span>
               </div>
             </div>
@@ -207,7 +225,7 @@ export function ConfirmationDialog({
         
         <AlertDialogFooter className="flex-col sm:flex-row gap-2">
           <AlertDialogCancel onClick={onClose} className="w-full sm:w-auto">
-            {cancelText}
+            {finalCancelText}
           </AlertDialogCancel>
           
           {severity === "high" ? (
@@ -216,11 +234,11 @@ export function ConfirmationDialog({
                 onClick={onConfirm}
                 className={`${getConfirmButtonClass()} w-full`}
               >
-                <Trash2 className="w-4 h-4 mr-2" />
-                {confirmText}
+                <FinalActionIcon className="w-4 h-4 mr-2" />
+                {finalConfirmText}
               </AlertDialogAction>
               <p className="text-xs text-center text-red-600">
-                Você está ciente dos riscos
+                {t('common.riskAware')}
               </p>
             </div>
           ) : (
@@ -228,8 +246,8 @@ export function ConfirmationDialog({
               onClick={onConfirm}
               className={`${getConfirmButtonClass()} w-full sm:w-auto`}
             >
-              <Trash2 className="w-4 h-4 mr-2" />
-              {confirmText}
+              <FinalActionIcon className="w-4 h-4 mr-2" />
+              {finalConfirmText}
             </AlertDialogAction>
           )}
         </AlertDialogFooter>

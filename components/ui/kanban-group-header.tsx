@@ -4,7 +4,7 @@ import React from "react"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { CardTitle, CardDescription } from "@/components/ui/card"
-import { MoreHorizontal, Info } from "lucide-react"
+import { MoreHorizontal, Info, HelpCircle } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,21 +35,23 @@ export function KanbanGroupHeader({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div 
-            className="w-2 h-2 rounded-full flex-shrink-0" 
-            style={{ backgroundColor: group.color }}
-          />
-          <CardTitle className="text-base font-semibold truncate">
-            {group.name}
-          </CardTitle>
-          <StatusBadge 
-            label={`${itemCount}`}
-            variant="neutral"
-            size="sm"
-            className="flex-shrink-0"
-          />
-          {group.description && (
+        <div className="flex items-center justify-between gap-2 flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <div 
+              className="w-2 h-2 rounded-full flex-shrink-0" 
+              style={{ backgroundColor: group.color }}
+            />
+            <CardTitle className="text-base font-semibold truncate">
+              {group.name}
+            </CardTitle>
+            <StatusBadge 
+              label={`${itemCount}`}
+              variant="neutral"
+              size="sm"
+              className="flex-shrink-0"
+              />
+            </div>
+          {group.tooltip && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -58,11 +60,11 @@ export function KanbanGroupHeader({
                     size="sm" 
                     className="h-5 w-5 p-0 flex-shrink-0 hover:bg-muted"
                   >
-                    <Info className="w-3.5 h-3.5 text-muted-foreground" />
+                    <HelpCircle className="w-3.5 h-3.5 text-muted-foreground" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
-                  <p className="text-xs">{group.description}</p>
+                  <p className="text-xs">{group.tooltip}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

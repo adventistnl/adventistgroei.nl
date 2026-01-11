@@ -86,7 +86,7 @@ export function useActivityDocuments({ activityId, projectActivityId }: UseActiv
   /**
    * Upload a single file using REST endpoint
    */
-  const uploadDocument = async (file: File, type: string = 'image') => {
+  const uploadDocument = async (file: File, type: string = 'receipt') => {
     try {
       // Validate file before upload
       const validation = validateFile(file)

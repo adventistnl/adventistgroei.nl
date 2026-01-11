@@ -18,6 +18,7 @@ import {
   AvatarImage,
 } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "react-i18next"
 
 export interface User {
   id: string
@@ -63,14 +64,15 @@ export function UserMultiSelector({
   availableUsers,
   selectedUsers,
   onUsersChange,
-  buttonLabel = "Adicionar Responsáveis",
-  dialogTitle = "Selecionar Responsáveis",
-  searchPlaceholder = "Buscar usuário...",
+  buttonLabel,
+  dialogTitle,
+  searchPlaceholder,
   disabled = false,
   maxSelections,
   activityName,
   activityType,
 }: UserMultiSelectorProps) {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [tempSelectedUsers, setTempSelectedUsers] = useState<User[]>(selectedUsers)
@@ -143,13 +145,15 @@ export function UserMultiSelector({
           )}
         >
           <UserPlus className="w-4 h-4" />
-          {buttonLabel}
+          {buttonLabel || t('activities.user_selector.add_assignees')}
         </Button>
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-lg font-medium">{dialogTitle}</DialogTitle>
+          <DialogTitle className="text-lg font-medium">
+            {dialogTitle || t('activities.user_selector.select_assignees')}
+          </DialogTitle>
           {(activityName || activityType) && (
             <div className="mt-2 pt-2 border-t">
               {activityType && (
@@ -172,7 +176,7 @@ export function UserMultiSelector({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Selecionados ({tempSelectedUsers.length})
+                  {t('activities.user_selector.selected')} ({tempSelectedUsers.length})
                 </p>
               </div>
               <div className="space-y-1.5 p-3 border rounded-lg bg-muted/30">
@@ -213,13 +217,13 @@ export function UserMultiSelector({
           {/* Search Input */}
           <div className="space-y-1.5">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Buscar Usuário
+              {t('activities.user_selector.search_label')}
             </p>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder={searchPlaceholder}
+                placeholder={searchPlaceholder || t('activities.user_selector.search_user')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -230,15 +234,15 @@ export function UserMultiSelector({
           {/* Users List */}
           <div className="space-y-1.5">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Usuários Disponíveis
+              {t('activities.user_selector.available_users')}
             </p>
             <div className="max-h-[280px] overflow-y-auto space-y-1 p-2 border rounded-lg">
               {filteredUsers.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-sm text-muted-foreground">
                     {searchQuery
-                      ? "Nenhum usuário encontrado"
-                      : "Nenhum usuário disponível"}
+                      ? t('activities.user_selector.no_user_found')
+                      : t('activities.user_selector.no_user_available')}
                   </p>
                 </div>
               ) : (
@@ -297,7 +301,10 @@ export function UserMultiSelector({
           {/* Selection count */}
           {maxSelections && (
             <div className="text-xs text-muted-foreground text-center pt-1 border-t">
-              {tempSelectedUsers.length} de {maxSelections} usuário(s) selecionado(s)
+              {t('activities.user_selector.selection_count', { 
+                selected: tempSelectedUsers.length, 
+                max: maxSelections 
+              })}
             </div>
           )}
         </div>
@@ -308,13 +315,13 @@ export function UserMultiSelector({
             onClick={handleCancel}
             className="flex-1 sm:flex-none"
           >
-            Cancelar
+            {t('activities.user_selector.cancel')}
           </Button>
           <Button 
             onClick={handleConfirm}
             className="flex-1 sm:flex-none bg-foreground text-background hover:bg-foreground/90"
           >
-            Confirmar ({tempSelectedUsers.length})
+            {t('activities.user_selector.confirm', { count: tempSelectedUsers.length })}
           </Button>
         </DialogFooter>
       </DialogContent>
