@@ -1472,7 +1472,7 @@ export default function ProjectDetailsPage() {
   const handleEditSubsidyRequestFromView = (subsidy: SubsidyRequestCardData) => {
     // TODO: Convert SubsidyRequestCardData to activities and open RequestSubsidyModal
     // For now, just show a message
-    toast.success(`✏️ Abrindo edição para: ${subsidy.title}`, { duration: 2000 })
+    toast.success(`Abrindo edição para: ${subsidy.title}`, { duration: 2000 })
     // Future implementation: 
     // 1. Find or create activities related to this subsidy
     // 2. Set selectedActivities with those activities

@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from "@/components/ui/chart"
-import { BarChart, Bar, XAxis, YAxis } from "recharts"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from "recharts"
 import { Building2, TrendingUp } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useChartColors } from "@/lib/chart-colors"
@@ -22,12 +22,7 @@ interface UsersByStructureOverviewChartProps {
  * UsersByStructureOverviewChart Component
  * 
  * Displays the total count of entities distributed across the organizational structure.
- * Shows how many entities exist in each structural level:
- * - Institutions
- * - Regions
- * - Churches
- * - Institutional Departments
- * - Church Departments
+ * Shows how many entities exist in each structural level with custom labels inside and outside bars.
  */
 export function UsersByStructureOverviewChart({ 
   loading, 
@@ -39,7 +34,6 @@ export function UsersByStructureOverviewChart({
 }: UsersByStructureOverviewChartProps) {
   const { i18n } = useTranslation()
   const currentLanguage = i18n?.language || 'en'
-  const { theme, generatePalette } = useChartColors()
   
   // Translation helper
   const t = {
@@ -98,18 +92,6 @@ export function UsersByStructureOverviewChart({
     return key[currentLanguage as keyof typeof key] || key.en
   }
 
-  // Generate colors for each structure type
-  const structureColors = React.useMemo(() => {
-    const palette = generatePalette(5)
-    return {
-      institutions: palette[0],
-      regions: palette[1],
-      churches: palette[2],
-      institutionalDepts: palette[3],
-      churchDepts: palette[4]
-    }
-  }, [generatePalette])
-
   // Calculate entity counts by structure
   const structureData = React.useMemo(() => {
     // Count active entities only
@@ -146,61 +128,42 @@ export function UsersByStructureOverviewChart({
     return { ...data, largest }
   }, [institutions, regions, churches, departments])
 
-  // Chart data
+  // Chart data with translated names and individual colors
   const chartData = React.useMemo(() => [
     {
-      structure: "institutions",
+      name: getText(t.legends.institutions),
       count: structureData.institutions,
-      fill: structureColors.institutions,
+      fill: "hsl(var(--structure-institutions))",
     },
     {
-      structure: "regions",
+      name: getText(t.legends.regions),
       count: structureData.regions,
-      fill: structureColors.regions,
+      fill: "hsl(var(--structure-regions))",
     },
     {
-      structure: "churches",
+      name: getText(t.legends.churches),
       count: structureData.churches,
-      fill: structureColors.churches,
+      fill: "hsl(var(--structure-churches))",
     },
     {
-      structure: "institutionalDepts",
+      name: getText(t.legends.institutionalDepts),
       count: structureData.institutionalDepts,
-      fill: structureColors.institutionalDepts,
+      fill: "hsl(var(--structure-institutional-depts))",
     },
     {
-      structure: "churchDepts",
+      name: getText(t.legends.churchDepts),
       count: structureData.churchDepts,
-      fill: structureColors.churchDepts,
+      fill: "hsl(var(--structure-church-depts))",
     }
-  ], [structureData, structureColors])
+  ], [structureData, currentLanguage])
 
   // Chart configuration
-  const chartConfig: ChartConfig = React.useMemo(() => ({
+  const chartConfig: ChartConfig = {
     count: {
       label: getText({ en: "Entities", pt: "Entidades", nl: "Entiteiten" }),
+      color: "hsl(var(--chart-2))",
     },
-    institutions: {
-      label: getText(t.legends.institutions),
-      color: structureColors.institutions,
-    },
-    regions: {
-      label: getText(t.legends.regions),
-      color: structureColors.regions,
-    },
-    churches: {
-      label: getText(t.legends.churches),
-      color: structureColors.churches,
-    },
-    institutionalDepts: {
-      label: getText(t.legends.institutionalDepts),
-      color: structureColors.institutionalDepts,
-    },
-    churchDepts: {
-      label: getText(t.legends.churchDepts),
-      color: structureColors.churchDepts,
-    },
-  }), [structureColors, currentLanguage])
+  }
 
   if (loading) {
     return (
@@ -234,35 +197,55 @@ export function UsersByStructureOverviewChart({
             data={chartData}
             layout="vertical"
             margin={{
-              left: 0,
+              right: 16,
             }}
           >
+            <CartesianGrid horizontal={false} />
             <YAxis
-              dataKey="structure"
+              dataKey="name"
               type="category"
               tickLine={false}
               tickMargin={10}
               axisLine={false}
-              tickFormatter={(value) =>
-                chartConfig[value as keyof typeof chartConfig]?.label || value
-              }
+              tickFormatter={(value) => value.slice(0, 3)}
+              hide
             />
             <XAxis dataKey="count" type="number" hide />
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent hideLabel />}
+              content={<ChartTooltipContent indicator="line" />}
             />
-            <Bar dataKey="count" layout="vertical" radius={5} />
+            <Bar
+              dataKey="count"
+              layout="vertical"
+              radius={4}
+            >
+              <LabelList
+                dataKey="name"
+                position="insideLeft"
+                offset={8}
+                style={{ fill: '#ffffff' }}
+                fontSize={12}
+                fontWeight={500}
+              />
+              <LabelList
+                dataKey="count"
+                position="right"
+                offset={8}
+                style={{ fill: 'hsl(var(--foreground))' }}
+                fontSize={12}
+                fontWeight={500}
+              />
+            </Bar>
           </BarChart>
         </ChartContainer>
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 text-sm">
         <div className="flex gap-2 leading-none font-medium">
-          <TrendingUp className="h-4 w-4" />
-          {getText(t.footer.largest)}: {getText(t.legends[structureData.largest.key as keyof typeof t.legends])} ({structureData.largest.value})
+          {getText(t.footer.largest)}: {getText(t.legends[structureData.largest.key as keyof typeof t.legends])} <TrendingUp className="h-4 w-4" />
         </div>
         <div className="text-muted-foreground leading-none">
-          {getText(t.footer.total)}: {structureData.total.toLocaleString()}
+          {getText(t.footer.total)}: {structureData.total.toLocaleString()} {getText({ en: "entities", pt: "entidades", nl: "entiteiten" })}
         </div>
       </CardFooter>
     </Card>
