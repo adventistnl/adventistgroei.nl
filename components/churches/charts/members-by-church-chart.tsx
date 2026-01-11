@@ -1,8 +1,8 @@
 "use client"
 
 import React from "react"
-import { TrendingUp } from "lucide-react"
-import { Bar, BarChart, XAxis, YAxis } from "recharts"
+import { TrendingUp, Users } from "lucide-react"
+import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts"
 import {
   Card,
   CardContent,
@@ -17,7 +17,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-import { Users } from "lucide-react"
 
 interface MembersByChurchChartProps {
   data?: any[]
@@ -132,28 +131,52 @@ export function MembersByChurchChart({
             data={chartData}
             layout="vertical"
             margin={{
-              left: 0,
+              right: 16,
             }}
           >
+            <CartesianGrid horizontal={false} />
             <YAxis
               dataKey={itemKey}
               type="category"
               tickLine={false}
               tickMargin={10}
               axisLine={false}
-              tickFormatter={(value) => {
-                const label = chartConfig[value as keyof typeof chartConfig]?.label || value
-                // Limitar nome a 20 caracteres
-                return label.length > 20 ? `${label.substring(0, 20)}...` : label
-              }}
-              width={140}
+              hide
             />
             <XAxis dataKey="members" type="number" hide />
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent hideLabel />}
+              content={<ChartTooltipContent indicator="line" />}
             />
-            <Bar dataKey="members" layout="vertical" radius={5} />
+            <Bar 
+              dataKey="members" 
+              layout="vertical" 
+              radius={4}
+            >
+              <LabelList
+                dataKey={itemKey}
+                position="insideLeft"
+                offset={8}
+                style={{ fill: '#ffffff' }}
+                fontSize={12}
+                fontWeight={500}
+                formatter={(value: any) => {
+                  const label = chartConfig[value as keyof typeof chartConfig]?.label || value
+                  const labelStr = String(label)
+                  // Limitar nome a 20 caracteres
+                  return labelStr.length > 20 ? `${labelStr.substring(0, 20)}...` : labelStr
+                }}
+              />
+              <LabelList
+                dataKey="members"
+                position="right"
+                offset={8}
+                style={{ fill: 'hsl(var(--foreground))' }}
+                fontSize={12}
+                fontWeight={500}
+                formatter={(value: any) => Number(value).toLocaleString()}
+              />
+            </Bar>
           </BarChart>
         </ChartContainer>
       </CardContent>

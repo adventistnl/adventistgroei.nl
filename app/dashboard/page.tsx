@@ -54,6 +54,9 @@ import { RoleDistributionChart, PermissionsByGroupChart, UserActivityChart } fro
 import { UserStructureGrowthChart, UsersByStructureOverviewChart, UserDistributionBarChart } from "@/components/charts/dashboard"
 import { HierarchicalStructureCard } from "@/components/charts/dashboard/hierarchical-structure-card"
 import { StructureBarChart, GrowthLineChart } from "@/components/charts/generic"
+import { ChurchActivityChart } from "@/components/churches/charts/church-activity-chart"
+import { MembersByChurchChart } from "@/components/churches/charts/members-by-church-chart"
+import { ProjectsByChurchChart } from "@/components/churches/charts/projects-by-church-chart"
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart"
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts"
 
@@ -77,7 +80,7 @@ const MONTHS = [
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
-  const { currentInstitution, institutions } = useInstitution()  
+  const { currentInstitutionData, institutions } = useInstitution()  
   const { formatCurrency, selectedCurrency } = useCurrency()
   const currentLanguage = i18n?.language || 'en'
   const ts = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
@@ -103,10 +106,10 @@ export default function DashboardPage() {
   const { data: regionsData, loading: regionsLoading, refetch: refetchRegions } = useQuery(GET_REGIONS_QUERY)
   const { data: churchesData, loading: churchesLoading, refetch: refetchChurches } = useQuery(GET_CHURCHES_QUERY)
   const { data: departmentsData, loading: departmentsLoading, refetch: refetchDepartments } = useQuery(GET_DEPARTMENTS_QUERY, {
-    variables: { institution_id: currentInstitution?.id }
+    variables: { institution_id: currentInstitutionData?.id }
   })
   const { data: usersData, loading: usersLoading, refetch: refetchUsers } = useQuery(GET_ALL_USERS_QUERY, {
-    variables: { institution_id: currentInstitution?.id }
+    variables: { institution_id: currentInstitutionData?.id }
   })
   const { data: rolesData, loading: rolesLoading, refetch: refetchRoles } = useQuery(GET_ALL_ROLES_QUERY)
 
@@ -266,6 +269,61 @@ export default function DashboardPage() {
       color: COLORS[index % COLORS.length]
     }))
   }, [allRoles])
+
+  // Church Analytics Data
+  const churchChartData = useMemo(() => {
+    const colors = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899']
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    
+    // Church Activities by Month
+    const churchActivities = months.map((month, index) => {
+      const monthData: any = { month }
+      
+      filteredChurches.slice(0, 5).forEach((church: any, idx: number) => {
+        const churchName = church.name.replace('Igreja ', '').replace(' de ', ' ')
+        // Simulate activity score based on members and departments
+        const baseActivity = (church.users?.length || 0) + (church.departments?.length || 0) * 2
+        const variation = Math.sin(index + idx) * 10
+        monthData[churchName] = Math.max(5, Math.round(baseActivity + variation))
+      })
+      
+      return monthData
+    })
+
+    // Members by Church
+    const membersByChurchRaw = filteredChurches.map((church: any, index: number) => ({
+      church: church.name.replace('Igreja ', '').replace(' de ', ' '),
+      fullName: church.name,
+      members: church.users?.length || 0,
+      activeMembers: church.users?.filter((u: any) => !u.is_deleted).length || 0,
+      fill: colors[index % colors.length]
+    }))
+    const membersByChurch = membersByChurchRaw.sort((a: any, b: any) => b.members - a.members).slice(0, 8)
+
+    // Projects by Church
+    const projectsByChurchRaw = filteredChurches.map((church: any, index: number) => {
+      const allProjects = church.departments?.reduce((sum: number, dept: any) => 
+        sum + (dept.projects?.length || 0), 0) || 0
+      const activeProjects = church.departments?.reduce((sum: number, dept: any) => 
+        sum + (dept.projects?.filter((p: any) => !p.is_deleted).length || 0), 0) || 0
+      
+      return {
+        church: church.name.replace('Igreja ', '').replace(' de ', ' '),
+        fullName: church.name,
+        projects: allProjects,
+        activeProjects: activeProjects,
+        completedProjects: allProjects - activeProjects,
+        fill: colors[index % colors.length]
+      }
+    })
+    const projectsByChurch = projectsByChurchRaw.sort((a: any, b: any) => b.projects - a.projects).slice(0, 8)
+
+    return {
+      churchActivities,
+      membersByChurch,
+      projectsByChurch
+    }
+  }, [filteredChurches])
 
   // Refresh all data
   const handleRefresh = async () => {
@@ -508,14 +566,14 @@ export default function DashboardPage() {
                   {selectedMonth !== "all" && ` - ${MONTHS[parseInt(selectedMonth)]}`}
                   {selectedRegion !== "all" && ` - ${allRegions.find((r: any) => r.id === selectedRegion)?.name || 'Region'}`}
                 </p>
-                {currentInstitution && (
+                {currentInstitutionData && (
                   <div className="flex items-center gap-2 mt-3">
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       <Building className="w-3 h-3 mr-1" />
-                      {currentInstitution.name}
+                      {currentInstitutionData.name}
                     </Badge>
                     <Badge variant="outline" className="text-xs">
-                      {currentInstitution.denomination}
+                      {currentInstitutionData.denomination}
                     </Badge>
                   </div>
                 )}
@@ -742,7 +800,42 @@ export default function DashboardPage() {
 
         <Separator />
 
-        {/* Section 4: Governance & Compliance */}
+        {/* Section 4: Churches Analytics */}
+        <div>
+          <SectionHeader
+            title="Churches Analytics"
+            icon={Church}
+            description="Church activities, member distribution and project tracking"
+          />
+          
+          <ResponsiveGridCarousel
+            enableAutoplay={false}
+            gap="gap-6"
+          >
+            {/* Church Activities Timeline */}
+            <ChurchActivityChart 
+              data={churchChartData.churchActivities}
+              loading={churchesLoading}
+            />
+
+            {/* Members by Church */}
+            <MembersByChurchChart
+              data={churchChartData.membersByChurch}
+              loading={churchesLoading}
+              mode="churches"
+            />
+
+            {/* Projects by Church */}
+            <ProjectsByChurchChart
+              data={churchChartData.projectsByChurch}
+              loading={churchesLoading}
+            />
+          </ResponsiveGridCarousel>
+        </div>
+
+        <Separator />
+
+        {/* Section 5: Governance & Compliance */}
         <div>
           <SectionHeader
             title="Governance & Compliance"

@@ -303,9 +303,19 @@ export const departmentTranslations = {
       inactive: "Inactive",
       actions: "Actions",
       annual_budget: "Annual Budget",
+      planned_budget: "Planned Budget",
+      allocated_budget: "Allocated Budget",
+      spent_budget: "Spent Budget",
+      available_budget: "Available Budget",
+      budget_utilization: "Budget Utilization",
+      with_budget: "with budget",
+      spent_this_year: "Spent this year",
+      spent_of: "of",
       trend: {
         vs_previous_month: "vs. previous month",
-        vs_previous_year: "vs. previous year"
+        vs_previous_year: "vs. previous year",
+        budget_status: "budget status",
+        efficiency: "efficiency"
       }
     },
 
@@ -315,6 +325,7 @@ export const departmentTranslations = {
         updated_success: "Budget updated successfully"
       },
       table: {
+        planned: "Planned",
         headers: {
           budget_total: "Budget Total",
           spent_amount: "Spent Amount",
@@ -664,9 +675,19 @@ export const departmentTranslations = {
       inactive: "Inactief",
       actions: "Acties",
       annual_budget: "Jaarlijks Budget",
+      planned_budget: "Gepland Budget",
+      allocated_budget: "Toegewezen Budget",
+      spent_budget: "Uitgegeven Budget",
+      available_budget: "Beschikbaar Budget",
+      budget_utilization: "Budgetgebruik",
+      with_budget: "met budget",
+      spent_this_year: "Dit jaar uitgegeven",
+      spent_of: "van",
       trend: {
         vs_previous_month: "vs. vorige maand",
-        vs_previous_year: "vs. vorig jaar"
+        vs_previous_year: "vs. vorig jaar",
+        budget_status: "budgetstatus",
+        efficiency: "efficiëntie"
       }
     },
 
@@ -676,6 +697,7 @@ export const departmentTranslations = {
         updated_success: "Budget succesvol bijgewerkt"
       },
       table: {
+        planned: "Gepland",
         headers: {
           budget_total: "Budget Totaal",
           spent_amount: "Uitgegeven Bedrag",
@@ -1025,9 +1047,19 @@ export const departmentTranslations = {
       inactive: "Inativo",
       actions: "Ações",
       annual_budget: "Orçamento Anual",
+      planned_budget: "Orçamento Planejado",
+      allocated_budget: "Orçamento Alocado",
+      spent_budget: "Orçamento Gasto",
+      available_budget: "Orçamento Disponível",
+      budget_utilization: "Utilização do Orçamento",
+      with_budget: "com orçamento",
+      spent_this_year: "Gasto este ano",
+      spent_of: "de",
       trend: {
         vs_previous_month: "vs. mês anterior",
-        vs_previous_year: "vs. ano anterior"
+        vs_previous_year: "vs. ano anterior",
+        budget_status: "status do orçamento",
+        efficiency: "eficiência"
       }
     },
 
@@ -1037,6 +1069,7 @@ export const departmentTranslations = {
         updated_success: "Orçamento atualizado com sucesso"
       },
       table: {
+        planned: "Planejado",
         headers: {
           budget_total: "Orçamento Total",
           spent_amount: "Valor Gasto",

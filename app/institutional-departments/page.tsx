@@ -195,7 +195,7 @@ export default function DepartmentsPage() {
       title: tDept.common?.planned_budget || "Planned Budget",
       value: formatCurrency(kpiData.totalPlannedBudget, { compact: true }),
       icon: DollarSign,
-      subtitle: `${tDept.fields?.planned_budget || "Planned budget"} ${selectedYear}`,
+      subtitle: `${tDept.common?.planned_budget || "Planned budget"} ${selectedYear}`,
       trend: {
         value: 0,
         isPositive: true,
@@ -207,7 +207,7 @@ export default function DepartmentsPage() {
       title: tDept.common?.allocated_budget || "Allocated Budget",
       value: formatCurrency(kpiData.totalAllocatedBudget, { compact: true }),
       icon: Building2,
-      subtitle: `${tDept.fields?.allocated_budget || "Allocated budget"} ${selectedYear}`,
+      subtitle: `${tDept.common?.allocated_budget || "Allocated budget"} ${selectedYear}`,
       trend: {
         value: 0,
         isPositive: true,
