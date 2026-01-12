@@ -340,7 +340,7 @@ export const projectTranslations = {
       duplicate: "Duplicate",
       archive: "Archive",
       unarchive: "Unarchive",
-      loadingCreator: "🚀 Loading project creator..."
+      loadingCreator: "Loading project creator..."
     },
     
     // Project Details Page

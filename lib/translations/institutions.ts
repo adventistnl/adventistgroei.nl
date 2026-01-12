@@ -103,6 +103,20 @@ export const institutionTranslations = {
       createError: "Failed to create institution",
       updateError: "Failed to update institution"
     }
+    ,
+    // Analytics
+    analytics: {
+      title: "Analytics",
+      noData: "No data available",
+      churchesByRegion: {
+        title: "Churches by Region",
+        description: "Distribution across regions",
+        noData: "No church data available for this institution",
+        churchesLabel: "Churches"
+      },
+      totalChurches: "Total Churches",
+      selected: "Selected"
+    }
   },
   nl: {
     // Modal titles and descriptions

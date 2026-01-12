@@ -66,16 +66,31 @@ export function ChurchesByRegionChart({ data, loading }: ChurchesByRegionChartPr
     return config;
   }, [data, hasData]);
 
-  const [activeRegion, setActiveRegion] = React.useState(hasData ? data[0].region : "")
+  const [activeRegion, setActiveRegion] = React.useState<string>(hasData ? data[0].region : "")
 
-  const activeIndex = React.useMemo(
-    () => hasData ? data.findIndex((item) => item.region === activeRegion) : 0,
-    [activeRegion, data, hasData]
-  )
+  // Keep activeRegion in sync when data changes
+  React.useEffect(() => {
+    if (!hasData) {
+      setActiveRegion("")
+      return
+    }
+
+    setActiveRegion((prev) => {
+      if (!prev) return data[0].region
+      const exists = data.some((d) => d.region === prev)
+      return exists ? prev : data[0].region
+    })
+  }, [data, hasData])
+
+  const activeIndex = React.useMemo(() => {
+    if (!hasData) return 0
+    const idx = data.findIndex((item) => item.region === activeRegion)
+    return idx >= 0 ? idx : 0
+  }, [activeRegion, data, hasData])
   
-  const regionKeys = React.useMemo(() => hasData ? data.map((item) => item.region) : [], [data, hasData])
+  const regionKeys = React.useMemo(() => (hasData ? data.map((item) => item.region) : []), [data, hasData])
   const totalChurches = React.useMemo(
-    () => hasData ? data.reduce((sum, item) => sum + item.churches, 0) : 0,
+    () => (hasData ? data.reduce((sum, item) => sum + item.churches, 0) : 0),
     [data, hasData]
   )
 
@@ -163,7 +178,15 @@ export function ChurchesByRegionChart({ data, loading }: ChurchesByRegionChartPr
           config={chartConfig}
           className="mx-auto aspect-square w-full max-w-[300px]"
         >
-          <PieChart>
+          {totalChurches === 0 ? (
+            <div className="flex items-center justify-center h-[300px]">
+              <div className="text-center text-muted-foreground">
+                <p className="text-lg font-medium mb-2">{t('institutions.analytics.noData')}</p>
+                <p className="text-sm">{t('institutions.analytics.churchesByRegion.noData')}</p>
+              </div>
+            </div>
+          ) : (
+            <PieChart>
             <ChartTooltip
               cursor={false}
               content={<ChartTooltipContent hideLabel />}
@@ -175,11 +198,10 @@ export function ChurchesByRegionChart({ data, loading }: ChurchesByRegionChartPr
               innerRadius={60}
               strokeWidth={5}
               activeIndex={activeIndex}
-              onClick={(data) => {
-                // Allow clicking on pie sectors to select them
-                if (data && data.region) {
-                  setActiveRegion(data.region)
-                }
+              onClick={(entry: any) => {
+                // Allow clicking on pie sectors to select them. Recharts may provide several shapes.
+                const regionKey = entry?.region || entry?.payload?.region || entry?.name || entry?.payload?.name
+                if (regionKey) setActiveRegion(regionKey)
               }}
               activeShape={({
                 outerRadius = 0,
@@ -218,7 +240,7 @@ export function ChurchesByRegionChart({ data, loading }: ChurchesByRegionChartPr
                           y={(viewBox.cy || 0) + 24}
                           className="fill-muted-foreground"
                         >
-                          Churches
+                          {t('institutions.analytics.churchesByRegion.churchesLabel')}
                         </tspan>
                       </text>
                     )
@@ -226,14 +248,15 @@ export function ChurchesByRegionChart({ data, loading }: ChurchesByRegionChartPr
                 }}
               />
             </Pie>
-          </PieChart>
+            </PieChart>
+          )}
         </ChartContainer>
       </CardContent>
       <CardFooter className="flex-col gap-2 text-xs pt-4 border-t">
         {/* Minimalist footer - show selected region data */}
         <div className="w-full flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Total Churches</span>
+            <span className="text-muted-foreground">{t('institutions.analytics.totalChurches')}</span>
           </div>
           <span className="font-semibold text-gray-900">
             {totalChurches.toLocaleString()}
@@ -246,12 +269,12 @@ export function ChurchesByRegionChart({ data, loading }: ChurchesByRegionChartPr
               className="w-2 h-2 rounded-full" 
               style={{ backgroundColor: data?.[activeIndex]?.fill }}
             ></div>
-            <span className="text-muted-foreground">Selected: {data?.[activeIndex]?.name}</span>
+            <span className="text-muted-foreground">{t('institutions.analytics.selected')}: {data?.[activeIndex]?.name}</span>
           </div>
           <span className="font-medium">
             {data?.[activeIndex]?.churches.toLocaleString()} churches
             <span className="text-muted-foreground ml-1">
-              ({Math.round(((data?.[activeIndex]?.churches || 0) / totalChurches) * 100)}%)
+              ({totalChurches > 0 ? Math.round(((data?.[activeIndex]?.churches || 0) / totalChurches) * 100) : 0}%)
             </span>
           </span>
         </div>

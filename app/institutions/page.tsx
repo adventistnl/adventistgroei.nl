@@ -24,7 +24,9 @@ import {
   Home,
   Layers,
   DollarSign,
-  ChevronRight
+  ChevronRight,
+  Building2,
+  Map
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -39,9 +41,15 @@ import { cn } from "@/lib/utils"
 // Components - Lazy load heavy components
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
+import { GridContainer } from "@/components/shared/grid-container"
 import { UseTable } from "@/components/ui/use-table"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { EntityInfoCard, EntityInfoCardAction } from "@/components/shared/entity-info-card"
+
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { UserStructureGrowthChart, UsersByStructureOverviewChart } from "@/components/charts/dashboard"
+import { HierarchicalStructureCard } from "@/components/charts/dashboard/hierarchical-structure-card"
+import { allUsers, allInstitutions, allDepartments, allRegions, allChurches } from "@/data/usersData"
 
 // Lazy load modals
 const ContactViewEditModal = React.lazy(() => import("@/components/modals/contact").then(module => ({ default: module.ContactViewEditModal })))
@@ -177,6 +185,26 @@ export default function InstitutionsPage() {
     title: pageTitle,
     showBreadcrumbsInHeader: true
   })
+
+  // Local filter state used by charts/tabs
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const [activeTab, setActiveTab] = useState<string>("structure-chart")
+
+  const kpis = React.useMemo(() => {
+    const institutionDepartments = allDepartments.filter(d => !d.church_id && !d.is_deleted).length
+    const churchDepartments = allDepartments.filter(d => d.church_id && !d.is_deleted).length
+    const filteredChurches = allChurches.filter(c => !c.is_deleted)
+
+    return {
+      totalInstitutions: allInstitutions.length,
+      totalRegions: allRegions.filter(r => !r.is_deleted).length,
+      activeChurches: filteredChurches.length,
+      totalDepartments: institutionDepartments + churchDepartments,
+      institutionDepartments,
+      churchDepartments,
+      totalUsers: allUsers.filter(u => !u.is_deleted).length
+    }
+  }, [allInstitutions, allRegions, allChurches, allDepartments, allUsers, selectedYear])
 
   // Refresh handler
   const handleRefresh = async () => {
@@ -651,11 +679,103 @@ export default function InstitutionsPage() {
         <Separator />
 
         {/* Charts Section */}
+
+           <GridContainer
+            items={[
+              {
+                id: "UserStructureGrowthChart-full-width",
+                component: (
+                  <UserStructureGrowthChart
+                    loading={isLoading}
+                    users={allUsers}
+                    departments={allDepartments}
+                    regions={allRegions}
+                    churches={allChurches}
+                    selectedYear={selectedYear}
+                  />
+                ),
+                colSpan: "col-span-12 lg:col-span-8",
+              },
+              {
+                id: "structure-tabs-panel",
+                component: (
+                  <div className="space-y-4 h-full flex flex-col">
+                    {/* Tabs - Chart vs Info */}
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="structure-chart" className="gap-2">
+                          <Building2 className="w-4 h-4" />
+                          Chart
+                        </TabsTrigger>
+                        <TabsTrigger value="structure-info" className="gap-2">
+                          <Map className="w-4 h-4" />
+                          Info
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+
+                    {/* Content based on active tab */}
+                    <div className="flex-1 min-h-0">
+                      {activeTab === "structure-chart" ? (
+                        <UsersByStructureOverviewChart
+                          loading={isLoading}
+                          users={allUsers}
+                          institutions={allInstitutions}
+                          departments={allDepartments}
+                          regions={allRegions}
+                          churches={allChurches}
+                        />
+                      ) : (
+                        <HierarchicalStructureCard
+                          title="Hierarchical Structure"
+                          description="The institutional structure follows a clear hierarchy"
+                          icon={Map}
+                          loading={isLoading}
+                          levels={[
+                          {
+                            title: 'Institution Level',
+                            icon: Building2,
+                            description: `${kpis.totalInstitutions} institution(s) with ${kpis.institutionDepartments} department(s)`,
+                            details: 'Top-level organizational units managing all operations',
+                            borderColor: 'border-primary/30',
+                            indent: 0
+                          },
+                          {
+                            title: 'Regions',
+                            icon: Map,
+                            description: `${kpis.totalRegions} region(s) managing ${kpis.activeChurches} churches`,
+                            details: 'Geographic divisions containing provinces and churches',
+                            borderColor: 'border-blue-500/30',
+                            indent: 1
+                          },
+                          {
+                            title: 'Churches',
+                            icon: Church,
+                            description: `${kpis.activeChurches} active churches with ${kpis.churchDepartments} departments`,
+                            details: 'Local congregations with specialized ministry departments',
+                            borderColor: 'border-green-500/30',
+                            indent: 2
+                          }
+                        ]}
+                        footer={
+                          <div className="p-3 bg-muted/30 rounded-lg">
+                            <div className="text-xs font-medium mb-1">Hierarchy Flow:</div>
+                            <div className="text-xs text-muted-foreground font-mono">
+                              Institution → Regions → Provinces → Churches → Departments
+                            </div>
+                          </div>
+                        }
+                      />
+                    )}
+                    </div>
+                  </div>
+                ),
+                colSpan: "col-span-12 lg:col-span-4",
+              },
+            ]}
+            gap="lg"
+          />
           <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
-            <DepartmentActivityChart
-              departments={displayedInstitution?.departments || []}
-              loading={isLoading}
-            />
             <UsersByRoleChart
               data={displayedInstitution?.institutionChartsData?.usersByRole}
               monthlyUserGrowth={displayedInstitution?.institutionChartsData?.monthlyUserGrowth}
