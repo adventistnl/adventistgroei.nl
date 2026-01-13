@@ -23,6 +23,7 @@ import { AddSubsidyModal, SubsidyFormData } from "@/components/modals/project/ad
 import { EditSubsidyModal, EditSubsidyFormData } from "@/components/modals/project/edit-subsidy-modal"
 import { DeleteSubsidyModal } from "@/components/modals/project/delete-subsidy-modal"
 import { DeleteProjectModal } from "@/components/modals/project/delete-project-modal"
+import { ProjectExpiredModal } from "@/components/projects/project-expired-modal"
 // View subsidy modal is handled internally by SubsidyRequestsContainer
 import { DeleteSubsidyRequestModal } from "@/components/modals/project/delete-subsidy-request-modal"
 import { AddActivityModal, ActivityFormData } from "@/components/modals/project/add-activity-modal"
@@ -156,6 +157,7 @@ export default function ProjectDetailsPage() {
   // Modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteProjectModalOpen, setIsDeleteProjectModalOpen] = useState(false)
+  const [isExpiredModalOpen, setIsExpiredModalOpen] = useState(false)
   const [isEventModalOpen, setIsEventModalOpen] = useState(false)
   const [isCommunicationModalOpen, setIsCommunicationModalOpen] = useState(false)
   const [isAddSubsidyModalOpen, setIsAddSubsidyModalOpen] = useState(false)
@@ -368,17 +370,6 @@ export default function ProjectDetailsPage() {
 
   // Transform backend project to ProjectTableData format
   const transformProjectData = (backendProject: any): ProjectTableData => {
-    const now = new Date()
-    const startDate = new Date(backendProject.start_at)
-    const endDate = new Date(backendProject.end_at)
-
-    let status: "active" | "upcoming" | "completed" = "upcoming"
-    if (startDate <= now && endDate >= now) {
-      status = "active"
-    } else if (endDate < now) {
-      status = "completed"
-    }
-
     return {
       id: backendProject.id,
       department_id: backendProject.department_id,
@@ -394,7 +385,7 @@ export default function ProjectDetailsPage() {
       // Names for display
       institutionName: backendProject.Institution?.name || "",
       departmentName: backendProject.department?.name || "",
-      status: status,
+      status: backendProject.status || 'DRAFT', // Use status from backend
       is_event: !!backendProject.event_id,
       type: backendProject.type,
       eventId: backendProject.event_id,
@@ -409,6 +400,11 @@ export default function ProjectDetailsPage() {
     if (projectData?.project) {
       const transformedProject = transformProjectData(projectData.project)
       setProject(transformedProject)
+      
+      // Show expired modal if project is expired
+      if (projectData.project.status === 'EXPIRED') {
+        setIsExpiredModalOpen(true)
+      }
 
       // Debug: Log project institution_id
       console.log('🏢 Project Data:', projectData.project)
@@ -1604,7 +1600,7 @@ export default function ProjectDetailsPage() {
           onCreateEvent={handleCreateEvent}
           onCreateCommunication={handleCreateCommunication}
           users={projectUsers}
-
+          onRefetch={refetchProject}
         />
 
         {/* KPI Cards */}
@@ -1761,6 +1757,19 @@ export default function ProjectDetailsPage() {
             documents: 0 // TODO: Adicionar contagem de documentos quando disponível
           } : null}
         />
+
+        {project && (
+          <ProjectExpiredModal
+            isOpen={isExpiredModalOpen}
+            onClose={() => setIsExpiredModalOpen(false)}
+            projectTitle={project.title}
+            endDate={project.end_at}
+            onExtendDate={() => {
+              setIsExpiredModalOpen(false)
+              setIsEditModalOpen(true)
+            }}
+          />
+        )}
         
         <CreateEventModal
           isOpen={isEventModalOpen}

@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
+import { useMutation } from "@apollo/client"
 import {
   ArrowLeft,
   MoreVertical,
@@ -15,6 +16,8 @@ import {
   Plus,
   DollarSign,
   UserPlus,
+  ChevronDown,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -25,6 +28,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { projectTranslations } from "@/lib/translations/projects"
@@ -33,6 +43,9 @@ import { mockDepartments } from "@/data/mockData"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
 import { UserListModal } from "@/components/shared/user-list-modal"
 import { useCurrency } from "@/contexts/currency-context"
+import { useToast } from "@/hooks/use-toast"
+import { UPDATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
+import { ProjectStatus } from "@/types/graphql-global-types"
 
 interface ProjectHeaderMinimalProps {
   project: ProjectTableData
@@ -64,8 +77,8 @@ interface ProjectHeaderMinimalProps {
   }>
   /** Users registered in the project */
   users?: UserAvatarData[]
-  /** Callback when adding new users to the project - REMOVED */
-  // onAddUser?: () => void
+  /** Callback to refetch project data after status update */
+  onRefetch?: () => void
 }
 
 export function ProjectHeaderMinimal({
@@ -78,21 +91,93 @@ export function ProjectHeaderMinimal({
   funding,
   fundingPolicies: fundingPoliciesProp,
   users = [],
-  // onAddUser,
+  onRefetch,
 }: ProjectHeaderMinimalProps) {
   const router = useRouter()
   const { i18n } = useTranslation()
   const { formatCurrency } = useCurrency()
+  const { toast } = useToast()
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
   const [isUserListModalOpen, setIsUserListModalOpen] = React.useState(false)
 
-  // Monochromatic status appearance
+  // Mutation for updating project status
+  const [updateProjectStatus, { loading: isUpdatingStatus }] = useMutation(UPDATE_PROJECT_MUTATION, {
+    onCompleted: () => {
+      toast({
+        title: t.common.save,
+        description: t.status?.statusUpdated || 'Status updated successfully',
+      })
+      onRefetch?.()
+    },
+    onError: (error) => {
+      const errorCode = (error.graphQLErrors?.[0]?.extensions?.additional as any)?.errorCode
+      let errorMessage = error.message
+      
+      if (errorCode === 'PROJECT_IS_CONCLUDED') {
+        errorMessage = t.status?.cannotModifyConcluded || 'Cannot modify a concluded project'
+      } else if (errorCode === 'PROJECT_HAS_INCOMPLETE_ACTIVITIES') {
+        errorMessage = t.status?.incompleteActivities || 'All activities must be completed'
+      } else if (errorCode === 'PROJECT_HAS_UNVALIDATED_DOCUMENTS') {
+        errorMessage = t.status?.unvalidatedDocuments || 'All documents must be validated'
+      } else if (errorCode === 'PROJECT_HAS_OPEN_SUBSIDIES') {
+        errorMessage = t.status?.openSubsidies || 'All subsidies must be closed'
+      }
+      
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      })
+    },
+  })
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (newStatus === project.status) return
+    
+    await updateProjectStatus({
+      variables: {
+        id: project.id,
+        status: newStatus,
+      },
+    })
+  }
+
+  // Available statuses for selection
+  // EXPIRED is included for display but the dropdown will be disabled for expired projects
+  const availableStatuses = [
+    ProjectStatus.Draft,
+    ProjectStatus.InProgress,
+    ProjectStatus.InReview,
+    ProjectStatus.OnHold,
+    ProjectStatus.Expired,
+    ProjectStatus.Concluded,
+  ]
+
+  // Check if project is concluded or expired (read-only for concluded, warning for expired)
+  const isConcluded = project.status === 'CONCLUDED'
+  const isExpired = project.status === 'EXPIRED'
+
+  // Status colors for backend statuses
   const statusColors: Record<string, string> = {
-    planned: "bg-gray-50 text-gray-900 border-gray-200",
-    active: "bg-gray-50 text-gray-900 border-gray-200",
-    upcoming: "bg-gray-50 text-gray-900 border-gray-200",
-    completed: "bg-gray-50 text-gray-900 border-gray-200",
-    cancelled: "bg-gray-50 text-gray-900 border-gray-200",
+    DRAFT: "bg-gray-50 text-gray-900 border-gray-200",
+    IN_PROGRESS: "bg-green-50 text-green-900 border-green-200",
+    IN_REVIEW: "bg-blue-50 text-blue-900 border-blue-200",
+    ON_HOLD: "bg-amber-50 text-amber-900 border-amber-200",
+    EXPIRED: "bg-red-50 text-red-900 border-red-200",
+    CONCLUDED: "bg-slate-50 text-slate-900 border-slate-200",
+  }
+
+  // Get status label from translations
+  const getStatusLabel = (status: string): string => {
+    const statusLabels: Record<string, string> = {
+      DRAFT: t.status?.draft || 'Draft',
+      IN_PROGRESS: t.status?.inProgress || 'In Progress',
+      IN_REVIEW: t.status?.inReview || 'In Review',
+      ON_HOLD: t.status?.onHold || 'On Hold',
+      EXPIRED: t.status?.expired || 'Expired',
+      CONCLUDED: t.status?.concluded || 'Concluded',
+    }
+    return statusLabels[status] || status
   }
 
   const getDepartmentName = (departmentId: string) => {
@@ -272,10 +357,52 @@ export function ProjectHeaderMinimal({
           {project.description && (
             <p className="text-muted-foreground mb-3">{project.description}</p>
           )}
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline" className={cn("capitalize", statusColors[project.status])}>
-              {t.filters[project.status as keyof typeof t.filters] || project.status}
-            </Badge>
+          <div className="flex flex-wrap gap-2 items-center">
+            {/* Status Dropdown */}
+            <Select
+              value={project.status}
+              onValueChange={handleStatusChange}
+              disabled={isConcluded || isUpdatingStatus}
+            >
+              <SelectTrigger 
+                className={cn(
+                  "w-auto min-w-[140px] h-8 text-sm",
+                  statusColors[project.status] || statusColors.DRAFT,
+                  isConcluded && "opacity-60 cursor-not-allowed"
+                )}
+              >
+                {isUpdatingStatus ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <SelectValue placeholder={getStatusLabel(project.status)} />
+                )}
+              </SelectTrigger>
+              <SelectContent>
+                {availableStatuses.map((status) => (
+                  <SelectItem 
+                    key={status} 
+                    value={status}
+                    className={cn(
+                      "cursor-pointer",
+                      project.status === status && "font-medium"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={cn(
+                        "w-2 h-2 rounded-full",
+                        status === 'DRAFT' && "bg-gray-500",
+                        status === 'IN_PROGRESS' && "bg-green-500",
+                        status === 'IN_REVIEW' && "bg-blue-500",
+                        status === 'ON_HOLD' && "bg-amber-500",
+                        status === 'EXPIRED' && "bg-red-500",
+                        status === 'CONCLUDED' && "bg-slate-500",
+                      )} />
+                      {getStatusLabel(status)}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Badge variant="outline">
               {getDepartmentName(project.department_id)}
             </Badge>
