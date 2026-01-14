@@ -62,27 +62,18 @@ export function ProjectHeader({
     return department?.name || "Unknown Department"
   }
 
+  // Get status display configuration based on backend status
   const getProjectStatus = (project: ProjectTableData) => {
-    const now = new Date()
-    const start = new Date(project.start_at)
-    const end = new Date(project.end_at)
+    const statusConfig: Record<string, { text: string; className: string }> = {
+      DRAFT: { text: t.status?.draft || 'Draft', className: "bg-gray-100 text-gray-700 border-gray-200" },
+      IN_PROGRESS: { text: t.status?.inProgress || 'In Progress', className: "bg-green-100 text-green-700 border-green-200" },
+      IN_REVIEW: { text: t.status?.inReview || 'In Review', className: "bg-blue-100 text-blue-700 border-blue-200" },
+      ON_HOLD: { text: t.status?.onHold || 'On Hold', className: "bg-amber-100 text-amber-700 border-amber-200" },
+      EXPIRED: { text: t.status?.expired || 'Expired', className: "bg-red-100 text-red-700 border-red-200" },
+      CONCLUDED: { text: t.status?.concluded || 'Concluded', className: "bg-slate-100 text-slate-700 border-slate-200" },
+    }
     
-    if (now < start) {
-      return { 
-        text: t.upcoming, 
-        className: "bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" 
-      }
-    }
-    if (now > end) {
-      return { 
-        text: t.completed, 
-        className: "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200" 
-      }
-    }
-    return { 
-      text: t.active, 
-      className: "bg-green-100 text-green-700 border-green-200 hover:bg-green-200" 
-    }
+    return statusConfig[project.status] || statusConfig.DRAFT
   }
 
   const handleBack = () => {

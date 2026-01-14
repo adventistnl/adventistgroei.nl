@@ -3415,6 +3415,15 @@ export enum ProjectType {
   Local = 'Local'
 }
 
+export enum ProjectStatus {
+  Draft = 'DRAFT',
+  InProgress = 'IN_PROGRESS',
+  InReview = 'IN_REVIEW',
+  OnHold = 'ON_HOLD',
+  Expired = 'EXPIRED',
+  Concluded = 'CONCLUDED'
+}
+
 export type ProjectUpdateDto = {
   activities?: InputMaybe<Array<ProjectActivityUpdateDto>>;
   balance?: InputMaybe<Scalars['Float']['input']>;

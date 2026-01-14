@@ -96,6 +96,7 @@ export const UPDATE_PROJECT_MUTATION = gql`
     $subsidized_budget: Float
     $balance: Float
     $type: ProjectType
+    $status: ProjectStatus
     $start_at: String
     $end_at: String
     $language_preference: LanguagePreference
@@ -116,6 +117,7 @@ export const UPDATE_PROJECT_MUTATION = gql`
         subsidized_budget: $subsidized_budget
         balance: $balance
         type: $type
+        status: $status
         start_at: $start_at
         end_at: $end_at
         language_preference: $language_preference
@@ -134,6 +136,7 @@ export const UPDATE_PROJECT_MUTATION = gql`
       subsidized_budget
       balance
       type
+      status
       is_private
       required_volunteers
       start_at

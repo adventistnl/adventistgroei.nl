@@ -53,7 +53,7 @@ export interface ProjectTableData {
   // Names for display
   institutionName?: string
   departmentName?: string
-  status: "active" | "upcoming" | "completed"
+  status: string  // ProjectStatus from backend (DRAFT, IN_PROGRESS, etc.)
   subsidyRequests?: number
   subsidyAmount?: number
   activities?: number
@@ -140,22 +140,34 @@ export function ProjectsTable({
   }
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      active: { 
-        label: t.active, 
-        className: "bg-green-100 text-green-700 border-green-200 hover:bg-green-200" 
+    const statusConfig: Record<string, { label: string; className: string }> = {
+      DRAFT: { 
+        label: t.status?.draft || 'Draft', 
+        className: "bg-gray-100 text-gray-700 border-gray-200" 
       },
-      upcoming: { 
-        label: t.upcoming, 
-        className: "bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" 
+      IN_PROGRESS: { 
+        label: t.status?.inProgress || 'In Progress', 
+        className: "bg-green-100 text-green-700 border-green-200" 
       },
-      completed: { 
-        label: t.completed, 
-        className: "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200" 
-      }
+      IN_REVIEW: { 
+        label: t.status?.inReview || 'In Review', 
+        className: "bg-blue-100 text-blue-700 border-blue-200" 
+      },
+      ON_HOLD: { 
+        label: t.status?.onHold || 'On Hold', 
+        className: "bg-amber-100 text-amber-700 border-amber-200" 
+      },
+      EXPIRED: { 
+        label: t.status?.expired || 'Expired', 
+        className: "bg-red-100 text-red-700 border-red-200" 
+      },
+      CONCLUDED: { 
+        label: t.status?.concluded || 'Concluded', 
+        className: "bg-slate-100 text-slate-700 border-slate-200" 
+      },
     }
     
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.active
+    const config = statusConfig[status] || statusConfig.DRAFT
     return (
       <Badge variant="outline" className={config.className}>
         {config.label}

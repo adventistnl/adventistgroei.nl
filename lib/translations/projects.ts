@@ -660,6 +660,27 @@ export const projectTranslations = {
     upcoming: "Upcoming", 
     completed: "Completed",
     
+    // Status object for ProjectStatusBadge
+    status: {
+      draft: "Draft",
+      inProgress: "In Progress",
+      inReview: "In Review",
+      onHold: "On Hold",
+      expired: "Expired",
+      concluded: "Concluded",
+      // Expired modal
+      expiredModalTitle: "Project Expired",
+      expiredModalDescription: "This project has passed its end date. Please extend the date or conclude the project.",
+      extendDate: "Extend End Date",
+      concludeProject: "Conclude Project",
+      // Errors
+      cannotModifyConcluded: "Cannot modify a concluded project",
+      incompleteActivities: "All activities must be completed",
+      unvalidatedDocuments: "All documents must be validated",
+      openSubsidies: "All subsidies must be closed",
+      statusUpdated: "Status updated successfully",
+    },
+    
     // Project types
     public: "Public",
     private: "Private",
@@ -1473,6 +1494,27 @@ export const projectTranslations = {
     upcoming: "Aankomend",
     completed: "Voltooid",
     
+    // Status object for ProjectStatusBadge
+    status: {
+      draft: "Concept",
+      inProgress: "In Uitvoering",
+      inReview: "In Beoordeling",
+      onHold: "In Wacht",
+      expired: "Verlopen",
+      concluded: "Afgerond",
+      // Expired modal
+      expiredModalTitle: "Project Verlopen",
+      expiredModalDescription: "Dit project heeft de einddatum overschreden. Verleng de datum of sluit het project af.",
+      extendDate: "Einddatum Verlengen",
+      concludeProject: "Project Afsluiten",
+      // Errors
+      cannotModifyConcluded: "Kan een afgerond project niet wijzigen",
+      incompleteActivities: "Alle activiteiten moeten voltooid zijn",
+      unvalidatedDocuments: "Alle documenten moeten gevalideerd zijn",
+      openSubsidies: "Alle subsidies moeten afgesloten zijn",
+      statusUpdated: "Status succesvol bijgewerkt",
+    },
+    
     // Project types
     public: "Openbaar",
     private: "Privé",
@@ -2237,6 +2279,25 @@ export const projectTranslations = {
     active: "Ativo",
     upcoming: "Futuro", 
     completed: "Concluído",
+    
+    // Status object for type consistency (using EN as PT is not used)
+    status: {
+      draft: "Draft",
+      inProgress: "In Progress",
+      inReview: "In Review",
+      onHold: "On Hold",
+      expired: "Expired",
+      concluded: "Concluded",
+      expiredModalTitle: "Project Expired",
+      expiredModalDescription: "This project has passed its end date.",
+      extendDate: "Extend End Date",
+      concludeProject: "Conclude Project",
+      cannotModifyConcluded: "Cannot modify a concluded project",
+      incompleteActivities: "All activities must be completed",
+      unvalidatedDocuments: "All documents must be validated",
+      openSubsidies: "All subsidies must be closed",
+      statusUpdated: "Status updated successfully",
+    },
     
     // Project types
     public: "Público",
