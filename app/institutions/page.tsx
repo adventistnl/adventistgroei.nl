@@ -47,9 +47,8 @@ import { StatusBadge } from "@/components/ui/status-badge"
 import { EntityInfoCard, EntityInfoCardAction } from "@/components/shared/entity-info-card"
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { UserStructureGrowthChart, UsersByStructureOverviewChart } from "@/components/charts/dashboard"
+import { UsersByStructureOverviewChart } from "@/components/charts/dashboard"
 import { HierarchicalStructureCard } from "@/components/charts/dashboard/hierarchical-structure-card"
-import { allUsers, allInstitutions, allDepartments, allRegions, allChurches } from "@/data/usersData"
 
 // Lazy load modals
 const ContactViewEditModal = React.lazy(() => import("@/components/modals/contact").then(module => ({ default: module.ContactViewEditModal })))
@@ -61,6 +60,7 @@ const RegisterInstitutionModal = React.lazy(() => import("@/components/modals/in
 const DepartmentActivityChart = React.lazy(() => import("@/components/institutions/charts").then(module => ({ default: module.DepartmentActivityChart })))
 const UsersByRoleChart = React.lazy(() => import("@/components/institutions/charts").then(module => ({ default: module.UsersByRoleChart })))
 const ChurchesByRegionChart = React.lazy(() => import("@/components/institutions/charts").then(module => ({ default: module.ChurchesByRegionChart })))
+const UserDistributionByEntityChart = React.lazy(() => import("@/components/institutions/charts").then(module => ({ default: module.UserDistributionByEntityChart })))
 
 import { Institutions_institutions } from "@/types/Institutions"
 import { useInstitution } from "@/contexts/institution-context"
@@ -187,24 +187,34 @@ export default function InstitutionsPage() {
   })
 
   // Local filter state used by charts/tabs
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const [activeTab, setActiveTab] = useState<string>("structure-chart")
 
   const kpis = React.useMemo(() => {
-    const institutionDepartments = allDepartments.filter(d => !d.church_id && !d.is_deleted).length
-    const churchDepartments = allDepartments.filter(d => d.church_id && !d.is_deleted).length
-    const filteredChurches = allChurches.filter(c => !c.is_deleted)
+    if (!displayedInstitution) return {
+      totalInstitutions: 0,
+      totalRegions: 0,
+      activeChurches: 0,
+      totalDepartments: 0,
+      institutionDepartments: 0,
+      churchDepartments: 0,
+      totalUsers: 0
+    }
+
+    const institutionDepartments = displayedInstitution.departments?.filter((d: any) => !d.church_id && !d.is_deleted).length || 0
+    const churchDepartments = displayedInstitution.departments?.filter((d: any) => d.church_id && !d.is_deleted).length || 0
+    const activeChurches = displayedInstitution.churches?.filter((c: any) => !c.is_deleted).length || 0
+    const activeRegions = displayedInstitution.regions?.filter((r: any) => !r.is_deleted).length || 0
 
     return {
-      totalInstitutions: allInstitutions.length,
-      totalRegions: allRegions.filter(r => !r.is_deleted).length,
-      activeChurches: filteredChurches.length,
+      totalInstitutions: 1,
+      totalRegions: activeRegions,
+      activeChurches,
       totalDepartments: institutionDepartments + churchDepartments,
       institutionDepartments,
       churchDepartments,
-      totalUsers: allUsers.filter(u => !u.is_deleted).length
+      totalUsers: displayedInstitution.users?.filter((u: any) => !u.is_deleted).length || 0
     }
-  }, [allInstitutions, allRegions, allChurches, allDepartments, allUsers, selectedYear])
+  }, [displayedInstitution])
 
   // Refresh handler
   const handleRefresh = async () => {
@@ -683,16 +693,14 @@ export default function InstitutionsPage() {
            <GridContainer
             items={[
               {
-                id: "UserStructureGrowthChart-full-width",
+                id: "UserDistributionByEntityChart-full-width",
                 component: (
-                  <UserStructureGrowthChart
-                    loading={isLoading}
-                    users={allUsers}
-                    departments={allDepartments}
-                    regions={allRegions}
-                    churches={allChurches}
-                    selectedYear={selectedYear}
-                  />
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <UserDistributionByEntityChart
+                      institutionData={displayedInstitution}
+                      loading={isLoading}
+                    />
+                  </Suspense>
                 ),
                 colSpan: "col-span-12 lg:col-span-8",
               },
@@ -719,47 +727,47 @@ export default function InstitutionsPage() {
                       {activeTab === "structure-chart" ? (
                         <UsersByStructureOverviewChart
                           loading={isLoading}
-                          users={allUsers}
-                          institutions={allInstitutions}
-                          departments={allDepartments}
-                          regions={allRegions}
-                          churches={allChurches}
+                          users={displayedInstitution?.users || []}
+                          institutions={[displayedInstitution].filter(Boolean)}
+                          departments={displayedInstitution?.departments || []}
+                          regions={displayedInstitution?.regions || []}
+                          churches={displayedInstitution?.churches || []}
                         />
                       ) : (
                         <HierarchicalStructureCard
-                          title="Hierarchical Structure"
-                          description="The institutional structure follows a clear hierarchy"
+                          title={t('institutions.analytics.hierarchyTitle') || "Hierarchical Structure"}
+                          description={t('institutions.analytics.hierarchyDescription') || "The institutional structure follows a clear hierarchy"}
                           icon={Map}
                           loading={isLoading}
                           levels={[
                           {
-                            title: 'Institution Level',
+                            title: t('institutions.analytics.institutionLevel') || 'Institution Level',
                             icon: Building2,
-                            description: `${kpis.totalInstitutions} institution(s) with ${kpis.institutionDepartments} department(s)`,
-                            details: 'Top-level organizational units managing all operations',
+                            description: `${kpis.totalInstitutions} ${t('institutions.analytics.institutionsWith')} ${kpis.institutionDepartments} ${t('institutions.analytics.departments')}`,
+                            details: t('institutions.analytics.institutionDetails') || 'Top-level organizational units managing all operations',
                             borderColor: 'border-primary/30',
                             indent: 0
                           },
                           {
-                            title: 'Regions',
+                            title: t('regions.title') || 'Regions',
                             icon: Map,
-                            description: `${kpis.totalRegions} region(s) managing ${kpis.activeChurches} churches`,
-                            details: 'Geographic divisions containing provinces and churches',
+                            description: `${kpis.totalRegions} ${t('institutions.analytics.regionsManaging')} ${kpis.activeChurches} ${t('churches.title')}`,
+                            details: t('institutions.analytics.regionsDetails') || 'Geographic divisions containing provinces and churches',
                             borderColor: 'border-blue-500/30',
                             indent: 1
                           },
                           {
-                            title: 'Churches',
+                            title: t('churches.title') || 'Churches',
                             icon: Church,
-                            description: `${kpis.activeChurches} active churches with ${kpis.churchDepartments} departments`,
-                            details: 'Local congregations with specialized ministry departments',
+                            description: `${kpis.activeChurches} ${t('institutions.analytics.activeChurches')} ${t('institutions.analytics.with')} ${kpis.churchDepartments} ${t('institutions.analytics.departments')}`,
+                            details: t('institutions.analytics.churchesDetails') || 'Local congregations with specialized ministry departments',
                             borderColor: 'border-green-500/30',
                             indent: 2
                           }
                         ]}
                         footer={
                           <div className="p-3 bg-muted/30 rounded-lg">
-                            <div className="text-xs font-medium mb-1">Hierarchy Flow:</div>
+                            <div className="text-xs font-medium mb-1">{t('institutions.analytics.hierarchyFlow') || "Hierarchy Flow:"}:</div>
                             <div className="text-xs text-muted-foreground font-mono">
                               Institution → Regions → Provinces → Churches → Departments
                             </div>

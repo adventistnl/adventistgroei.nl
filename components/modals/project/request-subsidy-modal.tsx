@@ -4,6 +4,7 @@ import React, { useState, useMemo, useCallback } from "react"
 import { X, Upload, FileText, DollarSign, Building2, Church, Trash2, Info, AlertCircle, Edit2, Check, Zap, ChevronRight, Plus, ChevronsUpDown, Loader2 } from "lucide-react"
 import { useSubsidyReceipts } from "@/hooks/use-subsidy-receipts"
 import { ValidationBadgesCarousel, type ValidationBadgeData } from "@/components/shared/validation-badges-carousel"
+import { SubsidyValidationInfo } from "./subsidy-validation-info"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -717,36 +718,22 @@ export function RequestSubsidyModal({
         {/* Main Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           
-          {/* Descriptive Text - Click to Expand */}
-          <div className="space-y-2">
-            <button
-              onClick={() => {
-                const content = document.getElementById('subsidy-info-content')
-                if (content) {
-                  content.classList.toggle('hidden')
-                }
-              }}
-              className="w-full flex items-center gap-2 p-2 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all cursor-pointer"
-            >
-              <Info className="w-4 h-4 text-gray-500 flex-shrink-0" />
-              <span className="text-xs font-medium text-gray-700">{translations.about.title}</span>
-            </button>
-            
-            <div id="subsidy-info-content" className="hidden px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
-              <div className="text-xs text-gray-600 leading-relaxed space-y-2">
-                <p className="font-medium text-gray-900">{translations.about.howItWorks}</p>
-                <p>{translations.about.description}</p>
-                <p dangerouslySetInnerHTML={{ __html: translations.about.distribution }} />
-              </div>
-            </div>
-          </div>
-
-          {/* Validation Badges - Moved here from Activity Navigation */}
-          <ValidationBadgesCarousel
+          {/* Subsidy Validation Info - New Component */}
+          <SubsidyValidationInfo
             badges={getValidationBadges(currentItem)}
-            showCarousel={true}
-            minBadgesForCarousel={4}
-            className="mb-3"
+            isValid={validateActivity(currentItem).isComplete}
+            translations={{
+              title: translations.about.title,
+              howItWorks: translations.about.howItWorks,
+              description: translations.about.description,
+              distribution: translations.about.distribution,
+              status: {
+                complete: translations.status.completed,
+                pending: translations.status.pendingValidation,
+                issues: translations.validation.documentsRequired
+              }
+            }}
+            initiallyExpanded={false}
           />
           
           {/* Activity Navigation */}

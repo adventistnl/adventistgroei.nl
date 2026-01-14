@@ -249,8 +249,8 @@ function ProjectRegisterContent() {
       toast.success(translations.toast.projectCreated, {
         duration: 3000
       })
-      // Navigate back to projects page
-      router.push('/projects')
+      // Navigate back to projects page with refresh parameter
+      router.push('/projects?refresh=true')
     },
     onError: (error) => {
       console.error("Error creating project:", error)
@@ -328,8 +328,8 @@ function ProjectRegisterContent() {
     is_private: false,
     activities: [],
     total_budget: 0,
-    church_contribution: 0,
-    institution_contribution: 0,
+    project_budget: 0,
+    request_contribution: 0,
     subsidy_percentage: 35,
     is_special_case: false,
   })
@@ -590,14 +590,14 @@ function ProjectRegisterContent() {
       .filter(act => act.is_subsidized)
       .reduce((sum, act) => sum + act.budget_amount, 0)
     
-    const institutionContribution = (subsidyBudget * formData.subsidy_percentage) / 100
-    const churchContribution = totalBudget - institutionContribution
+    const requestContribution = (subsidyBudget * formData.subsidy_percentage) / 100
+    const projectBudget = totalBudget - requestContribution
 
     setFormData(prev => ({
       ...prev,
       total_budget: totalBudget,
-      church_contribution: churchContribution,
-      institution_contribution: institutionContribution
+      project_budget: projectBudget,
+      request_contribution: requestContribution
     }))
   }, [formData.activities, formData.subsidy_percentage])
 
@@ -622,11 +622,11 @@ function ProjectRegisterContent() {
       case 3:
         // Validate funding policies for regular projects
         if (!isSpecialProject && !isChurchPlanting) {
-          if (formData.institution_contribution > FUNDING_POLICIES.max_institution_amount) {
+          if (formData.request_contribution > FUNDING_POLICIES.max_institution_amount) {
             newErrors.funding = translations.validation.institutionExceedsAmount.replace('{{amount}}', FUNDING_POLICIES.max_institution_amount.toLocaleString())
           }
-          const institutionPercent = (formData.institution_contribution / formData.total_budget) * 100
-          if (institutionPercent > FUNDING_POLICIES.max_institution_percent) {
+          const requestPercent = (formData.request_contribution / formData.total_budget) * 100
+          if (requestPercent > FUNDING_POLICIES.max_institution_percent) {
             newErrors.funding = translations.validation.institutionExceedsPercent.replace('{{percent}}', FUNDING_POLICIES.max_institution_percent.toString())
           }
         }
@@ -923,8 +923,8 @@ function ProjectRegisterContent() {
         department_id: formData.department_id,
         institution_id: institutionId, // Add institution_id from context
         budget: formData.total_budget,
-        subsidized_budget: formData.institution_contribution,
-        balance: formData.church_contribution,
+        subsidized_budget: formData.request_contribution,
+        balance: formData.project_budget,
         type: ProjectType.Local, // Default to Local, adjust based on your needs
         start_at: new Date().toISOString(), // Use current date or get from formData
         end_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
@@ -1497,8 +1497,8 @@ function ProjectRegisterContent() {
     const currentSubsidyPercentage = formData.subsidy_percentage
     
     // Calcular contribuições baseado APENAS nas atividades subsidiadas
-    const institutionContribution = (subsidyTotal * currentSubsidyPercentage) / 100
-    const churchContribution = totalBudget - institutionContribution
+    const requestContribution = (subsidyTotal * currentSubsidyPercentage) / 100
+    const projectBudget = totalBudget - requestContribution
     
     // Handle manual entry calculations - baseado apenas no total das atividades subsidiadas
     const handleManualAmountChange = (value: number) => {
@@ -1623,16 +1623,16 @@ function ProjectRegisterContent() {
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                           <Home className="w-3 h-3 text-blue-600" />
-                          <span className="text-muted-foreground">{t('projectRegister.fundingDistribution.church')}</span>
+                          <span className="text-muted-foreground">{t('projectRegister.fundingDistribution.projectBudget')}</span>
                         </div>
-                        <span className="font-medium text-blue-600">€ {churchContribution.toLocaleString()}</span>
+                        <span className="font-medium text-blue-600">€ {projectBudget.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                           <Building className="w-3 h-3 text-green-600" />
-                          <span className="text-muted-foreground">{t('projectRegister.fundingDistribution.institution')}</span>
+                          <span className="text-muted-foreground">{t('projectRegister.fundingDistribution.requestContribution')}</span>
                         </div>
-                        <span className="font-medium text-green-600">€ {institutionContribution.toLocaleString()}</span>
+                        <span className="font-medium text-green-600">€ {requestContribution.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -1827,7 +1827,7 @@ function ProjectRegisterContent() {
                       <Badge variant="outline" className="text-xs">
                         {(translations as any).fundingCalculator?.maxPercentageRule?.replace('{{percent}}', FUNDING_POLICIES.max_institution_percent.toString()) || `Máximo ${FUNDING_POLICIES.max_institution_percent}% de contribuição`}
                       </Badge>
-                      {institutionContribution > FUNDING_POLICIES.max_institution_amount && (
+                      {requestContribution > FUNDING_POLICIES.max_institution_amount && (
                         <Badge className="text-xs bg-black text-white hover:bg-black/90">
                           ⚠️ {t('projectRegister.fundingDistribution.limitExceeded')}: {(translations as any).fundingCalculator?.limitReached || t('projectRegister.fundingDistribution.limitReachedMessage')}
                         </Badge>
@@ -2005,7 +2005,7 @@ function ProjectRegisterContent() {
                           setIsManualEntry(newIsManual)
                           // When switching to manual, populate with current slider values
                           if (newIsManual) {
-                            setManualAmount(institutionContribution)
+                            setManualAmount(requestContribution)
                             setManualPercentage(currentSubsidyPercentage)
                           }
                         }}
@@ -2019,7 +2019,7 @@ function ProjectRegisterContent() {
                         {/* Manual Amount Input */}
                         <div className="space-y-2">
                           <Label className="text-sm font-medium">
-                            {t('projectRegister.fundingDistribution.institutionContributionValue')}
+                            {t('projectRegister.fundingDistribution.requestContributionValue')}
                           </Label>
                           <div className="flex gap-2">
                             <div className="relative flex-1">
@@ -2157,28 +2157,28 @@ function ProjectRegisterContent() {
 
               {/* Detailed Results Display */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
-                {/* Church Contribution Card */}
+                {/* Project Budget Card */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div className="flex items-center gap-2">
                       <Home className="w-4 h-4 text-blue-600" />
-                      <CardTitle className="text-sm font-medium">{t('projectRegister.fundingDistribution.churchContribution')}</CardTitle>
+                      <CardTitle className="text-sm font-medium">{t('projectRegister.fundingDistribution.projectBudget')}</CardTitle>
                     </div>
                     <Tooltip>
                       <TooltipTrigger>
                         <Info className="w-3 h-3 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>{t('projectRegister.fundingDistribution.churchResponsibilityTooltip')}</p>
+                        <p>{t('projectRegister.fundingDistribution.projectBudgetTooltip')}</p>
                       </TooltipContent>
                     </Tooltip>
                   </CardHeader>
                   <CardContent>
                     <div className="text-xl sm:text-2xl font-bold text-blue-600">
-                      € {churchContribution.toLocaleString()}
+                      € {projectBudget.toLocaleString()}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {Math.round(totalBudget > 0 ? (churchContribution / totalBudget) * 100 : 0)}% {t('projectRegister.fundingDistribution.ofTotalBudget')}
+                      {Math.round(totalBudget > 0 ? (projectBudget / totalBudget) * 100 : 0)}% {t('projectRegister.fundingDistribution.ofTotalBudget')}
                     </p>
                     <div className="text-xs text-muted-foreground mt-2">
                       {t('projectRegister.fundingDistribution.includesNonSubsidized')}
@@ -2186,12 +2186,12 @@ function ProjectRegisterContent() {
                   </CardContent>
                 </Card>
                 
-                {/* Institution Contribution Card */}
+                {/* Request Contribution Card */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div className="flex items-center gap-2">
                       <Building className="w-4 h-4 text-green-600" />
-                      <CardTitle className="text-sm font-medium">{t('projectRegister.fundingDistribution.institutionContribution')}</CardTitle>
+                      <CardTitle className="text-sm font-medium">{t('projectRegister.fundingDistribution.requestContribution')}</CardTitle>
                     </div>
                     <Tooltip>
                       <TooltipTrigger>
@@ -2204,7 +2204,7 @@ function ProjectRegisterContent() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-xl sm:text-2xl font-bold text-green-600">
-                      € {institutionContribution.toLocaleString()}
+                      € {requestContribution.toLocaleString()}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {Math.round(currentSubsidyPercentage)}% {t('projectRegister.fundingDistribution.overSubsidizedActivities')}
@@ -2280,8 +2280,8 @@ function ProjectRegisterContent() {
   const renderReviewStep = () => {
     // Cálculos para os highlights
     const totalBudget = formData.total_budget
-    const churchContribution = formData.church_contribution
-    const institutionContribution = formData.institution_contribution
+    const projectBudget = formData.project_budget
+    const requestContribution = formData.request_contribution
     
     const subsidizedActivities = formData.activities.filter(a => a.request_subsidy)
     const nonSubsidizedActivities = formData.activities.filter(a => !a.request_subsidy)
@@ -2331,14 +2331,14 @@ function ProjectRegisterContent() {
                         <Home className="w-3 h-3 text-muted-foreground" />
                         <span className="text-muted-foreground">{t('projectRegister.review.church')}</span>
                       </div>
-                      <span className="font-medium text-foreground">€ {churchContribution.toLocaleString()}</span>
+                      <span className="font-medium text-foreground">€ {projectBudget.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <Building className="w-3 h-3 text-muted-foreground" />
                         <span className="text-muted-foreground">{t('projectRegister.review.institution')}</span>
                       </div>
-                      <span className="font-medium text-foreground">€ {institutionContribution.toLocaleString()}</span>
+                      <span className="font-medium text-foreground">€ {requestContribution.toLocaleString()}</span>
                     </div>
                   </div>
                   
@@ -2414,10 +2414,10 @@ function ProjectRegisterContent() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">{translations.summary.church}</p>
-                      <p className="text-2xl font-bold text-foreground">€ {churchContribution.toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-foreground">€ {projectBudget.toLocaleString()}</p>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">{Math.round((churchContribution / totalBudget) * 100)}% do total</p>
+                  <p className="text-xs text-muted-foreground">{Math.round((projectBudget / totalBudget) * 100)}% do total</p>
                 </CardContent>
               </Card>
 
@@ -2429,10 +2429,10 @@ function ProjectRegisterContent() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">{translations.summary.institution}</p>
-                      <p className="text-2xl font-bold text-foreground">€ {institutionContribution.toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-foreground">€ {requestContribution.toLocaleString()}</p>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">{Math.round((institutionContribution / totalBudget) * 100)}% do total</p>
+                  <p className="text-xs text-muted-foreground">{Math.round((requestContribution / totalBudget) * 100)}% do total</p>
                 </CardContent>
               </Card>
             </div>
@@ -2529,8 +2529,8 @@ function ProjectRegisterContent() {
                       <TrendingUp className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">{t('projectRegister.fundingDistribution.maxPercentageLabel')}</span>
                     </div>
-                    <Badge variant={isChurchPlanting || isSpecialProject || institutionContribution <= totalBudget * (FUNDING_POLICIES.max_institution_percent / 100) ? "default" : "destructive"}>
-                      {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? t('projectRegister.fundingDistribution.statusSpecial') : institutionContribution <= totalBudget * (FUNDING_POLICIES.max_institution_percent / 100) ? t('projectRegister.fundingDistribution.statusCompliant') : t('projectRegister.fundingDistribution.statusExceeded')}
+                    <Badge variant={isChurchPlanting || isSpecialProject || requestContribution <= totalBudget * (FUNDING_POLICIES.max_institution_percent / 100) ? "default" : "destructive"}>
+                      {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? t('projectRegister.fundingDistribution.statusSpecial') : requestContribution <= totalBudget * (FUNDING_POLICIES.max_institution_percent / 100) ? t('projectRegister.fundingDistribution.statusCompliant') : t('projectRegister.fundingDistribution.statusExceeded')}
                     </Badge>
                   </div>
 
@@ -2539,8 +2539,8 @@ function ProjectRegisterContent() {
                       <Banknote className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">{t('projectRegister.fundingDistribution.maxValueLabel')}</span>
                     </div>
-                    <Badge variant={isChurchPlanting || isSpecialProject || institutionContribution <= FUNDING_POLICIES.max_institution_amount ? "default" : "destructive"}>
-                       {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? t('projectRegister.fundingDistribution.statusSpecial') : institutionContribution <= FUNDING_POLICIES.max_institution_amount ? t('projectRegister.fundingDistribution.statusCompliant') : t('projectRegister.fundingDistribution.statusExceeded')}
+                    <Badge variant={isChurchPlanting || isSpecialProject || requestContribution <= FUNDING_POLICIES.max_institution_amount ? "default" : "destructive"}>
+                       {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? t('projectRegister.fundingDistribution.statusSpecial') : requestContribution <= FUNDING_POLICIES.max_institution_amount ? t('projectRegister.fundingDistribution.statusCompliant') : t('projectRegister.fundingDistribution.statusExceeded')}
                     </Badge>
                   </div>
 
@@ -2549,8 +2549,8 @@ function ProjectRegisterContent() {
                       <Home className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">{t('projectRegister.fundingDistribution.minimumChurch')}</span>
                     </div>
-                    <Badge variant={isChurchPlanting || isSpecialProject || churchContribution >= totalBudget * (FUNDING_POLICIES.min_church_percent / 100) ? "default" : "destructive"}>
-                       {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? t('projectRegister.fundingDistribution.statusSpecial') : churchContribution >= totalBudget * (FUNDING_POLICIES.min_church_percent / 100) ? t('projectRegister.fundingDistribution.statusCompliant') : t('projectRegister.fundingDistribution.statusInsufficient')}
+                    <Badge variant={isChurchPlanting || isSpecialProject || projectBudget >= totalBudget * (FUNDING_POLICIES.min_church_percent / 100) ? "default" : "destructive"}>
+                       {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? t('projectRegister.fundingDistribution.statusSpecial') : projectBudget >= totalBudget * (FUNDING_POLICIES.min_church_percent / 100) ? t('projectRegister.fundingDistribution.statusCompliant') : t('projectRegister.fundingDistribution.statusInsufficient')}
                     </Badge>
                   </div>
                 </div>
@@ -2567,14 +2567,14 @@ function ProjectRegisterContent() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t('projectRegister.fundingCalculator.subsidyRequested')}</span>
-                      <span className="font-medium text-foreground">€ {institutionContribution.toLocaleString()}</span>
+                      <span className="font-medium text-foreground">€ {requestContribution.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t('projectRegister.fundingCalculator.remainingCapacity')}</span>
                       <span className="font-medium">
                         € {Math.max(0, 
                             ((isChurchPlanting || isSpecialProject) ? totalBudget : Math.min(FUNDING_POLICIES.max_institution_amount, totalBudget * (FUNDING_POLICIES.max_institution_percent / 100))) 
-                            - institutionContribution
+                            - requestContribution
                           ).toLocaleString()}
                       </span>
                     </div>

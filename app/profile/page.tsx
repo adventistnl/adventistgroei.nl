@@ -15,8 +15,9 @@ import { AdventistLogo } from "@/components/ui/adventist-logo"
 import { useUser } from "@/hooks/use-user"
 import { UpdateUserVariables } from "@/types/UpdateUser"
 import { usePageTitle } from "@/hooks/use-page-title"
+import { LoadingSpinner } from "@/components/shared/loading-spinner"
 import "@/lib/i18n"
-import { ChevronRight } from "lucide-react"
+import { ChevronRight, Building2 } from "lucide-react"
 
 export default function ProfilePage() {
   const { t, i18n } = useTranslation()
@@ -91,36 +92,13 @@ export default function ProfilePage() {
   // Show loading state
   if (isLoading) {
     return (
-      <AppLayout>
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="text-center space-y-8 max-w-md mx-auto px-8">
-            {/* Logo centralizada */}
-            <div className="flex justify-center">
-              <div className="relative">
-                {/* Animação de loading */}
-                <div className="absolute inset-0 w-24 h-24 border-2 border-transparent border-t-primary/30 border-r-primary/20 rounded-full animate-spin"></div>
-                
-                {/* Logo */}
-                <div className="w-24 h-24 flex items-center justify-center">
-                  <AdventistLogo className="w-16 h-16 text-primary" />
-                </div>
-              </div>
-            </div>
-
-            {/* Texto */}
-            <div className="space-y-4">
-              <p className="text-lg text-muted-foreground font-medium">{t('profile.loading')}</p>
-              
-              {/* Indicador de carregamento */}
-              <div className="flex items-center justify-center space-x-1 pt-6">
-                <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                <div className="w-2 h-2 bg-primary rounded-full animate-pulse [animation-delay:0.2s]"></div>
-                <div className="w-2 h-2 bg-primary rounded-full animate-pulse [animation-delay:0.4s]"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </AppLayout>
+      <LoadingSpinner
+        text={t('profile.loading')}
+        customIcon={Building2}
+        size="lg"
+        fullScreen
+        className="space-y-6 max-w-sm mx-auto px-8"
+      />
     )
   }
 

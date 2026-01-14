@@ -6,7 +6,6 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from "
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from "recharts"
 import { Building2, TrendingUp } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useChartColors } from "@/lib/chart-colors"
 import { useTranslation } from "react-i18next"
 
 interface UsersByStructureOverviewChartProps {
