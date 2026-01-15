@@ -563,18 +563,20 @@ export function ViewSubsidyModal({
 
     // Handle document comment
     if (commentingDocument) {
-      const message: StatusHistoryItem = {
-        id: `msg-${Date.now()}`,
-        status: "in_review",
-        reason: `${t('toasts.documentCommentPrefix', { name: commentingDocument.name })}${newMessage}`,
-        changed_by: "Admin User",
-        changed_at: new Date(),
-        isNew: false
+      try {
+        const messageText = `${t('toasts.documentCommentPrefix', { name: commentingDocument.name })}${newMessage}`
+        await addSubsidyRequestMessage({
+          variables: {
+            id: subsidy?.id,
+            message: messageText
+          }
+        })
+        toast.success(t('toasts.commentAdded'))
+        setCommentingDocument(null)
+        setNewMessage("")
+      } catch (error) {
+        console.error('Error adding document comment:', error)
       }
-      setMessages(prev => [...prev, message])
-      toast.success(t('toasts.commentAdded'))
-      setCommentingDocument(null)
-      setNewMessage("")
       return
     }
 
