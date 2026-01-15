@@ -5,7 +5,7 @@ export const subsidyManagementTranslations = {
       approved: "Approved",
       rejected: "Rejected",
       closed: "Closed",
-      in_review: "In review"
+      inReview: "In review"
     },
     requestedOn: "Requested on",
     history: "History",
@@ -76,7 +76,7 @@ export const subsidyManagementTranslations = {
       approved: "Goedgekeurd",
       rejected: "Afgewezen",
       closed: "Gesloten",
-      in_review: "In beoordeling"
+      inReview: "In beoordeling"
     },
     requestedOn: "Aangevraagd op",
     history: "Geschiedenis",
