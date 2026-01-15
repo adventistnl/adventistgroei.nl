@@ -111,12 +111,16 @@ export const projectRegisterTranslations = {
       eventLanguage: "Select the primary language for the event",
       communicationType: "Choose the type of communication to send",
       scheduleDate: "When to send the communication (leave empty for immediate)",
-      churchProject: "Enable if this project is linked to a specific church"
+      churchProject: "Enable if this project is linked to a specific church",
+      department: "Select the department responsible for this project",
+      responsible: "Select the person who will be accountable for project execution",
+      noDepartmentsAvailable: "No departments with available budget. Contact administrator to unlock department budgets."
     },
     placeholders: {
       enterProjectTitle: "Enter project title",
       describeProject: "Describe the project objectives and scope",
       selectDepartment: "Select department",
+      noDepartmentsAvailable: "No departments available",
       selectResponsible: "Select responsible",
       selectResponsibilityType: "Select responsibility type",
       selectDeadline: "Select deadline",
@@ -251,6 +255,11 @@ export const projectRegisterTranslations = {
       totalItems: "{{count}} activities",
       budgetSummary: "R$ {{amount}}"
     },
+    info: {
+      noDepartmentsTitle: "No departments available",
+      noDepartmentsDescription: "Departments are currently without budget or have unlocked budgets that need administrative approval.",
+      contactAdmin: "Please contact the administrator to proceed with department selection."
+    },
     fundingCalculator: {
       title: "Funding Calculator",
       description: "Calculate subsidy distribution and funding rules",
@@ -339,6 +348,7 @@ export const projectRegisterTranslations = {
       activityTags: "Activity Tags",
       activityResponsibles: "Activity Responsibles",
       selectResponsibles: "Select responsibles...",
+      searchUser: "Search user...",
       searchUsers: "Search users...",
       noUsersFound: "No users found.",
       responsiblesDescription: "Select one or more users responsible for this activity",
@@ -563,12 +573,16 @@ export const projectRegisterTranslations = {
       eventLanguage: "Selecionar o idioma principal do evento",
       communicationType: "Escolher o tipo de comunicação a enviar",
       scheduleDate: "Quando enviar a comunicação (deixe vazio para imediato)",
-      churchProject: "Ative se este projeto for vinculado a uma igreja específica"
+      churchProject: "Ative se este projeto for vinculado a uma igreja específica",
+      department: "Selecione o departamento responsável por este projeto",
+      responsible: "Selecione a pessoa que será responsável pela execução do projeto",
+      noDepartmentsAvailable: "Nenhum departamento com orçamento disponível. Entre em contato com o administrador para desbloquear orçamentos dos departamentos."
     },
     placeholders: {
       enterProjectTitle: "Digite o título do projeto",
       describeProject: "Descreva os objetivos e escopo do projeto",
       selectDepartment: "Selecione o departamento",
+      noDepartmentsAvailable: "Nenhum departamento disponível",
       selectResponsible: "Selecione o responsável",
       selectResponsibilityType: "Selecione o tipo de responsabilidade",
       selectDeadline: "Selecione o prazo",
@@ -703,6 +717,11 @@ export const projectRegisterTranslations = {
       totalItems: "{{count}} atividades",
       budgetSummary: "R$ {{amount}}"
     },
+    info: {
+      noDepartmentsTitle: "Nenhum departamento disponível",
+      noDepartmentsDescription: "Os departamentos estão atualmente sem orçamento ou possuem orçamentos desbloqueados que necessitam aprovação administrativa.",
+      contactAdmin: "Por favor, entre em contato com o administrador para prosseguir com a seleção do departamento."
+    },
     fundingCalculator: {
       title: "Calculadora de Funding",
       description: "Calcule a distribuição de subsídios e regras de financiamento",
@@ -791,6 +810,7 @@ export const projectRegisterTranslations = {
       activityTags: "Tags da Atividade",
       activityResponsibles: "Responsáveis pela Atividade",
       selectResponsibles: "Selecionar responsáveis...",
+      searchUser: "Procurar usuário...",
       searchUsers: "Procurar usuários...",
       noUsersFound: "Nenhum usuário encontrado.",
       responsiblesDescription: "Selecione um ou mais usuários responsáveis por esta atividade",
@@ -963,12 +983,16 @@ export const projectRegisterTranslations = {
       selectChurch: "Selecteer Kerk"
     },
     tooltips: {
-      churchProject: "Schakel in als dit project aan een specifieke kerk is gekoppeld"
+      churchProject: "Schakel in als dit project aan een specifieke kerk is gekoppeld",
+      department: "Selecteer de afdeling die verantwoordelijk is voor dit project",
+      responsible: "Selecteer de persoon die verantwoordelijk zal zijn voor de uitvoering van het project",
+      noDepartmentsAvailable: "Geen afdelingen met beschikbaar budget. Neem contact op met de beheerder om afdelingsbudgetten te ontgrendelen."
     },
     placeholders: {
       enterProjectTitle: "Voer projecttitel in",
       describeProject: "Beschrijf de projectdoelstellingen en reikwijdte",
       selectDepartment: "Selecteer afdeling",
+      noDepartmentsAvailable: "Geen afdelingen beschikbaar",
       selectDeadline: "Selecteer deadline",
       addResponsiblePerson: "Voeg verantwoordelijke persoon toe",
       enterActivityName: "Voer activiteitsnaam in",
@@ -1061,6 +1085,11 @@ export const projectRegisterTranslations = {
       totalItems: "{{count}} activiteiten",
       budgetSummary: "R$ {{amount}}"
     },
+    info: {
+      noDepartmentsTitle: "Geen afdelingen beschikbaar",
+      noDepartmentsDescription: "Afdelingen hebben momenteel geen budget of hebben ontgrendelde budgetten die administratieve goedkeuring nodig hebben.",
+      contactAdmin: "Neem contact op met de beheerder om verder te gaan met afdelingsselectie."
+    },
     fundingCalculator: {
       title: "Funding Calculator",
       description: "Bereken subsidieverdeling en financieringsregels",
@@ -1137,6 +1166,7 @@ export const projectRegisterTranslations = {
       activityTags: "Activiteitstags",
       activityResponsibles: "Activiteitsverantwoordelijken",
       selectResponsibles: "Selecteer verantwoordelijken...",
+      searchUser: "Zoek gebruiker...",
       searchUsers: "Zoek gebruikers...",
       noUsersFound: "Geen gebruikers gevonden.",
       responsiblesDescription: "Selecteer één of meer gebruikers die verantwoordelijk zijn voor deze activiteit",

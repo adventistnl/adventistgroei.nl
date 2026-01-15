@@ -117,7 +117,6 @@ type Activity = ProjectActivity
 import toast from "react-hot-toast"
 import { useMutation, useQuery } from "@apollo/client"
 import { CREATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
-import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
 import { GET_ALL_USERS_QUERY } from "@/graphql/queries/GET_USER_QUERY"
 import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
@@ -262,12 +261,6 @@ function ProjectRegisterContent() {
     },
   })
 
-  // Fetch departments from database filtered by institution
-  const { data: departmentsData, loading: loadingDepartments } = useQuery(GET_DEPARTMENTS_QUERY, {
-    variables: { institution_id: institutionId },
-    skip: !institutionId
-  })
-
   // Fetch users from database filtered by institution
   const { data: usersData, loading: loadingUsers } = useQuery(GET_ALL_USERS_QUERY, {
     variables: { institution_id: institutionId },
@@ -282,12 +275,92 @@ function ProjectRegisterContent() {
 
   // Extract data with fallback to empty arrays and filter by current year budget
   const currentYear = new Date().getFullYear()
-  const departments = (departmentsData?.departments || []).filter((dept: any) => 
-    // dept.annual_budgets?.some((budget: any) => budget.year === currentYear && budget.is_locked === true) // TODO: reimplementar is_locked
-    dept.annual_budgets?.some((budget: any) => budget.year === currentYear)
-  )
+  
+  // Debug logs para validar os dados da instituição
+  console.log('=== INSTITUTION DEBUG START ===')
+  console.log('currentInstitutionData:', currentInstitutionData)
+  console.log('institutionId:', institutionId)
+  console.log('currentInstitutionData?.departments:', currentInstitutionData?.departments)
+  console.log('departments count from institution:', currentInstitutionData?.departments?.length || 0)
+  console.log('currentYear:', currentYear)
+  
+  // Use currentInstitutionData for departments (matching annual-budget page logic)
+  const departments = useMemo(() => {
+    console.log('=== DEPARTMENTS PROCESSING START ===')
+    
+    if (!currentInstitutionData?.departments) {
+      console.log('❌ No currentInstitutionData.departments found')
+      console.log('currentInstitutionData:', currentInstitutionData)
+      return []
+    }
+    
+    console.log('✅ Found currentInstitutionData.departments:', currentInstitutionData.departments.length)
+    
+    const processedDepartments = currentInstitutionData.departments
+      .map((department: any, index: number) => {
+        console.log(`Processing department ${index + 1}:`, {
+          id: department.id,
+          name: department.name,
+          annual_budgets: department.annual_budgets
+        })
+
+        // Find annual budget for current year - must match entity_type as DEPARTMENT
+        const annualBudget = department.annual_budgets?.find(
+          (budget: any) => budget.year === currentYear && budget.entity_type === 'DEPARTMENT'
+        )
+        
+        console.log(`  - Annual budget for ${currentYear}:`, annualBudget)
+        
+        // Calculate planned budget and allocated amount correctly
+        const plannedBudget = annualBudget ? parseFloat(annualBudget.planned_budget) || 0 : 0
+        const allocatedAmount = annualBudget ? parseFloat(annualBudget.allocated_amount) || 0 : 0
+        const availableBudget = plannedBudget - allocatedAmount
+        
+        const processedDept = {
+          id: department.id,
+          name: department.name,
+          description: department.description,
+          // Use planned_budget as annual_budget for compatibility with existing component
+          annual_budget: (annualBudget && annualBudget.has_budget_record && annualBudget.is_locked) 
+            ? plannedBudget
+            : undefined,
+          // Additional data for better validation
+          hasBudgetRecord: annualBudget?.has_budget_record || false,
+          isLocked: annualBudget?.is_locked || false,
+          budgetYear: annualBudget?.year || currentYear,
+          allocatedAmount: allocatedAmount,
+          plannedBudget: plannedBudget,
+          availableBudget: availableBudget
+        }
+        
+        console.log(`  - Processed department:`, processedDept)
+        console.log(`  - Budget details: planned=${plannedBudget}, allocated=${allocatedAmount}, available=${availableBudget}`)
+        console.log(`  - Passes basic checks: hasBudgetRecord=${processedDept.hasBudgetRecord}, isLocked=${processedDept.isLocked}`)
+        console.log(`  - Has available budget: ${availableBudget > 0}`)
+        
+        return processedDept
+      })
+      
+    console.log('All processed departments before filter:', processedDepartments)
+      
+    // Return all departments for the component to filter appropriately
+    const filteredDepartments = processedDepartments
+    
+    console.log('Final departments passed to component:', filteredDepartments)
+    console.log('=== DEPARTMENTS PROCESSING END ===')
+    
+    return filteredDepartments
+  }, [currentInstitutionData, currentYear])
+  
   const users = usersData?.users || []
   const churches = churchesData?.churches || []
+  
+  // Final debug log antes de passar para o componente
+  console.log('=== FINAL DATA TO COMPONENT ===')
+  console.log('departments being passed to ProjectDataStep:', departments)
+  console.log('users being passed:', users.length)
+  console.log('churches being passed:', churches.length)
+  console.log('=== END FINAL DATA ===')
 
   // Get translations for current language - usar o sistema i18n global
   const getCurrentTranslation = (key: string) => {
@@ -606,6 +679,12 @@ function ProjectRegisterContent() {
 
     switch (step) {
       case 1:
+        // Use the internal validation from ProjectDataStep
+        if (formData._isStepValid === false) {
+          return false
+        }
+        
+        // Keep existing validations as fallback
         if (!formData.title.trim()) newErrors.title = translations.validation.projectTitleRequired
         if (!formData.description.trim()) newErrors.description = translations.validation.projectDescriptionRequired
         if (!formData.department_id) newErrors.department_id = translations.validation.departmentRequired
@@ -2788,7 +2867,7 @@ function ProjectRegisterContent() {
                 <Button 
                   onClick={handleNext}
                   className="gap-2"
-                  disabled={isLoading}
+                  disabled={isLoading || (currentStep === 1 && formData._isStepValid === false)}
                 >
                   <span className="hidden sm:inline">{translations.buttons.next}</span>
                   <ChevronRight className="w-4 h-4" />

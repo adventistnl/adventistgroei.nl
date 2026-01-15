@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Globe, Building, Users, Target, Home, Settings, MapPin, CalendarIcon, Check, Info } from 'lucide-react'
 import { Label } from '@/components/ui/label'
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import { Collapse } from '@/components/ui/collapse'
 import { cn } from '@/lib/utils'
 import { StepInfo } from '../step-info'
 import { ProjectFormData } from '@/components/projects/types'
@@ -17,7 +18,18 @@ import { ProjectFormData } from '@/components/projects/types'
 interface ProjectDataStepProps {
   formData: ProjectFormData
   errors: Record<string, string>
-  departments: Array<{ id: string; name: string; annual_budget?: number }>
+  departments: Array<{ 
+    id: string; 
+    name: string; 
+    description?: string;
+    annual_budget?: number;
+    hasBudgetRecord?: boolean;
+    isLocked?: boolean;
+    budgetYear?: number;
+    allocatedAmount?: number;
+    plannedBudget?: number;
+    availableBudget?: number;
+  }>
   users: Array<{ id: string; name: string; email: string }>
   churches: Array<{ id: string; name: string }>
   onChange: (data: Partial<ProjectFormData>) => void
@@ -37,6 +49,190 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
   const [openDepartment, setOpenDepartment] = useState(false)
   const [openResponsible, setOpenResponsible] = useState(false)
   const [openChurch, setOpenChurch] = useState(false)
+
+  // Check if there are departments with available budget (locked budget with remaining budget)
+  const availableDepartments = useMemo(() => 
+    departments.filter(dept => {
+      // Must have budget record and be locked
+      if (!dept.hasBudgetRecord || !dept.isLocked) return false
+      
+      // Must have a planned budget
+      const plannedBudget = dept.plannedBudget || dept.annual_budget || 0
+      if (plannedBudget <= 0) return false
+      
+      // Must have available budget (use availableBudget if provided, otherwise calculate)
+      const availableBudget = dept.availableBudget !== undefined 
+        ? dept.availableBudget 
+        : plannedBudget - (dept.allocatedAmount || 0)
+      
+      const hasAvailableBudget = availableBudget > 0
+      
+      return hasAvailableBudget
+    }), [departments]
+  )
+
+  // Debug logs para validar os dados
+  console.log('=== DEPARTMENT DEBUG START ===')
+  console.log('Raw Departments received:', departments)
+  console.log('Departments count:', departments.length)
+  
+  // Debug cada departamento individualmente
+  departments.forEach((dept, index) => {
+    const plannedBudget = dept.plannedBudget || dept.annual_budget || 0
+    const allocatedAmount = dept.allocatedAmount || 0
+    const availableBudget = dept.availableBudget !== undefined 
+      ? dept.availableBudget 
+      : plannedBudget - allocatedAmount
+    const hasAvailableBudget = availableBudget > 0
+    
+    console.log(`Department ${index + 1}:`, {
+      id: dept.id,
+      name: dept.name,
+      description: dept.description,
+      planned_budget: plannedBudget,
+      allocated_amount: allocatedAmount,
+      available_budget: availableBudget,
+      hasBudgetRecord: dept.hasBudgetRecord,
+      isLocked: dept.isLocked,
+      budgetYear: dept.budgetYear,
+      // Show both for comparison
+      annual_budget_field: dept.annual_budget,
+      plannedBudget_field: dept.plannedBudget,
+      availableBudget_field: dept.availableBudget
+    })
+    console.log(`  - Passes hasBudgetRecord check: ${!!dept.hasBudgetRecord}`)
+    console.log(`  - Passes isLocked check: ${!!dept.isLocked}`)
+    console.log(`  - Has planned budget > 0: ${plannedBudget > 0} (€${plannedBudget})`)
+    console.log(`  - Has available budget: ${hasAvailableBudget} (€${availableBudget} remaining)`)
+    console.log(`  - Overall eligible: ${dept.hasBudgetRecord && dept.isLocked && hasAvailableBudget}`)
+  })
+
+  console.log('Available Departments after filtering:', availableDepartments)
+  console.log('Available Departments count:', availableDepartments.length)
+  console.log('Has Available Departments:', availableDepartments.length > 0)
+  console.log('=== DEPARTMENT DEBUG END ===')
+
+  const hasAvailableDepartments = availableDepartments.length > 0
+
+  // Form validation logic
+  const isFormValid = useMemo(() => {
+    console.log('=== VALIDATION DEBUG START ===')
+    console.log('Form data:', {
+      title: formData.title?.trim(),
+      description: formData.description?.trim(),
+      department_id: formData.department_id,
+      responsible_id: formData.responsible_id,
+      church_id: formData.church_id,
+      project_responsible_type: formData.project_responsible_type
+    })
+
+    // Basic required fields
+    const titleValid = !!formData.title?.trim()
+    const descriptionValid = !!formData.description?.trim()
+    const responsibleValid = !!formData.responsible_id
+    
+    console.log('Basic validation:', {
+      titleValid,
+      descriptionValid,
+      responsibleValid
+    })
+    
+    if (!titleValid || !descriptionValid || !responsibleValid) {
+      console.log('❌ Basic validation failed')
+      console.log('=== VALIDATION DEBUG END ===')
+      return false
+    }
+    
+    // Department validation
+    const hasDepartments = hasAvailableDepartments
+    const departmentSelected = !!formData.department_id
+    const selectedDept = departmentSelected ? availableDepartments.find(dept => dept.id === formData.department_id) : null
+    
+    // Check if selected department has available budget
+    const departmentHasAvailableBudget = selectedDept ? (() => {
+      const plannedBudget = selectedDept.plannedBudget || selectedDept.annual_budget || 0
+      const availableBudget = selectedDept.availableBudget !== undefined
+        ? selectedDept.availableBudget
+        : plannedBudget - (selectedDept.allocatedAmount || 0)
+      return availableBudget > 0
+    })() : false
+    
+    console.log('Department validation:', {
+      hasDepartments,
+      departmentSelected,
+      departmentExists: !!selectedDept,
+      selectedDepartmentId: formData.department_id,
+      departmentHasAvailableBudget,
+      selectedDeptBudget: selectedDept ? {
+        planned: selectedDept.plannedBudget || selectedDept.annual_budget || 0,
+        allocated: selectedDept.allocatedAmount || 0,
+        available: selectedDept.availableBudget !== undefined 
+          ? selectedDept.availableBudget 
+          : (selectedDept.plannedBudget || selectedDept.annual_budget || 0) - (selectedDept.allocatedAmount || 0)
+      } : null
+    })
+    
+    if (!hasDepartments || !departmentSelected || !selectedDept || !departmentHasAvailableBudget) {
+      console.log('❌ Department validation failed')
+      console.log('=== VALIDATION DEBUG END ===')
+      return false
+    }
+    
+    // Church project validation
+    if (formData.project_responsible_type === 'church') {
+      const churchSelected = !!formData.church_id
+      const churchExists = churchSelected ? churches.find(church => church.id === formData.church_id) : null
+      
+      console.log('Church validation:', {
+        churchSelected,
+        churchExists: !!churchExists,
+        selectedChurchId: formData.church_id
+      })
+      
+      if (!churchSelected || !churchExists) {
+        console.log('❌ Church validation failed')
+        console.log('=== VALIDATION DEBUG END ===')
+        return false
+      }
+    }
+    
+    // Users validation
+    const userExists = users.find(user => user.id === formData.responsible_id)
+    console.log('User validation:', {
+      userExists: !!userExists,
+      selectedUserId: formData.responsible_id,
+      totalUsers: users.length
+    })
+    
+    if (!userExists) {
+      console.log('❌ User validation failed')
+      console.log('=== VALIDATION DEBUG END ===')
+      return false
+    }
+    
+    console.log('✅ All validations passed')
+    console.log('=== VALIDATION DEBUG END ===')
+    return true
+  }, [
+    formData.title,
+    formData.description,
+    formData.department_id,
+    formData.responsible_id,
+    formData.church_id,
+    formData.project_responsible_type,
+    hasAvailableDepartments,
+    availableDepartments,
+    churches,
+    users
+  ])
+
+  // Communicate form validity to parent component only when it changes
+  React.useEffect(() => {
+    console.log('=== FORM VALIDITY UPDATE ===')
+    console.log('Sending _isStepValid to parent:', isFormValid)
+    console.log('================================')
+    onChange({ _isStepValid: isFormValid })
+  }, [isFormValid])
 
   const ResponsibilityTypeButton = ({ 
     type, 
@@ -229,21 +425,30 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
                       <Info className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
                     </TooltipTrigger>
                     <TooltipContent side="right" className="max-w-xs">
-                      <p className="text-sm">{t('projectRegister.tooltips.department')}</p>
+                      <p className="text-sm">
+                        {hasAvailableDepartments 
+                          ? t('projectRegister.tooltips.department')
+                          : t('projectRegister.tooltips.noDepartmentsAvailable')
+                        }
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                 </Label>
-                <Popover open={openDepartment} onOpenChange={setOpenDepartment}>
+                <Popover open={openDepartment && hasAvailableDepartments} onOpenChange={setOpenDepartment}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       role="combobox"
-                      aria-expanded={openDepartment}
-                      className={`h-12 w-full justify-between border-2 ${errors.department_id ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors`}
+                      aria-expanded={openDepartment && hasAvailableDepartments}
+                      disabled={!hasAvailableDepartments}
+                      className={`h-12 w-full justify-between border-2 ${errors.department_id ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
-                      {formData.department_id
-                        ? departments.find((dept) => dept.id === formData.department_id)?.name
-                        : t('projectRegister.placeholders.selectDepartment')}
+                      {formData.department_id && hasAvailableDepartments
+                        ? availableDepartments.find((dept) => dept.id === formData.department_id)?.name
+                        : hasAvailableDepartments 
+                          ? t('projectRegister.placeholders.selectDepartment')
+                          : t('projectRegister.placeholders.noDepartmentsAvailable')
+                      }
                       <Building className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
@@ -253,7 +458,7 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
                       <CommandList>
                         <CommandEmpty>{t('projectRegister.noResults.department')}</CommandEmpty>
                         <CommandGroup>
-                          {departments.map((dept) => (
+                          {availableDepartments.map((dept) => (
                             <CommandItem
                               key={dept.id}
                               value={dept.name}
@@ -268,11 +473,18 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
                                 </div>
                                 <div className="flex-1">
                                   <span className="font-medium">{dept.name}</span>
-                                  {dept.annual_budget !== undefined && (
-                                    <Badge variant="outline" className="ml-2 text-xs">
-                                      € {dept.annual_budget.toLocaleString()}
-                                    </Badge>
-                                  )}
+                                  {(() => {
+                                    const plannedBudget = dept.plannedBudget || dept.annual_budget || 0
+                                    const availableBudget = dept.availableBudget !== undefined
+                                      ? dept.availableBudget
+                                      : plannedBudget - (dept.allocatedAmount || 0)
+                                    
+                                    return plannedBudget > 0 && (
+                                      <Badge variant="outline" className="ml-2 text-xs">
+                                        € {availableBudget.toLocaleString()} disponível
+                                      </Badge>
+                                    )
+                                  })()}
                                 </div>
                                 {formData.department_id === dept.id && (
                                   <Check className="ml-auto h-4 w-4" />
@@ -286,6 +498,36 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
                   </PopoverContent>
                 </Popover>
                 {errors.department_id && <p className="text-sm text-red-600">{errors.department_id}</p>}
+                
+                {/* Department Status Information */}
+                {!hasAvailableDepartments && (
+                  <div className="animate-in fade-in-0 slide-in-from-top-2 duration-200">
+                    <Collapse
+                      trigger={
+                        <div className="flex items-center gap-3">
+                          <Info className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {t('projectRegister.info.noDepartmentsTitle')}
+                          </span>
+                        </div>
+                      }
+                      defaultOpen={false}
+                      className="bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700/50 rounded-lg"
+                      triggerClassName="hover:bg-gray-100 dark:hover:bg-gray-800/60"
+                    >
+                      <div className="space-y-3 px-1">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                          {t('projectRegister.info.noDepartmentsDescription')}
+                        </p>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                          <span className="font-medium text-gray-900 dark:text-gray-100">
+                            {t('projectRegister.info.contactAdmin')}
+                          </span>
+                        </p>
+                      </div>
+                    </Collapse>
+                  </div>
+                )}
               </div>
 
               {/* Responsible Person */}

@@ -28,6 +28,7 @@ export interface ProjectFormData {
   special_case_reason?: string
   location_church_plant?: string
   special_budget?: number
+  _isStepValid?: boolean // Internal field for step validation
   event?: {
     title: string
     description: string
