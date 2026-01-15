@@ -43,7 +43,7 @@ import { mockDepartments } from "@/data/mockData"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
 import { UserListModal } from "@/components/shared/user-list-modal"
 import { useCurrency } from "@/contexts/currency-context"
-import { useToast } from "@/hooks/use-toast"
+import toast from "react-hot-toast"
 import { UPDATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { ProjectStatus } from "@/types/graphql-global-types"
 
@@ -96,50 +96,52 @@ export function ProjectHeaderMinimal({
   const router = useRouter()
   const { i18n } = useTranslation()
   const { formatCurrency } = useCurrency()
-  const { toast } = useToast()
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
   const [isUserListModalOpen, setIsUserListModalOpen] = React.useState(false)
 
   // Mutation for updating project status
   const [updateProjectStatus, { loading: isUpdatingStatus }] = useMutation(UPDATE_PROJECT_MUTATION, {
     onCompleted: () => {
-      toast({
-        title: t.common.save,
-        description: t.status?.statusUpdated || 'Status updated successfully',
-      })
+      toast.success(t.status?.statusUpdated || 'Status updated successfully')
       onRefetch?.()
     },
-    onError: (error) => {
-      const errorCode = (error.graphQLErrors?.[0]?.extensions?.additional as any)?.errorCode
-      let errorMessage = error.message
+    onError: (err) => {
+      // Extract extensions from different possible paths (same pattern as subsidy-approvals-manager)
+      let ext = (err.graphQLErrors?.[0]?.extensions as any);
+      if (!ext && (err.networkError as any)?.result?.errors?.[0]?.extensions) {
+        ext = (err.networkError as any).result.errors[0].extensions;
+      }
+      const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
+      
+      let errorMessage = err.message
       
       if (errorCode === 'PROJECT_IS_CONCLUDED') {
         errorMessage = t.status?.cannotModifyConcluded || 'Cannot modify a concluded project'
       } else if (errorCode === 'PROJECT_HAS_INCOMPLETE_ACTIVITIES') {
-        errorMessage = t.status?.incompleteActivities || 'All activities must be completed'
+        errorMessage = t.status?.incompleteActivities || 'All activities must be completed before concluding'
       } else if (errorCode === 'PROJECT_HAS_UNVALIDATED_DOCUMENTS') {
-        errorMessage = t.status?.unvalidatedDocuments || 'All documents must be validated'
+        errorMessage = t.status?.unvalidatedDocuments || 'All documents must be validated before concluding'
       } else if (errorCode === 'PROJECT_HAS_OPEN_SUBSIDIES') {
-        errorMessage = t.status?.openSubsidies || 'All subsidies must be closed'
+        errorMessage = t.status?.openSubsidies || 'All subsidies must be closed before concluding'
       }
       
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      })
+      toast.error(errorMessage)
     },
   })
 
   const handleStatusChange = async (newStatus: string) => {
     if (newStatus === project.status) return
     
-    await updateProjectStatus({
-      variables: {
-        id: project.id,
-        status: newStatus,
-      },
-    })
+    try {
+      await updateProjectStatus({
+        variables: {
+          id: project.id,
+          status: newStatus,
+        },
+      })
+    } catch (e) {
+      // Error handled by onError callback
+    }
   }
 
   // Available statuses for selection

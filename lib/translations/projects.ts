@@ -15,7 +15,8 @@ export const projectTranslations = {
       apply: "Apply",
       irreversible: "This action cannot be undone",
       deletePermanently: "Delete Permanently",
-      registeredUsers: "Registered Users"
+      registeredUsers: "Registered Users",
+      error: "Error"
     },
     
     // Page titles
@@ -674,10 +675,11 @@ export const projectTranslations = {
       extendDate: "Extend End Date",
       concludeProject: "Conclude Project",
       // Errors
+      statusUpdateError: "Status Update Error",
       cannotModifyConcluded: "Cannot modify a concluded project",
-      incompleteActivities: "All activities must be completed",
-      unvalidatedDocuments: "All documents must be validated",
-      openSubsidies: "All subsidies must be closed",
+      incompleteActivities: "All activities must be completed before concluding the project",
+      unvalidatedDocuments: "All documents must be validated before concluding the project",
+      openSubsidies: "All subsidies must be closed before concluding the project",
       statusUpdated: "Status updated successfully",
     },
     
@@ -848,7 +850,8 @@ export const projectTranslations = {
       apply: "Toepassen",
       irreversible: "Deze actie kan niet ongedaan worden gemaakt",
       deletePermanently: "Definitief Verwijderen",
-      registeredUsers: "Geregistreerde Gebruikers"
+      registeredUsers: "Geregistreerde Gebruikers",
+      error: "Fout"
     },
     
     // Page titles
@@ -1508,10 +1511,11 @@ export const projectTranslations = {
       extendDate: "Einddatum Verlengen",
       concludeProject: "Project Afsluiten",
       // Errors
+      statusUpdateError: "Statusupdatefout",
       cannotModifyConcluded: "Kan een afgerond project niet wijzigen",
-      incompleteActivities: "Alle activiteiten moeten voltooid zijn",
-      unvalidatedDocuments: "Alle documenten moeten gevalideerd zijn",
-      openSubsidies: "Alle subsidies moeten afgesloten zijn",
+      incompleteActivities: "Alle activiteiten moeten voltooid zijn voordat het project kan worden afgerond",
+      unvalidatedDocuments: "Alle documenten moeten gevalideerd zijn voordat het project kan worden afgerond",
+      openSubsidies: "Alle subsidies moeten afgesloten zijn voordat het project kan worden afgerond",
       statusUpdated: "Status succesvol bijgewerkt",
     },
     
@@ -1682,7 +1686,8 @@ export const projectTranslations = {
       apply: "Aplicar",
       irreversible: "Esta ação não pode ser desfeita",
       deletePermanently: "Excluir Permanentemente",
-      registeredUsers: "Usuários Registrados"
+      registeredUsers: "Usuários Registrados",
+      error: "Erro"
     },
     
     // Page titles
@@ -2292,10 +2297,11 @@ export const projectTranslations = {
       expiredModalDescription: "This project has passed its end date.",
       extendDate: "Extend End Date",
       concludeProject: "Conclude Project",
+      statusUpdateError: "Status Update Error",
       cannotModifyConcluded: "Cannot modify a concluded project",
-      incompleteActivities: "All activities must be completed",
-      unvalidatedDocuments: "All documents must be validated",
-      openSubsidies: "All subsidies must be closed",
+      incompleteActivities: "All activities must be completed before concluding the project",
+      unvalidatedDocuments: "All documents must be validated before concluding the project",
+      openSubsidies: "All subsidies must be closed before concluding the project",
       statusUpdated: "Status updated successfully",
     },
     
