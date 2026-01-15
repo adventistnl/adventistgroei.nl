@@ -240,7 +240,8 @@ export const projectTranslations = {
       commentUpdated: "Comment updated",
       commentAdded: "Comment added",
       documentCommentPrefix: "Comment on document \"{{name}}\": ",
-      documentsPending: "All documents must be validated first"
+      documentsPending: "All documents must be validated first",
+      documentsRejected: "Cannot approve subsidy with rejected documents"
     },
     
     // Error messages
@@ -1076,7 +1077,8 @@ export const projectTranslations = {
       commentUpdated: "Opmerking bijgewerkt",
       commentAdded: "Opmerking toegevoegd",
       documentCommentPrefix: "Opmerking bij document \"{{name}}\": ",
-      documentsPending: "Alle documenten moeten eerst worden gevalideerd"
+      documentsPending: "Alle documenten moeten eerst worden gevalideerd",
+      documentsRejected: "Kan subsidie met afgewezen documenten niet goedkeuren"
     },
     
     // Error messages
@@ -1911,7 +1913,8 @@ export const projectTranslations = {
       commentUpdated: "Comentário atualizado",
       commentAdded: "Comentário adicionado",
       documentCommentPrefix: "Comentário sobre documento \"{{name}}\": ",
-      documentsPending: "Todos os documentos devem ser validados antes de prosseguir"
+      documentsPending: "Todos os documentos devem ser validados antes de prosseguir",
+      documentsRejected: "Não é possível aprovar subsídio com documentos rejeitados"
     },
     
     // Error messages

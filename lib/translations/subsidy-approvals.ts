@@ -23,7 +23,8 @@ export const subsidyApprovalsTranslations = {
       inReviewToClosed: "Cannot close In Review requests",
       mustBeFinal: "Must be Approved or Rejected to Close",
       finalState: "Can only change to Closed",
-      documentsPending: "All documents must be validated first"
+      documentsPending: "All documents must be validated first",
+      documentsRejected: "Cannot approve subsidy with rejected documents"
     },
     
     // Default values
@@ -205,7 +206,8 @@ export const subsidyApprovalsTranslations = {
       inReviewToClosed: "Kan aanvragen In Beoordeling niet sluiten",
       mustBeFinal: "Moet Goedgekeurd of Afgewezen zijn om te sluiten",
       finalState: "Kan alleen wijzigen naar Gesloten",
-      documentsPending: "Alle documenten moeten eerst worden gevalideerd"
+      documentsPending: "Alle documenten moeten eerst worden gevalideerd",
+      documentsRejected: "Kan subsidie met afgewezen documenten niet goedkeuren"
     },
     
     // Default values
