@@ -283,8 +283,7 @@ function ProjectRegisterContent() {
   // Extract data with fallback to empty arrays and filter by current year budget
   const currentYear = new Date().getFullYear()
   const departments = (departmentsData?.departments || []).filter((dept: any) => 
-    // dept.annual_budgets?.some((budget: any) => budget.year === currentYear && budget.is_locked === true) // TODO: reimplementar is_locked
-    dept.annual_budgets?.some((budget: any) => budget.year === currentYear)
+    dept.annual_budgets?.some((budget: any) => budget.year === currentYear && budget.is_locked === true)
   )
   const users = usersData?.users || []
   const churches = churchesData?.churches || []

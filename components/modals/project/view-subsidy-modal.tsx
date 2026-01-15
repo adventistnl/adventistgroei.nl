@@ -187,6 +187,8 @@ export function ViewSubsidyModal({
           toast.error("Subsídios aprovados ou rejeitados só podem ser fechados.");
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
           toast.error(t('toasts.documentsPending') || "All documents must be validated first");
+      } else if (errorCode === 'DOCUMENTS_REJECTED') {
+          toast.error(t('toasts.documentsRejected') || "Cannot approve subsidy with rejected documents");
       } else {
           toast.error(t('toasts.approveError', { error: error.message }))
       }

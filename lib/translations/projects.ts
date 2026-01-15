@@ -15,7 +15,8 @@ export const projectTranslations = {
       apply: "Apply",
       irreversible: "This action cannot be undone",
       deletePermanently: "Delete Permanently",
-      registeredUsers: "Registered Users"
+      registeredUsers: "Registered Users",
+      error: "Error"
     },
     
     // Page titles
@@ -239,7 +240,8 @@ export const projectTranslations = {
       commentUpdated: "Comment updated",
       commentAdded: "Comment added",
       documentCommentPrefix: "Comment on document \"{{name}}\": ",
-      documentsPending: "All documents must be validated first"
+      documentsPending: "All documents must be validated first",
+      documentsRejected: "Cannot approve subsidy with rejected documents"
     },
     
     // Error messages
@@ -660,6 +662,28 @@ export const projectTranslations = {
     upcoming: "Upcoming", 
     completed: "Completed",
     
+    // Status object for ProjectStatusBadge
+    status: {
+      draft: "Draft",
+      inProgress: "In Progress",
+      inReview: "In Review",
+      onHold: "On Hold",
+      expired: "Expired",
+      concluded: "Concluded",
+      // Expired modal
+      expiredModalTitle: "Project Expired",
+      expiredModalDescription: "This project has passed its end date. Please extend the date or conclude the project.",
+      extendDate: "Extend End Date",
+      concludeProject: "Conclude Project",
+      // Errors
+      statusUpdateError: "Status Update Error",
+      cannotModifyConcluded: "Cannot modify a concluded project",
+      incompleteActivities: "All activities must be completed before concluding the project",
+      unvalidatedDocuments: "All documents must be validated before concluding the project",
+      openSubsidies: "All subsidies must be closed before concluding the project",
+      statusUpdated: "Status updated successfully",
+    },
+    
     // Project types
     public: "Public",
     private: "Private",
@@ -827,7 +851,8 @@ export const projectTranslations = {
       apply: "Toepassen",
       irreversible: "Deze actie kan niet ongedaan worden gemaakt",
       deletePermanently: "Definitief Verwijderen",
-      registeredUsers: "Geregistreerde Gebruikers"
+      registeredUsers: "Geregistreerde Gebruikers",
+      error: "Fout"
     },
     
     // Page titles
@@ -1052,7 +1077,8 @@ export const projectTranslations = {
       commentUpdated: "Opmerking bijgewerkt",
       commentAdded: "Opmerking toegevoegd",
       documentCommentPrefix: "Opmerking bij document \"{{name}}\": ",
-      documentsPending: "Alle documenten moeten eerst worden gevalideerd"
+      documentsPending: "Alle documenten moeten eerst worden gevalideerd",
+      documentsRejected: "Kan subsidie met afgewezen documenten niet goedkeuren"
     },
     
     // Error messages
@@ -1473,6 +1499,28 @@ export const projectTranslations = {
     upcoming: "Aankomend",
     completed: "Voltooid",
     
+    // Status object for ProjectStatusBadge
+    status: {
+      draft: "Concept",
+      inProgress: "In Uitvoering",
+      inReview: "In Beoordeling",
+      onHold: "In Wacht",
+      expired: "Verlopen",
+      concluded: "Afgerond",
+      // Expired modal
+      expiredModalTitle: "Project Verlopen",
+      expiredModalDescription: "Dit project heeft de einddatum overschreden. Verleng de datum of sluit het project af.",
+      extendDate: "Einddatum Verlengen",
+      concludeProject: "Project Afsluiten",
+      // Errors
+      statusUpdateError: "Statusupdatefout",
+      cannotModifyConcluded: "Kan een afgerond project niet wijzigen",
+      incompleteActivities: "Alle activiteiten moeten voltooid zijn voordat het project kan worden afgerond",
+      unvalidatedDocuments: "Alle documenten moeten gevalideerd zijn voordat het project kan worden afgerond",
+      openSubsidies: "Alle subsidies moeten afgesloten zijn voordat het project kan worden afgerond",
+      statusUpdated: "Status succesvol bijgewerkt",
+    },
+    
     // Project types
     public: "Openbaar",
     private: "Privé",
@@ -1640,7 +1688,8 @@ export const projectTranslations = {
       apply: "Aplicar",
       irreversible: "Esta ação não pode ser desfeita",
       deletePermanently: "Excluir Permanentemente",
-      registeredUsers: "Usuários Registrados"
+      registeredUsers: "Usuários Registrados",
+      error: "Erro"
     },
     
     // Page titles
@@ -1864,7 +1913,8 @@ export const projectTranslations = {
       commentUpdated: "Comentário atualizado",
       commentAdded: "Comentário adicionado",
       documentCommentPrefix: "Comentário sobre documento \"{{name}}\": ",
-      documentsPending: "Todos os documentos devem ser validados antes de prosseguir"
+      documentsPending: "Todos os documentos devem ser validados antes de prosseguir",
+      documentsRejected: "Não é possível aprovar subsídio com documentos rejeitados"
     },
     
     // Error messages
@@ -2237,6 +2287,26 @@ export const projectTranslations = {
     active: "Ativo",
     upcoming: "Futuro", 
     completed: "Concluído",
+    
+    // Status object for type consistency (using EN as PT is not used)
+    status: {
+      draft: "Draft",
+      inProgress: "In Progress",
+      inReview: "In Review",
+      onHold: "On Hold",
+      expired: "Expired",
+      concluded: "Concluded",
+      expiredModalTitle: "Project Expired",
+      expiredModalDescription: "This project has passed its end date.",
+      extendDate: "Extend End Date",
+      concludeProject: "Conclude Project",
+      statusUpdateError: "Status Update Error",
+      cannotModifyConcluded: "Cannot modify a concluded project",
+      incompleteActivities: "All activities must be completed before concluding the project",
+      unvalidatedDocuments: "All documents must be validated before concluding the project",
+      openSubsidies: "All subsidies must be closed before concluding the project",
+      statusUpdated: "Status updated successfully",
+    },
     
     // Project types
     public: "Público",

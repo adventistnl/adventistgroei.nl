@@ -18,6 +18,7 @@ export const GET_PROJECTS_QUERY = gql`
       owner_id
       institution_id
       event_id
+      status
       created_at
       updated_at
       owner {
@@ -92,6 +93,7 @@ export const GET_PROJECT_BY_ID_QUERY = gql`
       owner_id
       institution_id
       event_id
+      status
       created_at
       updated_at
       owner {

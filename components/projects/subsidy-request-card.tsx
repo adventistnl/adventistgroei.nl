@@ -85,11 +85,11 @@ export function SubsidyRequestCard({
     SubsidyRequestCardData["status"],
     { label: string; className: string }
   > = {
-    pending: { label: t('subsidy.pending'), className: "bg-amber-50 text-amber-700 border-amber-200" },
-    approved: { label: t('subsidy.approved'), className: "bg-green-50 text-green-700 border-green-200" },
-    rejected: { label: t('subsidy.rejected'), className: "bg-red-50 text-red-700 border-red-200" },
-    in_review: { label: t('subsidy.inReview'), className: "bg-blue-50 text-blue-700 border-blue-200" },
-    closed: { label: t('subsidy.closed'), className: "bg-gray-50 text-gray-700 border-gray-200" },
+    pending: { label: t('subsidy.status.pending'), className: "bg-amber-50 text-amber-700 border-amber-200" },
+    approved: { label: t('subsidy.status.approved'), className: "bg-green-50 text-green-700 border-green-200" },
+    rejected: { label: t('subsidy.status.rejected'), className: "bg-red-50 text-red-700 border-red-200" },
+    in_review: { label: t('subsidy.status.inReview'), className: "bg-blue-50 text-blue-700 border-blue-200" },
+    closed: { label: t('subsidy.status.closed'), className: "bg-gray-50 text-gray-700 border-gray-200" },
   }
 
   const currentStatus = statusConfig[data.status]

@@ -112,26 +112,12 @@ export default function ProjectsPage() {
   // Transform backend data to table format
   const transformProjectsData = (backendProjects: any[]): ProjectTableData[] => {
     return backendProjects.map((project: any) => {
-      // Calculate status based on dates
-      const now = new Date()
-      const startDate = new Date(project.start_at)
-      const endDate = new Date(project.end_at)
-
-      let status: "active" | "upcoming" | "completed"
-      if (startDate > now) {
-        status = "upcoming"
-      } else if (endDate < now) {
-        status = "completed"
-      } else {
-        status = "active"
-      }
-
       return {
         id: project.id,
         department_id: project.department_id,
         title: project.title,
         description: project.description,
-        budget: project.budget,
+        budget: Number(project.budget || 0),
         is_private: project.is_private,
         required_volunteers: project.required_volunteers,
         start_at: project.start_at,
@@ -139,9 +125,9 @@ export default function ProjectsPage() {
         created_at: project.created_at,
         language_preference: project.language_preference,
         institutionId: project.institution_id || project.Institution?.id || '',
-        status,
+        status: project.status || 'DRAFT', // Use status from backend
         subsidyRequests: project.subsidies?.length || 0,
-        subsidyAmount: project.subsidies?.reduce((sum: number, s: any) => sum + (s.requested_amount || 0), 0) || 0,
+        subsidyAmount: project.subsidies?.reduce((sum: number, s: any) => sum + Number(s.requested_amount || 0), 0) || 0,
         activities: project.activities?.length || 0,
         is_event: !!project.event_id,
         type: project.type as "Local" | "Global" | undefined,
@@ -208,17 +194,18 @@ export default function ProjectsPage() {
     // Use filteredData to include both year and department filtering
     const yearProjects = filteredData
     const totalProjects = yearProjects.length
-    const totalBudget = yearProjects.reduce((sum, p) => sum + (p.budget || 0), 0)
+    // Note: Using Number() to ensure proper numeric addition (values may come as strings from GraphQL/Prisma Decimal)
+    const totalBudget = yearProjects.reduce((sum, p) => sum + Number(p.budget || 0), 0)
     
     // Calculate subsidy-related metrics from projects data
-    const totalSubsidyRequests = yearProjects.reduce((sum, p) => sum + (p.subsidyRequests || 0), 0)
-    const totalSubsidyAmount = yearProjects.reduce((sum, p) => sum + (p.subsidyAmount || 0), 0)
+    const totalSubsidyRequests = yearProjects.reduce((sum, p) => sum + Number(p.subsidyRequests || 0), 0)
+    const totalSubsidyAmount = yearProjects.reduce((sum, p) => sum + Number(p.subsidyAmount || 0), 0)
     
     // Calculate projects with subsidized budgets (projects that have subsidy requests)
-    const projectsWithSubsidies = yearProjects.filter(p => (p.subsidyRequests || 0) > 0).length
+    const projectsWithSubsidies = yearProjects.filter(p => Number(p.subsidyRequests || 0) > 0).length
     const totalSubsidizedBudget = yearProjects
-      .filter(p => (p.subsidyRequests || 0) > 0)
-      .reduce((sum, p) => sum + (p.budget || 0), 0)
+      .filter(p => Number(p.subsidyRequests || 0) > 0)
+      .reduce((sum, p) => sum + Number(p.budget || 0), 0)
     
     return {
       totalProjects,
@@ -385,20 +372,25 @@ export default function ProjectsPage() {
       ),
       cell: ({ row }) => {
         const status = row.original.status
-        const statusText = status === "active" ? t_project.active :
-                          status === "completed" ? t_project.completed :
-                          t_project.upcoming
         
-        let dotColor = "#10b981" // Green for active
-        if (status === "completed") dotColor = "#3b82f6" // Blue
-        if (status === "upcoming") dotColor = "#f59e0b" // Amber
+        // Map backend status to display text and colors
+        const statusConfig: Record<string, { text: string; variant: 'success' | 'warning' | 'error' | 'info' | 'default'; dotColor: string }> = {
+          DRAFT: { text: t_project.status?.draft || 'Draft', variant: 'default', dotColor: '#6b7280' },
+          IN_PROGRESS: { text: t_project.status?.inProgress || 'In Progress', variant: 'success', dotColor: '#10b981' },
+          IN_REVIEW: { text: t_project.status?.inReview || 'In Review', variant: 'info', dotColor: '#3b82f6' },
+          ON_HOLD: { text: t_project.status?.onHold || 'On Hold', variant: 'warning', dotColor: '#f59e0b' },
+          EXPIRED: { text: t_project.status?.expired || 'Expired', variant: 'error', dotColor: '#ef4444' },
+          CONCLUDED: { text: t_project.status?.concluded || 'Concluded', variant: 'default', dotColor: '#64748b' },
+        }
+        
+        const config = statusConfig[status] || statusConfig.DRAFT
         
         return (
           <StatusBadge
-            label={statusText}
-            variant={status === "active" ? "success" : status === "completed" ? "info" : "warning"}
+            label={config.text}
+            variant={config.variant}
             showDot={true}
-            dotColor={dotColor}
+            dotColor={config.dotColor}
             size="sm"
           />
         )
