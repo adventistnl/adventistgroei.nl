@@ -1,5 +1,13 @@
 export const subsidyManagementTranslations = {
   en: {
+    status: {
+      pending: "Pending",
+      approved: "Approved",
+      rejected: "Rejected",
+      closed: "Closed",
+      in_review: "In review"
+    },
+    requestedOn: "Requested on",
     history: "History",
     requestsTitle: "Subsidy Requests",
     noRequests: "No existing requests",
@@ -63,6 +71,14 @@ export const subsidyManagementTranslations = {
     }
   },
   nl: {
+    status: {
+      pending: "In afwachting",
+      approved: "Goedgekeurd",
+      rejected: "Afgewezen",
+      closed: "Gesloten",
+      in_review: "In beoordeling"
+    },
+    requestedOn: "Aangevraagd op",
     history: "Geschiedenis",
     requestsTitle: "Subsidieaanvragen",
     noRequests: "Geen bestaande aanvragen",
