@@ -117,7 +117,7 @@ export default function ProjectsPage() {
         department_id: project.department_id,
         title: project.title,
         description: project.description,
-        budget: project.budget,
+        budget: Number(project.budget || 0),
         is_private: project.is_private,
         required_volunteers: project.required_volunteers,
         start_at: project.start_at,
@@ -127,7 +127,7 @@ export default function ProjectsPage() {
         institutionId: project.institution_id || project.Institution?.id || '',
         status: project.status || 'DRAFT', // Use status from backend
         subsidyRequests: project.subsidies?.length || 0,
-        subsidyAmount: project.subsidies?.reduce((sum: number, s: any) => sum + (s.requested_amount || 0), 0) || 0,
+        subsidyAmount: project.subsidies?.reduce((sum: number, s: any) => sum + Number(s.requested_amount || 0), 0) || 0,
         activities: project.activities?.length || 0,
         is_event: !!project.event_id,
         type: project.type as "Local" | "Global" | undefined,
@@ -194,17 +194,18 @@ export default function ProjectsPage() {
     // Use filteredData to include both year and department filtering
     const yearProjects = filteredData
     const totalProjects = yearProjects.length
-    const totalBudget = yearProjects.reduce((sum, p) => sum + (p.budget || 0), 0)
+    // Note: Using Number() to ensure proper numeric addition (values may come as strings from GraphQL/Prisma Decimal)
+    const totalBudget = yearProjects.reduce((sum, p) => sum + Number(p.budget || 0), 0)
     
     // Calculate subsidy-related metrics from projects data
-    const totalSubsidyRequests = yearProjects.reduce((sum, p) => sum + (p.subsidyRequests || 0), 0)
-    const totalSubsidyAmount = yearProjects.reduce((sum, p) => sum + (p.subsidyAmount || 0), 0)
+    const totalSubsidyRequests = yearProjects.reduce((sum, p) => sum + Number(p.subsidyRequests || 0), 0)
+    const totalSubsidyAmount = yearProjects.reduce((sum, p) => sum + Number(p.subsidyAmount || 0), 0)
     
     // Calculate projects with subsidized budgets (projects that have subsidy requests)
-    const projectsWithSubsidies = yearProjects.filter(p => (p.subsidyRequests || 0) > 0).length
+    const projectsWithSubsidies = yearProjects.filter(p => Number(p.subsidyRequests || 0) > 0).length
     const totalSubsidizedBudget = yearProjects
-      .filter(p => (p.subsidyRequests || 0) > 0)
-      .reduce((sum, p) => sum + (p.budget || 0), 0)
+      .filter(p => Number(p.subsidyRequests || 0) > 0)
+      .reduce((sum, p) => sum + Number(p.budget || 0), 0)
     
     return {
       totalProjects,
