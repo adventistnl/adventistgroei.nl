@@ -49,10 +49,13 @@ import {
   ChevronRight,
   ArrowRight,
   Info,
+  UserPlus,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
 import { activityModalTranslations } from "@/lib/translations/activity-modal"
+import { UserMultiSelector, User } from "@/components/shared/user-multi-selector"
+import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -65,6 +68,7 @@ export interface RegisterActivityFormData {
   request_subsidy: boolean
   priority: "low" | "medium" | "high"
   tags: string[]
+  assignee_ids?: string[]
   institution_requested_amount?: number
 }
 
@@ -73,6 +77,7 @@ interface RegisterActivityModalProps {
   onClose: () => void
   onSubmit: (data: RegisterActivityFormData) => void
   projectId: string
+  availableUsers?: User[]
 }
 
 // ============================================================================
@@ -486,9 +491,10 @@ interface ActivityFormProps {
   onChange: (updates: Partial<RegisterActivityFormData>) => void
   translations: typeof activityModalTranslations.en
   language: 'en' | 'nl' | 'pt'
+  availableUsers?: User[]
 }
 
-function ActivityForm({ formData, errors, onChange, translations, language }: ActivityFormProps) {
+function ActivityForm({ formData, errors, onChange, translations, language, availableUsers }: ActivityFormProps) {
   const handleAddTag = (tag: string) => {
     if (tag && !formData.tags.includes(tag)) {
       onChange({ tags: [...formData.tags, tag] })
@@ -498,6 +504,14 @@ function ActivityForm({ formData, errors, onChange, translations, language }: Ac
   const handleRemoveTag = (tag: string) => {
     onChange({ tags: formData.tags.filter(t => t !== tag) })
   }
+
+  const handleUsersChange = (users: User[]) => {
+    onChange({ assignee_ids: users.map(user => user.id) })
+  }
+
+  const selectedUsers = availableUsers?.filter(user => 
+    formData.assignee_ids?.includes(user.id)
+  ) || []
 
   const activityTags = getActivityTags(language)
   
@@ -549,6 +563,60 @@ function ActivityForm({ formData, errors, onChange, translations, language }: Ac
         </FormField>
       </div>
 
+      {/* Assignees Section */}
+      {availableUsers && availableUsers.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <Label className="text-sm">
+              {translations.user_selector?.select_assignees || 'Responsáveis pela Atividade'} <span className="text-red-500">*</span>
+            </Label>
+            <UserMultiSelector
+              availableUsers={availableUsers}
+              selectedUsers={selectedUsers}
+              onUsersChange={handleUsersChange}
+              buttonLabel={<UserPlus className="w-4 h-4" />}
+              dialogTitle={translations.user_selector?.select_assignees || 'Selecionar Responsáveis'}
+              searchPlaceholder={translations.user_selector?.search_user || 'Buscar usuário...'}
+              activityName={formData.name}
+              activityType="Atividade do Projeto"
+            />
+          </div>
+          
+          {/* Avatar Group Display */}
+          {selectedUsers.length > 0 ? (
+            <div className="p-3 rounded-lg border bg-muted/30">
+              <UsersAvatarGroup
+                users={selectedUsers.map(user => ({
+                  id: user.id,
+                  name: user.name,
+                  email: user.email,
+                  avatar: user.avatar,
+                  role: user.role,
+                  initials: user.initials
+                }))}
+                maxDisplay={4}
+                size="md"
+                showLabel={false}
+                labelText={translations.user_selector?.select_assignees || 'Responsáveis'}
+                showAddButton={false}
+              />
+            </div>
+          ) : (
+            <div className="p-3 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/10">
+              <p className="text-sm text-muted-foreground text-center">
+                {translations.user_selector?.add_assignees || 'Adicionar responsáveis para a atividade'}
+              </p>
+            </div>
+          )}
+          
+          {formData.assignee_ids && formData.assignee_ids.length === 0 && (
+            <p className="text-xs text-red-500">
+              {translations.user_selector?.minimum_required || 'Pelo menos um responsável deve ser selecionado'}
+            </p>
+          )}
+        </div>
+      )}
+
 
       {/* Tags */}
       <TagManager
@@ -558,6 +626,8 @@ function ActivityForm({ formData, errors, onChange, translations, language }: Ac
         onRemoveTag={handleRemoveTag}
         translations={translations}
       />
+
+
     </div>
   )
 }
@@ -570,7 +640,8 @@ export function RegisterActivityModal({
   isOpen,
   onClose,
   onSubmit,
-  projectId
+  projectId,
+  availableUsers = []
 }: RegisterActivityModalProps) {
   const { i18n } = useTranslation()
   const currentLanguage = (i18n.language || 'en') as 'en' | 'nl' | 'pt'
@@ -584,6 +655,7 @@ export function RegisterActivityModal({
     request_subsidy: false,
     priority: "medium",
     tags: [],
+    assignee_ids: [],
     institution_requested_amount: 0
   })
   
@@ -599,6 +671,7 @@ export function RegisterActivityModal({
         request_subsidy: false,
         priority: "medium",
         tags: [],
+        assignee_ids: [],
         institution_requested_amount: 0
       })
       setErrors({})
@@ -617,6 +690,9 @@ export function RegisterActivityModal({
     if (!formData.budget_amount || formData.budget_amount <= 0) {
       newErrors.budget_amount = t.budgetMustBeGreaterThanZero
     }
+    if (!formData.assignee_ids || formData.assignee_ids.length === 0) {
+      newErrors.assignees = t.user_selector?.minimum_required || 'Pelo menos um responsável deve ser selecionado'
+    }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -633,14 +709,15 @@ export function RegisterActivityModal({
   }
 
   const handleSelectPredefinedActivity = (activity: ReturnType<typeof getPredefinedActivities>[0]) => {
-    setFormData({
+    setFormData(prev => ({
       name: activity.name,
       description: activity.description,
       budget_amount: activity.budget_amount,
       request_subsidy: activity.request_subsidy,
       priority: activity.priority,
-      tags: activity.tags
-    })
+      tags: activity.tags,
+      assignee_ids: prev.assignee_ids || [] // Manter usuários já selecionados
+    }))
     
     toast.success(t.quickActivitySelected.replace('{{name}}', activity.name), {
       duration: 3000
@@ -694,6 +771,7 @@ export function RegisterActivityModal({
               onChange={handleFormChange}
               translations={t}
               language={currentLanguage}
+              availableUsers={availableUsers}
             />
           </div>
         </ScrollArea>

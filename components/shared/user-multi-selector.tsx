@@ -39,7 +39,7 @@ export interface UserMultiSelectorProps {
   onUsersChange: (users: User[]) => void
 
   /** Label do botão */
-  buttonLabel?: string
+  buttonLabel?: React.ReactNode
 
   /** Título do dialog */
   dialogTitle?: string
@@ -144,8 +144,19 @@ export function UserMultiSelector({
             disabled && "opacity-50 cursor-not-allowed"
           )}
         >
-          <UserPlus className="w-4 h-4" />
-          {buttonLabel || t('activities.user_selector.add_assignees')}
+          {typeof buttonLabel === 'string' ? (
+            <>
+              <UserPlus className="w-4 h-4" />
+              {buttonLabel || t('activities.user_selector.add_assignees')}
+            </>
+          ) : (
+            buttonLabel || (
+              <>
+                <UserPlus className="w-4 h-4" />
+                {t('activities.user_selector.add_assignees')}
+              </>
+            )
+          )}
         </Button>
       </DialogTrigger>
 
@@ -298,15 +309,22 @@ export function UserMultiSelector({
             </div>
           </div>
 
-          {/* Selection count */}
-          {maxSelections && (
-            <div className="text-xs text-muted-foreground text-center pt-1 border-t">
-              {t('activities.user_selector.selection_count', { 
-                selected: tempSelectedUsers.length, 
-                max: maxSelections 
-              })}
-            </div>
-          )}
+          {/* Selection count and validation */}
+          <div className="pt-1 border-t space-y-2">
+            {maxSelections && (
+              <div className="text-xs text-muted-foreground text-center">
+                {t('activities.user_selector.selection_count', { 
+                  selected: tempSelectedUsers.length, 
+                  max: maxSelections 
+                })}
+              </div>
+            )}
+            {tempSelectedUsers.length === 0 && (
+              <div className="text-xs text-dark-600 text-center bg-dark-50 border border-dark-200 rounded-md p-2">
+                {t('activities.user_selector.minimum_required')}
+              </div>
+            )}
+          </div>
         </div>
 
         <DialogFooter className="gap-2 sm:gap-2">
@@ -319,7 +337,11 @@ export function UserMultiSelector({
           </Button>
           <Button 
             onClick={handleConfirm}
-            className="flex-1 sm:flex-none bg-foreground text-background hover:bg-foreground/90"
+            disabled={tempSelectedUsers.length === 0}
+            className={cn(
+              "flex-1 sm:flex-none bg-foreground text-background hover:bg-foreground/90",
+              tempSelectedUsers.length === 0 && "opacity-50 cursor-not-allowed"
+            )}
           >
             {t('activities.user_selector.confirm', { count: tempSelectedUsers.length })}
           </Button>

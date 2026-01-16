@@ -217,6 +217,16 @@ export default function ProjectDetailsPage() {
     }
   })
 
+  // Extract and transform users data
+  const users = usersData?.users || []
+  const institutionUsers = users.map((user: any) => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    avatar: user.avatar,
+    role: user.role || 'Member'
+  }))
+
   // DEBUG: Monitor KPIs and Budget
   useEffect(() => {
     if (projectData?.project?.kpis) {
@@ -1093,7 +1103,7 @@ export default function ProjectDetailsPage() {
         description: data.description,
         budget_amount: data.budget_amount,
         deadline: deadline.toISOString(),
-        assignee_ids: [user.id], // Novo: usar assignee_ids ao invés de owner_id
+        assignee_ids: data.assignee_ids && data.assignee_ids.length > 0 ? data.assignee_ids : [user.id], // Usar usuários selecionados ou usuário logado como fallback
         tags: mappedTags,
         custom_tags: customTags,
         priority: priorityMap[data.priority] || ActivityPriority.Medium,
@@ -1876,6 +1886,7 @@ export default function ProjectDetailsPage() {
           onClose={() => setIsRegisterActivityModalOpen(false)}
           onSubmit={handleRegisterActivitySubmit}
           projectId={projectId}
+          availableUsers={institutionUsers}
         />
 
         <RequestSubsidyModal

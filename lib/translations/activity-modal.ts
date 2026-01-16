@@ -92,8 +92,29 @@ export const activityModalTranslations = {
     // Toast messages
     fillAllRequiredFields: "Please fill in all required fields",
     quickActivitySelected: "Quick Activity selected: \"{{name}}\"",
+        // User Selector
+    user_selector: {
+      add_assignees: "Add Assignees",
+      select_assignees: "Select Assignees",
+      selected: "Selected",
+      search_label: "Search Users",
+      search_user: "Search by name, email or role...",
+      available_users: "Available Users",
+      no_user_found: "No users found",
+      no_user_available: "No users available",
+      selection_count: "{{selected}} of {{max}} selected",
+      minimum_required: "At least one user must be assigned to the activity",
+      cancel: "Cancel",
+      confirm: "Confirm ({{count}})"
+    },
     
-    // Required indicator
+    // Documents
+    documents: "Documents",
+    unsaved_changes_and_files: "Unsaved changes and {{count}} pending files",
+    save_and_upload: "Save & Upload ({{count}})",
+    saving_and_uploading: "Saving...",
+    
+        // Required indicator
     required: "*"
   },
   
@@ -190,6 +211,22 @@ export const activityModalTranslations = {
     // Toast messages
     fillAllRequiredFields: "Vul alle verplichte velden in",
     quickActivitySelected: "Quick Activity geselecteerd: \"{{name}}\"",
+    
+    // User Selector
+    user_selector: {
+      add_assignees: "Toegewijzenen Toevoegen",
+      select_assignees: "Toegewijzenen Selecteren",
+      selected: "Geselecteerd",
+      search_label: "Gebruikers Zoeken",
+      search_user: "Zoeken op naam, email of rol...",
+      available_users: "Beschikbare Gebruikers",
+      no_user_found: "Geen gebruikers gevonden",
+      no_user_available: "Geen gebruikers beschikbaar",
+      selection_count: "{{selected}} van {{max}} geselecteerd",
+      minimum_required: "Ten minste één gebruiker moet worden toegewezen aan de activiteit",
+      cancel: "Annuleren",
+      confirm: "Bevestigen ({{count}})"
+    },
     
     // Required indicator
     required: "*"
@@ -288,6 +325,28 @@ export const activityModalTranslations = {
     // Toast messages
     fillAllRequiredFields: "Por favor, preencha todos os campos obrigatórios",
     quickActivitySelected: "Quick Activity selecionada: \"{{name}}\"",
+    
+    // User Selector
+    user_selector: {
+      add_assignees: "Adicionar Responsáveis",
+      select_assignees: "Selecionar Responsáveis",
+      selected: "Selecionados",
+      search_label: "Buscar Usuários",
+      search_user: "Buscar por nome, email ou cargo...",
+      available_users: "Usuários Disponíveis",
+      no_user_found: "Nenhum usuário encontrado",
+      no_user_available: "Nenhum usuário disponível",
+      selection_count: "{{selected}} de {{max}} selecionados",
+      minimum_required: "Pelo menos um usuário deve ser atribuído à atividade",
+      cancel: "Cancelar",
+      confirm: "Confirmar ({{count}})"
+    },
+    
+    // Documents
+    documents: "Documentos",
+    unsaved_changes_and_files: "Alterações não salvas e {{count}} arquivos pendentes",
+    save_and_upload: "Salvar e Enviar ({{count}})",
+    saving_and_uploading: "Salvando...",
     
     // Required indicator
     required: "*"

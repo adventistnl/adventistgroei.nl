@@ -278,8 +278,8 @@ export function ProjectActivitiesTable({
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
-      "TODO": pt.filters.pending,
-      "todo": pt.filters.pending,
+      "TODO": "To Do",
+      "todo": "To Do",
       "IN_PROGRESS": pt.filters.inProgress,
       "in_progress": pt.filters.inProgress,
       "COMPLETED": pt.filters.completed,
@@ -316,7 +316,7 @@ export function ProjectActivitiesTable({
     switch (statusLower) {
       case "completed": return "success"
       case "in_progress": return "info"
-      case "todo": return "warning"
+      case "todo": return "default"  // grey
       case "on_hold": return "neutral"
       default: return "default"
     }
@@ -337,10 +337,10 @@ export function ProjectActivitiesTable({
   const getPriorityVariant = (priority: string): StatusBadgeVariant => {
     const priorityLower = priority.toLowerCase()
     switch (priorityLower) {
-      case "urgent": return "error"
-      case "high": return "warning"
-      case "medium": return "info"
-      case "low": return "success"
+      case "urgent": return "error"   // red
+      case "high": return "warning"   // yellow
+      case "medium": return "neutral" // brown
+      case "low": return "default"    // grey
       default: return "default"
     }
   }
@@ -464,7 +464,6 @@ export function ProjectActivitiesTable({
           label={getPriorityLabel(row.original.priority)}
           variant={getPriorityVariant(row.original.priority)}
           icon={Flag}
-          showDot={true}
           size="sm"
         />
       ),

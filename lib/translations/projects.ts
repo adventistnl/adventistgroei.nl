@@ -675,6 +675,10 @@ export const projectTranslations = {
       expiredModalDescription: "This project has passed its end date. Please extend the date or conclude the project.",
       extendDate: "Extend End Date",
       concludeProject: "Conclude Project",
+      // Status validation errors
+      cannotSetExpired: "Cannot set project as expired before due date",
+      cannotSetConcluded: "Cannot conclude project: all activities, documents and subsidies must be completed first",
+      invalidStatusChange: "Invalid status change",
       // Errors
       statusUpdateError: "Status Update Error",
       cannotModifyConcluded: "Cannot modify a concluded project",
@@ -1512,6 +1516,10 @@ export const projectTranslations = {
       expiredModalDescription: "Dit project heeft de einddatum overschreden. Verleng de datum of sluit het project af.",
       extendDate: "Einddatum Verlengen",
       concludeProject: "Project Afsluiten",
+      // Status validation errors
+      cannotSetExpired: "Kan project niet als verlopen markeren vóór einddatum",
+      cannotSetConcluded: "Kan project niet afsluiten: alle activiteiten, documenten en subsidies moeten eerst voltooid zijn",
+      invalidStatusChange: "Ongeldige statuswijziging",
       // Errors
       statusUpdateError: "Statusupdatefout",
       cannotModifyConcluded: "Kan een afgerond project niet wijzigen",
@@ -2290,22 +2298,27 @@ export const projectTranslations = {
     
     // Status object for type consistency (using EN as PT is not used)
     status: {
-      draft: "Draft",
-      inProgress: "In Progress",
-      inReview: "In Review",
-      onHold: "On Hold",
-      expired: "Expired",
-      concluded: "Concluded",
-      expiredModalTitle: "Project Expired",
-      expiredModalDescription: "This project has passed its end date.",
-      extendDate: "Extend End Date",
-      concludeProject: "Conclude Project",
-      statusUpdateError: "Status Update Error",
-      cannotModifyConcluded: "Cannot modify a concluded project",
-      incompleteActivities: "All activities must be completed before concluding the project",
-      unvalidatedDocuments: "All documents must be validated before concluding the project",
-      openSubsidies: "All subsidies must be closed before concluding the project",
-      statusUpdated: "Status updated successfully",
+      draft: "Rascunho",
+      inProgress: "Em Andamento",
+      inReview: "Em Revisão",
+      onHold: "Em Espera",
+      expired: "Expirado",
+      concluded: "Concluído",
+      expiredModalTitle: "Projeto Expirado",
+      expiredModalDescription: "Este projeto passou da data de término.",
+      extendDate: "Estender Data de Fim",
+      concludeProject: "Concluir Projeto",
+      // Status validation errors
+      cannotSetExpired: "Não é possível marcar o projeto como expirado antes da data de vencimento",
+      cannotSetConcluded: "Não é possível concluir o projeto: todas as atividades, documentos e subsídios devem ser concluídos primeiro",
+      invalidStatusChange: "Mudança de status inválida",
+      // Errors
+      statusUpdateError: "Erro ao Atualizar Status",
+      cannotModifyConcluded: "Não é possível modificar um projeto concluído",
+      incompleteActivities: "Todas as atividades devem ser concluídas antes de finalizar o projeto",
+      unvalidatedDocuments: "Todos os documentos devem ser validados antes de finalizar o projeto",
+      openSubsidies: "Todos os subsídios devem ser fechados antes de finalizar o projeto",
+      statusUpdated: "Status atualizado com sucesso",
     },
     
     // Project types

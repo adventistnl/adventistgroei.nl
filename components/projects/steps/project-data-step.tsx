@@ -385,8 +385,8 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
                           </ul>
                         </div>
                       )}
+                      </div>
                     </div>
-                  </div>
                   </div>
                 )}
 

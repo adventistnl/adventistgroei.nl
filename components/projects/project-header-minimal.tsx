@@ -47,6 +47,14 @@ import toast from "react-hot-toast"
 import { UPDATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { ProjectStatus } from "@/types/graphql-global-types"
 
+interface ProjectCompletionData {
+  allActivitiesCompleted: boolean
+  allDocumentsValidated: boolean
+  allSubsidiesCompleted: boolean
+  totalActivities: number
+  totalSubsidies: number
+}
+
 interface ProjectHeaderMinimalProps {
   project: ProjectTableData
   onEdit?: () => void
@@ -79,6 +87,8 @@ interface ProjectHeaderMinimalProps {
   users?: UserAvatarData[]
   /** Callback to refetch project data after status update */
   onRefetch?: () => void
+  /** Data about project completion status for status validation */
+  completionData?: ProjectCompletionData
 }
 
 export function ProjectHeaderMinimal({
@@ -92,6 +102,7 @@ export function ProjectHeaderMinimal({
   fundingPolicies: fundingPoliciesProp,
   users = [],
   onRefetch,
+  completionData,
 }: ProjectHeaderMinimalProps) {
   const router = useRouter()
   const { i18n } = useTranslation()
@@ -132,6 +143,24 @@ export function ProjectHeaderMinimal({
   const handleStatusChange = async (newStatus: string) => {
     if (newStatus === project.status) return
     
+    // Prevent invalid status changes
+    if (isStatusDisabled(newStatus)) {
+      if (newStatus === 'EXPIRED') {
+        toast.error(t.status?.cannotSetExpired || 'Cannot set project as expired before due date')
+      } else if (newStatus === 'CONCLUDED') {
+        toast.error(t.status?.cannotSetConcluded || 'Cannot conclude project: all activities, documents and subsidies must be completed first')
+      } else {
+        toast.error(t.status?.invalidStatusChange || 'Invalid status change')
+      }
+      return
+    }
+
+    // Prevent changing from CONCLUDED to any other status
+    if (project.status === 'CONCLUDED' && newStatus !== 'CONCLUDED') {
+      toast.error(t.status?.cannotModifyConcluded || 'Cannot modify a concluded project')
+      return
+    }
+    
     try {
       await updateProjectStatus({
         variables: {
@@ -144,15 +173,63 @@ export function ProjectHeaderMinimal({
     }
   }
 
-  // Available statuses for selection
-  // EXPIRED is included for display but the dropdown will be disabled for expired projects
+  // Helper function to check if project can be expired
+  const canSetExpired = (): boolean => {
+    const now = new Date()
+    const endDate = new Date(project.end_at)
+    return now > endDate
+  }
+
+  // Helper function to check if project can be concluded
+  const canSetConcluded = (): boolean => {
+    // If already concluded, cannot change back
+    if (project.status === 'CONCLUDED') return false
+    
+    // If no completion data provided, disable CONCLUDED status
+    if (!completionData) return false
+    
+    // Check if all activities are completed
+    const allActivitiesCompleted = completionData.totalActivities === 0 || completionData.allActivitiesCompleted
+    
+    // Check if all documents are validated
+    const allDocumentsValidated = completionData.allDocumentsValidated
+    
+    // Check if all subsidies are completed
+    const allSubsidiesCompleted = completionData.totalSubsidies === 0 || completionData.allSubsidiesCompleted
+    
+    return allActivitiesCompleted && allDocumentsValidated && allSubsidiesCompleted
+  }
+
+  // Helper function to check if a status option should be disabled
+  const isStatusDisabled = (status: string): boolean => {
+    // If project is concluded, cannot change to any other status
+    if (project.status === 'CONCLUDED') {
+      return status !== 'CONCLUDED'
+    }
+    
+    // EXPIRED is only enabled if due date has passed
+    if (status === 'EXPIRED') {
+      return !canSetExpired()
+    }
+    
+    // CONCLUDED is only enabled if all conditions are met
+    if (status === 'CONCLUDED') {
+      return !canSetConcluded()
+    }
+    
+    return false
+  }
+
+  // Available statuses for selection with business rules
+  // EXPIRED is only available if due date has passed
+  // CONCLUDED is only available if all activities, documents and subsidies are complete
   const availableStatuses = [
     ProjectStatus.Draft,
     ProjectStatus.InProgress,
     ProjectStatus.InReview,
     ProjectStatus.OnHold,
-    ProjectStatus.Expired,
-    ProjectStatus.Concluded,
+    ...(canSetExpired() ? [ProjectStatus.Expired] : []),
+    ...(canSetConcluded() ? [ProjectStatus.Concluded] : []),
   ]
 
   // Check if project is concluded or expired (read-only for concluded, warning for expired)
@@ -239,56 +316,10 @@ export function ProjectHeaderMinimal({
           <ArrowLeft className="h-4 w-4" />
           {t.header.back}
         </Button>
-
-        <div className="flex items-center gap-2">
-          {onEdit && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onEdit}
-              className="gap-2"
-            >
-              <Edit className="h-4 w-4" />
-              {t.actions.editProject}
-            </Button>
-          )}
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {onCreateCommunication && (
-                <DropdownMenuItem onClick={onCreateCommunication}>
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  {t.actions.createCommunication}
-                </DropdownMenuItem>
-              )}
-              {onCreateEvent && (
-                <DropdownMenuItem onClick={onCreateEvent}>
-                  <Calendar className="h-4 w-4 mr-2" />
-                  {t.actions.createEvent}
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              {onDelete && (
-                <DropdownMenuItem
-                  onClick={onDelete}
-                  className="text-red-600"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  {t.header.delete}
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
       </div>
 
       {/* Minimalist Project Header */}
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-4 mb-2 border-b pb-4">
         <Avatar className="w-16 h-16 rounded-lg relative">
           <AvatarFallback className={cn("rounded-lg", variantAvatarBg)}>
             <Folder className="w-8 h-8 text-white" />
@@ -324,6 +355,86 @@ export function ProjectHeaderMinimal({
                 onShowAllUsers={() => setIsUserListModalOpen(true)}
               />
 
+                  {/* Status Dropdown */}
+            <Select
+              value={project.status}
+              onValueChange={handleStatusChange}
+              disabled={isConcluded || isUpdatingStatus}
+            >
+              <SelectTrigger 
+                className={cn(
+                  "w-auto min-w-[140px] h-8 text-sm",
+                  statusColors[project.status] || statusColors.DRAFT,
+                  isConcluded && "opacity-60 cursor-not-allowed"
+                )}
+              >
+                {isUpdatingStatus ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <SelectValue placeholder={getStatusLabel(project.status)} />
+                )}
+              </SelectTrigger>
+              <SelectContent>
+                {/* Show current status even if it wouldn't be normally available */}
+                {!availableStatuses.includes(project.status as any) && (
+                  <SelectItem 
+                    value={project.status}
+                    disabled
+                    className="cursor-not-allowed opacity-50"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={cn(
+                        "w-2 h-2 rounded-full",
+                        project.status === 'DRAFT' && "bg-gray-500",
+                        project.status === 'IN_PROGRESS' && "bg-green-500",
+                        project.status === 'IN_REVIEW' && "bg-blue-500",
+                        project.status === 'ON_HOLD' && "bg-amber-500",
+                        project.status === 'EXPIRED' && "bg-red-500",
+                        project.status === 'CONCLUDED' && "bg-slate-500",
+                      )} />
+                      {getStatusLabel(project.status)} {project.status === 'EXPIRED' && '(Expirado)'} {project.status === 'CONCLUDED' && '(Permanente)'}
+                    </div>
+                  </SelectItem>
+                )}
+                {availableStatuses.map((status) => {
+                  const isDisabled = isStatusDisabled(status)
+                  const isCurrentStatus = project.status === status
+                  
+                  return (
+                    <SelectItem 
+                      key={status} 
+                      value={status}
+                      disabled={isDisabled}
+                      className={cn(
+                        "cursor-pointer",
+                        isCurrentStatus && "font-medium",
+                        isDisabled && "cursor-not-allowed opacity-50"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className={cn(
+                          "w-2 h-2 rounded-full",
+                          status === 'DRAFT' && "bg-gray-500",
+                          status === 'IN_PROGRESS' && "bg-green-500",
+                          status === 'IN_REVIEW' && "bg-blue-500",
+                          status === 'ON_HOLD' && "bg-amber-500",
+                          status === 'EXPIRED' && "bg-red-500",
+                          status === 'CONCLUDED' && "bg-slate-500",
+                        )} />
+                        <span>{getStatusLabel(status)}</span>
+                        {isDisabled && status === 'EXPIRED' && (
+                          <span className="text-xs text-muted-foreground">(Disponível após data de fim)</span>
+                        )}
+                        {isDisabled && status === 'CONCLUDED' && (
+                          <span className="text-xs text-muted-foreground">(Requer atividades e documentos completos)</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  )
+                })}
+              </SelectContent>
+            </Select>
+
             <div className="flex items-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -355,63 +466,24 @@ export function ProjectHeaderMinimal({
             </div>
             </div>
           </div>
-          
-          {project.description && (
-            <p className="text-muted-foreground mb-3">{project.description}</p>
-          )}
-          <div className="flex flex-wrap gap-2 items-center">
-            {/* Status Dropdown */}
-            <Select
-              value={project.status}
-              onValueChange={handleStatusChange}
-              disabled={isConcluded || isUpdatingStatus}
-            >
-              <SelectTrigger 
-                className={cn(
-                  "w-auto min-w-[140px] h-8 text-sm",
-                  statusColors[project.status] || statusColors.DRAFT,
-                  isConcluded && "opacity-60 cursor-not-allowed"
+
+          <div className="w-full flex gap-2 items-center">
+            <div>
+                {project.description && (
+                  <p className="text-muted-foreground">{project.description}</p>
                 )}
-              >
-                {isUpdatingStatus ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <SelectValue placeholder={getStatusLabel(project.status)} />
-                )}
-              </SelectTrigger>
-              <SelectContent>
-                {availableStatuses.map((status) => (
-                  <SelectItem 
-                    key={status} 
-                    value={status}
-                    className={cn(
-                      "cursor-pointer",
-                      project.status === status && "font-medium"
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className={cn(
-                        "w-2 h-2 rounded-full",
-                        status === 'DRAFT' && "bg-gray-500",
-                        status === 'IN_PROGRESS' && "bg-green-500",
-                        status === 'IN_REVIEW' && "bg-blue-500",
-                        status === 'ON_HOLD' && "bg-amber-500",
-                        status === 'EXPIRED' && "bg-red-500",
-                        status === 'CONCLUDED' && "bg-slate-500",
-                      )} />
-                      {getStatusLabel(status)}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Badge variant="outline">
-              {getDepartmentName(project.department_id)}
-            </Badge>
-            <Badge variant="outline">
-              {formatCurrency(project.budget)}
-            </Badge>
+            </div>
+            <div className="flex flex-wrap gap-2 items-center">
+              <Badge variant="outline">
+                {getDepartmentName(project.department_id)}
+              </Badge>
+              <Badge variant="outline">
+                {formatCurrency(project.budget)}
+              </Badge>
+            </div>
           </div>
+          
+    
 
           {/* Funding summary & policy indicators (optional) */}
           { (totalBudget > 0 || subsidyBudget > 0 || requestContribution > 0) && (

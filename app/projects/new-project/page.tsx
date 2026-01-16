@@ -110,6 +110,7 @@ import {
 import { EventRegistrationForm, EventFormData } from "@/components/shared/event-registration-form"
 import { CommunicationForm, CommunicationFormData } from "@/components/shared/communication-form"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
+import { UserMultiSelector, User } from "@/components/shared/user-multi-selector"
 import { ProjectDataStep } from "@/components/projects/steps/project-data-step"
 import type { ProjectFormData, ProjectActivity } from "@/components/projects/types"
 type FormData = ProjectFormData
@@ -718,6 +719,11 @@ function ProjectRegisterContent() {
       return
     }
 
+    if (!currentActivity.assignee_ids || currentActivity.assignee_ids.length === 0) {
+      toast.error(t('activities.user_selector.minimum_required') || 'Pelo menos um responsável deve ser selecionado para a atividade')
+      return
+    }
+
     if (editingActivityId) {
       // Update existing activity
       setFormData(prev => ({
@@ -773,6 +779,12 @@ function ProjectRegisterContent() {
     console.log('🔄 Resetting currentActivity, assignee_ids:', resetActivity.assignee_ids)
     setCurrentActivity(resetActivity)
     setEditingActivityId(null)
+  }
+
+  const handleUsersChange = (selectedUsers: User[]) => {
+    const assigneeIds = selectedUsers.map(user => user.id)
+    console.log('👥 Users changed:', selectedUsers.length, 'users selected, IDs:', assigneeIds)
+    setCurrentActivity({ ...currentActivity, assignee_ids: assigneeIds })
   }
 
   const handleEditActivity = (activityId: string) => {
@@ -1403,75 +1415,41 @@ function ProjectRegisterContent() {
               <div className="space-y-4">
                 <Label className="flex items-center gap-2 text-base font-medium">
                   <Users className="w-4 h-4 text-muted-foreground" />
-                  {t('projectRegister.activityForm.activityResponsibles')}
+                  {t('projectRegister.activityForm.activityResponsibles')} <span className="text-red-500">*</span>
                 </Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className="w-full justify-between h-auto min-h-[48px] border-2"
-                    >
-                      <div className="flex flex-wrap gap-1.5">
-                        {(currentActivity.assignee_ids && currentActivity.assignee_ids.length > 0) ? (
-                          currentActivity.assignee_ids.map((userId) => {
-                            const user = users?.find((u: any) => u.id === userId)
-                            return user ? (
-                              <Badge key={userId} variant="secondary" className="text-xs">
-                                {user.name}
-                              </Badge>
-                            ) : null
-                          })
-                        ) : (
-                          <span className="text-muted-foreground">{t('projectRegister.activityForm.selectResponsibles')}</span>
-                        )}
-                      </div>
-                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder={t('projectRegister.activityForm.searchUsers')} />
-                      <CommandEmpty>{t('projectRegister.activityForm.noUsersFound')}</CommandEmpty>
-                      <CommandList>
-                        <CommandGroup>
-                          {users?.map((user: any) => {
-                            const isSelected = currentActivity.assignee_ids?.includes(user.id) || false
-                            return (
-                              <CommandItem
-                                key={user.id}
-                                onSelect={() => {
-                                  const currentAssignees = currentActivity.assignee_ids || []
-                                  const newAssignees = isSelected
-                                    ? currentAssignees.filter(id => id !== user.id)
-                                    : [...currentAssignees, user.id]
-                                  setCurrentActivity({ ...currentActivity, assignee_ids: newAssignees })
-                                }}
-                                className="cursor-pointer"
-                              >
-                                <div className="flex items-center gap-2 flex-1">
-                                  <div className={cn(
-                                    "w-4 h-4 border-2 rounded flex items-center justify-center",
-                                    isSelected ? "bg-primary border-primary" : "border-muted-foreground"
-                                  )}>
-                                    {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
-                                  </div>
-                                  <span>{user.name}</span>
-                                  {user.email && (
-                                    <span className="text-xs text-muted-foreground ml-auto">{user.email}</span>
-                                  )}
-                                </div>
-                              </CommandItem>
-                            )
-                          })}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <UserMultiSelector
+                  availableUsers={users?.map((user: any) => ({
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    avatar: user.avatar,
+                    role: user.role
+                  })) || []}
+                  selectedUsers={users?.filter((user: any) => 
+                    currentActivity.assignee_ids?.includes(user.id)
+                  ).map((user: any) => ({
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    avatar: user.avatar,
+                    role: user.role
+                  })) || []}
+                  onUsersChange={handleUsersChange}
+                  buttonLabel={t('projectRegister.activityForm.selectResponsibles')}
+                  dialogTitle={t('projectRegister.activityForm.activityResponsibles')}
+                  searchPlaceholder={t('projectRegister.activityForm.searchUsers')}
+                  activityName={currentActivity.name}
+                  activityType="Atividade do Projeto"
+                  disabled={!users || users.length === 0}
+                />
                 <p className="text-xs text-muted-foreground">
                   {t('projectRegister.activityForm.responsiblesDescription')}
                 </p>
+                {(!currentActivity.assignee_ids || currentActivity.assignee_ids.length === 0) && (
+                  <p className="text-xs text-red-500">
+                    {t('activities.user_selector.minimum_required') || 'Pelo menos um responsável deve ser selecionado'}
+                  </p>
+                )}
               </div>
 
               <Button 
