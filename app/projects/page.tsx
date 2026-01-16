@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@apollo/client"
+import { useRouter, useSearchParams } from "next/navigation"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -49,6 +50,8 @@ import { useAuth } from "@/contexts/auth-context"
 
 export default function ProjectsPage() {
   const { t, i18n } = useTranslation()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const { navigateWithLoading } = useNavigateWithLoading()
   const { currentInstitutionData } = useInstitution()
   const { selectedCurrency, formatCurrency } = useCurrency()
@@ -468,6 +471,30 @@ export default function ProjectsPage() {
       },
     },
   ]
+
+  // Auto-refresh data when redirected from project creation
+  useEffect(() => {
+    const shouldRefresh = searchParams.get('refresh')
+    
+    if (shouldRefresh === 'true') {
+      // Show loading toast
+      const refreshToast = toast.loading(t_project.toasts.dataRefreshing || 'Refreshing data...')
+      
+      // Refetch data
+      refetch().then(() => {
+        toast.dismiss(refreshToast)
+        toast.success(t_project.toasts.dataRefreshed || 'Data refreshed successfully', {
+          duration: 2000
+        })
+      }).catch(() => {
+        toast.dismiss(refreshToast)
+        toast.error(t_project.toasts.errorLoading || 'Failed to refresh data')
+      })
+      
+      // Clean up URL by removing the refresh parameter
+      router.replace('/projects')
+    }
+  }, [searchParams, refetch, router, t_project])
 
   // Show loading/error toasts
   useEffect(() => {

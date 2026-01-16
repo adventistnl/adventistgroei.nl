@@ -589,14 +589,14 @@ function ProjectRegisterContent() {
       .filter(act => act.is_subsidized)
       .reduce((sum, act) => sum + act.budget_amount, 0)
     
-    const institutionContribution = (subsidyBudget * formData.subsidy_percentage) / 100
-    const churchContribution = totalBudget - institutionContribution
+    const requestContribution = (subsidyBudget * formData.subsidy_percentage) / 100
+    const selfContribution = totalBudget - requestContribution
 
     setFormData(prev => ({
       ...prev,
       total_budget: totalBudget,
-      church_contribution: churchContribution,
-      institution_contribution: institutionContribution
+      church_contribution: selfContribution,
+      institution_contribution: requestContribution
     }))
   }, [formData.activities, formData.subsidy_percentage])
 
@@ -605,12 +605,19 @@ function ProjectRegisterContent() {
 
     switch (step) {
       case 1:
-        if (!formData.title.trim()) newErrors.title = translations.validation.projectTitleRequired
-        if (!formData.description.trim()) newErrors.description = translations.validation.projectDescriptionRequired
-        if (!formData.department_id) newErrors.department_id = translations.validation.departmentRequired
-        if (!formData.responsible_id) newErrors.responsible_id = translations.validation.responsiblePersonRequired
-        if (formData.project_responsible_type === 'church' && !formData.church_id) {
-          newErrors.church_id = (translations as any).validation?.churchRequired || "Selecione a igreja"
+        // Use _isStepValid property from ProjectDataStep component
+        if (formData._isStepValid === false) {
+          if (!formData.title?.trim()) newErrors.title = translations.validation.projectTitleRequired
+          if (!formData.description?.trim()) newErrors.description = translations.validation.projectDescriptionRequired
+          if (!formData.department_id) newErrors.department_id = translations.validation.departmentRequired
+          if (!formData.responsible_id) newErrors.responsible_id = translations.validation.responsiblePersonRequired
+          if (formData.project_responsible_type === 'church' && !formData.church_id) {
+            newErrors.church_id = (translations as any).validation?.churchRequired || "Selecione a igreja"
+          }
+          // Special case for no departments available
+          if (departments.length === 0) {
+            newErrors.department_id = t('projectRegister.validation.noDepartmentsAvailable', 'Nenhum departamento está disponível para seleção')
+          }
         }
         break
       
@@ -983,7 +990,7 @@ function ProjectRegisterContent() {
             departments={departments}
             users={users}
             churches={churches}
-            onChange={(updates) => setFormData({ ...formData, ...updates })}
+            onChange={(updates) => setFormData(prev => ({ ...prev, ...updates }))}
           />
         )
       case translations.steps.activities.title:
@@ -1496,8 +1503,8 @@ function ProjectRegisterContent() {
     const currentSubsidyPercentage = formData.subsidy_percentage
     
     // Calcular contribuições baseado APENAS nas atividades subsidiadas
-    const institutionContribution = (subsidyTotal * currentSubsidyPercentage) / 100
-    const churchContribution = totalBudget - institutionContribution
+    const requestContribution = (subsidyTotal * currentSubsidyPercentage) / 100
+    const selfContribution = totalBudget - requestContribution
     
     // Handle manual entry calculations - baseado apenas no total das atividades subsidiadas
     const handleManualAmountChange = (value: number) => {
@@ -1622,16 +1629,16 @@ function ProjectRegisterContent() {
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                           <Home className="w-3 h-3 text-blue-600" />
-                          <span className="text-muted-foreground">{t('projectRegister.fundingDistribution.church')}</span>
+                          <span className="text-muted-foreground">{t('projectRegister.fundingDistribution.self')}</span>
                         </div>
-                        <span className="font-medium text-blue-600">€ {churchContribution.toLocaleString()}</span>
+                        <span className="font-medium text-blue-600">€ {selfContribution.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                           <Building className="w-3 h-3 text-green-600" />
-                          <span className="text-muted-foreground">{t('projectRegister.fundingDistribution.institution')}</span>
+                          <span className="text-muted-foreground">{t('projectRegister.fundingDistribution.request')}</span>
                         </div>
-                        <span className="font-medium text-green-600">€ {institutionContribution.toLocaleString()}</span>
+                        <span className="font-medium text-green-600">€ {requestContribution.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -1826,9 +1833,9 @@ function ProjectRegisterContent() {
                       <Badge variant="outline" className="text-xs">
                         {(translations as any).fundingCalculator?.maxPercentageRule?.replace('{{percent}}', FUNDING_POLICIES.max_institution_percent.toString()) || `Máximo ${FUNDING_POLICIES.max_institution_percent}% de contribuição`}
                       </Badge>
-                      {institutionContribution > FUNDING_POLICIES.max_institution_amount && (
+                      {requestContribution > FUNDING_POLICIES.max_institution_amount && (
                         <Badge className="text-xs bg-black text-white hover:bg-black/90">
-                          ⚠️ {t('projectRegister.fundingDistribution.limitExceeded')}: {(translations as any).fundingCalculator?.limitReached || t('projectRegister.fundingDistribution.limitReachedMessage')}
+                          {t('projectRegister.fundingDistribution.limitExceeded')}: {(translations as any).fundingCalculator?.limitReached || t('projectRegister.fundingDistribution.limitReachedMessage')}
                         </Badge>
                       )}
                       {currentSubsidyPercentage > FUNDING_POLICIES.max_institution_percent && !formData.is_special_case && (
@@ -2004,7 +2011,7 @@ function ProjectRegisterContent() {
                           setIsManualEntry(newIsManual)
                           // When switching to manual, populate with current slider values
                           if (newIsManual) {
-                            setManualAmount(institutionContribution)
+                            setManualAmount(requestContribution)
                             setManualPercentage(currentSubsidyPercentage)
                           }
                         }}
@@ -2018,7 +2025,7 @@ function ProjectRegisterContent() {
                         {/* Manual Amount Input */}
                         <div className="space-y-2">
                           <Label className="text-sm font-medium">
-                            {t('projectRegister.fundingDistribution.institutionContributionValue')}
+                            {t('projectRegister.fundingDistribution.requestContributionValue')}
                           </Label>
                           <div className="flex gap-2">
                             <div className="relative flex-1">
@@ -2156,12 +2163,12 @@ function ProjectRegisterContent() {
 
               {/* Detailed Results Display */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
-                {/* Church Contribution Card */}
+                {/* Self Contribution Card */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div className="flex items-center gap-2">
                       <Home className="w-4 h-4 text-blue-600" />
-                      <CardTitle className="text-sm font-medium">{t('projectRegister.fundingDistribution.churchContribution')}</CardTitle>
+                      <CardTitle className="text-sm font-medium">{t('projectRegister.fundingDistribution.selfContribution')}</CardTitle>
                     </div>
                     <Tooltip>
                       <TooltipTrigger>
@@ -2174,10 +2181,10 @@ function ProjectRegisterContent() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-xl sm:text-2xl font-bold text-blue-600">
-                      € {churchContribution.toLocaleString()}
+                      € {selfContribution.toLocaleString()}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {Math.round(totalBudget > 0 ? (churchContribution / totalBudget) * 100 : 0)}% {t('projectRegister.fundingDistribution.ofTotalBudget')}
+                      {Math.round(totalBudget > 0 ? (selfContribution / totalBudget) * 100 : 0)}% {t('projectRegister.fundingDistribution.ofTotalBudget')}
                     </p>
                     <div className="text-xs text-muted-foreground mt-2">
                       {t('projectRegister.fundingDistribution.includesNonSubsidized')}
@@ -2185,12 +2192,12 @@ function ProjectRegisterContent() {
                   </CardContent>
                 </Card>
                 
-                {/* Institution Contribution Card */}
+                {/* Request Contribution Card */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div className="flex items-center gap-2">
                       <Building className="w-4 h-4 text-green-600" />
-                      <CardTitle className="text-sm font-medium">{t('projectRegister.fundingDistribution.institutionContribution')}</CardTitle>
+                      <CardTitle className="text-sm font-medium">{t('projectRegister.fundingDistribution.requestContribution')}</CardTitle>
                     </div>
                     <Tooltip>
                       <TooltipTrigger>
@@ -2203,7 +2210,7 @@ function ProjectRegisterContent() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-xl sm:text-2xl font-bold text-green-600">
-                      € {institutionContribution.toLocaleString()}
+                      € {requestContribution.toLocaleString()}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {Math.round(currentSubsidyPercentage)}% {t('projectRegister.fundingDistribution.overSubsidizedActivities')}
@@ -2279,8 +2286,8 @@ function ProjectRegisterContent() {
   const renderReviewStep = () => {
     // Cálculos para os highlights
     const totalBudget = formData.total_budget
-    const churchContribution = formData.church_contribution
-    const institutionContribution = formData.institution_contribution
+    const selfContribution = formData.church_contribution
+    const requestContribution = formData.institution_contribution
     
     const subsidizedActivities = formData.activities.filter(a => a.request_subsidy)
     const nonSubsidizedActivities = formData.activities.filter(a => !a.request_subsidy)
@@ -2328,16 +2335,16 @@ function ProjectRegisterContent() {
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <Home className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-muted-foreground">{t('projectRegister.review.church')}</span>
+                        <span className="text-muted-foreground">{t('projectRegister.review.self')}</span>
                       </div>
-                      <span className="font-medium text-foreground">€ {churchContribution.toLocaleString()}</span>
+                      <span className="font-medium text-foreground">€ {selfContribution.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <Building className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-muted-foreground">{t('projectRegister.review.institution')}</span>
+                        <span className="text-muted-foreground">{t('projectRegister.review.request')}</span>
                       </div>
-                      <span className="font-medium text-foreground">€ {institutionContribution.toLocaleString()}</span>
+                      <span className="font-medium text-foreground">€ {requestContribution.toLocaleString()}</span>
                     </div>
                   </div>
                   
@@ -2413,10 +2420,10 @@ function ProjectRegisterContent() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">{translations.summary.church}</p>
-                      <p className="text-2xl font-bold text-foreground">€ {churchContribution.toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-foreground">€ {selfContribution.toLocaleString()}</p>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">{Math.round((churchContribution / totalBudget) * 100)}% do total</p>
+                  <p className="text-xs text-muted-foreground">{Math.round((selfContribution / totalBudget) * 100)}% do total</p>
                 </CardContent>
               </Card>
 
@@ -2428,10 +2435,10 @@ function ProjectRegisterContent() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">{translations.summary.institution}</p>
-                      <p className="text-2xl font-bold text-foreground">€ {institutionContribution.toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-foreground">€ {requestContribution.toLocaleString()}</p>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">{Math.round((institutionContribution / totalBudget) * 100)}% do total</p>
+                  <p className="text-xs text-muted-foreground">{Math.round((requestContribution / totalBudget) * 100)}% do total</p>
                 </CardContent>
               </Card>
             </div>
@@ -2528,8 +2535,8 @@ function ProjectRegisterContent() {
                       <TrendingUp className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">{t('projectRegister.fundingDistribution.maxPercentageLabel')}</span>
                     </div>
-                    <Badge variant={isChurchPlanting || isSpecialProject || institutionContribution <= totalBudget * (FUNDING_POLICIES.max_institution_percent / 100) ? "default" : "destructive"}>
-                      {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? t('projectRegister.fundingDistribution.statusSpecial') : institutionContribution <= totalBudget * (FUNDING_POLICIES.max_institution_percent / 100) ? t('projectRegister.fundingDistribution.statusCompliant') : t('projectRegister.fundingDistribution.statusExceeded')}
+                    <Badge variant={isChurchPlanting || isSpecialProject || requestContribution <= totalBudget * (FUNDING_POLICIES.max_institution_percent / 100) ? "default" : "destructive"}>
+                      {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? t('projectRegister.fundingDistribution.statusSpecial') : requestContribution <= totalBudget * (FUNDING_POLICIES.max_institution_percent / 100) ? t('projectRegister.fundingDistribution.statusCompliant') : t('projectRegister.fundingDistribution.statusExceeded')}
                     </Badge>
                   </div>
 
@@ -2538,8 +2545,8 @@ function ProjectRegisterContent() {
                       <Banknote className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">{t('projectRegister.fundingDistribution.maxValueLabel')}</span>
                     </div>
-                    <Badge variant={isChurchPlanting || isSpecialProject || institutionContribution <= FUNDING_POLICIES.max_institution_amount ? "default" : "destructive"}>
-                       {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? t('projectRegister.fundingDistribution.statusSpecial') : institutionContribution <= FUNDING_POLICIES.max_institution_amount ? t('projectRegister.fundingDistribution.statusCompliant') : t('projectRegister.fundingDistribution.statusExceeded')}
+                    <Badge variant={isChurchPlanting || isSpecialProject || requestContribution <= FUNDING_POLICIES.max_institution_amount ? "default" : "destructive"}>
+                       {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? t('projectRegister.fundingDistribution.statusSpecial') : requestContribution <= FUNDING_POLICIES.max_institution_amount ? t('projectRegister.fundingDistribution.statusCompliant') : t('projectRegister.fundingDistribution.statusExceeded')}
                     </Badge>
                   </div>
 
@@ -2548,8 +2555,8 @@ function ProjectRegisterContent() {
                       <Home className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">{t('projectRegister.fundingDistribution.minimumChurch')}</span>
                     </div>
-                    <Badge variant={isChurchPlanting || isSpecialProject || churchContribution >= totalBudget * (FUNDING_POLICIES.min_church_percent / 100) ? "default" : "destructive"}>
-                       {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? t('projectRegister.fundingDistribution.statusSpecial') : churchContribution >= totalBudget * (FUNDING_POLICIES.min_church_percent / 100) ? t('projectRegister.fundingDistribution.statusCompliant') : t('projectRegister.fundingDistribution.statusInsufficient')}
+                    <Badge variant={isChurchPlanting || isSpecialProject || selfContribution >= totalBudget * (FUNDING_POLICIES.min_church_percent / 100) ? "default" : "destructive"}>
+                       {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? t('projectRegister.fundingDistribution.statusSpecial') : selfContribution >= totalBudget * (FUNDING_POLICIES.min_church_percent / 100) ? t('projectRegister.fundingDistribution.statusCompliant') : t('projectRegister.fundingDistribution.statusInsufficient')}
                     </Badge>
                   </div>
                 </div>
@@ -2566,14 +2573,14 @@ function ProjectRegisterContent() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t('projectRegister.fundingCalculator.subsidyRequested')}</span>
-                      <span className="font-medium text-foreground">€ {institutionContribution.toLocaleString()}</span>
+                      <span className="font-medium text-foreground">€ {requestContribution.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t('projectRegister.fundingCalculator.remainingCapacity')}</span>
                       <span className="font-medium">
                         € {Math.max(0, 
                             ((isChurchPlanting || isSpecialProject) ? totalBudget : Math.min(FUNDING_POLICIES.max_institution_amount, totalBudget * (FUNDING_POLICIES.max_institution_percent / 100))) 
-                            - institutionContribution
+                            - requestContribution
                           ).toLocaleString()}
                       </span>
                     </div>
@@ -2787,7 +2794,7 @@ function ProjectRegisterContent() {
                 <Button 
                   onClick={handleNext}
                   className="gap-2"
-                  disabled={isLoading}
+                  disabled={isLoading || (currentStep === 1 && formData._isStepValid === false)}
                 >
                   <span className="hidden sm:inline">{translations.buttons.next}</span>
                   <ChevronRight className="w-4 h-4" />

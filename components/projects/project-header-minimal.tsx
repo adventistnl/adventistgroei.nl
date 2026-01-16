@@ -64,7 +64,7 @@ interface ProjectHeaderMinimalProps {
   funding?: {
     totalBudget?: number
     subsidyBudget?: number
-    institutionContribution?: number
+    requestContribution?: number
     subsidyPercentage?: number
   }
   /** Optional override for funding policies (defaults provided) */
@@ -212,15 +212,15 @@ export function ProjectHeaderMinimal({
 
   // Funding snapshot (may be partial)
   const totalBudget = funding?.totalBudget || 0
-  const institutionContribution = funding?.institutionContribution || 0
+  const requestContribution = funding?.requestContribution || 0
   const subsidyBudget = funding?.subsidyBudget || 0
   const subsidyPercentage = funding?.subsidyPercentage ?? fundingPolicies.default_institution_percent
 
-  const institutionPercent = totalBudget > 0 ? (institutionContribution / totalBudget) * 100 : 0
+  const institutionPercent = totalBudget > 0 ? (requestContribution / totalBudget) * 100 : 0
 
-  const exceedsInstitutionAmount = institutionContribution > fundingPolicies.max_institution_amount
+  const exceedsInstitutionAmount = requestContribution > fundingPolicies.max_institution_amount
   const exceedsInstitutionPercent = institutionPercent > fundingPolicies.max_institution_percent
-  const belowMinChurchPercent = totalBudget > 0 ? ((totalBudget - institutionContribution) / totalBudget) * 100 < fundingPolicies.min_church_percent : false
+  const belowMinChurchPercent = totalBudget > 0 ? ((totalBudget - requestContribution) / totalBudget) * 100 < fundingPolicies.min_church_percent : false
 
   const handleBack = () => {
     router.push('/projects')
@@ -414,13 +414,13 @@ export function ProjectHeaderMinimal({
           </div>
 
           {/* Funding summary & policy indicators (optional) */}
-          { (totalBudget > 0 || subsidyBudget > 0 || institutionContribution > 0) && (
+          { (totalBudget > 0 || subsidyBudget > 0 || requestContribution > 0) && (
             <div className="mt-3 flex items-center gap-3">
               <div className={cn("w-3 h-3 rounded-full", variantAvatarBg)} aria-hidden />
               <div className="text-sm text-gray-700">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{t.header.institution}:</span>
-                  <span>{formatCurrency(institutionContribution)}</span>
+                  <span>{formatCurrency(requestContribution)}</span>
                   <span className="text-xs text-gray-500">({institutionPercent.toFixed(0)}%)</span>
                 </div>
                 <div className="flex items-center gap-2 mt-1">

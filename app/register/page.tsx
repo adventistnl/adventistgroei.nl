@@ -6,6 +6,8 @@ import { useTranslation } from "react-i18next"
 import { Form } from "@/components/ui/form"
 import { registerTranslations } from "@/lib/translations/register"
 import { MultiStepForm } from "@/components/shared/multi-step-form"
+import { LoadingSpinner } from "@/components/shared/loading-spinner"
+import { Building2 } from "lucide-react"
 
 // Componentes organizados
 import { RegistrationLayout } from "@/components/registration/registration-layout"
@@ -198,12 +200,13 @@ function RegisterPageContent() {
 export default function RegisterPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
+      <LoadingSpinner
+        text="Loading..."
+        customIcon={Building2}
+        size="lg"
+        fullScreen
+        className="space-y-6 max-w-sm mx-auto px-8"
+      />
     }>
       <RegisterPageContent />
     </Suspense>

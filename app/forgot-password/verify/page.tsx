@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { ArrowLeft, CheckCircle } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Building2 } from 'lucide-react'
+import { LoadingSpinner } from '@/components/shared/loading-spinner'
 import { AdventistLogo } from '@/components/ui/adventist-logo'
 import { useVerifyForgotPasswordCodeMutation, useSendForgotPasswordCodeMutation } from '@/hooks/graphql/use-forgot-password-mutation'
 
@@ -255,12 +256,13 @@ function VerifyCodePageContent() {
 export default function VerifyCodePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
+      <LoadingSpinner
+        text="Loading..."
+        customIcon={Building2}
+        size="lg"
+        fullScreen
+        className="space-y-6 max-w-sm mx-auto px-8"
+      />
     }>
       <VerifyCodePageContent />
     </Suspense>

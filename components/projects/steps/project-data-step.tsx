@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Globe, Building, Users, Target, Home, Settings, MapPin, CalendarIcon, Check, Info } from 'lucide-react'
+import { Globe, Building, Users, Target, Home, Settings, MapPin, CalendarIcon, Check, Info, AlertTriangle } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -10,6 +10,13 @@ import { Button } from '@/components/ui/button'
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { StepInfo } from '../step-info'
 import { ProjectFormData } from '@/components/projects/types'
@@ -37,6 +44,39 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
   const [openDepartment, setOpenDepartment] = useState(false)
   const [openResponsible, setOpenResponsible] = useState(false)
   const [openChurch, setOpenChurch] = useState(false)
+  const [showDepartmentInfoModal, setShowDepartmentInfoModal] = useState(false)
+  const [autoModalShown, setAutoModalShown] = useState(false)
+  const [isWarningExpanded, setIsWarningExpanded] = useState(false)
+
+  // Check if there are departments available
+  const hasDepartments = departments && departments.length > 0
+
+  // Calculate step validity using useMemo to prevent infinite loops
+  const isStepValid = useMemo(() => {
+    return hasDepartments && 
+           formData.title?.trim() && 
+           formData.description?.trim() && 
+           formData.department_id && 
+           formData.responsible_id &&
+           (formData.project_responsible_type !== 'church' || formData.church_id)
+  }, [hasDepartments, formData.title, formData.description, formData.department_id, formData.responsible_id, formData.project_responsible_type, formData.church_id])
+
+  // Communicate step validity to parent component
+  useEffect(() => {
+    onChange({ _isStepValid: isStepValid })
+  }, [isStepValid]) // Remove onChange from dependencies to prevent infinite loop
+
+  // Auto-show modal when no departments are available and modal hasn't been shown yet
+  useEffect(() => {
+    if (!hasDepartments && !autoModalShown) {
+      const timer = setTimeout(() => {
+        setShowDepartmentInfoModal(true)
+        setAutoModalShown(true)
+      }, 1000) // Show after 1 second to let the page load
+      
+      return () => clearTimeout(timer)
+    }
+  }, [hasDepartments, autoModalShown])
 
   const ResponsibilityTypeButton = ({ 
     type, 
@@ -111,7 +151,7 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
             </div>
 
             {/* Church Project Switch and Selector */}
-            <div className="space-y-4 pt-2 border-t border-border">
+            <div className="space-y-4 pt-2">
               <div 
                 className="flex items-center justify-between p-3 border border-border rounded-lg hover:border-primary/30 transition-colors cursor-pointer"
                 onClick={(e) => {
@@ -154,7 +194,7 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
                       : { church_id: undefined, project_responsible_type: 'personal' }
                     )
                   }}
-                  className="data-[state=checked]:bg-primary"
+                  className="data-[state=checked]:bg-primary disabled:bg-gray-800 disabled:opacity-70"
                 />
               </div>
 
@@ -217,140 +257,229 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
               ) : null}
             </div>
 
-            {/* Department and Responsible */}
             <div className="flex flex-col sm:flex-row gap-6">
-              {/* Department */}
-              <div className="flex-1 space-y-4">
-                <Label htmlFor="department" className="flex items-center gap-2 text-base font-medium">
-                  <Building className="w-4 h-4 text-muted-foreground" />
-                  {t('projectRegister.fields.department')} *
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-xs">
-                      <p className="text-sm">{t('projectRegister.tooltips.department')}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </Label>
-                <Popover open={openDepartment} onOpenChange={setOpenDepartment}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openDepartment}
-                      className={`h-12 w-full justify-between border-2 ${errors.department_id ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors`}
-                    >
-                      {formData.department_id
-                        ? departments.find((dept) => dept.id === formData.department_id)?.name
-                        : t('projectRegister.placeholders.selectDepartment')}
-                      <Building className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder={t('projectRegister.placeholders.searchDepartment')} />
-                      <CommandList>
-                        <CommandEmpty>{t('projectRegister.noResults.department')}</CommandEmpty>
-                        <CommandGroup>
-                          {departments.map((dept) => (
-                            <CommandItem
-                              key={dept.id}
-                              value={dept.name}
-                              onSelect={() => {
-                                onChange({ department_id: dept.id })
-                                setOpenDepartment(false)
-                              }}
-                            >
-                              <div className="flex items-center gap-3 w-full">
-                                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                                  <Building className="w-4 h-4 text-primary" />
-                                </div>
-                                <div className="flex-1">
-                                  <span className="font-medium">{dept.name}</span>
-                                  {dept.annual_budget !== undefined && (
-                                    <Badge variant="outline" className="ml-2 text-xs">
-                                      € {dept.annual_budget.toLocaleString()}
-                                    </Badge>
+              {/* Department and Responsible */}
+              {hasDepartments && (
+                /* Department */
+                <div className="flex-1 space-y-4">
+                  <Label htmlFor="department" className="flex items-center gap-2 text-base font-medium">
+                    <Building className="w-4 h-4 text-muted-foreground" />
+                    {t('projectRegister.fields.department')} *
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs">
+                        <p className="text-sm">{t('projectRegister.tooltips.department')}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </Label>
+                  <Popover open={openDepartment && hasDepartments} onOpenChange={setOpenDepartment}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openDepartment && hasDepartments}
+                        disabled={!hasDepartments}
+                        className={`h-12 w-full justify-between border-2 ${errors.department_id ? 'border-red-500' : 'border-border'} ${!hasDepartments ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary/50'} transition-colors`}
+                      >
+                        {formData.department_id
+                          ? departments.find((dept) => dept.id === formData.department_id)?.name
+                          : t('projectRegister.placeholders.selectDepartment')}
+                        <Building className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder={t('projectRegister.placeholders.searchDepartment')} />
+                        <CommandList>
+                          <CommandEmpty>{t('projectRegister.noResults.department')}</CommandEmpty>
+                          <CommandGroup>
+                            {departments.map((dept) => (
+                              <CommandItem
+                                key={dept.id}
+                                value={dept.name}
+                                onSelect={() => {
+                                  onChange({ department_id: dept.id })
+                                  setOpenDepartment(false)
+                                }}
+                              >
+                                <div className="flex items-center gap-3 w-full">
+                                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                                    <Building className="w-4 h-4 text-primary" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <span className="font-medium">{dept.name}</span>
+                                    {dept.annual_budget !== undefined && (
+                                      <Badge variant="outline" className="ml-2 text-xs">
+                                        € {dept.annual_budget.toLocaleString()}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  {formData.department_id === dept.id && (
+                                    <Check className="ml-auto h-4 w-4" />
                                   )}
                                 </div>
-                                {formData.department_id === dept.id && (
-                                  <Check className="ml-auto h-4 w-4" />
-                                )}
-                              </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {errors.department_id && <p className="text-sm text-red-600">{errors.department_id}</p>}
-              </div>
-
-              {/* Responsible Person */}
-              <div className="flex-1 space-y-4">
-                <Label htmlFor="responsible" className="flex items-center gap-2 text-base font-medium">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                  {t('projectRegister.fields.responsiblePeople')} *
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-xs">
-                      <p className="text-sm">{t('projectRegister.tooltips.responsible')}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </Label>
-                <Popover open={openResponsible} onOpenChange={setOpenResponsible}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openResponsible}
-                      className={`h-12 w-full justify-between border-2 ${errors.responsible_id ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors`}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {errors.department_id && <p className="text-sm text-red-600">{errors.department_id}</p>}
+                </div>
+              )}
+                
+                {/* Department Unavailable Warning */}
+                {!hasDepartments && (
+                  <div className="flex-1 space-y-4">
+                  <Label htmlFor="department" className="flex items-center gap-2 text-base font-medium">
+                    <Building className="w-4 h-4 text-muted-foreground" />
+                    {t('projectRegister.fields.department')} *
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs">
+                        <p className="text-sm">{t('projectRegister.tooltips.department')}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </Label>
+                  <div className="animate-in fade-in-0 slide-in-from-top-2 duration-300">
+                    <div 
+                      className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-700/50 rounded-lg p-3 cursor-pointer transition-all hover:bg-gray-100 dark:hover:bg-gray-800/30"
+                      onClick={() => setIsWarningExpanded(!isWarningExpanded)}
                     >
-                      {formData.responsible_id
-                        ? users.find((user) => user.id === formData.responsible_id)?.name
-                        : t('projectRegister.placeholders.selectResponsible')}
-                      <Users className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder={t('projectRegister.placeholders.searchUser')} />
-                      <CommandList>
-                        <CommandEmpty>{t('projectRegister.noResults.user')}</CommandEmpty>
-                        <CommandGroup>
-                          {users.map((user) => (
-                            <CommandItem
-                              key={user.id}
-                              value={user.name}
-                              onSelect={() => {
-                                onChange({ responsible_id: user.id })
-                                setOpenResponsible(false)
-                              }}
-                            >
-                              <div className="flex items-center gap-3 w-full">
-                                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                                  <Users className="w-4 h-4 text-primary" />
+                      <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center flex-shrink-0">
+                          <AlertTriangle className="w-3 h-3 text-gray-500 dark:text-gray-400" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {t('projectRegister.warnings.noDepartmentsTitle', 'Departamentos não disponíveis')}
+                          </h4>
+                        </div>
+                        <div className="text-gray-400 dark:text-gray-500">
+                          {isWarningExpanded ? (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {isWarningExpanded && (
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700/50">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-2">
+                            {t('projectRegister.warnings.noDepartmentsDescription', 'Os departamentos não estão disponíveis no momento. Verifique se o orçamento já foi finalizado e fechado, contate diretamente o seu admin ou financeiro.')}
+                          </p>
+                          <ul className="list-disc list-inside space-y-1 text-xs text-gray-500 dark:text-gray-500 ml-2">
+                            <li>{t('projectRegister.warnings.reason1', 'O orçamento anual ainda não foi finalizado')}</li>
+                            <li>{t('projectRegister.warnings.reason2', 'Os orçamentos departamentais estão em processo de aprovação')}</li>
+                            <li>{t('projectRegister.warnings.reason3', 'Não há orçamento disponível para novos projetos')}</li>
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  </div>
+                )}
+
+                {/* Auto-show Modal for No Departments */}
+                <Dialog open={showDepartmentInfoModal} onOpenChange={setShowDepartmentInfoModal}>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                        {t('projectRegister.warnings.noDepartmentsTitle', 'Departamentos não disponíveis')}
+                      </DialogTitle>
+                      <DialogDescription className="space-y-3 text-left">
+                        <p>
+                          {t('projectRegister.warnings.noDepartmentsDetailedDescription', 'Os departamentos não estão disponíveis para seleção neste momento. Isso pode acontecer por alguns motivos:')}
+                        </p>
+                        <ul className="list-disc list-inside space-y-1 text-sm">
+                          <li>{t('projectRegister.warnings.reason1', 'O orçamento anual ainda não foi finalizado')}</li>
+                          <li>{t('projectRegister.warnings.reason2', 'Os orçamentos departamentais estão em processo de aprovação')}</li>
+                          <li>{t('projectRegister.warnings.reason3', 'Não há orçamento disponível para novos projetos')}</li>
+                        </ul>
+                        <p className="text-sm font-medium">
+                          {t('projectRegister.warnings.contactAdvice', 'Entre em contato com o administrador ou responsável financeiro para mais informações.')}
+                        </p>
+                      </DialogDescription>
+                    </DialogHeader>
+                  </DialogContent>
+                </Dialog>
+             
+
+                {/* Responsible Person */}
+                <div className="flex-1 space-y-4">
+                  <Label htmlFor="responsible" className="flex items-center gap-2 text-base font-medium">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    {t('projectRegister.fields.responsiblePeople')} *
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs">
+                        <p className="text-sm">{t('projectRegister.tooltips.responsible')}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </Label>
+                  <Popover open={openResponsible} onOpenChange={setOpenResponsible}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openResponsible}
+                        className={`h-12 w-full justify-between border-2 ${errors.responsible_id ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors`}
+                      >
+                        {formData.responsible_id
+                          ? users.find((user) => user.id === formData.responsible_id)?.name
+                          : t('projectRegister.placeholders.selectResponsible')}
+                        <Users className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder={t('projectRegister.placeholders.searchUser')} />
+                        <CommandList>
+                          <CommandEmpty>{t('projectRegister.noResults.user')}</CommandEmpty>
+                          <CommandGroup>
+                            {users.map((user) => (
+                              <CommandItem
+                                key={user.id}
+                                value={user.name}
+                                onSelect={() => {
+                                  onChange({ responsible_id: user.id })
+                                  setOpenResponsible(false)
+                                }}
+                              >
+                                <div className="flex items-center gap-3 w-full">
+                                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                                    <Users className="w-4 h-4 text-primary" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <span className="font-medium">{user.name}</span>
+                                    <div className="text-xs text-muted-foreground">{user.email}</div>
+                                  </div>
+                                  {formData.responsible_id === user.id && (
+                                    <Check className="ml-auto h-4 w-4" />
+                                  )}
                                 </div>
-                                <div className="flex-1">
-                                  <span className="font-medium">{user.name}</span>
-                                  <div className="text-xs text-muted-foreground">{user.email}</div>
-                                </div>
-                                {formData.responsible_id === user.id && (
-                                  <Check className="ml-auto h-4 w-4" />
-                                )}
-                              </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {errors.responsible_id && <p className="text-sm text-red-600">{errors.responsible_id}</p>}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {errors.responsible_id && <p className="text-sm text-red-600">{errors.responsible_id}</p>}
+                </div>
               </div>
             </div>
 
@@ -450,6 +579,5 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
           </div>
         </div>
       </div>
-    </div>
   )
 }

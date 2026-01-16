@@ -124,13 +124,13 @@ export function GrowthLineChart({
 }: GrowthLineChartProps) {
   if (loading) {
     return (
-      <Card>
+      <Card className="h-full flex flex-col">
         <CardHeader>
           <Skeleton className="h-6 w-48" />
           {description && <Skeleton className="h-4 w-64 mt-2" />}
         </CardHeader>
-        <CardContent>
-          <Skeleton className={`h-[${height}px] w-full`} />
+        <CardContent className="flex-1">
+          <Skeleton className="h-full w-full" />
         </CardContent>
       </Card>
     )
@@ -146,7 +146,7 @@ export function GrowthLineChart({
   }, {} as Record<string, { label: string; color: string }>)
 
   return (
-    <Card>
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           {Icon && <Icon className="w-5 h-5" />}
@@ -154,10 +154,10 @@ export function GrowthLineChart({
         </CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 min-h-0">
         <ChartContainer
           config={chartConfig}
-          className={`h-[${height}px] w-full`}
+          className="h-full w-full"
         >
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />

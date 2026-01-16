@@ -37,7 +37,7 @@ export const subsidyRequestTranslations = {
     
     // Budget distribution
     budget: {
-      title: "Institution Contribution",
+      title: "Request Contribution",
       tooltip: {
         title: "Request Value",
         description: "This is the amount the institution will contribute. The rest of the budget will be covered by the church."
@@ -65,7 +65,7 @@ export const subsidyRequestTranslations = {
       
       // Calculated values
       totalBudget: "Total Activity Budget:",
-      institutionContribution: "Institution Contribution:",
+      requestContribution: "Request Contribution:",
       churchRemainder: "Remainder for Church:",
       
       // Limit info
@@ -201,7 +201,7 @@ export const subsidyRequestTranslations = {
     // Labels
     labels: {
       department: "Department",
-      institutionContribution: "Institution Contribution",
+      requestContribution: "Request Contribution",
       projectBudgetLimit: "Limit: Project Budget",
       selectType: "Select type",
       searchType: "Search type...",
@@ -284,7 +284,7 @@ export const subsidyRequestTranslations = {
       
       // Calculated values
       totalBudget: "Orçamento Total da Atividade:",
-      institutionContribution: "Contribuição da Instituição:",
+      requestContribution: "Contribuição da Instituição:",
       churchRemainder: "Restante para a Igreja:",
       
       // Limit info
@@ -420,7 +420,7 @@ export const subsidyRequestTranslations = {
     // Labels
     labels: {
       department: "Departamento",
-      institutionContribution: "Contribuição da Instituição",
+      requestContribution: "Contribuição da Instituição",
       projectBudgetLimit: "Limite: Orçamento do Projeto",
       selectType: "Selecionar tipo",
       searchType: "Buscar tipo...",
@@ -502,7 +502,7 @@ export const subsidyRequestTranslations = {
       
       // Calculated values
       totalBudget: "Totaal Activiteitenbudget:",
-      institutionContribution: "Bijdrage Instelling:",
+      requestContribution: "Bijdrage Instelling:",
       churchRemainder: "Restant voor Kerk:",
       
       // Limit info
@@ -638,7 +638,7 @@ export const subsidyRequestTranslations = {
     // Labels
     labels: {
       department: "Afdeling",
-      institutionContribution: "Bijdrage Instelling",
+      requestContribution: "Bijdrage Instelling",
       projectBudgetLimit: "Limiet: Projectbudget",
       selectType: "Type selecteren",
       searchType: "Type zoeken...",

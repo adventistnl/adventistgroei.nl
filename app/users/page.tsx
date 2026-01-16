@@ -118,13 +118,13 @@ export default function UsersPage() {
       await new Promise(resolve => setTimeout(resolve, 1000))
       
       toast.dismiss(refreshToast)
-      toast.success(`✅ ${t('users.refreshed')}`, {
+      toast.success(`${t('users.refreshed')}`, {
         duration: 2000
       })
       
     } catch (error) {
       toast.dismiss(refreshToast)
-      toast.error(`❌ ${t('users.refresh_error')}`)
+      toast.error(`${t('users.refresh_error')}`)
     } finally {
       setRefreshing(false)
     }

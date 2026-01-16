@@ -3,9 +3,11 @@
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
+import { Building2 } from 'lucide-react'
 
 import { useTranslation } from 'react-i18next'
 import { loginTranslations } from '@/lib/translations/login'
+import { LoadingSpinner } from '@/components/shared/loading-spinner'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -29,12 +31,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   // Mostrar loading enquanto verifica autenticação
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">{t.validatingAccount}</p>
-        </div>
-      </div>
+      <LoadingSpinner
+        text={t.validatingAccount}
+        customIcon={Building2}
+        size="lg"
+        fullScreen
+        className="space-y-6 max-w-sm mx-auto px-8"
+      />
     )
   }
 
