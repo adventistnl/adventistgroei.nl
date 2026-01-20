@@ -135,7 +135,7 @@ export const departments = [
 // Subsidy Statuses
 export const subsidy_statuses = [
   { id: "ss_pending", status: "pending", description: "Pending review" },
-  { id: "ss_approved", status: "approved", description: "Approved for funding" },
+  { id: "ss_accepted", status: "accepted", description: "Accepted for funding" },
   { id: "ss_rejected", status: "rejected", description: "Rejected" },
   { id: "ss_under_review", status: "under_review", description: "Under review" }
 ]
@@ -143,21 +143,21 @@ export const subsidy_statuses = [
 // Subsidy Requests (12 months of data for charts)
 export const subsidy_requests = [
   // 2024 data
-  { id: "s1", institution_id: "i1", requester_id: "u1", department_project_id: "d1", church_id: "c1", total_budget: 5000, subsidy_statuses_id: "ss_approved", created_at: "2024-01-15T00:00:00Z", updated_at: "2024-02-01T10:30:00Z" },
-  { id: "s2", institution_id: "i1", requester_id: "u2", department_project_id: "d2", church_id: "c1", total_budget: 8000, subsidy_statuses_id: "ss_approved", created_at: "2024-01-20T00:00:00Z", updated_at: "2024-02-05T15:20:00Z" },
-  { id: "s3", institution_id: "i2", requester_id: "u4", department_project_id: "d4", church_id: "c5", total_budget: 12000, subsidy_statuses_id: "ss_approved", created_at: "2024-02-10T00:00:00Z", updated_at: "2024-02-25T09:45:00Z" },
+  { id: "s1", institution_id: "i1", requester_id: "u1", department_project_id: "d1", church_id: "c1", total_budget: 5000, subsidy_statuses_id: "ss_accepted", created_at: "2024-01-15T00:00:00Z", updated_at: "2024-02-01T10:30:00Z" },
+  { id: "s2", institution_id: "i1", requester_id: "u2", department_project_id: "d2", church_id: "c1", total_budget: 8000, subsidy_statuses_id: "ss_accepted", created_at: "2024-01-20T00:00:00Z", updated_at: "2024-02-05T15:20:00Z" },
+  { id: "s3", institution_id: "i2", requester_id: "u4", department_project_id: "d4", church_id: "c5", total_budget: 12000, subsidy_statuses_id: "ss_accepted", created_at: "2024-02-10T00:00:00Z", updated_at: "2024-02-25T09:45:00Z" },
   { id: "s4", institution_id: "i2", requester_id: "u5", department_project_id: "d5", church_id: "c6", total_budget: 6500, subsidy_statuses_id: "ss_under_review", created_at: "2024-02-15T00:00:00Z", updated_at: "2024-08-24T14:30:00Z" },
-  { id: "s5", institution_id: "i3", requester_id: "u7", department_project_id: "d7", church_id: "c9", total_budget: 9000, subsidy_statuses_id: "ss_approved", created_at: "2024-03-05T00:00:00Z", updated_at: "2024-03-20T11:15:00Z" },
+  { id: "s5", institution_id: "i3", requester_id: "u7", department_project_id: "d7", church_id: "c9", total_budget: 9000, subsidy_statuses_id: "ss_accepted", created_at: "2024-03-05T00:00:00Z", updated_at: "2024-03-20T11:15:00Z" },
   { id: "s6", institution_id: "i1", requester_id: "u3", department_project_id: "d3", church_id: "c2", total_budget: 4500, subsidy_statuses_id: "ss_pending", created_at: "2024-03-12T00:00:00Z", updated_at: "2024-08-27T10:30:00Z" },
-  { id: "s7", institution_id: "i4", requester_id: "u8", department_project_id: "d9", church_id: "c11", total_budget: 7200, subsidy_statuses_id: "ss_approved", created_at: "2024-04-08T00:00:00Z", updated_at: "2024-04-22T16:45:00Z" },
+  { id: "s7", institution_id: "i4", requester_id: "u8", department_project_id: "d9", church_id: "c11", total_budget: 7200, subsidy_statuses_id: "ss_accepted", created_at: "2024-04-08T00:00:00Z", updated_at: "2024-04-22T16:45:00Z" },
   { id: "s8", institution_id: "i2", requester_id: "u6", department_project_id: "d6", church_id: "c6", total_budget: 8800, subsidy_statuses_id: "ss_under_review", created_at: "2024-04-18T00:00:00Z", updated_at: "2024-08-26T15:20:00Z" },
   { id: "s9", institution_id: "i5", requester_id: "u9", department_project_id: "d10", church_id: "c13", total_budget: 5500, subsidy_statuses_id: "ss_rejected", created_at: "2024-05-03T00:00:00Z", updated_at: "2024-05-20T11:15:00Z" },
   { id: "s10", institution_id: "i6", requester_id: "u10", department_project_id: "d11", church_id: "c15", total_budget: 6800, subsidy_statuses_id: "ss_pending", created_at: "2024-05-15T00:00:00Z", updated_at: "2024-08-22T16:45:00Z" },
-  { id: "s11", institution_id: "i7", requester_id: "u1", department_project_id: "d12", church_id: "c16", total_budget: 15000, subsidy_statuses_id: "ss_approved", created_at: "2024-06-10T00:00:00Z", updated_at: "2024-06-25T08:30:00Z" },
+  { id: "s11", institution_id: "i7", requester_id: "u1", department_project_id: "d12", church_id: "c16", total_budget: 15000, subsidy_statuses_id: "ss_accepted", created_at: "2024-06-10T00:00:00Z", updated_at: "2024-06-25T08:30:00Z" },
   { id: "s12", institution_id: "i8", requester_id: "u1", department_project_id: "d14", church_id: "c18", total_budget: 11200, subsidy_statuses_id: "ss_under_review", created_at: "2024-06-20T00:00:00Z", updated_at: "2024-08-20T13:20:00Z" },
   { id: "s13", institution_id: "i1", requester_id: "u1", department_project_id: "d1", church_id: "c1", total_budget: 5800, subsidy_statuses_id: "ss_pending", created_at: "2024-07-05T00:00:00Z", updated_at: "2024-08-27T10:30:00Z" },
-  { id: "s14", institution_id: "i2", requester_id: "u4", department_project_id: "d4", church_id: "c5", total_budget: 9500, subsidy_statuses_id: "ss_approved", created_at: "2024-07-15T00:00:00Z", updated_at: "2024-07-30T15:20:00Z" },
-  { id: "s15", institution_id: "i3", requester_id: "u7", department_project_id: "d8", church_id: "c9", total_budget: 13000, subsidy_statuses_id: "ss_approved", created_at: "2024-08-02T00:00:00Z", updated_at: "2024-08-15T09:45:00Z" },
+  { id: "s14", institution_id: "i2", requester_id: "u4", department_project_id: "d4", church_id: "c5", total_budget: 9500, subsidy_statuses_id: "ss_accepted", created_at: "2024-07-15T00:00:00Z", updated_at: "2024-07-30T15:20:00Z" },
+  { id: "s15", institution_id: "i3", requester_id: "u7", department_project_id: "d8", church_id: "c9", total_budget: 13000, subsidy_statuses_id: "ss_accepted", created_at: "2024-08-02T00:00:00Z", updated_at: "2024-08-15T09:45:00Z" },
   { id: "s16", institution_id: "i7", requester_id: "u1", department_project_id: "d13", church_id: "c17", total_budget: 16800, subsidy_statuses_id: "ss_pending", created_at: "2024-08-10T00:00:00Z", updated_at: "2024-08-21T08:30:00Z" }
 ]
 
@@ -277,7 +277,7 @@ export const getRevenueVsBudgetData = (institutionId?: string) => {
     const instDepartments = departments.filter(d => d.institution_id === inst.id)
     
     const approvedSubsidies = instSubsidies
-      .filter(s => s.subsidy_statuses_id === 'ss_approved')
+      .filter(s => s.subsidy_statuses_id === 'ss_accepted')
       .reduce((sum, s) => sum + s.total_budget, 0)
     
     const totalBudget = instDepartments.reduce((sum, d) => sum + d.annual_budget, 0)
@@ -308,13 +308,13 @@ export const getMonthlySubsidyData = (institutionId?: string) => {
       return date.getMonth() === index && date.getFullYear() === 2024
     })
     
-    const approved = monthRequests.filter(r => r.subsidy_statuses_id === 'ss_approved')
+    const accepted = monthRequests.filter(r => r.subsidy_statuses_id === 'ss_accepted')
     const pending = monthRequests.filter(r => r.subsidy_statuses_id === 'ss_pending')
     const underReview = monthRequests.filter(r => r.subsidy_statuses_id === 'ss_under_review')
     
     return {
       month,
-      approved: approved.reduce((sum, req) => sum + req.total_budget, 0),
+      accepted: accepted.reduce((sum, req) => sum + req.total_budget, 0),
       pending: pending.reduce((sum, req) => sum + req.total_budget, 0),
       under_review: underReview.reduce((sum, req) => sum + req.total_budget, 0)
     }

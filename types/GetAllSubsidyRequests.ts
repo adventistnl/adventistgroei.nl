@@ -58,6 +58,12 @@ export interface GetAllSubsidyRequests_subsidyRequests_items {
   project_activity: GetAllSubsidyRequests_subsidyRequests_items_project_activity;
 }
 
+export interface GetAllSubsidyRequests_subsidyRequests_receipts {
+  __typename: "SubsidyReceipt";
+  id: string;
+  is_validated: boolean;
+}
+
 export interface GetAllSubsidyRequests_subsidyRequests {
   __typename: "SubsidyRequest";
   id: string;
@@ -80,6 +86,7 @@ export interface GetAllSubsidyRequests_subsidyRequests {
   department: GetAllSubsidyRequests_subsidyRequests_department;
   church: GetAllSubsidyRequests_subsidyRequests_church | null;
   items: GetAllSubsidyRequests_subsidyRequests_items[] | null;
+  receipts: GetAllSubsidyRequests_subsidyRequests_receipts[] | null;
 }
 
 export interface GetAllSubsidyRequests {

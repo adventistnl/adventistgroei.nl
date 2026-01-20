@@ -57,7 +57,7 @@ function filterUserProjects(projects: any[], userId: string | undefined): any[] 
 // Prepare data structure for sidebar components
 function useSidebarData() {
   const { user } = useAuth()
-  const { navigation } = useNavigation()
+  const { navigation, sections } = useNavigation()
   const { currentInstitutionData } = useInstitution()
 
   // Fetch projects from API
@@ -90,10 +90,11 @@ function useSidebarData() {
   return React.useMemo(() => ({
     user: userData,
     navMain: navigation,
+    navSections: sections,
     projects,
     projectsLoading,
     onAddProject: handleAddProject,
-  }), [userData, navigation, projects, projectsLoading, handleAddProject])
+  }), [userData, navigation, sections, projects, projectsLoading, handleAddProject])
 }
 
 export const AppSidebar = React.memo(function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -107,7 +108,7 @@ export const AppSidebar = React.memo(function AppSidebar({ ...props }: React.Com
         </WithPermission>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain sections={data.navSections} />
         <NavProjects projects={data.projects} loading={data.projectsLoading} />
       </SidebarContent>
       <SidebarFooter>

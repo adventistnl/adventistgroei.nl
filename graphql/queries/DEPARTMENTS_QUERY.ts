@@ -31,3 +31,24 @@ export const GET_DEPARTMENTS_QUERY = gql`
     }
   }
 `;
+
+export const GET_CHURCH_DEPARTMENTS_QUERY = gql`
+  query GetChurchDepartments($church_id: String!) {
+    departments(
+      institution_id: null
+      where: {
+        church_id: { equals: $church_id }
+        is_deleted: { equals: false }
+      }
+    ) {
+      id
+      name
+      description
+      church_id
+      church {
+        id
+        name
+      }
+    }
+  }
+`;

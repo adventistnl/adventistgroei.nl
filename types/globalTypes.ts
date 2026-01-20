@@ -115,6 +115,15 @@ export enum ProjectActivityLogAction {
   UPDATED = "UPDATED",
 }
 
+export enum ProjectStatus {
+  CONCLUDED = "CONCLUDED",
+  DRAFT = "DRAFT",
+  EXPIRED = "EXPIRED",
+  IN_PROGRESS = "IN_PROGRESS",
+  IN_REVIEW = "IN_REVIEW",
+  ON_HOLD = "ON_HOLD",
+}
+
 export enum ProjectType {
   Global = "Global",
   Local = "Local",
@@ -281,6 +290,8 @@ export interface SubsidyRequestItemInput {
   project_activity_id: string;
   requested_amount: number;
   notes?: string | null;
+  linked_activity_document_ids?: string[] | null;
+  linked_document_amounts?: number[] | null;
 }
 
 export interface SubsidyRequestUpdateDto {

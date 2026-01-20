@@ -50,10 +50,10 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
         {[1, 2, 3].map((i) => (
           <div key={i} className="animate-pulse">
             <div className="flex gap-3">
-              <div className="w-8 h-8 bg-gray-200 rounded-full" />
+              <div className="w-8 h-8 bg-muted rounded-full" />
               <div className="flex-1 space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-3/4" />
-                <div className="h-3 bg-gray-200 rounded w-1/2" />
+                <div className="h-4 bg-muted rounded w-3/4" />
+                <div className="h-3 bg-muted rounded w-1/2" />
               </div>
             </div>
           </div>
@@ -64,7 +64,7 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
 
   if (logs.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center py-8 text-muted-foreground">
         <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
         <p className="text-sm">{t('activities.logs.no_history')}</p>
       </div>
@@ -74,59 +74,36 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
   const getActionIcon = (action: string) => {
     switch (action) {
       case 'CREATED':
-        return <Plus className="w-4 h-4 text-green-600" />
+        return <Plus className="w-4 h-4 text-muted-foreground" />
       case 'UPDATED':
-        return <Edit3 className="w-4 h-4 text-blue-600" />
+        return <Edit3 className="w-4 h-4 text-muted-foreground" />
       case 'DELETED':
-        return <Trash2 className="w-4 h-4 text-red-600" />
+        return <Trash2 className="w-4 h-4 text-muted-foreground" />
       case 'STATUS_CHANGED':
-        return <CheckCircle className="w-4 h-4 text-purple-600" />
+        return <CheckCircle className="w-4 h-4 text-muted-foreground" />
       case 'PRIORITY_CHANGED':
-        return <Flag className="w-4 h-4 text-orange-600" />
+        return <Flag className="w-4 h-4 text-muted-foreground" />
       case 'ASSIGNED':
-        return <UserPlus className="w-4 h-4 text-blue-600" />
+        return <UserPlus className="w-4 h-4 text-muted-foreground" />
       case 'UNASSIGNED':
-        return <UserMinus className="w-4 h-4 text-gray-600" />
+        return <UserMinus className="w-4 h-4 text-muted-foreground" />
       case 'BUDGET_UPDATED':
-        return <DollarSign className="w-4 h-4 text-green-600" />
+        return <DollarSign className="w-4 h-4 text-muted-foreground" />
       case 'DEADLINE_UPDATED':
-        return <Calendar className="w-4 h-4 text-red-600" />
+        return <Calendar className="w-4 h-4 text-muted-foreground" />
       case 'TAG_ADDED':
       case 'TAG_REMOVED':
-        return <Tag className="w-4 h-4 text-indigo-600" />
+        return <Tag className="w-4 h-4 text-muted-foreground" />
       case 'SUBSIDIZED_CHANGED':
-        return <DollarSign className="w-4 h-4 text-emerald-600" />
+        return <DollarSign className="w-4 h-4 text-muted-foreground" />
       default:
-        return <Settings className="w-4 h-4 text-gray-600" />
+        return <Settings className="w-4 h-4 text-muted-foreground" />
     }
   }
 
   const getActionColor = (action: string) => {
-    switch (action) {
-      case 'CREATED':
-        return 'bg-green-50 border-green-200'
-      case 'UPDATED':
-        return 'bg-blue-50 border-blue-200'
-      case 'DELETED':
-        return 'bg-red-50 border-red-200'
-      case 'STATUS_CHANGED':
-        return 'bg-purple-50 border-purple-200'
-      case 'PRIORITY_CHANGED':
-        return 'bg-orange-50 border-orange-200'
-      case 'ASSIGNED':
-      case 'UNASSIGNED':
-        return 'bg-blue-50 border-blue-200'
-      case 'BUDGET_UPDATED':
-      case 'SUBSIDIZED_CHANGED':
-        return 'bg-green-50 border-green-200'
-      case 'DEADLINE_UPDATED':
-        return 'bg-red-50 border-red-200'
-      case 'TAG_ADDED':
-      case 'TAG_REMOVED':
-        return 'bg-indigo-50 border-indigo-200'
-      default:
-        return 'bg-gray-50 border-gray-200'
-    }
+    // Use monochromatic muted colors for all actions
+    return 'bg-muted/30 border-border hover:bg-muted/50'
   }
 
   const formatFieldName = (fieldName: string) => {
@@ -174,11 +151,11 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
         return (
           <span>
             {t('activities.logs.actions.status_changed', { user: userName })}{' '}
-            <span className="font-semibold text-gray-700">
+            <span className="font-semibold text-foreground">
               {log.old_value ? formatValue(log.old_value, 'status') : '—'}
             </span>
             {' '}{t('activities.logs.actions.to')}{' '}
-            <span className="font-semibold text-gray-700">
+            <span className="font-semibold text-foreground">
               {log.new_value ? formatValue(log.new_value, 'status') : '—'}
             </span>
           </span>
@@ -188,11 +165,11 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
         return (
           <span>
             {t('activities.logs.actions.priority_changed', { user: userName })}{' '}
-            <span className="font-semibold text-gray-700">
+            <span className="font-semibold text-foreground">
               {log.old_value ? formatValue(log.old_value, 'priority') : '—'}
             </span>
             {' '}{t('activities.logs.actions.to')}{' '}
-            <span className="font-semibold text-gray-700">
+            <span className="font-semibold text-foreground">
               {log.new_value ? formatValue(log.new_value, 'priority') : '—'}
             </span>
           </span>
@@ -202,11 +179,11 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
         return (
           <span>
             {t('activities.logs.actions.budget_updated', { user: userName })}{' '}
-            <span className="font-semibold text-gray-700">
+            <span className="font-semibold text-foreground">
               {log.old_value || '—'}
             </span>
             {' '}{t('activities.logs.actions.to')}{' '}
-            <span className="font-semibold text-gray-700">
+            <span className="font-semibold text-foreground">
               {log.new_value || '—'}
             </span>
           </span>
@@ -228,11 +205,11 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
               {log.old_value && log.new_value && (
                 <>
                   {' '}{t('activities.logs.actions.from')}{' '}
-                  <span className="font-semibold text-gray-700">
+                  <span className="font-semibold text-foreground">
                     {formatValue(log.old_value, log.field_name)}
                   </span>
                   {' '}{t('activities.logs.actions.to')}{' '}
-                  <span className="font-semibold text-gray-700">
+                  <span className="font-semibold text-foreground">
                     {formatValue(log.new_value, log.field_name)}
                   </span>
                 </>
@@ -292,8 +269,8 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
         >
           {/* User Avatar */}
           <div className="flex-shrink-0">
-            <Avatar className="h-8 w-8 border-2 border-white shadow-sm">
-              <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+            <Avatar className="h-8 w-8 border border-border">
+              <AvatarFallback className="text-xs bg-muted text-muted-foreground">
                 {log.user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
               </AvatarFallback>
             </Avatar>
@@ -306,12 +283,12 @@ export function ActivityLogs({ logs, isLoading }: ActivityLogsProps) {
                 {getActionIcon(log.action)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-700 leading-snug">
+                <p className="text-sm text-foreground leading-snug">
                   {getActionMessage(log)}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   <time
-                    className="text-xs text-gray-500"
+                    className="text-xs text-muted-foreground"
                     title={formatFullDate(log.created_at)}
                   >
                     {formatTimeAgo(log.created_at)}

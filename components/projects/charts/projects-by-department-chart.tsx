@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select"
 import { PieChart } from "lucide-react"
 import { projectTranslations } from "@/lib/translations/projects"
+import { PROJECT_CHART_COLORS, getProjectColor } from "@/lib/chart-colors"
 
 interface ProjectsByDepartmentChartProps {
   data: any[]
@@ -38,19 +39,7 @@ export function ProjectsByDepartmentChart({ data, departments }: ProjectsByDepar
   const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
   const id = "projects-by-department"
 
-  // Cores para o gráfico PIE - HSL para light/dark mode
-  const COLORS = [
-    'hsl(217, 91%, 60%)',  // Deep Blue
-    'hsl(142, 76%, 36%)',  // Deep Green
-    'hsl(32, 95%, 44%)',   // Deep Orange
-    'hsl(271, 91%, 65%)',  // Deep Purple
-    'hsl(330, 81%, 60%)',  // Deep Pink
-    'hsl(189, 94%, 43%)',  // Deep Cyan
-    'hsl(14, 100%, 57%)',  // Deep Coral
-    'hsl(250, 95%, 63%)',  // Deep Indigo
-    'hsl(173, 80%, 40%)',  // Deep Teal
-    'hsl(346, 77%, 50%)',  // Deep Rose
-  ]
+
 
   // Transformar dados para o PIE chart
   const pieData = useMemo(() => {
@@ -71,7 +60,7 @@ export function ProjectsByDepartmentChart({ data, departments }: ProjectsByDepar
       return {
         department: dept?.name || 'Unknown',
         count: item.count,
-        fill: COLORS[index % COLORS.length]
+        fill: getProjectColor(index)
       }
     })
   }, [data, departments])

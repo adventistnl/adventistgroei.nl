@@ -27,7 +27,8 @@ import {
   PanelRight,
   Flag,
   UserPlus,
-  History
+  History,
+  Upload
 } from "lucide-react"
 import { useQuery } from "@apollo/client"
 import { GET_PROJECT_ACTIVITY_LOGS_QUERY } from "@/graphql/queries/ACTIVITY_LOGS_QUERY"
@@ -59,6 +60,7 @@ import { UserMultiSelector } from "@/components/shared/user-multi-selector"
 import { ActivityTags } from "@/types/graphql-global-types"
 import { TagBadgeVariant } from "@/components/ui/tag-badge"
 import { ActivityDocumentsSection } from "@/components/projects/activity-documents-section"
+import { useActivityDocuments } from "@/hooks/use-activity-documents"
 
 // Type alias for User
 type User = UserType
@@ -95,6 +97,23 @@ export function ActivityDetailsModal({
   const [editingField, setEditingField] = useState<string | null>(null)
   const [editorState, setEditorState] = useState<any>(null)
   const [isDescriptionEditing, setIsDescriptionEditing] = useState(false)
+
+  // Hook para gerenciar documentos da atividade
+  const {
+    documents,
+    loading: documentsLoading,
+    uploading: documentsUploading,
+    uploadMultipleDocuments,
+    deleteDocument,
+    validateDocument,
+    downloadDocument,
+  } = useActivityDocuments({ 
+    activityId: activity?.id || '', 
+    projectActivityId: activity?.id || '' 
+  })
+
+  // Estado para arquivos pendentes de upload
+  const [pendingFiles, setPendingFiles] = useState<File[]>([])
 
   // Fetch activity logs
   const { data: logsData, loading: logsLoading, refetch: refetchLogs } = useQuery(
@@ -360,24 +379,38 @@ export function ActivityDetailsModal({
     setHasChanges(true)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (onSave && activity) {
-      // Include activity id and assignee_ids from assignedUsers
-      const dataToSave: Partial<ProjectActivityData> = {
-        id: activity.id,
-        ...formData,
-        tags: formData.tags.map(tag => normalizeActivityTag(tag) as ActivityTags),
-        assignee_ids: assignedUsers.map(u => u.id), // Enviar todos os responsáveis
-      }
-      onSave(dataToSave)
-      toast.success(t('common.success'))
-      setHasChanges(false)
+      try {
+        // Primeiro, fazer upload dos arquivos pendentes se existirem
+        if (pendingFiles.length > 0) {
+          toast.loading(t('activities.documents.uploading_files'))
+          await uploadMultipleDocuments(pendingFiles)
+          setPendingFiles([])
+          toast.dismiss()
+          toast.success(t('activities.documents.files_uploaded_successfully'))
+        }
 
-      // Refetch logs after saving to show the new changes
-      if (refetchLogs) {
-        setTimeout(() => {
-          refetchLogs()
-        }, 500)
+        // Depois salvar as alterações da atividade
+        const dataToSave: Partial<ProjectActivityData> = {
+          id: activity.id,
+          ...formData,
+          tags: formData.tags.map(tag => normalizeActivityTag(tag) as ActivityTags),
+          assignee_ids: assignedUsers.map(u => u.id),
+        }
+        onSave(dataToSave)
+        toast.success(t('common.success'))
+        setHasChanges(false)
+
+        // Refetch logs after saving to show the new changes
+        if (refetchLogs) {
+          setTimeout(() => {
+            refetchLogs()
+          }, 500)
+        }
+      } catch (error) {
+        console.error('Error saving activity:', error)
+        toast.error(t('common.error'))
       }
     }
   }
@@ -910,11 +943,151 @@ export function ActivityDetailsModal({
               )}
             </div>
 
-            {/* File Upload Area - New Integrated Component */}
-            <ActivityDocumentsSection
-              activityId={activity.id}
-              projectActivityId={activity.id}
-            />
+            {/* Documents Upload Section - Minimalist */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">{t('activities.modal.documents')}</h3>
+                {pendingFiles.length > 0 && (
+                  <div className="text-xs text-gray-500">
+                    {t('activities.documents.pending_upload_count', { count: pendingFiles.length })}
+                  </div>
+                )}
+              </div>
+              
+              {/* Simple Drop Zone */}
+              <div
+                className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:border-gray-300 transition-colors cursor-pointer"
+                onClick={() => {
+                  const input = document.createElement('input')
+                  input.type = 'file'
+                  input.multiple = true
+                  input.accept = 'image/*,application/pdf'
+                  input.onchange = (e) => {
+                    const files = (e.target as HTMLInputElement).files
+                    if (files) {
+                      const validFiles = Array.from(files).filter(file => {
+                        const isValidType = file.type.startsWith('image/') || file.type === 'application/pdf'
+                        const isValidSize = file.size <= 10 * 1024 * 1024 // 10MB
+                        return isValidType && isValidSize
+                      })
+                      
+                      if (validFiles.length > 0) {
+                        setPendingFiles(prev => [...prev, ...validFiles])
+                        setHasChanges(true)
+                        toast.success(t('activities.documents.files_added', { count: validFiles.length }))
+                      }
+                    }
+                  }
+                  input.click()
+                }}
+                onDragEnter={(e) => { e.preventDefault() }}
+                onDragOver={(e) => { e.preventDefault() }}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    const droppedFiles = Array.from(e.dataTransfer.files)
+                    const validFiles = droppedFiles.filter(file => {
+                      const isValidType = file.type.startsWith('image/') || file.type === 'application/pdf'
+                      const isValidSize = file.size <= 10 * 1024 * 1024 // 10MB
+                      return isValidType && isValidSize
+                    })
+
+                    if (validFiles.length > 0) {
+                      setPendingFiles(prev => [...prev, ...validFiles])
+                      setHasChanges(true)
+                      toast.success(t('activities.documents.files_added', { count: validFiles.length }))
+                    }
+                  }
+                }}
+              >
+                <Upload className="w-6 h-6 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-500">{t('activities.documents.drag_or_click')}</p>
+                <p className="text-xs text-gray-500 mt-2">{t('activities.documents.supported_formats')}</p>
+              </div>
+
+              {/* Pending Files */}
+              {pendingFiles.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                    {pendingFiles.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded text-sm"
+                      >
+                        {file.type.startsWith('image/') ? (
+                          <Image className="w-3 h-3 text-blue-600" />
+                        ) : (
+                          <FileText className="w-3 h-3 text-blue-600" />
+                        )}
+                        <span className="truncate max-w-[120px]">{file.name}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setPendingFiles(prev => prev.filter((_, i) => i !== index))
+                            if (pendingFiles.length === 1) {
+                              setHasChanges(false)
+                            }
+                          }}
+                          className="h-4 w-4 p-0 text-blue-600 hover:text-blue-800"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Existing Documents */}
+              {documentsLoading ? (
+                <div className="text-center py-2 text-gray-400 text-sm">
+                  {t('activities.documents.loading')}
+                </div>
+              ) : documents.length > 0 && (
+                <div className="space-y-2">
+                  {documents.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center justify-between p-2 bg-gray-50 border border-gray-200 rounded text-sm"
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        {doc.type.toLowerCase().includes('image') ? (
+                          <Image className="w-3 h-3 text-gray-600 flex-shrink-0" />
+                        ) : (
+                          <FileText className="w-3 h-3 text-gray-600 flex-shrink-0" />
+                        )}
+                        <span className="truncate text-gray-700">{doc.filename}</span>
+                        {doc.is_validated && (
+                          <CheckCircle className="w-3 h-3 text-green-600 flex-shrink-0" />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => downloadDocument(doc.id, doc.filename)}
+                          className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Minimalist label */}
+              <div className="text-center">
+                <p className="text-xs text-gray-400">
+                  {documents.length + pendingFiles.length === 0 
+                    ? t('activities.documents.no_files_attached')
+                    : t('activities.documents.files_will_upload_on_save')
+                  }
+                </p>
+              </div>
+            </div>
 
 
           </div>
@@ -1016,10 +1189,15 @@ export function ActivityDetailsModal({
         <div className="border-t border-gray-200 p-3 bg-white">
           <div className="flex justify-between">
             <div className="flex items-center">
-              {hasChanges && (
+              {(hasChanges || pendingFiles.length > 0) && (
                 <div className="flex items-center gap-2 text-sm text-amber-600">
                   <AlertCircle className="w-4 h-4" />
-                  <span>{t('activities.modal.unsaved_changes')}</span>
+                  <span>
+                    {pendingFiles.length > 0 
+                      ? t('activities.modal.unsaved_changes_and_files', { count: pendingFiles.length })
+                      : t('activities.modal.unsaved_changes')
+                    }
+                  </span>
                 </div>
               )}
             </div>
@@ -1028,14 +1206,20 @@ export function ActivityDetailsModal({
               <Button variant="outline" onClick={onClose} size="sm" className="px-4 h-8 text-gray-600 border-gray-300">
                 {t('activities.modal.close')}
               </Button>
-              {hasChanges && (
+              {(hasChanges || pendingFiles.length > 0) && (
                 <Button 
                   onClick={handleSave}
                   size="sm"
+                  disabled={documentsUploading}
                   className="px-4 h-8 bg-gray-800 hover:bg-gray-900 text-white"
                 >
                   <Save className="w-3 h-3 mr-1" />
-                  {t('activities.modal.save_changes')}
+                  {documentsUploading 
+                    ? t('activities.modal.saving_and_uploading')
+                    : pendingFiles.length > 0
+                      ? t('activities.modal.save_and_upload', { count: pendingFiles.length })
+                      : t('activities.modal.save_changes')
+                  }
                 </Button>
               )}
             </div>

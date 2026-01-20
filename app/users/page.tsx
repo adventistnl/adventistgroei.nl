@@ -48,6 +48,7 @@ const ContactViewEditModal = React.lazy(() => import("@/components/modals/contac
 import { UseTable } from "@/components/ui/use-table"
 import { KPICards, type KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { StatusBadge } from "@/components/ui/status-badge"
+import { PageFilters, type FilterConfig } from "@/components/shared/page-filters"
 import { ColumnDef } from "@tanstack/react-table"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
@@ -55,6 +56,15 @@ import { useInstitution } from "@/contexts/institution-context"
 import { InstitutionById_institution_users as User } from "@/types/InstitutionById"
 import { useRoles } from "@/hooks/use-roles"
 import { AccessDenied } from "@/components/access/access-denied"
+import { UsersByStructureOverviewChart, UserStructureGrowthChart } from "@/components/charts/dashboard"
+import { useQuery } from "@apollo/client"
+import { GET_INSTITUTIONS_QUERY } from "@/graphql/queries/INSTITUTIONS_QUERY"
+import { GET_REGIONS_QUERY } from "@/graphql/queries/REGIONS_QUERY"
+import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
+import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
+import { GET_ALL_USERS_QUERY } from "@/graphql/queries/GET_USER_QUERY"
+import { GET_ALL_ROLES_QUERY } from "@/graphql/queries/GET_ROLES_QUERY"
+import { YearFilter } from "@/components/shared/year-filter"
 
 export default function UsersPage() {
   const { t } = useTranslation()
@@ -78,6 +88,83 @@ export default function UsersPage() {
   const [isEditUserOpen, setIsEditUserOpen] = useState(false)
   const [isDeleteUserOpen, setIsDeleteUserOpen] = useState(false)
   const [isViewContactOpen, setIsViewContactOpen] = useState(false)
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const [availableYears, setAvailableYears] = useState<number[]>(() => {
+    const current = new Date().getFullYear()
+    return [current, current - 1, current - 2]
+  })
+  
+  // Page filters state
+  const [pageFilters, setPageFilters] = useState<Record<string, any>>({
+    church: '',
+    departmentType: '',
+    status: ''
+  })
+
+  // Handle filter change
+  const handleFilterChange = (filterId: string, value: any) => {
+    setPageFilters(prev => ({ ...prev, [filterId]: value }))
+  }
+
+  // Clear all filters
+  const handleClearFilters = () => {
+    setPageFilters({
+      church: '',
+      departmentType: '',
+      status: ''
+    })
+  }
+  
+  // Filter users by selected year based on created_at and page filters
+  const filteredUsers = React.useMemo(() => {
+    return users.filter(user => {
+      // Year filter
+      const createdYear = new Date(user.created_at).getFullYear()
+      if (createdYear !== selectedYear) return false
+      
+      // Church filter
+      if (pageFilters.church && pageFilters.church !== '') {
+        if (!user.church || user.church.name !== pageFilters.church) return false
+      }
+      
+      // Department Type filter
+      if (pageFilters.departmentType && pageFilters.departmentType !== '') {
+        const deptInfo = getDepartmentInfo(user)
+        if (deptInfo.type !== pageFilters.departmentType) return false
+      }
+      
+      // Status filter
+      if (pageFilters.status && pageFilters.status !== '') {
+        if (pageFilters.status === 'active' && user.is_deleted) return false
+        if (pageFilters.status === 'inactive' && !user.is_deleted) return false
+      }
+      
+      return true
+    })
+  }, [users, selectedYear, pageFilters])
+
+    // GraphQL Queries
+    const { data: institutionsData, loading: institutionsLoading, refetch: refetchInstitutions } = useQuery(GET_INSTITUTIONS_QUERY)
+    const { data: regionsData, loading: regionsLoading, refetch: refetchRegions } = useQuery(GET_REGIONS_QUERY)
+    const { data: churchesData, loading: churchesLoading, refetch: refetchChurches } = useQuery(GET_CHURCHES_QUERY)
+    const { data: departmentsData, loading: departmentsLoading, refetch: refetchDepartments } = useQuery(GET_DEPARTMENTS_QUERY, {
+      variables: { institution_id: currentInstitutionData?.id }
+    })
+    const { data: usersData, loading: usersLoading, refetch: refetchUsers } = useQuery(GET_ALL_USERS_QUERY, {
+      variables: { institution_id: currentInstitutionData?.id }
+    })
+    const { data: rolesData, loading: rolesLoading, refetch: refetchRoles } = useQuery(GET_ALL_ROLES_QUERY)
+  
+
+  const displayedInstitution = currentInstitutionData
+
+      // Extract data from queries
+  const allInstitutions = institutionsData?.institutions || []
+  const allRegions = regionsData?.regions || []
+  const allChurches = churchesData?.churches || []
+  const allDepartments = departmentsData?.departments || []
+  const allUsers = usersData?.users || []
+  const allRoles = rolesData?.roles || []
 
   usePageTitle({
     title: t('users.title')
@@ -108,6 +195,12 @@ export default function UsersPage() {
     loadData()
   }, [])
 
+    // Handle add year
+  const handleAddYearCallback = (newYear: number) => {
+    setAvailableYears(prev => [...prev, newYear].sort((a, b) => b - a))
+    setSelectedYear(newYear)
+  }
+
   // Handle refresh
   const handleRefresh = async () => {
     setRefreshing(true)
@@ -118,13 +211,13 @@ export default function UsersPage() {
       await new Promise(resolve => setTimeout(resolve, 1000))
       
       toast.dismiss(refreshToast)
-      toast.success(`✅ ${t('users.refreshed')}`, {
+      toast.success(`${t('users.refreshed')}`, {
         duration: 2000
       })
       
     } catch (error) {
       toast.dismiss(refreshToast)
-      toast.error(`❌ ${t('users.refresh_error')}`)
+      toast.error(`${t('users.refresh_error')}`)
     } finally {
       setRefreshing(false)
     }
@@ -150,40 +243,8 @@ export default function UsersPage() {
     setIsCreateUserOpen(true)
   }
 
-  // KPIs calculados
-  const {
-    totalUsers,
-    activeUsers,
-    inactiveUsers,
-  } = useUserKPI()
-
-  // Prepare KPI Cards data
-  const kpiCardsData: KPICardData[] = [
-    {
-      id: "total-users",
-      title: t('users.kpis.total_users'),
-      value: totalUsers,
-      subtitle: t('users.kpis.total_users_description'),
-      icon: Users,
-    },
-    {
-      id: "active-users",
-      title: t('users.kpis.active_users'),
-      value: activeUsers,
-      subtitle: `${Math.round((activeUsers / totalUsers) * 100)}% ${t('users.kpis.of_total')}`,
-      icon: UserCheck,
-    },
-    {
-      id: "inactive-users",
-      title: t('users.kpis.inactive_users'),
-      value: inactiveUsers,
-      subtitle: t('users.kpis.deleted_users_description'),
-      icon: UserX,
-    },
-  ]
-
-  // Helper function to get department info
-  const getDepartmentInfo = (user: User) => {
+  // Helper function to get department info (moved up for filter usage)
+  const getDepartmentInfo = React.useCallback((user: User) => {
     // Check if user has department_id in church context
     const churchDepartment = churches
       .flatMap(church => church.departments || [])
@@ -215,7 +276,75 @@ export default function UsersPage() {
       departmentName: '-',
       departmentId: null
     }
-  }
+  }, [churches, departments])
+
+  // KPIs calculados com dados filtrados por ano
+  const totalUsers = filteredUsers.length
+  const activeUsers = filteredUsers.filter(user => !user.is_deleted).length
+  const inactiveUsers = filteredUsers.filter(user => user.is_deleted).length
+
+  // Prepare KPI Cards data
+  const kpiCardsData: KPICardData[] = [
+    {
+      id: "total-users",
+      title: t('users.kpis.total_users'),
+      value: totalUsers,
+      subtitle: t('users.kpis.total_users_description'),
+      icon: Users,
+    },
+    {
+      id: "active-users",
+      title: t('users.kpis.active_users'),
+      value: activeUsers,
+      subtitle: `${Math.round((activeUsers / totalUsers) * 100)}% ${t('users.kpis.of_total')}`,
+      icon: UserCheck,
+    },
+    {
+      id: "inactive-users",
+      title: t('users.kpis.inactive_users'),
+      value: inactiveUsers,
+      subtitle: t('users.kpis.deleted_users_description'),
+      icon: UserX,
+    },
+  ]
+
+  // Filter configurations
+  const filterConfigs: FilterConfig[] = [
+    {
+      id: 'church',
+      label: t('users.filters.church'),
+      type: 'select',
+      placeholder: t('users.filters.church'),
+      icon: Building2,
+      options: churches.map(church => ({
+        label: church.name,
+        value: church.name
+      }))
+    },
+    {
+      id: 'departmentType',
+      label: t('users.filters.department_type'),
+      type: 'select',
+      placeholder: t('users.filters.department_type'),
+      icon: Layers,
+      options: [
+        { label: t('users.filters.church_departmental'), value: 'Church Departmental' },
+        { label: t('users.filters.institutional_departmental'), value: 'Institutional Departmental' },
+        { label: t('users.filters.no_departmental'), value: 'No Departmental' }
+      ]
+    },
+    {
+      id: 'status',
+      label: t('users.filters.status'),
+      type: 'select',
+      placeholder: t('users.filters.status'),
+      icon: Shield,
+      options: [
+        { label: t('users.table.active'), value: 'active' },
+        { label: t('users.table.inactive'), value: 'inactive' }
+      ]
+    }
+  ]
 
   // User table columns
   const userColumns: ColumnDef<User>[] = [
@@ -372,8 +501,8 @@ export default function UsersPage() {
                     onClick={() => handleDeleteUser(user)}
                     className="text-red-600"
                   >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    {t('users.actions.delete_user')}
+                  <UserX  className="mr-2 h-4 w-4" />
+                    {t('users.actions.deactivate_user')}
                   </DropdownMenuItem>
                 </WithPermission>
               </DropdownMenuContent>
@@ -431,9 +560,27 @@ export default function UsersPage() {
                     </Badge>
                   </div>
                 )}
+                <div className="flex-1 mt-4">
+                  <YearFilter
+                    availableYears={availableYears}
+                    selectedYear={selectedYear}
+                    onYearChange={setSelectedYear}
+                    onAddYear={handleAddYearCallback}
+                    showAddButton={false}
+                  />
+                </div>
             </div>
             
             <div className="flex items-center gap-3">
+              <PageFilters
+                filters={filterConfigs}
+                values={pageFilters}
+                onChange={handleFilterChange}
+                onClear={handleClearFilters}
+                triggerLabel={t('users.filters.title') || 'Filters'}
+                align="end"
+                width={350}
+              />
               <Button 
                 variant="outline" 
                 size="icon"
@@ -455,6 +602,15 @@ export default function UsersPage() {
             variant="minimal"
           />
 
+            <UserStructureGrowthChart
+              loading={isLoading}
+              users={filteredUsers}
+              departments={displayedInstitution?.departments || allDepartments}
+              regions={allRegions}
+              churches={displayedInstitution?.churches || allChurches}
+              selectedYear={selectedYear}
+            />
+
           {/* Users Table */}
           <Card>
             <CardHeader>
@@ -473,39 +629,8 @@ export default function UsersPage() {
             <CardContent className="overflow-hidden p-0">
               <UseTable
                 columns={userColumns}
-                data={users}
+                data={filteredUsers}
                 searchKey="name"
-                filters={[
-                  {
-                    id: "church_name",
-                    title: t('users.filters.church'),
-                    options: churches.map(church => ({ 
-                      label: church.name, 
-                      value: church.name 
-                    }))
-                  },
-                  {
-                    id: "department_type",
-                    title: t('users.filters.department_type'),
-                    options: [
-                      { label: t('users.filters.church_departmental'), value: "Church Departmental" },
-                      { label: t('users.filters.institutional_departmental'), value: "Institutional Departmental" },
-                      { label: t('users.filters.no_departmental'), value: "No Departmental" }
-                    ]
-                  },
-                  {
-                    id: "status",
-                    title: t('users.filters.status'),
-                    options: [
-                      { label: t('users.table.active'), value: "active" },
-                      { label: t('users.table.inactive'), value: "inactive" }
-                    ]
-                  }
-                ]}
-                // onRowClick={(user) => {
-                //   setSelectedUser(user)
-                //   setIsUserDetailsOpen(true)
-                // }}
                 emptyMessage={t('users.table.no_users') || "No users found"}
                 emptyEntityName="user"
               />

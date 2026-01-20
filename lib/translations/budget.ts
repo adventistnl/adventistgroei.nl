@@ -129,7 +129,16 @@ export const budgetTranslations = {
       planned_budget_min: "Planned budget must be at least 0",
       total_expenses_required: "Total expenses is required",
       total_expenses_min: "Total expenses must be at least 0",
+      total_expenses_below_allocated: "Cannot be less than allocated amount: {{allocated}}",
+      total_expenses_required_allocated: "Minimum required (already allocated): {{allocated}}",
+      reserved_below_allocated: "Cannot be less than allocated amount: {{allocated}}",
+      reserved_required_allocated: "Minimum required (already allocated): {{allocated}}",
       status_required: "Status is required"
+    },
+    
+    // Fields
+    fields: {
+      already_allocated: "Already allocated to departments"
     }
   },
   
@@ -263,7 +272,16 @@ export const budgetTranslations = {
       planned_budget_min: "Gepland budget moet minimaal 0 zijn",
       total_expenses_required: "Totale uitgaven is verplicht",
       total_expenses_min: "Totale uitgaven moet minimaal 0 zijn",
+      total_expenses_below_allocated: "Mag niet lager zijn dan toegewezen bedrag: {{allocated}}",
+      total_expenses_required_allocated: "Minimum vereist (reeds toegewezen): {{allocated}}",
+      reserved_below_allocated: "Mag niet lager zijn dan toegewezen bedrag: {{allocated}}",
+      reserved_required_allocated: "Minimum vereist (reeds toegewezen): {{allocated}}",
       status_required: "Status is verplicht"
+    },
+    
+    // Fields  
+    fields: {
+      already_allocated: "Reeds toegewezen aan afdelingen"
     }
   },
   
@@ -397,7 +415,16 @@ export const budgetTranslations = {
       planned_budget_min: "Orçamento planejado deve ser pelo menos 0",
       total_expenses_required: "Total de despesas é obrigatório",
       total_expenses_min: "Total de despesas deve ser pelo menos 0",
+      total_expenses_below_allocated: "Não pode ser menor que o valor alocado: {{allocated}}",
+      total_expenses_required_allocated: "Mínimo requerido (já alocado): {{allocated}}",
+      reserved_below_allocated: "Não pode ser menor que o valor alocado: {{allocated}}",
+      reserved_required_allocated: "Mínimo requerido (já alocado): {{allocated}}",
       status_required: "Status é obrigatório"
+    },
+    
+    // Fields
+    fields: {
+      already_allocated: "Já alocado para departamentos"
     }
   }
 }

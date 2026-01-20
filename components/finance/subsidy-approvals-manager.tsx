@@ -30,7 +30,10 @@ import {
   TrendingUp,
   Settings,
   Info,
-  Flag
+  Flag,
+  Maximize2,
+  X,
+  Fullscreen
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -46,6 +49,7 @@ import { AnalyticsGridCarousel } from "@/components/shared/responsive-grid-carou
 import { KanbanBoard, KanbanGroup, KanbanItem, KanbanAction } from "@/components/ui/kanban-board"
 import { ViewSubsidyModal } from "@/components/modals/project/view-subsidy-modal"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
+import { ExpandedViewModal } from "@/components/shared/expanded-view-modal"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { useCurrency } from "@/contexts/currency-context"
@@ -82,6 +86,8 @@ import {
 } from "recharts"
 import { APPROVE_SUBSIDY_REQUEST, REJECT_SUBSIDY_REQUEST, UPDATE_SUBSIDY_REQUEST } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
 import { GET_ALL_SUBSIDY_STATUSES } from "@/graphql/queries/SUBSIDY_STATUS_QUERIES"
+import { InlinePrivacyToggle, PrivacyWrapper } from "@/components/shared/privacy-wrapper"
+import { PrivacyConfig } from "@/contexts/privacy-context"
 
 interface SubsidyRequest {
   id: string
@@ -126,6 +132,18 @@ interface SubsidyApprovalsManagerProps {
   subsidyData?: any
   analyticsData?: any
   refetchSubsidies?: () => Promise<any>
+  privacyConfigs?: {
+    totalRequests?: PrivacyConfig
+    pendingReview?: PrivacyConfig
+    totalRequested?: PrivacyConfig
+    totalApproved?: PrivacyConfig
+    approvalRate?: PrivacyConfig
+    tableMonetaryValues?: PrivacyConfig
+    kanbanMonetaryValues?: PrivacyConfig
+    byDepartmentChart?: PrivacyConfig
+    overTimeChart?: PrivacyConfig
+    statusOverviewChart?: PrivacyConfig
+  }
 }
 
 export function SubsidyApprovalsManager({
@@ -137,7 +155,8 @@ export function SubsidyApprovalsManager({
   showKPICards = true,
   subsidyData,
   analyticsData,
-  refetchSubsidies
+  refetchSubsidies,
+  privacyConfigs
 }: SubsidyApprovalsManagerProps) {
   const { t, i18n } = useTranslation()
   const { formatCurrency } = useCurrency()
@@ -146,6 +165,7 @@ export function SubsidyApprovalsManager({
   const [selectedSubsidy, setSelectedSubsidy] = useState<SubsidyRequest | null>(null)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table')
+  const [isExpandedView, setIsExpandedView] = useState(false)
 
   // Fetch all subsidy statuses for ID resolution
   const { data: statusesData } = useQuery(GET_ALL_SUBSIDY_STATUSES)
@@ -371,7 +391,14 @@ export function SubsidyApprovalsManager({
         value: 15,
         isPositive: true,
         label: translations.kpis.trend.vsLastMonth
-      }
+      },
+      privacyConfig: privacyConfigs?.totalRequests,
+      headerAction: privacyConfigs?.totalRequests ? (
+        <InlinePrivacyToggle 
+          config={privacyConfigs.totalRequests}
+          className="w-6 h-6 flex-shrink-0"
+        />
+      ) : undefined
     },
     {
       id: "pending_review",
@@ -383,7 +410,14 @@ export function SubsidyApprovalsManager({
         value: 8,
         isPositive: false,
         label: translations.kpis.trend.vsLastMonth
-      }
+      },
+      privacyConfig: privacyConfigs?.pendingReview,
+      headerAction: privacyConfigs?.pendingReview ? (
+        <InlinePrivacyToggle 
+          config={privacyConfigs.pendingReview}
+          className="w-6 h-6 flex-shrink-0"
+        />
+      ) : undefined
     },
     {
       id: "total_requested",
@@ -395,7 +429,14 @@ export function SubsidyApprovalsManager({
         value: 12,
         isPositive: true,
         label: translations.kpis.trend.vsLastMonth
-      }
+      },
+      privacyConfig: privacyConfigs?.totalRequested,
+      headerAction: privacyConfigs?.totalRequested ? (
+        <InlinePrivacyToggle 
+          config={privacyConfigs.totalRequested}
+          className="w-6 h-6 flex-shrink-0"
+        />
+      ) : undefined
     },
     {
       id: "total_approved",
@@ -407,7 +448,14 @@ export function SubsidyApprovalsManager({
         value: 10,
         isPositive: true,
         label: translations.kpis.trend.vsLastMonth
-      }
+      },
+      privacyConfig: privacyConfigs?.totalApproved,
+      headerAction: privacyConfigs?.totalApproved ? (
+        <InlinePrivacyToggle 
+          config={privacyConfigs.totalApproved}
+          className="w-6 h-6 flex-shrink-0"
+        />
+      ) : undefined
     },
     {
       id: "approval_rate",
@@ -419,9 +467,16 @@ export function SubsidyApprovalsManager({
         value: 5,
         isPositive: true,
         label: translations.kpis.trend.vsLastMonth
-      }
+      },
+      privacyConfig: privacyConfigs?.approvalRate,
+      headerAction: privacyConfigs?.approvalRate ? (
+        <InlinePrivacyToggle 
+          config={privacyConfigs.approvalRate}
+          className="w-6 h-6 flex-shrink-0"
+        />
+      ) : undefined
     }
-  ], [kpiData, formatCurrency])
+  ], [kpiData, formatCurrency, translations, privacyConfigs])
 
   // Chart data - Calculated directly from subsidyRequests (same source as table/kanban)
   const chartData = useMemo(() => {
@@ -496,28 +551,38 @@ export function SubsidyApprovalsManager({
     const byMonthData = Object.values(monthData)
 
     // 3. By Department (RequestsByDepartmentChart)
-    // Group by department and month
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    const departmentMonthData: Record<string, any> = {}
+    // Group by department with EXACT created_at date
+    console.log('📅 [Manager] Gerando dados com datas exatas')
     
-    // Initialize all months
-    months.forEach(month => {
-      departmentMonthData[month] = { month }
-    })
+    const dateMap: Record<string, any> = {}
     
-    // Aggregate amounts by department and month
-    subsidyRequests.forEach(request => {
-      const date = new Date(request.requested_at)
-      const monthAbbr = months[date.getMonth()]
+    subsidyRequests.forEach((request, index) => {
+      const createdDate = new Date(request.requested_at)
+      const dateKey = createdDate.toISOString().split('T')[0]
       const dept = request.department_name || 'Other'
+      const monthAbbr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][createdDate.getMonth()]
       
-      if (!departmentMonthData[monthAbbr][dept]) {
-        departmentMonthData[monthAbbr][dept] = 0
+      console.log(`📊 [Manager] #${index + 1}:`, {
+        created_at: request.requested_at,
+        date: dateKey,
+        month: monthAbbr,
+        dept,
+        amount: request.requested_amount
+      })
+      
+      if (!dateMap[dateKey]) {
+        dateMap[dateKey] = { date: dateKey, month: monthAbbr }
       }
-      departmentMonthData[monthAbbr][dept] += request.requested_amount
+      
+      if (!dateMap[dateKey][dept]) {
+        dateMap[dateKey][dept] = 0
+      }
+      dateMap[dateKey][dept] += request.requested_amount
     })
     
-    const byDepartmentData = Object.values(departmentMonthData)
+    const byDepartmentData = Object.values(dateMap)
+    
+    console.log('✅ [Manager] Enviando para gráfico:', byDepartmentData[0])
 
     return {
       byStatus: byStatusData,
@@ -525,6 +590,7 @@ export function SubsidyApprovalsManager({
       byDepartment: byDepartmentData
     }
   }, [subsidyRequests])
+
 
   // Handlers
   const handleRefresh = async () => {
@@ -671,7 +737,7 @@ export function SubsidyApprovalsManager({
     variant: "success" | "warning" | "error" | "info" | "neutral"
   }> = {
     low: { label: translations.priority.low, variant: "neutral" },
-    medium: { label: translations.priority.medium, variant: "info" },
+    medium: { label: translations.priority.medium, variant: "warning" },
     high: { label: translations.priority.high, variant: "error" }
   }
 
@@ -704,9 +770,28 @@ export function SubsidyApprovalsManager({
       accessorKey: "requested_amount",
       header: translations.table.requested,
       cell: ({ row }) => (
-        <div className="text-sm font-semibold">
-          {formatCurrency(row.original.requested_amount)}
-        </div>
+        privacyConfigs?.tableMonetaryValues ? (
+          <PrivacyWrapper 
+            config={privacyConfigs.tableMonetaryValues}
+            showToggle={false}
+            className="inline-block"
+            fallback={
+              <div className="flex items-center gap-1 blur-[1px] opacity-40">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="w-1 h-1 rounded-full bg-gray-400" />
+                ))}
+              </div>
+            }
+          >
+            <div className="text-sm font-semibold">
+              {formatCurrency(row.original.requested_amount)}
+            </div>
+          </PrivacyWrapper>
+        ) : (
+          <div className="text-sm font-semibold">
+            {formatCurrency(row.original.requested_amount)}
+          </div>
+        )
       ),
     },
     {
@@ -727,28 +812,13 @@ export function SubsidyApprovalsManager({
       header: translations.table.priority,
       cell: ({ row }) => {
         const config = priorityConfig[row.original.priority]
-        const flagColors = {
-          high: 'text-red-500',
-          medium: 'text-yellow-500',
-          low: 'text-green-500'
-        }
-        const bgColors = {
-          high: 'bg-red-100 dark:bg-red-900/30 border-red-200 dark:border-red-800',
-          medium: 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800',
-          low: 'bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-800'
-        }
-        const textColors = {
-          high: 'text-red-700 dark:text-red-400',
-          medium: 'text-yellow-700 dark:text-yellow-400',
-          low: 'text-green-700 dark:text-green-400'
-        }
         return (
-          <div className={`flex items-center gap-2 px-2.5 py-1 rounded-md border w-fit ${bgColors[row.original.priority]}`}>
-            <Flag className={`w-3.5 h-3.5 fill-current ${flagColors[row.original.priority]}`} />
-            <span className={`text-xs font-medium ${textColors[row.original.priority]}`}>
-              {config.label}
-            </span>
-          </div>
+          <StatusBadge
+            label={config.label}
+            variant={config.variant}
+            size="sm"
+            icon={Flag}
+          />
         )
       },
     },
@@ -776,8 +846,7 @@ export function SubsidyApprovalsManager({
           <StatusBadge
             label={config.label}
             variant={variantMap[row.original.status]}
-            showDot
-            dotColor={dotColorMap[row.original.status]}
+            showDot={true}
             size="sm"
           />
         )
@@ -854,6 +923,7 @@ export function SubsidyApprovalsManager({
     icon: statusConfig[request.status].icon,
     metadata: {
       requested_amount: formatCurrency(request.requested_amount),
+      requested_amount_raw: request.requested_amount,
       activities_count: request.activities_count,
       priority: request.priority,
       requested_at: format(new Date(request.requested_at), "dd/MM/yyyy", { locale: ptBR })
@@ -928,9 +998,28 @@ export function SubsidyApprovalsManager({
         )}
 
         <div className="flex items-center justify-between gap-2">
-          <span className="text-sm font-semibold text-foreground">
-            {item.metadata?.requested_amount}
-          </span>
+          {privacyConfigs?.kanbanMonetaryValues ? (
+            <PrivacyWrapper
+              config={privacyConfigs.kanbanMonetaryValues}
+              showToggle={false}
+              className="inline-block"
+              fallback={
+                <div className="flex items-center gap-1 blur-[1px] opacity-40">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                  ))}
+                </div>
+              }
+            >
+              <span className="text-sm font-semibold text-foreground">
+                {item.metadata?.requested_amount}
+              </span>
+            </PrivacyWrapper>
+          ) : (
+            <span className="text-sm font-semibold text-foreground">
+              {item.metadata?.requested_amount}
+            </span>
+          )}
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -961,24 +1050,34 @@ export function SubsidyApprovalsManager({
 
   // View Toggle Component
   const ViewToggle = () => (
-    <div className="flex items-center border rounded-md">
+    <div className="flex items-center gap-2">
+      <div className="flex items-center border rounded-md">
+        <Button
+          variant={viewMode === 'table' ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => setViewMode('table')}
+          className={viewMode === 'table' ? 'rounded-r-none bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200' : 'rounded-r-none'}
+        >
+          <List className="h-4 w-4 mr-2" />
+          {/* {translations.actions.viewToggle.table} */}
+        </Button>
+        <Button
+          variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => setViewMode('kanban')}
+          className={viewMode === 'kanban' ? 'rounded-l-none bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200' : 'rounded-l-none'}
+        >
+          <LayoutGrid className="h-4 w-4 mr-2" />
+          {/* {translations.actions.viewToggle.kanban} */}
+        </Button>
+      </div>
       <Button
-        variant={viewMode === 'table' ? 'default' : 'ghost'}
+        variant="outline"
         size="sm"
-        onClick={() => setViewMode('table')}
-        className={viewMode === 'table' ? 'rounded-r-none bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200' : 'rounded-r-none'}
+        onClick={() => setIsExpandedView(true)}
+        className="gap-2"
       >
-        <List className="h-4 w-4 mr-2" />
-        {translations.actions.viewToggle.table}
-      </Button>
-      <Button
-        variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-        size="sm"
-        onClick={() => setViewMode('kanban')}
-        className={viewMode === 'kanban' ? 'rounded-l-none bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200' : 'rounded-l-none'}
-      >
-        <LayoutGrid className="h-4 w-4 mr-2" />
-        {translations.actions.viewToggle.kanban}
+        <Fullscreen className="h-4 w-4" />
       </Button>
     </div>
   )
@@ -1013,6 +1112,7 @@ export function SubsidyApprovalsManager({
           {/* Requests by Department Chart */}
            <RequestsByDepartmentChart
             data={chartData.byDepartment}
+            privacyConfig={privacyConfigs?.byDepartmentChart}
             loading={isLoading}
             selectedYear={new Date().getFullYear()}
             translations={translations.charts.byDepartment}
@@ -1047,6 +1147,18 @@ export function SubsidyApprovalsManager({
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
+              {viewMode === 'table' && privacyConfigs?.tableMonetaryValues && (
+                <InlinePrivacyToggle 
+                  config={privacyConfigs.tableMonetaryValues}
+                  className="w-8 h-8"
+                />
+              )}
+              {viewMode === 'kanban' && privacyConfigs?.kanbanMonetaryValues && (
+                <InlinePrivacyToggle 
+                  config={privacyConfigs.kanbanMonetaryValues}
+                  className="w-8 h-8"
+                />
+              )}
               <ViewToggle />
             </div>
           </div>
@@ -1163,6 +1275,39 @@ export function SubsidyApprovalsManager({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Expanded View Modal */}
+      <ExpandedViewModal
+        isOpen={isExpandedView}
+        onClose={() => setIsExpandedView(false)}
+        title={`${translations.table.requestTitle}`}
+        itemCount={subsidyRequests.length}
+        itemCountLabel={translations.defaults.requests || 'solicitações'}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        tableViewLabel={translations.actions.viewToggle.table}
+        kanbanViewLabel={translations.actions.viewToggle.kanban}
+        tablePrivacyConfig={privacyConfigs?.tableMonetaryValues}
+        kanbanPrivacyConfig={privacyConfigs?.kanbanMonetaryValues}
+      >
+        <div className="flex-1 overflow-hidden p-6 flex flex-col h-full">
+          {viewMode === 'table' ? (
+            <UseTable
+              data={subsidyRequests}
+              columns={subsidyColumns}
+              fillHeight={true}
+            />
+          ) : (
+            <KanbanBoard
+              groups={kanbanGroups}
+              items={kanbanItems}
+              actions={kanbanActions}
+              onItemMove={handleKanbanItemMove}
+              renderItem={renderKanbanItem}
+            />
+          )}
+        </div>
+      </ExpandedViewModal>
     </div>
   )
 }

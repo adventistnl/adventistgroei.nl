@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { KanbanItem, KanbanGroup, KanbanAction } from "./kanban-board"
+import { getStatusStyleFromGroup, KANBAN_SPACING, getBgColorWithOpacity } from "@/lib/kanban-styles"
 
 export interface KanbanCardProps {
   item: KanbanItem
@@ -35,18 +36,39 @@ export function KanbanCard({
   const IconComponent = item.icon
   const itemActions = actions.filter(action => action.showInItem)
   
-  // Use group color for left border
-  const borderColor = group.color || '#94a3b8'
+  // Get standardized status style
+  const statusStyle = getStatusStyleFromGroup(group)
 
   return (
     <Card 
-      className={`relative w-full p-3 m-1 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-lg transition-all duration-200 bg-card ${
-        enableDragDrop ? 'cursor-grab active:cursor-grabbing' : ''
-      } ${isDragging ? 'opacity-50 scale-95 shadow-xl' : ''}`}
-      style={{ borderLeftWidth: '5px', borderLeftColor: borderColor }}
+      className={`relative w-full transition-all duration-200 bg-card hover:shadow-md ${
+        enableDragDrop ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
+      } ${isDragging ? 'opacity-50 scale-95 shadow-xl' : 'shadow-sm'}`}
+      style={{ 
+        borderLeftWidth: KANBAN_SPACING.borderWidth,
+        borderLeftColor: statusStyle.borderColor,
+        borderColor: isDragging ? statusStyle.hoverBorderColor : '#e5e7eb',
+        borderWidth: '1px',
+        borderLeftStyle: 'solid',
+        padding: KANBAN_SPACING.cardPadding,
+        margin: KANBAN_SPACING.cardMargin,
+        backgroundColor: isDragging ? getBgColorWithOpacity(statusStyle.borderColor, 0.05) : undefined
+      }}
       draggable={enableDragDrop}
       onDragStart={(e) => onDragStart?.(e, item)}
       onDragEnd={onDragEnd}
+      onMouseEnter={(e) => {
+        if (!isDragging && enableDragDrop) {
+          e.currentTarget.style.borderLeftColor = statusStyle.hoverBorderColor
+          e.currentTarget.style.backgroundColor = getBgColorWithOpacity(statusStyle.borderColor, 0.03)
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isDragging) {
+          e.currentTarget.style.borderLeftColor = statusStyle.borderColor
+          e.currentTarget.style.backgroundColor = 'transparent'
+        }
+      }}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-2 flex-1 min-w-0">

@@ -24,6 +24,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 
 import { useTranslation } from "react-i18next"
+import { projectTranslations } from "@/lib/translations/projects"
 
 export interface ConfirmationDialogProps {
   isOpen: boolean
@@ -73,10 +74,28 @@ export function ConfirmationDialog({
   effects = [],
   additionalWarning
 }: ConfirmationDialogProps) {
-  const { t } = useTranslation()
+  const { i18n } = useTranslation()
+  const [isConfirmed, setIsConfirmed] = React.useState(false)
   
-  const finalConfirmText = confirmText || t('common.confirm')
-  const finalCancelText = cancelText || t('common.cancel')
+  // Get translations from project translations based on current language
+  const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+  
+  const finalConfirmText = confirmText || t.common.confirm || 'Confirm'
+  const finalCancelText = cancelText || t.common.cancel || 'Cancel'
+
+  // Reset confirmation when dialog opens/closes
+  React.useEffect(() => {
+    if (isOpen) {
+      setIsConfirmed(false)
+    }
+  }, [isOpen])
+
+  const handleConfirm = () => {
+    if (isConfirmed) {
+      onConfirm()
+      setIsConfirmed(false)
+    }
+  }
 
   const getSeverityColor = () => {
     switch (severity) {
@@ -112,144 +131,49 @@ export function ConfirmationDialog({
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent className="sm:max-w-[500px]">
-        <AlertDialogHeader>
-          <AlertDialogTitle className={`flex items-center gap-2 ${titleIconClass}`}>
-            <FinalTitleIcon className="w-5 h-5" />
+      <AlertDialogContent className="sm:max-w-[400px]">
+        <AlertDialogHeader className="flex-row items-center gap-2">
+          <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
+            <AlertTriangle className="w-6 h-6 text-yellow-600" />
+          </div>
+          <AlertDialogTitle className="text-gray-900">
             {title}
           </AlertDialogTitle>
-          <AlertDialogDescription className="space-y-4">
-            <p>{description}</p>
-            
-            {/* Item Summary */}
-            {itemSummary && (
-              <Card>
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{itemSummary.title}</span>
-                    {itemSummary.badge && (
-                      <Badge variant="outline">
-                        {itemSummary.badge}
-                      </Badge>
-                    )}
-                  </div>
-                  {itemSummary.subtitle && (
-                    <p className="text-sm text-muted-foreground">{itemSummary.subtitle}</p>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Warnings */}
-            {warnings.length > 0 && (
-              <Card className={`border-2 ${getSeverityColor()}`}>
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    {getSeverityIcon()}
-                    <span className="text-sm font-medium">{t('common.impact')}</span>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    {warnings.map((warning, index) => {
-                      const Icon = warning.icon
-                      return (
-                        <div key={index} className="flex items-center gap-2 text-sm">
-                          <Icon className="w-4 h-4 text-red-500" />
-                          <span>{warning.text}</span>
-                          {warning.badge && (
-                            <Badge variant="outline" className="text-red-600 border-red-200">
-                              {warning.badge}
-                            </Badge>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Effects */}
-            {effects.length > 0 && (
-              <div className="space-y-3">
-                <p className="text-sm font-medium text-red-600">{t('common.consequences')}</p>
-                <div className="space-y-2">
-                  {effects.map((effect, index) => {
-                    const Icon = effect.icon
-                    return (
-                      <div key={index} className="flex items-center gap-2 text-sm">
-                        <Icon className="w-4 h-4 text-red-500" />
-                        <span>{effect.text}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Additional Warning */}
-            {additionalWarning && (
-              <>
-                <Separator />
-                <div className="p-3 bg-red-100 rounded-lg border border-red-300 dark:bg-red-900/20 dark:border-red-800">
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle className="w-4 h-4 text-red-600" />
-                    <span className="text-sm font-medium text-red-600">
-                      {additionalWarning.title}
-                    </span>
-                  </div>
-                  <div className="space-y-1 text-xs text-red-600">
-                    {additionalWarning.items.map((item, index) => (
-                      <p key={index}>• {item}</p>
-                    ))}
-                  </div>
-                  {additionalWarning.recommendation && (
-                    <div className="mt-2 p-2 bg-red-200 rounded text-xs text-red-700 font-medium dark:bg-red-800/30">
-                      ⚠️ {additionalWarning.recommendation}
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-
-            <div className="p-3 bg-red-50 rounded-lg border border-red-200 dark:bg-red-900/20 dark:border-red-800">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-600" />
-                <span className="text-sm font-medium text-red-600">
-                  {t('common.undone')}
-                </span>
-              </div>
-            </div>
-          </AlertDialogDescription>
         </AlertDialogHeader>
+
+        <AlertDialogDescription className="text-gray-600 text-sm">
+          {description}
+        </AlertDialogDescription>
         
-        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-          <AlertDialogCancel onClick={onClose} className="w-full sm:w-auto">
+        {/* Confirmation checkbox */}
+        <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-md border border-gray-200 dark:border-gray-700">
+          <input
+            type="checkbox"
+            id="confirm-action"
+            checked={isConfirmed}
+            onChange={(e) => setIsConfirmed(e.target.checked)}
+            className="w-4 h-4 mt-0.5 text-gray-900 bg-white border-gray-300 rounded focus:ring-gray-500 dark:focus:ring-gray-400 dark:bg-gray-700 dark:border-gray-600"
+          />
+          <label htmlFor="confirm-action" className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed cursor-pointer">
+            {t.common.confirmAction || 'Confirmo que desejo executar esta ação e entendo as consequências.'}
+          </label>
+        </div>
+        
+        <AlertDialogFooter className="flex gap-3 pt-6">
+          <AlertDialogCancel 
+            onClick={onClose} 
+            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200"
+          >
             {finalCancelText}
           </AlertDialogCancel>
           
-          {severity === "high" ? (
-            <div className="flex flex-col gap-2 w-full sm:w-auto">
-              <AlertDialogAction
-                onClick={onConfirm}
-                className={`${getConfirmButtonClass()} w-full`}
-              >
-                <FinalActionIcon className="w-4 h-4 mr-2" />
-                {finalConfirmText}
-              </AlertDialogAction>
-              <p className="text-xs text-center text-red-600">
-                {t('common.riskAware')}
-              </p>
-            </div>
-          ) : (
-            <AlertDialogAction
-              onClick={onConfirm}
-              className={`${getConfirmButtonClass()} w-full sm:w-auto`}
-            >
-              <FinalActionIcon className="w-4 h-4 mr-2" />
-              {finalConfirmText}
-            </AlertDialogAction>
-          )}
+          <AlertDialogAction
+            onClick={handleConfirm}
+            disabled={!isConfirmed}
+            className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {finalConfirmText}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

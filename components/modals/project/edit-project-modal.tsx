@@ -62,6 +62,10 @@ import { projectTranslations } from "@/lib/translations/projects"
 import { ProjectTableData } from "@/components/projects/projects-table"
 import { UPDATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
+import { GET_ALL_USERS_QUERY } from "@/graphql/queries/GET_USER_QUERY"
+import { GET_PROJECTS_QUERY, GET_PROJECT_BY_ID_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
+import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
+import { UserMultiSelector, User } from "@/components/shared/user-multi-selector"
 import { useInstitution } from "@/contexts/institution-context"
 
 export interface EditProjectFormData {
@@ -76,6 +80,7 @@ export interface EditProjectFormData {
   required_volunteers: boolean
   is_event: boolean
   type: "Local" | "Global"
+  owner_id: string
 }
 
 interface EditProjectModalProps {
@@ -107,6 +112,19 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
     skip: !institutionId
   })
 
+  // Fetch users for owner selection
+  const { data: usersData } = useQuery(GET_ALL_USERS_QUERY, {
+    variables: { institution_id: institutionId },
+    skip: !institutionId
+  })
+
+  const availableUsers = (usersData?.users || []).map((user: any): User => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: 'User'
+  }))
+
   // Filter departments: only show those with locked annual budget for current year
   const currentYear = new Date().getFullYear()
   const departments = (departmentsData?.departments || []).filter((dept: any) => 
@@ -115,6 +133,11 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
 
   // Update project mutation
   const [updateProject, { loading: updateLoading }] = useMutation(UPDATE_PROJECT_MUTATION, {
+    refetchQueries: [
+      { query: GET_PROJECTS_QUERY },
+      ...(project?.id ? [{ query: GET_PROJECT_BY_ID_QUERY, variables: { id: project.id } }] : [])
+    ],
+    awaitRefetchQueries: true,
     onCompleted: () => {
       toast.success(t.toasts.projectUpdated, { duration: 3000 })
       handleClose()
@@ -140,6 +163,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
     required_volunteers: false,
     is_event: false,
     type: "Local",
+    owner_id: "",
   })
 
   const [errors, setErrors] = useState<Partial<EditProjectFormData>>({})
@@ -153,6 +177,8 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
   // Load project data when project changes
   useEffect(() => {
     if (project) {
+      const resolvedOwnerId = project.owner?.id || project.owner_id || ""
+      
       setFormData({
         title: project.title,
         description: project.description,
@@ -165,7 +191,9 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
         required_volunteers: project.required_volunteers,
         is_event: (project as any).is_event || false,
         type: (project as any).type || "Local",
+        owner_id: resolvedOwnerId,
       })
+      
       setCurrentStep(1)
       setErrors({})
     }
@@ -208,6 +236,10 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
       if (!formData.department_id) {
         newErrors.department_id = t.errors.departmentRequired
       }
+
+      if (!formData.owner_id) {
+        newErrors.owner_id = t.errors.ownerRequired || "Owner is required" as any
+      }
     }
 
     if (step === 2) {
@@ -235,6 +267,10 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
       newErrors.department_id = t.errors.departmentRequired
     }
 
+    if (!formData.owner_id) {
+      newErrors.owner_id = t.errors.ownerRequired || "Owner is required" as any
+    }
+
     if (formData.budget <= 0) {
       newErrors.budget = t.errors.budgetPositive as any
     }
@@ -255,21 +291,30 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
     }
 
     try {
+      const updateVariables = {
+        id: project.id,
+        title: formData.title,
+        description: formData.description,
+        department_id: formData.department_id,
+        budget: parseFloat(String(formData.budget)),
+        type: formData.type,
+        start_at: formData.start_at.toISOString(),
+        end_at: formData.end_at.toISOString(),
+        language_preference: formData.language_preference,
+        is_private: formData.is_private,
+        required_volunteers: formData.required_volunteers,
+        owner_id: formData.owner_id,
+      }
+
+      if (!formData.owner_id || formData.owner_id.trim() === '') {
+        toast.error(t.errors.ownerRequired)
+        return
+      }
+
       await updateProject({
-        variables: {
-          id: project.id,
-          title: formData.title,
-          description: formData.description,
-          department_id: formData.department_id,
-          budget: parseFloat(String(formData.budget)),
-          type: formData.type,
-          start_at: formData.start_at.toISOString(),
-          end_at: formData.end_at.toISOString(),
-          language_preference: formData.language_preference,
-          is_private: formData.is_private,
-          required_volunteers: formData.required_volunteers,
-        }
+        variables: updateVariables
       })
+
       setErrors({})
     } catch (error) {
       console.error("Error submitting form:", error)
@@ -409,6 +454,94 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                 </Popover>
                 {errors.department_id && (
                   <p className="text-sm text-red-500">{errors.department_id}</p>
+                )}
+              </div>
+
+              {/* Owner Selection */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-sm">
+                  <Settings className="w-4 h-4 text-muted-foreground" />
+                  {t.errors.currentOwner} <span className="text-red-500">*</span>
+                </Label>
+                
+                {/* Clickable owner display container */}
+                <div 
+                  className={cn(
+                    "p-3 border rounded-lg bg-muted/30 cursor-pointer transition-all",
+                    "hover:bg-muted/50 hover:border-primary/50",
+                    !formData.owner_id && "border-dashed"
+                  )}
+                  onClick={() => {
+                    // Trigger UserMultiSelector programmatically
+                    const selectorButton = document.querySelector('[data-owner-selector-button]') as HTMLButtonElement
+                    if (selectorButton) {
+                      selectorButton.click()
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      const selectorButton = document.querySelector('[data-owner-selector-button]') as HTMLButtonElement
+                      if (selectorButton) {
+                        selectorButton.click()
+                      }
+                    }
+                  }}
+                >
+                  {formData.owner_id ? (
+                    <div className="space-y-1">
+                      <UsersAvatarGroup
+                        users={availableUsers
+                          .filter((user: User) => user.id === formData.owner_id)
+                          .map((user: User): UserAvatarData => ({
+                            id: user.id,
+                            name: user.name,
+                            email: user.email,
+                            role: user.role
+                          }))}
+                        maxDisplay={1}
+                        size="md"
+                        showLabel={true}
+                        labelText={t.errors.currentOwner}
+                        showAddButton={false}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t.errors.clickToChange}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="text-center py-2">
+                      <p className="text-sm text-muted-foreground">
+                        {t.errors.clickToChange}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Hidden owner selector - triggered programmatically */}
+                <div className="hidden">
+                  <UserMultiSelector
+                    availableUsers={availableUsers}
+                    selectedUsers={availableUsers.filter((user: User) => user.id === formData.owner_id)}
+                    onUsersChange={(users: User[]) => {
+                      const ownerId = users.length > 0 ? users[0].id : ""
+                      handleInputChange('owner_id', ownerId)
+                    }}
+                    buttonLabel={formData.owner_id ? "Change Owner" : "Select Owner"}
+                    dialogTitle="Select Project Owner"
+                    searchPlaceholder="Search users..."
+                    disabled={updateLoading}
+                    maxSelections={1}
+                    activityName={formData.title}
+                    activityType="Project"
+                    buttonDataAttribute="data-owner-selector-button"
+                  />
+                </div>
+                
+                {errors.owner_id && (
+                  <p className="text-sm text-red-500">{String(errors.owner_id)}</p>
                 )}
               </div>
             </div>
@@ -567,6 +700,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
           <DialogDescription className="text-sm text-muted-foreground">
             {t.editProjectInfo}: {project.title}
           </DialogDescription>
+          
           
           {/* Progress Bar */}
           <div className="mt-4 space-y-2">

@@ -114,8 +114,29 @@ export const institutionTranslations = {
         noData: "No church data available for this institution",
         churchesLabel: "Churches"
       },
+      userDistribution: {
+        title: "User Distribution by Entity",
+        description: "Top entities by user count",
+        noData: "No user data available for this institution",
+        users: "Users",
+        institution: "Institution",
+        footer: "Showing user distribution across entities"
+      },
       totalChurches: "Total Churches",
-      selected: "Selected"
+      totalUsers: "Total Users",
+      selected: "Selected",
+      hierarchyTitle: "Hierarchical Structure",
+      hierarchyDescription: "The institutional structure follows a clear hierarchy",
+      hierarchyFlow: "Hierarchy Flow",
+      institutionLevel: "Institution Level",
+      institutionsWith: "institution(s) with",
+      departments: "department(s)",
+      institutionDetails: "Top-level organizational units managing all operations",
+      regionsManaging: "region(s) managing",
+      regionsDetails: "Geographic divisions containing provinces and churches",
+      activeChurches: "active churches",
+      with: "with",
+      churchesDetails: "Local congregations with specialized ministry departments"
     }
   },
   nl: {
@@ -225,13 +246,37 @@ export const institutionTranslations = {
     
     // Analytics
     analytics: {
-      title: "Analytics",
-      noData: "No data available",
+      title: "Analyses",
+      noData: "Geen gegevens beschikbaar",
       churchesByRegion: {
-        title: "Churches by Region",
-        description: "Distribution across regions",
-        noData: "No church data available for this institution"
-      }
+        title: "Kerken per Regio",
+        description: "Verdeling over regio's",
+        noData: "Geen kerkgegevens beschikbaar voor deze instelling",
+        churchesLabel: "Kerken"
+      },
+      userDistribution: {
+        title: "Gebruikersverdeling per Entiteit",
+        description: "Top entiteiten op gebruikersaantal",
+        noData: "Geen gebruikersgegevens beschikbaar voor deze instelling",
+        users: "Gebruikers",
+        institution: "Instelling",
+        footer: "Toont gebruikersverdeling over entiteiten"
+      },
+      totalChurches: "Totaal Kerken",
+      totalUsers: "Totaal Gebruikers",
+      selected: "Geselecteerd",
+      hierarchyTitle: "Hiërarchische Structuur",
+      hierarchyDescription: "De institutionele structuur volgt een duidelijke hiërarchie",
+      hierarchyFlow: "Hiërarchie Stroom",
+      institutionLevel: "Instellingsniveau",
+      institutionsWith: "instelling(en) met",
+      departments: "afdeling(en)",
+      institutionDetails: "Organisatie-eenheden op topniveau die alle operaties beheren",
+      regionsManaging: "regio('s) beheren",
+      regionsDetails: "Geografische afdelingen met provincies en kerken",
+      activeChurches: "actieve kerken",
+      with: "met",
+      churchesDetails: "Lokale gemeenten met gespecialiseerde bedieningen"
     },
   },
   pt: {
@@ -346,8 +391,32 @@ export const institutionTranslations = {
       churchesByRegion: {
         title: "Igrejas por Região",
         description: "Distribuição por regiões",
-        noData: "Nenhum dado de igreja disponível para esta instituição"
-      }
+        noData: "Nenhum dado de igreja disponível para esta instituição",
+        churchesLabel: "Igrejas"
+      },
+      userDistribution: {
+        title: "Distribuição de Usuários por Entidade",
+        description: "Top entidades por número de usuários",
+        noData: "Nenhum dado de usuário disponível para esta instituição",
+        users: "Usuários",
+        institution: "Instituição",
+        footer: "Mostrando distribuição de usuários entre entidades"
+      },
+      totalChurches: "Total de Igrejas",
+      totalUsers: "Total de Usuários",
+      selected: "Selecionado",
+      hierarchyTitle: "Estrutura Hierárquica",
+      hierarchyDescription: "A estrutura institucional segue uma hierarquia clara",
+      hierarchyFlow: "Fluxo Hierárquico",
+      institutionLevel: "Nível Institucional",
+      institutionsWith: "instituição(ões) com",
+      departments: "departamento(s)",
+      institutionDetails: "Unidades organizacionais de alto nível gerenciando todas as operações",
+      regionsManaging: "região(ões) gerenciando",
+      regionsDetails: "Divisões geográficas contendo províncias e igrejas",
+      activeChurches: "igrejas ativas",
+      with: "com",
+      churchesDetails: "Congregações locais com departamentos ministeriais especializados"
     }
   }
 }

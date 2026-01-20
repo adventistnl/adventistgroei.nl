@@ -37,7 +37,7 @@ export const subsidyRequestTranslations = {
     
     // Budget distribution
     budget: {
-      title: "Institution Contribution",
+      title: "Request Contribution",
       tooltip: {
         title: "Request Value",
         description: "This is the amount the institution will contribute. The rest of the budget will be covered by the church."
@@ -65,8 +65,9 @@ export const subsidyRequestTranslations = {
       
       // Calculated values
       totalBudget: "Total Activity Budget:",
-      institutionContribution: "Institution Contribution:",
-      churchRemainder: "Remainder for Church:",
+      requestContribution: "Request Contribution:",
+      selfFunded: "Remainder for Church:",
+      churchRemainder: "Church Remainder",
       
       // Limit info
       limitTitle: "Limit for this activity:",
@@ -77,7 +78,8 @@ export const subsidyRequestTranslations = {
       requestedValueTooltip: "This is the amount that will be requested from the institution for this activity",
       percentOfTotal: "{{percent}}% of total budget",
       totalBudgetLabel: "Total Budget",
-      churchRemainderLabel: "Remainder (Church)"
+      selfFundedLabel: "Remainder (Self-funded)",
+      churchRemainderLabel: "Church Remainder"
     },
     
     // Activity notes
@@ -178,7 +180,9 @@ export const subsidyRequestTranslations = {
       requestUpdated: "Request updated successfully",
       uploadError: "Error uploading files. Please try again.",
       createError: "Error creating request or uploading files",
-      maxValueSet: "{{label}}: {{amount}}"
+      maxValueSet: "{{label}}: {{amount}}",
+      maxDocumentValueSet: "Maximum available value set: {{amount}}",
+      documentLimitReached: "Limit already reached by other documents"
     },
     
     // Status labels
@@ -201,7 +205,8 @@ export const subsidyRequestTranslations = {
     // Labels
     labels: {
       department: "Department",
-      institutionContribution: "Institution Contribution",
+      churchDepartment: "Church Department",
+      requestContribution: "Request Contribution",
       projectBudgetLimit: "Limit: Project Budget",
       selectType: "Select type",
       searchType: "Search type...",
@@ -284,9 +289,8 @@ export const subsidyRequestTranslations = {
       
       // Calculated values
       totalBudget: "Orçamento Total da Atividade:",
-      institutionContribution: "Contribuição da Instituição:",
-      churchRemainder: "Restante para a Igreja:",
-      
+      requestContribution: "Contribuição da Instituição:",
+      selfFunded: "Restante para a Igreja:",      churchRemainder: "Restante da Igreja",      
       // Limit info
       limitTitle: "Limite para esta atividade:",
       limitMaxAllowed: "Máximo permitido:",
@@ -296,7 +300,8 @@ export const subsidyRequestTranslations = {
       requestedValueTooltip: "Este é o valor que será solicitado à instituição para esta atividade",
       percentOfTotal: "{{percent}}% do orçamento total",
       totalBudgetLabel: "Orçamento Total",
-      churchRemainderLabel: "Restante (Igreja)"
+      selfFundedLabel: "Restante (Igreja)",
+      churchRemainderLabel: "Restante da Igreja"
     },
     
     // Activity notes
@@ -397,7 +402,9 @@ export const subsidyRequestTranslations = {
       requestUpdated: "Solicitação atualizada com sucesso",
       uploadError: "Erro ao enviar arquivos. Tente novamente.",
       createError: "Erro ao criar solicitação ou enviar arquivos",
-      maxValueSet: "{{label}}: {{amount}}"
+      maxValueSet: "{{label}}: {{amount}}",
+      maxDocumentValueSet: "Valor máximo disponível definido: {{amount}}",
+      documentLimitReached: "Limite já atingido pelos outros documentos"
     },
     
     // Status labels
@@ -420,7 +427,8 @@ export const subsidyRequestTranslations = {
     // Labels
     labels: {
       department: "Departamento",
-      institutionContribution: "Contribuição da Instituição",
+      churchDepartment: "Departamento da Igreja",
+      requestContribution: "Contribuição da Instituição",
       projectBudgetLimit: "Limite: Orçamento do Projeto",
       selectType: "Selecionar tipo",
       searchType: "Buscar tipo...",
@@ -502,8 +510,9 @@ export const subsidyRequestTranslations = {
       
       // Calculated values
       totalBudget: "Totaal Activiteitenbudget:",
-      institutionContribution: "Bijdrage Instelling:",
-      churchRemainder: "Restant voor Kerk:",
+      requestContribution: "Bijdrage Instelling:",
+      selfFunded: "Restant voor Kerk:",
+      churchRemainder: "Restant Kerk",
       
       // Limit info
       limitTitle: "Limiet voor deze activiteit:",
@@ -514,7 +523,8 @@ export const subsidyRequestTranslations = {
       requestedValueTooltip: "Dit is het bedrag dat bij de instelling wordt aangevraagd voor deze activiteit",
       percentOfTotal: "{{percent}}% van totaal budget",
       totalBudgetLabel: "Totaal Budget",
-      churchRemainderLabel: "Restant (Kerk)"
+      selfFundedLabel: "Restant (Kerk)",
+      churchRemainderLabel: "Restant Kerk"
     },
     
     // Activity notes
@@ -615,7 +625,9 @@ export const subsidyRequestTranslations = {
       requestUpdated: "Aanvraag succesvol bijgewerkt",
       uploadError: "Fout bij uploaden van bestanden. Probeer het opnieuw.",
       createError: "Fout bij aanmaken van aanvraag of uploaden van bestanden",
-      maxValueSet: "{{label}}: {{amount}}"
+      maxValueSet: "{{label}}: {{amount}}",
+      maxDocumentValueSet: "Maximale beschikbare waarde ingesteld: {{amount}}",
+      documentLimitReached: "Limiet al bereikt door andere documenten"
     },
     
     // Status labels
@@ -638,7 +650,8 @@ export const subsidyRequestTranslations = {
     // Labels
     labels: {
       department: "Afdeling",
-      institutionContribution: "Bijdrage Instelling",
+      churchDepartment: "Kerkafdeling",
+      requestContribution: "Bijdrage Instelling",
       projectBudgetLimit: "Limiet: Projectbudget",
       selectType: "Type selecteren",
       searchType: "Type zoeken...",

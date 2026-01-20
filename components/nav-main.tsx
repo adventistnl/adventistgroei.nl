@@ -25,25 +25,54 @@ import {
 
 import * as React from "react"
 import { it } from "node:test"
-import { NavItem } from "@/config/navigation"
-import { WithPermission } from "@/hocs/with-permission"
+import { NavItem, NavSection } from "@/config/navigation"
 
 interface NavMainProps {
-  items: NavItem[]
+  items?: NavItem[]
+  sections?: NavSection[]
 }
 
-export const NavMain = React.memo(function NavMain({ items }: NavMainProps) {
+export const NavMain = React.memo(function NavMain({ items, sections }: NavMainProps) {
+  const { i18n } = useTranslation()
+  const t = structureTranslations[i18n.language as keyof typeof structureTranslations] || structureTranslations.en
+
+  // Helper para resolver label de seção traduzido
+  const resolveSectionLabel = React.useCallback((section: NavSection) => {
+    if (section.translationKey?.startsWith('sidebar.')) {
+      const key = section.translationKey.split('.')[1] as keyof typeof t.sidebar
+      return t.sidebar[key] || section.label
+    }
+    return section.label
+  }, [t])
+
+  // Se sections foi passado, renderizar por seções
+  if (sections) {
+    return (
+      <>
+        {sections.map((section) => (
+          <SidebarGroup key={section.label}>
+            <SidebarGroupLabel>{resolveSectionLabel(section)}</SidebarGroupLabel>
+            <SidebarMenu>
+              {section.items.map((item) => (
+                <NavMainItem key={item.title} item={item} />
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        ))}
+      </>
+    )
+  }
+
+  // Fallback para items (compatibilidade)
   return (
     <SidebarGroup>
-        <SidebarGroupLabel>Platform</SidebarGroupLabel>
-        <SidebarMenu>
-          {items.map((item) => (
-            <WithPermission key={item.title} requiredPermissions={item.permissions}>
-              <NavMainItem item={item} />
-            </WithPermission>
-          ))}
-        </SidebarMenu>
-      </SidebarGroup>
+      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <SidebarMenu>
+        {items?.map((item) => (
+          <NavMainItem key={item.title} item={item} />
+        ))}
+      </SidebarMenu>
+    </SidebarGroup>
   )
 })
 
@@ -51,11 +80,13 @@ export const NavMain = React.memo(function NavMain({ items }: NavMainProps) {
 const NavMainItem = React.memo(function NavMainItem({ 
   item 
 }: { 
-  item: NavMainProps['items'][0] 
+  item: NavItem
 }) {
   const { state, setOpen } = useSidebar()
   const router = useRouter()
   const { navigateWithLoading } = useNavigateWithLoading()
+  const { i18n } = useTranslation()
+  const t = structureTranslations[i18n.language as keyof typeof structureTranslations] || structureTranslations.en
   
   // Handler para expandir sidebar quando clicar em item com subitens no modo collapsed
   const handleExpandOnClick = React.useCallback(() => {
@@ -63,9 +94,6 @@ const NavMainItem = React.memo(function NavMainItem({
       setOpen(true)
     }
   }, [state, item.items, setOpen])
-
-  const { i18n } = useTranslation()
-  const t = structureTranslations[i18n.language as keyof typeof structureTranslations] || structureTranslations.en
 
   // Helper para resolver título traduzido
   const resolveTitle = React.useCallback((navItem: typeof item) => {
@@ -85,7 +113,6 @@ const NavMainItem = React.memo(function NavMainItem({
     })
   }, [navigateWithLoading, router, t])
 
-  // Se o item não tem subitens, renderizar como link direto
   if (!item.items || item.items.length === 0) {
     return (
       <SidebarMenuItem>
@@ -126,17 +153,15 @@ const NavMainItem = React.memo(function NavMainItem({
             {item.items.map((subItem) => {
               const subTitle = resolveTitle(subItem)
               return (
-                <WithPermission key={subItem.title} requiredPermissions={subItem.permissions}>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton 
-                      isActive={subItem.isActive}
-                      onClick={() => handleNavigation(subItem.url, subTitle)}
-                      className="cursor-pointer"
-                    >
-                      <span>{subTitle}</span>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                </WithPermission>
+                <SidebarMenuSubItem key={subItem.title}>
+                  <SidebarMenuSubButton 
+                    isActive={subItem.isActive}
+                    onClick={() => handleNavigation(subItem.url, subTitle)}
+                    className="cursor-pointer"
+                  >
+                    <span>{subTitle}</span>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
               )
             })}
           </SidebarMenuSub>

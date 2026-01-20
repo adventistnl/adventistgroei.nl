@@ -25,13 +25,69 @@
   --destructive-foreground: #ffffff;
   --border: #e5e7eb; /* light off-grey borders */
   --input: #ffffff;
-  --ring: #6b7280;
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --ring: #80726b;
+  /* ========================================
+     CORES PADRÃO PARA GRÁFICOS - LIGHT MODE
+     ======================================== */
+  --chart-1: oklch(0.646 0.222 41.116);    /* Primary Blue */
+  --chart-2: oklch(0.6 0.118 184.704);     /* Teal/Cyan */
+  --chart-2-light: oklch(0.75 0.1 184.704);   /* Teal Light - mais claro */
+  --chart-2-dark: oklch(0.45 0.15 184.704);   /* Teal Dark - mais escuro */
+  --chart-2-muted: oklch(0.65 0.08 184.704);  /* Teal Muted - mais suave */
+  --chart-2-accent: oklch(0.55 0.18 184.704); /* Teal Accent - mais vibrante */
+  --chart-2-green: oklch(0.62 0.13 155);      /* Teal Green - mais verde */
+  --chart-3: oklch(0.398 0.07 227.392);    /* Dark Gray */
+  --chart-4: oklch(0.828 0.189 84.429);    /* Yellow */
+  --chart-5: oklch(0.769 0.188 70.08);     /* Orange */
+  
   --radius: 0.625rem;
+  
+  /* ========================================
+     CORES PARA ESTRUTURA ORGANIZACIONAL
+     Baseadas nas cores padrão --chart-*
+     ======================================== */
+  --structure-institutions: 227 51% 51%;         /* chart-1: Blue */
+  --structure-regions: 172 40% 47%;              /* chart-2: Teal */
+  --structure-churches: 28 75% 64%;              /* chart-5: Orange */
+  --structure-institutional-depts: 50 89% 62%;   /* chart-4: Yellow */
+  --structure-church-depts: 218 20% 35%;         /* chart-3: Dark Gray */
+  
+  /* ========================================
+     CORES PARA STATUS
+     ======================================== */
+  --status-active: 172 40% 47%;        /* Teal - ativo */
+  --status-pending: 50 89% 62%;        /* Yellow - pendente */
+  --status-inactive: 218 20% 35%;      /* Gray - inativo */
+  --status-rejected: 28 75% 64%;       /* Orange - rejeitado */
+  --status-approved: 227 51% 51%;      /* Blue - aprovado */
+  
+  /* ========================================
+     CORES PARA BUDGET/FINANÇAS
+     ======================================== */
+  --budget-allocated: 220 13% 69%;     /* Grey - alocado/reservado */
+  --budget-spent: 0 84% 60%;           /* Red - gasto */
+  --budget-available: 142 76% 45%;     /* Green - disponível */
+  --budget-overbudget: 25 95% 53%;     /* Orange - acima do orçamento */
+  
+  /* ========================================
+     CORES ESPECÍFICAS PARA FINANCE PAGE
+     ======================================== */
+  --finance-spent: 0 84% 60%;          /* Red - gastos realizados */
+  --finance-spent-bg: 0 84% 53%;       /* Red background - barras de progresso */
+  --finance-allocated: 220 13% 69%;    /* Grey - orçamento reservado/alocado */
+  --finance-allocated-bg: 220 13% 60%; /* Grey background - barras */
+  --finance-available: 142 76% 45%;    /* Green - orçamento disponível */
+  --finance-available-bg: 142 76% 41%; /* Green background - barras */
+  --finance-utilization: 172 40% 47%;  /* Teal - utilização geral */
+  --finance-utilization-bg: 172 40% 42%; /* Teal background - barras */
+  
+  /* ========================================
+     CORES PARA PRIORIDADES
+     ======================================== */
+  --priority-high: 28 75% 64%;         /* Orange - alta */
+  --priority-medium: 50 89% 62%;       /* Yellow - média */
+  --priority-low: 172 40% 47%;         /* Teal - baixa */
+  
   --sidebar: #ffffff; /* white sidebar */
   --sidebar-foreground: #2a2a2a;
   --sidebar-primary: #2a2a2a; /* dark-grey for active items */
@@ -63,11 +119,66 @@
   --border: #374151;
   --input: #2a2a2a;
   --ring: #6b7280;
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  /* ========================================
+     CORES PADRÃO PARA GRÁFICOS - DARK MODE
+     ======================================== */
+  --chart-1: oklch(0.488 0.243 264.376);    /* Primary Blue */
+  --chart-2: oklch(0.696 0.17 162.48);      /* Teal/Cyan */
+  --chart-2-light: oklch(0.8 0.15 162.48);     /* Teal Light - mais claro para dark mode */
+  --chart-2-dark: oklch(0.55 0.2 162.48);      /* Teal Dark - mais escuro para dark mode */
+  --chart-2-muted: oklch(0.72 0.12 162.48);    /* Teal Muted - mais suave para dark mode */
+  --chart-2-accent: oklch(0.65 0.22 162.48);   /* Teal Accent - mais vibrante para dark mode */
+  --chart-2-green: oklch(0.72 0.18 145);       /* Teal Green - mais verde para dark mode */
+  --chart-3: oklch(0.769 0.188 70.08);      /* Orange */
+  --chart-4: oklch(0.627 0.265 303.9);      /* Purple */
+  --chart-5: oklch(0.645 0.246 16.439);     /* Red */
+  
+  /* ========================================
+     CORES PARA ESTRUTURA ORGANIZACIONAL
+     Baseadas nas cores padrão --chart-*
+     ======================================== */
+  --structure-institutions: 233 61% 61%;         /* chart-1: Blue */
+  --structure-regions: 170 55% 55%;              /* chart-2: Teal */
+  --structure-churches: 0 74% 68%;               /* chart-5: Red */
+  --structure-institutional-depts: 283 56% 65%;  /* chart-4: Purple */
+  --structure-church-depts: 28 75% 64%;          /* chart-3: Orange */
+  
+  /* ========================================
+     CORES PARA STATUS
+     ======================================== */
+  --status-active: 170 55% 55%;        /* Teal - ativo */
+  --status-pending: 283 56% 65%;       /* Purple - pendente */
+  --status-inactive: 28 75% 64%;       /* Orange - inativo */
+  --status-rejected: 0 74% 68%;        /* Red - rejeitado */
+  --status-approved: 233 61% 61%;      /* Blue - aprovado */
+  
+  /* ========================================
+     CORES PARA BUDGET/FINANÇAS
+     ======================================== */
+  --budget-allocated: 220 20% 75%;     /* Light Grey - alocado/reservado */
+  --budget-spent: 0 84% 70%;           /* Red - gasto */
+  --budget-available: 142 69% 58%;     /* Green - disponível */
+  --budget-overbudget: 25 90% 60%;     /* Orange - acima do orçamento */
+  
+  /* ========================================
+     CORES ESPECÍFICAS PARA FINANCE PAGE
+     ======================================== */
+  --finance-spent: 0 84% 70%;          /* Red - gastos realizados (mais claro) */
+  --finance-spent-bg: 0 84% 65%;       /* Red background - barras de progresso */
+  --finance-allocated: 220 20% 75%;    /* Light Grey - orçamento reservado/alocado */
+  --finance-allocated-bg: 220 20% 65%; /* Light Grey background - barras */
+  --finance-available: 142 69% 58%;    /* Green - orçamento disponível */
+  --finance-available-bg: 142 69% 50%; /* Green background - barras */
+  --finance-utilization: 170 55% 55%;  /* Teal - utilização geral */
+  --finance-utilization-bg: 170 55% 50%; /* Teal background - barras */
+  
+  /* ========================================
+     CORES PARA PRIORIDADES
+     ======================================== */
+  --priority-high: 0 74% 68%;          /* Red - alta */
+  --priority-medium: 283 56% 65%;      /* Purple - média */
+  --priority-low: 170 55% 55%;         /* Teal - baixa */
+  
   --sidebar: #1a1a1a;
   --sidebar-foreground: #fafafa;
   --sidebar-primary: #fafafa;

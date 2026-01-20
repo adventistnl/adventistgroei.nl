@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@apollo/client"
+import { useRouter, useSearchParams } from "next/navigation"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -29,7 +30,7 @@ import { projectTranslations } from "@/lib/translations/projects"
 import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { DELETE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
-import { Globe, Plus, RefreshCw, Building, MoreHorizontal, Eye, Edit, Trash2, Activity, TrendingUp, Users, DollarSign, Folder, ArrowRight, Calendar, Building2, Clock, CheckCircle2, ListChecks } from "lucide-react"
+import { Globe, Plus, RefreshCw, Building, MoreHorizontal, Eye, Edit, Activity, TrendingUp, Users, DollarSign, Folder, ArrowRight, Calendar, Building2, Clock, CheckCircle2, ListChecks } from "lucide-react"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
@@ -42,23 +43,26 @@ import { UseTable } from "@/components/ui/use-table"
 import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
 import { createProjectColumns } from "@/components/projects/projects-table-columns"
 import { EditProjectModal } from "@/components/modals/project/edit-project-modal"
-import { DeleteProjectModal } from "@/components/modals/project/delete-project-modal"
+import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
+import { MyProjectsFilter } from "@/components/shared/my-projects-filter"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
 import { useAuth } from "@/contexts/auth-context"
-
 export default function ProjectsPage() {
   const { t, i18n } = useTranslation()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const { navigateWithLoading } = useNavigateWithLoading()
   const { currentInstitutionData } = useInstitution()
   const { selectedCurrency, formatCurrency } = useCurrency()
-  const { roles } = useAuth()
+  const { roles, user } = useAuth()
   
   const canViewFilters = roles.includes('ADMIN') || roles.includes('INSTITUTIONAL_LEADER') || roles.includes('DEV')
 
   const [refreshing, setRefreshing] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedProject, setSelectedProject] = useState<ProjectTableData | undefined>(undefined)
 
   const institutionId = currentInstitutionData?.id
@@ -72,7 +76,14 @@ export default function ProjectsPage() {
     skip: !institutionId
   })
 
-  const departments = departmentsData?.departments || []
+  // Filter only institutional departments (not church departments)
+  const departments = (departmentsData?.departments || []).filter(
+    (dept: any) => dept.institution_id && !dept.church_id
+  )
+  
+  // Get churches from institution context
+  const churches = currentInstitutionData?.churches || []
+  const activeChurches = churches.filter((church: any) => !church.is_deleted)
 
   // Fetch KPIs and analytics data
   const { data: kpisData, loading: kpisLoading } = useQuery(GET_PROJECT_KPIS_QUERY, {
@@ -87,8 +98,12 @@ export default function ProjectsPage() {
 
   // Filter states - usando objeto para PageFilters
   const [filterValues, setFilterValues] = useState<Record<string, any>>({
-    department: "all"
+    department: "all",
+    church: "all"
   })
+  
+  // My projects filter state - starts active by default
+  const [showMyProjectsOnly, setShowMyProjectsOnly] = useState(true)
   
   // Year filter states
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
@@ -112,12 +127,15 @@ export default function ProjectsPage() {
   // Transform backend data to table format
   const transformProjectsData = (backendProjects: any[]): ProjectTableData[] => {
     return backendProjects.map((project: any) => {
+      
       return {
         id: project.id,
         department_id: project.department_id,
+        church_department_id: project.church_department_id,
         title: project.title,
         description: project.description,
         budget: Number(project.budget || 0),
+        subsidized_budget: Number(project.subsidized_budget || 0),
         is_private: project.is_private,
         required_volunteers: project.required_volunteers,
         start_at: project.start_at,
@@ -135,7 +153,15 @@ export default function ProjectsPage() {
         // Preserve activities data with owners for user avatar display
         activitiesData: project.activities || [],
         // Preserve owner data for assigned user column
-        owner: project.owner || null
+        owner_id: project.owner_id || project.owner?.id,
+        owner: project.owner || null,
+        // Preserve church data for church column
+        church_id: project.church_id,
+        church: project.church,
+        Church: project.Church,
+        // Preserve department data for charts and filtering
+        department: project.department || null,
+        church_department: project.church_department || null
       }
     })
   }
@@ -154,19 +180,51 @@ export default function ProjectsPage() {
     })
   }, [projects, selectedYear])
 
-  // Filter data based on selected department
+  // Filter data based on selected department and church
   const filteredData = useMemo(() => {
     const selectedDepartment = filterValues.department
-    if (selectedDepartment === "all") return projectsByYear
-    return projectsByYear.filter(project => project.department_id === selectedDepartment)
-  }, [filterValues.department, projectsByYear])
+    const selectedChurch = filterValues.church
+    
+    let filtered = projectsByYear
+    
+    // Apply department filter (institutional departments only)
+    if (selectedDepartment !== "all") {
+      filtered = filtered.filter(project => project.department_id === selectedDepartment)
+    }
+    
+    // Apply church filter
+    if (selectedChurch !== "all") {
+      filtered = filtered.filter(project => {
+        // Filter by church_id if project has a church registered
+        return project.church_id === selectedChurch || project.church?.id === selectedChurch || project.Church?.id === selectedChurch
+      })
+    }
+    
+    // Apply "My Projects" filter if active
+    if (showMyProjectsOnly && user?.id) {
+      filtered = filtered.filter(project => {
+        // Check if user is the owner
+        const isOwner = user.id === project.owner_id || user.id === project.owner?.id
+        
+        // Check if user is a collaborator in any activity
+        const isCollaborator = project.activitiesData?.some((activity: any) => 
+          activity.assignees?.some((assignee: any) => assignee.user?.id === user.id)
+        )
+        
+        return isOwner || isCollaborator
+      })
+    }
+    
+    return filtered
+  }, [filterValues.department, filterValues.church, projectsByYear, showMyProjectsOnly, user])
 
   // Configure PageFilters
   const pageFilters: FilterConfig[] = useMemo(() => {
-    if (departments.length === 0) return []
+    const filters: FilterConfig[] = []
     
-    return [
-      {
+    // Add department filter (institutional only)
+    if (departments.length > 0) {
+      filters.push({
         id: "department",
         label: t_project.filters?.filterByDepartment || "Department",
         type: "select",
@@ -183,9 +241,33 @@ export default function ProjectsPage() {
           }))
         ],
         defaultValue: "all"
-      }
-    ]
-  }, [departments, t_project])
+      })
+    }
+    
+    // Add church filter
+    if (activeChurches.length > 0) {
+      filters.push({
+        id: "church",
+        label: "Church",
+        type: "select",
+        placeholder: "All Churches",
+        icon: Building,
+        options: [
+          {
+            label: "All Churches",
+            value: "all"
+          },
+          ...activeChurches.map((church: any) => ({
+            label: church.name,
+            value: church.id
+          }))
+        ],
+        defaultValue: "all"
+      })
+    }
+    
+    return filters
+  }, [departments, activeChurches, t_project])
 
 
 
@@ -197,27 +279,33 @@ export default function ProjectsPage() {
     // Note: Using Number() to ensure proper numeric addition (values may come as strings from GraphQL/Prisma Decimal)
     const totalBudget = yearProjects.reduce((sum, p) => sum + Number(p.budget || 0), 0)
     
-    // Calculate subsidy-related metrics from projects data
-    const totalSubsidyRequests = yearProjects.reduce((sum, p) => sum + Number(p.subsidyRequests || 0), 0)
-    const totalSubsidyAmount = yearProjects.reduce((sum, p) => sum + Number(p.subsidyAmount || 0), 0)
+    // Calculate total allocated to projects (subsidized_budget)
+    const totalAllocated = yearProjects.reduce((sum, p) => sum + Number(p.subsidized_budget || 0), 0)
     
-    // Calculate projects with subsidized budgets (projects that have subsidy requests)
-    const projectsWithSubsidies = yearProjects.filter(p => Number(p.subsidyRequests || 0) > 0).length
-    const totalSubsidizedBudget = yearProjects
-      .filter(p => Number(p.subsidyRequests || 0) > 0)
-      .reduce((sum, p) => sum + Number(p.budget || 0), 0)
+    // Calculate year progress
+    const now = new Date()
+    const startOfYear = new Date(now.getFullYear(), 0, 1)
+    const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999)
+    const totalDaysInYear = Math.ceil((endOfYear.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24))
+    const dayOfYear = Math.ceil((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24))
+    const daysRemaining = totalDaysInYear - dayOfYear
+    const yearProgressPercent = Math.round((dayOfYear / totalDaysInYear) * 100)
     
     return {
       totalProjects,
-      activeProjects: yearProjects.filter(p => p.status === 'active').length,
       completedProjects: yearProjects.filter(p => p.status === 'completed').length,
       upcomingProjects: yearProjects.filter(p => p.status === 'upcoming').length,
       totalBudget,
-      totalSubsidizedBudget,
-      totalSubsidyRequests,
-      totalSubsidyAmount,
+      totalAllocated,
       projectsWithVolunteers: yearProjects.filter(p => p.required_volunteers).length,
       averageBudgetPerProject: totalProjects > 0 ? totalBudget / totalProjects : 0,
+      averageAllocatedPerProject: totalProjects > 0 ? totalAllocated / totalProjects : 0,
+      yearProgress: {
+        percent: yearProgressPercent,
+        dayOfYear,
+        totalDaysInYear,
+        daysRemaining
+      }
     }
   }, [filteredData])
 
@@ -260,6 +348,148 @@ export default function ProjectsPage() {
             label={dept?.name || t_project.unknown}
             variant="neutral"
             size="sm"
+          />
+        )
+      },
+    },
+    {
+      id: "church",
+      header: () => (
+        <div className="flex items-center gap-2">
+          <Building className="w-4 h-4 text-muted-foreground" />
+          <span>{t_project.table.church || "Church"}</span>
+        </div>
+      ),
+      cell: ({ row }) => {
+        const project = row.original
+
+        
+        // Try multiple sources for church name
+        const churchName = project.church?.name || project.Church?.name
+        const churchId = project.church_id || project.church?.id || project.Church?.id
+
+        
+        if (churchName) {
+          return (
+            <StatusBadge
+              label={churchName}
+              variant="default"
+              size="sm"
+              showDot={false}
+            />
+          )
+        }
+        
+        return (
+          <StatusBadge
+            label={t_project.table.noChurch || "No church"}
+            variant="default"
+            size="sm"
+          />
+        )
+      },
+    },
+        {
+      id: "collaborators",
+      header: () => (
+        <div className="flex items-center gap-2">
+          <Users className="w-4 h-4 text-muted-foreground" />
+          <span>{t_project.table.collaborators || "Collaborators"}</span>
+        </div>
+      ),
+      cell: ({ row }) => {
+        const project = row.original
+
+        
+        // Get unique users from activities - extract user from assignees
+        const activityUsers = project.activitiesData?.flatMap((activity: any) => 
+          activity.assignees?.map((assignee: any) => assignee.user) || []
+        ) || []
+
+        
+        // Remove duplicates by id
+        const uniqueUsers = Array.from(
+          new Map(activityUsers.map((user: any) => [user.id, user])).values()
+        )
+        // Get owner
+        const ownerId = project.owner?.id || project.owner_id
+        // Reorder users to show owner first
+        let orderedUsers: UserAvatarData[] = []
+        
+        if (ownerId) {
+          const ownerInUsers = uniqueUsers.find((user: any) => user.id === ownerId)
+          
+          // If owner is in activity users, use that data
+          if (ownerInUsers) {
+            const otherUsers = uniqueUsers.filter((user: any) => user.id !== ownerId)
+            orderedUsers = [
+              {
+                id: (ownerInUsers as any).id,
+                name: (ownerInUsers as any).name,
+                email: (ownerInUsers as any).email,
+                role: 'Owner',
+                isOwner: true
+              },
+              ...otherUsers.map((user: any) => ({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: 'Colaborador'
+              }))
+            ]
+          } else if (project.owner) {
+            // If owner is not in activities, add from project.owner
+            orderedUsers = [
+              {
+                id: project.owner.id,
+                name: project.owner.name,
+                email: project.owner.email,
+                role: 'Owner',
+                isOwner: true
+              },
+              ...uniqueUsers.map((user: any) => ({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: 'Colaborador'
+              }))
+            ]
+          } else {
+            // No owner data available
+            orderedUsers = uniqueUsers.map((user: any) => ({
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              role: 'Colaborador'
+            }))
+          }
+        } else {
+          // No owner ID
+          orderedUsers = uniqueUsers.map((user: any) => ({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: 'Colaborador'
+          }))
+        }
+        
+        
+        if (orderedUsers.length === 0) {
+          return (
+            <div className="text-xs text-muted-foreground">
+              {t_project.table.noCollaborators || "No collaborators"}
+            </div>
+          )
+        }
+        
+        return (
+          <UsersAvatarGroup
+            users={orderedUsers}
+            maxDisplay={2}
+            size="sm"
+            showLabel={false}
+            showAddButton={false}
+            ownerUserId={ownerId}
           />
         )
       },
@@ -421,6 +651,9 @@ export default function ProjectsPage() {
       cell: ({ row }) => {
         const project = row.original
         
+        // Validate ownership: only project owner can edit/delete
+        const isProjectOwner = user?.id === project.owner_id || user?.id === project.owner?.id
+        
         return (
           <div data-action-button>
             <DropdownMenu>
@@ -441,26 +674,20 @@ export default function ProjectsPage() {
                   <Eye className="mr-2 h-4 w-4" />
                   {t_project.viewProject}
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleEditProject(project)
-                  }}
-                  className="cursor-pointer"
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  {t_project.editProject}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleDeleteProject(project)
-                  }}
-                  className="cursor-pointer text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {t_project.deleteProject}
-                </DropdownMenuItem>
+                
+                {/* Only show Edit option if user is the project owner */}
+                {isProjectOwner && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleEditProject(project)
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <Edit className="mr-2 h-4 w-4" />
+                    {t_project.editProject}
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -468,6 +695,30 @@ export default function ProjectsPage() {
       },
     },
   ]
+
+  // Auto-refresh data when redirected from project creation
+  useEffect(() => {
+    const shouldRefresh = searchParams.get('refresh')
+    
+    if (shouldRefresh === 'true') {
+      // Show loading toast
+      const refreshToast = toast.loading(t_project.toasts.dataRefreshing || 'Refreshing data...')
+      
+      // Refetch data
+      refetch().then(() => {
+        toast.dismiss(refreshToast)
+        toast.success(t_project.toasts.dataRefreshed || 'Data refreshed successfully', {
+          duration: 2000
+        })
+      }).catch(() => {
+        toast.dismiss(refreshToast)
+        toast.error(t_project.toasts.errorLoading || 'Failed to refresh data')
+      })
+      
+      // Clean up URL by removing the refresh parameter
+      router.replace('/projects')
+    }
+  }, [searchParams, refetch, router, t_project])
 
   // Show loading/error toasts
   useEffect(() => {
@@ -482,13 +733,13 @@ export default function ProjectsPage() {
       [filterId]: value
     }))
     
-    if (filterId === "department") {
+    if (filterId === "department" || filterId === "church") {
       toast.success(t_project.toasts.filterApplied, { duration: 1500 })
     }
   }
 
   const handleClearFilters = () => {
-    setFilterValues({ department: "all" })
+    setFilterValues({ department: "all", church: "all" })
     toast.success("Filters cleared", { duration: 1500 })
   }
 
@@ -551,15 +802,19 @@ export default function ProjectsPage() {
     setSelectedProject(undefined)
   }
 
-  const handleDeleteProject = (project: ProjectTableData) => {
-    setSelectedProject(project)
-    setIsDeleteModalOpen(true)
-  }
-
-  const handleDeleteProjectSuccess = () => {
-    refetch()
-    setIsDeleteModalOpen(false)
-    setSelectedProject(undefined)
+  const handleToggleMyProjects = () => {
+    const newState = !showMyProjectsOnly
+    setShowMyProjectsOnly(newState)
+    
+    if (newState) {
+      toast.success(t_project.filters?.showMyProjects || 'Showing only your projects', {
+        duration: 2000,
+      })
+    } else {
+      toast.success(t_project.filters?.showAllProjects || 'Showing all projects', {
+        duration: 2000,
+      })
+    }
   }
 
 
@@ -650,7 +905,7 @@ export default function ProjectsPage() {
               {t_project.projectsDashboard}
             </h2>
             <p className="text-muted-foreground text-0.875rem sm:text-1rem">
-              {t_project.pageHeader.subtitle.replace('{{year}}', selectedYear.toString())}
+              {t_project?.pageHeader?.subtitle?.replace('{{year}}', selectedYear.toString()) || `Complete overview of projects - ${selectedYear}`}
             </p>
             {currentInstitutionData && (
               <div className="flex items-center gap-2 mt-3">
@@ -661,11 +916,29 @@ export default function ProjectsPage() {
                 <Badge variant="outline" className="text-xs">
                   {currentInstitutionData.denomination}
                 </Badge>
+                {/* Show active filter badge */}
+                {showMyProjectsOnly && (
+                  <Badge variant="default" className="text-xs animate-in fade-in slide-in-from-left-2">
+                    <Users className="w-3 h-3 mr-1" />
+                    {t_project.filters?.myProjectsActive || `My Projects (${filteredData.length})`}
+                  </Badge>
+                )}
               </div>
             )}
           </div>
           
           <div className="flex items-center gap-3">
+          {/* My Projects Filter - User Avatar */}
+          <MyProjectsFilter
+            user={user}
+            active={showMyProjectsOnly}
+            defaultActive={true}
+            onToggle={handleToggleMyProjects}
+            translations={{
+              showMyProjects: t_project.filters?.showMyProjects || 'Show my projects',
+              showAllProjects: t_project.filters?.showAllProjects || 'Show all projects'
+            }}
+          />
 
           {/* Department Filter */}
             {canViewFilters && pageFilters.length > 0 && (
@@ -691,16 +964,18 @@ export default function ProjectsPage() {
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             </Button>
             
-            <Button 
-              onClick={() => navigateWithLoading('/projects/new-project', {
-                message: t_project.actions.loadingCreator,
-                showToast: true
-              })} 
-              className="gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              {t_project.newProject}
-            </Button>
+            <WithPermission requiredPermissions={[PermissionResolverName.CreateProject]}>
+              <Button 
+                onClick={() => navigateWithLoading('/projects/new-project', {
+                  message: t_project.actions.loadingCreator,
+                  showToast: true
+                })} 
+                className="gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                {t_project.newProject}
+              </Button>
+            </WithPermission>
           </div>
         </div>
 
@@ -741,10 +1016,15 @@ export default function ProjectsPage() {
                 {t_project.projectsOverview}
               </CardTitle>
               <CardDescription>
-                {t_project.pageHeader.manageDescription}
+                {t_project?.pageHeader?.manageDescription || "Manage and track all projects across departments"}
                 {filterValues.department !== "all" && (
                   <span className="ml-2">
-                    • Filtered by: {departments.find((d: any) => d.id === filterValues.department)?.name}
+                    • Department: {departments.find((d: any) => d.id === filterValues.department)?.name}
+                  </span>
+                )}
+                {filterValues.church !== "all" && (
+                  <span className="ml-2">
+                    • Church: {activeChurches.find((c: any) => c.id === filterValues.church)?.name}
                   </span>
                 )}
               </CardDescription>
@@ -782,17 +1062,6 @@ export default function ProjectsPage() {
             }}
             onSuccess={handleEditProjectSuccess}
             project={selectedProject}
-          />
-
-          {/* Delete Project Modal */}
-          <DeleteProjectModal
-            isOpen={isDeleteModalOpen}
-            onClose={() => {
-              setIsDeleteModalOpen(false)
-              setSelectedProject(undefined)
-            }}
-            onConfirm={handleDeleteProjectSuccess}
-            project={selectedProject || null}
           />
         </Card>
 

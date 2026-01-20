@@ -23,7 +23,13 @@ export function PrivacyProviderWithAuth({ children }: { children: React.ReactNod
   const userKeyCodeRoles = auth?.roles || []
   
   // Map auth key_code roles to privacy role
-  const userRole = mapAuthRoleToPrivacyRole(userKeyCodeRoles, auth?.user?.name)
+  // Only call the mapping when auth is not loading to avoid false warnings
+  const userRole = React.useMemo(() => {
+    if (auth?.isLoading) {
+      return 'guest' // Return guest role while loading
+    }
+    return mapAuthRoleToPrivacyRole(userKeyCodeRoles, auth?.user?.name, auth?.isLoading)
+  }, [userKeyCodeRoles, auth?.user?.name, auth?.isLoading])
   
   // 🔍 DEBUG: Log mapped role (only in development)
   React.useEffect(() => {
@@ -59,13 +65,17 @@ export function PrivacyProviderWithAuth({ children }: { children: React.ReactNod
  */
 function mapAuthRoleToPrivacyRole(
   authRoles: string[] | undefined, 
-  userName: string | undefined
+  userName: string | undefined,
+  isAuthLoading?: boolean
 ): string {
   // Development fallback: if no roles or in dev environment, use admin
   if (!authRoles || authRoles.length === 0) {
     // Only fallback to admin in non-production (development) to avoid leaking elevated access
     if (process.env.NODE_ENV !== 'production') {
-      console.warn('⚠️ No roles found, using admin as fallback (development mode)')
+      // Only show warning if auth is not currently loading (avoid false positives)
+      if (!isAuthLoading) {
+        console.warn('⚠️ No roles found, using admin as fallback (development mode)')
+      }
       return 'admin'
     }
 
@@ -160,7 +170,7 @@ function mapAuthRoleToPrivacyRole(
 export function useHasPrivacyRole(requiredRole: 'admin' | 'finance_manager' | 'department_head' | 'user' | 'guest'): boolean {
   const auth = useAuth()
   const userKeyCodeRoles = auth?.roles || []
-  const userPrivacyRole = mapAuthRoleToPrivacyRole(userKeyCodeRoles, auth?.user?.name)
+  const userPrivacyRole = mapAuthRoleToPrivacyRole(userKeyCodeRoles, auth?.user?.name, auth?.isLoading)
   
   // Role hierarchy (lower index = higher access)
   const roleHierarchy = ['admin', 'finance_manager', 'department_head', 'user', 'guest']

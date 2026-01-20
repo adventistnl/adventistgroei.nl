@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { ptBR, enUS, nl } from "date-fns/locale"
 import { useTranslation } from "react-i18next"
+import { useCurrency } from "@/contexts/currency-context"
 
 export interface SubsidyRequestCardData {
   id: string
@@ -32,10 +33,12 @@ export interface SubsidyRequestCardData {
   institution_id?: string
   department_id?: string
   church_id?: string
+  church_department_id?: string
   // Display names
   institution_name?: string
   church_name?: string
   department_name?: string
+  church_department_name?: string
   activities_count?: number
   total_budget?: number
   notes?: string
@@ -79,20 +82,25 @@ export function SubsidyRequestCard({
   className,
 }: SubsidyRequestCardProps) {
   const { t, i18n } = useTranslation()
+  const { formatCurrency } = useCurrency()
   const contentDisabledClass = data.archived ? "opacity-60 pointer-events-none" : ""
   
   const statusConfig: Record<
     SubsidyRequestCardData["status"],
     { label: string; className: string }
   > = {
-    pending: { label: t('subsidy.status.pending'), className: "bg-amber-50 text-amber-700 border-amber-200" },
-    approved: { label: t('subsidy.status.approved'), className: "bg-green-50 text-green-700 border-green-200" },
-    rejected: { label: t('subsidy.status.rejected'), className: "bg-red-50 text-red-700 border-red-200" },
-    in_review: { label: t('subsidy.status.inReview'), className: "bg-blue-50 text-blue-700 border-blue-200" },
-    closed: { label: t('subsidy.status.closed'), className: "bg-gray-50 text-gray-700 border-gray-200" },
+    pending: { label: t('subsidy.status.pending') || t('subsidy.deleteRequest.statusLabels.pending') || "Pending", className: "bg-amber-50 text-amber-700 border-amber-200" },
+    approved: { label: t('subsidy.status.approved') || t('subsidy.deleteRequest.statusLabels.approved') || t('subsidy.approvedLower') || "Approved", className: "bg-green-50 text-green-700 border-green-200" },
+    rejected: { label: t('subsidy.status.rejected') || t('subsidy.deleteRequest.statusLabels.rejected') || "Rejected", className: "bg-red-50 text-red-700 border-red-200" },
+    in_review: { label: t('subsidy.status.inReview') || t('subsidy.deleteRequest.statusLabels.in_review') || "In Review", className: "bg-blue-50 text-blue-700 border-blue-200" },
+    closed: { label: t('subsidy.status.closed') || t('subsidy.deleteRequest.statusLabels.closed') || t('subsidy.closed') || "Closed", className: "bg-gray-50 text-gray-700 border-gray-200" },
   }
 
-  const currentStatus = statusConfig[data.status]
+  // Use fallback for unknown status
+  const currentStatus = statusConfig[data.status] || {
+    label: data.status || 'Unknown',
+    className: "bg-gray-50 text-gray-700 border-gray-200"
+  }
 
   const formattedDate = React.useMemo(() => {
     const date = typeof data.requested_at === "string" ? new Date(data.requested_at) : data.requested_at
@@ -101,12 +109,8 @@ export function SubsidyRequestCard({
   }, [data.requested_at, i18n.language])
 
   const formattedAmount = React.useMemo(() => {
-    return new Intl.NumberFormat(i18n.language === 'en' ? 'en-US' : i18n.language === 'nl' ? 'nl-NL' : 'pt-BR', {
-      style: "currency",
-      currency: i18n.language === 'en' ? 'USD' : i18n.language === 'nl' ? 'EUR' : 'BRL',
-      minimumFractionDigits: 0,
-    }).format(data.requested_amount)
-  }, [data.requested_amount, i18n.language])
+    return formatCurrency(data.requested_amount)
+  }, [data.requested_amount, formatCurrency])
 
   return (
     <div
@@ -178,14 +182,14 @@ export function SubsidyRequestCard({
               </>
             )}
 
-            {onDuplicate && (
+            {/* {onDuplicate && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onDuplicate(data.id)}>
                   {t('actions.duplicate')}
                 </DropdownMenuItem>
               </>
-            )}
+            )} */}
 
             {/* Archive / Unarchive action */}
             {onArchive && (

@@ -109,6 +109,12 @@ export function PrivacyProvider({
     return initialState
   })
 
+  // Use ref to track current state without causing re-renders
+  const privacyStateRef = React.useRef(privacyState)
+  React.useEffect(() => {
+    privacyStateRef.current = privacyState
+  }, [privacyState])
+
   const [registeredComponents, setRegisteredComponents] = useState<Map<string, PrivacyConfig>>(
     new Map()
   )
@@ -150,6 +156,8 @@ export function PrivacyProvider({
    * Register a new privacy-enabled component
    */
   const registerComponent = useCallback((config: PrivacyConfig) => {
+
+    
     setRegisteredComponents(prev => {
       const newMap = new Map(prev)
       newMap.set(config.id, config)
@@ -159,14 +167,16 @@ export function PrivacyProvider({
     // 🎯 NOVO: Componente VISÍVEL por padrão (defaultHidden = false)
     // Só esconde se defaultHidden for explicitamente true
     // Ou se já existe estado salvo no localStorage
-    if (privacyState[config.id] === undefined) {
+    if (privacyStateRef.current[config.id] === undefined) {
       const shouldHide = config.defaultHidden === true // Apenas esconde se explicitamente true
+
       setPrivacyState(prev => ({
         ...prev,
         [config.id]: shouldHide // false by default = visível
       }))
+    } else {
     }
-  }, [privacyState])
+  }, [])
 
   /**
    * Unregister a privacy-enabled component
@@ -183,11 +193,14 @@ export function PrivacyProvider({
    * Toggle privacy for a specific component
    */
   const togglePrivacy = useCallback((componentId: string) => {
+    
     setPrivacyState(prev => {
+      const currentState = prev[componentId] || false
       const newState = {
         ...prev,
-        [componentId]: !prev[componentId]
+        [componentId]: !currentState
       }
+
 
       // Persist to localStorage if configured
       const config = registeredComponents.get(componentId)
@@ -223,8 +236,8 @@ export function PrivacyProvider({
    * Check if component is currently hidden
    */
   const isHidden = useCallback((componentId: string): boolean => {
-    return privacyState[componentId] || false
-  }, [privacyState])
+    return privacyStateRef.current[componentId] || false
+  }, [])
 
   /**
    * Toggle privacy for all registered components
@@ -302,7 +315,7 @@ export function usePrivacy() {
  */
 export function useComponentPrivacy(config: PrivacyConfig) {
   const { 
-    isHidden, 
+    privacyState,
     togglePrivacy, 
     setPrivacy, 
     canTogglePrivacy,
@@ -310,13 +323,20 @@ export function useComponentPrivacy(config: PrivacyConfig) {
     unregisterComponent,
   } = usePrivacy()
 
-  // Register component on mount, unregister on unmount
+  // Use ref to store config and avoid re-registration on every render
+  const configRef = React.useRef(config)
+  React.useEffect(() => {
+    configRef.current = config
+  }, [config])
+
+  // Register component ONCE on mount with stable ID
   React.useEffect(() => {
     registerComponent(config)
     return () => {
       unregisterComponent(config.id)
     }
-  }, [config.id]) // Only re-register if ID changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.id]) // Only depend on ID, not the whole config object
 
   // Auto-hide functionality
   React.useEffect(() => {
@@ -332,7 +352,8 @@ export function useComponentPrivacy(config: PrivacyConfig) {
     }
 
     const handleActivity = () => {
-      if (!isHidden(config.id)) {
+      // Check if component is currently visible (not hidden)
+      if (!privacyState[config.id]) {
         resetTimer()
       }
     }
@@ -350,10 +371,16 @@ export function useComponentPrivacy(config: PrivacyConfig) {
       window.removeEventListener('keydown', handleActivity)
       window.removeEventListener('click', handleActivity)
     }
-  }, [config.autoHideDelay, config.id, isHidden, setPrivacy])
+  }, [config.autoHideDelay, config.id, privacyState, setPrivacy])
 
-  const hidden = isHidden(config.id)
+  // Get current hidden state reactively from privacyState
+  const hidden = privacyState[config.id] || false
   const canToggle = canTogglePrivacy(config)
+
+  // Debug log to validate isolation
+  React.useEffect(() => {
+
+  }, [hidden, canToggle, config.id, privacyState])
 
   return {
     isHidden: hidden,

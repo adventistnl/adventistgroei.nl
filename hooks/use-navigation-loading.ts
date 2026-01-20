@@ -18,7 +18,7 @@ export function useNavigateWithLoading() {
     options: NavigateWithLoadingOptions = {}
   ) => {
     const { 
-      message = "🚀 Redirecting...", 
+      message = "Redirecting...", 
       showToast = false // Default to false for cleaner UX
     } = options
 

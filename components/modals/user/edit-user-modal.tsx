@@ -504,7 +504,7 @@ export function EditUserModal({
               </div>
 
               {/* Status Switch */}
-              <div className="flex items-center justify-between rounded-lg border border-border p-4">
+              {/* <div className="flex items-center justify-between rounded-lg border border-border p-4">
                 <div className="space-y-0.5">
                   <Label htmlFor="user-status" className="text-sm font-medium">
                     {t('users.modals.edit_user.fields.status')}: {userForm.is_active ? t('users.modals.edit_user.fields.active') : t('users.modals.edit_user.fields.inactive')}
@@ -521,7 +521,7 @@ export function EditUserModal({
                   onCheckedChange={(checked) => handleInputChange('is_active', checked)}
                   disabled={isLoading}
                 />
-              </div>
+              </div> */}
             </div>
           </div>
         );

@@ -5,13 +5,13 @@ import {
   Folder,
   Forward,
   MoreHorizontal,
-  Trash2,
   Plus,
   Lock,
   type LucideIcon,
 } from "lucide-react"
 import toast from "react-hot-toast"
-import { DeleteProjectModal } from "@/components/modals/project/delete-project-modal"
+import { useTranslation } from "react-i18next"
+import { projectTranslations } from "@/lib/translations/projects"
 
 import {
   DropdownMenu,
@@ -32,6 +32,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { useNavigateWithLoading } from "@/hooks/use-navigation-loading"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 interface NavProjectsProps {
   projects: any[]
@@ -42,73 +44,65 @@ export const NavProjects = React.memo(function NavProjects({ projects, loading }
   const { isMobile } = useSidebar()
   const router = useRouter()
   const { navigateWithLoading } = useNavigateWithLoading()
-  
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = React.useState(false)
-  const [selectedProject, setSelectedProject] = React.useState<any>(null)
-
-  const handleDeleteProject = React.useCallback((project: any) => {
-    setSelectedProject(project)
-    setIsDeleteModalOpen(true)
-  }, [])
+  const { i18n } = useTranslation()
+  const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+  const maxProjects = 3
+  const hasMoreProjects = projects.length > maxProjects
+  const displayedProjects = projects.slice(0, maxProjects)
 
   const handleShareProject = React.useCallback((project: any) => {
     const projectUrl = `${window.location.origin}/projects/${project.id}`
     navigator.clipboard.writeText(projectUrl).then(() => {
-      toast.success(`Link do projeto copiado!`, {
+      toast.success(t.sidebar.projectLinkCopied, {
         duration: 2000
       })
     }).catch(() => {
-      toast.error('Erro ao copiar link')
+      toast.error(t.sidebar.errorCopyingLink)
     })
-  }, [])
-
-  const handleDeleteSuccess = React.useCallback(() => {
-    setIsDeleteModalOpen(false)
-    setSelectedProject(null)
-    toast.success('Projeto deletado com sucesso!', {
-      duration: 3000
-    })
-  }, [])
+  }, [t])
 
   return (
     <>
       <SidebarGroup className="group-data-[collapsible=icon]:hidden">
         <div className="flex items-center justify-between px-2 py-1">
-          <SidebarGroupLabel>Projects</SidebarGroupLabel>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigateWithLoading('/projects/new-project', {
-              message: "Creating new project...",
-              showToast: true
-            })}
-            className="h-6 w-6 p-0 hover:bg-sidebar-accent"
-          >
-            <Plus className="h-3 w-3" />
-            <span className="sr-only">Add Project</span>
-          </Button>
+          <SidebarGroupLabel>{t.sidebar.projects}</SidebarGroupLabel>
+          <WithPermission requiredPermissions={[PermissionResolverName.CreateProject]}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigateWithLoading('/projects/new-project', {
+                message: t.sidebar.creatingNewProject,
+                showToast: true
+              })}
+              className="h-6 w-6 p-0 hover:bg-sidebar-accent"
+            >
+              <Plus className="h-3 w-3" />
+              <span className="sr-only">{t.sidebar.addProject}</span>
+            </Button>
+          </WithPermission>
+     
         </div>
         <SidebarMenu>
           {loading ? (
             <SidebarMenuItem>
               <SidebarMenuButton className="text-sidebar-foreground/70">
                 <Folder className="text-sidebar-foreground/70 sidebar-icon animate-pulse" />
-                <span>Loading projects...</span>
+                <span>{t.sidebar.loadingProjects}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ) : projects.length === 0 ? (
             <SidebarMenuItem>
               <SidebarMenuButton className="text-sidebar-foreground/70">
                 <Folder className="text-sidebar-foreground/70 sidebar-icon" />
-                <span>No projects yet</span>
+                <span>{t.sidebar.noProjectsYet}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ) : (
-            projects.map((project) => (
+            displayedProjects.map((project) => (
               <SidebarMenuItem key={project.id}>
                 <SidebarMenuButton
                   onClick={() => navigateWithLoading(`/projects/${project.id}`, {
-                    message: `Opening ${project.title}...`,
+                    message: t.sidebar.openingProject.replace('{{title}}', project.title),
                     showToast: true
                   })}
                 >
@@ -124,7 +118,7 @@ export const NavProjects = React.memo(function NavProjects({ projects, loading }
                   <DropdownMenuTrigger asChild>
                     <SidebarMenuAction showOnHover>
                       <MoreHorizontal className="sidebar-icon" />
-                      <span className="sr-only">More</span>
+                      <span className="sr-only">{t.sidebar.more}</span>
                     </SidebarMenuAction>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
@@ -133,26 +127,18 @@ export const NavProjects = React.memo(function NavProjects({ projects, loading }
                     align={isMobile ? "end" : "start"}
                   >
                     <DropdownMenuItem onClick={() => navigateWithLoading(`/projects/${project.id}`, {
-                      message: `Opening ${project.title}...`,
+                      message: t.sidebar.openingProject.replace('{{title}}', project.title),
                       showToast: true
                     })}>
                       <Folder className="text-muted-foreground" />
-                      <span>View Project</span>
+                      <span>{t.sidebar.viewProject}</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={(e) => {
                       e.stopPropagation()
                       handleShareProject(project)
                     }}>
                       <Forward className="text-muted-foreground" />
-                      <span>Share Project</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={(e) => {
-                      e.stopPropagation()
-                      handleDeleteProject(project)
-                    }}>
-                      <Trash2 className="text-muted-foreground" />
-                      <span>Delete Project</span>
+                      <span>{t.sidebar.shareProject}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -160,26 +146,22 @@ export const NavProjects = React.memo(function NavProjects({ projects, loading }
             ))
           )}
         </SidebarMenu>
+        {hasMoreProjects && (
+          <div className="px-2 py-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigateWithLoading('/projects', {
+                message: t.sidebar.loadingProjects,
+                showToast: false
+              })}
+              className="w-full text-xs"
+            >
+              {t.sidebar.seeMore}
+            </Button>
+          </div>
+        )}
       </SidebarGroup>
-
-      <DeleteProjectModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => {
-          setIsDeleteModalOpen(false)
-          setSelectedProject(null)
-        }}
-        onConfirm={handleDeleteSuccess}
-        project={selectedProject ? {
-          id: selectedProject.id,
-          title: selectedProject.title,
-          description: selectedProject.description || '',
-          budget: selectedProject.budget || 0,
-          activities: selectedProject.activities?.length || 0,
-          subsidyRequests: selectedProject.subsidies?.length || 0,
-          volunteers: 0,
-          documents: 0
-        } : null}
-      />
     </>
   )
 })

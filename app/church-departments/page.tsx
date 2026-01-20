@@ -44,7 +44,8 @@ import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal } from "
 import { useInstitution } from "@/contexts/institution-context"
 import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
 import { DepartmentsKPICards, KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
-import { DepartmentActivityChart } from "@/components/institutions/charts/department-activity-chart"
+import { DepartmentProjectOverTimeChart } from "@/components/institutions/charts/department-project-over-time-chart"
+import { DepartmentLeadersCard } from "@/components/charts/department-leaders-card"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { UseTable } from "@/components/ui/use-table"
 import { EntityInfoCard } from "@/components/shared/entity-info-card"
@@ -70,6 +71,9 @@ import { PermissionResolverName, AnnualBudgetEntityType } from "@/types/graphql-
 import { AccessDenied } from "@/components/access/access-denied"
 import { WithPermission } from "@/hocs/with-permission"
 import { useDepartmentKPIs } from "@/hooks/use-department-kpis"
+import { GridContainer } from "@/components/shared/grid-container"
+import { useQuery } from "@apollo/client"
+import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 
 
 /**
@@ -79,7 +83,151 @@ import { useDepartmentKPIs } from "@/hooks/use-department-kpis"
 export default function ChurchDepartmentsPage() {
   const { currentInstitutionData, refetchInstitutionById } = useInstitution();
   const churches: ChurchData[] = currentInstitutionData?.churches || [];
-  const departments: DepartmentData[] = churches.flatMap(church => church.departments?.flatMap(department => ({ ...department, church_name: church.name })) || []);
+  
+  // Extrair departamentos das igrejas e adicionar church_name
+  const departments: DepartmentData[] = churches.flatMap(church => 
+    church.departments?.map(department => ({ 
+      ...department, 
+      church_name: church.name 
+    })) || []
+  );
+  
+  // Fetch todos os projetos da instituição
+  const { 
+    data: projectsData, 
+    loading: projectsLoading, 
+    error: projectsError 
+  } = useQuery(GET_PROJECTS_QUERY, {
+    variables: { institutionId: currentInstitutionData?.id },
+    skip: !currentInstitutionData?.id
+  });
+  
+  const projects = projectsData?.projects || [];
+  
+  // Debug: Log dados de igrejas e departamentos
+  useEffect(() => {
+    console.log('🏛️ [Church Departments Page] Total Churches:', churches.length)
+    console.log('📋 [Church Departments Page] Total Departments:', departments.length)
+    console.log('📊 [Church Departments Page] Departments by Church:', 
+      churches.map(church => ({
+        church_id: church.id,
+        church_name: church.name,
+        departments_count: church.departments?.length || 0,
+        departments: church.departments?.map(d => ({ id: d.id, name: d.name, church_id: d.church_id })) || []
+      }))
+    )
+    
+    // Validar consistência: todos os departamentos devem ter church_id correspondente
+    const inconsistentDepartments = departments.filter(dept => {
+      const parentChurch = churches.find(c => c.id === dept.church_id)
+      return !parentChurch
+    })
+    
+    if (inconsistentDepartments.length > 0) {
+      console.error('❌ [Data Inconsistency] Departments without valid church reference:', inconsistentDepartments)
+    }
+  }, [churches, departments])
+  
+  // Debug: Log dados de projetos e sua relação com departamentos
+  useEffect(() => {
+    if (!projects || projects.length === 0) {
+      console.log('📦 [Projects Data] No projects found')
+      return
+    }
+    
+    console.log('📦 [Projects Data] Total Projects:', projects.length)
+    console.log('📦 [Projects Data] Projects Loading:', projectsLoading)
+    
+    // Mapear todos os projetos com seus department_id e church_department_id
+    const projectsMapping = projects.map((project: any) => ({
+      project_id: project.id,
+      project_title: project.title,
+      department_id: project.department_id,
+      church_department_id: project.church_department_id,
+      owner_id: project.owner_id,
+      status: project.status,
+      has_church_department: !!project.church_department_id,
+      church_department_name: project.church_department?.name || null,
+      church_name: project.church_department?.church?.name || project.Church?.name || null
+    }))
+    
+    console.log('📦 [Projects Data] All Projects with Department Links:', projectsMapping)
+    
+    // Filtrar projetos que têm church_department_id
+    const projectsWithChurchDept = projects.filter((p: any) => p.church_department_id)
+    console.log(`📦 [Projects Data] Projects with church_department_id: ${projectsWithChurchDept.length}/${projects.length}`)
+    
+    if (projectsWithChurchDept.length > 0) {
+      console.log('📦 [Projects Data] Projects linked to Church Departments:', 
+        projectsWithChurchDept.map((p: any) => ({
+          project_title: p.title,
+          church_department_id: p.church_department_id,
+          church_department_name: p.church_department?.name || 'Unknown',
+          church_name: p.church_department?.church?.name || 'Unknown'
+        }))
+      )
+    }
+    
+    // Validar se os church_department_id dos projetos correspondem aos departamentos da página
+    const departmentIds = new Set(departments.map(d => d.id))
+    const projectDepartmentMatches = projectsWithChurchDept.map((project: any) => {
+      const matchesDepartment = departmentIds.has(project.church_department_id)
+      return {
+        project_title: project.title,
+        church_department_id: project.church_department_id,
+        church_department_name: project.church_department?.name || 'Unknown',
+        matches_page_department: matchesDepartment,
+        department_found: matchesDepartment ? departments.find(d => d.id === project.church_department_id)?.name : null
+      }
+    })
+    
+    console.log('🔍 [Projects-Departments Validation] Church Department Matches:', projectDepartmentMatches)
+    
+    // Contar projetos por departamento
+    const projectsByDepartment = new Map<string, any[]>()
+    projectsWithChurchDept.forEach((project: any) => {
+      const deptId = project.church_department_id
+      if (!projectsByDepartment.has(deptId)) {
+        projectsByDepartment.set(deptId, [])
+      }
+      projectsByDepartment.get(deptId)?.push(project)
+    })
+    
+    console.log('📊 [Projects by Department] Project Count per Church Department:', 
+      Array.from(projectsByDepartment.entries()).map(([dept_id, projs]) => {
+        const dept = departments.find(d => d.id === dept_id)
+        return {
+          department_id: dept_id,
+          department_name: dept?.name || projs[0]?.church_department?.name || 'Unknown',
+          church_name: dept?.church_name || projs[0]?.church_department?.church?.name || 'Unknown',
+          project_count: projs.length,
+          projects: projs.map((p: any) => ({ id: p.id, title: p.title, status: p.status }))
+        }
+      })
+    )
+    
+    // Identificar departamentos sem projetos
+    const departmentsWithoutProjects = departments.filter(dept => 
+      !projectsByDepartment.has(dept.id)
+    )
+    
+    if (departmentsWithoutProjects.length > 0) {
+      console.log('⚠️ [Departments Without Projects] Departments with no linked projects:', 
+        departmentsWithoutProjects.map(d => ({
+          department_id: d.id,
+          department_name: d.name,
+          church_name: d.church_name
+        }))
+      )
+    }
+    
+    // Log erro se houver
+    if (projectsError) {
+      console.error('❌ [Projects Data] Error loading projects:', projectsError)
+    }
+    
+  }, [projects, departments, projectsLoading, projectsError])
+  
   const { i18n } = useTranslation()
   const currentLanguage = i18n?.language || 'en'
   const t = departmentTranslations[currentLanguage as keyof typeof departmentTranslations] || departmentTranslations.en
@@ -124,18 +272,94 @@ export default function ChurchDepartmentsPage() {
     return map
   }, [activityData])
 
-  // Enriquecer departments com dados de projetos da API
+  // Criar mapeamento de projetos reais da API por church_department_id
+  const projectsByDepartmentMap = useMemo(() => {
+    const map = new Map<string, any[]>()
+    
+    if (projects && projects.length > 0) {
+      // Filtrar apenas projetos com church_department_id (projetos de departamentos de igreja)
+      const churchDeptProjects = projects.filter((p: any) => p.church_department_id)
+      
+      churchDeptProjects.forEach((project: any) => {
+        const deptId = project.church_department_id
+        if (!map.has(deptId)) {
+          map.set(deptId, [])
+        }
+        map.get(deptId)?.push(project)
+      })
+      
+      console.log('🗺️ [Projects Map] Projects grouped by church_department_id:', 
+        Array.from(map.entries()).map(([dept_id, projs]) => ({
+          department_id: dept_id,
+          project_count: projs.length,
+          projects: projs.map((p: any) => ({ id: p.id, title: p.title, status: p.status }))
+        }))
+      )
+    }
+    
+    return map
+  }, [projects])
+
+  // Enriquecer departments com dados de projetos da API REAL
   const enrichedDepartments = useMemo(() => {
-    return departments.map(dept => {
-      const activityInfo = departmentActivityMap.get(dept.id)
+    const enriched = departments.map(dept => {
+      // Buscar projetos reais vinculados a este departamento via church_department_id
+      const deptProjects = projectsByDepartmentMap.get(dept.id) || []
+      
+      // Calcular projetos abertos e concluídos
+      const openProjects = deptProjects.filter((p: any) => 
+        p.status !== 'CONCLUDED' && p.status !== 'EXPIRED'
+      ).length
+      
+      const completedProjects = deptProjects.filter((p: any) => 
+        p.status === 'CONCLUDED'
+      ).length
+      
       return {
         ...dept,
-        open_projects: activityInfo?.open_projects || 0,
-        completed_projects: activityInfo?.completed_projects || 0,
-        total_projects: activityInfo?.project_count || 0,
+        open_projects: openProjects,
+        completed_projects: completedProjects,
+        total_projects: deptProjects.length,
+        // Guardar os projetos para uso posterior se necessário
+        projects: deptProjects
       }
     })
-  }, [departments, departmentActivityMap])
+    
+    // Debug: Log enriched departments with project counts from REAL API data
+    console.log('📊 [Church Departments] Enriched Departments with REAL Project Data:', 
+      enriched.map(d => ({
+        id: d.id,
+        name: d.name,
+        church_name: d.church_name,
+        total_projects: d.total_projects,
+        open_projects: d.open_projects,
+        completed_projects: d.completed_projects,
+        projects_from_api: d.projects?.map((p: any) => ({ id: p.id, title: p.title, status: p.status }))
+      }))
+    )
+    
+    // Comparação entre dados da API de projetos vs. KPI hook (se houver discrepância)
+    const departmentsWithDiscrepancy = enriched.filter(d => {
+      const kpiData = departmentActivityMap.get(d.id)
+      return kpiData && kpiData.project_count !== d.total_projects
+    })
+    
+    if (departmentsWithDiscrepancy.length > 0) {
+      console.warn('⚠️ [Data Discrepancy] Departments with different project counts between API sources:', 
+        departmentsWithDiscrepancy.map(d => {
+          const kpiData = departmentActivityMap.get(d.id)
+          return {
+            department_name: d.name,
+            real_project_count: d.total_projects,
+            kpi_project_count: kpiData?.project_count || 0,
+            difference: d.total_projects - (kpiData?.project_count || 0)
+          }
+        })
+      )
+    }
+    
+    return enriched
+  }, [departments, projectsByDepartmentMap, departmentActivityMap])
 
   // Dados para KPI Cards Carrossel
   const kpiCardsData: KPICardData[] = useMemo(() => {
@@ -358,11 +582,26 @@ export default function ChurchDepartmentsPage() {
       ),
       cell: ({ row }) => {
         const church = churches.find((c: ChurchData) => c.id === row.original.church_id)
+        
+        // Log quando não encontrar a igreja correspondente
+        if (!church && row.original.church_id) {
+          console.warn('⚠️ [Church Not Found] Department has church_id but church not found:', {
+            departmentId: row.original.id,
+            departmentName: row.original.name,
+            church_id: row.original.church_id,
+            church_name: row.original.church_name,
+            availableChurches: churches.map(c => ({ id: c.id, name: c.name }))
+          })
+        }
+        
         return (
           <div className="flex items-center justify-center gap-2">
-            <Badge variant="outline" className="flex items-center gap-1.5 px-2.5 py-1">
+            <Badge 
+              variant="outline" 
+              className="flex items-center gap-1.5 px-2.5 py-1"
+            >
               <Home className="h-3.5 w-3.5" />
-              <span>{church ? church.name : '-'}</span>
+              <span>{church?.name || row.original.church_name || '-'}</span>
             </Badge>
           </div>
         )
@@ -383,44 +622,21 @@ export default function ChurchDepartmentsPage() {
       ),
       cell: ({ row }) => (
         <div className="flex items-center justify-center">
-          <Badge variant="secondary" className="flex items-center gap-1.5 px-2.5 py-1">
-            <Users className="w-3.5 h-3.5" />
-            <span className="font-semibold">{row.original.users?.length || 0}</span>
-          </Badge>
+          <span className="font-medium text-foreground">{row.original.users?.length || 0}</span>
         </div>
       ),
     },
     {
-      id: "open_projects",
+      id: "total_projects",
       header: () => (
         <div className="flex items-center justify-center gap-2">
           <FileText className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium text-gray-900">{t.stats?.projects || "Projects"} (Open)</span>
+          <span className="font-medium text-gray-900">{t.stats?.projects || "Projects"}</span>
         </div>
       ),
       cell: ({ row }) => (
         <div className="flex items-center justify-center">
-          <Badge variant="outline" className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-700 border-blue-200">
-            <FileText className="w-3.5 h-3.5" />
-            <span className="font-semibold">{row.original.open_projects || 0}</span>
-          </Badge>
-        </div>
-      ),
-    },
-    {
-      id: "completed_projects",
-      header: () => (
-        <div className="flex items-center justify-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium text-gray-900">{t.stats?.projects || "Projects"} (Completed)</span>
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div className="flex items-center justify-center">
-          <Badge variant="outline" className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-700 border-green-200">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span className="font-semibold">{row.original.completed_projects || 0}</span>
-          </Badge>
+          <span className="font-medium text-foreground">{row.original.total_projects || 0}</span>
         </div>
       ),
     },
@@ -451,18 +667,10 @@ export default function ChurchDepartmentsPage() {
         return value === "true" ? isActive : !isActive
       },
     },
-    // {
-    //   id: "efficiency",
-    //   header: t.efficiency,
-    //   cell: () => (
-    //     <Badge variant="outline" className="bg-gray-100 text-gray-700">N/A {/* TODO: efficiency não existe, implementar quando backend fornecer */}</Badge>
-    //   ),
-    // },
     {
       id: "actions",
       header: () => (
         <div className="flex items-center justify-center gap-2">
-          <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium text-gray-900">{t.common?.actions || "Actions"}</span>
         </div>
       ),
@@ -803,9 +1011,34 @@ export default function ChurchDepartmentsPage() {
         <Separator />
 
         {/* Charts Section - Visible in both views */}
-        <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
-          <DepartmentActivityChart loading={isLoading} departments={departments} />
-        </ResponsiveGridCarousel>
+        <GridContainer
+            items={[
+                {
+                  id: "DepartmentProjectOverTimeChart",
+                    component: (
+                      <DepartmentProjectOverTimeChart 
+                        loading={isLoading || projectsLoading} 
+                        departments={departments}
+                        projects={projects}
+                        selectedYear={new Date().getFullYear()}
+                      />
+                    ),
+                  colSpan: "col-span-12 lg:col-span-8",
+                },
+                {
+                  id: "DepartmentLeadersCard",
+                    component: (
+                      <DepartmentLeadersCard 
+                        institutionId={currentInstitutionData?.id} 
+                        loading={isLoading}
+                        departmentType="church"
+                      />
+                    ),
+                  colSpan: "col-span-12 lg:col-span-4",
+                },
+              ]}
+            gap="lg"
+          />
 
         <Separator />
 

@@ -278,8 +278,8 @@ export function ProjectActivitiesTable({
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
-      "TODO": pt.filters.pending,
-      "todo": pt.filters.pending,
+      "TODO": "To Do",
+      "todo": "To Do",
       "IN_PROGRESS": pt.filters.inProgress,
       "in_progress": pt.filters.inProgress,
       "COMPLETED": pt.filters.completed,
@@ -316,7 +316,7 @@ export function ProjectActivitiesTable({
     switch (statusLower) {
       case "completed": return "success"
       case "in_progress": return "info"
-      case "todo": return "warning"
+      case "todo": return "default"  // grey
       case "on_hold": return "neutral"
       default: return "default"
     }
@@ -337,10 +337,10 @@ export function ProjectActivitiesTable({
   const getPriorityVariant = (priority: string): StatusBadgeVariant => {
     const priorityLower = priority.toLowerCase()
     switch (priorityLower) {
-      case "urgent": return "error"
-      case "high": return "warning"
-      case "medium": return "info"
-      case "low": return "success"
+      case "urgent": return "error"   // red
+      case "high": return "warning"   // yellow
+      case "medium": return "neutral" // brown
+      case "low": return "default"    // grey
       default: return "default"
     }
   }
@@ -373,14 +373,17 @@ export function ProjectActivitiesTable({
       id: "name",
       accessorKey: "name",
       header: pt.activitiesTable.activity,
+      meta: {
+        responsive: "always", // Always show this column
+      },
       cell: ({ row }) => (
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center shrink-0">
             <Activity className="w-4 h-4 text-gray-600" />
           </div>
-          <div>
-            <div className="font-medium">{row.original.name}</div>
-            <div className="text-xs text-muted-foreground max-w-xs truncate line-clamp-2">
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-left">{row.original.name}</div>
+            <div className="text-xs text-muted-foreground line-clamp-2 text-left mt-1">
               {row.original.description}
             </div>
           </div>
@@ -391,6 +394,9 @@ export function ProjectActivitiesTable({
       id: "tags",
       accessorKey: "tags",
       header: pt.activitiesTable.category,
+      meta: {
+        responsive: "desktop", // Hide on mobile
+      },
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-1">
           {row.original.tags && row.original.tags.length > 0 ? (
@@ -418,6 +424,9 @@ export function ProjectActivitiesTable({
     {
       id: "subsidy_status",
       header: pt.activitiesTable.subsidy_status,
+      meta: {
+        responsive: "desktop", // Hide on mobile
+      },
       cell: ({ row }) => (
         <div className="flex items-center justify-center">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -438,6 +447,9 @@ export function ProjectActivitiesTable({
       id: "budget_amount",
       accessorKey: "budget_amount",
       header: pt.activitiesTable.budget,
+      meta: {
+        responsive: "desktop", // Hide on mobile
+      },
       cell: ({ row }) => (
         <div className="font-medium">{formatCurrency(row.original.budget_amount)}</div>
       ),
@@ -446,6 +458,9 @@ export function ProjectActivitiesTable({
       id: "status",
       accessorKey: "status",
       header: pt.activitiesTable.status,
+      meta: {
+        responsive: "desktop", // Hide on mobile
+      },
       cell: ({ row }) => (
         <StatusBadge
           label={getStatusLabel(row.original.status)}
@@ -459,12 +474,14 @@ export function ProjectActivitiesTable({
       id: "priority",
       accessorKey: "priority",
       header: pt.activitiesTable.priority,
+      meta: {
+        responsive: "desktop", // Hide on mobile
+      },
       cell: ({ row }) => (
         <StatusBadge
           label={getPriorityLabel(row.original.priority)}
           variant={getPriorityVariant(row.original.priority)}
           icon={Flag}
-          showDot={true}
           size="sm"
         />
       ),
@@ -472,6 +489,9 @@ export function ProjectActivitiesTable({
     {
       id: "assigned_users",
       header: pt.filters.assignees,
+      meta: {
+        responsive: "desktop", // Hide on mobile
+      },
       cell: ({ row }) => {
         // Prioridade: assignees (nova estrutura) > assigned_users (legacy)
         let assignedUsers: Array<{ id: string; name: string; email?: string; avatar?: string; initials?: string; role?: string }> = []
@@ -544,6 +564,9 @@ export function ProjectActivitiesTable({
     {
       id: "actions",
       header: pt.activitiesTable.actions,
+      meta: {
+        responsive: "always", // Always show this column
+      },
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

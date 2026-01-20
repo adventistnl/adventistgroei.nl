@@ -1,5 +1,3 @@
-"use client"
-
 import * as React from "react"
 import { Plus, Inbox } from "lucide-react"
 import { useTranslation } from "react-i18next"
@@ -9,6 +7,7 @@ import { SubsidyRequestCard, SubsidyRequestCardData } from "./subsidy-request-ca
 import { ViewSubsidyModal } from "@/components/modals/project/view-subsidy-modal"
 import { RequestSubsidyModal, SubsidyRequestData as SubsidyRequestFormData } from "@/components/modals/project/request-subsidy-modal"
 import { useSubsidyReceipts, SubsidyReceipt } from "@/hooks/use-subsidy-receipts"
+import { useCurrency } from "@/contexts/currency-context"
 import { cn } from "@/lib/utils"
 import type { ProjectActivityData } from "@/components/projects/project-activities-table"
 
@@ -66,6 +65,7 @@ export function SubsidyRequestsContainer({
   projectSubsidizedBudget = 0,
 }: SubsidyRequestsContainerProps) {
   const { t, i18n } = useTranslation()
+  const { formatCurrency } = useCurrency()
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false)
   const [selectedSubsidy, setSelectedSubsidy] = React.useState<SubsidyRequestCardData | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
@@ -124,8 +124,8 @@ export function SubsidyRequestsContainer({
 
   const confirmDelete = () => {
     if (!subsidyPendingDelete) return
-    // Only allow delete if NOT approved or in_review
-    if (subsidyPendingDelete.status === "approved" || subsidyPendingDelete.status === "in_review") {
+    // Only allow delete if NOT accepted or in_review
+    if (subsidyPendingDelete.status === "accepted" || subsidyPendingDelete.status === "in_review") {
       // show info via toast and close modal
       setIsConfirmDeleteOpen(false)
       setSubsidyPendingDelete(null)
@@ -152,7 +152,7 @@ export function SubsidyRequestsContainer({
       // Fetch receipts for this subsidy request (pass ID directly since state hasn't updated yet)
       try {
         const receipts = await fetchReceipts(subsidy.id)
-        console.log('📄 Loaded receipts for edit:', receipts)
+        console.log('Loaded receipts for edit:', receipts)
         setEditReceipts(receipts || [])
       } catch (error) {
         console.error('Error fetching receipts:', error)
@@ -227,19 +227,6 @@ export function SubsidyRequestsContainer({
       }
     }) || []
 
-    console.log('📝 Building editInitialData:', {
-      subsidyId: selectedSubsidyForEdit.id,
-      project_id: selectedSubsidyForEdit.project_id,
-      institution_id: selectedSubsidyForEdit.institution_id,
-      department_id: selectedSubsidyForEdit.department_id,
-      church_id: selectedSubsidyForEdit.church_id,
-      rawItemsCount: selectedSubsidyForEdit.items?.length || 0,
-      rawItems: selectedSubsidyForEdit.items,
-      transformedItemsCount: items.length,
-      receiptsCount: editReceipts.length,
-      itemsWithDocs: items.filter(i => i.activity_documents.length > 0).length
-    })
-
     return {
       project_id: selectedSubsidyForEdit.project_id || "",
       institution_id: selectedSubsidyForEdit.institution_id || "",
@@ -258,8 +245,8 @@ export function SubsidyRequestsContainer({
 
   return (
     <>
-      <div className={cn(gridColSpan, className)}>
-      <div className="h-full flex flex-col space-y-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+      <div className={cn(gridColSpan, className, "h-full")}>
+      <div className="bg-card text-card-foreground flex gap-6 rounded-xl border p-3 shadow-sm h-full flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between flex-shrink-0">
           <div className="space-y-0.5">
@@ -282,7 +269,7 @@ export function SubsidyRequestsContainer({
 
         {/* Cards Container */}
         {displaySubsidies.length === 0 ? (
-          <div className="flex-1 min-h-0">
+          <div className="flex-1">
             <EmptyState
               icon={Inbox}
               title={defaultEmptyTitle}
@@ -291,8 +278,8 @@ export function SubsidyRequestsContainer({
             />
           </div>
         ) : (
-          <div className="relative flex-1 min-h-0">
-            <div className="h-full flex flex-col gap-3 overflow-y-auto pr-2">
+          <div className="relative flex-1 overflow-hidden">
+            <div className="h-full max-h-[280px] flex flex-col gap-3 overflow-y-auto pr-2">
               {displaySubsidies.map((subsidy) => (
                 <SubsidyRequestCard
                   key={subsidy.id}
@@ -311,16 +298,15 @@ export function SubsidyRequestsContainer({
         {displaySubsidies.length > 0 && (
           <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-2 text-[10px] text-gray-500 dark:text-gray-400 flex-shrink-0">
             <span>
-              {t("subsidy.requestCount", { count: displaySubsidies.length })}
+              {displaySubsidies.length === 1 
+                ? t("subsidy.requestCount_one") || "1 request"
+                : t("subsidy.requestCount_other")?.replace("{{count}}", displaySubsidies.length.toString()) || `${displaySubsidies.length} requests`
+              }
             </span>
             <span>
               {t("common.total")}:{" "}
               <span className="font-semibold text-gray-700 dark:text-gray-300">
-                {new Intl.NumberFormat(i18n.language === 'en' ? 'en-US' : i18n.language === 'nl' ? 'nl-NL' : 'pt-BR', {
-                  style: "currency",
-                  currency: i18n.language === 'en' ? 'USD' : i18n.language === 'nl' ? 'EUR' : 'BRL',
-                  minimumFractionDigits: 0,
-                }).format(displaySubsidies.filter(s => s.status !== 'rejected').reduce((sum, s) => sum + s.requested_amount, 0))}
+                {formatCurrency(displaySubsidies.filter(s => s.status !== 'rejected').reduce((sum, s) => sum + s.requested_amount, 0))}
               </span>
             </span>
           </div>
@@ -350,9 +336,11 @@ export function SubsidyRequestsContainer({
         institutionId={selectedSubsidyForEdit?.institution_id || ""}
         departmentId={selectedSubsidyForEdit?.department_id || ""}
         churchId={selectedSubsidyForEdit?.church_id || ""}
+        churchDepartmentId={selectedSubsidyForEdit?.church_department_id || ""}
         institutionName={selectedSubsidyForEdit?.institution_name || ""}
         departmentName={selectedSubsidyForEdit?.department_name || ""}
         churchName={selectedSubsidyForEdit?.church_name || ""}
+        churchDepartmentName={selectedSubsidyForEdit?.church_department_name || ""}
         subsidyRequestId={selectedSubsidyForEdit?.id}
         initialData={editInitialData}
         mode="edit"
@@ -361,9 +349,9 @@ export function SubsidyRequestsContainer({
           if (onUpdateSubsidy && selectedSubsidyForEdit) {
             try {
               await onUpdateSubsidy(selectedSubsidyForEdit.id, data)
-              console.log('✅ Subsidy updated successfully')
+
             } catch (error) {
-              console.error('❌ Error updating subsidy:', error)
+
             }
           }
 
@@ -378,14 +366,7 @@ export function SubsidyRequestsContainer({
           // In edit mode, add back the current subsidy's amount to available budget
           const currentSubsidyAmount = selectedSubsidyForEdit?.requested_amount || 0
           const available = projectSubsidizedBudget - used + currentSubsidyAmount
-          console.log('💰 Budget Calculation (Container - Edit Mode):', { 
-            projectSubsidizedBudget, 
-            used, 
-            currentSubsidyAmount,
-            available, 
-            subsidies_count: displaySubsidies.length,
-            subs: displaySubsidies.map(s => ({ id: s.id, amount: s.requested_amount, status: s.status }))
-          })
+
           return available
         })()}
       />

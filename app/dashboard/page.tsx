@@ -50,12 +50,16 @@ import { QuickActions, QuickAction } from "@/components/shared/quick-actions"
 import { YearFilter } from "@/components/shared/year-filter"
 import { SectionHeader } from "@/components/shared/section-header"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
+import { DateTimeDisplay } from "@/components/shared/date-time-display"
+import { CalendarCard } from "@/components/shared/calendar-card"
+import { CalendarHeatmap } from "@/components/shared/calendar-heatmap"
 import { RoleDistributionChart, PermissionsByGroupChart, UserActivityChart } from "@/components/access/access-charts"
+import { BudgetSection } from "@/components/budget"
 import { UserStructureGrowthChart, UsersByStructureOverviewChart, UserDistributionBarChart } from "@/components/charts/dashboard"
 import { HierarchicalStructureCard } from "@/components/charts/dashboard/hierarchical-structure-card"
 import { StructureBarChart, GrowthLineChart } from "@/components/charts/generic"
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart"
-import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts"
+import { BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts"
 
 // GraphQL Queries
 import { GET_INSTITUTIONS_QUERY } from "@/graphql/queries/INSTITUTIONS_QUERY"
@@ -68,6 +72,8 @@ import { GET_ALL_ROLES_QUERY } from "@/graphql/queries/GET_ROLES_QUERY"
 import { structureTranslations } from "@/lib/translations/structure"
 import { GridContainer } from "@/components/shared/grid-container"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { format } from "date-fns"
+import { ptBR, nl, enUS } from "date-fns/locale"
 
 // Month names
 const MONTHS = [
@@ -77,7 +83,7 @@ const MONTHS = [
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
-  const { currentInstitution, institutions } = useInstitution()  
+  const { currentInstitutionData, institutions } = useInstitution()  
   const { formatCurrency, selectedCurrency } = useCurrency()
   const currentLanguage = i18n?.language || 'en'
   const ts = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
@@ -103,13 +109,14 @@ export default function DashboardPage() {
   const { data: regionsData, loading: regionsLoading, refetch: refetchRegions } = useQuery(GET_REGIONS_QUERY)
   const { data: churchesData, loading: churchesLoading, refetch: refetchChurches } = useQuery(GET_CHURCHES_QUERY)
   const { data: departmentsData, loading: departmentsLoading, refetch: refetchDepartments } = useQuery(GET_DEPARTMENTS_QUERY, {
-    variables: { institution_id: currentInstitution?.id }
+    variables: { institution_id: currentInstitutionData?.id }
   })
   const { data: usersData, loading: usersLoading, refetch: refetchUsers } = useQuery(GET_ALL_USERS_QUERY, {
-    variables: { institution_id: currentInstitution?.id }
+    variables: { institution_id: currentInstitutionData?.id }
   })
   const { data: rolesData, loading: rolesLoading, refetch: refetchRoles } = useQuery(GET_ALL_ROLES_QUERY)
 
+  // Mock Budget KPIs Query - replace with actual hook when available
   const isLoading = institutionsLoading || regionsLoading || churchesLoading || departmentsLoading || usersLoading || rolesLoading
 
   const breadcrumbs = useMemo(() => [
@@ -154,15 +161,25 @@ export default function DashboardPage() {
     return filtered
   }, [allChurches, selectedRegion, filterValues.region])
 
-  // Calculate KPIs
+  // Get displayedInstitution from context - use this for institution-specific data
+  const displayedInstitution = currentInstitutionData
+
+  // Calculate KPIs - use displayedInstitution when available for better accuracy
   const kpis = useMemo(() => {
-    const activeUsers = filteredUsers.filter((user: any) => !user.is_deleted).length
-    const newUsersThisYear = allUsers.filter((user: any) => {
+    // Use institution-specific data if available
+    const institutionUsers = displayedInstitution?.users || allUsers
+    const institutionDepts = displayedInstitution?.departments || allDepartments
+    const institutionChurches = displayedInstitution?.churches || allChurches
+    // Note: regions come from separate query, not from institution object
+    const institutionRegions = allRegions
+
+    const activeUsers = institutionUsers.filter((user: any) => !user.is_deleted).length
+    const newUsersThisYear = institutionUsers.filter((user: any) => {
       const createdDate = new Date(user.created_at)
       return createdDate.getFullYear() === selectedYear && !user.is_deleted
     }).length
     
-    const previousYearUsers = allUsers.filter((user: any) => {
+    const previousYearUsers = institutionUsers.filter((user: any) => {
       const createdDate = new Date(user.created_at)
       return createdDate.getFullYear() === selectedYear - 1 && !user.is_deleted
     }).length
@@ -171,17 +188,19 @@ export default function DashboardPage() {
       ? Math.round(((newUsersThisYear - previousYearUsers) / previousYearUsers) * 100)
       : 100
 
-    const institutionDepartments = allDepartments.filter((dept: any) => !dept.church_id && !dept.is_deleted).length
-    const churchDepartments = allDepartments.filter((dept: any) => dept.church_id && !dept.is_deleted).length
+    const institutionDepartments = institutionDepts.filter((dept: any) => !dept.church_id && !dept.is_deleted).length
+    const churchDepartments = institutionDepts.filter((dept: any) => dept.church_id && !dept.is_deleted).length
+    const activeChurches = institutionChurches.filter((c: any) => !c.is_deleted).length
+    const activeRegions = institutionRegions.filter((r: any) => !r.is_deleted).length
 
     return {
-      totalInstitutions: allInstitutions.length,
-      totalRegions: allRegions.length,
-      activeChurches: filteredChurches.length,
+      totalInstitutions: displayedInstitution ? 1 : allInstitutions.length,
+      totalRegions: activeRegions,
+      activeChurches: filteredChurches.length > 0 ? filteredChurches.length : activeChurches,
       totalDepartments: institutionDepartments + churchDepartments,
       institutionDepartments,
       churchDepartments,
-      totalUsers: allUsers.filter((u: any) => !u.is_deleted).length,
+      totalUsers: institutionUsers.filter((u: any) => !u.is_deleted).length,
       activeUsers,
       newUsersThisYear,
       userGrowthRate,
@@ -190,17 +209,19 @@ export default function DashboardPage() {
         return sum + (role.permissions?.reduce((pSum: number, group: any) => pSum + (group.data?.length || 0), 0) || 0)
       }, 0)
     }
-  }, [allInstitutions, allRegions, filteredChurches, allDepartments, filteredUsers, allUsers, allRoles, selectedYear])
+  }, [displayedInstitution, allInstitutions, allRegions, allChurches, allDepartments, filteredChurches, allUsers, allRoles, selectedYear])
 
   // User Growth Over Time (Monthly data for selected year)
   const userGrowthData = useMemo(() => {
+    const institutionUsers = displayedInstitution?.users || allUsers
+    
     const monthlyData = MONTHS.map((month, index) => ({
       month: month.substring(0, 3),
       users: 0,
       newUsers: 0
     }))
 
-    allUsers.forEach((user: any) => {
+    institutionUsers.forEach((user: any) => {
       const createdDate = new Date(user.created_at)
       if (createdDate.getFullYear() === selectedYear && !user.is_deleted) {
         const monthIndex = createdDate.getMonth()
@@ -216,17 +237,19 @@ export default function DashboardPage() {
     })
 
     return monthlyData
-  }, [allUsers, selectedYear])
+  }, [displayedInstitution, allUsers, selectedYear])
 
   // User Distribution by Structure
   const userDistributionData = useMemo(() => {
     const distribution: any[] = []
+    const institutionUsers = displayedInstitution?.users || filteredUsers
+    const institutions = displayedInstitution ? [displayedInstitution] : allInstitutions
 
     // Group by institution
     const byInstitution: Record<string, number> = {}
     
-    filteredUsers.forEach((user: any) => {
-      const institutionName = allInstitutions.find((i: any) => i.id === user.institution_id)?.name || 'Unknown'
+    institutionUsers.forEach((user: any) => {
+      const institutionName = institutions.find((i: any) => i.id === user.institution_id)?.name || 'Unknown'
       byInstitution[institutionName] = (byInstitution[institutionName] || 0) + 1
     })
 
@@ -235,7 +258,7 @@ export default function DashboardPage() {
     })
 
     return distribution
-  }, [filteredUsers, allInstitutions])
+  }, [displayedInstitution, filteredUsers, allInstitutions])
 
   // Role Distribution Data for Charts
   const roleDistributionData = useMemo(() => {
@@ -502,42 +525,25 @@ export default function DashboardPage() {
           <div className="flex flex-col gap-2">
             <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
               <div className="flex-1">
-                <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Dashboard</h2>
+                <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold text-foreground mb-2">Dashboard</h2>
                 <p className="text-muted-foreground text-sm">
                   Strategic institutional overview for {selectedYear}
                   {selectedMonth !== "all" && ` - ${MONTHS[parseInt(selectedMonth)]}`}
                   {selectedRegion !== "all" && ` - ${allRegions.find((r: any) => r.id === selectedRegion)?.name || 'Region'}`}
                 </p>
-                {currentInstitution && (
+                {currentInstitutionData && (
                   <div className="flex items-center gap-2 mt-3">
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       <Building className="w-3 h-3 mr-1" />
-                      {currentInstitution.name}
+                      {currentInstitutionData.name}
                     </Badge>
                     <Badge variant="outline" className="text-xs">
-                      {currentInstitution.denomination}
+                      {currentInstitutionData.denomination}
                     </Badge>
                   </div>
                 )}
               </div>
-            </div>
-          </div>
-          <div/>
-
-          {/* Year Filter and Action Buttons Row */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            {/* Year Filter - Left Side */}
-            <div className="flex-1">
-              <YearFilter
-                availableYears={availableYears}
-                selectedYear={selectedYear}
-                onYearChange={setSelectedYear}
-                onAddYear={handleAddYearCallback}
-                showAddButton={false}
-              />
-            </div>
-
-            {/* Action Buttons - Right Side */}
+                          {/* Action Buttons - Right Side */}
             <div className="flex items-center gap-2">
               <PageFilters
                 filters={filterConfigs}
@@ -556,21 +562,34 @@ export default function DashboardPage() {
                 className="gap-2"
               >
                 <RefreshCw className="w-4 h-4" />
-                Refresh
               </Button>
             </div>
+            </div>
           </div>
+          <div/>
 
-          {/* Quick Actions - Below */}
-          <QuickActions 
-            actions={quickActions}
-            title="Quick Actions:"
-            showTitle={true}
-            size="sm"
-          />
+          {/* Year Filter and Action Buttons Row */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            {/* Year Filter - Left Side */}
+            <div className="flex-1">
+              <YearFilter
+                availableYears={availableYears}
+                selectedYear={selectedYear}
+                onYearChange={setSelectedYear}
+                onAddYear={handleAddYearCallback}
+                showAddButton={false}
+              />
+            </div>
+          </div>
         </div>
 
         <Separator />
+
+        {/* Date & Time Display */}
+        <DateTimeDisplay 
+          locale={currentLanguage === 'pt' ? 'pt-BR' : currentLanguage === 'nl' ? 'nl-NL' : 'en-US'}
+          showSeconds={false}
+        />
 
         {/* Section 1: System Overview KPIs */}
         <div>
@@ -583,6 +602,13 @@ export default function DashboardPage() {
             data={kpiCardsData}
             isLoading={isLoading}
             variant="default"
+          />
+          {/* Quick Actions - Below */}
+          <QuickActions 
+            actions={quickActions}
+            title="Quick Actions:"
+            showTitle={true}
+            size="sm"
           />
         </div>
 
@@ -599,18 +625,18 @@ export default function DashboardPage() {
           <GridContainer
             items={[
               {
-                id: "UserStructureGrowthChart-full-width",
+                id: "UserStructureGrowthChart-reduced-width",
                 component: (
                   <UserStructureGrowthChart
                     loading={isLoading}
-                    users={allUsers}
-                    departments={allDepartments}
+                    users={displayedInstitution?.users || allUsers}
+                    departments={displayedInstitution?.departments || allDepartments}
                     regions={allRegions}
-                    churches={allChurches}
+                    churches={displayedInstitution?.churches || allChurches}
                     selectedYear={selectedYear}
                   />
                 ),
-                colSpan: "col-span-12 lg:col-span-8",
+                colSpan: "col-span-12 lg:col-span-5",
               },
               {
                 id: "structure-tabs-panel",
@@ -635,11 +661,11 @@ export default function DashboardPage() {
                       {activeTab === "structure-chart" ? (
                         <UsersByStructureOverviewChart
                           loading={isLoading}
-                          users={allUsers}
-                          institutions={allInstitutions}
-                          departments={allDepartments}
+                          users={displayedInstitution?.users || allUsers}
+                          institutions={displayedInstitution ? [displayedInstitution] : allInstitutions}
+                          departments={displayedInstitution?.departments || allDepartments}
                           regions={allRegions}
-                          churches={allChurches}
+                          churches={displayedInstitution?.churches || allChurches}
                         />
                       ) : (
                         <HierarchicalStructureCard
@@ -651,7 +677,7 @@ export default function DashboardPage() {
                           {
                             title: 'Institution Level',
                             icon: Building2,
-                            description: `${kpis.totalInstitutions} institution(s) with ${kpis.institutionDepartments} department(s)`,
+                            description: `${kpis.totalInstitutions} institution${kpis.totalInstitutions !== 1 ? 's' : ''} with ${kpis.institutionDepartments} department${kpis.institutionDepartments !== 1 ? 's' : ''}`,
                             details: 'Top-level organizational units managing all operations',
                             borderColor: 'border-primary/30',
                             indent: 0
@@ -659,7 +685,7 @@ export default function DashboardPage() {
                           {
                             title: 'Regions',
                             icon: Map,
-                            description: `${kpis.totalRegions} region(s) managing ${kpis.activeChurches} churches`,
+                            description: `${kpis.totalRegions} region${kpis.totalRegions !== 1 ? 's' : ''} managing ${kpis.activeChurches} church${kpis.activeChurches !== 1 ? 'es' : ''}`,
                             details: 'Geographic divisions containing provinces and churches',
                             borderColor: 'border-blue-500/30',
                             indent: 1
@@ -667,7 +693,7 @@ export default function DashboardPage() {
                           {
                             title: 'Churches',
                             icon: Church,
-                            description: `${kpis.activeChurches} active churches with ${kpis.churchDepartments} departments`,
+                            description: `${kpis.activeChurches} active church${kpis.activeChurches !== 1 ? 'es' : ''} with ${kpis.churchDepartments} department${kpis.churchDepartments !== 1 ? 's' : ''}`,
                             details: 'Local congregations with specialized ministry departments',
                             borderColor: 'border-green-500/30',
                             indent: 2
@@ -677,7 +703,7 @@ export default function DashboardPage() {
                           <div className="p-3 bg-muted/30 rounded-lg">
                             <div className="text-xs font-medium mb-1">Hierarchy Flow:</div>
                             <div className="text-xs text-muted-foreground font-mono">
-                              Institution → Regions → Provinces → Churches → Departments
+                              Institution → Regions → Churches → Departments
                             </div>
                           </div>
                         }
@@ -688,16 +714,67 @@ export default function DashboardPage() {
                 ),
                 colSpan: "col-span-12 lg:col-span-4",
               },
+              {
+                id: "calendar-combined",
+                component: (
+                  <div className="flex flex-col h-full space-y-4">
+                    {/* Calendar Heatmap - Acima com altura menor */}
+                    <div className="flex-shrink-0 h-[200px]">
+                      <CalendarHeatmap
+                        title={currentLanguage === 'pt' ? 'Mapa de Atividades' : currentLanguage === 'nl' ? 'Activiteitenkaart' : 'Progress year map'}
+                        description={currentLanguage === 'pt' ? 'Visualização de atividades ao longo do ano' : currentLanguage === 'nl' ? 'Visualisatie van activiteiten gedurende het jaar' : 'Progress visualization throughout the year'}
+                        variant="full"
+                        colorScheme="mono"
+                        showLegend={true}
+                        showNavigation={false}
+                        size="sm"
+                        containerSize="md"
+                        fixedSize={false}
+                        locale={currentLanguage}
+                        year={selectedYear}
+                        className="h-full"
+                        onDayClick={(date, activity) => {
+                          if (activity && activity.count > 0) {
+                            toast.info(`${activity.count} ${currentLanguage === 'pt' ? 'atividades em' : currentLanguage === 'nl' ? 'activiteiten op' : 'activities on'} ${format(date, 'PPP', { locale: currentLanguage === 'pt' ? ptBR : currentLanguage === 'nl' ? nl : enUS })}`)
+                          }
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Calendar Card - Abaixo com altura maior */}
+                    <div className="flex-1">
+                      <CalendarCard
+                        title={currentLanguage === 'pt' ? 'Calendário' : currentLanguage === 'nl' ? 'Kalender' : 'Calendar'}
+                        description={currentLanguage === 'pt' ? 'Navegue pelas datas' : currentLanguage === 'nl' ? 'Navigeer door data' : 'Navigate through dates'}
+                        locale={currentLanguage === 'pt' ? 'pt-BR' : currentLanguage === 'nl' ? 'nl-NL' : 'en-US'}
+                        className="h-full"
+                        onDateSelect={(date) => {
+                          if (date) {
+                            toast.info(`${currentLanguage === 'pt' ? 'Data selecionada:' : currentLanguage === 'nl' ? 'Geselecteerde datum:' : 'Selected date:'} ${format(date, 'PPP', { locale: currentLanguage === 'pt' ? ptBR : currentLanguage === 'nl' ? nl : enUS })}`)
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                ),
+                colSpan: "col-span-12 lg:col-span-3",
+              },
             ]}
             gap="lg"
           />
         </div>
 
-        
+        <Separator />
+
+        {/* Section 3: Budget Overview */}
+        <BudgetSection
+          selectedYear={selectedYear}
+          currentLanguage={currentLanguage}
+        />
 
         <Separator />
 
-        {/* Section 3: Users Overview */}
+        {/* Section 4: Users Overview */}
         <div>
           <SectionHeader
             title="Users Overview"
@@ -708,41 +785,47 @@ export default function DashboardPage() {
           <ResponsiveGridCarousel
             enableAutoplay={false}
             gap="gap-6"
+            className="w-full"
           >
             {/* User Growth Over Time */}
-            <GrowthLineChart
-              title="User Growth Over Time"
-              description={`New user registrations throughout ${selectedYear}`}
-              icon={TrendingUp}
-              data={userGrowthData}
-              lines={[
-                { dataKey: 'users', label: 'Total Users', color: '#3b82f6' },
-                { dataKey: 'newUsers', label: 'New Users', color: '#10b981' }
-              ]}
-              loading={isLoading}
-              xAxisKey="month"
-              footer={
-                <div className="flex items-center gap-1">
-                  <TrendingUp className="w-4 h-4" />
-                  Growth rate: {kpis.userGrowthRate}% compared to previous year
-                </div>
-              }
-            />
+            <div className="h-full min-h-[400px] md:min-h-[450px] lg:min-h-[500px]">
+              <GrowthLineChart
+                title="User Growth Over Time"
+                description={`New user registrations throughout ${selectedYear}`}
+                icon={TrendingUp}
+                data={userGrowthData}
+                lines={[
+                  { dataKey: 'users', label: 'Total Users', color: '#3b82f6' },
+                  { dataKey: 'newUsers', label: 'New Users', color: '#10b981' }
+                ]}
+                loading={isLoading}
+                xAxisKey="month"
+                footer={
+                  <div className="flex items-center gap-1">
+                    <TrendingUp className="w-4 h-4" />
+                    Growth rate: {kpis.userGrowthRate}% compared to previous year
+                  </div>
+                }
+              />
+            </div>
 
             {/* User Distribution by Structure */}
-            <UserDistributionBarChart
-              title="User Distribution"
-              description="Users distributed across institutions"
-              icon={Building2}
-              data={userDistributionData}
-              loading={isLoading}
-            />
+            <div className="h-full min-h-[400px] md:min-h-[450px] lg:min-h-[500px]">
+              <UserDistributionBarChart
+                users={displayedInstitution?.users || allUsers}
+                departments={displayedInstitution?.departments || allDepartments}
+                regions={allRegions}
+                churches={displayedInstitution?.churches || allChurches}
+                institutions={displayedInstitution ? [displayedInstitution] : allInstitutions}
+                loading={isLoading}
+              />
+            </div>
           </ResponsiveGridCarousel>
         </div>
 
         <Separator />
 
-        {/* Section 4: Governance & Compliance */}
+        {/* Section 5: Governance & Compliance */}
         <div>
           <SectionHeader
             title="Governance & Compliance"

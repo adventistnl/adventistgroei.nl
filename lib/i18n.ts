@@ -3,12 +3,16 @@ import { initReactI18next } from 'react-i18next'
 import { projectRegisterTranslations } from './translations/project-register'
 import { projectTranslations } from './translations/projects'
 import { subsidyManagementTranslations } from './translations/subsidy-management'
+import { dynamicFieldsTranslations } from './translations/dynamic-fields'
+import { projectDetailsTranslations } from './translations/project-details'
 
 // Recursos de tradução
 const resources = {
   en: {
     translation: {
       ...projectTranslations.en,
+      ...projectDetailsTranslations.en,
+      dynamicFields: dynamicFieldsTranslations.en,
       dashboard: {
         title: "General Dashboard",
         subtitle: "Overview of key system metrics",
@@ -241,6 +245,7 @@ const resources = {
           drag_or_click: "Drag files here or click to select",
           supported_formats: "Supported formats: JPG, PNG, PDF (max. 10MB)",
           pending_upload: "Pending upload files:",
+          pending_upload_count: "{{count}} files pending upload",
           loading: "Loading documents...",
           uploaded_documents: "Uploaded documents ({{count}}):",
           uploaded_on: "Uploaded on",
@@ -251,7 +256,11 @@ const resources = {
           delete_confirm: "Are you sure you want to delete this document?",
           delete_document: "Delete document",
           no_documents: "No documents attached yet",
-          drag_to_add: "Drag files or click \"Upload\" to add"
+          drag_to_add: "Drag files or click \"Upload\" to add",
+          no_files_attached: "No files attached",
+          files_will_upload_on_save: "Files will be uploaded automatically when saving",
+          uploading_files: "Uploading files...",
+          files_uploaded_successfully: "Files uploaded successfully"
         }
       },
       metrics: {
@@ -323,7 +332,11 @@ const resources = {
         apply: "Apply",
         irreversible: "This action cannot be undone",
         deletePermanently: "Delete Permanently",
-        registeredUsers: "Registered Users"
+        registeredUsers: "Registered Users",
+        month: "month",
+        months: "months",
+        all: "All",
+        none: "None"
       },
       kanban: {
         dropItemHere: "Drop item here",
@@ -1153,8 +1166,11 @@ const resources = {
           inactive: "Inactive",
           gender: "Gender",
           no_role: "No Role",
+          no_church: "No Church",
+          no_department: "No Department",
         },
         filters: {
+          title: "Filter",
           institution: "Institution",
           church: "Church",
           department_type: "Department Type",
@@ -1283,7 +1299,9 @@ const resources = {
             toasts: {
               updating_user: "Updating user...",
               user_updated: "User updated successfully",
-              user_update_failed: "Failed to update user"
+              user_update_failed: "Failed to update user",
+              user_created: "User created successfully",
+              user_deleted: "User deleted successfully"
             },
             // Placeholders
             placeholders: {
@@ -1539,6 +1557,9 @@ const resources = {
           spending_over_time: {
             title: "Department Spending Over Time",
             subtitle: "Showing spending trends for {{year}}",
+            with_approvals: "with approvals",
+            no_approvals: "No approvals registered",
+            monthly_average: "Monthly average",
             time_ranges: {
               "12m": "Last 12 months",
               "6m": "Last 6 months",
@@ -1954,6 +1975,8 @@ const resources = {
   nl: {
     translation: {
       ...projectTranslations.nl,
+      ...projectDetailsTranslations.nl,
+      dynamicFields: dynamicFieldsTranslations.nl,
       dashboard: {
         title: "Algemeen Dashboard",
         subtitle: "Overzicht van belangrijke systeemstatistieken",
@@ -2186,6 +2209,7 @@ const resources = {
           drag_or_click: "Sleep bestanden hier of klik om te selecteren",
           supported_formats: "Ondersteunde formaten: JPG, PNG, PDF (max. 10MB)",
           pending_upload: "Bestanden in afwachting van upload:",
+          pending_upload_count: "{{count}} bestanden in afwachting van upload",
           loading: "Documenten laden...",
           uploaded_documents: "Geüploade documenten ({{count}}):",
           uploaded_on: "Geüpload op",
@@ -2196,7 +2220,11 @@ const resources = {
           delete_confirm: "Weet u zeker dat u dit document wilt verwijderen?",
           delete_document: "Document verwijderen",
           no_documents: "Nog geen documenten bijgevoegd",
-          drag_to_add: "Sleep bestanden of klik op \\\"Upload\\\" om toe te voegen"
+          drag_to_add: "Sleep bestanden of klik op \"Upload\" om toe te voegen",
+          no_files_attached: "Geen bestanden bijgevoegd",
+          files_will_upload_on_save: "Bestanden worden automatisch geüpload bij opslaan",
+          uploading_files: "Bestanden uploaden...",
+          files_uploaded_successfully: "Bestanden succesvol geüpload"
         }
       },
       metrics: {
@@ -2268,7 +2296,11 @@ const resources = {
         apply: "Toepassen",
         irreversible: "Deze actie kan niet ongedaan worden gemaakt",
         deletePermanently: "Definitief Verwijderen",
-        registeredUsers: "Geregistreerde Gebruikers"
+        registeredUsers: "Geregistreerde Gebruikers",
+        month: "maand",
+        months: "maanden",
+        all: "Alle",
+        none: "Geen"
       },
       kanban: {
         dropItemHere: "Item hier neerzetten",
@@ -3090,8 +3122,11 @@ const resources = {
           inactive: "Inactief",
           gender: "Geslacht",
           no_role: "Geen Rol",
+          no_church: "Geen Kerk",
+          no_department: "Geen Afdeling",
         },
         filters: {
+          title: "Filter",
           institution: "Instelling",
           church: "Kerk",
           department_type: "Afdelingstype",
@@ -3220,7 +3255,9 @@ const resources = {
             toasts: {
               updating_user: "Gebruiker bijwerken...",
               user_updated: "Gebruiker succesvol bijgewerkt",
-              user_update_failed: "Kon gebruiker niet bijwerken"
+              user_update_failed: "Kon gebruiker niet bijwerken",
+              user_created: "Gebruiker succesvol aangemaakt",
+              user_deleted: "Gebruiker succesvol verwijderd"
             },
             // Placeholders
             placeholders: {
@@ -3476,6 +3513,9 @@ const resources = {
           spending_over_time: {
             title: "Departement Uitgaven in de Tijd",
             subtitle: "Uitgaventrends voor {{year}}",
+            with_approvals: "met goedkeuringen",
+            no_approvals: "Geen goedkeuringen geregistreerd",
+            monthly_average: "Maandelijks gemiddelde",
             time_ranges: {
               "12m": "Laatste 12 maanden",
               "6m": "Laatste 6 maanden",
@@ -3716,6 +3756,8 @@ const resources = {
   pt: {
     translation: {
       ...projectTranslations.pt,
+      ...projectDetailsTranslations.pt,
+      dynamicFields: dynamicFieldsTranslations.pt,
       common: {
         ...projectTranslations.pt.common,
         language: "Idioma",
@@ -3756,11 +3798,131 @@ const resources = {
         all_members_associated_with: "Todos os membros associados com",
         all_departments_within: "Todos os departamentos dentro de",
         view_contact: "Ver Contato",
-        add: "Adicionar"
+        add: "Adicionar",
+        filter: "Filtrar",
+        total: "Total",
+        month: "mês",
+        months: "meses",
+        all: "Todos",
+        none: "Nenhum"
       },
       privacy: {
         protected_content: "Conteúdo Protegido",
         contact_admin: "Entre em contato com o administrador para acesso"
+      },
+      activities: {
+        modal: {
+          title: "Detalhes da Atividade",
+          edit_title: "Editar Atividade",
+          status: "Status",
+          priority: "Prioridade", 
+          category: "Categoria",
+          budget: "Orçamento",
+          subsidy: "Subsídio",
+          description: "Descrição",
+          documents: "Documentos",
+          system_info: "Informações do Sistema",
+          created_at: "Criado em",
+          updated_at: "Atualizado em",
+          created_by: "Criado por",
+          updated_by: "Atualizado por",
+          activity_id: "ID da Atividade",
+          total_budget: "Orçamento Total",
+          rich_editor: "Editor Rico",
+          click_to_edit: "Clique para editar descrição",
+          drop_files: "Arraste arquivos aqui ou clique para enviar",
+          supported_formats: "Suporta PDF e imagens até 10MB",
+          no_documents: "Nenhum documento anexado",
+          use_button_above: "Use o botão acima para adicionar documentos",
+          save_changes: "Salvar Alterações",
+          unsaved_changes: "Há alterações não salvas",
+          unsaved_changes_and_files: "Alterações não salvas e {{count}} arquivos pendentes",
+          save_and_upload: "Salvar e Enviar ({{count}})",
+          saving_and_uploading: "Salvando...",
+          close: "Fechar",
+          assignees: "Responsáveis",
+          assignees_count: "{{count}} responsáveis",
+          select_assignees: "Selecionar Responsáveis",
+          search_user: "Pesquisar usuário...",
+          click_to_add_description: "Clique aqui para adicionar uma descrição...",
+          metadata: "Metadados",
+          history: "Histórico",
+          technical_details: "Detalhes técnicos e metadados da atividade",
+          change_history: "Histórico de alterações da atividade",
+          tooltips: {
+            status: "Status atual da atividade",
+            priority: "Nível de urgência da atividade", 
+            category: "Tipo de atividade",
+            subsidy: "Se esta atividade é subsidiada ou não",
+            total_requested_amount: "Valor total solicitado para esta atividade"
+          },
+          status_labels: {
+            planning: "Planejamento",
+            in_progress: "Em Progresso",
+            completed: "Concluído",
+            pending_approval: "Aguardando Aprovação",
+            cancelled: "Cancelado"
+          },
+          priority_labels: {
+            urgent: "Urgente",
+            high: "Alto",
+            medium: "Médio",
+            low: "Baixo"
+          },
+          tag_labels: {
+            reform: "Reforma",
+            equipment: "Equipamento",
+            materials: "Materiais",
+            training: "Treinamento",
+            travel: "Viagem",
+            event: "Evento",
+            transport: "Transporte",
+            marketing: "Marketing",
+            services: "Serviços",
+            feeding: "Alimentação",
+            accommodation: "Acomodação"
+          },
+          status_options: {
+            todo: "A Fazer",
+            in_progress: "Em Progresso", 
+            completed: "Concluído",
+            on_hold: "Pausado"
+          },
+          priority_options: {
+            urgent: "Urgente",
+            high: "Alto",
+            medium: "Médio", 
+            low: "Baixo"
+          },
+          done: "Concluído",
+          no_category: "Sem categoria"
+        },
+        documents: {
+          title: "Arquivos Anexados",
+          uploading: "Enviando...",
+          upload_files: "Enviar {{count}} arquivo(s)",
+          files_added: "{{count}} arquivo(s) adicionado(s)",
+          files_rejected: "Alguns arquivos foram rejeitados (apenas PDF e imagens até 10MB)",
+          drag_or_click: "Arraste arquivos aqui ou clique para selecionar",
+          supported_formats: "Formatos suportados: JPG, PNG, PDF (máx. 10MB)",
+          pending_upload: "Arquivos pendentes de upload:",
+          pending_upload_count: "{{count}} arquivos pendentes de upload",
+          loading: "Carregando documentos...",
+          uploaded_documents: "Documentos enviados ({{count}}):",
+          uploaded_on: "Enviado em",
+          validated: "Validado",
+          pending: "Pendente",
+          download_document: "Baixar documento",
+          validate_document: "Validar documento",
+          delete_confirm: "Tem certeza que deseja excluir este documento?",
+          delete_document: "Excluir documento",
+          no_documents: "Nenhum documento anexado ainda",
+          drag_to_add: "Arraste arquivos ou clique em \"Enviar\" para adicionar",
+          no_files_attached: "Nenhum arquivo anexado",
+          files_will_upload_on_save: "Arquivos serão enviados automaticamente ao salvar",
+          uploading_files: "Enviando arquivos...",
+          files_uploaded_successfully: "Arquivos enviados com sucesso"
+        }
       },
       annual_budget: {
         title: "Gestão de Orçamento Anual",
@@ -3812,6 +3974,9 @@ const resources = {
           spending_over_time: {
             title: "Gastos por Departamento ao Longo do Tempo",
             subtitle: "Mostrando tendências de gastos para {{year}}",
+            with_approvals: "com aprovações",
+            no_approvals: "Nenhuma aprovação registrada",
+            monthly_average: "Média mensal",
             time_ranges: {
               "12m": "Últimos 12 meses",
               "6m": "Últimos 6 meses",

@@ -62,6 +62,14 @@ function getRequiredPermissions(pathname: string): { resolvers: string[] } {
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Handle Chrome DevTools specific requests to avoid 404 logs
+  if (pathname.startsWith('/.well-known/')) {
+    return new NextResponse('{}', {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   // Permitir acesso às rotas na whitelist sem verificar cookies
   if (whitelist.includes(pathname)) {
     return NextResponse.next();

@@ -1,5 +1,32 @@
 "use client"
 
+/* 
+ * USAGE EXAMPLE:
+ * 
+ * // For Institution Budget
+ * <AnnualBudgetViewEditModal
+ *   isOpen={isOpen}
+ *   onOpenChange={setIsOpen}
+ *   budget={budget}
+ *   entityName="Central Institution"
+ *   entityType="Institution"
+ *   allocatedExpenses={50000} // Total already allocated to departments
+ *   allocatedReserved={10000} // Reserved amounts already committed
+ * />
+ * 
+ * // For Department Budget  
+ * <AnnualBudgetViewEditModal
+ *   isOpen={isOpen}
+ *   onOpenChange={setIsOpen}
+ *   budget={departmentBudget}
+ *   entityName="Youth Department"
+ *   entityType="Department"
+ *   availableBudget={100000} // Available from institution
+ *   allocatedExpenses={25000} // Already allocated to sub-programs
+ *   allocatedReserved={5000} // Reserved for specific activities
+ * />
+ */
+
 import React, { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { useCurrency } from "@/contexts/currency-context"
@@ -79,6 +106,8 @@ export interface AnnualBudgetViewEditModalProps {
   isLocked?: boolean
   defaultYear?: number // Year to pre-populate when creating new budget
   availableBudget?: number // Available budget from institution (real API data)
+  allocatedExpenses?: number // Minimum total expenses already allocated to departments
+  allocatedReserved?: number // Minimum reserved amount already allocated
 }
 
 export function AnnualBudgetViewEditModal({
@@ -91,10 +120,21 @@ export function AnnualBudgetViewEditModal({
   readonly = false,
   isLocked = false,
   defaultYear,
-  availableBudget
+  availableBudget,
+  allocatedExpenses = 0,
+  allocatedReserved = 0
 }: AnnualBudgetViewEditModalProps) {
   const { t } = useTranslation()
-  const { formatCurrency } = useCurrency()
+  const { formatCurrency, selectedCurrency } = useCurrency()
+  
+  // Calculate actual minimum values - use budget data when props are zero
+  const actualAllocatedExpenses = allocatedExpenses > 0 ? allocatedExpenses : (budget?.total_expenses || 0)
+  const actualAllocatedReserved = allocatedReserved > 0 ? allocatedReserved : (budget?.allocated_amount || 0)
+  
+
+  
+  // Ensure selectedCurrency is available as fallback
+  const currentCurrency = selectedCurrency || { symbol: '€', code: 'EUR', name: 'Euro' }
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
@@ -129,6 +169,39 @@ export function AnnualBudgetViewEditModal({
   }
 
   const yearOptions = generateYearOptions()
+
+  // Generate dynamic budget options based on available budget
+  const generateBudgetOptions = () => {
+    const maxBudget = availableBudget || 2500000 // Default max if no available budget
+    const options: number[] = []
+    
+    // Generate up to 6 graduated options
+    if (maxBudget <= 50000) {
+      // Small budgets: 10K, 25K, 50K
+      const increments = [10000, 25000, maxBudget]
+      options.push(...increments.filter(val => val <= maxBudget))
+    } else if (maxBudget <= 250000) {
+      // Medium budgets: 25K, 50K, 100K, 150K, 200K, maxBudget
+      const increments = [25000, 50000, 100000, 150000, 200000, maxBudget]
+      options.push(...increments.filter(val => val <= maxBudget))
+    } else if (maxBudget <= 1000000) {
+      // Large budgets: 100K, 250K, 500K, 750K, maxBudget
+      const increments = [100000, 250000, 500000, 750000, maxBudget]
+      options.push(...increments.filter(val => val <= maxBudget))
+    } else {
+      // Very large budgets: 250K, 500K, 1M, 1.5M, 2M, maxBudget
+      const increments = [250000, 500000, 1000000, 1500000, 2000000, maxBudget]
+      options.push(...increments.filter(val => val <= maxBudget))
+    }
+    
+    // Remove duplicates and sort
+    const uniqueOptions = [...new Set(options)].sort((a, b) => a - b)
+    
+    // Limit to 6 options maximum
+    return uniqueOptions.slice(0, 6)
+  }
+
+  const budgetOptions = generateBudgetOptions()
 
   // Calculate balance automatically: planned_budget - (total_expenses + allocated_amount)
   const calculateBalance = (plannedBudget: string | number, totalExpenses: string | number, allocatedAmount: string | number = 0) => {
@@ -191,6 +264,23 @@ export function AnnualBudgetViewEditModal({
     const newErrors: Record<string, string> = {}
     const currentYear = new Date().getFullYear()
 
+    // DEBUG: Log validation step with corrected minimum values
+    console.log('🔍 Validating Step', step, {
+      formData: {
+        total_expenses: formData.total_expenses,
+        reserved: formData.reserved
+      },
+      originalProps: { allocatedExpenses, allocatedReserved },
+      correctedLimits: {
+        actualAllocatedExpenses,
+        actualAllocatedReserved
+      },
+      parsedValues: {
+        totalExpensesParsed: parseFloat(formData.total_expenses) || 0,
+        reservedParsed: parseFloat(formData.reserved) || 0
+      }
+    })
+
     if (step === 1) {
       // Year validation
       if (!formData.year?.trim()) {
@@ -225,28 +315,78 @@ export function AnnualBudgetViewEditModal({
     }
 
     if (step === 2) {
-      // Total expenses validation
+      // Total expenses validation with corrected minimum values
       if (formData.total_expenses?.trim()) {
         const expenses = parseFloat(formData.total_expenses)
+        console.log('🔍 Total Expenses Validation:', {
+          inputValue: formData.total_expenses,
+          parsedExpenses: expenses,
+          originalAllocatedExpenses: allocatedExpenses,
+          actualAllocatedExpenses,
+          isValid: expenses >= actualAllocatedExpenses,
+          difference: expenses - actualAllocatedExpenses
+        })
         if (isNaN(expenses)) {
           newErrors.total_expenses = t("annual_budget.modals.validation.total_expenses_invalid")
         } else if (expenses < 0) {
           newErrors.total_expenses = t("annual_budget.modals.validation.total_expenses_negative")
+        } else if (expenses < actualAllocatedExpenses) {
+          newErrors.total_expenses = t("budget.validation.total_expenses_below_allocated", 
+            { allocated: formatCurrency(actualAllocatedExpenses) }) || `Cannot be less than allocated amount: ${formatCurrency(actualAllocatedExpenses)}`
+        }
+      } else {
+        // If total_expenses is empty but there are allocated expenses, require minimum value
+        if (actualAllocatedExpenses > 0) {
+          console.log('🔍 Total Expenses Required (Empty Field):', {
+            actualAllocatedExpenses,
+            formDataEmpty: !formData.total_expenses?.trim()
+          })
+          newErrors.total_expenses = t("budget.validation.total_expenses_required_allocated", 
+            { allocated: formatCurrency(actualAllocatedExpenses) }) || `Minimum required: ${formatCurrency(actualAllocatedExpenses)}`
         }
       }
 
-      // Reserved amount validation
+      // Reserved amount validation with corrected minimum values
       if (formData.reserved?.trim()) {
         const reserved = parseFloat(formData.reserved)
+        console.log('🔍 Reserved Amount Validation:', {
+          inputValue: formData.reserved,
+          parsedReserved: reserved,
+          originalAllocatedReserved: allocatedReserved,
+          actualAllocatedReserved,
+          isValid: reserved >= actualAllocatedReserved,
+          difference: reserved - actualAllocatedReserved
+        })
         if (isNaN(reserved)) {
           newErrors.reserved = t("annual_budget.modals.validation.reserved_invalid")
         } else if (reserved < 0) {
           newErrors.reserved = t("annual_budget.modals.validation.reserved_negative")
+        } else if (reserved < actualAllocatedReserved) {
+          newErrors.reserved = t("budget.validation.reserved_below_allocated", 
+            { allocated: formatCurrency(actualAllocatedReserved) }) || `Cannot be less than allocated amount: ${formatCurrency(actualAllocatedReserved)}`
+        }
+      } else {
+        // If reserved is empty but there are allocated reserved amounts, require minimum value
+        if (actualAllocatedReserved > 0) {
+          console.log('🔍 Reserved Amount Required (Empty Field):', {
+            actualAllocatedReserved,
+            formDataEmpty: !formData.reserved?.trim()
+          })
+          newErrors.reserved = t("budget.validation.reserved_required_allocated", 
+            { allocated: formatCurrency(actualAllocatedReserved) }) || `Minimum required: ${formatCurrency(actualAllocatedReserved)}`
         }
       }
     }
 
     setErrors(newErrors)
+    
+    // DEBUG: Log validation results
+    console.log('🔍 Validation Results for Step', step, {
+      errorsFound: Object.keys(newErrors),
+      errorMessages: newErrors,
+      isValid: Object.keys(newErrors).length === 0
+    })
+    
     return Object.keys(newErrors).length === 0
   }
 
@@ -699,53 +839,65 @@ export function AnnualBudgetViewEditModal({
                   {t("annual_budget.modals.fields.planned_budget")} *
                 </Label>
                 
-                {/* Quick Amount Selection Tags - Horizontal Scroll */}
+                {/* Dynamic Quick Amount Selection - Currency Aware */}
                 <div className="overflow-x-auto scrollbar-thin pb-2 mb-3">
                   <div className="flex gap-2 min-w-max">
-                    {[100000, 250000, 500000, 750000, 1000000, 1500000, 2000000, 2500000]
-                      .filter((amount) => {
-                        // Se for departamento e houver orçamento disponível, filtrar valores que excedem
-                        if (entityType?.toLowerCase() !== 'institution' && availableBudget !== undefined) {
-                          return amount <= availableBudget
+                    {budgetOptions.map((amount) => {
+                      const isDisabled = isLoading
+                      const isSelected = parseInt(formData.planned_budget) === amount
+                      
+                      // Format display value with proper currency context
+                      const getDisplayValue = (value: number) => {
+                        if (value >= 1000000) {
+                          return (value / 1000000).toFixed(1) + 'M'
+                        } else if (value >= 1000) {
+                          return (value / 1000).toFixed(0) + 'K'
                         }
-                        return true
-                      })
-                      .map((amount) => {
-                        const isDisabled = isLoading || (entityType?.toLowerCase() !== 'institution' && availableBudget !== undefined && amount > availableBudget)
-                        return (
-                          <Button
-                            key={amount}
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleInputChange('planned_budget', amount.toString())}
-                            disabled={isDisabled}
-                            className={cn(
-                              "h-8 text-xs font-medium transition-all hover:bg-primary hover:text-primary-foreground border-2 flex-shrink-0",
-                              formData.planned_budget === amount.toString() 
-                                ? "bg-primary text-primary-foreground border-primary" 
-                                : isDisabled
-                                  ? "border-border text-muted-foreground opacity-50 cursor-not-allowed"
-                                  : "border-border text-foreground"
-                            )}
-                          >
-                            ${(amount / 1000)}K
-                          </Button>
-                        )
-                      })}
+                        return value.toString()
+                      }
+                      
+                      return (
+                        <Button
+                          key={amount}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleInputChange('planned_budget', amount.toString())}
+                          disabled={isDisabled}
+                          className={cn(
+                            "h-8 text-xs font-medium transition-all hover:bg-primary hover:text-primary-foreground border-2 flex-shrink-0 min-w-[60px]",
+                            isSelected
+                              ? "bg-primary text-primary-foreground border-primary shadow-md" 
+                              : "border-border text-foreground hover:border-primary/50"
+                          )}
+                          title={formatCurrency(amount)} // Show full formatted amount on hover
+                        >
+                          <span className="flex items-center gap-1">
+                            <span className="text-[10px] opacity-70">{currentCurrency.symbol}</span>
+                            <span>{getDisplayValue(amount)}</span>
+                          </span>
+                        </Button>
+                      )
+                    })}
                   </div>
                 </div>
                 
-                <Input
-                  id="planned_budget"
-                  type="number"
-                  step="0.01"
-                  value={formData.planned_budget}
-                  onChange={(e) => handleInputChange('planned_budget', e.target.value)}
-                  placeholder={t("annual_budget.modals.fields.planned_budget_placeholder")}
-                  disabled={isLoading}
-                  className={`h-12 text-base border-border focus:border-input focus:ring-ring ${errors.planned_budget ? 'border-red-500' : ''}`}
-                />
+                <div className="relative">
+                  <Input
+                    id="planned_budget"
+                    type="number"
+                    step="1" // Use step=1 for integers as requested
+                    min="0"
+                    value={formData.planned_budget}
+                    onChange={(e) => handleInputChange('planned_budget', e.target.value)}
+                    placeholder={`${t("annual_budget.modals.fields.planned_budget_placeholder")} (${currentCurrency.symbol})`}
+                    disabled={isLoading}
+                    className={`h-12 text-base pl-8 border-border focus:border-input focus:ring-ring ${errors.planned_budget ? 'border-red-500' : ''}`}
+                  />
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
+                    {currentCurrency.symbol}
+                  </div>
+                </div>
                 {errors.planned_budget && (
                   <p className="text-sm text-red-600">{errors.planned_budget}</p>
                 )}
@@ -776,16 +928,33 @@ export function AnnualBudgetViewEditModal({
                   <Calculator className="w-4 h-4 text-muted-foreground" />
                   {t("annual_budget.modals.fields.total_expenses")}
                 </Label>
-                <Input
-                  id="total_expenses"
-                  type="number"
-                  step="0.01"
-                  value={formData.total_expenses}
-                  onChange={(e) => handleInputChange('total_expenses', e.target.value)}
-                  placeholder={t("annual_budget.modals.fields.total_expenses_placeholder")}
-                  disabled={isLoading}
-                  className={`h-12 text-base border-border focus:border-input focus:ring-ring ${errors.total_expenses ? 'border-red-500' : ''}`}
-                />
+                <div className="relative">
+                  <Input
+                    id="total_expenses"
+                    type="number"
+                    step="1"
+                    min={actualAllocatedExpenses.toString()}
+                    value={formData.total_expenses}
+                    onChange={(e) => handleInputChange('total_expenses', e.target.value)}
+                    placeholder={`${t("annual_budget.modals.fields.total_expenses_placeholder")} (${currentCurrency.symbol})`}
+                    disabled={isLoading}
+                    className={`h-12 text-base pl-8 border-border focus:border-input focus:ring-ring ${errors.total_expenses ? 'border-red-500' : ''}`}
+                  />
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
+                    {currentCurrency.symbol}
+                  </div>
+                </div>
+                {actualAllocatedExpenses > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className="w-2 h-2 bg-amber-500 rounded-full" />
+                      <span className="text-muted-foreground">
+                        {t("budget.fields.already_spent", "Already spent amount")}: 
+                        <span className="font-medium text-foreground ml-1">{formatCurrency(actualAllocatedExpenses)}</span>
+                      </span>
+                    </div>
+                  </div>
+                )}
                 {errors.total_expenses && (
                   <p className="text-sm text-red-600">{errors.total_expenses}</p>
                 )}
@@ -796,16 +965,33 @@ export function AnnualBudgetViewEditModal({
                   <DollarSign className="w-4 h-4 text-muted-foreground" />
                   {t("annual_budget.modals.fields.reserved") || "Reserved"}
                 </Label>
-                <Input
-                  id="reserved"
-                  type="number"
-                  step="0.01"
-                  value={formData.reserved}
-                  onChange={(e) => handleInputChange('reserved', e.target.value)}
-                  placeholder={t("annual_budget.modals.fields.reserved_placeholder") || "0.00"}
-                  disabled={isLoading}
-                  className={`h-12 text-base border-border focus:border-input focus:ring-ring ${errors.reserved ? 'border-red-500' : ''}`}
-                />
+                <div className="relative">
+                  <Input
+                    id="reserved"
+                    type="number"
+                    step="1"
+                    min={actualAllocatedReserved.toString()}
+                    value={formData.reserved}
+                    onChange={(e) => handleInputChange('reserved', e.target.value)}
+                    placeholder={`${t("annual_budget.modals.fields.reserved_placeholder") || "0"} (${currentCurrency.symbol})`}
+                    disabled={isLoading}
+                    className={`h-12 text-base pl-8 border-border focus:border-input focus:ring-ring ${errors.reserved ? 'border-red-500' : ''}`}
+                  />
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
+                    {currentCurrency.symbol}
+                  </div>
+                </div>
+                {actualAllocatedReserved > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className="w-2 h-2 bg-amber-500 rounded-full" />
+                      <span className="text-muted-foreground">
+                        {t("budget.fields.already_allocated", "Already allocated to departments")}: 
+                        <span className="font-medium text-foreground ml-1">{formatCurrency(actualAllocatedReserved)}</span>
+                      </span>
+                    </div>
+                  </div>
+                )}
                 {errors.reserved && (
                   <p className="text-sm text-red-600">{errors.reserved}</p>
                 )}
@@ -836,35 +1022,60 @@ export function AnnualBudgetViewEditModal({
                 <p className="text-xs text-muted-foreground">{t("annual_budget.modals.fields.balance_help")}</p>
               </div>
 
-              {/* Budget Summary Card */}
+              {/* Budget Calculation Preview - Currency Context Enhanced */}
               <div className="bg-muted rounded-lg p-4 space-y-3 border border-border">
-                <h4 className="text-sm font-medium text-foreground">{t("annual_budget.modals.summary.title") || "Budget Summary"}</h4>
+                <div className="flex items-center gap-2">
+                  <Calculator className="w-4 h-4 text-muted-foreground" />
+                  <h4 className="text-sm font-medium text-foreground">Budget Preview</h4>
+                  <Badge variant="outline" className="text-xs ml-auto">
+                    {currentCurrency.code}
+                  </Badge>
+                </div>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t("annual_budget.modals.summary.spent") || "Spent"}:</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <DollarSign className="w-3 h-3" />
+                      Planned:
+                    </span>
                     <span className="font-medium text-foreground">
-                      {formatCurrency(parseFloat(formData.total_expenses || "0"))}
+                      {formData.planned_budget ? formatCurrency(parseFloat(formData.planned_budget)) : formatCurrency(0)}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t("annual_budget.modals.summary.reserved") || "Reserved"}:</span>
-                    <div className="text-right">
-                      <span className="font-medium text-foreground">
-                        {formatCurrency(parseFloat(formData.reserved || "0"))}
-                      </span>
-                      {parseFloat(formData.total_expenses || "0") > 0 && (
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          + {formatCurrency(parseFloat(formData.total_expenses || "0"))}
-                        </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <Calculator className="w-3 h-3" />
+                      Expenses + Reserved:
+                    </span>
+                    <span className="font-medium text-foreground">
+                      {formatCurrency(
+                        (parseFloat(formData.total_expenses) || 0) + 
+                        (parseFloat(formData.reserved) || 0)
                       )}
-                    </div>
-                  </div>
-                  <div className="flex justify-between border-t border-border pt-2">
-                    <span className="text-muted-foreground">{t("annual_budget.modals.summary.available") || "Available"}:</span>
-                    <span className={`font-semibold ${calculateBalance(formData.planned_budget, formData.total_expenses, formData.reserved) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(calculateBalance(formData.planned_budget, formData.total_expenses, formData.reserved))}
                     </span>
                   </div>
+                  <div className="flex justify-between items-center border-t border-border pt-2">
+                    <span className="text-muted-foreground font-medium flex items-center gap-1">
+                      <Calculator className="w-3 h-3" />
+                      Balance:
+                    </span>
+                    <span className={`font-semibold text-base ${
+                      calculateBalance(formData.planned_budget, formData.total_expenses, formData.reserved) >= 0 
+                        ? 'text-green-600' 
+                        : 'text-red-600'
+                    }`}>
+                      {formatCurrency(
+                        calculateBalance(formData.planned_budget, formData.total_expenses, formData.reserved)
+                      )}
+                    </span>
+                  </div>
+                  {availableBudget !== undefined && entityType?.toLowerCase() !== 'institution' && (
+                    <div className="flex justify-between items-center pt-1 border-t border-border">
+                      <span className="text-xs text-muted-foreground">Available Budget:</span>
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {formatCurrency(availableBudget)}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -899,43 +1110,92 @@ export function AnnualBudgetViewEditModal({
                 />
               </div>
 
-              {/* Review Section */}
-              <div className="bg-muted rounded-lg p-4 space-y-3 border border-border">
-                <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-muted-foreground" />
-                  {t("annual_budget.modals.review.title") || "Review & Confirm"}
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t("annual_budget.modals.fields.year") || "Year"}:</span>
-                    <span className="font-medium text-foreground">{formData.year}</span>
+              {/* Final Summary Preview - Enhanced with Currency Context */}
+              <div className="bg-gradient-to-r from-muted to-muted/50 rounded-lg p-4 space-y-3 border border-border">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-muted-foreground" />
+                    <h4 className="text-sm font-medium text-foreground">Final Budget Summary</h4>
                   </div>
-
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t("annual_budget.modals.summary.spent") || "Spent"}:</span>
+                  <Badge variant="secondary" className="text-xs">
+                    {currentCurrency.name} ({currentCurrency.code})
+                  </Badge>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      Year:
+                    </span>
+                    <span className="font-medium text-foreground">{formData.year || 'Not set'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <DollarSign className="w-3 h-3" />
+                      Planned Budget:
+                    </span>
                     <span className="font-medium text-foreground">
-                      {formatCurrency(parseFloat(formData.total_expenses || "0"))}
+                      {formData.planned_budget ? formatCurrency(parseFloat(formData.planned_budget)) : formatCurrency(0)}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t("annual_budget.modals.summary.reserved") || "Reserved"}:</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <Calculator className="w-3 h-3" />
+                      Total Expenses:
+                    </span>
                     <div className="text-right">
-                      <span className="font-medium text-foreground">
-                        {formatCurrency(parseFloat(formData.reserved || "0"))}
+                      <span className="font-medium text-foreground block">
+                        {formData.total_expenses ? formatCurrency(parseFloat(formData.total_expenses)) : formatCurrency(0)}
                       </span>
-                      {parseFloat(formData.total_expenses || "0") > 0 && (
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          + {formatCurrency(parseFloat(formData.total_expenses || "0"))}
-                        </div>
-                      )}
+                      {/* {actualAllocatedExpenses > 0 && (
+                        <span className="text-xs text-amber-600">
+                          Min: {formatCurrency(actualAllocatedExpenses)}
+                        </span>
+                      )} */}
                     </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t("annual_budget.modals.summary.available") || "Available"}:</span>
-                    <span className={`font-semibold ${calculateBalance(formData.planned_budget, formData.total_expenses, formData.reserved) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(calculateBalance(formData.planned_budget, formData.total_expenses, formData.reserved))}
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <Calculator className="w-3 h-3" />
+                      Reserved Amount:
+                    </span>
+                    <div className="text-right">
+                      <span className="font-medium text-foreground block">
+                        {formData.reserved ? formatCurrency(parseFloat(formData.reserved)) : formatCurrency(0)}
+                      </span>
+                      {/* {actualAllocatedReserved > 0 && (
+                        <span className="text-xs text-amber-600">
+                          Min: {formatCurrency(actualAllocatedReserved)}
+                        </span>
+                      )} */}
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center border-t border-border pt-2">
+                    <span className="text-muted-foreground font-medium flex items-center gap-1">
+                      <Calculator className="w-3 h-3" />
+                      Final Balance:
+                    </span>
+                    <span className={`font-semibold text-base ${
+                      calculateBalance(formData.planned_budget, formData.total_expenses, formData.reserved) >= 0 
+                        ? 'text-green-600' 
+                        : 'text-red-600'
+                    }`}>
+                      {formatCurrency(
+                        calculateBalance(formData.planned_budget, formData.total_expenses, formData.reserved)
+                      )}
                     </span>
                   </div>
+                  {/* {(actualAllocatedExpenses > 0 || actualAllocatedReserved > 0) && (
+                    <div className="flex justify-between items-center pt-1 border-t border-border">
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <div className="w-2 h-2 bg-amber-500 rounded-full" />
+                        Protected Allocations:
+                      </span>
+                      <span className="text-xs font-medium text-amber-600">
+                        {formatCurrency(actualAllocatedExpenses + actualAllocatedReserved)}
+                      </span>
+                    </div>
+                  )} */}
                 </div>
               </div>
             </div>

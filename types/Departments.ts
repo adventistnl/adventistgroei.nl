@@ -11,6 +11,7 @@ export interface Departments_departments_annual_budgets {
   __typename: "AnnualBudget";
   id: string;
   year: number;
+  is_locked: boolean;
   allocated_amount: any;
   total_expenses: any;
 }

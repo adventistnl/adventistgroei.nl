@@ -36,6 +36,8 @@ import "@/lib/i18n"
 // Components
 import { UseTable } from "@/components/ui/use-table"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
+import { RoleDistributionChart } from "@/components/charts/role-distribution-chart"
+import { RolePermissionsChart } from "@/components/charts/role-permissions-chart"
 
 // Role Modals
 import { CreateRoleModal, EditRoleModal, DeleteRoleModal } from "@/components/modals/role"
@@ -50,6 +52,7 @@ import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
 import { useInstitution } from "@/contexts/institution-context"
+import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 
 export default function AccessManagementPage() {
   const { t } = useTranslation()
@@ -95,6 +98,59 @@ export default function AccessManagementPage() {
       subtitle: "Permission groups"
     }
   ], [roles, permissions])
+
+  // Processar dados para o gráfico de distribuição de roles
+  const roleDistributionData = useMemo(() => {
+    // Contar quantos usuários tem cada role
+    const roleCounts = new Map<string, { id: string; name: string; key_code: string; count: number }>()
+    
+    // Inicializar todos os roles com contagem 0
+    roles.forEach(role => {
+      roleCounts.set(role.id, {
+        id: role.id,
+        name: role.name,
+        key_code: role.key_code,
+        count: 0
+      })
+    })
+    
+    // Contar usuários por role
+    const institutionUsers = currentInstitutionData?.users || []
+    institutionUsers.forEach(user => {
+      user.user_roles?.forEach(userRole => {
+        const roleData = roleCounts.get(userRole.role.id)
+        if (roleData) {
+          roleData.count += 1
+        }
+      })
+    })
+    
+    return Array.from(roleCounts.values()).map(role => ({
+      id: role.id,
+      name: role.name,
+      key_code: role.key_code,
+      userCount: role.count
+    }))
+  }, [roles, currentInstitutionData])
+
+  const totalUsersWithRoles = useMemo(() => {
+    return currentInstitutionData?.users?.filter(user => 
+      user.user_roles && user.user_roles.length > 0
+    ).length || 0
+  }, [currentInstitutionData])
+
+  // Processar dados para o gráfico de permissões por role
+  const rolePermissionsData = useMemo(() => {
+    return roles.map(role => {
+      const permissionCount = role.permissions.reduce((sum, group) => sum + group.data.length, 0)
+      return {
+        id: role.id,
+        name: role.name,
+        key_code: role.key_code,
+        permissionCount
+      }
+    })
+  }, [roles])
 
   usePageTitle({
     title: t('access.title')
@@ -415,6 +471,27 @@ export default function AccessManagementPage() {
             minCardsForCarousel={4}
             showCarousel={true}
           />
+
+          <Separator />
+
+          <ResponsiveGridCarousel
+            enableAutoplay={false}
+            gap="gap-6"
+            className="w-full"
+          >
+            <RoleDistributionChart
+              roles={roleDistributionData}
+              totalUsers={totalUsersWithRoles}
+              isLoading={isLoading}
+            />
+
+            {/* Role Permissions Chart */}
+            <RolePermissionsChart
+              roles={rolePermissionsData}
+              isLoading={isLoading}
+            />
+          </ResponsiveGridCarousel>
+
 
           <Separator />
 

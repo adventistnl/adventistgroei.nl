@@ -22,7 +22,7 @@ export const projectRegisterTranslations = {
       funding: {
         title: "Funding Distribution",
         description: "Funding calculator",
-        content: "This step automatically calculates the funding distribution based on your project activities. The system validates that all funding policies are respected, including the maximum institution contribution of 65% and the absolute limit of R$ 5,000 per project. Churches must contribute at least 35% of the total budget to ensure local commitment and sustainability."
+        content: "This step automatically calculates the funding distribution based on your project activities. The system validates that all funding policies are respected, including the maximum request contribution of 65% and the absolute limit of R$ 5,000 per project. Churches must contribute at least 35% of the total budget to ensure local commitment and sustainability."
       },
       eventRegistration: {
         title: "Event Registration",
@@ -57,7 +57,7 @@ export const projectRegisterTranslations = {
       activityDeadline: "Activity Deadline",
       fundingType: "Funding Type",
       fundingDistribution: "Funding Distribution",
-      churchContribution: "Church Contribution",
+      selfContribution: "Self Contribution",
       activityTags: "Activity Tags",
       requestSubsidy: "Request Subsidy",
       eventTitle: "Event Title",
@@ -71,7 +71,8 @@ export const projectRegisterTranslations = {
       communicationType: "Communication Type",
       schedule: "Schedule",
       isChurchProject: "Is this a church project?",
-      selectChurch: "Select Church"
+      selectChurch: "Select Church",
+      churchDepartment: "Church Department"
     },
     responsibilityTypes: {
       personal: "Personal",
@@ -111,7 +112,10 @@ export const projectRegisterTranslations = {
       eventLanguage: "Select the primary language for the event",
       communicationType: "Choose the type of communication to send",
       scheduleDate: "When to send the communication (leave empty for immediate)",
-      churchProject: "Enable if this project is linked to a specific church"
+      churchProject: "Enable if this project is linked to a specific church",
+      churchDepartment: "Specific church department responsible for this project",
+      department: "Select the institutional department for budget allocation",
+      responsible: "Select the person responsible for managing this project"
     },
     placeholders: {
       enterProjectTitle: "Enter project title",
@@ -133,7 +137,11 @@ export const projectRegisterTranslations = {
       selectCommunicationType: "Select communication type",
       selectScheduleDate: "Select schedule date",
       selectChurch: "Select church...",
-      searchChurch: "Search church..."
+      searchChurch: "Search church...",
+      selectChurchDepartment: "Select church department...",
+      searchChurchDepartment: "Search church department...",
+      loadingChurchDepartments: "Loading departments...",
+      noChurchDepartments: "No departments available for this church"
     },
     buttons: {
       addActivity: "Add Activity",
@@ -157,14 +165,27 @@ export const projectRegisterTranslations = {
       title: "Quick Activities",
       select: "Select"
     },
+    warnings: {
+      noDepartmentsTitle: "Departments Not Available",
+      noDepartmentsDescription: "Departments are not available at the moment. Check if the budget has already been finalized and closed, contact your admin or finance directly.",
+      noDepartmentsDetailedDescription: "Departments are not available for selection at this time. This may happen for several reasons:",
+      reason1: "The annual budget has not been finalized yet",
+      reason2: "Department budgets are under approval process",
+      reason3: "No budget is available for new projects",
+      contactAdvice: "Contact the administrator or finance manager for more information."
+    },
+    actions: {
+      moreInfo: "More Info"
+    },
     validation: {
       projectTitleRequired: "Project title is required",
       projectDescriptionRequired: "Project description is required",
       departmentRequired: "Department is required",
+      noDepartmentsAvailable: "No departments are available for selection",
       responsiblePersonRequired: "At least one responsible person is required",
       activityRequired: "At least one activity is required",
       activityFieldsRequired: "Please fill all required activity fields",
-      institutionExceedsAmount: "Institution contribution cannot exceed R$ {{amount}}",
+      institutionExceedsAmount: "request contribution cannot exceed R$ {{amount}}",
       institutionExceedsPercent: "Institution percentage cannot exceed {{percent}}%",
       institutionAmountLimit: "Institution Amount Limit",
       institutionPercentLimit: "Institution Percentage Limit",
@@ -177,14 +198,14 @@ export const projectRegisterTranslations = {
       activities: "Activities",
       budgetDistribution: "Budget Distribution",
       totalBudget: "Total Budget",
-      church: "Church",
-      institution: "Institution",
+      selfContribution: "Self Contribution",
+      requestContribution: "Request Contribution",
       policyValidation: "Policy Validation"
     },
     highlights: {
       totalBudget: "Total Budget",
-      churchContribution: "Church Contribution",
-      institutionContribution: "Institution Contribution",
+      selfContribution: "Self Contribution",
+      requestContribution: "Request Contribution",
       subsidizedActivities: "Subsidized Activities",
       nonSubsidizedActivities: "Non-Subsidized Activities",
       totalActivities: "Total Activities",
@@ -260,7 +281,7 @@ export const projectRegisterTranslations = {
       remainingAmount: "Remaining Amount",
       validationRules: "Validation Rules",
       maxSubsidyAmount: "Maximum Subsidy",
-      institutionContribution: "Institution Contribution",
+      requestContribution: "Request Contribution",
       subsidyPercentage: "Subsidy Percentage",
       manualEntry: "Manual Entry",
       automaticCalculation: "Automatic Calculation",
@@ -306,12 +327,14 @@ export const projectRegisterTranslations = {
       subsidizedSubtotal: "Subsidized Subtotal:"
     },
     info: {
-      churchProjectDescription: "This will link the project directly to a local church"
+      churchProjectDescription: "This will link the project directly to a local church",
+      noChurchDepartmentsAvailable: "No departments are available for the selected church"
     },
     noResults: {
       church: "No church found.",
       department: "No department found.",
-      user: "No user found."
+      user: "No user found.",
+      churchDepartment: "No church department found."
     },
     eventRegistration: {
       header: "Event Registration",
@@ -342,6 +365,8 @@ export const projectRegisterTranslations = {
       searchUsers: "Search users...",
       noUsersFound: "No users found.",
       responsiblesDescription: "Select one or more users responsible for this activity",
+      addResponsibles: "Add responsibles to the activity",
+      clickToEdit: "Click to edit",
       updateActivity: "Update Activity",
       addActivity: "Add Activity",
       quickActivitySelected: "Quick Activity selected: \"{{name}}\""
@@ -389,8 +414,8 @@ export const projectRegisterTranslations = {
       subsidizedActivities: "Subsidized Activities",
       nonSubsidizedActivities: "Non-Subsidized Activities",
       responsibilityDistribution: "Responsibility Distribution",
-      church: "Church",
-      institution: "Institution",
+      self: "Self",
+      request: "Request",
       churchPlanting: "Church Planting",
       churchPlantingInfoTitle: "Church Planting - Special Information",
       specialProjectInfoTitle: "Special Project - Additional Information",
@@ -405,15 +430,15 @@ export const projectRegisterTranslations = {
       locationPlaceholder: "City, region or specific address...",
       plantingDescriptionPlaceholder: "Describe the location, target community, planting strategy, necessary resources...",
       specialJustificationPlaceholder: "Explain the strategic importance, social or missionary impact that justifies special funding...",
-      institutionContributionValue: "Institution Contribution Amount",
+      requestContributionValue: "request Contribution Amount",
       contributionPercentage: "Contribution Percentage",
       appliedOver: "Applied over",
       maximum: "Maximum",
       noSubsidy: "No Subsidy",
       specialProject: "Special Project",
       regularMaximum: "Regular Maximum",
-      churchContribution: "Church Contribution",
-      institutionContribution: "Institution Contribution",
+      selfContribution: "Self Contribution",
+      requestContribution: "Request Contribution",
       churchResponsibilityTooltip: "Total amount the church will be responsible for financing",
       includesNonSubsidized: "Includes all non-subsidized activities + church portion in subsidized ones",
       subsidyCalculatedOver: "Subsidy calculated over",
@@ -438,8 +463,8 @@ export const projectRegisterTranslations = {
     },
     review: {
       totalBudget: "Total Budget",
-      church: "Church",
-      institution: "Institution",
+      self: "Self",
+      request: "Request",
       activities: "Activities",
       totalActivities: "Total Activities",
       subsidized: "Subsidized",
@@ -506,7 +531,7 @@ export const projectRegisterTranslations = {
       activityDeadline: "Prazo da Atividade",
       fundingType: "Tipo de Financiamento",
       fundingDistribution: "Distribuição de Financiamento",
-      churchContribution: "Contribuição da Igreja",
+      selfContribution: "Contribuição da Igreja",
       activityTags: "Tags da Atividade",
       requestSubsidy: "Solicitar Subsídio",
       eventTitle: "Título do Evento",
@@ -520,7 +545,8 @@ export const projectRegisterTranslations = {
       communicationType: "Tipo de Comunicação",
       schedule: "Agendamento",
       isChurchProject: "É um projeto de igreja?",
-      selectChurch: "Selecione a Igreja"
+      selectChurch: "Selecione a Igreja",
+      churchDepartment: "Departamento da Igreja"
     },
     responsibilityTypes: {
       personal: "Pessoal",
@@ -560,7 +586,10 @@ export const projectRegisterTranslations = {
       eventLanguage: "Selecionar o idioma principal do evento",
       communicationType: "Escolher o tipo de comunicação a enviar",
       scheduleDate: "Quando enviar a comunicação (deixe vazio para imediato)",
-      churchProject: "Ative se este projeto for vinculado a uma igreja específica"
+      churchProject: "Ative se este projeto for vinculado a uma igreja específica",
+      churchDepartment: "Departamento específico da igreja responsável por este projeto",
+      department: "Selecione o departamento institucional para alocação de orçamento",
+      responsible: "Selecione a pessoa responsável por gerenciar este projeto"
     },
     placeholders: {
       enterProjectTitle: "Digite o título do projeto",
@@ -582,7 +611,11 @@ export const projectRegisterTranslations = {
       selectCommunicationType: "Selecione o tipo de comunicação",
       selectScheduleDate: "Selecione a data de agendamento",
       selectChurch: "Selecione a igreja...",
-      searchChurch: "Buscar igreja..."
+      searchChurch: "Buscar igreja...",
+      selectChurchDepartment: "Selecione o departamento da igreja...",
+      searchChurchDepartment: "Buscar departamento da igreja...",
+      loadingChurchDepartments: "Carregando departamentos...",
+      noChurchDepartments: "Nenhum departamento disponível para esta igreja"
     },
     buttons: {
       addActivity: "Adicionar Atividade",
@@ -606,10 +639,23 @@ export const projectRegisterTranslations = {
       title: "Atividades Rápidas",
       select: "Selecionar"
     },
+    warnings: {
+      noDepartmentsTitle: "Departamentos Não Disponíveis",
+      noDepartmentsDescription: "Os departamentos não estão disponíveis no momento. Verifique se o orçamento já foi finalizado e fechado, contate diretamente o seu admin ou financeiro.",
+      noDepartmentsDetailedDescription: "Os departamentos não estão disponíveis para seleção neste momento. Isso pode acontecer por alguns motivos:",
+      reason1: "O orçamento anual ainda não foi finalizado",
+      reason2: "Os orçamentos departamentais estão em processo de aprovação",
+      reason3: "Não há orçamento disponível para novos projetos",
+      contactAdvice: "Entre em contato com o administrador ou responsável financeiro para mais informações."
+    },
+    actions: {
+      moreInfo: "Mais Informações"
+    },
     validation: {
       projectTitleRequired: "Título do projeto é obrigatório",
       projectDescriptionRequired: "Descrição do projeto é obrigatória",
       departmentRequired: "Departamento é obrigatório",
+      noDepartmentsAvailable: "Nenhum departamento está disponível para seleção",
       responsiblePersonRequired: "Pelo menos uma pessoa responsável é obrigatória",
       activityRequired: "Pelo menos uma atividade é obrigatória",
       activityFieldsRequired: "Por favor, preencha todos os campos obrigatórios da atividade",
@@ -626,8 +672,8 @@ export const projectRegisterTranslations = {
       activities: "Atividades",
       budgetDistribution: "Distribuição do Orçamento",
       totalBudget: "Orçamento Total",
-      church: "Igreja",
-      institution: "Instituição",
+      selfContribution: "Contribuição Própria",
+      requestContribution: "Contribuição Solicitada",
       policyValidation: "Validação de Políticas"
     },
     toast: {
@@ -651,8 +697,8 @@ export const projectRegisterTranslations = {
     },
     highlights: {
       totalBudget: "Orçamento Total",
-      churchContribution: "Contribuição da Igreja",
-      institutionContribution: "Contribuição da Instituição",
+      selfContribution: "Contribuição da Igreja",
+      requestContribution: "Contribuição da Instituição",
       subsidizedActivities: "Atividades Subsidiadas",
       nonSubsidizedActivities: "Atividades Não Subsidiadas",
       totalActivities: "Total de Atividades",
@@ -709,7 +755,7 @@ export const projectRegisterTranslations = {
       remainingAmount: "Valor Restante",
       validationRules: "Regras de Validação",
       maxSubsidyAmount: "Subsídio Máximo",
-      institutionContribution: "Contribuição da Instituição",
+      requestContribution: "Contribuição da Instituição",
       subsidyPercentage: "Porcentagem de Subsídio",
       manualEntry: "Entrada Manual",
       automaticCalculation: "Cálculo Automático",
@@ -755,12 +801,14 @@ export const projectRegisterTranslations = {
       subsidizedSubtotal: "Subtotal Subsidiadas:"
     },
     info: {
-      churchProjectDescription: "Isso vinculará o projeto diretamente a uma igreja local"
+      churchProjectDescription: "Isso vinculará o projeto diretamente a uma igreja local",
+      noChurchDepartmentsAvailable: "Nenhum departamento disponível para a igreja selecionada"
     },
     noResults: {
       church: "Nenhuma igreja encontrada.",
       department: "Nenhum departamento encontrado.",
-      user: "Nenhum usuário encontrado."
+      user: "Nenhum usuário encontrado.",
+      churchDepartment: "Nenhum departamento de igreja encontrado."
     },
     eventRegistration: {
       header: "Registro de Evento",
@@ -791,6 +839,8 @@ export const projectRegisterTranslations = {
       searchUsers: "Procurar usuários...",
       noUsersFound: "Nenhum usuário encontrado.",
       responsiblesDescription: "Selecione um ou mais usuários responsáveis por esta atividade",
+      addResponsibles: "Adicionar responsáveis para a atividade",
+      clickToEdit: "Clique para editar",
       updateActivity: "Atualizar Atividade",
       addActivity: "Adicionar Atividade",
       quickActivitySelected: "Quick Activity selecionada: \"{{name}}\""
@@ -838,8 +888,8 @@ export const projectRegisterTranslations = {
       subsidizedActivities: "Atividades Subsidiadas",
       nonSubsidizedActivities: "Atividades Não Subsidiadas",
       responsibilityDistribution: "Distribuição de Responsabilidade",
-      church: "Igreja",
-      institution: "Instituição",
+      self: "Proprio",
+      request: "Requisitar",
       churchPlanting: "Church Planting",
       churchPlantingInfoTitle: "Church Planting - Informações Especiais",
       specialProjectInfoTitle: "Projeto Especial - Informações Adicionais",
@@ -854,15 +904,15 @@ export const projectRegisterTranslations = {
       locationPlaceholder: "Cidade, região ou endereço específico...",
       plantingDescriptionPlaceholder: "Descreva a localização, comunidade alvo, estratégia de plantação, recursos necessários...",
       specialJustificationPlaceholder: "Explique a importância estratégica, impacto social ou missionário que justifica o funding especial...",
-      institutionContributionValue: "Valor de Contribuição da Instituição",
+      requestContributionValue: "Valor de Contribuição da Instituição",
       contributionPercentage: "Porcentagem de Contribuição",
       appliedOver: "Aplicado sobre",
       maximum: "Máximo",
       noSubsidy: "Sem Subsídio",
       specialProject: "Projeto Especial",
       regularMaximum: "Máximo Regular",
-      churchContribution: "Contribuição da Igreja",
-      institutionContribution: "Contribuição da Instituição",
+      selfContribution: "Contribuição da Igreja",
+      requestContribution: "Contribuição da Instituição",
       churchResponsibilityTooltip: "Valor total que a igreja será responsável por financiar",
       includesNonSubsidized: "Inclui todas as atividades não-subsidiadas + parte da igreja nas subsidiadas",
       subsidyCalculatedOver: "Subsídio calculado sobre",
@@ -870,7 +920,7 @@ export const projectRegisterTranslations = {
       distributionByActivities: "Distribuição por Atividades",
       dragToRecalculate: "Arraste atividades entre grupos para recalcular automaticamente",
       maxAllowedError: "Máximo permitido: {{percent}}%. Use Projeto Especial ou Church Planting para valores maiores.",
-      percentExceeded: "⚠️ PORCENTAGEM EXCEDIDA: Máximo {{percent}}% permitido",
+      percentExceeded: "PORCENTAGEM EXCEDIDA: Máximo {{percent}}% permitido",
       limitExceeded: "LIMITE EXCEDIDO",
       limitReachedMessage: "Este é o máximo que a instituição pode conceder",
       ofTotalBudget: "do orçamento total",
@@ -887,8 +937,8 @@ export const projectRegisterTranslations = {
     },
     review: {
       totalBudget: "Orçamento Total",
-      church: "Igreja",
-      institution: "Instituição",
+      self: "Próprio",
+      request: "Requisitar",
       activities: "Atividades",
       totalActivities: "Total de Atividades",
       subsidized: "Subsidiadas",
@@ -951,13 +1001,26 @@ export const projectRegisterTranslations = {
       activityDeadline: "Activiteitsdeadline",
       fundingType: "Financieringstype",
       fundingDistribution: "Financieringsverdeling",
-      churchContribution: "Kerkbijdrage",
+      selfContribution: "Eingebijdrage",
       activityTags: "Activiteitstags",
       isChurchProject: "Is dit een kerkproject?",
-      selectChurch: "Selecteer Kerk"
+      selectChurch: "Selecteer Kerk",
+      churchDepartment: "Kerkafdeling"
     },
     tooltips: {
-      churchProject: "Schakel in als dit project aan een specifieke kerk is gekoppeld"
+      churchProject: "Schakel in als dit project aan een specifieke kerk is gekoppeld",
+      churchDepartment: "Specifieke kerkafdeling verantwoordelijk voor dit project",
+      department: "Selecteer de institutionele afdeling voor budgettoewijzing",
+      responsible: "Selecteer de persoon verantwoordelijk voor het beheer van dit project",
+      projectResponsibleType: "Definieer wie verantwoordelijk zal zijn voor dit project",
+      registerAsEvent: "Creëert een openbaar evenement gekoppeld aan dit project",
+      privateProject: "Project is alleen zichtbaar voor geautoriseerde leden",
+      requestSubsidy: "Vraag institutionele financiering aan voor deze activiteit",
+      fundingDistribution: "Pas percentageverdeling tussen kerk en instelling aan",
+      specialCase: "Overschrijf financieringsbeleid voor speciale omstandigheden",
+      eventLanguage: "Selecteer de primaire taal voor het evenement",
+      communicationType: "Kies het type communicatie om te verzenden",
+      scheduleDate: "Wanneer de communicatie te verzenden (leeg laten voor onmiddellijk)"
     },
     placeholders: {
       enterProjectTitle: "Voer projecttitel in",
@@ -970,7 +1033,11 @@ export const projectRegisterTranslations = {
       selectResponsible: "Selecteer verantwoordelijke",
       selectDate: "Selecteer datum",
       selectChurch: "Selecteer kerk...",
-      searchChurch: "Zoek kerk..."
+      searchChurch: "Zoek kerk...",
+      selectChurchDepartment: "Selecteer kerkafdeling...",
+      searchChurchDepartment: "Zoek kerkafdeling...",
+      loadingChurchDepartments: "Afdelingen laden...",
+      noChurchDepartments: "Geen afdelingen beschikbaar voor deze kerk"
     },
     buttons: {
       addActivity: "Activiteit Toevoegen",
@@ -994,10 +1061,23 @@ export const projectRegisterTranslations = {
       title: "Snelle Activiteiten",
       select: "Selecteren"
     },
+    warnings: {
+      noDepartmentsTitle: "Afdelingen Niet Beschikbaar",
+      noDepartmentsDescription: "Afdelingen zijn op dit moment niet beschikbaar. Controleer of de begroting al is gefinaliseerd en gesloten, neem direct contact op met uw beheerder of financiële afdeling.",
+      noDepartmentsDetailedDescription: "Afdelingen zijn op dit moment niet beschikbaar voor selectie. Dit kan om verschillende redenen gebeuren:",
+      reason1: "De jaarlijkse begroting is nog niet gefinaliseerd",
+      reason2: "Afdelingsbudgetten zijn in het goedkeuringsproces",
+      reason3: "Er is geen budget beschikbaar voor nieuwe projecten",
+      contactAdvice: "Neem contact op met de beheerder of financiële manager voor meer informatie."
+    },
+    actions: {
+      moreInfo: "Meer Info"
+    },
     validation: {
       projectTitleRequired: "Projecttitel is verplicht",
       projectDescriptionRequired: "Projectbeschrijving is verplicht",
       departmentRequired: "Afdeling is verplicht",
+      noDepartmentsAvailable: "Geen afdelingen beschikbaar voor selectie",
       responsiblePersonRequired: "Ten minste één verantwoordelijke persoon is verplicht",
       activityRequired: "Ten minste één activiteit is verplicht",
       activityFieldsRequired: "Vul alle verplichte activiteitsvelden in",
@@ -1014,8 +1094,8 @@ export const projectRegisterTranslations = {
       activities: "Activiteiten",
       budgetDistribution: "Budgetverdeling",
       totalBudget: "Totaal Budget",
-      church: "Kerk",
-      institution: "Instelling",
+      selfContribution: "Eigen Bijdrage",
+      requestContribution: "Aangevraagde Bijdrage",
       policyValidation: "Beleidsvalidatie"
     },
     toast: {
@@ -1064,7 +1144,7 @@ export const projectRegisterTranslations = {
       remainingAmount: "Resterend Bedrag", 
       validationRules: "Validatieregels",
       maxSubsidyAmount: "Maximum Subsidie",
-      institutionContribution: "Institutie Bijdrage",
+      requestContribution: "Institutie Bijdrage",
       subsidyPercentage: "Subsidie Percentage",
       manualEntry: "Handmatige Invoer",
       automaticCalculation: "Automatische Berekening",
@@ -1098,12 +1178,14 @@ export const projectRegisterTranslations = {
       subsidizedSubtotal: "Subtotaal Gesubsidieerd:"
     },
     info: {
-      churchProjectDescription: "Dit koppelt het project direct aan een lokale kerk"
+      churchProjectDescription: "Dit koppelt het project direct aan een lokale kerk",
+      noChurchDepartmentsAvailable: "Geen afdelingen beschikbaar voor de geselecteerde kerk"
     },
     noResults: {
       church: "Geen kerk gevonden.",
       department: "Geen afdeling gevonden.",
-      user: "Geen gebruiker gevonden."
+      user: "Geen gebruiker gevonden.",
+      churchDepartment: "Geen kerkafdeling gevonden."
     },
     eventRegistration: {
       header: "Evenement Registratie",
@@ -1134,6 +1216,8 @@ export const projectRegisterTranslations = {
       searchUsers: "Zoek gebruikers...",
       noUsersFound: "Geen gebruikers gevonden.",
       responsiblesDescription: "Selecteer één of meer gebruikers die verantwoordelijk zijn voor deze activiteit",
+      addResponsibles: "Voeg verantwoordelijken toe aan de activiteit",
+      clickToEdit: "Klik om te bewerken",
       updateActivity: "Activiteit Bijwerken",
       addActivity: "Activiteit Toevoegen",
       quickActivitySelected: "Snelle activiteit geselecteerd: \"{{name}}\""
@@ -1181,8 +1265,8 @@ export const projectRegisterTranslations = {
       subsidizedActivities: "Gesubsidieerde Activiteiten",
       nonSubsidizedActivities: "Niet-gesubsidieerde Activiteiten",
       responsibilityDistribution: "Verantwoordelijkheidsverdeling",
-      church: "Kerk",
-      institution: "Instelling",
+      self: "Zelf",
+      request: "Aanvragen",
       churchPlanting: "Church Planting",
       churchPlantingInfoTitle: "Church Planting - Speciale Informatie",
       specialProjectInfoTitle: "Speciaal Project - Aanvullende Informatie",
@@ -1197,15 +1281,15 @@ export const projectRegisterTranslations = {
       locationPlaceholder: "Stad, regio of specifiek adres...",
       plantingDescriptionPlaceholder: "Beschrijf de locatie, doelgroep, plantingsstrategie, benodigde middelen...",
       specialJustificationPlaceholder: "Leg het strategische belang, sociale of missionaire impact uit die speciale financiering rechtvaardigt...",
-      institutionContributionValue: "Instellingsbijdragebedrag",
+      requestContributionValue: "Instellingsbijdragebedrag",
       contributionPercentage: "Bijdragepercentage",
       appliedOver: "Toegepast op",
       maximum: "Maximum",
       noSubsidy: "Geen Subsidie",
       specialProject: "Speciaal Project",
       regularMaximum: "Regulier Maximum",
-      churchContribution: "Kerkbijdrage",
-      institutionContribution: "Instellingsbijdrage",
+      selfContribution: "Eingebijdrage",
+      requestContribution: "Instellingsbijdrage",
       churchResponsibilityTooltip: "Totaalbedrag waarvoor de kerk verantwoordelijk zal zijn voor financiering",
       includesNonSubsidized: "Omvat alle niet-gesubsidieerde activiteiten + kerkgedeelte in gesubsidieerde",
       subsidyCalculatedOver: "Subsidie berekend over",
@@ -1213,7 +1297,7 @@ export const projectRegisterTranslations = {
       distributionByActivities: "Verdeling per Activiteiten",
       dragToRecalculate: "Sleep activiteiten tussen groepen om automatisch opnieuw te berekenen",
       maxAllowedError: "Maximum toegestaan: {{percent}}%. Gebruik Speciaal Project of Church Planting voor hogere waarden.",
-      percentExceeded: "⚠️ PERCENTAGE OVERSCHREDEN: Maximum {{percent}}% toegestaan",
+      percentExceeded: "PERCENTAGE OVERSCHREDEN: Maximum {{percent}}% toegestaan",
       limitExceeded: "LIMIET OVERSCHREDEN",
       limitReachedMessage: "Dit is het maximum dat de instelling kan verstrekken",
       ofTotalBudget: "van totaal budget",
@@ -1230,8 +1314,8 @@ export const projectRegisterTranslations = {
     },
     review: {
       totalBudget: "Totaal Budget",
-      church: "Kerk",
-      institution: "Instelling",
+      self: "Eingebijdrage",
+      request: "Aanvragere",
       activities: "Activiteiten",
       totalActivities: "Totaal Activiteiten",
       subsidized: "Gesubsidieerd",

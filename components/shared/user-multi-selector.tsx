@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, forwardRef } from "react"
 import { UserPlus, Search, Check, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,7 +39,7 @@ export interface UserMultiSelectorProps {
   onUsersChange: (users: User[]) => void
 
   /** Label do botão */
-  buttonLabel?: string
+  buttonLabel?: React.ReactNode
 
   /** Título do dialog */
   dialogTitle?: string
@@ -58,9 +58,12 @@ export interface UserMultiSelectorProps {
 
   /** Tipo de atividade */
   activityType?: string
+
+  /** Data attribute para identificação do botão */
+  buttonDataAttribute?: string
 }
 
-export function UserMultiSelector({
+export const UserMultiSelector = forwardRef<HTMLButtonElement, UserMultiSelectorProps>(({
   availableUsers,
   selectedUsers,
   onUsersChange,
@@ -71,7 +74,8 @@ export function UserMultiSelector({
   maxSelections,
   activityName,
   activityType,
-}: UserMultiSelectorProps) {
+  buttonDataAttribute,
+}, ref) => {
   const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -135,6 +139,7 @@ export function UserMultiSelector({
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
+          ref={ref}
           type="button"
           variant="outline"
           size="sm"
@@ -143,9 +148,21 @@ export function UserMultiSelector({
             "gap-2",
             disabled && "opacity-50 cursor-not-allowed"
           )}
+          {...(buttonDataAttribute && { [buttonDataAttribute]: "true" })}
         >
-          <UserPlus className="w-4 h-4" />
-          {buttonLabel || t('activities.user_selector.add_assignees')}
+          {typeof buttonLabel === 'string' ? (
+            <>
+              <UserPlus className="w-4 h-4" />
+              {buttonLabel || t('activities.user_selector.add_assignees')}
+            </>
+          ) : (
+            buttonLabel || (
+              <>
+                <UserPlus className="w-4 h-4" />
+                {t('activities.user_selector.add_assignees')}
+              </>
+            )
+          )}
         </Button>
       </DialogTrigger>
 
@@ -298,15 +315,22 @@ export function UserMultiSelector({
             </div>
           </div>
 
-          {/* Selection count */}
-          {maxSelections && (
-            <div className="text-xs text-muted-foreground text-center pt-1 border-t">
-              {t('activities.user_selector.selection_count', { 
-                selected: tempSelectedUsers.length, 
-                max: maxSelections 
-              })}
-            </div>
-          )}
+          {/* Selection count and validation */}
+          <div className="pt-1 border-t space-y-2">
+            {maxSelections && (
+              <div className="text-xs text-muted-foreground text-center">
+                {t('activities.user_selector.selection_count', { 
+                  selected: tempSelectedUsers.length, 
+                  max: maxSelections 
+                })}
+              </div>
+            )}
+            {tempSelectedUsers.length === 0 && (
+              <div className="text-xs text-dark-600 text-center bg-dark-50 border border-dark-200 rounded-md p-2">
+                {t('activities.user_selector.minimum_required')}
+              </div>
+            )}
+          </div>
         </div>
 
         <DialogFooter className="gap-2 sm:gap-2">
@@ -319,7 +343,11 @@ export function UserMultiSelector({
           </Button>
           <Button 
             onClick={handleConfirm}
-            className="flex-1 sm:flex-none bg-foreground text-background hover:bg-foreground/90"
+            disabled={tempSelectedUsers.length === 0}
+            className={cn(
+              "flex-1 sm:flex-none bg-foreground text-background hover:bg-foreground/90",
+              tempSelectedUsers.length === 0 && "opacity-50 cursor-not-allowed"
+            )}
           >
             {t('activities.user_selector.confirm', { count: tempSelectedUsers.length })}
           </Button>
@@ -327,4 +355,6 @@ export function UserMultiSelector({
       </DialogContent>
     </Dialog>
   )
-}
+})
+
+UserMultiSelector.displayName = "UserMultiSelector"

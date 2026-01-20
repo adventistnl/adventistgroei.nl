@@ -19,6 +19,7 @@ export interface ProjectFormData {
   register_as_event: boolean
   is_private: boolean
   church_id?: string
+  church_department_id?: string | null
   activities: ProjectActivity[]
   total_budget: number
   church_contribution: number
@@ -28,6 +29,7 @@ export interface ProjectFormData {
   special_case_reason?: string
   location_church_plant?: string
   special_budget?: number
+  _isStepValid?: boolean // Internal field for step validation
   event?: {
     title: string
     description: string

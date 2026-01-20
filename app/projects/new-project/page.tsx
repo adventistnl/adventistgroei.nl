@@ -89,6 +89,7 @@ import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { useInstitution } from "@/contexts/institution-context"
 import { projectRegisterTranslations } from "@/lib/translations/project-register"
+import { projectTranslations } from "@/lib/translations/projects"
 import { LanguageSelector } from "@/components/shared/language-selector"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -110,6 +111,8 @@ import {
 import { EventRegistrationForm, EventFormData } from "@/components/shared/event-registration-form"
 import { CommunicationForm, CommunicationFormData } from "@/components/shared/communication-form"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
+import { UserMultiSelector, User } from "@/components/shared/user-multi-selector"
+import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
 import { ProjectDataStep } from "@/components/projects/steps/project-data-step"
 import type { ProjectFormData, ProjectActivity } from "@/components/projects/types"
 type FormData = ProjectFormData
@@ -123,6 +126,8 @@ import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
 import { ProjectType, LanguagePreference, EventType } from "@/types/globalTypes"
 import "@/lib/i18n"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 // Predefined activities with translation keys
 // The 'key' field is used to fetch translations, tagKeys are database keys
@@ -331,6 +336,7 @@ function ProjectRegisterContent() {
     institution_contribution: 0,
     subsidy_percentage: 35,
     is_special_case: false,
+    church_department_id: null,
   })
   
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -368,6 +374,9 @@ function ProjectRegisterContent() {
   
   // Ref for activity form to scroll into view
   const activityFormRef = useRef<HTMLDivElement>(null)
+  
+  // Ref for user selector dialog
+  const userSelectorRef = useRef<HTMLButtonElement>(null)
 
   // Draft persistence (sessionStorage)
   const DRAFT_KEY = `project_register_draft:${projectId || 'new'}`
@@ -463,6 +472,27 @@ function ProjectRegisterContent() {
       }))
     }
   }, [isSpecialProject, isChurchPlanting])
+  
+  // Update currentActivity default assignee when project responsible changes
+  useEffect(() => {
+    if (formData.responsible_id && !editingActivityId) {
+      // Only update if not currently editing an activity and the assignee_ids is empty or only has one item
+      setCurrentActivity(prev => {
+        // Check if current assignee_ids is empty or needs to be updated with project owner
+        const shouldUpdate = !prev.assignee_ids || 
+                             prev.assignee_ids.length === 0 || 
+                             (prev.assignee_ids.length === 1 && prev.assignee_ids[0] !== formData.responsible_id)
+        
+        if (shouldUpdate) {
+          return {
+            ...prev,
+            assignee_ids: [formData.responsible_id]
+          }
+        }
+        return prev
+      })
+    }
+  }, [formData.responsible_id, editingActivityId])
   
   // Functions for activity group management
   const moveActivityBetweenGroups = (activityId: string, toGroup: 'subsidized' | 'nonSubsidized' | 'trash') => {
@@ -589,14 +619,14 @@ function ProjectRegisterContent() {
       .filter(act => act.is_subsidized)
       .reduce((sum, act) => sum + act.budget_amount, 0)
     
-    const institutionContribution = (subsidyBudget * formData.subsidy_percentage) / 100
-    const churchContribution = totalBudget - institutionContribution
+    const requestContribution = (subsidyBudget * formData.subsidy_percentage) / 100
+    const selfContribution = totalBudget - requestContribution
 
     setFormData(prev => ({
       ...prev,
       total_budget: totalBudget,
-      church_contribution: churchContribution,
-      institution_contribution: institutionContribution
+      church_contribution: selfContribution,
+      institution_contribution: requestContribution
     }))
   }, [formData.activities, formData.subsidy_percentage])
 
@@ -605,12 +635,19 @@ function ProjectRegisterContent() {
 
     switch (step) {
       case 1:
-        if (!formData.title.trim()) newErrors.title = translations.validation.projectTitleRequired
-        if (!formData.description.trim()) newErrors.description = translations.validation.projectDescriptionRequired
-        if (!formData.department_id) newErrors.department_id = translations.validation.departmentRequired
-        if (!formData.responsible_id) newErrors.responsible_id = translations.validation.responsiblePersonRequired
-        if (formData.project_responsible_type === 'church' && !formData.church_id) {
-          newErrors.church_id = (translations as any).validation?.churchRequired || "Selecione a igreja"
+        // Use _isStepValid property from ProjectDataStep component
+        if (formData._isStepValid === false) {
+          if (!formData.title?.trim()) newErrors.title = translations.validation.projectTitleRequired
+          if (!formData.description?.trim()) newErrors.description = translations.validation.projectDescriptionRequired
+          if (!formData.department_id) newErrors.department_id = translations.validation.departmentRequired
+          if (!formData.responsible_id) newErrors.responsible_id = translations.validation.responsiblePersonRequired
+          if (formData.project_responsible_type === 'church' && !formData.church_id) {
+            newErrors.church_id = (translations as any).validation?.churchRequired || "Selecione a igreja"
+          }
+          // Special case for no departments available
+          if (departments.length === 0) {
+            newErrors.department_id = t('projectRegister.validation.noDepartmentsAvailable', 'Nenhum departamento está disponível para seleção')
+          }
         }
         break
       
@@ -711,6 +748,11 @@ function ProjectRegisterContent() {
       return
     }
 
+    if (!currentActivity.assignee_ids || currentActivity.assignee_ids.length === 0) {
+      toast.error(t('activities.user_selector.minimum_required') || 'Pelo menos um responsável deve ser selecionado para a atividade')
+      return
+    }
+
     if (editingActivityId) {
       // Update existing activity
       setFormData(prev => ({
@@ -743,8 +785,6 @@ function ProjectRegisterContent() {
         assignee_ids: currentActivity.assignee_ids || [], // Include assignees
         tags: currentActivity.tags!
       }
-      
-      console.log('💾 Saving activity:', newActivity.name, 'with assignee_ids:', newActivity.assignee_ids)
 
       setFormData(prev => ({
         ...prev,
@@ -754,18 +794,27 @@ function ProjectRegisterContent() {
     }
 
     // Reset current activity and editing state with fresh references
+    // Pre-populate assignee_ids with project responsible (owner) as default
+    const defaultAssigneeIds = formData.responsible_id ? [formData.responsible_id] : []
+    
     const resetActivity = {
       name: "",
       description: "",
       budget_amount: 0,
       request_subsidy: false,
-      assignee_ids: [], // Fresh empty array
+      assignee_ids: defaultAssigneeIds, // Pre-fill with project owner
       tags: []
     }
     
-    console.log('🔄 Resetting currentActivity, assignee_ids:', resetActivity.assignee_ids)
+    console.log('Resetting currentActivity, assignee_ids:', resetActivity.assignee_ids)
     setCurrentActivity(resetActivity)
     setEditingActivityId(null)
+  }
+
+  const handleUsersChange = (selectedUsers: User[]) => {
+    const assigneeIds = selectedUsers.map(user => user.id)
+    console.log('👥 Users changed:', selectedUsers.length, 'users selected, IDs:', assigneeIds)
+    setCurrentActivity({ ...currentActivity, assignee_ids: assigneeIds })
   }
 
   const handleEditActivity = (activityId: string) => {
@@ -792,11 +841,15 @@ function ProjectRegisterContent() {
     // Convert tagKeys to translated tags for display (store keys in database)
     const translatedTags = predefinedActivity.tagKeys.map(tagKey => t(`projectRegister.tags.${tagKey}`))
     
+    // Pre-populate assignee_ids with project responsible (owner) if available
+    const defaultAssigneeIds = formData.responsible_id ? [formData.responsible_id] : []
+    
     setCurrentActivity({
       name: translatedName,
       description: translatedDescription,
       budget_amount: predefinedActivity.budget_amount,
       request_subsidy: predefinedActivity.request_subsidy,
+      assignee_ids: defaultAssigneeIds, // Pre-fill with project owner
       tags: predefinedActivity.tagKeys // Store English keys for database compatibility
     })
     
@@ -836,6 +889,22 @@ function ProjectRegisterContent() {
 
   const handleSubmit = async () => {
     if (!validateStep(4)) return
+
+    if (!formData.responsible_id) {
+        toast.error(t('projectRegister.validation.responsiblePersonInvalid') || translations.validation.responsiblePersonRequired)
+      return
+    }
+    
+    // Validate that the responsible user exists in the users list
+    const selectedUser = users.find(u => u.id === formData.responsible_id)
+    if (!selectedUser) {
+      toast.error(t('projectRegister.validation.responsiblePersonInvalid') || translations.validation.responsiblePersonRequired)
+      return
+    }
+    
+
+
+
 
     setIsLoading(true)
     const loadingToast = toast.loading(isEditing ? translations.toast.updatingProject : translations.toast.creatingProject)
@@ -896,8 +965,6 @@ function ProjectRegisterContent() {
         }
         // If both are empty, finalAssigneeIds remains empty array (backend will add creator)
 
-        console.log('Activity:', activity.name, 'assignee_ids:', finalAssigneeIds)
-
         return {
           name: activity.name,
           description: activity.description,
@@ -938,7 +1005,22 @@ function ProjectRegisterContent() {
         location_church_plant: formData.location_church_plant,
         special_budget: formData.special_budget,
         church_id: formData.church_id,
+        church_department_id: formData.church_department_id,
       }
+
+      // DEBUG: Log project owner data before mutation
+      console.log('🔍 Project Creation Debug BEFORE MUTATION:', {
+        title: formData.title,
+        responsible_id: formData.responsible_id,
+        owner_id: variables.owner_id,
+        responsibleUser: users.find(u => u.id === formData.responsible_id),
+        hasOwner: !!formData.responsible_id,
+        isOwnerIdValid: typeof variables.owner_id === 'string' && variables.owner_id.length > 0,
+        totalUsers: users.length,
+        institutionId: institutionId,
+      })
+      
+      console.log('📤 FULL VARIABLES BEING SENT TO BACKEND:', JSON.stringify(variables, null, 2))
 
       // Add event data if registering as event
       if (formData.register_as_event && formData.event) {
@@ -954,13 +1036,41 @@ function ProjectRegisterContent() {
       }
 
       // Execute mutation
-      await createProjectMutation({ variables })
+      const result = await createProjectMutation({ variables })
+
+      // DEBUG: Log mutation result
+      console.log('✅ Project Creation Success AFTER MUTATION:', {
+        fullResult: result,
+        projectId: result?.data?.createProject?.id,
+        projectTitle: result?.data?.createProject?.title,
+        ownerId: result?.data?.createProject?.owner_id,
+        variablesSentToBackend: {
+          owner_id: variables.owner_id,
+          title: variables.title,
+          responsible_id: formData.responsible_id
+        }
+      })
 
       toast.dismiss(loadingToast)
 
-    } catch (error) {
+    } catch (error: any) {
       toast.dismiss(loadingToast)
-      console.error('Failed to create project:', error)
+      console.error('❌ Failed to create project - Full Error:', error)
+      console.error('❌ Error details:', {
+        message: error.message,
+        graphQLErrors: error.graphQLErrors,
+        networkError: error.networkError,
+        extraInfo: error.extraInfo
+      })
+      
+      // Check if error is related to owner field
+      if (error.message?.includes('owner') || error.message?.includes('Owner')) {
+        console.error('🚨 OWNER FIELD ERROR DETECTED:', {
+          formData_responsible_id: formData.responsible_id,
+          variables_owner_id: variables.owner_id,
+          userExists: users.find(u => u.id === formData.responsible_id) ? 'YES' : 'NO'
+        })
+      }
       // Error toast is handled by mutation onError
     } finally {
       setIsLoading(false)
@@ -983,7 +1093,7 @@ function ProjectRegisterContent() {
             departments={departments}
             users={users}
             churches={churches}
-            onChange={(updates) => setFormData({ ...formData, ...updates })}
+            onChange={(updates) => setFormData(prev => ({ ...prev, ...updates }))}
           />
         )
       case translations.steps.activities.title:
@@ -1396,75 +1506,97 @@ function ProjectRegisterContent() {
               <div className="space-y-4">
                 <Label className="flex items-center gap-2 text-base font-medium">
                   <Users className="w-4 h-4 text-muted-foreground" />
-                  {t('projectRegister.activityForm.activityResponsibles')}
+                  {t('projectRegister.activityForm.activityResponsibles')} <span className="text-red-500">*</span>
                 </Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className="w-full justify-between h-auto min-h-[48px] border-2"
-                    >
-                      <div className="flex flex-wrap gap-1.5">
-                        {(currentActivity.assignee_ids && currentActivity.assignee_ids.length > 0) ? (
-                          currentActivity.assignee_ids.map((userId) => {
-                            const user = users?.find((u: any) => u.id === userId)
-                            return user ? (
-                              <Badge key={userId} variant="secondary" className="text-xs">
-                                {user.name}
-                              </Badge>
-                            ) : null
-                          })
-                        ) : (
-                          <span className="text-muted-foreground">{t('projectRegister.activityForm.selectResponsibles')}</span>
-                        )}
+                
+                {/* Hidden UserMultiSelector for dialog functionality */}
+                <div className="hidden">
+                  <UserMultiSelector
+                    ref={userSelectorRef}
+                    availableUsers={users?.map((user: any) => ({
+                      id: user.id,
+                      name: user.name,
+                      email: user.email,
+                      avatar: user.avatar,
+                      role: user.role
+                    })) || []}
+                    selectedUsers={users?.filter((user: any) => 
+                      currentActivity.assignee_ids?.includes(user.id)
+                    ).map((user: any) => ({
+                      id: user.id,
+                      name: user.name,
+                      email: user.email,
+                      avatar: user.avatar,
+                      role: user.role
+                    })) || []}
+                    onUsersChange={handleUsersChange}
+                    buttonLabel={t('projectRegister.activityForm.selectResponsibles')}
+                    dialogTitle={t('projectRegister.activityForm.activityResponsibles')}
+                    searchPlaceholder={t('projectRegister.activityForm.searchUsers')}
+                    activityName={currentActivity.name}
+                    activityType="Atividade do Projeto"
+                    disabled={!users || users.length === 0}
+                  />
+                </div>
+                
+                {/* Avatar Group Display */}
+                {users?.filter((user: any) => 
+                  currentActivity.assignee_ids?.includes(user.id)
+                ).length > 0 ? (
+                  <div 
+                    className="p-3 rounded-lg border bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors group"
+                    onClick={() => {
+                      // Click on the UserMultiSelector trigger button
+                      userSelectorRef.current?.click();
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <UsersAvatarGroup
+                        users={users?.filter((user: any) => 
+                          currentActivity.assignee_ids?.includes(user.id)
+                        ).map((user: any) => ({
+                          id: user.id,
+                          name: user.name,
+                          email: user.email,
+                          avatar: user.avatar,
+                          role: user.role,
+                          initials: user.initials
+                        })) || []}
+                        maxDisplay={4}
+                        size="md"
+                        showLabel={false}
+                        showAddButton={false}
+                      />
+                      <div className="flex items-center gap-1 ml-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                        <Plus className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">
+                          {t('projectRegister.activityForm.clickToEdit') || 'Clique para editar'}
+                        </span>
                       </div>
-                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder={t('projectRegister.activityForm.searchUsers')} />
-                      <CommandEmpty>{t('projectRegister.activityForm.noUsersFound')}</CommandEmpty>
-                      <CommandList>
-                        <CommandGroup>
-                          {users?.map((user: any) => {
-                            const isSelected = currentActivity.assignee_ids?.includes(user.id) || false
-                            return (
-                              <CommandItem
-                                key={user.id}
-                                onSelect={() => {
-                                  const currentAssignees = currentActivity.assignee_ids || []
-                                  const newAssignees = isSelected
-                                    ? currentAssignees.filter(id => id !== user.id)
-                                    : [...currentAssignees, user.id]
-                                  setCurrentActivity({ ...currentActivity, assignee_ids: newAssignees })
-                                }}
-                                className="cursor-pointer"
-                              >
-                                <div className="flex items-center gap-2 flex-1">
-                                  <div className={cn(
-                                    "w-4 h-4 border-2 rounded flex items-center justify-center",
-                                    isSelected ? "bg-primary border-primary" : "border-muted-foreground"
-                                  )}>
-                                    {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
-                                  </div>
-                                  <span>{user.name}</span>
-                                  {user.email && (
-                                    <span className="text-xs text-muted-foreground ml-auto">{user.email}</span>
-                                  )}
-                                </div>
-                              </CommandItem>
-                            )
-                          })}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                    </div>
+                  </div>
+                ) : (
+                  <div 
+                    className="p-3 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/10 cursor-pointer hover:border-muted-foreground/50 transition-colors"
+                    onClick={() => {
+                      // Click on the UserMultiSelector trigger button
+                      userSelectorRef.current?.click();
+                    }}
+                  >
+                    <p className="text-sm text-muted-foreground text-center">
+                      {t('projectRegister.activityForm.addResponsibles') || 'Adicionar responsáveis para a atividade'}
+                    </p>
+                  </div>
+                )}
+                
                 <p className="text-xs text-muted-foreground">
                   {t('projectRegister.activityForm.responsiblesDescription')}
                 </p>
+                {(!currentActivity.assignee_ids || currentActivity.assignee_ids.length === 0) && (
+                  <p className="text-xs text-red-500">
+                    {t('activities.user_selector.minimum_required') || 'Pelo menos um responsável deve ser selecionado'}
+                  </p>
+                )}
               </div>
 
               <Button 
@@ -1496,8 +1628,8 @@ function ProjectRegisterContent() {
     const currentSubsidyPercentage = formData.subsidy_percentage
     
     // Calcular contribuições baseado APENAS nas atividades subsidiadas
-    const institutionContribution = (subsidyTotal * currentSubsidyPercentage) / 100
-    const churchContribution = totalBudget - institutionContribution
+    const requestContribution = (subsidyTotal * currentSubsidyPercentage) / 100
+    const selfContribution = totalBudget - requestContribution
     
     // Handle manual entry calculations - baseado apenas no total das atividades subsidiadas
     const handleManualAmountChange = (value: number) => {
@@ -1622,16 +1754,16 @@ function ProjectRegisterContent() {
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                           <Home className="w-3 h-3 text-blue-600" />
-                          <span className="text-muted-foreground">{t('projectRegister.fundingDistribution.church')}</span>
+                          <span className="text-muted-foreground">{t('projectRegister.fundingDistribution.self')}</span>
                         </div>
-                        <span className="font-medium text-blue-600">€ {churchContribution.toLocaleString()}</span>
+                        <span className="font-medium text-blue-600">€ {selfContribution.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                           <Building className="w-3 h-3 text-green-600" />
-                          <span className="text-muted-foreground">{t('projectRegister.fundingDistribution.institution')}</span>
+                          <span className="text-muted-foreground">{t('projectRegister.fundingDistribution.request')}</span>
                         </div>
-                        <span className="font-medium text-green-600">€ {institutionContribution.toLocaleString()}</span>
+                        <span className="font-medium text-green-600">€ {requestContribution.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -1826,9 +1958,9 @@ function ProjectRegisterContent() {
                       <Badge variant="outline" className="text-xs">
                         {(translations as any).fundingCalculator?.maxPercentageRule?.replace('{{percent}}', FUNDING_POLICIES.max_institution_percent.toString()) || `Máximo ${FUNDING_POLICIES.max_institution_percent}% de contribuição`}
                       </Badge>
-                      {institutionContribution > FUNDING_POLICIES.max_institution_amount && (
+                      {requestContribution > FUNDING_POLICIES.max_institution_amount && (
                         <Badge className="text-xs bg-black text-white hover:bg-black/90">
-                          ⚠️ {t('projectRegister.fundingDistribution.limitExceeded')}: {(translations as any).fundingCalculator?.limitReached || t('projectRegister.fundingDistribution.limitReachedMessage')}
+                          {t('projectRegister.fundingDistribution.limitExceeded')}: {(translations as any).fundingCalculator?.limitReached || t('projectRegister.fundingDistribution.limitReachedMessage')}
                         </Badge>
                       )}
                       {currentSubsidyPercentage > FUNDING_POLICIES.max_institution_percent && !formData.is_special_case && (
@@ -2004,7 +2136,7 @@ function ProjectRegisterContent() {
                           setIsManualEntry(newIsManual)
                           // When switching to manual, populate with current slider values
                           if (newIsManual) {
-                            setManualAmount(institutionContribution)
+                            setManualAmount(requestContribution)
                             setManualPercentage(currentSubsidyPercentage)
                           }
                         }}
@@ -2018,7 +2150,7 @@ function ProjectRegisterContent() {
                         {/* Manual Amount Input */}
                         <div className="space-y-2">
                           <Label className="text-sm font-medium">
-                            {t('projectRegister.fundingDistribution.institutionContributionValue')}
+                            {t('projectRegister.fundingDistribution.requestContributionValue')}
                           </Label>
                           <div className="flex gap-2">
                             <div className="relative flex-1">
@@ -2156,12 +2288,12 @@ function ProjectRegisterContent() {
 
               {/* Detailed Results Display */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
-                {/* Church Contribution Card */}
+                {/* Self Contribution Card */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div className="flex items-center gap-2">
                       <Home className="w-4 h-4 text-blue-600" />
-                      <CardTitle className="text-sm font-medium">{t('projectRegister.fundingDistribution.churchContribution')}</CardTitle>
+                      <CardTitle className="text-sm font-medium">{t('projectRegister.fundingDistribution.selfContribution')}</CardTitle>
                     </div>
                     <Tooltip>
                       <TooltipTrigger>
@@ -2174,10 +2306,10 @@ function ProjectRegisterContent() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-xl sm:text-2xl font-bold text-blue-600">
-                      € {churchContribution.toLocaleString()}
+                      € {selfContribution.toLocaleString()}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {Math.round(totalBudget > 0 ? (churchContribution / totalBudget) * 100 : 0)}% {t('projectRegister.fundingDistribution.ofTotalBudget')}
+                      {Math.round(totalBudget > 0 ? (selfContribution / totalBudget) * 100 : 0)}% {t('projectRegister.fundingDistribution.ofTotalBudget')}
                     </p>
                     <div className="text-xs text-muted-foreground mt-2">
                       {t('projectRegister.fundingDistribution.includesNonSubsidized')}
@@ -2185,12 +2317,12 @@ function ProjectRegisterContent() {
                   </CardContent>
                 </Card>
                 
-                {/* Institution Contribution Card */}
+                {/* Request Contribution Card */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div className="flex items-center gap-2">
                       <Building className="w-4 h-4 text-green-600" />
-                      <CardTitle className="text-sm font-medium">{t('projectRegister.fundingDistribution.institutionContribution')}</CardTitle>
+                      <CardTitle className="text-sm font-medium">{t('projectRegister.fundingDistribution.requestContribution')}</CardTitle>
                     </div>
                     <Tooltip>
                       <TooltipTrigger>
@@ -2203,7 +2335,7 @@ function ProjectRegisterContent() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-xl sm:text-2xl font-bold text-green-600">
-                      € {institutionContribution.toLocaleString()}
+                      € {requestContribution.toLocaleString()}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {Math.round(currentSubsidyPercentage)}% {t('projectRegister.fundingDistribution.overSubsidizedActivities')}
@@ -2279,8 +2411,8 @@ function ProjectRegisterContent() {
   const renderReviewStep = () => {
     // Cálculos para os highlights
     const totalBudget = formData.total_budget
-    const churchContribution = formData.church_contribution
-    const institutionContribution = formData.institution_contribution
+    const selfContribution = formData.church_contribution
+    const requestContribution = formData.institution_contribution
     
     const subsidizedActivities = formData.activities.filter(a => a.request_subsidy)
     const nonSubsidizedActivities = formData.activities.filter(a => !a.request_subsidy)
@@ -2328,16 +2460,16 @@ function ProjectRegisterContent() {
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <Home className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-muted-foreground">{t('projectRegister.review.church')}</span>
+                        <span className="text-muted-foreground">{t('projectRegister.review.self')}</span>
                       </div>
-                      <span className="font-medium text-foreground">€ {churchContribution.toLocaleString()}</span>
+                      <span className="font-medium text-foreground">€ {selfContribution.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <Building className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-muted-foreground">{t('projectRegister.review.institution')}</span>
+                        <span className="text-muted-foreground">{t('projectRegister.review.request')}</span>
                       </div>
-                      <span className="font-medium text-foreground">€ {institutionContribution.toLocaleString()}</span>
+                      <span className="font-medium text-foreground">€ {requestContribution.toLocaleString()}</span>
                     </div>
                   </div>
                   
@@ -2412,11 +2544,11 @@ function ProjectRegisterContent() {
                       <Home className="w-5 h-5 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">{translations.summary.church}</p>
-                      <p className="text-2xl font-bold text-foreground">€ {churchContribution.toLocaleString()}</p>
+                      <p className="text-sm text-muted-foreground">{translations.summary.selfContribution}</p>
+                      <p className="text-2xl font-bold text-foreground">€ {selfContribution.toLocaleString()}</p>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">{Math.round((churchContribution / totalBudget) * 100)}% do total</p>
+                  <p className="text-xs text-muted-foreground">{Math.round((selfContribution / totalBudget) * 100)}% do total</p>
                 </CardContent>
               </Card>
 
@@ -2427,11 +2559,11 @@ function ProjectRegisterContent() {
                       <Building className="w-5 h-5 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">{translations.summary.institution}</p>
-                      <p className="text-2xl font-bold text-foreground">€ {institutionContribution.toLocaleString()}</p>
+                      <p className="text-sm text-muted-foreground">{translations.summary.requestContribution}</p>
+                      <p className="text-2xl font-bold text-foreground">€ {requestContribution.toLocaleString()}</p>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">{Math.round((institutionContribution / totalBudget) * 100)}% do total</p>
+                  <p className="text-xs text-muted-foreground">{Math.round((requestContribution / totalBudget) * 100)}% do total</p>
                 </CardContent>
               </Card>
             </div>
@@ -2528,8 +2660,8 @@ function ProjectRegisterContent() {
                       <TrendingUp className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">{t('projectRegister.fundingDistribution.maxPercentageLabel')}</span>
                     </div>
-                    <Badge variant={isChurchPlanting || isSpecialProject || institutionContribution <= totalBudget * (FUNDING_POLICIES.max_institution_percent / 100) ? "default" : "destructive"}>
-                      {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? t('projectRegister.fundingDistribution.statusSpecial') : institutionContribution <= totalBudget * (FUNDING_POLICIES.max_institution_percent / 100) ? t('projectRegister.fundingDistribution.statusCompliant') : t('projectRegister.fundingDistribution.statusExceeded')}
+                    <Badge variant={isChurchPlanting || isSpecialProject || requestContribution <= totalBudget * (FUNDING_POLICIES.max_institution_percent / 100) ? "default" : "destructive"}>
+                      {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? t('projectRegister.fundingDistribution.statusSpecial') : requestContribution <= totalBudget * (FUNDING_POLICIES.max_institution_percent / 100) ? t('projectRegister.fundingDistribution.statusCompliant') : t('projectRegister.fundingDistribution.statusExceeded')}
                     </Badge>
                   </div>
 
@@ -2538,8 +2670,8 @@ function ProjectRegisterContent() {
                       <Banknote className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">{t('projectRegister.fundingDistribution.maxValueLabel')}</span>
                     </div>
-                    <Badge variant={isChurchPlanting || isSpecialProject || institutionContribution <= FUNDING_POLICIES.max_institution_amount ? "default" : "destructive"}>
-                       {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? t('projectRegister.fundingDistribution.statusSpecial') : institutionContribution <= FUNDING_POLICIES.max_institution_amount ? t('projectRegister.fundingDistribution.statusCompliant') : t('projectRegister.fundingDistribution.statusExceeded')}
+                    <Badge variant={isChurchPlanting || isSpecialProject || requestContribution <= FUNDING_POLICIES.max_institution_amount ? "default" : "destructive"}>
+                       {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? t('projectRegister.fundingDistribution.statusSpecial') : requestContribution <= FUNDING_POLICIES.max_institution_amount ? t('projectRegister.fundingDistribution.statusCompliant') : t('projectRegister.fundingDistribution.statusExceeded')}
                     </Badge>
                   </div>
 
@@ -2548,8 +2680,8 @@ function ProjectRegisterContent() {
                       <Home className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">{t('projectRegister.fundingDistribution.minimumChurch')}</span>
                     </div>
-                    <Badge variant={isChurchPlanting || isSpecialProject || churchContribution >= totalBudget * (FUNDING_POLICIES.min_church_percent / 100) ? "default" : "destructive"}>
-                       {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? t('projectRegister.fundingDistribution.statusSpecial') : churchContribution >= totalBudget * (FUNDING_POLICIES.min_church_percent / 100) ? t('projectRegister.fundingDistribution.statusCompliant') : t('projectRegister.fundingDistribution.statusInsufficient')}
+                    <Badge variant={isChurchPlanting || isSpecialProject || selfContribution >= totalBudget * (FUNDING_POLICIES.min_church_percent / 100) ? "default" : "destructive"}>
+                       {isChurchPlanting ? "✓ Church Planting" : isSpecialProject ? t('projectRegister.fundingDistribution.statusSpecial') : selfContribution >= totalBudget * (FUNDING_POLICIES.min_church_percent / 100) ? t('projectRegister.fundingDistribution.statusCompliant') : t('projectRegister.fundingDistribution.statusInsufficient')}
                     </Badge>
                   </div>
                 </div>
@@ -2566,14 +2698,14 @@ function ProjectRegisterContent() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t('projectRegister.fundingCalculator.subsidyRequested')}</span>
-                      <span className="font-medium text-foreground">€ {institutionContribution.toLocaleString()}</span>
+                      <span className="font-medium text-foreground">€ {requestContribution.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t('projectRegister.fundingCalculator.remainingCapacity')}</span>
                       <span className="font-medium">
                         € {Math.max(0, 
                             ((isChurchPlanting || isSpecialProject) ? totalBudget : Math.min(FUNDING_POLICIES.max_institution_amount, totalBudget * (FUNDING_POLICIES.max_institution_percent / 100))) 
-                            - institutionContribution
+                            - requestContribution
                           ).toLocaleString()}
                       </span>
                     </div>
@@ -2787,7 +2919,7 @@ function ProjectRegisterContent() {
                 <Button 
                   onClick={handleNext}
                   className="gap-2"
-                  disabled={isLoading}
+                  disabled={isLoading || (currentStep === 1 && formData._isStepValid === false)}
                 >
                   <span className="hidden sm:inline">{translations.buttons.next}</span>
                   <ChevronRight className="w-4 h-4" />
@@ -2856,9 +2988,31 @@ function ProjectRegisterLoading() {
 
 // Main component with Suspense wrapper
 export default function ProjectRegisterPage() {
+  const { i18n } = useTranslation()
+  const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+  
   return (
-    <Suspense fallback={<ProjectRegisterLoading />}>
-      <ProjectRegisterContent />
-    </Suspense>
+    <WithPermission 
+      requiredPermissions={[PermissionResolverName.CreateProject]}
+      fallback={
+        <AppLayout>
+          <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-foreground mb-2">{t.accessDenied.title}</h2>
+              <p className="text-muted-foreground mb-4">
+                {t.accessDenied.noPermission}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {t.accessDenied.contactAdmin}
+              </p>
+            </div>
+          </div>
+        </AppLayout>
+      }
+    >
+      <Suspense fallback={<ProjectRegisterLoading />}>
+        <ProjectRegisterContent />
+      </Suspense>
+    </WithPermission>
   )
 }

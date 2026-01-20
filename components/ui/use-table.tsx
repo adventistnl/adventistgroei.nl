@@ -61,6 +61,38 @@ interface FilterConfig {
   options: { label: string; value: string }[]
 }
 
+// Search Bar Component - Extraído para evitar re-criação e perda de foco
+const SearchBar = React.memo(({ 
+  globalFilter, 
+  setGlobalFilter, 
+  searchPlaceholder,
+  className = "" 
+}: { 
+  globalFilter: string
+  setGlobalFilter: (value: string) => void
+  searchPlaceholder: string
+  className?: string 
+}) => (
+  <div className={`relative ${className}`}>
+    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+    <Input
+      placeholder={searchPlaceholder}
+      value={globalFilter}
+      onChange={(e) => setGlobalFilter(e.target.value)}
+      className="pl-10 border-2 focus:border-primary"
+    />
+    {globalFilter && (
+      <Button
+        variant="ghost"
+        onClick={() => setGlobalFilter("")}
+        className="absolute right-1 top-1/2 h-6 w-6 -translate-y-1/2 p-0 hover:bg-transparent border border-transparent hover:border-border rounded"
+      >
+        <X className="h-3 w-3" />
+      </Button>
+    )}
+  </div>
+))
+
 interface UseTableProps<TData, TValue> {
   data: TData[]
   columns: ColumnDef<TData, TValue>[]
@@ -80,6 +112,8 @@ interface UseTableProps<TData, TValue> {
   batchActions?: BatchAction[] // Ações adicionais do painel
   batchPrimaryAction?: BatchAction // Ação primária do painel
   batchSummary?: React.ReactNode // Sumário customizado
+  translationNamespace?: string // Namespace para traduções do BatchActionsPanel
+  fillHeight?: boolean // Se true, ocupa 100% da altura do container
   translations?: {
     search?: string
     columns?: string
@@ -112,6 +146,8 @@ export function UseTable<TData, TValue>({
   batchActions = [],
   batchPrimaryAction,
   batchSummary,
+  translationNamespace = "projects", // Default namespace para projetos
+  fillHeight = false,
   translations,
 }: UseTableProps<TData, TValue>) {
   const { t } = useTranslation()
@@ -241,39 +277,38 @@ export function UseTable<TData, TValue>({
   React.useEffect(() => {
     const updateColumnVisibility = () => {
       const newVisibility = { ...columnVisibility }
-      const dataColumns = columns.filter(col => col.id && col.id !== 'select' && col.id !== 'actions')
       
-      if (window.innerWidth < 480) {
-        // Mobile muito pequeno: apenas actions (sem colunas de dados)
-        dataColumns.forEach((col) => {
-          newVisibility[col.id!] = false
-        })
-      } else if (window.innerWidth < 640) {
-        // Mobile pequeno: apenas primeira coluna de dados
-        dataColumns.forEach((col, index) => {
-          newVisibility[col.id!] = index === 0
-        })
-      } else if (window.innerWidth < 768) {
-        // Mobile grande: primeira e segunda coluna
-        dataColumns.forEach((col, index) => {
-          newVisibility[col.id!] = index <= 1
-        })
-      } else if (window.innerWidth < 1024) {
-        // Tablet: primeira, segunda e terceira coluna
-        dataColumns.forEach((col, index) => {
-          newVisibility[col.id!] = index <= 2
-        })
-      } else if (window.innerWidth < 1280) {
-        // Desktop pequeno: primeira, segunda, terceira e quarta coluna
-        dataColumns.forEach((col, index) => {
-          newVisibility[col.id!] = index <= 3
-        })
-      } else {
-        // Desktop grande: todas as colunas
-        dataColumns.forEach((col) => {
-          newVisibility[col.id!] = true
-        })
-      }
+      columns.forEach((col) => {
+        if (!col.id || col.id === 'select' || col.id === 'actions') return
+        
+        const responsive = col.meta?.responsive
+        
+        if (responsive === 'always') {
+          newVisibility[col.id] = true
+        } else if (responsive === 'desktop') {
+          newVisibility[col.id] = window.innerWidth >= 768
+        } else if (responsive === 'tablet') {
+          newVisibility[col.id] = window.innerWidth >= 640
+        } else {
+          // Fallback para lógica antiga baseada em índices se não houver meta.responsive
+          const dataColumns = columns.filter(c => c.id && c.id !== 'select' && c.id !== 'actions')
+          const index = dataColumns.findIndex(c => c.id === col.id)
+          
+          if (window.innerWidth < 480) {
+            newVisibility[col.id] = false
+          } else if (window.innerWidth < 640) {
+            newVisibility[col.id] = index === 0
+          } else if (window.innerWidth < 768) {
+            newVisibility[col.id] = index <= 1
+          } else if (window.innerWidth < 1024) {
+            newVisibility[col.id] = index <= 2
+          } else if (window.innerWidth < 1280) {
+            newVisibility[col.id] = index <= 3
+          } else {
+            newVisibility[col.id] = true
+          }
+        }
+      })
       
       setColumnVisibility(newVisibility)
     }
@@ -300,34 +335,21 @@ export function UseTable<TData, TValue>({
     }))
   }
 
-  // Componente de Search Bar
-  const SearchBar = ({ className: searchClassName = "" }: { className?: string }) => (
-    <div className={`relative ${searchClassName}`}>
-      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-      <Input
-        placeholder={translations?.search || t('common.search') || "Search..."}
-        value={globalFilter}
-        onChange={(e) => setGlobalFilter(e.target.value)}
-        className="pl-10 border-2 focus:border-primary"
-      />
-      {globalFilter && (
-        <Button
-          variant="ghost"
-          onClick={() => setGlobalFilter("")}
-          className="absolute right-1 top-1/2 h-6 w-6 -translate-y-1/2 p-0 hover:bg-transparent border border-transparent hover:border-border rounded"
-        >
-          <X className="h-3 w-3" />
-        </Button>
-      )}
-    </div>
-  )
+  const searchPlaceholder = translations?.search || t('common.search') || "Search..."
 
   return (
-    <div className={`w-full h-full max-w-screen space-y-4 bg-transparent ${className}`}>
+    <div className={`w-full h-full max-w-screen space-y-4 bg-transparent ${fillHeight ? 'h-full flex flex-col' : ''} ${className}`}>
       {/* Top Bar - Conditionally Visible */}
       <div className="flex flex-col gap-4">
         {/* Search Bar - Conditionally rendered */}
-        {showSearch && <SearchBar className="w-full" />}
+        {showSearch && (
+          <SearchBar 
+            globalFilter={globalFilter}
+            setGlobalFilter={setGlobalFilter}
+            searchPlaceholder={searchPlaceholder}
+            className="w-full"
+          />
+        )}
         
         {/* Controls Row */}
         <div className="flex gap-3 md:flex-row md:items-center justify-between">
@@ -429,6 +451,7 @@ export function UseTable<TData, TValue>({
           editFields={batchEditFields}
           actions={batchActions}
           primaryAction={batchPrimaryAction}
+          translationNamespace={translationNamespace}
         />
       )}
 
@@ -522,7 +545,7 @@ export function UseTable<TData, TValue>({
                             }`}
                           >
                             {isSelectCell ? (
-                              <div className={`transition-opacity duration-150 ${
+                              <div className={`transition-opacity duration-150 w-3 ${
                                 row.getIsSelected() || hoveredRowId === row.id ? 'opacity-100' : 'opacity-50'
                               }`}>
                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}

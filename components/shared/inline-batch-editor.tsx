@@ -19,6 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useTranslation } from "react-i18next"
 
 export interface BatchEditField {
   id: string
@@ -30,19 +31,24 @@ export interface BatchEditField {
   getBadgeVariant?: (value: string) => string
   showLabel?: boolean
   infoTooltip?: string
+  translationKey?: string // Key for translating field labels and options
+  translationNamespace?: string // Namespace for translations
 }
 
 interface InlineBatchEditorProps {
   fields: BatchEditField[]
   maxVisibleFields?: number
   className?: string
+  translationNamespace?: string // Default namespace for field translations
 }
 
 export function InlineBatchEditor({
   fields,
   maxVisibleFields = 3,
-  className = ""
+  className = "",
+  translationNamespace = "dynamicFields"
 }: InlineBatchEditorProps) {
+  const { t } = useTranslation()
   const [visibleFields, setVisibleFields] = useState<BatchEditField[]>([])
   const [overflowFields, setOverflowFields] = useState<BatchEditField[]>([])
   const containerRef = useRef<HTMLDivElement>(null)
@@ -105,8 +111,27 @@ export function InlineBatchEditor({
   }
 
   const renderField = (field: BatchEditField, showLabel = true) => {
+    // Get translated label and options
+    const getFieldTranslation = (key: string, fallback: string) => {
+      const namespace = field.translationNamespace || translationNamespace
+      return t(`${namespace}.${key}`, fallback)
+    }
+
+    const translatedLabel = field.translationKey 
+      ? getFieldTranslation(field.translationKey, field.label)
+      : field.label
+
+    const translatedOptions = field.options?.map(option => ({
+      ...option,
+      label: field.translationKey && option.value 
+        ? getFieldTranslation(`${field.translationKey}Options.${option.value}`, option.label)
+        : option.label
+    }))
+
     if (field.type === 'select') {
       const shouldShowLabel = field.showLabel !== false
+      const placeholder = getFieldTranslation('placeholders.selectOption', 'Select an option')
+      
       return (
         <div key={field.id} className="flex items-center gap-2">
           <Select 
@@ -114,10 +139,10 @@ export function InlineBatchEditor({
             onValueChange={(value) => field.onChange(value)}
           >
             <SelectTrigger className="w-[160px] h-8 text-sm">
-              <SelectValue placeholder={field.label} />
+              <SelectValue placeholder={translatedLabel} />
             </SelectTrigger>
             <SelectContent>
-              {field.options?.map(option => (
+              {translatedOptions?.map(option => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
@@ -129,7 +154,7 @@ export function InlineBatchEditor({
               variant="outline"
               className={`text-xs ${getBadgeClassName(field, field.value)}`}
             >
-              {field.options?.find(opt => opt.value === field.value)?.label || field.value}
+              {translatedOptions?.find(opt => opt.value === field.value)?.label || field.value}
             </Badge>
           )}
           {!shouldShowLabel && field.infoTooltip && (
@@ -156,13 +181,15 @@ export function InlineBatchEditor({
 
     if (field.type === 'switch') {
       const shouldShowLabel = field.showLabel !== false
-      const tooltipText = field.infoTooltip || 'Ative esta opção para marcar as atividades como subsidiadas. Atividades subsidiadas podem receber apoio financeiro da instituição.'
+      const defaultTooltip = getFieldTranslation('tooltips.subsidized', 
+        'Enable this option to mark as subsidized. Subsidized activities may receive financial support from the institution.')
+      const tooltipText = field.infoTooltip || defaultTooltip
       
       return (
         <div key={field.id} className="flex items-center gap-2">
           {shouldShowLabel && (
             <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
-              {field.label}:
+              {translatedLabel}:
             </Label>
           )}
           <Button
@@ -219,12 +246,12 @@ export function InlineBatchEditor({
               className="h-7 gap-1.5 text-xs text-gray-700 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-800 px-2"
             >
               <MoreHorizontal className="h-3 w-3" />
-              More
+              {t(`${translationNamespace}.inlineBatchEditor.more`, 'More')}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80 p-4 space-y-3">
             <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Mais Campos
+              {t(`${translationNamespace}.inlineBatchEditor.moreFields`, 'More Fields')}
             </div>
             {overflowFields.map(field => (
               <div key={field.id} className="py-2">

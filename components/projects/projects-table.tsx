@@ -40,9 +40,11 @@ import { ptBR, enUS, nl } from "date-fns/locale"
 export interface ProjectTableData {
   id: string
   department_id: string
+  church_department_id?: string
   title: string
   description: string
   budget: number
+  subsidized_budget?: number
   is_private: boolean
   required_volunteers: boolean
   start_at: string
@@ -90,6 +92,18 @@ export interface ProjectTableData {
     name: string
     email: string
   }
+  owner_id?: string // Direct owner_id field from API
+  church_id?: string // Direct church_id field from API
+  church_department?: {
+    id: string
+    name: string
+    description?: string
+    church?: {
+      id: string
+      name: string
+    }
+  }
+  activitiesData?: any[] // Full activities data with assignees for collaborators column
 }
 
 interface ProjectsTableProps {
