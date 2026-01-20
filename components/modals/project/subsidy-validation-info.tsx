@@ -114,28 +114,33 @@ export function SubsidyValidationInfo({
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
-          "w-full flex items-center gap-2 p-2 rounded-lg border transition-all cursor-pointer",
+          "w-full flex sm:items-center items-start gap-2 p-2 rounded-lg border transition-all cursor-pointer",
           getContainerColors()
         )}
       >
-        <Info className="w-4 h-4 text-gray-500 flex-shrink-0" />
-        <span className="text-xs font-medium text-gray-700 flex-1 text-left">
-          {translations.title}
-        </span>
-        
-        {/* Status Badge */}
-        <Badge 
-          variant="outline" 
-          className={cn("text-xs flex items-center gap-1", getBadgeColors())}
-        >
-          <StatusIcon className="w-3 h-3" />
-          {getStatusText()}
-        </Badge>
+        <div className="flex-1 flex justify-between sm:flex-row sm:items-center gap-2 text-left">
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Info className="w-4 h-4 text-gray-500 flex-shrink-0" />
+            <span className="text-xs font-medium text-gray-700 flex-1 text-left">
+              {translations.title}
+            </span>
+          </div>
+
+          {/* Status Badge */}
+          <Badge 
+            variant="outline" 
+            className={cn("text-xs flex items-center gap-1 w-full sm:w-auto justify-center sm:justify-start", getBadgeColors())}
+          >
+            <StatusIcon className="w-3 h-3" />
+            {getStatusText()}
+          </Badge>
+        </div>
+
         
         {/* Chevron */}
         <ChevronDown 
           className={cn(
-            "w-4 h-4 text-gray-500 transition-transform flex-shrink-0",
+            "w-4 h-4 text-gray-500 transition-transform flex-shrink-0 self-center",
             isExpanded && "transform rotate-180"
           )} 
         />

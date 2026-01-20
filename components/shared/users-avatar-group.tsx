@@ -22,6 +22,7 @@ export interface UserAvatarData {
   avatar?: string
   role?: string
   initials?: string
+  isOwner?: boolean
 }
 
 interface UsersAvatarGroupProps {
@@ -35,6 +36,7 @@ interface UsersAvatarGroupProps {
   onAddUser?: () => void
   showAddButton?: boolean
   onShowAllUsers?: () => void
+  ownerUserId?: string // ID of the project owner for special styling
 }
 
 const sizeConfig = {
@@ -92,6 +94,7 @@ export function UsersAvatarGroup({
   onAddUser,
   showAddButton = true,
   onShowAllUsers,
+  ownerUserId,
 }: UsersAvatarGroupProps) {
   const config = sizeConfig[size]
   const displayedUsers = users.slice(0, maxDisplay)
@@ -150,39 +153,57 @@ export function UsersAvatarGroup({
       <div className="flex items-center gap-2">
         {/* Avatar stack */}
         <div className="flex -space-x-2">
-          {displayedUsers.map((user) => (
-            <TooltipProvider key={user.id} delayDuration={200}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Avatar 
-                    className={cn(
-                      config.avatar,
-                      "border-2 border-background cursor-pointer hover:scale-110 transition-transform hover:z-50"
-                    )}
-                  >
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback className={cn(
-                      config.fontSize,
-                      "bg-gray-600 dark:bg-gray-700 text-white font-semibold"
-                    )}>
-                      {getInitials(user)}
-                    </AvatarFallback>
-                  </Avatar>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="text-xs max-w-[200px]" sideOffset={5}>
-                  <div className="space-y-1">
-                    <p className="font-medium">{user.name}</p>
-                    {user.email && (
-                      <p className="text-gray-400 text-[10px]">{user.email}</p>
-                    )}
-                    {user.role && (
-                      <p className="text-gray-400 text-[10px] capitalize">{user.role}</p>
-                    )}
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ))}
+          {displayedUsers.map((user) => {
+            const isOwner = user.id === ownerUserId
+            
+            return (
+              <TooltipProvider key={user.id} delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Avatar 
+                      className={cn(
+                        config.avatar,
+                        "border-2 cursor-pointer hover:scale-110 transition-transform hover:z-50",
+                        isOwner 
+                          ? "border-black dark:border-white border-4 ring-2 ring-yellow-400 dark:ring-yellow-300" 
+                          : "border-background"
+                      )}
+                    >
+                      <AvatarImage src={user.avatar} alt={user.name} />
+                      <AvatarFallback className={cn(
+                        config.fontSize,
+                        isOwner 
+                          ? "bg-yellow-600 dark:bg-yellow-500 text-white font-bold" 
+                          : "bg-gray-600 dark:bg-gray-700 text-white font-semibold"
+                      )}>
+                        {getInitials(user)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs max-w-[200px]" sideOffset={5}>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{user.name}</p>
+                        {isOwner && (
+                          <span className="bg-yellow-500 text-white text-[8px] px-1.5 py-0.5 rounded font-bold uppercase">
+                            Owner
+                          </span>
+                        )}
+                      </div>
+                      {user.email && (
+                        <p className="text-gray-400 text-[10px]">{user.email}</p>
+                      )}
+                      {user.role && (
+                        <p className="text-gray-400 text-[10px] capitalize">
+                          {isOwner ? 'Project Owner' : user.role}
+                        </p>
+                      )}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )
+          })}
 
           {/* Overflow indicator */}
           {remainingCount > 0 && (

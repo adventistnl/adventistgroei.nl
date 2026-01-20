@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useMemo, useCallback } from "react"
-import { X, Upload, FileText, DollarSign, Building2, Church, Trash2, Info, AlertCircle, Edit2, Check, Zap, ChevronRight, Plus, ChevronsUpDown, Loader2 } from "lucide-react"
+import { X, Upload, FileText, DollarSign, Building2, Church, Trash2, Info, AlertCircle, Edit2, Check, Zap, ChevronRight, Plus, ChevronsUpDown, Loader2, Layers } from "lucide-react"
 import { useSubsidyReceipts } from "@/hooks/use-subsidy-receipts"
 import { ValidationBadgesCarousel, type ValidationBadgeData } from "@/components/shared/validation-badges-carousel"
 import { SubsidyValidationInfo } from "./subsidy-validation-info"
@@ -20,6 +20,7 @@ import { useCurrency } from "@/contexts/currency-context"
 import { useTranslation } from "react-i18next"
 import { subsidyRequestTranslations } from "@/lib/translations/subsidy-request"
 import toast from "react-hot-toast"
+import { useInstitution } from "@/contexts/institution-context"
 import type { ProjectActivityData } from "@/components/projects/project-activities-table"
 import { SelectActivitiesModal } from "./select-activities-modal"
 
@@ -65,10 +66,12 @@ interface RequestSubsidyModalProps {
   institutionId?: string
   departmentId?: string
   churchId?: string
+  churchDepartmentId?: string
   // Display names
   institutionName?: string
   departmentName?: string
   churchName?: string
+  churchDepartmentName?: string
   /** Subsidy request ID (required for edit mode to upload files) */
   subsidyRequestId?: string
   onSubmit: (data: SubsidyRequestData) => Promise<string | void> // Returns subsidy ID in create mode
@@ -100,9 +103,11 @@ export function RequestSubsidyModal({
   institutionId = "",
   departmentId = "",
   churchId = "",
+  churchDepartmentId = "",
   institutionName = "",
   departmentName = "",
   churchName = "",
+  churchDepartmentName = "",
   subsidyRequestId,
   onSubmit,
   allActivities = [],
@@ -114,6 +119,48 @@ export function RequestSubsidyModal({
   const { formatCurrency, selectedCurrency } = useCurrency()
   const { t, i18n } = useTranslation()
   const [dragActive, setDragActive] = useState(false)
+  
+  // Usar useInstitution para obter dados da instituição (mesmo processo do project-data-step)
+  const { currentInstitutionData } = useInstitution()
+  
+  // Extrair church departments usando o mesmo processo do project-data-step
+  const allChurchDepartments = useMemo(() => {
+    const institutionChurches = currentInstitutionData?.churches || []
+    return institutionChurches.flatMap(church => 
+      church.departments?.map(department => ({ 
+        ...department, 
+        church_id: church.id,
+        church_name: church.name 
+      })) || []
+    )
+  }, [currentInstitutionData?.churches])
+  
+  // Buscar church_department pelo churchDepartmentId passado via props
+  const resolvedChurchDepartment = useMemo(() => {
+    if (!churchDepartmentId) return null
+    return allChurchDepartments.find(dept => dept.id === churchDepartmentId)
+  }, [churchDepartmentId, allChurchDepartments])
+  
+  // Usar o nome do church_department encontrado, ou o passado via props como fallback
+  const finalChurchDepartmentName = resolvedChurchDepartment?.name || churchDepartmentName
+  
+  // Debug: Log church department resolution
+  React.useEffect(() => {
+    if (isOpen && churchDepartmentId) {
+      console.log('🏛️ [RequestSubsidyModal] Church Department Resolution:', {
+        churchDepartmentIdFromProps: churchDepartmentId,
+        churchDepartmentNameFromProps: churchDepartmentName,
+        allChurchDepartmentsCount: allChurchDepartments.length,
+        resolvedChurchDepartment: resolvedChurchDepartment ? {
+          id: resolvedChurchDepartment.id,
+          name: resolvedChurchDepartment.name,
+          church_id: resolvedChurchDepartment.church_id,
+          church_name: resolvedChurchDepartment.church_name
+        } : null,
+        finalChurchDepartmentName
+      })
+    }
+  }, [isOpen, churchDepartmentId, churchDepartmentName, allChurchDepartments, resolvedChurchDepartment, finalChurchDepartmentName])
   const [currentActivityIndex, setCurrentActivityIndex] = useState(0)
   const [isEditingValues, setIsEditingValues] = useState(false)
   const [tempRequestedAmount, setTempRequestedAmount] = useState(0)
@@ -122,6 +169,28 @@ export function RequestSubsidyModal({
   const [availableActivities, setAvailableActivities] = useState<ProjectActivityData[]>([])
   const [pendingFiles, setPendingFiles] = useState<Map<string, File>>(new Map()) // Files pending upload (create mode)
   const [isSubmitting, setIsSubmitting] = useState(false) // Loading state for submission
+
+  // Debug: Log props received
+  React.useEffect(() => {
+    if (isOpen) {
+      console.log('💰 [RequestSubsidyModal] Props received:', {
+        mode,
+        projectId,
+        institutionId,
+        institutionName,
+        departmentId,
+        departmentName,
+        churchId,
+        churchName,
+        churchDepartmentId,
+        churchDepartmentNameFromProps: churchDepartmentName,
+        finalChurchDepartmentName,
+        selectedActivitiesCount: selectedActivities.length,
+        subsidyRequestId,
+        availableBudget
+      })
+    }
+  }, [isOpen, mode, projectId, institutionId, institutionName, departmentId, departmentName, churchId, churchName, churchDepartmentId, churchDepartmentName, finalChurchDepartmentName, selectedActivities.length, subsidyRequestId, availableBudget])
 
   // Subsidy receipts hook for file uploads (only active in edit mode)
   const {
@@ -599,7 +668,7 @@ export function RequestSubsidyModal({
           console.log('✅ [Create] All files uploaded successfully')
         }
         
-        toast.success(translations.success?.created || "Solicitação criada")
+        toast.success(translations.success.created)
         setPendingFiles(new Map())
         onClose()
       } catch (error) {
@@ -635,18 +704,18 @@ export function RequestSubsidyModal({
       style={{ pointerEvents: 'auto' }}
     >
       {/* Modal Container */}
-      <div className="relative w-[65vw] h-[85vh] bg-white rounded-lg shadow-xl animate-in zoom-in-95 duration-300 flex flex-col overflow-hidden border border-gray-200">
+      <div className="relative w-[95vw] sm:w-[85vw] md:w-[75vw] lg:w-[65vw] h-[90vh] sm:h-[85vh] bg-white rounded-lg shadow-xl animate-in zoom-in-95 duration-300 flex flex-col overflow-hidden border border-gray-200">
         
         {/* Header */}
         <div className="border-b border-gray-200 bg-white">
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-4 h-4 text-gray-700" />
+          <div className="flex items-center justify-between p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-gray-700" />
               </div>
-              <div>
-                <h1 className="text-lg font-semibold text-gray-900">{translations.title}</h1>
-                <p className="text-sm text-gray-500">
+              <div className="min-w-0">
+                <h1 className="text-sm sm:text-lg font-semibold text-gray-900 truncate">{translations.title}</h1>
+                <p className="text-xs sm:text-sm text-gray-500 truncate">
                   {formData.items.length === 1 
                     ? translations.selectedActivities.replace('{{count}}', formData.items.length.toString())
                     : translations.selectedActivities_plural.replace('{{count}}', formData.items.length.toString())
@@ -659,37 +728,37 @@ export function RequestSubsidyModal({
               onClick={onClose}
               variant="ghost"
               size="sm"
-              className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+              className="h-6 w-6 sm:h-8 sm:w-8 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100 flex-shrink-0"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>
           </div>
 
           {/* Summary Bar */}
-          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-            <div className="grid grid-cols-3 gap-4">
+          <div className="px-3 sm:px-4 py-2 sm:py-3 border-b border-gray-200 bg-gray-50">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
               {/* Total Requested */}
-              <div className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-gray-600" />
-                <div>
-                  <p className="text-xs text-gray-500">{translations.summary.totalRequested}</p>
-                  <p className="text-sm font-bold text-gray-900">{formatCurrency(totalRequestedAmount)}</p>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-500 truncate">{translations.summary.totalRequested}</p>
+                  <p className="text-xs sm:text-sm font-bold text-gray-900 truncate">{formatCurrency(totalRequestedAmount)}</p>
                 </div>
               </div>
 
               {/* Institution */}
-              <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-gray-600" />
-                <div>
-                  <p className="text-xs text-gray-500">{translations.summary.institution}</p>
-                  <p className="text-sm font-semibold text-gray-900">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Building2 className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-500 truncate">{translations.summary.institution}</p>
+                  <p className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
                     {institutionName || translations.status.notInformed}
                   </p>
                 </div>
               </div>
 
-              {/* Department (if applicable) */}
-              {departmentId && (
+              {/* Department (if applicable - for institutional projects) */}
+              {departmentId && !churchId && (
                 <div className="flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-gray-600" />
                   <div>
@@ -702,21 +771,49 @@ export function RequestSubsidyModal({
               )}
 
               {/* Church */}
-              <div className="flex items-center gap-2">
-                <Church className="w-4 h-4 text-gray-600" />
-                <div>
-                  <p className="text-xs text-gray-500">{translations.summary.church}</p>
-                  <p className="text-sm font-semibold text-gray-900">
-                    {churchName || (churchId ? translations.status.loading : translations.status.noChurchRegistered)}
-                  </p>
+              {churchId && (
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Church className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-500 truncate">{translations.summary.church}</p>
+                    <p className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
+                      {churchName || translations.status.loading}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Church Department (if applicable - for church projects) */}
+              {(() => {
+                const shouldShow = churchId && churchDepartmentId
+                console.log('💰 [RequestSubsidyModal] Church Department display logic:', {
+                  churchId,
+                  churchDepartmentId,
+                  churchDepartmentNameFromProps: churchDepartmentName,
+                  finalChurchDepartmentName,
+                  shouldShow,
+                  hasChurchId: !!churchId,
+                  hasChurchDepartmentId: !!churchDepartmentId,
+                  hasResolvedDepartment: !!resolvedChurchDepartment
+                })
+                return shouldShow ? (
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <Layers className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs text-gray-500 truncate">{translations.labels.churchDepartment || 'Church Department'}</p>
+                      <p className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
+                        {finalChurchDepartmentName || translations.status.notInformed}
+                      </p>
+                    </div>
+                  </div>
+                ) : null
+              })()}
             </div>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6">
           
           {/* Subsidy Validation Info - New Component */}
           <SubsidyValidationInfo
@@ -737,10 +834,10 @@ export function RequestSubsidyModal({
           />
           
           {/* Activity Navigation */}
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-gray-900">{translations.activities.title}</h3>
+              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+                <h3 className="text-xs sm:text-sm font-semibold text-gray-900 truncate">{translations.activities.title}</h3>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -753,43 +850,42 @@ export function RequestSubsidyModal({
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setCurrentActivityIndex(Math.max(0, currentActivityIndex - 1))}
                   disabled={currentActivityIndex === 0}
-                  className="h-7 px-2 text-xs"
+                  className="h-6 sm:h-7 px-1.5 sm:px-2 text-xs"
                 >
-                  {translations.activities.previous}
+                  <span className="hidden sm:inline">{translations.activities.previous}</span>
+                  <span className="sm:hidden">‹</span>
                 </Button>
-                <span className="text-xs text-gray-600">
-                  {translations.activities.ofTotal
-                    .replace('{{current}}', (currentActivityIndex + 1).toString())
-                    .replace('{{total}}', formData.items.length.toString())
-                  }
+                <span className="text-xs text-gray-600 whitespace-nowrap">
+                  {(currentActivityIndex + 1)}/{formData.items.length}
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setCurrentActivityIndex(Math.min(formData.items.length - 1, currentActivityIndex + 1))}
                   disabled={currentActivityIndex === formData.items.length - 1}
-                  className="h-7 px-2 text-xs"
+                  className="h-6 sm:h-7 px-1.5 sm:px-2 text-xs"
                 >
-                  {translations.activities.next}
+                  <span className="hidden sm:inline">{translations.activities.next}</span>
+                  <span className="sm:hidden">›</span>
                 </Button>
               </div>
             </div>
 
             {/* Activity Cards */}
-            <div className="flex gap-2 overflow-x-auto pb-2">
+            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2">
               {formData.items.map((item, idx) => {
                 const itemValidation = validateActivity(item)
                 return (
                   <button
                     key={item.activity_id}
                     onClick={() => setCurrentActivityIndex(idx)}
-                    className={`flex-shrink-0 px-3 py-2 rounded-lg border-2 transition-all relative ${
+                    className={`flex-shrink-0 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border-2 transition-all relative ${
                       idx === currentActivityIndex
                         ? 'border-gray-900 bg-gray-50'
                         : 'border-gray-200 bg-white hover:border-gray-300'
@@ -801,8 +897,8 @@ export function RequestSubsidyModal({
                         <Check className="w-2.5 h-2.5 text-white" />
                       </div>
                     )}
-                    <div className="flex items-center gap-2">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-xs font-semibold ${
                         itemValidation.isComplete
                           ? 'bg-green-500 text-white'
                           : item.activity_documents.length > 0
@@ -811,8 +907,8 @@ export function RequestSubsidyModal({
                       }`}>
                         {idx + 1}
                       </div>
-                      <div className="text-left">
-                        <p className={`text-xs font-medium ${
+                      <div className="text-left min-w-0">
+                        <p className={`text-xs font-medium truncate ${
                           idx === currentActivityIndex ? 'text-gray-900' : 'text-gray-700'
                         }`}>
                           {item.activity_name}
@@ -832,9 +928,9 @@ export function RequestSubsidyModal({
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => setIsAddActivityModalOpen(true)}
-                      className="flex-shrink-0 w-12 h-12 rounded-lg border-2 border-dashed border-gray-300 bg-white hover:border-gray-400 hover:bg-gray-50 transition-all flex items-center justify-center"
+                      className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg border-2 border-dashed border-gray-300 bg-white hover:border-gray-400 hover:bg-gray-50 transition-all flex items-center justify-center"
                     >
-                      <Plus className="w-5 h-5 text-gray-400" />
+                      <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -851,7 +947,7 @@ export function RequestSubsidyModal({
           </div>
 
           {/* Current Activity Details */}
-          <div className="space-y-4 border border-gray-200 rounded-lg p-4 bg-gray-50">
+          <div className="space-y-3 sm:space-y-4 border border-gray-200 rounded-lg p-3 sm:p-4 bg-gray-50">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-semibold text-gray-900">{currentItem.activity_name}</h4>
               <TagBadge
@@ -1336,18 +1432,45 @@ export function RequestSubsidyModal({
                               <Label className="text-xs text-gray-600">
                                 {translations.documents.amountLabel} *
                               </Label>
-                              <Input
-                                type="number"
-                                value={doc.amount || ""}
-                                onChange={(e) => {
-                                  const value = e.target.value ? Number(e.target.value) : 0
-                                  handleDocumentChange(doc.id, 'amount', value)
-                                }}
-                                className={`h-9 text-xs ${!isValidAmount ? 'border-red-300' : ''}`}
-                                placeholder="0.00"
-                                disabled={mode === "edit" && !doc.id.startsWith('temp-')}
-                                title={mode === "edit" && !doc.id.startsWith('temp-') ? translations.documents.amountCannotBeEdited : ""}
-                              />
+                              <div className="flex gap-2">
+                                <Input
+                                  type="number"
+                                  value={doc.amount || ""}
+                                  onChange={(e) => {
+                                    const value = e.target.value ? Number(e.target.value) : 0
+                                    handleDocumentChange(doc.id, 'amount', value)
+                                  }}
+                                  className={`h-9 text-xs flex-1 ${!isValidAmount ? 'border-red-300' : ''}`}
+                                  placeholder="0.00"
+                                  disabled={mode === "edit" && !doc.id.startsWith('temp-')}
+                                  title={mode === "edit" && !doc.id.startsWith('temp-') ? translations.documents.amountCannotBeEdited : ""}
+                                />
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    // Calcular o total já usado pelos outros documentos (excluindo o documento atual)
+                                    const otherDocsTotal = currentItem.activity_documents
+                                      .filter(d => d.id !== doc.id)
+                                      .reduce((sum, d) => sum + (d.amount || 0), 0)
+                                    
+                                    // Calcular o valor máximo disponível para este documento
+                                    const maxAvailable = Math.max(0, currentItem.requested_amount - otherDocsTotal)
+                                    
+                                    handleDocumentChange(doc.id, 'amount', maxAvailable)
+                                    
+                                    if (maxAvailable > 0) {
+                                      toast.success(translations.toasts.maxDocumentValueSet.replace('{{amount}}', formatCurrency(maxAvailable)))
+                                    } else {
+                                      toast.error(translations.toasts.documentLimitReached)
+                                    }
+                                  }}
+                                  disabled={mode === "edit" && !doc.id.startsWith('temp-')}
+                                  className="h-9 px-3 text-xs"
+                                >
+                                  Max
+                                </Button>
+                              </div>
                             </div>
                           </div>
 
@@ -1413,78 +1536,89 @@ export function RequestSubsidyModal({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 p-4 bg-white">
-          <div className="flex items-center justify-between">
-            {/* Progress Badge */}
-            <div className={`px-3 py-2 rounded-lg border-2 transition-all ${
+        <div className="border-t border-gray-200 p-3 sm:p-4 bg-white">
+          <div className="flex flex-col gap-3 sm:gap-4">
+            {/* Progress Badge - Always on top */}
+            <div className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border-2 transition-all self-start ${
               validateAllActivities.allComplete
                 ? 'border-green-500 bg-green-50'
                 : 'border-amber-500 bg-amber-50'
             }`}>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 {validateAllActivities.allComplete ? (
-                  <Check className="w-4 h-4 text-green-600" />
+                  <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 flex-shrink-0" />
                 ) : (
-                  <AlertCircle className="w-4 h-4 text-amber-600" />
-                )}
-                <div>
-                  <p className={`text-xs font-semibold ${
+                  <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 text-amber-600 flex-shrink-0" />
+                )}                <div className="min-w-0">
+                  <p className={`text-xs font-semibold truncate ${
                     validateAllActivities.allComplete ? 'text-green-700' : 'text-amber-700'
                   }`}>
                     {validateAllActivities.completedCount}/{validateAllActivities.totalCount} {translations.status.completed}
                   </p>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-gray-600 truncate">
                     {validateAllActivities.allComplete ? translations.status.readyToSubmit : translations.status.pendingValidation}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div>
-                <p className="text-xs text-gray-500">{translations.footer.totalRequested}</p>
-                <p className="text-lg font-bold text-gray-900">{formatCurrency(totalRequestedAmount)}</p>
+            {/* Statistics and Actions Row */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+              
+              {/* Statistics - Horizontal on mobile, vertical on larger screens */}
+              <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-4 min-w-0 flex-1">
+                <div className="text-center sm:text-left min-w-0">
+                  <p className="text-xs text-gray-500 truncate">{translations.footer.totalRequested}</p>
+                  <p className="text-sm sm:text-base md:text-lg font-bold text-gray-900 truncate">{formatCurrency(totalRequestedAmount)}</p>
+                </div>
+                
+                <div className="h-8 sm:h-10 w-px bg-gray-200 flex-shrink-0" />
+                
+                <div className="text-center sm:text-left min-w-0">
+                  <p className="text-xs text-gray-500 truncate">{translations.footer.activities}</p>
+                  <p className="text-sm font-semibold text-gray-900">{formData.items.length}</p>
+                </div>
+                
+                <div className="h-8 sm:h-10 w-px bg-gray-200 flex-shrink-0" />
+                
+                <div className="text-center sm:text-left min-w-0">
+                  <p className="text-xs text-gray-500 truncate">{translations.footer.documents}</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {formData.items.reduce((sum, item) => sum + item.activity_documents.length, 0)}
+                  </p>
+                </div>
               </div>
-              <div className="h-8 w-px bg-gray-200" />
-              <div>
-                <p className="text-xs text-gray-500">{translations.footer.activities}</p>
-                <p className="text-sm font-semibold text-gray-900">{formData.items.length}</p>
-              </div>
-              <div className="h-8 w-px bg-gray-200" />
-              <div>
-                <p className="text-xs text-gray-500">{translations.footer.documents}</p>
-                <p className="text-sm font-semibold text-gray-900">
-                  {formData.items.reduce((sum, item) => sum + item.activity_documents.length, 0)}
-                </p>
-              </div>
-            </div>
             
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={onClose}
-                size="sm"
-                className="h-9 px-4"
-              >
-                {translations.buttons.cancel}
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                size="sm"
-                disabled={!validateAllActivities.allComplete || isSubmitting}
-                className="h-9 px-4 bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                ) : (
-                  <DollarSign className="w-4 h-4 mr-1" />
-                )}
-                {isSubmitting
-                  ? translations.status.uploadingFiles
-                  : mode === "edit"
-                    ? translations.status.savingChanges
-                    : translations.buttons.submit}
-              </Button>
+              {/* Action Buttons */}
+              <div className="flex gap-2 w-full sm:w-auto sm:flex-shrink-0">
+                <Button
+                  variant="outline"
+                  onClick={onClose}
+                  size="sm"
+                  className="h-8 sm:h-9 px-3 sm:px-4 flex-1 sm:flex-none text-xs sm:text-sm"
+                >
+                  {translations.buttons.cancel}
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  size="sm"
+                  disabled={!validateAllActivities.allComplete || isSubmitting}
+                  className="h-8 sm:h-9 px-3 sm:px-4 flex-1 sm:flex-none text-xs sm:text-sm bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 animate-spin" />
+                  ) : (
+                    <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                  )}
+                  <span className="truncate">
+                    {isSubmitting
+                      ? translations.status.uploadingFiles
+                      : mode === "edit"
+                        ? translations.status.savingChanges
+                        : translations.buttons.submit}
+                  </span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>

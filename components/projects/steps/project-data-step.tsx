@@ -20,6 +20,7 @@ import {
 import { cn } from '@/lib/utils'
 import { StepInfo } from '../step-info'
 import { ProjectFormData } from '@/components/projects/types'
+import { useInstitution } from '@/contexts/institution-context'
 
 interface ProjectDataStepProps {
   formData: ProjectFormData
@@ -44,22 +45,99 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
   const [openDepartment, setOpenDepartment] = useState(false)
   const [openResponsible, setOpenResponsible] = useState(false)
   const [openChurch, setOpenChurch] = useState(false)
+  const [openChurchDepartment, setOpenChurchDepartment] = useState(false)
   const [showDepartmentInfoModal, setShowDepartmentInfoModal] = useState(false)
   const [autoModalShown, setAutoModalShown] = useState(false)
   const [isWarningExpanded, setIsWarningExpanded] = useState(false)
 
+  // Obter dados da instituição (mesma fonte que church-departments page)
+  const { currentInstitutionData } = useInstitution()
+  
+  // Extrair church departments da mesma forma que church-departments page
+  const allChurchDepartments = useMemo(() => {
+    const institutionChurches = currentInstitutionData?.churches || []
+    return institutionChurches.flatMap(church => 
+      church.departments?.map(department => ({ 
+        ...department, 
+        church_name: church.name 
+      })) || []
+    )
+  }, [currentInstitutionData?.churches])
+  
+  // Filtrar departments pela church_id selecionada
+  const churchDepartments = useMemo(() => {
+    if (!formData.church_id || formData.project_responsible_type !== 'church') {
+      return []
+    }
+    return allChurchDepartments.filter(dept => dept.church_id === formData.church_id)
+  }, [allChurchDepartments, formData.church_id, formData.project_responsible_type])
+  
+  const loadingChurchDepartments = !currentInstitutionData
+
+  // Debug: Log church departments data
+  useEffect(() => {
+    if (formData.church_id && formData.project_responsible_type === 'church') {
+      console.log('🏛️ [Church Departments] Selected Church ID:', formData.church_id)
+      console.log('📊 [Church Departments] All Departments from Institution:', allChurchDepartments.length)
+      console.log('📋 [Church Departments] Filtered Departments Count:', churchDepartments.length)
+      console.log('📄 [Church Departments] Filtered Departments List:', churchDepartments.map((d: any) => ({
+        id: d.id,
+        name: d.name,
+        church_id: d.church_id,
+        church_name: d.church_name
+      })))
+      
+      // Validar consistência dos dados
+      const invalidDepartments = churchDepartments.filter((d: any) => d.church_id !== formData.church_id)
+      if (invalidDepartments.length > 0) {
+        console.error('❌ [Church Departments] Inconsistent data - departments not matching selected church:', invalidDepartments)
+      }
+    }
+  }, [allChurchDepartments, churchDepartments, formData.church_id, formData.project_responsible_type])
+
   // Check if there are departments available
   const hasDepartments = departments && departments.length > 0
 
+  // Resetar church_department_id quando church_id mudar
+  useEffect(() => {
+    if (formData.church_id) {
+      console.log('🔄 [Church Change] Resetting church_department_id. Previous value:', formData.church_department_id)
+      // Limpar church_department_id quando mudar de igreja
+      onChange({ church_department_id: null })
+    }
+  }, [formData.church_id])
+
   // Calculate step validity using useMemo to prevent infinite loops
   const isStepValid = useMemo(() => {
-    return hasDepartments && 
+    // Verificar se church_department_id é obrigatório
+    const isChurchProject = formData.project_responsible_type === 'church'
+    const hasChurchDepartments = isChurchProject && churchDepartments.length > 0
+    const needsChurchDepartment = isChurchProject && hasChurchDepartments
+    
+    const valid = hasDepartments && 
            formData.title?.trim() && 
            formData.description?.trim() && 
            formData.department_id && 
            formData.responsible_id &&
-           (formData.project_responsible_type !== 'church' || formData.church_id)
-  }, [hasDepartments, formData.title, formData.description, formData.department_id, formData.responsible_id, formData.project_responsible_type, formData.church_id])
+           (formData.project_responsible_type !== 'church' || formData.church_id) &&
+           (!needsChurchDepartment || formData.church_department_id)
+    
+    console.log('✅ [Step Validation]', {
+      hasDepartments,
+      hasTitle: !!formData.title?.trim(),
+      hasDescription: !!formData.description?.trim(),
+      hasDepartmentId: !!formData.department_id,
+      hasResponsible: !!formData.responsible_id,
+      isChurchProject,
+      hasChurchId: !!formData.church_id,
+      hasChurchDepartments,
+      needsChurchDepartment,
+      hasChurchDepartmentId: !!formData.church_department_id,
+      isValid: valid
+    })
+    
+    return valid
+  }, [hasDepartments, formData.title, formData.description, formData.department_id, formData.responsible_id, formData.project_responsible_type, formData.church_id, formData.church_department_id, churchDepartments.length])
 
   // Communicate step validity to parent component
   useEffect(() => {
@@ -200,59 +278,162 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
 
               {/* Church Selector */}
               {formData.project_responsible_type === 'church' ? (
-                <div className="animate-in fade-in-0 slide-in-from-top-2 duration-200">
-                  <Label htmlFor="church" className="flex items-center gap-2 text-base font-medium mb-2">
-                    <Building className="w-4 h-4 text-muted-foreground" />
-                    {t('projectRegister.fields.selectChurch')} *
-                  </Label>
-                  <Popover open={openChurch} onOpenChange={setOpenChurch}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={openChurch}
-                        className={`h-12 w-full justify-between border-2 ${errors.church_id ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors`}
-                      >
-                        {formData.church_id
-                          ? churches.find((church) => church.id === formData.church_id)?.name
-                          : t('projectRegister.placeholders.selectChurch')}
-                        <Building className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder={t('projectRegister.placeholders.searchChurch')} />
-                        <CommandList>
-                          <CommandEmpty>{t('projectRegister.noResults.church')}</CommandEmpty>
-                          <CommandGroup>
-                            {churches.map((church) => (
-                              <CommandItem
-                                key={church.id}
-                                value={church.name}
-                                onSelect={() => {
-                                  onChange({ church_id: church.id, project_responsible_type: 'church' })
-                                  setOpenChurch(false)
-                                }}
-                              >
-                                <div className="flex items-center gap-3 w-full">
-                                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                                    <Home className="w-4 h-4 text-primary" />
-                                  </div>
-                                  <div className="flex-1">
-                                    <span className="font-medium">{church.name}</span>
-                                  </div>
-                                  {formData.church_id === church.id && (
-                                    <Check className="ml-auto h-4 w-4" />
-                                  )}
-                                </div>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  {errors.church_id && <p className="text-sm text-red-600">{errors.church_id}</p>}
+                <div className="animate-in fade-in-0 slide-in-from-top-2 duration-200 space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    {/* Church Select */}
+                    <div className="flex-1">
+                      <Label htmlFor="church" className="flex items-center gap-2 text-base font-medium mb-2">
+                        <Building className="w-4 h-4 text-muted-foreground" />
+                        {t('projectRegister.fields.selectChurch')} *
+                      </Label>
+                      <Popover open={openChurch} onOpenChange={setOpenChurch}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={openChurch}
+                            className={`h-12 w-full justify-between border-2 ${errors.church_id ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors`}
+                          >
+                            {formData.church_id
+                              ? churches.find((church) => church.id === formData.church_id)?.name
+                              : t('projectRegister.placeholders.selectChurch')}
+                            <Building className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0" align="start">
+                          <Command>
+                            <CommandInput placeholder={t('projectRegister.placeholders.searchChurch')} />
+                            <CommandList>
+                              <CommandEmpty>{t('projectRegister.noResults.church')}</CommandEmpty>
+                              <CommandGroup>
+                                {churches.map((church) => (
+                                  <CommandItem
+                                    key={church.id}
+                                    value={church.name}
+                                    onSelect={() => {
+                                      onChange({ church_id: church.id, project_responsible_type: 'church' })
+                                      setOpenChurch(false)
+                                    }}
+                                  >
+                                    <div className="flex items-center gap-3 w-full">
+                                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                                        <Home className="w-4 h-4 text-primary" />
+                                      </div>
+                                      <div className="flex-1">
+                                        <span className="font-medium">{church.name}</span>
+                                      </div>
+                                      {formData.church_id === church.id && (
+                                        <Check className="ml-auto h-4 w-4" />
+                                      )}
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      {errors.church_id && <p className="text-sm text-red-600 mt-1">{errors.church_id}</p>}
+                    </div>
+
+                    {/* Church Department Select - Only shows when church is selected */}
+                
+                      <div className="flex-1 animate-in fade-in-0 slide-in-from-right-2 duration-200">
+                        <Label htmlFor="church_department" className="flex items-center gap-2 text-base font-medium mb-2">
+                          <Building className="w-4 h-4 text-muted-foreground" />
+                          {t('projectRegister.fields.churchDepartment')} {churchDepartments.length > 0 && '*'}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="max-w-xs">
+                              <p className="text-sm">{t('projectRegister.tooltips.churchDepartment') || 'Departamento específico da igreja responsável pelo projeto'}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </Label>
+                        <Popover open={openChurchDepartment} onOpenChange={setOpenChurchDepartment}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={openChurchDepartment}
+                              disabled={loadingChurchDepartments || churchDepartments.length === 0}
+                              className={`h-12 w-full justify-between border-2 ${churchDepartments.length > 0 && !formData.church_department_id ? 'border-red-500' : 'border-border'} ${loadingChurchDepartments || churchDepartments.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary/50'} transition-colors`}
+                            >
+                              {loadingChurchDepartments ? (
+                                t('projectRegister.placeholders.loadingChurchDepartments')
+                              ) : formData.church_department_id ? (
+                                churchDepartments.find((dept: any) => dept.id === formData.church_department_id)?.name
+                              ) : churchDepartments.length === 0 ? (
+                                t('projectRegister.placeholders.noChurchDepartments')
+                              ) : (
+                                t('projectRegister.placeholders.selectChurchDepartment')
+                              )}
+                              <Building className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder={t('projectRegister.placeholders.searchChurchDepartment')} />
+                              <CommandList>
+                                <CommandEmpty>{t('projectRegister.noResults.churchDepartment')}</CommandEmpty>
+                                <CommandGroup>
+                                  
+                                  {churchDepartments.map((dept: any) => {
+                                    // Validação: garantir que o departamento pertence à igreja selecionada
+                                    const belongsToSelectedChurch = dept.church_id === formData.church_id
+                                    
+                                    if (!belongsToSelectedChurch) {
+                                      return null
+                                    }
+                                    
+                                    return (
+                                      <CommandItem
+                                        key={dept.id}
+                                        value={dept.name}
+                                        onSelect={() => {
+                                          console.log('✅ [Department Selected]', {
+                                            departmentId: dept.id,
+                                            departmentName: dept.name,
+                                            churchId: dept.church_id,
+                                            churchName: dept.church?.name
+                                          })
+                                          onChange({ church_department_id: dept.id })
+                                          setOpenChurchDepartment(false)
+                                        }}
+                                      >
+                                        <div className="flex items-center gap-3 w-full">
+                                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                                            <Building className="w-4 h-4 text-primary" />
+                                          </div>
+                                          <div className="flex-1">
+                                            <span className="font-medium">{dept.name}</span>
+                                          </div>
+                                          {formData.church_department_id === dept.id && (
+                                            <Check className="ml-auto h-4 w-4 text-primary" />
+                                          )}
+                                        </div>
+                                      </CommandItem>
+                                    )
+                                  })}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        {churchDepartments.length === 0 && !loadingChurchDepartments && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {t('projectRegister.info.noChurchDepartmentsAvailable')}
+                          </p>
+                        )}
+                        {churchDepartments.length > 0 && !formData.church_department_id && (
+                          <p className="text-sm text-red-600 mt-1">
+                            {t('projectRegister.errors.churchDepartmentRequired') || 'Selecione um departamento da igreja'}
+                          </p>
+                        )}
+                      </div>
+
+                  </div>
                 </div>
               ) : null}
             </div>

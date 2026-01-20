@@ -216,6 +216,30 @@ export const CHART_PRESETS = {
 } as const
 
 /**
+ * Paleta de cores para gráficos de projetos e atividades
+ * Array de cores otimizadas usando formato OKLCH para consistência em light/dark mode
+ */
+export const PROJECT_CHART_COLORS = [
+  'oklch(0.6 0.118 184.704)',    // Teal/Cyan - cor principal
+  'oklch(0.75 0.1 184.704)',     // Teal Light - variação clara
+  'oklch(0.45 0.15 184.704)',    // Teal Dark - variação escura
+  'oklch(0.65 0.08 184.704)',    // Teal Muted - suave
+  'oklch(0.398 0.07 227.392)',   // Dark Gray - neutro
+  'oklch(0.62 0.13 155)',        // Teal Green - verde
+  'oklch(0.828 0.189 84.429)',   // Yellow - amarelo
+  'hsl(173, 80%, 40%)',          // Deep Teal - teal profundo
+  'oklch(0.769 0.188 70.08)',    // Orange - laranja
+] as const
+
+/**
+ * Retorna uma cor do array PROJECT_CHART_COLORS baseado no índice
+ * Faz wrap automático se o índice exceder o tamanho do array
+ */
+export function getProjectColor(index: number): string {
+  return PROJECT_CHART_COLORS[index % PROJECT_CHART_COLORS.length]
+}
+
+/**
  * Utilitário para criar config do Recharts/shadcn charts
  */
 export function createChartConfig<T extends string>(

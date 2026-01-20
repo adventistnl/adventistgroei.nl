@@ -117,33 +117,40 @@ export function UserStructureGrowthChart({
     return key[currentLanguage as keyof typeof key] || key.en
   }
 
-  // Helper function para determinar onde o usuário está (mesma lógica da página de users)
-  const getUserStructureType = React.useCallback((user: any) => {
-    // Verificar se está em departamento de igreja
-    const churchDepartment = churches
-      .flatMap(church => church.departments || [])
-      .find(dept => dept.users?.some((u: any) => u.id === user.id))
+  // Helper function para determinar em quais estruturas o usuário está
+  // Um usuário pode estar em múltiplas estruturas simultaneamente
+  const getUserStructureTypes = React.useCallback((user: any) => {
+    const structures: string[] = []
     
-    if (churchDepartment) {
-      return 'churchDepts'
+    // Verificar se está em departamento de igreja
+    const isInChurchDept = churches
+      .flatMap(church => church.departments || [])
+      .some(dept => dept.users?.some((u: any) => u.id === user.id))
+    
+    if (isInChurchDept) {
+      structures.push('churchDepts')
     }
 
     // Verificar se está em departamento institucional
-    const institutionalDepartment = departments.find(dept => 
+    const isInInstitutionalDept = departments.some(dept => 
       dept.users?.some((u: any) => u.id === user.id)
     )
     
-    if (institutionalDepartment) {
-      return 'institutionalDepts'
+    if (isInInstitutionalDept) {
+      structures.push('institutionalDepts')
     }
 
-    // Se tem igreja mas sem departamento
+    // Se tem igreja vinculada (pode ter mesmo tendo departamento)
     if (user.church && user.church.id) {
-      return 'churches'
+      structures.push('churches')
     }
 
-    // Fallback para regions (usuários sem departamento nem igreja específica)
-    return 'regions'
+    // Se não está em nenhuma estrutura específica, está apenas na instituição (region level)
+    if (structures.length === 0) {
+      structures.push('regions')
+    }
+
+    return structures
   }, [churches, departments])
 
   // Processar usuários por estrutura e data de criação
@@ -172,6 +179,7 @@ export function UserStructureGrowthChart({
     })
 
     // Contar usuários por estrutura e mês
+    // Um usuário pode ser contado em múltiplas estruturas se fizer parte delas
     yearUsers.forEach((user: any) => {
       const createdDate = new Date(user.created_at)
       const month = createdDate.getMonth()
@@ -181,18 +189,26 @@ export function UserStructureGrowthChart({
         return
       }
 
-      // Determinar estrutura usando a mesma lógica da página de users
-      const structureType = getUserStructureType(user)
-      monthlyData[month][structureType]++
+      // Determinar todas as estruturas que o usuário faz parte
+      const structureTypes = getUserStructureTypes(user)
+      
+      // Incrementar contador para cada estrutura que o usuário pertence
+      structureTypes.forEach(structureType => {
+        monthlyData[month][structureType]++
+      })
     })
 
-    // Calcular totais por mês (não acumulado - para mostrar ondas de criação)
-    monthlyData.forEach((data) => {
-      data.total = data.institutionalDepts + data.regions + data.churches + data.churchDepts
+    // Calcular totais únicos por mês (contar cada usuário apenas uma vez no total)
+    monthlyData.forEach((data, index) => {
+      const monthUsers = yearUsers.filter((user: any) => {
+        const createdDate = new Date(user.created_at)
+        return createdDate.getMonth() === index
+      })
+      data.total = monthUsers.length
     })
 
     return monthlyData
-  }, [users, selectedYear, getUserStructureType])
+  }, [users, selectedYear, getUserStructureTypes])
 
   // Calcular estatísticas totais para o footer
   const structureStats = React.useMemo(() => {
@@ -206,9 +222,13 @@ export function UserStructureGrowthChart({
       total: activeUsers.length
     }
 
+    // Contabilizar quantos usuários estão em cada estrutura
+    // Um usuário pode estar em múltiplas estruturas
     activeUsers.forEach((user: any) => {
-      const structureType = getUserStructureType(user)
-      stats[structureType]++
+      const structureTypes = getUserStructureTypes(user)
+      structureTypes.forEach(structureType => {
+        stats[structureType]++
+      })
     })
 
     // Encontrar qual estrutura tem mais usuários
@@ -219,7 +239,7 @@ export function UserStructureGrowthChart({
       }, { key: 'institutionalDepts', value: 0 })
 
     return { ...stats, maxStructure }
-  }, [users, getUserStructureType])
+  }, [users, getUserStructureTypes])
 
   const { generatePalette } = useChartColors()
 

@@ -72,4 +72,6 @@ export interface CreateProjectVariables {
   special_case_reason?: string | null;
   location_church_plant?: string | null;
   special_budget?: number | null;
+  church_id?: string | null;
+  church_department_id?: string | null;
 }

@@ -106,6 +106,9 @@ export const structureTranslations = {
     // Sidebar
     sidebar: {
       dashboard: "Dashboard",
+      platform: "Platform",
+      structure: "Structure",
+      management: "Management",
       structureOrganization: "Structure & Organization",
       institutions: "Institutions",
       instDepartments: "Inst. Departments",
@@ -261,6 +264,9 @@ export const structureTranslations = {
     // Sidebar
     sidebar: {
       dashboard: "Dashboard",
+      platform: "Platform",
+      structure: "Structuur",
+      management: "Beheer",
       structureOrganization: "Structuur & Organisatie",
       institutions: "Instellingen",
       instDepartments: "Inst. Afdelingen",
@@ -497,6 +503,9 @@ export const structureTranslations = {
     // Sidebar
     sidebar: {
       dashboard: "Dashboard",
+      platform: "Plataforma",
+      structure: "Estrutura",
+      management: "Gestão",
       structureOrganization: "Estrutura & Organização",
       institutions: "Instituições",
       instDepartments: "Dept. Institucionais",

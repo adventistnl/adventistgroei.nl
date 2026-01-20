@@ -145,7 +145,7 @@ export const budgetVsSubsidyData = [
 // Status das solicitações de subsídio
 export const subsidyStatusData = [
   {
-    name: "Approved",
+    name: "Accepted",
     value: 420,
     percentage: 52.5,
     color: "#22c55e"
@@ -296,8 +296,8 @@ export const recentActivities = [
   },
   {
     id: "2",
-    type: "subsidy_approved",
-    description: "Subsidy approved for Evangelism Department",
+    type: "subsidy_accepted",
+    description: "Subsidy accepted for Evangelism Department",
     user: "Pastor João Santos",
     amount: 15000,
     timestamp: "2024-08-27T09:15:00Z",
@@ -481,7 +481,7 @@ export const mockDepartments = [
 export const mockSubsidyStatuses = [
   { id: "1", name: "Pending Review", description: "Awaiting initial review", order: 1, color: "#f59e0b" },
   { id: "2", name: "Under Review", description: "Currently being reviewed", order: 2, color: "#3b82f6" },
-  { id: "3", name: "Approved", description: "Request approved", order: 3, color: "#22c55e" },
+  { id: "3", name: "Accepted", description: "Request accepted", order: 3, color: "#22c55e" },
   { id: "4", name: "Rejected", description: "Request rejected", order: 4, color: "#ef4444" },
   { id: "5", name: "Completed", description: "Project completed", order: 5, color: "#6b7280" }
 ]
@@ -884,7 +884,7 @@ export const mockSubsidyActivities = [
     name: "Material de Evangelismo",
     description: "Impressão de folhetos e materiais evangelísticos",
     budget_amount: 5000,
-    status: "approved",
+    status: "accepted",
     created_at: "2024-01-20T10:30:00Z",
     updated_at: "2024-01-20T10:30:00Z"
   },
@@ -904,7 +904,7 @@ export const mockSubsidyActivities = [
     name: "Transporte",
     description: "Custos de transporte para evangelistas",
     budget_amount: 3000,
-    status: "approved",
+    status: "accepted",
     created_at: "2024-01-20T10:40:00Z",
     updated_at: "2024-01-20T10:40:00Z"
   },
@@ -924,7 +924,7 @@ export const mockSubsidyActivities = [
     name: "Capacitação de Professores",
     description: "Treinamento para educadores locais",
     budget_amount: 10000,
-    status: "approved",
+    status: "accepted",
     created_at: "2024-01-25T15:00:00Z",
     updated_at: "2024-01-25T15:00:00Z"
   },
@@ -944,7 +944,7 @@ export const mockSubsidyActivities = [
     name: "Medicamentos",
     description: "Compra de medicamentos básicos",
     budget_amount: 8000,
-    status: "approved",
+    status: "accepted",
     created_at: "2024-02-01T09:45:00Z",
     updated_at: "2024-02-01T09:45:00Z"
   },

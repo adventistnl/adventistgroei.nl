@@ -288,6 +288,16 @@ export const departmentTranslations = {
       institutional: "Institutional"
     },
 
+    // Leaders Section
+    leaders: {
+      title: "Department Leaders",
+      description: "Overview of department leaders and their responsibilities",
+      leaders: "Leaders",
+      managed_departments: "Managed Departments",
+      error: "Error loading leaders",
+      empty: "No leaders found"
+    },
+
     // Common translations (from other namespaces for convenience)
     common: {
       loading: "Loading...",
@@ -649,6 +659,16 @@ export const departmentTranslations = {
       institutional: "Institutioneel"
     },
 
+    // Leaders Section
+    leaders: {
+      title: "Afdeling Leiders",
+      description: "Overzicht van afdeling leiders en hun verantwoordelijkheden",
+      leaders: "Leiders",
+      managed_departments: "Beheerde Afdelingen",
+      error: "Fout bij laden van leiders",
+      empty: "Geen leiders gevonden"
+    },
+
     // Common translations (from other namespaces for convenience)
     common: {
       loading: "Laden...",
@@ -1008,6 +1028,16 @@ export const departmentTranslations = {
     },
     filters: {
       institutional: "Institucional"
+    },
+
+    // Leaders Section
+    leaders: {
+      title: "Líderes de Departamento",
+      description: "Visão geral dos líderes de departamento e suas responsabilidades",
+      leaders: "Líderes",
+      managed_departments: "Departamentos Gerenciados",
+      error: "Erro ao carregar líderes",
+      empty: "Nenhum líder encontrado"
     },
 
     // Common translations (from other namespaces for convenience)

@@ -3,7 +3,7 @@
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { Building2 } from 'lucide-react'
+import { Building2, Church } from 'lucide-react'
 
 import { useTranslation } from 'react-i18next'
 import { loginTranslations } from '@/lib/translations/login'
@@ -33,7 +33,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return (
       <LoadingSpinner
         text={t.validatingAccount}
-        customIcon={Building2}
+        customIcon={Church}
         size="lg"
         fullScreen
         className="space-y-6 max-w-sm mx-auto px-8"

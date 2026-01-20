@@ -1002,6 +1002,7 @@ export function ActivityDetailsModal({
               >
                 <Upload className="w-6 h-6 text-gray-400 mx-auto mb-2" />
                 <p className="text-sm text-gray-500">{t('activities.documents.drag_or_click')}</p>
+                <p className="text-xs text-gray-500 mt-2">{t('activities.documents.supported_formats')}</p>
               </div>
 
               {/* Pending Files */}

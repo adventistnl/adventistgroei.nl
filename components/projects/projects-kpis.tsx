@@ -5,24 +5,28 @@ import { KPICards } from "@/components/shared/kpi-cards-carousel"
 import { Currency } from "@/contexts/currency-context"
 import {
   Activity,
+  Calendar,
   DollarSign,
   Globe,
   TrendingUp,
-  Users,
 } from "lucide-react"
 
 interface ProjectsKPIsProps {
   kpis: {
     totalProjects: number
-    activeProjects: number
     completedProjects: number
     upcomingProjects: number
     totalBudget: number
-    totalSubsidizedBudget: number
-    totalSubsidyRequests: number
-    totalSubsidyAmount: number
+    totalAllocated: number
     projectsWithVolunteers: number
     averageBudgetPerProject: number
+    averageAllocatedPerProject: number
+    yearProgress: {
+      percent: number
+      dayOfYear: number
+      totalDaysInYear: number
+      daysRemaining: number
+    }
   }
   t_project: any
   isLoading?: boolean
@@ -45,19 +49,13 @@ export function ProjectsKPIs({
     const budgetUtilization = kpis.totalBudget > 0
       ? Math.round(((kpis.totalBudget - (kpis.totalBudget * 0.15)) / kpis.totalBudget) * 100)
       : 0
-    
-    const subsidyApprovalRate = kpis.totalSubsidyRequests > 0
-      ? Math.round((kpis.totalSubsidyRequests * 0.65) / kpis.totalSubsidyRequests * 100)
-      : 0
 
     return [
       {
         id: "total-projects",
         title: t_project.kpis.totalProjects,
         value: kpis.totalProjects.toString(),
-        subtitle: t_project.kpis.activeDeactivted
-          .replace('{{active}}', kpis.activeProjects.toString())
-          .replace('{{completed}}', kpis.completedProjects.toString()),
+        subtitle: t_project.kpis.waitingToStart.replace('{{count}}', kpis.upcomingProjects.toString()),
         trend: { 
           value: 12, 
           isPositive: true,
@@ -66,40 +64,30 @@ export function ProjectsKPIs({
         icon: Globe,
       },
       {
-        id: "active-projects",
-        title: t_project.kpis.activeProjects,
-        value: kpis.activeProjects.toString(),
-        subtitle: t_project.kpis.waitingToStart.replace('{{count}}', kpis.upcomingProjects.toString()),
+        id: "year-progress",
+        title: t_project.kpis.yearProgress,
+        value: `${kpis.yearProgress.percent}%`,
+        subtitle: t_project.kpis.currentDay
+          .replace('{{current}}', kpis.yearProgress.dayOfYear.toString())
+          .replace('{{total}}', kpis.yearProgress.totalDaysInYear.toString()),
         trend: { 
-          value: 8, 
-          isPositive: true,
-          label: t_project.kpis.newThisMonth
+          value: kpis.yearProgress.daysRemaining, 
+          isPositive: kpis.yearProgress.daysRemaining > 0,
+          label: t_project.kpis.daysRemaining.replace('{{days}}', kpis.yearProgress.daysRemaining.toString())
         },
-        icon: Activity,
+        icon: Calendar,
       },
       {
-        id: "total-budget",
-        title: t_project.kpis.totalBudget,
-        value: formatCurrency(kpis.totalBudget, { compact: true }),
-        subtitle: `${t_project.kpis.average}: ${formatCurrency(kpis.averageBudgetPerProject)}`,
+        id: "total-allocated",
+        title: t_project.kpis.totalAllocated,
+        value: formatCurrency(kpis.totalAllocated, { compact: true }),
+        subtitle: `${t_project.kpis.average}: ${formatCurrency(kpis.averageAllocatedPerProject)}`,
         trend: { 
-          value: budgetUtilization, 
-          isPositive: budgetUtilization > 70,
-          label: t_project.kpis.percentUsed.replace('{{percent}}', budgetUtilization.toString())
-        },
-        icon: DollarSign,
-      },
-      {
-        id: "subsidized-budget",
-        title: t_project.kpis.subsidizedBudget,
-        value: formatCurrency(kpis.totalSubsidizedBudget, { compact: true }),
-        subtitle: t_project.kpis.localContribution.replace('{{amount}}', formatCurrency(kpis.totalBudget - kpis.totalSubsidizedBudget, { compact: true })),
-        trend: { 
-          value: kpis.totalBudget > 0 ? Math.round((kpis.totalSubsidizedBudget / kpis.totalBudget) * 100) : 0, 
+          value: kpis.totalBudget > 0 ? Math.round((kpis.totalAllocated / kpis.totalBudget) * 100) : 0, 
           isPositive: true,
           label: t_project.kpis.ofTotalBudget
         },
-        icon: TrendingUp,
+        icon: DollarSign,
       },
       {
         id: "completion-rate",
@@ -112,21 +100,9 @@ export function ProjectsKPIs({
           label: t_project.kpis.vsPreviousMonth
         },
         icon: TrendingUp,
-      },
-      {
-        id: "subsidy-requests",
-        title: t_project.kpis.totalSubsidyRequests,
-        value: kpis.totalSubsidyRequests.toString(),
-        subtitle: `${formatCurrency(kpis.totalSubsidyAmount, { compact: true })} ${t_project.kpis.requested}`,
-        trend: { 
-          value: subsidyApprovalRate, 
-          isPositive: subsidyApprovalRate > 50,
-          label: t_project.kpis.approvedPercent.replace('{{percent}}', subsidyApprovalRate.toString())
-        },
-        icon: DollarSign,
       }
     ]
-  }, [kpis, t_project, formatCurrency, selectedCurrency])
+  }, [kpis, t_project, formatCurrency])
 
   return (
     <KPICards 

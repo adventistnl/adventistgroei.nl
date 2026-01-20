@@ -3,12 +3,16 @@ import { initReactI18next } from 'react-i18next'
 import { projectRegisterTranslations } from './translations/project-register'
 import { projectTranslations } from './translations/projects'
 import { subsidyManagementTranslations } from './translations/subsidy-management'
+import { dynamicFieldsTranslations } from './translations/dynamic-fields'
+import { projectDetailsTranslations } from './translations/project-details'
 
 // Recursos de tradução
 const resources = {
   en: {
     translation: {
       ...projectTranslations.en,
+      ...projectDetailsTranslations.en,
+      dynamicFields: dynamicFieldsTranslations.en,
       dashboard: {
         title: "General Dashboard",
         subtitle: "Overview of key system metrics",
@@ -328,7 +332,11 @@ const resources = {
         apply: "Apply",
         irreversible: "This action cannot be undone",
         deletePermanently: "Delete Permanently",
-        registeredUsers: "Registered Users"
+        registeredUsers: "Registered Users",
+        month: "month",
+        months: "months",
+        all: "All",
+        none: "None"
       },
       kanban: {
         dropItemHere: "Drop item here",
@@ -1158,8 +1166,11 @@ const resources = {
           inactive: "Inactive",
           gender: "Gender",
           no_role: "No Role",
+          no_church: "No Church",
+          no_department: "No Department",
         },
         filters: {
+          title: "Filter",
           institution: "Institution",
           church: "Church",
           department_type: "Department Type",
@@ -1288,7 +1299,9 @@ const resources = {
             toasts: {
               updating_user: "Updating user...",
               user_updated: "User updated successfully",
-              user_update_failed: "Failed to update user"
+              user_update_failed: "Failed to update user",
+              user_created: "User created successfully",
+              user_deleted: "User deleted successfully"
             },
             // Placeholders
             placeholders: {
@@ -1544,6 +1557,9 @@ const resources = {
           spending_over_time: {
             title: "Department Spending Over Time",
             subtitle: "Showing spending trends for {{year}}",
+            with_approvals: "with approvals",
+            no_approvals: "No approvals registered",
+            monthly_average: "Monthly average",
             time_ranges: {
               "12m": "Last 12 months",
               "6m": "Last 6 months",
@@ -1959,6 +1975,8 @@ const resources = {
   nl: {
     translation: {
       ...projectTranslations.nl,
+      ...projectDetailsTranslations.nl,
+      dynamicFields: dynamicFieldsTranslations.nl,
       dashboard: {
         title: "Algemeen Dashboard",
         subtitle: "Overzicht van belangrijke systeemstatistieken",
@@ -2278,7 +2296,11 @@ const resources = {
         apply: "Toepassen",
         irreversible: "Deze actie kan niet ongedaan worden gemaakt",
         deletePermanently: "Definitief Verwijderen",
-        registeredUsers: "Geregistreerde Gebruikers"
+        registeredUsers: "Geregistreerde Gebruikers",
+        month: "maand",
+        months: "maanden",
+        all: "Alle",
+        none: "Geen"
       },
       kanban: {
         dropItemHere: "Item hier neerzetten",
@@ -3100,8 +3122,11 @@ const resources = {
           inactive: "Inactief",
           gender: "Geslacht",
           no_role: "Geen Rol",
+          no_church: "Geen Kerk",
+          no_department: "Geen Afdeling",
         },
         filters: {
+          title: "Filter",
           institution: "Instelling",
           church: "Kerk",
           department_type: "Afdelingstype",
@@ -3230,7 +3255,9 @@ const resources = {
             toasts: {
               updating_user: "Gebruiker bijwerken...",
               user_updated: "Gebruiker succesvol bijgewerkt",
-              user_update_failed: "Kon gebruiker niet bijwerken"
+              user_update_failed: "Kon gebruiker niet bijwerken",
+              user_created: "Gebruiker succesvol aangemaakt",
+              user_deleted: "Gebruiker succesvol verwijderd"
             },
             // Placeholders
             placeholders: {
@@ -3486,6 +3513,9 @@ const resources = {
           spending_over_time: {
             title: "Departement Uitgaven in de Tijd",
             subtitle: "Uitgaventrends voor {{year}}",
+            with_approvals: "met goedkeuringen",
+            no_approvals: "Geen goedkeuringen geregistreerd",
+            monthly_average: "Maandelijks gemiddelde",
             time_ranges: {
               "12m": "Laatste 12 maanden",
               "6m": "Laatste 6 maanden",
@@ -3726,6 +3756,8 @@ const resources = {
   pt: {
     translation: {
       ...projectTranslations.pt,
+      ...projectDetailsTranslations.pt,
+      dynamicFields: dynamicFieldsTranslations.pt,
       common: {
         ...projectTranslations.pt.common,
         language: "Idioma",
@@ -3766,7 +3798,13 @@ const resources = {
         all_members_associated_with: "Todos os membros associados com",
         all_departments_within: "Todos os departamentos dentro de",
         view_contact: "Ver Contato",
-        add: "Adicionar"
+        add: "Adicionar",
+        filter: "Filtrar",
+        total: "Total",
+        month: "mês",
+        months: "meses",
+        all: "Todos",
+        none: "Nenhum"
       },
       privacy: {
         protected_content: "Conteúdo Protegido",
@@ -3936,6 +3974,9 @@ const resources = {
           spending_over_time: {
             title: "Gastos por Departamento ao Longo do Tempo",
             subtitle: "Mostrando tendências de gastos para {{year}}",
+            with_approvals: "com aprovações",
+            no_approvals: "Nenhuma aprovação registrada",
+            monthly_average: "Média mensal",
             time_ranges: {
               "12m": "Últimos 12 meses",
               "6m": "Últimos 6 meses",

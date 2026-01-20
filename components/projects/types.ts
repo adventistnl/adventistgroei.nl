@@ -19,6 +19,7 @@ export interface ProjectFormData {
   register_as_event: boolean
   is_private: boolean
   church_id?: string
+  church_department_id?: string | null
   activities: ProjectActivity[]
   total_budget: number
   church_contribution: number

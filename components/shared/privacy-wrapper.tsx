@@ -5,6 +5,8 @@ import { Eye, EyeOff } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { usePrivacy, useComponentPrivacy, type PrivacyConfig } from '@/contexts/privacy-context'
+import { useTranslation } from 'react-i18next'
+import { privacyTranslations } from '@/lib/translations/privacy'
 
 /**
  * Blur intensity mapping
@@ -23,7 +25,9 @@ interface PrivacyWrapperProps {
   config: PrivacyConfig
   /** Content to be protected */
   children: React.ReactNode
-  /** Custom skeleton component (optional) */
+  /** Custom fallback component to render when privacy is active (replaces skeleton + overlay) */
+  fallback?: React.ReactNode
+  /** Custom skeleton component (optional, used if fallback is not provided) */
   skeleton?: React.ReactNode
   /** Custom hidden message (optional) - deprecated, always shows "Privacy Content" */
   hiddenMessage?: string
@@ -76,6 +80,9 @@ function PrivacyToggleButton({
   canToggle,
   position 
 }: PrivacyToggleButtonProps) {
+  const { i18n } = useTranslation()
+  const t = privacyTranslations[i18n.language as keyof typeof privacyTranslations] || privacyTranslations.en
+  
   if (!canToggle) return null
 
   const positionClasses = {
@@ -96,8 +103,8 @@ function PrivacyToggleButton({
         isHidden ? "ring-blue-500 border-blue-500" : "ring-transparent",
         positionClasses[position]
       )}
-      title={isHidden ? "Show sensitive information" : "Hide sensitive information"}
-      aria-label={isHidden ? "Show content" : "Hide content"}
+      title={isHidden ? t.showSensitive : t.hideSensitive}
+      aria-label={isHidden ? t.showContent : t.hideContent}
     >
       {isHidden ? (
         <Eye className="w-5 h-5 text-blue-600 transition-colors duration-200" />
@@ -107,7 +114,7 @@ function PrivacyToggleButton({
       
       {/* Tooltip */}
       <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-xl">
-        {isHidden ? "Click to show information" : "Click to hide information"}
+        {isHidden ? t.clickToShow : t.clickToHide}
       </div>
     </button>
   )
@@ -118,16 +125,31 @@ function PrivacyToggleButton({
  * 
  * Wraps any content and provides privacy toggle functionality with role-based access control.
  * The toggle button is always positioned at the top-right corner of the component.
- * When hidden, shows a skeleton with blur and a centered message:
- * "Privacy Content - Contact admin to see more"
+ * 
+ * When hidden, you can provide:
+ * - `fallback`: Custom component to render (full control)
+ * - `skeleton`: Skeleton with blur effect + default overlay message
+ * - Neither: Uses default skeleton with overlay
  * 
  * @example
  * ```tsx
+ * // With custom fallback
  * <PrivacyWrapper
  *   config={{
  *     id: 'budget-chart',
  *     level: 'confidential',
  *     allowedRoles: ['admin', 'finance_manager'],
+ *   }}
+ *   fallback={<div>Custom privacy message</div>}
+ * >
+ *   <YourSensitiveContent />
+ * </PrivacyWrapper>
+ * 
+ * // With skeleton (default behavior)
+ * <PrivacyWrapper
+ *   config={{
+ *     id: 'budget-chart',
+ *     level: 'confidential',
  *     blurIntensity: 'high',
  *   }}
  * >
@@ -138,14 +160,17 @@ function PrivacyToggleButton({
 export function PrivacyWrapper({
   config,
   children,
+  fallback,
   skeleton,
-  hiddenMessage = "Sensitive information hidden",
+  hiddenMessage,
   className,
   showToggle = true,
   togglePosition = 'top-right',
   customToggle,
   onPrivacyChange,
 }: PrivacyWrapperProps) {
+  const { i18n } = useTranslation()
+  const t = privacyTranslations[i18n.language as keyof typeof privacyTranslations] || privacyTranslations.en
   const { isHidden, togglePrivacy, canToggle } = useComponentPrivacy(config)
 
   const blurIntensity = config.blurIntensity || 'medium'
@@ -165,46 +190,71 @@ export function PrivacyWrapper({
   return (
     <div className={cn("relative", className)}>
       {isHidden ? (
-        // Privacy Mode: Show skeleton with blur and centered message
-        <div className="relative w-full h-full min-h-[300px]">
-          {/* Blurred Content */}
-          <div className={cn(
-            "w-full h-full pointer-events-none select-none",
-            blurClass // Blur aplicado diretamente no skeleton
-          )}>
-            {skeleton || <DefaultSkeleton />}
+        // Privacy Mode: Render fallback or skeleton with blur and centered message
+        fallback ? (
+          // Custom Fallback Component
+          <div className="relative w-full h-full">
+            {fallback}
+            
+            {/* Toggle Button - Always top-right */}
+            {showToggle && !customToggle && (
+              <PrivacyToggleButton
+                isHidden={isHidden}
+                toggle={handleToggle}
+                canToggle={canToggle}
+                position="top-right"
+              />
+            )}
+
+            {/* Custom Toggle */}
+            {customToggle && customToggle({
+              isHidden,
+              toggle: handleToggle,
+              canToggle,
+            })}
           </div>
-          
-          {/* Overlay com Mensagem Centralizada */}
-          <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm">
-            <div className="bg-gray-900/95 text-white px-8 py-6 rounded-xl flex flex-col items-center gap-3 shadow-2xl max-w-md text-center border border-gray-700">
-              <div className="flex items-center gap-3">
-                <EyeOff className="w-6 h-6" />
-                <span className="text-lg font-semibold">Privacy Content</span>
-              </div>
-              <p className="text-sm text-gray-300 leading-relaxed">
-                This information is protected. Contact admin to see more.
-              </p>
+        ) : (
+          // Default Skeleton with Blur and Overlay
+          <div className="relative w-full h-full min-h-[300px]">
+            {/* Blurred Content */}
+            <div className={cn(
+              "w-full h-full pointer-events-none select-none",
+              blurClass // Blur aplicado diretamente no skeleton
+            )}>
+              {skeleton || <DefaultSkeleton />}
             </div>
+            
+            {/* Overlay com Mensagem Centralizada */}
+            <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm">
+              <div className="bg-gray-900/95 text-white px-8 py-6 rounded-xl flex flex-col items-center gap-3 shadow-2xl max-w-md text-center border border-gray-700">
+                <div className="flex items-center gap-3">
+                  <EyeOff className="w-6 h-6" />
+                  <span className="text-lg font-semibold">{t.privacyTitle}</span>
+                </div>
+                <p className="text-sm text-gray-300 leading-relaxed">
+                  {t.privacyDescription}
+                </p>
+              </div>
+            </div>
+
+            {/* Toggle Button - Always top-right */}
+            {showToggle && !customToggle && (
+              <PrivacyToggleButton
+                isHidden={isHidden}
+                toggle={handleToggle}
+                canToggle={canToggle}
+                position="top-right"
+              />
+            )}
+
+            {/* Custom Toggle */}
+            {customToggle && customToggle({
+              isHidden,
+              toggle: handleToggle,
+              canToggle,
+            })}
           </div>
-
-          {/* Toggle Button - Always top-right */}
-          {showToggle && !customToggle && (
-            <PrivacyToggleButton
-              isHidden={isHidden}
-              toggle={handleToggle}
-              canToggle={canToggle}
-              position="top-right"
-            />
-          )}
-
-          {/* Custom Toggle */}
-          {customToggle && customToggle({
-            isHidden,
-            toggle: handleToggle,
-            canToggle,
-          })}
-        </div>
+        )
       ) : (
         // Normal Mode: Show actual content
         <div className="relative w-full h-full">
@@ -242,6 +292,8 @@ interface InlinePrivacyToggleProps {
 }
 
 export function InlinePrivacyToggle({ config, className }: InlinePrivacyToggleProps) {
+  const { i18n } = useTranslation()
+  const t = privacyTranslations[i18n.language as keyof typeof privacyTranslations] || privacyTranslations.en
   const privacyContext = usePrivacy()
   const { isHidden, togglePrivacy, canToggle } = useComponentPrivacy(config)
 
@@ -286,21 +338,21 @@ export function InlinePrivacyToggle({ config, className }: InlinePrivacyTogglePr
           : "bg-transparent border-gray-400 hover:border-gray-600 opacity-70 hover:opacity-100", // Transparent quando visible
         className
       )}
-      title={isHidden ? "Show sensitive information" : "Hide sensitive information"}
-      aria-label={isHidden ? "Show content" : "Hide content"}
+      title={isHidden ? t.showSensitive : t.hideSensitive}
+      aria-label={isHidden ? t.showContent : t.hideContent}
       data-privacy-toggle={config.id}
       data-can-toggle={canToggle}
       data-is-hidden={isHidden}
     >
       {isHidden ? (
-        <Eye className="w-4 h-4 text-white transition-colors duration-300" /> // Ícone branco quando hidden
+        <Eye className="w-4 h-4 text-white transition-colors duration-300" />
       ) : (
-        <EyeOff className="w-4 h-4 text-gray-700 transition-colors duration-300" /> // Ícone dark quando visible
+        <EyeOff className="w-4 h-4 text-gray-700 transition-colors duration-300" />
       )}
       
       {/* Tooltip */}
       <div className="absolute right-0 top-full mt-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
-        {isHidden ? "Click to show" : "Click to hide"}
+        {isHidden ? t.clickShow : t.clickHide}
       </div>
     </button>
   )
@@ -313,6 +365,7 @@ export function withPrivacy<P extends object>(
   Component: React.ComponentType<P>,
   config: PrivacyConfig,
   options?: {
+    fallback?: React.ReactNode
     skeleton?: React.ReactNode
     hiddenMessage?: string
     showToggle?: boolean
@@ -323,6 +376,7 @@ export function withPrivacy<P extends object>(
     return (
       <PrivacyWrapper
         config={config}
+        fallback={options?.fallback}
         skeleton={options?.skeleton}
         hiddenMessage={options?.hiddenMessage}
         showToggle={options?.showToggle}

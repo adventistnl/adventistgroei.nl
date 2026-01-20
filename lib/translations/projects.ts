@@ -4,6 +4,22 @@ export const projectTranslations = {
     projects: "Projects",
     reportsAndProjects: "Reports & Projects",
 
+    // Sidebar
+    sidebar: {
+      projects: "Projects",
+      addProject: "Add Project",
+      creatingNewProject: "Creating new project...",
+      loadingProjects: "Loading projects...",
+      noProjectsYet: "No projects yet",
+      openingProject: "Opening {{title}}...",
+      more: "More",
+      viewProject: "View Project",
+      shareProject: "Share Project",
+      projectLinkCopied: "Project link copied!",
+      errorCopyingLink: "Error copying link",
+      seeMore: "See More"
+    },
+
     common: {
       add: "Add",
       cancel: "Cancel",
@@ -16,7 +32,34 @@ export const projectTranslations = {
       irreversible: "This action cannot be undone",
       deletePermanently: "Delete Permanently",
       registeredUsers: "Registered Users",
-      error: "Error"
+      error: "Error",
+      confirm: "Confirm",
+      confirmAction: "I confirm that I want to execute this action and understand the consequences."
+    },
+
+    // Access Control
+    accessDenied: {
+      title: "Access Denied",
+      noPermission: "You don't have permission to create projects.",
+      contactAdmin: "Please contact your administrator to request access."
+    },
+
+    // Rejection Dialog
+    rejection: {
+      dialog: {
+        title: "Reject Request",
+        description: "Please provide a reason for the rejection.",
+        warning: "This action will result in the permanent rejection of the request and cannot be undone.",
+        confirmation: "I confirm that I want to reject this request and understand that this action cannot be undone."
+      },
+      form: {
+        reasonLabel: "Reason for rejection",
+        reasonPlaceholder: "Describe the reason for rejection..."
+      },
+      actions: {
+        confirm: "Reject",
+        processing: "Processing..."
+      }
     },
     
     // Page titles
@@ -33,6 +76,7 @@ export const projectTranslations = {
       completedProjects: "Completed Projects",
       upcomingProjects: "Upcoming Projects",
       totalBudget: "Total Budget",
+      totalAllocated: "Total Allocated to Projects",
       totalSubsidyRequests: "Subsidy Requests",
       totalSubsidyAmount: "Total Subsidy Amount",
       averageProjectBudget: "Average Project Budget",
@@ -52,7 +96,11 @@ export const projectTranslations = {
       requested: "requested",
       approvedPercent: "{{percent}}% approved",
       ofProjects: "{{percent}}% of projects",
-      growingEngagement: "growing engagement"
+      growingEngagement: "growing engagement",
+      yearProgress: "Year Progress",
+      daysElapsed: "{{days}} days elapsed",
+      daysRemaining: "{{days}} days remaining",
+      currentDay: "Day {{current}} of {{total}}"
     },
     
     // Charts
@@ -86,6 +134,13 @@ export const projectTranslations = {
       noProjectData: "No project data available",
       projectsCreatedThisYear: "projects created this year",
       top: "Top",
+      showingTotal: "Showing total projects for the last",
+      last12Months: "Last 12 months",
+      last6Months: "Last 6 months",
+      last3Months: "Last 3 months",
+      last30Days: "Last 30 days",
+      last7Days: "Last 7 days",
+      selectTimeRange: "Select time range",
       distributionByDepartment: "Distribution of projects across departments",
       selectDepartment: "Select department",
       projectsWithMostActivities: "Projects with Most Activities",
@@ -113,6 +168,10 @@ export const projectTranslations = {
     table: {
       projectTitle: "Project Title",
       department: "Department",
+      church: "Church",
+      noChurch: "No church",
+      collaborators: "Collaborators",
+      noCollaborators: "No collaborators",
       subsidyRequests: "Subsidy Requests",
       subsidyAmount: "Subsidy Amount",
       activities: "Activities",
@@ -152,6 +211,9 @@ export const projectTranslations = {
     
     // Filters
     filters: {
+      showMyProjects: "Show my projects",
+      showAllProjects: "Show all projects",
+      myProjectsActive: "My Projects",
       allDepartments: "All Departments",
       allStatuses: "All Statuses",
       allPeriods: "All Periods",
@@ -214,11 +276,23 @@ export const projectTranslations = {
       create_first_non_subsidized: "Create your first activity"
     },
     
+    // Delete Activity Modal
+    deleteActivity: {
+      title: "Delete Activity",
+      description: "You are about to permanently delete this activity. This action cannot be undone.",
+      warning: "This action is permanent and cannot be reversed.",
+      warningDescription: "All data related to this activity will be permanently deleted.",
+      understand: "I understand this action is permanent and irreversible",
+      deleting: "Deleting...",
+      deleteButton: "Delete Activity"
+    },
+    
     // Toast messages
     toasts: {
       projectCreated: "Project created successfully!",
       projectUpdated: "Project updated successfully!",
       projectDeleted: "Project deleted successfully!",
+      activityDeleted: "Activity deleted successfully!",
       eventCreated: "Event created successfully!",
       communicationCreated: "Communication created successfully!",
       loadingData: "Loading projects data...",
@@ -254,12 +328,16 @@ export const projectTranslations = {
       cannotDeleteApprovedSubsidy: "Cannot delete approved or closed subsidy requests.",
       genericDeleteError: "Failed to delete. Please try again.",
       updateError: "Error updating project",
+      onlyOwnerCanEdit: "Only the project owner can edit",
       departmentNotFound: "Department not found",
       titleRequired: "Title is required",
       descriptionRequired: "Description is required",
       departmentRequired: "Department is required",
+      ownerRequired: "Project owner is required",
       budgetPositive: "Budget must be greater than 0",
-      endDateAfterStart: "End date must be after start date"
+      endDateAfterStart: "End date must be after start date",
+      currentOwner: "Current Owner",
+      clickToChange: "Click to change owner"
     },
     
     // Steps
@@ -416,6 +494,7 @@ export const projectTranslations = {
       approveSubsidy: "Approve Subsidy",
       rejectSubsidy: "Reject Subsidy",
       subsidyDescription: "Subsidy Description",
+      subsidyRequestDescription: "Subsidy request with {{count}} activity(ies)",
       totalBudget: "Total Budget",
       requestedAmount: "Requested Amount",
       approvedAmount: "Approved Amount",
@@ -721,6 +800,17 @@ export const projectTranslations = {
     deleteProjectAcknowledge: "I understand that this action cannot be undone and all data will be permanently removed.",
     deleteProjectTypeConfirmLabel: "Type the confirmation text to proceed",
     deleteProjectConfirmHelp: "Type \"delete project\" to confirm",
+    deleteProjectValidationTitle: "Deletion Requirements",
+    deleteProjectStatusLabel: "Project Status",
+    deleteProjectNoActivities: "No activities",
+    deleteProjectActivitiesCompleted: "completed",
+    deleteProjectNoSubsidies: "No subsidies",
+    deleteProjectActiveSubsidies: "active",
+    deleteProjectStatusCorrect: "Correct status",
+    deleteProjectMustBeDraft: "(must be DRAFT)",
+    deleteProjectCannotDelete: "Cannot delete this project",
+    deleteProjectFixIssues: "Fix the issues marked above before proceeding.",
+    deleteProjectDocumentsWillBeDeleted: "document(s) will be permanently deleted",
     shareProject: "Share Project",
     manageVolunteers: "Manage Volunteers",
     joinAsVolunteer: "Join as Volunteer",
@@ -732,6 +822,13 @@ export const projectTranslations = {
     endDate: "End Date",
     languagePreference: "Language Preference",
     department: "Department",
+    projectOwner: "Project Owner",
+    selectOwner: "Select Owner",
+    changeOwner: "Change Owner",
+    currentOwner: "Current Owner",
+    selectProjectOwner: "Select Project Owner",
+    project: "Project",
+    searchUsers: "Search users...",
     privateProject: "Private Project",
     requestVolunteers: "Request Volunteers",
     
@@ -844,6 +941,22 @@ export const projectTranslations = {
     projects: "Projecten",
     reportsAndProjects: "Rapporten & Projecten",
 
+    // Sidebar
+    sidebar: {
+      projects: "Projecten",
+      addProject: "Project Toevoegen",
+      creatingNewProject: "Nieuw project maken...",
+      loadingProjects: "Projecten laden...",
+      noProjectsYet: "Nog geen projecten",
+      openingProject: "{{title}} openen...",
+      more: "Meer",
+      viewProject: "Project Bekijken",
+      shareProject: "Project Delen",
+      projectLinkCopied: "Projectlink gekopieerd!",
+      errorCopyingLink: "Fout bij kopiëren link",
+      seeMore: "Meer Weergeven"
+    },
+
     common: {
       add: "Toevoegen",
       cancel: "Annuleren",
@@ -856,7 +969,27 @@ export const projectTranslations = {
       irreversible: "Deze actie kan niet ongedaan worden gemaakt",
       deletePermanently: "Definitief Verwijderen",
       registeredUsers: "Geregistreerde Gebruikers",
-      error: "Fout"
+      error: "Fout",
+      confirm: "Bevestigen",
+      confirmAction: "Ik bevestig dat ik deze actie wil uitvoeren en begrijp de gevolgen."
+    },
+
+    // Rejection Dialog
+    rejection: {
+      dialog: {
+        title: "Verzoek afwijzen",
+        description: "Geef een reden op voor de afwijzing.",
+        warning: "Deze actie zal resulteren in de permanente afwijzing van het verzoek en kan niet ongedaan worden gemaakt.",
+        confirmation: "Ik bevestig dat ik dit verzoek wil afwijzen en begrijp dat deze actie niet ongedaan kan worden gemaakt."
+      },
+      form: {
+        reasonLabel: "Reden voor afwijzing",
+        reasonPlaceholder: "Beschrijf de reden voor afwijzing..."
+      },
+      actions: {
+        confirm: "Afwijzen",
+        processing: "Verwerken..."
+      }
     },
     
     // Page titles
@@ -892,7 +1025,11 @@ export const projectTranslations = {
       requested: "aangevraagd",
       approvedPercent: "{{percent}}% goedgekeurd",
       ofProjects: "{{percent}}% van projecten",
-      growingEngagement: "groeiende betrokkenheid"
+      growingEngagement: "groeiende betrokkenheid",
+      yearProgress: "Jaarvoortgang",
+      daysElapsed: "{{days}} dagen verstreken",
+      daysRemaining: "{{days}} dagen resterend",
+      currentDay: "Dag {{current}} van {{total}}"
     },
     
     // Charts
@@ -926,7 +1063,11 @@ export const projectTranslations = {
       noProjectData: "Geen projectgegevens beschikbaar",
       projectsCreatedThisYear: "projecten gemaakt dit jaar",
       top: "Top",
-
+      showingTotal: "Totaal projecten weergegeven voor de laatste",
+      last3Months: "Laatste 3 maanden",
+      last30Days: "Laatste 30 dagen",
+      last7Days: "Laatste 7 dagen",
+      selectTimeRange: "Selecteer tijdsbereik",
       distributionByDepartment: "Verdeling van projecten per afdeling",
       selectDepartment: "Selecteer afdeling",
       projectsWithMostActivities: "Projecten met meeste activiteiten",
@@ -954,6 +1095,10 @@ export const projectTranslations = {
     table: {
       projectTitle: "Project Titel",
       department: "Afdeling",
+      church: "Kerk",
+      noChurch: "Geen kerk",
+      collaborators: "Medewerkers",
+      noCollaborators: "Geen medewerkers",
       subsidyRequests: "Subsidie Aanvragen",
       subsidyAmount: "Subsidie Bedrag",
       activities: "Activiteiten",
@@ -993,6 +1138,9 @@ export const projectTranslations = {
     
     // Filters
     filters: {
+      showMyProjects: "Toon mijn projecten",
+      showAllProjects: "Toon alle projecten",
+      myProjectsActive: "Mijn Projecten",
       allDepartments: "Alle Afdelingen",
       allStatuses: "Alle Statussen",
       allPeriods: "Alle Perioden",
@@ -1055,11 +1203,23 @@ export const projectTranslations = {
       create_first_non_subsidized: "Maak uw eerste activiteit"
     },
     
+    // Delete Activity Modal
+    deleteActivity: {
+      title: "Activiteit Verwijderen",
+      description: "U staat op het punt deze activiteit permanent te verwijderen. Deze actie kan niet ongedaan worden gemaakt.",
+      warning: "Deze actie is permanent en kan niet worden teruggedraaid.",
+      warningDescription: "Alle gegevens met betrekking tot deze activiteit worden permanent verwijderd.",
+      understand: "Ik begrijp dat deze actie permanent en onomkeerbaar is",
+      deleting: "Verwijderen...",
+      deleteButton: "Activiteit Verwijderen"
+    },
+    
     // Toast messages
     toasts: {
       projectCreated: "Project succesvol aangemaakt!",
       projectUpdated: "Project succesvol bijgewerkt!",
       projectDeleted: "Project succesvol verwijderd!",
+      activityDeleted: "Activiteit succesvol verwijderd!",
       eventCreated: "Evenement succesvol aangemaakt!",
       communicationCreated: "Communicatie succesvol aangemaakt!",
       loadingData: "Projecten data laden...",
@@ -1095,12 +1255,16 @@ export const projectTranslations = {
       cannotDeleteApprovedSubsidy: "Kan goedgekeurde of afgesloten subsidie aanvragen niet verwijderen.",
       genericDeleteError: "Verwijderen mislukt. Probeer het opnieuw.",
       updateError: "Fout bij bijwerken project",
+      onlyOwnerCanEdit: "Alleen de projecteigenaar kan bewerken",
       departmentNotFound: "Afdeling niet gevonden",
       titleRequired: "Titel is verplicht",
       descriptionRequired: "Beschrijving is verplicht",
       departmentRequired: "Afdeling is verplicht",
+      ownerRequired: "Projecteigenaar is verplicht",
       budgetPositive: "Budget moet groter zijn dan 0",
-      endDateAfterStart: "Einddatum moet na startdatum liggen"
+      endDateAfterStart: "Einddatum moet na startdatum liggen",
+      currentOwner: "Huidige eigenaar",
+      clickToChange: "Klik om eigenaar te wijzigen"
     },
     
     // Steps
@@ -1257,6 +1421,7 @@ export const projectTranslations = {
       approveSubsidy: "Subsidie Goedkeuren",
       rejectSubsidy: "Subsidie Afwijzen",
       subsidyDescription: "Subsidie Beschrijving",
+      subsidyRequestDescription: "Subsidie aanvraag met {{count}} activiteit(en)",
       totalBudget: "Totaal Budget",
       requestedAmount: "Aangevraagd Bedrag",
       approvedAmount: "Goedgekeurd Bedrag",
@@ -1581,6 +1746,17 @@ export const projectTranslations = {
     deleteProjectAcknowledge: "Ik begrijp dat deze actie niet ongedaan kan worden gemaakt en alle gegevens permanent worden verwijderd.",
     deleteProjectTypeConfirmLabel: "Typ de bevestigingstekst om door te gaan",
     deleteProjectConfirmHelp: "Typ \"delete project\" om te bevestigen",
+    deleteProjectValidationTitle: "Verwijderingsvereisten",
+    deleteProjectStatusLabel: "Projectstatus",
+    deleteProjectNoActivities: "Geen activiteiten",
+    deleteProjectActivitiesCompleted: "voltooid",
+    deleteProjectNoSubsidies: "Geen subsidies",
+    deleteProjectActiveSubsidies: "actief",
+    deleteProjectStatusCorrect: "Correcte status",
+    deleteProjectMustBeDraft: "(moet DRAFT zijn)",
+    deleteProjectCannotDelete: "Kan dit project niet verwijderen",
+    deleteProjectFixIssues: "Los de hierboven gemarkeerde problemen op voordat u doorgaat.",
+    deleteProjectDocumentsWillBeDeleted: "document(en) worden permanent verwijderd",
     shareProject: "Deel Project",
     manageVolunteers: "Beheer Vrijwilligers",
     joinAsVolunteer: "Word Vrijwilliger",
@@ -1685,6 +1861,22 @@ export const projectTranslations = {
     projects: "Projetos",
     reportsAndProjects: "Relatórios & Projetos",
 
+    // Sidebar
+    sidebar: {
+      projects: "Projetos",
+      addProject: "Adicionar Projeto",
+      creatingNewProject: "Criando novo projeto...",
+      loadingProjects: "Carregando projetos...",
+      noProjectsYet: "Nenhum projeto ainda",
+      openingProject: "Abrindo {{title}}...",
+      more: "Mais",
+      viewProject: "Ver Projeto",
+      shareProject: "Compartilhar Projeto",
+      projectLinkCopied: "Link do projeto copiado!",
+      errorCopyingLink: "Erro ao copiar link",
+      seeMore: "Ver Mais"
+    },
+
     common: {
       add: "Adicionar",
       cancel: "Cancelar",
@@ -1697,7 +1889,27 @@ export const projectTranslations = {
       irreversible: "Esta ação não pode ser desfeita",
       deletePermanently: "Excluir Permanentemente",
       registeredUsers: "Usuários Registrados",
-      error: "Erro"
+      error: "Erro",
+      confirm: "Confirmar",
+      confirmAction: "Confirmo que desejo executar esta ação e entendo as consequências."
+    },
+
+    // Rejection Dialog
+    rejection: {
+      dialog: {
+        title: "Rejeitar Solicitação",
+        description: "Por favor, forneça um motivo para a rejeição.",
+        warning: "Esta ação resultará na rejeição permanente da solicitação e não poderá ser desfeita.",
+        confirmation: "Confirmo que desejo rejeitar esta solicitação e entendo que esta ação não pode ser desfeita."
+      },
+      form: {
+        reasonLabel: "Motivo da rejeição",
+        reasonPlaceholder: "Descreva o motivo da rejeição..."
+      },
+      actions: {
+        confirm: "Rejeitar",
+        processing: "Processando..."
+      }
     },
     
     // Page titles
@@ -1733,7 +1945,11 @@ export const projectTranslations = {
       requested: "solicitado",
       approvedPercent: "{{percent}}% aprovados",
       ofProjects: "{{percent}}% dos projetos",
-      growingEngagement: "engajamento crescente"
+      growingEngagement: "engajamento crescente",
+      yearProgress: "Progresso do Ano",
+      daysElapsed: "{{days}} dias decorridos",
+      daysRemaining: "{{days}} dias restantes",
+      currentDay: "Dia {{current}} de {{total}}"
     },
     
     // Charts
@@ -1767,6 +1983,13 @@ export const projectTranslations = {
       noProjectData: "Nenhum dado de projeto disponível",
       projectsCreatedThisYear: "projetos criados este ano",
       top: "Top",
+      showingTotal: "Mostrando total de projetos dos últimos",
+      last12Months: "Últimos 12 meses",
+      last6Months: "Últimos 6 meses",
+      last3Months: "Últimos 3 meses",
+      last30Days: "Últimos 30 dias",
+      last7Days: "Últimos 7 dias",
+      selectTimeRange: "Selecionar período",
       distributionByDepartment: "Distribuição de projetos por departamento",
       selectDepartment: "Selecione o departamento",
       projectsWithMostActivities: "Projetos com Mais Atividades",
@@ -1794,6 +2017,10 @@ export const projectTranslations = {
     table: {
       projectTitle: "Título do Projeto",
       department: "Departamento",
+      church: "Igreja",
+      noChurch: "Sem igreja",
+      collaborators: "Colaboradores",
+      noCollaborators: "Sem colaboradores",
       subsidyRequests: "Pedidos de Subsídio",
       subsidyAmount: "Valor do Subsídio",
       activities: "Atividades",
@@ -1833,6 +2060,9 @@ export const projectTranslations = {
     
     // Filters
     filters: {
+      showMyProjects: "Mostrar meus projetos",
+      showAllProjects: "Mostrar todos os projetos",
+      myProjectsActive: "Meus Projetos",
       allDepartments: "Todos os Departamentos",
       allStatuses: "Todos os Status",
       allPeriods: "Todos os Períodos",
@@ -1895,11 +2125,23 @@ export const projectTranslations = {
       create_first_non_subsidized: "Crie sua primeira atividade"
     },
     
+    // Delete Activity Modal
+    deleteActivity: {
+      title: "Excluir Atividade",
+      description: "Você está prestes a excluir permanentemente esta atividade. Esta ação não pode ser desfeita.",
+      warning: "Esta ação é permanente e não pode ser revertida.",
+      warningDescription: "Todos os dados relacionados a esta atividade serão permanentemente excluídos.",
+      understand: "Eu entendo que esta ação é permanente e irreversível",
+      deleting: "Excluindo...",
+      deleteButton: "Excluir Atividade"
+    },
+    
     // Toast messages
     toasts: {
       projectCreated: "Projeto criado com sucesso!",
       projectUpdated: "Projeto atualizado com sucesso!",
       projectDeleted: "Projeto excluído com sucesso!",
+      activityDeleted: "Atividade excluída com sucesso!",
       eventCreated: "Evento criado com sucesso!",
       communicationCreated: "Comunicação criada com sucesso!",
       loadingData: "Carregando dados dos projetos...",
@@ -1935,12 +2177,16 @@ export const projectTranslations = {
       cannotDeleteApprovedSubsidy: "Não é possível excluir pedidos de subsídio aprovados ou concluídos.",
       genericDeleteError: "Falha ao excluir. Tente novamente.",
       updateError: "Erro ao atualizar projeto",
+      onlyOwnerCanEdit: "Apenas o proprietário do projeto pode editar",
       departmentNotFound: "Departamento não encontrado",
       titleRequired: "O título é obrigatório",
       descriptionRequired: "A descrição é obrigatória",
       departmentRequired: "O departamento é obrigatório",
+      ownerRequired: "O proprietário do projeto é obrigatório",
       budgetPositive: "O orçamento deve ser maior que 0",
-      endDateAfterStart: "A data de término deve ser após a data de início"
+      endDateAfterStart: "A data de término deve ser após a data de início",
+      currentOwner: "Proprietário atual",
+      clickToChange: "Clique para alterar o proprietário"
     },
     
     // Steps
@@ -2097,6 +2343,7 @@ export const projectTranslations = {
       approveSubsidy: "Aprovar Subsídio",
       rejectSubsidy: "Rejeitar Subsídio",
       subsidyDescription: "Descrição do Subsídio",
+      subsidyRequestDescription: "Solicitação de subsídio com {{count}} atividade(s)",
       totalBudget: "Orçamento Total",
       requestedAmount: "Valor Solicitado",
       approvedAmount: "Valor Aprovado",
@@ -2354,6 +2601,17 @@ export const projectTranslations = {
     deleteProjectAcknowledge: "Eu entendo que esta ação não pode ser desfeita e todos os dados serão permanentemente removidos.",
     deleteProjectTypeConfirmLabel: "Digite o texto de confirmação para prosseguir",
     deleteProjectConfirmHelp: "Digite \"delete project\" para confirmar",
+    deleteProjectValidationTitle: "Requisitos para Deleção",
+    deleteProjectStatusLabel: "Status do Projeto",
+    deleteProjectNoActivities: "Nenhuma atividade",
+    deleteProjectActivitiesCompleted: "concluídas",
+    deleteProjectNoSubsidies: "Nenhum subsídio",
+    deleteProjectActiveSubsidies: "ativo(s)",
+    deleteProjectStatusCorrect: "Status correto",
+    deleteProjectMustBeDraft: "(deve ser DRAFT)",
+    deleteProjectCannotDelete: "Não é possível deletar este projeto",
+    deleteProjectFixIssues: "Corrija os itens marcados acima antes de prosseguir.",
+    deleteProjectDocumentsWillBeDeleted: "documento(s) serão deletados permanentemente",
     shareProject: "Compartilhar Projeto",
     manageVolunteers: "Gerenciar Voluntários",
     joinAsVolunteer: "Participar como Voluntário",
@@ -2365,6 +2623,13 @@ export const projectTranslations = {
     endDate: "Data de Término",
     languagePreference: "Preferência de Idioma",
     department: "Departamento",
+    projectOwner: "Proprietário do Projeto",
+    selectOwner: "Selecionar Proprietário",
+    changeOwner: "Alterar Proprietário",
+    currentOwner: "Proprietário Atual",
+    selectProjectOwner: "Selecionar Proprietário do Projeto",
+    project: "Projeto",
+    searchUsers: "Buscar usuários...",
     privateProject: "Projeto Privado",
     requestVolunteers: "Solicitar Voluntários",
     

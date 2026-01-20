@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ProjectType, LanguagePreference, ActivityTags, ActivityStatus, ActivityPriority, EntityType } from "./globalTypes";
+import { ProjectType, LanguagePreference, ProjectStatus, ActivityTags, ActivityStatus, ActivityPriority, EntityType } from "./globalTypes";
 
 // ====================================================
 // GraphQL query operation: Projects
@@ -16,14 +16,41 @@ export interface Projects_projects_owner {
   email: string;
 }
 
-export interface Projects_projects_department {
-  __typename: "Department";
+export interface Projects_projects_department_church {
+  __typename: "Church";
   id: string;
   name: string;
 }
 
+export interface Projects_projects_department {
+  __typename: "Department";
+  id: string;
+  name: string;
+  church: Projects_projects_department_church | null;
+}
+
+export interface Projects_projects_church_department_church {
+  __typename: "Church";
+  id: string;
+  name: string;
+}
+
+export interface Projects_projects_church_department {
+  __typename: "Department";
+  id: string;
+  name: string;
+  description: string;
+  church: Projects_projects_church_department_church | null;
+}
+
 export interface Projects_projects_Institution {
   __typename: "Institution";
+  id: string;
+  name: string;
+}
+
+export interface Projects_projects_Church {
+  __typename: "Church";
   id: string;
   name: string;
 }
@@ -74,6 +101,7 @@ export interface Projects_projects {
   title: string;
   description: string;
   budget: any;
+  subsidized_budget: any;
   type: ProjectType;
   is_private: boolean;
   required_volunteers: boolean;
@@ -82,14 +110,18 @@ export interface Projects_projects {
   deadline: any | null;
   language_preference: LanguagePreference;
   department_id: string;
+  church_department_id: string | null;
   owner_id: string;
   institution_id: string | null;
   event_id: string | null;
+  status: ProjectStatus;
   created_at: any;
   updated_at: any;
   owner: Projects_projects_owner;
   department: Projects_projects_department;
+  church_department: Projects_projects_church_department | null;
   Institution: Projects_projects_Institution | null;
+  Church: Projects_projects_Church | null;
   activities: Projects_projects_activities[] | null;
 }
 

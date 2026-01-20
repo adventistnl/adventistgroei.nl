@@ -3,8 +3,13 @@
 import React, { useState, useMemo, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
+import { useQuery } from "@apollo/client"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
+import { GET_ALL_SUBSIDY_REQUESTS } from "@/graphql/queries/SUBSIDY_REQUESTS_QUERY"
+import { GET_SUBSIDY_STATUS_HISTORY } from "@/graphql/queries/SUBSIDY_STATUS_HISTORY_QUERIES"
+import { format } from "date-fns"
+import { ptBR } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -56,6 +61,7 @@ import { UseTable } from "@/components/ui/use-table"
 import { UsageIndicator } from "@/components/ui/usage-indicator"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
+import { GlobalPrivacyToggle } from "@/components/shared/global-privacy-toggle"
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
 import { PermissionResolverName } from "@/types/graphql-global-types"
@@ -102,14 +108,14 @@ export default function AnnualBudgetPage() {
   const { currentInstitutionData, refetchInstitutionById } = useInstitution()
   const { formatCurrency: formatCurrencyGlobal, selectedCurrency, setCurrency, availableCurrencies } = useCurrency()
   
-  // Privacy configurations for KPIs
-  const PRIVACY_CONFIGS = {
+  // Privacy configurations for KPIs (memoized to ensure stable IDs)
+  const PRIVACY_CONFIGS = useMemo(() => ({
     totalBudget: createPrivacyConfig('kpi-total-budget', 'FINANCIAL_DATA'),
     totalAllocated: createPrivacyConfig('kpi-total-allocated', 'FINANCIAL_DATA'),
     totalSpent: createPrivacyConfig('kpi-total-spent', 'FINANCIAL_DATA'),
     budgetRemaining: createPrivacyConfig('kpi-budget-remaining', 'FINANCIAL_DATA'),
     budgetUtilization: createPrivacyConfig('kpi-budget-utilization', 'FINANCIAL_DATA'),
-  }
+  }), [])
   
   // GraphQL mutations
   const [createInstitutionBudgetMutation] = useCreateInstitutionBudgetMutation()
@@ -152,6 +158,15 @@ export default function AnnualBudgetPage() {
       institutionId: currentInstitutionData?.id!,
       year: selectedYear
     }
+  })
+
+  // Query para buscar dados de subsidies para cruzar com as datas de aprovação
+  const { data: subsidyData } = useQuery(GET_ALL_SUBSIDY_REQUESTS)
+  
+  // Query para buscar histórico de status dos subsídios para obter datas precisas de aprovação
+  const { data: subsidyStatusHistoryData } = useQuery(GET_SUBSIDY_STATUS_HISTORY, {
+    variables: { subsidyRequestId: "ALL" }, // Assumindo que podemos buscar todos
+    skip: !subsidyData?.subsidyRequests?.length, // Só buscar se tiver subsídios
   })
 
   // State for managing available years (frontend-managed)
@@ -625,7 +640,7 @@ export default function AnnualBudgetPage() {
       ) : undefined
     }
   ]
-  }, [kpiData, selectedYear, hasInstitutionBudget, institutionAnnualBudgets, handleCreateInstitutionBudget, handleEditInstitutionBudget, handleToggleInstitutionBudgetLock, t])
+  }, [kpiData, selectedYear, hasInstitutionBudget, institutionAnnualBudgets, handleCreateInstitutionBudget, handleEditInstitutionBudget, handleToggleInstitutionBudgetLock, t, PRIVACY_CONFIGS])
 
   // Chart data from GraphQL
   const chartData = useMemo(() => {
@@ -642,7 +657,147 @@ export default function AnnualBudgetPage() {
       }))
       .filter((entity: any) => entity.amount > 0)
 
+    // Função auxiliar para encontrar a data real de aprovação usando o histórico
+    const findRealApprovalDate = (subsidyId: string, subsidyApprovedAt: string | null, subsidyUpdatedAt: string) => {
+      // Primeiro, tentar usar a data approved_at se existir
+      if (subsidyApprovedAt) {
+        
+        return subsidyApprovedAt
+      }
+
+      // Se tiver histórico de status, procurar pela data de aprovação
+      if (subsidyStatusHistoryData?.getSubsidyStatusHistory) {
+        const approvalHistory = subsidyStatusHistoryData.getSubsidyStatusHistory.find((history: any) => 
+          history.subsidy_request_id === subsidyId && 
+          ['APPROVED', 'CLOSED'].includes(history.status?.name?.toUpperCase())
+        )
+        
+        if (approvalHistory) {
+          
+          return approvalHistory.changed_at
+        }
+      }
+
+      // Fallback para updated_at
+      
+      return subsidyUpdatedAt
+    }
+
+    // Função para contabilizar subsidios aprovados por mês e departamento
+    const processSubsidySpendingByMonth = () => {
+
+      
+      if (!subsidyData?.subsidyRequests) {
+        return []
+      }
+
+      const allMonths = [
+        'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+        'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+      ]
+
+      // Inicializar estrutura para todos os meses
+      const monthlySpending = new Map()
+      allMonths.forEach((month, index) => {
+        const date = new Date(selectedYear, index, 1)
+        monthlySpending.set(month, {
+          month: month,
+          date: format(date, 'yyyy-MM-dd'),
+          departments: []
+        })
+      })
+      // Filtrar subsidios aprovados e fechados
+      const approvedSubsidies = subsidyData.subsidyRequests
+        .filter((subsidy: any) => {
+          const statusMatch = ['APPROVED', 'CLOSED'].includes(subsidy.subsidy_status?.name)
+          const hasDepartment = subsidy.department_id
+        
+          
+          return statusMatch && hasDepartment
+        })
+
+
+      const departmentConnections = new Map()
+      
+      approvedSubsidies.forEach((subsidy: any) => {
+        const deptId = subsidy.department_id
+        const deptName = subsidy.department?.name
+        
+        if (!departmentConnections.has(deptId)) {
+          departmentConnections.set(deptId, {
+            id: deptId,
+            name: deptName,
+            subsidyIds: [],
+            totalAmount: 0
+          })
+        }
+        
+        const deptData = departmentConnections.get(deptId)
+        deptData.subsidyIds.push(subsidy.id)
+        deptData.totalAmount += parseFloat(subsidy.approved_amount) || parseFloat(subsidy.total_budget) || 0
+      })
+
+
+      // Processar subsidios aprovados e fechados
+      let processedCount = 0
+      approvedSubsidies.forEach((subsidy: any) => {
+        const deptId = subsidy.department_id
+        const deptName = subsidy.department?.name || `Departamento ${deptId}`
+        
+        // Usar função auxiliar para encontrar a data real de aprovação
+        const approvalDate = findRealApprovalDate(subsidy.id, subsidy.approved_at, subsidy.updated_at)
+        const approvedAmount = parseFloat(subsidy.approved_amount) || parseFloat(subsidy.total_budget) || 0
+
+        
+        if (approvalDate && new Date(approvalDate).getFullYear() === selectedYear) {
+          const monthKey = format(new Date(approvalDate), 'MMM', { locale: ptBR })
+          // Garantir que a primeira letra seja maiúscula para corresponder à estrutura
+          const normalizedMonthKey = monthKey.charAt(0).toUpperCase() + monthKey.slice(1)
+
+          if (monthlySpending.has(normalizedMonthKey)) {
+            const monthData = monthlySpending.get(normalizedMonthKey)
+            
+            // Buscar se departamento já existe neste mês
+            let deptIndex = monthData.departments.findIndex(
+              (d: any) => d.departmentId === deptId
+            )
+            
+            if (deptIndex === -1) {
+              // Adicionar novo departamento
+              monthData.departments.push({
+                departmentId: deptId,
+                departmentName: deptName,
+                amount: approvedAmount
+              })
+
+            } else {
+              // Somar ao departamento existente
+              const oldAmount = monthData.departments[deptIndex].amount
+              monthData.departments[deptIndex].amount += approvedAmount
+
+            }
+            processedCount++
+          }
+        } 
+      })
+
+
+      // Converter para array e manter ordem dos meses
+      const result = Array.from(monthlySpending.values())
+
+      return result
+    }
+
+    const processedSpendingOverTime = processSubsidySpendingByMonth()
+    
+    // Fallback para dados originais se não houver dados de subsidy
+    const finalSpendingOverTime = processedSpendingOverTime.length > 0 
+      ? processedSpendingOverTime 
+      : (kpisData?.spendingOverTime || [])
+
+
     if (!kpisData) {
+   
       return {
         budgetDistribution: {
           total: kpiData.totalInstitutionBudget,
@@ -652,7 +807,7 @@ export default function AnnualBudgetPage() {
           percentageUsed: kpiData.budgetUtilization
         },
         departmentSpending: [],
-        spendingOverTime: [],
+        spendingOverTime: finalSpendingOverTime,
         entityDistribution
       }
     }
@@ -660,10 +815,10 @@ export default function AnnualBudgetPage() {
     return {
       budgetDistribution: kpisData.budgetDistribution,
       departmentSpending: kpisData.departmentSpending || [],
-      spendingOverTime: kpisData.spendingOverTime || [],
+      spendingOverTime: finalSpendingOverTime,
       entityDistribution
     }
-  }, [kpisData, kpiData, departmentBudgetData])
+  }, [kpisData, kpiData, departmentBudgetData, subsidyData, subsidyStatusHistoryData, selectedYear])
 
   // Handlers
   // Centraliza o recarregamento de todos os dados
@@ -949,12 +1104,6 @@ export default function AnnualBudgetPage() {
   }
 
   const handleSaveInstitutionBudget = async (budget: AnnualBudgetData) => {
-    console.log('🔍 handleSaveInstitutionBudget - budget received:', budget)
-    console.log('📊 Values being sent:', {
-      total_expenses: budget.total_expenses,
-      allocated_amount: budget.allocated_amount,
-      planned_budget: budget.planned_budget
-    })
     try {
       const result = await createInstitutionBudgetMutation({
         variables: {
@@ -1440,6 +1589,13 @@ export default function AnnualBudgetPage() {
             </div>
             
             <div className="flex items-center gap-3">
+              <GlobalPrivacyToggle 
+                labels={{
+                  showAll: t('annual_budget.buttons.show_all_kpis', 'Show All KPIs'),
+                  hideAll: t('annual_budget.buttons.hide_all_kpis', 'Hide All KPIs'),
+                  someHidden: t('annual_budget.buttons.some_kpis_hidden', 'Some KPIs hidden'),
+                }}
+              />
               <Button 
                 variant="outline" 
                 size="icon"

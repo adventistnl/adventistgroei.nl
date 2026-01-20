@@ -9,6 +9,11 @@ import { BudgetOverviewCard } from "./budget-overview-card"
 import { BudgetMetricsCard } from "./budget-metrics-card"
 import { DepartmentAllocationList } from "./department-allocation-list"
 import { SpendingOverTimeChart } from "@/components/charts/annual-budget/spending-over-time-chart"
+import { useQuery } from "@apollo/client"
+import { GET_ALL_SUBSIDY_REQUESTS } from "@/graphql/queries/SUBSIDY_REQUESTS_QUERY"
+import { GET_SUBSIDY_STATUS_HISTORY } from "@/graphql/queries/SUBSIDY_STATUS_HISTORY_QUERIES"
+import { format } from "date-fns"
+import { ptBR } from "date-fns/locale"
 
 interface BudgetSectionProps {
   selectedYear: number
@@ -51,28 +56,113 @@ export function BudgetSection({
     })
   }, [currentInstitutionData, selectedYear])
 
-  // Mock data para SpendingOverTimeChart
+  // Query para buscar dados de subsidies para cruzar com as datas de aprovação
+  const { data: subsidyData } = useQuery(GET_ALL_SUBSIDY_REQUESTS)
+  
+  // Query para buscar histórico de status dos subsídios para obter datas precisas de aprovação
+  const { data: subsidyStatusHistoryData } = useQuery(GET_SUBSIDY_STATUS_HISTORY, {
+    variables: { subsidyRequestId: "ALL" },
+    skip: !subsidyData?.subsidyRequests?.length,
+  })
+
+  // Dados reais baseados em subsídios aprovados
   const spendingOverTimeData = useMemo(() => {
-    if (!departmentBudgetData.length) return []
-    
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ]
-    
-    return months.map((month, index) => ({
-      date: `${selectedYear}-${String(index + 1).padStart(2, '0')}-01`,
-      month,
-      departments: departmentBudgetData
-        .filter(dept => dept.hasBudgetRecord && dept.annualBudget)
-        .map(dept => ({
-          departmentId: dept.id,
-          departmentName: dept.departmentName,
-          amount: Math.floor((dept.annualBudget?.total_expenses || 0) / 12 + 
-            (Math.random() - 0.5) * (dept.annualBudget?.total_expenses || 0) * 0.3)
-        }))
-    }))
-  }, [departmentBudgetData, selectedYear])
+    // Função auxiliar para encontrar a data real de aprovação usando o histórico
+    const findRealApprovalDate = (subsidyId: string, subsidyApprovedAt: string | null, subsidyUpdatedAt: string) => {
+      // Primeiro, tentar usar a data approved_at se existir
+      if (subsidyApprovedAt) {
+        return subsidyApprovedAt
+      }
+
+      // Se tiver histórico de status, procurar pela data de aprovação
+      if (subsidyStatusHistoryData?.getSubsidyStatusHistory) {
+        const approvalHistory = subsidyStatusHistoryData.getSubsidyStatusHistory.find((history: any) => 
+          history.subsidy_request_id === subsidyId && 
+          ['APPROVED', 'CLOSED'].includes(history.status?.name?.toUpperCase())
+        )
+        
+        if (approvalHistory) {
+          return approvalHistory.changed_at
+        }
+      }
+
+      // Fallback para updated_at
+      return subsidyUpdatedAt
+    }
+
+    // Função para contabilizar subsidios aprovados por mês e departamento
+    const processSubsidySpendingByMonth = () => {
+      if (!subsidyData?.subsidyRequests) {
+        return []
+      }
+
+      const allMonths = [
+        'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+        'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+      ]
+
+      // Inicializar estrutura para todos os meses
+      const monthlySpending = new Map()
+      allMonths.forEach((month, index) => {
+        const date = new Date(selectedYear, index, 1)
+        monthlySpending.set(month, {
+          month: month,
+          date: format(date, 'yyyy-MM-dd'),
+          departments: []
+        })
+      })
+
+      // Filtrar subsidios aprovados e fechados
+      const approvedSubsidies = subsidyData.subsidyRequests
+        .filter((subsidy: any) => {
+          const statusMatch = ['APPROVED', 'CLOSED'].includes(subsidy.subsidy_status?.name)
+          const hasDepartment = subsidy.department_id
+          return statusMatch && hasDepartment
+        })
+
+      // Processar subsidios aprovados e fechados
+      approvedSubsidies.forEach((subsidy: any) => {
+        const deptId = subsidy.department_id
+        const deptName = subsidy.department?.name || `Departamento ${deptId}`
+        
+        // Usar função auxiliar para encontrar a data real de aprovação
+        const approvalDate = findRealApprovalDate(subsidy.id, subsidy.approved_at, subsidy.updated_at)
+        const approvedAmount = parseFloat(subsidy.approved_amount) || parseFloat(subsidy.total_budget) || 0
+
+        if (approvalDate && new Date(approvalDate).getFullYear() === selectedYear) {
+          const monthKey = format(new Date(approvalDate), 'MMM', { locale: ptBR })
+          // Garantir que a primeira letra seja maiúscula para corresponder à estrutura
+          const normalizedMonthKey = monthKey.charAt(0).toUpperCase() + monthKey.slice(1)
+
+          if (monthlySpending.has(normalizedMonthKey)) {
+            const monthData = monthlySpending.get(normalizedMonthKey)
+            
+            // Buscar se departamento já existe neste mês
+            let deptIndex = monthData.departments.findIndex(
+              (d: any) => d.departmentId === deptId
+            )
+            
+            if (deptIndex === -1) {
+              // Adicionar novo departamento
+              monthData.departments.push({
+                departmentId: deptId,
+                departmentName: deptName,
+                amount: approvedAmount
+              })
+            } else {
+              // Somar ao departamento existente
+              monthData.departments[deptIndex].amount += approvedAmount
+            }
+          }
+        }
+      })
+
+      // Converter para array e manter ordem dos meses
+      return Array.from(monthlySpending.values())
+    }
+
+    return processSubsidySpendingByMonth()
+  }, [subsidyData, subsidyStatusHistoryData, selectedYear])
 
   // Se não há instituição selecionada, não renderiza nada
   if (!currentInstitutionData) {
@@ -103,20 +193,6 @@ export function BudgetSection({
             departmentBudgetData={departmentBudgetData}
           />
           
-          <BudgetMetricsCard
-            institutionId={currentInstitutionData.id}
-            year={selectedYear}
-            currentLanguage={currentLanguage}
-          />
-          
-          <div className="lg:col-span-2 xl:col-span-1">
-            <DepartmentAllocationList
-              institutionId={currentInstitutionData.id}
-              year={selectedYear}
-              currentLanguage={currentLanguage}
-              departmentBudgetData={departmentBudgetData}
-            />
-          </div>
         </div>
         
         {/* Second Row: Spending Over Time Chart */}

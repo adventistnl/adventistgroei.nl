@@ -31,6 +31,7 @@ import { UPDATE_SUBSIDY_REQUEST, APPROVE_SUBSIDY_REQUEST, REJECT_SUBSIDY_REQUEST
 import { GET_SUBSIDY_STATUS_HISTORY } from "@/graphql/queries/SUBSIDY_STATUS_HISTORY_QUERIES"
 import { GET_ALL_SUBSIDY_STATUSES } from "@/graphql/queries/SUBSIDY_STATUS_QUERIES"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
+import { RejectionDialog } from "@/components/modals/project/rejection-dialog"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface ActivityItem {
@@ -107,7 +108,7 @@ export function ViewSubsidyModal({
   
   // Dialog states for replacing browser alerts
   const [deleteCommentDialog, setDeleteCommentDialog] = React.useState<{ isOpen: boolean; messageId: string | null }>({ isOpen: false, messageId: null })
-  const [rejectionDialog, setRejectionDialog] = React.useState<{ isOpen: boolean; reason: string }>({ isOpen: false, reason: "" })
+  const [rejectionDialog, setRejectionDialog] = React.useState<{ isOpen: boolean }>({ isOpen: false })
   const [statusConfirmationDialog, setStatusConfirmationDialog] = React.useState<{ 
     isOpen: boolean; 
     status: "approved" | "rejected" | "closed" | null; 
@@ -266,12 +267,24 @@ export function ViewSubsidyModal({
     return status?.id || null
   }
 
+  // Helper function to check if there are rejected documents
+  const hasRejectedDocuments = (): boolean => {
+    return (receipts || []).some((receipt: any) => 
+      receipt.is_validated && !receipt.approved && !receipt.is_deleted
+    )
+  }
+
   // Validate status transition
   const canChangeStatus = (to: string) => {
     const from = currentSubsidyStatus
 
     // Rule: Closed status cannot be changed to anything else
     if (from === 'closed') return false
+    
+    // Rule: Cannot approve if there are rejected documents
+    if (to === 'approved' && hasRejectedDocuments()) {
+      return false
+    }
     
     // Rule: To Closed is allowed from Approved or Rejected only (not In Review)
     if (to === 'closed') {
@@ -294,11 +307,16 @@ export function ViewSubsidyModal({
     
     // Check validation first
     if (!canChangeStatus(normalizedStatus)) {
-        toast.error(t('toasts.statusChangeNotAllowed'))
+        // Specific message for rejected documents blocking approval
+        if (normalizedStatus === 'approved' && hasRejectedDocuments()) {
+            toast.error(t('toasts.documentsRejected') || 'Cannot approve subsidy with rejected documents')
+        } else {
+            toast.error(t('toasts.statusChangeNotAllowed'))
+        }
         return
     }
 
-    // Check document validation
+    // Check document validation for pending documents
     if (['approved', 'closed', 'rejected'].includes(normalizedStatus)) {
         const hasPending = (receipts || []).some((r: any) => !r.is_validated && !r.is_deleted);
         if (hasPending) {
@@ -309,7 +327,7 @@ export function ViewSubsidyModal({
 
     // For Rejected, we have a specific dialog with reason input
     if (normalizedStatus === 'rejected') {
-      setRejectionDialog({ isOpen: true, reason: "" })
+      setRejectionDialog({ isOpen: true })
       return
     }
 
@@ -642,27 +660,17 @@ export function ViewSubsidyModal({
     }
   }
 
-  const confirmRejection = async () => {
-    if (!rejectionDialog.reason) {
-      toast.error(t('subsidy.addRejectionReason'))
-      return
-    }
-
-    setNewMessage(t('subsidy.statusChangeReasonPrefix', { status: t('charts.legend.rejected'), reason: rejectionDialog.reason }))
+  const confirmRejection = async (reason: string) => {
+    setNewMessage(t('subsidy.statusChangeReasonPrefix', { status: t('charts.legend.rejected'), reason: reason }))
     chatInputRef.current?.focus()
     
     // Reject subsidy
-    try {
-      await rejectSubsidyRequest({
-        variables: {
-          id: subsidy.id,
-          rejection_reason: rejectionDialog.reason
-        }
-      })
-      setRejectionDialog({ isOpen: false, reason: "" })
-    } catch (error) {
-      console.error('Error rejecting subsidy:', error)
-    }
+    await rejectSubsidyRequest({
+      variables: {
+        id: subsidy.id,
+        rejection_reason: reason
+      }
+    })
   }
 
   const handleEditMessage = (message: StatusHistoryItem) => {
@@ -842,7 +850,7 @@ export function ViewSubsidyModal({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in-0 duration-300"
+      className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 animate-in fade-in-0 duration-300"
       onClick={handleBackdropClick}
     >
       <div className="relative w-[85vw] h-[90vh] bg-white dark:bg-gray-900 rounded-lg shadow-xl animate-in zoom-in-95 duration-300 flex flex-col overflow-hidden border border-gray-200 dark:border-gray-800">
@@ -920,10 +928,20 @@ export function ViewSubsidyModal({
                     
                     <DropdownMenuItem 
                         onClick={() => handleStatusChangeRequest('APPROVED')}
-                         disabled={!canChangeStatus('approved')}
+                        disabled={!canChangeStatus('approved')}
+                        className={cn(
+                          hasRejectedDocuments() && "opacity-50 cursor-not-allowed"
+                        )}
                     >
                       <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
-                      {t('charts.legend.accepted')}
+                      <div className="flex flex-col">
+                        <span>{t('charts.legend.accepted')}</span>
+                        {hasRejectedDocuments() && (
+                          <span className="text-xs text-red-600 dark:text-red-400">
+                            {t('toasts.documentsRejected') || 'Documentos rejeitados impedem aprovação'}
+                          </span>
+                        )}
+                      </div>
                     </DropdownMenuItem>
                     
                     <DropdownMenuItem 
@@ -1342,19 +1360,13 @@ export function ViewSubsidyModal({
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handleDownload(doc)}
-                                    disabled={doc.is_validated !== undefined}
-                                    className={cn(
-                                      "h-7 w-7 p-0",
-                                      doc.is_validated === undefined 
-                                        ? "text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                                        : "text-gray-400 dark:text-gray-600 opacity-50 cursor-not-allowed"
-                                    )}
+                                    className="h-7 w-7 p-0 text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                                   >
                                     <Download className="w-3.5 h-3.5" />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent side="top">
-                                  <p className="text-xs">{doc.is_validated !== undefined ? t('subsidy.downloadDisabled') : t('subsidy.downloadDocument')}</p>
+                                  <p className="text-xs">{t('subsidy.downloadDocument')}</p>
                                 </TooltipContent>
                               </Tooltip>
                             </div>
@@ -1812,48 +1824,15 @@ export function ViewSubsidyModal({
       />
 
       {/* Rejection Dialog */}
-      <Dialog open={rejectionDialog.isOpen} onOpenChange={(open) => !open && setRejectionDialog({ isOpen: false, reason: "" })}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-                <AlertCircle className="w-5 h-5" />
-                {t('subsidy.rejectTitle')}
-            </DialogTitle>
-            <DialogDescription>
-              {t('subsidy.reasonRejection')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:border-red-800">
-                <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-2 text-justify">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    {t('subsidy.statusChange.warning.rejected')}
-                </p>
-            </div>
-            <Textarea
-              value={rejectionDialog.reason}
-              onChange={(e) => setRejectionDialog(prev => ({ ...prev, reason: e.target.value }))}
-              placeholder={t('subsidy.placeholders.rejectReason')}
-              className="resize-none"
-              rows={4}
-            />
-          </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => setRejectionDialog({ isOpen: false, reason: "" })} className="w-full sm:w-auto">
-              {t('common.cancel')}
-            </Button>
-            <div className="flex flex-col gap-2 w-full sm:w-auto">
-                <Button variant="destructive" onClick={confirmRejection} className="w-full">
-                <AlertCircle className="w-4 h-4 mr-2" />
-                {t('common.reject')}
-                </Button>
-                <p className="text-xs text-center text-red-600">
-                    {t('common.riskAware')}
-                </p>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <RejectionDialog
+        isOpen={rejectionDialog.isOpen}
+        onClose={() => setRejectionDialog({ isOpen: false })}
+        onConfirm={confirmRejection}
+        title={t('rejection.dialog.title')}
+        description={t('rejection.dialog.description')}
+        warningMessage={t('subsidy.statusChange.warning.rejected')}
+        confirmationText={t('rejection.dialog.confirmation')}
+      />
       
       {/* Status Confirmation Dialog */}
        <ConfirmationDialog

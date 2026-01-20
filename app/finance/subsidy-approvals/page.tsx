@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@apollo/client"
 import { AppLayout } from "@/components/layouts/app-layout"
@@ -15,9 +15,11 @@ import {
 } from "lucide-react"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
+import { createPrivacyConfig } from "@/config/privacy-roles.config"
 
 // Components
 import { SubsidyApprovalsManager } from "@/components/finance/subsidy-approvals-manager"
+import { GlobalPrivacyToggle } from "@/components/shared/global-privacy-toggle"
 import { useInstitution } from "@/contexts/institution-context"
 import { WithPermission } from "@/hocs/with-permission"
 import { AccessDenied } from "@/components/access/access-denied"
@@ -33,6 +35,20 @@ export default function SubsidyApprovalsPage() {
   
   const translations = subsidyApprovalsTranslations[i18n.language as keyof typeof subsidyApprovalsTranslations] || subsidyApprovalsTranslations.en
 
+  // Privacy configurations for KPIs (memoized to ensure stable IDs)
+  const PRIVACY_CONFIGS = useMemo(() => ({
+    totalRequests: createPrivacyConfig('kpi-subsidy-total-requests', 'FINANCIAL_DATA'),
+    pendingReview: createPrivacyConfig('kpi-subsidy-pending-review', 'FINANCIAL_DATA'),
+    totalRequested: createPrivacyConfig('kpi-subsidy-total-requested', 'FINANCIAL_DATA'),
+    totalApproved: createPrivacyConfig('kpi-subsidy-total-approved', 'FINANCIAL_DATA'),
+    approvalRate: createPrivacyConfig('kpi-subsidy-approval-rate', 'FINANCIAL_DATA'),
+    tableMonetaryValues: createPrivacyConfig('subsidy-table-monetary-values', 'FINANCIAL_DATA'),
+    kanbanMonetaryValues: createPrivacyConfig('subsidy-kanban-monetary-values', 'FINANCIAL_DATA'),
+    byDepartmentChart: createPrivacyConfig('subsidy-chart-by-department', 'FINANCIAL_DATA'),
+    overTimeChart: createPrivacyConfig('subsidy-chart-over-time', 'FINANCIAL_DATA'),
+    statusOverviewChart: createPrivacyConfig('subsidy-chart-status-overview', 'FINANCIAL_DATA'),
+  }), [])
+
   usePageTitle({
     title: translations.pageTitle
   })
@@ -40,26 +56,20 @@ export default function SubsidyApprovalsPage() {
   // Fetch subsidy requests from backend
   const { data: subsidyData, loading: subsidyLoading, error: subsidyError, refetch: refetchSubsidies } = useQuery(GET_ALL_SUBSIDY_REQUESTS, {
     fetchPolicy: 'network-only', // Always fetch from server to ensure fresh data
-    onCompleted: () => {
-      console.log('Subsidy requests loaded successfully')
-    },
-    onError: (error) => {
-      console.error('❌ Error loading subsidy requests:', error)
+  })
+
+  // Handle subsidy error with useEffect (Apollo Client v3.14+)
+  useEffect(() => {
+    if (subsidyError) {
       toast.error(translations.toasts.loadingError)
     }
-  })
+  }, [subsidyError, translations.toasts.loadingError])
 
   // Fetch analytics data from backend
   const { data: analyticsData, loading: analyticsLoading, refetch: refetchAnalytics } = useQuery(GET_SUBSIDY_ANALYTICS, {
     variables: { institutionId: currentInstitutionData?.id },
     fetchPolicy: 'network-only',
     skip: !currentInstitutionData?.id,
-    onCompleted: () => {
-      console.log('Analytics data loaded successfully')
-    },
-    onError: (error) => {
-      console.error('Error loading analytics:', error)
-    }
   })
 
   // Combined loading state
@@ -111,6 +121,11 @@ export default function SubsidyApprovalsPage() {
             </div>
 
             <div className="flex items-center gap-3">
+              <GlobalPrivacyToggle 
+                variant="icon"
+                size="icon"
+                showLabel={false}
+              />
               <Button 
                 variant="outline" 
                 size="icon"
@@ -136,6 +151,7 @@ export default function SubsidyApprovalsPage() {
               await refetchSubsidies()
               await refetchAnalytics()
             }}
+            privacyConfigs={PRIVACY_CONFIGS}
           />
         </div>
       </WithPermission>

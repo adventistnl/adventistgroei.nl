@@ -29,6 +29,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { BarChart3 } from "lucide-react"
 import { projectTranslations } from "@/lib/translations/projects"
+import { PROJECT_CHART_COLORS, getProjectColor } from "@/lib/chart-colors"
 
 interface ProjectActivitiesChartProps {
   data: any[]
@@ -44,15 +45,6 @@ export function ProjectActivitiesChart({
   const { i18n } = useTranslation()
   const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
   const [selectedQuarter, setSelectedQuarter] = useState<"all" | "q1" | "q2" | "q3" | "q4">("all")
-
-  // Cores dinâmicas para os top 5 projetos
-  const projectColors = [
-    "hsl(217, 91%, 60%)",  // Deep Blue
-    "hsl(142, 76%, 36%)",  // Deep Green
-    "hsl(32, 95%, 44%)",   // Deep Orange
-    "hsl(271, 91%, 65%)",  // Deep Purple
-    "hsl(330, 81%, 60%)",  // Deep Pink
-  ]
 
   // Transformar dados para mostrar atividades por mês e projeto
   const chartData = useMemo(() => {
@@ -142,12 +134,12 @@ export function ProjectActivitiesChart({
         
         config[safeKey] = {
           label: truncatedName,
-          color: projectColors[index % projectColors.length]
+          color: getProjectColor(index)
         }
       })
     
     return config
-  }, [chartData, projectColors])
+  }, [chartData])
 
   const filteredData = useMemo(() => {
     if (selectedQuarter === "all") return chartData
@@ -274,7 +266,7 @@ export function ProjectActivitiesChart({
                 key={safeKey}
                 dataKey={originalName}
                 stackId="a"
-                fill={chartConfig[safeKey]?.color || projectColors[index % projectColors.length]}
+                fill={chartConfig[safeKey]?.color || getProjectColor(index)}
                 radius={index === Object.entries(projectKeyMap).length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
               />
             ))}

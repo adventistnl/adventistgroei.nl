@@ -11,7 +11,6 @@ import toast from "react-hot-toast"
 import { KanbanCard } from "./kanban-card"
 import { KanbanGroupHeader } from "./kanban-group-header"
 import { KanbanEmptyState } from "./kanban-empty-state"
-import { KanbanSavePanel } from "./kanban-save-panel"
 
 // Generic interfaces for the Kanban board
 export interface KanbanGroup {
@@ -43,6 +42,22 @@ export interface KanbanAction {
   showInItem?: boolean // Show in item dropdown
 }
 
+export interface KanbanMoveRule {
+  /**
+   * Group IDs from which items cannot be dragged
+   */
+  disableDragFrom?: string[]
+  /**
+   * Group IDs to which items cannot be dropped
+   */
+  disableDropTo?: string[]
+  /**
+   * Custom validation function for allowed moves
+   * Return false to prevent the move
+   */
+  canMove?: (itemId: string, fromGroupId: string, toGroupId: string, item?: KanbanItem) => boolean
+}
+
 export interface KanbanBoardProps {
   /**
    * Groups/columns for the Kanban board
@@ -56,6 +71,10 @@ export interface KanbanBoardProps {
    * Actions available for groups and items
    */
   actions?: KanbanAction[]
+  /**
+   * Rules for controlling drag and drop behavior
+   */
+  moveRules?: KanbanMoveRule
   /**
    * Callback when an item is moved between groups (optimistic update)
    */
@@ -115,6 +134,7 @@ export function KanbanBoard({
   groups,
   items,
   actions = [],
+  moveRules,
   onItemMove,
   onSaveChanges,
   renderSaveButton,
@@ -131,12 +151,6 @@ export function KanbanBoard({
   const [dragOverGroupId, setDragOverGroupId] = useState<string | null>(null)
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null)
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false)
-  const [pendingChanges, setPendingChanges] = useState<Array<{
-    itemId: string
-    fromGroupId: string
-    toGroupId: string
-  }>>([])
-  const [isSaving, setIsSaving] = useState(false)
 
   // Group items by their groupId
   const itemsByGroup = items.reduce((acc, item) => {
@@ -147,9 +161,49 @@ export function KanbanBoard({
     return acc
   }, {} as Record<string, KanbanItem[]>)
 
+  // Helper function to check if a move is allowed based on rules
+  const isMoveAllowed = (itemId: string, fromGroupId: string, toGroupId: string): boolean => {
+    if (!moveRules) return true
+    
+    const item = items.find(i => i.id === itemId)
+    
+    // Check if drag is disabled from source group
+    if (moveRules.disableDragFrom?.includes(fromGroupId)) {
+      return false
+    }
+    
+    // Check if drop is disabled to target group
+    if (moveRules.disableDropTo?.includes(toGroupId)) {
+      return false
+    }
+    
+    // Use custom validation function if provided
+    if (moveRules.canMove) {
+      return moveRules.canMove(itemId, fromGroupId, toGroupId, item)
+    }
+    
+    return true
+  }
+
+  // Helper function to check if an item can be dragged
+  const canDragItem = (item: KanbanItem): boolean => {
+    if (!enableDragDrop) return false
+    if (!moveRules) return true
+    
+    // Check if drag is disabled from this group
+    if (moveRules.disableDragFrom?.includes(item.groupId)) {
+      return false
+    }
+    
+    return true
+  }
+
   // Handle drag and drop
   const handleDragStart = (e: React.DragEvent, item: KanbanItem) => {
-    if (!enableDragDrop) return
+    if (!enableDragDrop || !canDragItem(item)) {
+      e.preventDefault()
+      return
+    }
     setDraggingItemId(item.id)
     e.dataTransfer.setData('text/plain', JSON.stringify({
       itemId: item.id,
@@ -180,7 +234,7 @@ export function KanbanBoard({
     setDragOverGroupId(null)
   }
 
-  const handleDrop = (e: React.DragEvent, toGroupId: string) => {
+  const handleDrop = async (e: React.DragEvent, toGroupId: string) => {
     if (!enableDragDrop) return
     e.preventDefault()
     setDragOverGroupId(null)
@@ -191,57 +245,40 @@ export function KanbanBoard({
       const { itemId, fromGroupId } = data
       
       if (fromGroupId !== toGroupId) {
-        // Add to pending changes instead of saving immediately
-        setPendingChanges(prev => {
-          // Check if this item already has a pending change
-          const existingIndex = prev.findIndex(change => change.itemId === itemId)
-          if (existingIndex >= 0) {
-            // Update existing change
-            const updated = [...prev]
-            updated[existingIndex] = { itemId, fromGroupId: prev[existingIndex].fromGroupId, toGroupId }
-            return updated
-          }
-          // Add new change
-          return [...prev, { itemId, fromGroupId, toGroupId }]
-        })
+        // Validate if the move is allowed
+        if (!isMoveAllowed(itemId, fromGroupId, toGroupId)) {
+          toast.error('This move is not allowed', {
+            duration: 2000,
+          })
+          return
+        }
         
         // Apply the change optimistically (visual update only)
         if (onItemMove) {
           onItemMove(itemId, fromGroupId, toGroupId)
         }
+        
+        // Save immediately without showing pending changes panel
+        if (onSaveChanges) {
+          try {
+            await onSaveChanges([{ itemId, fromGroupId, toGroupId }])
+            toast.success('Status updated successfully', {
+              duration: 2000,
+            })
+          } catch (error) {
+            toast.error('Failed to update status', {
+              duration: 2000,
+            })
+            // Revert the visual change on error
+            if (onItemMove) {
+              onItemMove(itemId, toGroupId, fromGroupId)
+            }
+          }
+        }
       }
     } catch (error) {
       console.error('Error parsing drag data:', error)
     }
-  }
-
-  const handleSaveChanges = async () => {
-    if (pendingChanges.length === 0) return
-    
-    setIsSaving(true)
-    try {
-      if (onSaveChanges) {
-        await onSaveChanges(pendingChanges)
-      } else {
-        // Default behavior - simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
-      }
-      
-      toast.success(`${pendingChanges.length} change${pendingChanges.length > 1 ? 's' : ''} saved successfully!`, {
-        duration: 2000,
-      })
-      
-      setPendingChanges([])
-    } catch (error) {
-      toast.error('Failed to save changes')
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const handleDiscardChanges = () => {
-    // Reload the page or refetch data to revert visual changes
-    window.location.reload()
   }
 
   // Handle create group modal
@@ -265,6 +302,7 @@ export function KanbanBoard({
 
   // Default item renderer
   const defaultRenderItem = (item: KanbanItem, group: KanbanGroup) => {
+    const isDraggable = canDragItem(item)
     return (
       <KanbanCard
         key={item.id}
@@ -272,7 +310,7 @@ export function KanbanBoard({
         group={group}
         actions={actions}
         isDragging={draggingItemId === item.id}
-        enableDragDrop={enableDragDrop}
+        enableDragDrop={enableDragDrop && isDraggable}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       />
@@ -358,22 +396,13 @@ export function KanbanBoard({
   }
 
   return (
-    <div className={`kanban-board ${className}`}>
-      {/* Save Panel */}
-      <KanbanSavePanel
-        pendingChangesCount={pendingChanges.length}
-        isSaving={isSaving}
-        onSave={handleSaveChanges}
-        onDiscard={handleDiscardChanges}
-      />
-      
+    <div className={`kanban-board h-full flex flex-col ${className}`}>
       {/* Main container - contained within viewport */}
       <div 
-        className="overflow-x-auto overflow-y-hidden w-full px-6 py-4"
-        style={{ maxHeight }}
+        className="overflow-x-auto overflow-y-hidden w-full px-6 py-4 flex-1"
       >
         {/* Horizontal scrolling container for groups */}
-        <div className="flex gap-6" style={{ minWidth: 'min-content' }}>
+        <div className="flex gap-6 h-full" style={{ minWidth: 'min-content' }}>
           {groups.map((group) => {
             const groupItems = itemsByGroup[group.id] || []
             
@@ -412,11 +441,12 @@ export function KanbanBoard({
                     )}
                     
                     {/* Container for items */}
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                    <div className="space-y-2 flex-1 overflow-y-auto" style={{ maxHeight: 'calc(100% - 120px)' }}>
                       {groupItems.length > 0 ? (
                         groupItems.map((item) => {
                           if (renderItem) {
-                            const dragHandlers = enableDragDrop ? {
+                            const isDraggable = canDragItem(item)
+                            const dragHandlers = enableDragDrop && isDraggable ? {
                               onDragStart: (e: React.DragEvent) => handleDragStart(e, item),
                               onDragEnd: handleDragEnd,
                               draggable: true,

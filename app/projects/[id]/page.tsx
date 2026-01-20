@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
-import { ProjectHeaderMinimal } from "@/components/projects/project-header-minimal"
+import { ProjectHeader } from "@/components/projects/project-header"
 import { ProjectActivitiesFilters } from "@/components/projects/project-activities-filters"
 import { ProjectActivitiesTable, ProjectActivityData } from "@/components/projects/project-activities-table"
 import { ProjectSubsidiesTable, SubsidyRequestData, ActivityData } from "@/components/projects/project-subsidies-table"
@@ -16,27 +16,23 @@ import { CommunicationsContainer } from "@/components/projects/communications-co
 import { CommunicationCardData } from "@/components/projects/communication-card"
 import { GridContainer } from "@/components/shared/grid-container"
 import { KPICards } from "@/components/shared/kpi-cards-carousel"
-import { EditProjectModal } from "@/components/modals/project/edit-project-modal"
-import { CreateEventModal, EventFormData } from "@/components/modals/project/create-event-modal"
-import { CreateCommunicationModal, CommunicationFormData } from "@/components/modals/project/create-communication-modal"
-import { AddSubsidyModal, SubsidyFormData } from "@/components/modals/project/add-subsidy-modal"
-import { EditSubsidyModal, EditSubsidyFormData } from "@/components/modals/project/edit-subsidy-modal"
-import { DeleteSubsidyModal } from "@/components/modals/project/delete-subsidy-modal"
-import { DeleteProjectModal } from "@/components/modals/project/delete-project-modal"
-import { ProjectExpiredModal } from "@/components/projects/project-expired-modal"
+import { ProjectModalsWrapper } from "@/components/projects/project-modals-wrapper"
+import { projectTranslations } from "@/lib/translations/projects"
 // View subsidy modal is handled internally by SubsidyRequestsContainer
-import { DeleteSubsidyRequestModal } from "@/components/modals/project/delete-subsidy-request-modal"
-import { AddActivityModal, ActivityFormData } from "@/components/modals/project/add-activity-modal"
-import { EditActivityModal, EditActivityFormData } from "@/components/modals/project/edit-activity-modal"
-import { DeleteActivityModal } from "@/components/modals/project/delete-activity-modal"
-import { UploadReceiptModal, ReceiptFormData } from "@/components/modals/project/upload-receipt-modal"
-import { ViewReceiptsModal } from "@/components/modals/project/view-receipts-modal"
-import { CreateReportModal, ReportFormData } from "@/components/modals/project/create-report-modal"
-import { RegisterActivityModal, RegisterActivityFormData } from "@/components/modals/project/register-activity-modal"
-import { BatchEditActivitiesModal, BatchEditData } from "@/components/modals/project/batch-edit-activities-modal"
+
 import { BatchEditField } from "@/components/shared/inline-batch-editor"
-import { RequestSubsidyModal, SubsidyRequestData as SubsidyRequestFormData } from "@/components/modals/project/request-subsidy-modal"
-import { SelectActivitiesModal } from "@/components/modals/project/select-activities-modal"
+import type { EventFormData } from "@/components/modals/project/create-event-modal"
+import type { CommunicationFormData } from "@/components/modals/project/create-communication-modal"
+import type { SubsidyFormData } from "@/components/modals/project/add-subsidy-modal"
+import type { EditSubsidyFormData } from "@/components/modals/project/edit-subsidy-modal"
+import type { ActivityFormData } from "@/components/modals/project/add-activity-modal"
+import type { EditActivityFormData } from "@/components/modals/project/edit-activity-modal"
+import type { ReceiptFormData } from "@/components/modals/project/upload-receipt-modal"
+import type { ReportFormData } from "@/components/modals/project/create-report-modal"
+import type { RegisterActivityFormData } from "@/components/modals/project/register-activity-modal"
+import type { BatchEditData } from "@/components/modals/project/batch-edit-activities-modal"
+import type { SubsidyRequestData as SubsidyRequestFormData } from "@/components/modals/project/request-subsidy-modal"
+
 import {
   Dialog,
   DialogContent,
@@ -56,7 +52,6 @@ import {
 } from "@/components/ui/tabs"
 
 import { ProjectTableData } from "@/components/projects/projects-table"
-import { projectTranslations } from "@/lib/translations/projects"
 import { Button } from "@/components/ui/button"
 import { 
   DollarSign, 
@@ -64,7 +59,8 @@ import {
   Activity, 
   Calendar,
   Target,
-  TrendingUp 
+  TrendingUp, 
+  Church
 } from "lucide-react"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
@@ -77,6 +73,8 @@ import { useAuth } from "@/contexts/auth-context"
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
 import { ActivityTags, EntityType, ActivityPriority, ActivityStatus } from "@/types/graphql-global-types"
+import { LoadingSpinner } from "@/components/shared/loading-spinner"
+import { CardDescription, CardTitle } from "@/components/ui/card"
 
 // Helper functions for ActivityTags
 const getActivityTagLabel = (tag: ActivityTags): string => {
@@ -124,10 +122,14 @@ export default function ProjectDetailsPage() {
   const params = useParams()
   const router = useRouter()
   const { i18n } = useTranslation()
+  const { t } = useTranslation()
   const { user } = useAuth()
   const { currentInstitutionData } = useInstitution()
   const { formatCurrency } = useCurrency()
   const projectId = params.id as string
+  
+  // Translations
+  const pt = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.pt
   
   const locale = i18n.language === 'en' ? 'en-US' : i18n.language === 'nl' ? 'nl-NL' : 'pt-BR'
   const currency = i18n.language === 'en' ? 'USD' : i18n.language === 'nl' ? 'EUR' : 'BRL'
@@ -182,21 +184,28 @@ export default function ProjectDetailsPage() {
   const [selectedSubsidy, setSelectedSubsidy] = useState<SubsidyRequestData | undefined>(undefined)
   const [selectedSubsidyCard, setSelectedSubsidyCard] = useState<SubsidyRequestCardData | null>(null)
   const [selectedActivity, setSelectedActivity] = useState<ActivityData | undefined>(undefined)
-  
-  const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
 
   // Fetch project data from backend
   const { data: projectData, loading: projectLoading, error: projectError, refetch: refetchProject } = useQuery(GET_PROJECT_BY_ID_QUERY, {
     variables: { id: projectId },
     skip: !projectId,
     fetchPolicy: 'network-only', // Sempre buscar do servidor para garantir dados atualizados
-    onCompleted: () => {
-      toast.success(t.toasts.projectDetailsLoaded, {
+    onCompleted: (data) => {
+      console.log('✅ [Project Query] Data loaded from API:', {
+        projectId: data?.project?.id,
+        title: data?.project?.title,
+        church_id: data?.project?.Church?.id,
+        church_department_id: data?.project?.church_department_id,
+        church_department: data?.project?.church_department,
+        hasChurchDepartment: !!data?.project?.church_department,
+        fullProject: data?.project
+      })
+      toast.success(t('toasts.projectDetailsLoaded'), {
         duration: 3000
       })
     },
     onError: (error) => {
-      toast.error(t.toasts.errorLoading)
+      toast.error(t('toasts.errorLoading'))
       console.error("Error loading project:", error)
     }
   })
@@ -242,7 +251,7 @@ export default function ProjectDetailsPage() {
   // Batch update mutation
   const [batchUpdateActivities, { loading: batchUpdateLoading }] = useMutation(BATCH_UPDATE_PROJECT_ACTIVITIES, {
     onCompleted: () => {
-      toast.success(t.activity.activityUpdated, { duration: 3000 })
+      toast.success(t('activity.activityUpdated'), { duration: 3000 })
       refetchProject()
       setSelectedActivities([])
       setBatchEditData({
@@ -253,7 +262,7 @@ export default function ProjectDetailsPage() {
       })
     },
     onError: (error) => {
-      toast.error(`${t.errors.updateError}: ${error.message}`)
+      toast.error(`${t('errors.updateError')}: ${error.message}`)
       console.error("Error updating activities:", error)
     }
   })
@@ -261,12 +270,12 @@ export default function ProjectDetailsPage() {
   // Create activity mutation
   const [createProjectActivity, { loading: createActivityLoading }] = useMutation(CREATE_PROJECT_ACTIVITY, {
     onCompleted: () => {
-      toast.success(t.activity.activityCreated, { duration: 3000 })
+      toast.success(t('activity.activityCreated'), { duration: 3000 })
       refetchProject()
       setIsRegisterActivityModalOpen(false)
     },
     onError: (error) => {
-      toast.error(`${t.errors.updateError}: ${error.message}`)
+      toast.error(`${t('errors.updateError')}: ${error.message}`)
       console.error("Error creating activity:", error)
     }
   })
@@ -274,13 +283,13 @@ export default function ProjectDetailsPage() {
   // Update activity mutation
   const [updateProjectActivity, { loading: updateActivityLoading }] = useMutation(UPDATE_PROJECT_ACTIVITY, {
     onCompleted: () => {
-      toast.success(t.activity.activityUpdated, { duration: 3000 })
+      toast.success(t('activity.activityUpdated'), { duration: 3000 })
       refetchProject()
       setIsEditActivityModalOpen(false)
       setSelectedActivity(undefined)
     },
     onError: (error) => {
-      toast.error(`${t.errors.updateError}: ${error.message}`)
+      toast.error(`${t('errors.updateError')}: ${error.message}`)
       console.error("Error updating activity:", error)
     }
   })
@@ -302,7 +311,7 @@ export default function ProjectDetailsPage() {
 
   const [updateSubsidyRequest, { loading: updateSubsidyLoading }] = useMutation(UPDATE_SUBSIDY_REQUEST, {
     onCompleted: () => {
-      toast.success(t.subsidy.subsidyUpdated, { duration: 3000 })
+      toast.success(t('subsidy.subsidyUpdated'), { duration: 3000 })
       refetchProject()
     },
     onError: (error) => {
@@ -312,9 +321,9 @@ export default function ProjectDetailsPage() {
       }
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
       if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(t.toasts.documentsPending || "All documents must be validated first", { duration: 5000 });
+          toast.error(t('toasts.documentsPending') || "All documents must be validated first", { duration: 5000 });
       } else {
-          toast.error(`${t.errors.updateError}: ${error.message}`)
+          toast.error(`${t('errors.updateError')}: ${error.message}`)
       }
       console.error("Error updating subsidy request:", error)
     }
@@ -322,11 +331,11 @@ export default function ProjectDetailsPage() {
 
   const [approveSubsidyRequest, { loading: approveSubsidyLoading }] = useMutation(APPROVE_SUBSIDY_REQUEST, {
     onCompleted: () => {
-      toast.success(t.subsidy.subsidyApproved, { duration: 3000 })
+      toast.success(t('subsidy.subsidyApproved'), { duration: 3000 })
       refetchProject()
     },
     onError: (error) => {
-      console.log('❌ Page Subsidy Error (Full):', JSON.stringify(error, null, 2));
+      console.log('Page Subsidy Error (Full):', JSON.stringify(error, null, 2));
       let ext = (error.graphQLErrors?.[0]?.extensions as any);
       if (!ext && (error.networkError as any)?.result?.errors?.[0]?.extensions) {
         ext = (error.networkError as any).result.errors[0].extensions;
@@ -335,9 +344,9 @@ export default function ProjectDetailsPage() {
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
       console.log('❌ Extracted Error Code:', errorCode);
       if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(t.toasts.documentsPending || "All documents must be validated first", { duration: 5000 });
+          toast.error(t('toasts.documentsPending') || "All documents must be validated first", { duration: 5000 });
       } else {
-          toast.error(`${t.errors.updateError}: ${error.message}`)
+          toast.error(`${t('errors.updateError')}: ${error.message}`)
       }
       console.error("Error approving subsidy request:", error)
     }
@@ -345,15 +354,15 @@ export default function ProjectDetailsPage() {
 
   const [rejectSubsidyRequest, { loading: rejectSubsidyLoading }] = useMutation(REJECT_SUBSIDY_REQUEST, {
     onCompleted: () => {
-      toast.success(t.subsidy.subsidyRejected, { duration: 3000 })
+      toast.success(t('subsidy.subsidyRejected'), { duration: 3000 })
       refetchProject()
     },
     onError: (error) => {
       const errorCode = (error.graphQLErrors?.[0]?.extensions as any)?.additional?.errorCode;
       if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(t.toasts.documentsPending || "All documents must be validated first", { duration: 5000 });
+          toast.error(t('toasts.documentsPending') || "All documents must be validated first", { duration: 5000 });
       } else {
-          toast.error(`${t.errors.updateError}: ${error.message}`)
+          toast.error(`${t('errors.updateError')}: ${error.message}`)
       }
       console.error("Error rejecting subsidy request:", error)
     }
@@ -361,7 +370,7 @@ export default function ProjectDetailsPage() {
 
   const [deleteSubsidyRequest, { loading: deleteSubsidyLoading }] = useMutation(DELETE_SUBSIDY_REQUEST, {
     onCompleted: () => {
-      toast.success(t.subsidy.subsidyDeleted, { duration: 3000 })
+      toast.success(t('subsidy.subsidyDeleted'), { duration: 3000 })
       refetchProject()
       setIsDeleteSubsidyRequestModalOpen(false)
       setSelectedSubsidyCard(null)
@@ -380,9 +389,25 @@ export default function ProjectDetailsPage() {
 
   // Transform backend project to ProjectTableData format
   const transformProjectData = (backendProject: any): ProjectTableData => {
+    // DEBUG: Log backend project transformation
+    console.log('🔧 Transforming Project Data:', {
+      projectId: backendProject.id,
+      title: backendProject.title,
+      church_id: backendProject.Church?.id || backendProject.department?.church?.id,
+      church_department_id: backendProject.church_department_id,
+      church_department: backendProject.church_department,
+      hasChurchDepartment: !!backendProject.church_department,
+      owner: backendProject.owner,
+      owner_id: backendProject.owner_id,
+      hasOwnerObject: !!backendProject.owner,
+      hasOwnerId: !!backendProject.owner_id
+    })
+
     return {
       id: backendProject.id,
       department_id: backendProject.department_id,
+      church_id: backendProject.Church?.id || backendProject.department?.church?.id,
+      church_department_id: backendProject.church_department_id,
       title: backendProject.title,
       description: backendProject.description,
       budget: Number(backendProject.budget),
@@ -395,13 +420,28 @@ export default function ProjectDetailsPage() {
       // Names for display
       institutionName: backendProject.Institution?.name || "",
       departmentName: backendProject.department?.name || "",
+      churchName: backendProject.Church?.name || backendProject.department?.church?.name || "",
+      churchDepartmentName: backendProject.church_department?.name || "",
       status: backendProject.status || 'DRAFT', // Use status from backend
       is_event: !!backendProject.event_id,
       type: backendProject.type,
       eventId: backendProject.event_id,
       subsidyRequests: 0, // Will be calculated from subsidies
       subsidyAmount: 0, // Will be calculated from subsidies
-      activities: backendProject.activities?.length || 0
+      activities: backendProject.activities?.length || 0,
+      // Owner data - include both approaches for compatibility
+      owner: backendProject.owner ? {
+        id: backendProject.owner.id,
+        name: backendProject.owner.name,
+        email: backendProject.owner.email
+      } : undefined,
+      owner_id: backendProject.owner_id,
+      // Church department object for compatibility
+      church_department: backendProject.church_department ? {
+        id: backendProject.church_department.id,
+        name: backendProject.church_department.name,
+        description: backendProject.church_department.description
+      } : undefined
     }
   }
 
@@ -409,6 +449,7 @@ export default function ProjectDetailsPage() {
   useEffect(() => {
     if (projectData?.project) {
       const transformedProject = transformProjectData(projectData.project)
+
       setProject(transformedProject)
       
       // Show expired modal if project is expired
@@ -416,9 +457,6 @@ export default function ProjectDetailsPage() {
         setIsExpiredModalOpen(true)
       }
 
-      // Debug: Log project institution_id
-      console.log('🏢 Project Data:', projectData.project)
-      console.log('🏢 Project institution_id:', projectData.project.institution_id)
 
       // Transform subsidies data with new items structure
       if (projectData.project.subsidies) {
@@ -569,6 +607,24 @@ export default function ProjectDetailsPage() {
       new Map(allAssignees.map(user => [user.id, user])).values()
     )
     
+    // Always include project owner, even if not in any activity
+    const ownerId = project?.owner?.id || project?.owner_id
+    if (ownerId) {
+      const ownerInAssignees = uniqueUsers.find(user => user.id === ownerId)
+      if (!ownerInAssignees) {
+        // Find owner in institution users
+        const ownerData = institutionUsers.find(user => user.id === ownerId)
+        if (ownerData) {
+          uniqueUsers.unshift({
+            id: ownerData.id,
+            name: ownerData.name,
+            email: ownerData.email,
+            initials: ownerData.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+          })
+        }
+      }
+    }
+    
     return uniqueUsers.map(user => ({
       id: user.id,
       name: user.name,
@@ -576,7 +632,7 @@ export default function ProjectDetailsPage() {
       role: 'Colaborador',
       initials: user.initials
     }))
-  }, [usersData, allProjectActivities])
+  }, [usersData, allProjectActivities, project, institutionUsers])
 
   // Get KPIs from backend (pre-calculated)
   const projectKPIs = useMemo(() => {
@@ -588,9 +644,9 @@ export default function ProjectDetailsPage() {
     return [
       {
         id: "total-activities",
-        title: t.details.totalActivities,
+        title: t('details.totalActivities') || "Total Activities",
         value: kpis.totalActivities.toString(),
-        subtitle: t.details.activitiesStats
+        subtitle: (t('details.activitiesStats') || "{{completed}} completed | {{inProgress}} in progress")
             .replace('{{completed}}', kpis.completedActivities.toString())
             .replace('{{inProgress}}', kpis.inProgressActivities.toString()),
         trend: {
@@ -602,64 +658,75 @@ export default function ProjectDetailsPage() {
       },
       {
         id: "project-budget",
-        title: t.details.totalInvestment,
-        subtitle: t.details.sumOfActivities,
+        title: t('details.totalInvestment') || "Total Investment",
+        subtitle: t('details.sumOfActivities') || "Sum of all activities",
         value: formatCurrency(kpis.projectBudget, { compact: true }),
         icon: DollarSign,
       },
       {
         id: "subsidized-budget",
         value: formatCurrency(kpis.subsidizedBudget, { compact: true }),
-        title: t.details.subsidizedBudgetTitle,
-        subtitle: t.details.localContribution.replace('{{amount}}', `${formatCurrency(kpis.balance, { compact: true })}`),
+        title: t('details.subsidizedBudgetTitle') || "Subsidized Budget",
+        subtitle: (t('details.localContribution') || "{{amount}} local contribution")
+          .replace('{{amount}}', formatCurrency(kpis.balance, { compact: true })),
         trend: {
           value: kpis.subsidizedBudgetPercentage,
           isPositive: true,
-          label: t.details.subsidizedBudgetSubtitle
+          label: t('details.subsidizedBudgetSubtitle') || "of total budget"
         },
         icon: TrendingUp,
       },
       {
         id: "completion-rate",
-        title: t.details.completionRate,
+        title: t('details.completionRate') || "Completion Rate",
         value: `${kpis.completionRate}%`,
-        subtitle: t.details.completionSubtitle
+        subtitle: (t('details.completionSubtitle') || "{{completed}} of {{total}} finalized")
             .replace('{{completed}}', kpis.completedActivities.toString())
             .replace('{{total}}', kpis.totalActivities.toString()),
         trend: {
           value: kpis.completedActivities,
           isPositive: kpis.completedActivities > 0,
-          label: t.details.totalActivities
+          label: t('details.totalActivities') || "Total Activities"
         },
         icon: CheckCircle,
       },
       {
         id: "subsidized-activities",
-        title: t.details.subsidizedActivitiesTitle,
+        title: t('details.subsidizedActivitiesTitle') || "Subsidized Activities",
         value: kpis.subsidizedActivities.toString(),
-        subtitle: t.details.subsidizedStats
+        subtitle: (t('details.subsidizedStats') || "{{percent}}% of total | {{count}} requests")
             .replace('{{percent}}', kpis.subsidyRate.toString())
             .replace('{{count}}', kpis.subsidyRequestsCount.toString()),
         icon: Target,
       },
       {
         id: "project-timeline",
-        title: kpis.daysRemaining > 0 ? t.details.timeRemaining : t.details.projectFinalized,
-        value: kpis.daysRemaining > 0 ? t.details.daysRemainingCount.replace('{{days}}', kpis.daysRemaining.toString()) : t.details.concluded,
-        subtitle: t.details.endsIn.replace('{{date}}', endDate.toLocaleDateString(i18n.language === 'pt' ? 'pt-BR' : i18n.language === 'nl' ? 'nl-NL' : 'en-US')),
+        title: kpis.daysRemaining > 0 
+          ? (t('details.timeRemaining') || "Time Remaining") 
+          : (t('details.projectFinalized') || "Project Finalized"),
+        value: kpis.daysRemaining > 0 
+          ? (t('details.daysRemainingCount') || "{{days}} days").replace('{{days}}', kpis.daysRemaining.toString())
+          : (t('details.concluded') || "Concluded"),
+        subtitle: (t('details.endsIn') || "Ends on {{date}}")
+          .replace('{{date}}', endDate.toLocaleDateString(
+            i18n.language === 'pt' ? 'pt-BR' : 
+            i18n.language === 'nl' ? 'nl-NL' : 'en-US'
+          )),
         trend: {
           value: Math.abs(kpis.daysRemaining),
           isPositive: kpis.daysRemaining > 30,
-          label: kpis.daysRemaining > 0 ? t.details.daysPositiveLabel : t.details.daysNegativeLabel
+          label: kpis.daysRemaining > 0 
+            ? (t('details.daysPositiveLabel') || "days remaining")
+            : (t('details.daysNegativeLabel') || "days ago")
         },
         icon: Calendar,
       },
     ]
-  }, [projectData, subsidyRequests])
+  }, [projectData, formatCurrency, t, i18n.language])
 
 
   usePageTitle({
-    title: project?.title || t.details.projectDetails,
+    title: project?.title || t('details.projectDetails'),
     showBreadcrumbsInHeader: true
   })
 
@@ -670,9 +737,13 @@ export default function ProjectDetailsPage() {
     setIsEditModalOpen(true)
   }
 
+  const handleDeleteProject = () => {
+    setIsDeleteProjectModalOpen(true)
+  }
+
   const handleDeleteProjectSuccess = () => {
     setIsDeleteProjectModalOpen(false)
-    toast.success(`${t.toasts.projectDeleted} ${project?.title}`, { duration: 3000 })
+    toast.success(`${t('toasts.projectDeleted')} ${project?.title}`, { duration: 3000 })
     router.push("/projects")
   }
 
@@ -686,7 +757,7 @@ export default function ProjectDetailsPage() {
 
   const handleDuplicateProject = () => {
     // TODO: Implement project duplication
-    toast.success(`${t.actions.duplicateProject}: ${project?.title}`, { duration: 3000 })
+    toast.success(`${t('actions.duplicateProject')}: ${project?.title}`, { duration: 3000 })
   }
 
   const handleCreateReport = () => {
@@ -702,13 +773,13 @@ export default function ProjectDetailsPage() {
   const handleEventSubmit = (data: EventFormData) => {
     // TODO: Implement event creation API call
     setIsEventModalOpen(false)
-    toast.success(t.toasts.eventCreated, { duration: 3000 })
+    toast.success(t('toasts.eventCreated'), { duration: 3000 })
   }
 
   const handleCommunicationSubmit = (data: CommunicationFormData) => {
     // TODO: Implement communication creation API call
     setIsCommunicationModalOpen(false)
-    toast.success(t.toasts.communicationCreated, { duration: 3000 })
+    toast.success(t('toasts.communicationCreated'), { duration: 3000 })
   }
 
   const handleEditActivity = (activity: ProjectActivityData) => {
@@ -718,7 +789,6 @@ export default function ProjectDetailsPage() {
 
   const handleDeleteActivity = (activity: ProjectActivityData) => {
     // TODO: Implement activity deletion
-    toast.success(`🗑️ Activity deleted: ${activity.name}`, { duration: 3000 })
   }
 
   const handleViewActivity = (activity: ProjectActivityData) => {
@@ -749,12 +819,12 @@ export default function ProjectDetailsPage() {
     })
 
     if (!hasChanges) {
-      toast.error(t.errors.selectFieldEdit)
+      toast.error(pt.errors.selectFieldEdit)
       return
     }
 
     if (selectedActivities.length === 0) {
-      toast.error(t.errors.selectActivity)
+      toast.error(pt.errors.selectActivity)
       return
     }
 
@@ -829,7 +899,7 @@ export default function ProjectDetailsPage() {
     if (activitiesWithSubsidy.length > 0) {
       const activityNames = activitiesWithSubsidy.map(a => a.name).join(', ')
       toast.error(
-        t.errors.activitiesHaveSubsidy.replace('{{names}}', activityNames),
+        pt.errors.activitiesHaveSubsidy.replace('{{names}}', activityNames),
         { duration: 5000 }
       )
       return
@@ -862,13 +932,13 @@ export default function ProjectDetailsPage() {
       const result = await createSubsidyRequest({
         variables: {
           data: {
-            description: data.notes || `Solicitação de subsídio com ${data.items.length} atividade(s)`,
+            description: data.notes || (pt.subsidy.subsidyRequestDescription || "Subsidy request with {{count}} activity(ies)").replace('{{count}}', data.items.length.toString()),
             total_budget: data.requested_amount,
             institution_id: data.institution_id,
             department_id: data.department_id || undefined,
             church_id: data.church_id || undefined,
             project_id: data.project_id,
-            requester_id: user?.id, // Add current user as requester
+            requester_id: user?.id, 
             items: subsidyItems,
             notes: data.notes
           }
@@ -933,7 +1003,7 @@ export default function ProjectDetailsPage() {
         variables: {
           id,
           data: {
-            description: data.notes || `Solicitação de subsídio com ${data.items.length} atividade(s)`,
+            description: data.notes || (pt.subsidy.subsidyRequestDescription || "Subsidy request with {{count}} activity(ies)").replace('{{count}}', data.items.length.toString()),
             total_budget: data.requested_amount,
             institution_id: data.institution_id,
             department_id: data.department_id || undefined,
@@ -944,9 +1014,9 @@ export default function ProjectDetailsPage() {
         }
       })
 
-      console.log('✅ Subsidy request updated successfully')
+      console.log('Subsidy request updated successfully')
     } catch (error) {
-      console.error('❌ Error updating subsidy request:', error)
+      console.error('Error updating subsidy request:', error)
       throw error
     }
   }
@@ -1157,12 +1227,12 @@ export default function ProjectDetailsPage() {
 
   const handleApproveSubsidy = (subsidy: SubsidyRequestData) => {
     // TODO: Implement subsidy approval API call
-    toast.success(t.subsidy.subsidyApproved, { duration: 3000 })
+    toast.success(t('subsidy.subsidyApproved'), { duration: 3000 })
   }
 
   const handleRejectSubsidy = (subsidy: SubsidyRequestData) => {
     // TODO: Implement subsidy rejection API call
-    toast.success(t.subsidy.subsidyRejected, { duration: 3000 })
+    toast.success(t('subsidy.subsidyRejected'), { duration: 3000 })
   }
 
   const handleAddActivityToSubsidy = (subsidy: SubsidyRequestData) => {
@@ -1197,7 +1267,7 @@ export default function ProjectDetailsPage() {
 
   const handleDeleteReceipt = (receipt: any) => {
     // TODO: Implement receipt deletion
-    toast.success(`🗑️ Receipt deleted: ${receipt.description}`, { duration: 3000 })
+    toast.success(`Receipt deleted: ${receipt.description}`, { duration: 3000 })
   }
 
   const handleReportSubmit = (data: ReportFormData) => {
@@ -1278,35 +1348,35 @@ export default function ProjectDetailsPage() {
   const handleSubsidySubmit = (data: SubsidyFormData) => {
     // TODO: Implement subsidy creation API call
     setIsAddSubsidyModalOpen(false)
-    toast.success(t.subsidy.subsidyCreated, { duration: 3000 })
+    toast.success(t('subsidy.subsidyCreated'), { duration: 3000 })
   }
 
   const handleEditSubsidySubmit = (data: EditSubsidyFormData) => {
     // TODO: Implement subsidy update API call
     setIsEditSubsidyModalOpen(false)
     setSelectedSubsidy(undefined)
-    toast.success(t.subsidy.subsidyUpdated, { duration: 3000 })
+    toast.success(t('subsidy.subsidyUpdated'), { duration: 3000 })
   }
 
   const handleDeleteSubsidyConfirm = () => {
     // TODO: Implement subsidy deletion API call
     setIsDeleteSubsidyModalOpen(false)
     setSelectedSubsidy(undefined)
-    toast.success(t.subsidy.subsidyDeleted, { duration: 3000 })
+    toast.success(t('subsidy.subsidyDeleted'), { duration: 3000 })
   }
 
   const handleActivitySubmit = (data: ActivityFormData) => {
     // TODO: Implement activity creation API call
     setIsAddActivityModalOpen(false)
     setSelectedSubsidy(undefined)
-    toast.success(t.activity.activityCreated, { duration: 3000 })
+    toast.success(t('activity.activityCreated'), { duration: 3000 })
   }
 
   const handleReceiptSubmit = (data: ReceiptFormData) => {
     // TODO: Implement receipt upload API call
     setIsUploadReceiptModalOpen(false)
     setSelectedActivity(undefined)
-    toast.success(t.activity.uploadSuccess, { duration: 3000 })
+    toast.success(t('activity.uploadSuccess'), { duration: 3000 })
   }
 
   // Wrapper to convert ProjectActivityData to EditActivityFormData
@@ -1471,7 +1541,7 @@ export default function ProjectDetailsPage() {
     // TODO: Implement activity deletion API call
     setIsDeleteActivityModalOpen(false)
     setSelectedActivity(undefined)
-    toast.success(t.activity.activityDeleted, { duration: 3000 })
+    toast.success(t('activity.activityDeleted'), { duration: 3000 })
   }
 
   // Handlers for Subsidy Request Card modals
@@ -1514,18 +1584,20 @@ export default function ProjectDetailsPage() {
     }
   }
 
-  // Batch edit fields configuration
+  // Batch edit fields configuration with i18n support
   const batchEditFields: BatchEditField[] = useMemo(() => [
     {
       id: 'status',
-      label: 'Status',
+      label: t('dynamicFields.statusOptions.label'), 
+      translationKey: 'status', 
+      translationNamespace: 'dynamicFields',
       type: 'select',
       value: batchEditData.status,
       options: [
-        { value: 'todo', label: 'A Fazer' },
-        { value: 'in_progress', label: 'Em Andamento' },
-        { value: 'completed', label: 'Concluído' },
-        { value: 'on_hold', label: 'Em Espera' }
+        { value: 'todo', label: t('dynamicFields.statusOptions.todo') },
+        { value: 'in_progress', label: t('dynamicFields.statusOptions.in_progress') },
+        { value: 'completed', label: t('dynamicFields.statusOptions.completed') },
+        { value: 'on_hold', label: t('dynamicFields.statusOptions.on_hold') }
       ],
       onChange: (value) => setBatchEditData(prev => ({ ...prev, status: value as string })),
       getBadgeVariant: (value) => {
@@ -1540,14 +1612,16 @@ export default function ProjectDetailsPage() {
     },
     {
       id: 'priority',
-      label: 'Prioridade',
+      label: t('dynamicFields.priorityOptions.label'), 
+      translationKey: 'priority', 
+      translationNamespace: 'dynamicFields',
       type: 'select',
       value: batchEditData.priority,
       options: [
-        { value: 'urgent', label: 'Urgente' },
-        { value: 'high', label: 'Alta' },
-        { value: 'medium', label: 'Média' },
-        { value: 'low', label: 'Baixa' }
+        { value: 'urgent', label: t('dynamicFields.priorityOptions.urgent') },
+        { value: 'high', label: t('dynamicFields.priorityOptions.high') },
+        { value: 'medium', label: t('dynamicFields.priorityOptions.medium') },
+        { value: 'low', label: t('dynamicFields.priorityOptions.low') }
       ],
       onChange: (value) => setBatchEditData(prev => ({ ...prev, priority: value as string })),
       getBadgeVariant: (value) => {
@@ -1560,27 +1634,31 @@ export default function ProjectDetailsPage() {
         return map[value] || 'gray'
       }
     },
-    // activity_tag field removed - legacy field
     {
       id: 'is_subsidized',
-      label: 'Subsidiado',
+      label: t('dynamicFields.subsidizedOptions.label'), 
+      translationKey: 'subsidized', 
+      translationNamespace: 'dynamicFields',
       type: 'switch',
       value: batchEditData.is_subsidized,
       onChange: (value) => setBatchEditData(prev => ({ ...prev, is_subsidized: value as boolean })),
       showLabel: false,
-      infoTooltip: 'Ative esta opção para marcar as atividades selecionadas como subsidiadas. Atividades subsidiadas podem receber apoio financeiro da instituição.'
+      infoTooltip: t('dynamicFields.tooltips.subsidizedField')
     }
-  ], [batchEditData])
+  ], [batchEditData, t])
 
   if (projectLoading) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="text-muted-foreground mt-4">Carregando detalhes do projeto...</p>
+        <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
+            <LoadingSpinner 
+                text="Loading project..." 
+                icon={Church}
+                size="lg"
+              />
+              </div>
           </div>
-        </div>
       </AppLayout>
     )
   }
@@ -1590,8 +1668,8 @@ export default function ProjectDetailsPage() {
       <AppLayout>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-muted-foreground">{t.projectNotFound}</h1>
-            <p className="text-muted-foreground mt-2">{t.projectNotFoundDesc}</p>
+            <h1 className="text-2xl font-bold text-muted-foreground">{t('projectNotFound')}</h1>
+            <p className="text-muted-foreground mt-2">{t('projectNotFoundDesc')}</p>
           </div>
         </div>
       </AppLayout>
@@ -1603,14 +1681,22 @@ export default function ProjectDetailsPage() {
     <AppLayout>
       <div className="space-y-6">
         {/* Project Header */}
-        <ProjectHeaderMinimal
+        <ProjectHeader
           project={project}
           onEdit={handleEditProject}
-          onDelete={handleDeleteProjectSuccess}
+          onDelete={handleDeleteProject}
           onCreateEvent={handleCreateEvent}
           onCreateCommunication={handleCreateCommunication}
           users={projectUsers}
+          ownerId={project.owner?.id || project.owner_id}
           onRefetch={refetchProject}
+          completionData={{
+            allActivitiesCompleted: projectData?.project?.kpis ? projectData.project.kpis.completedActivities === projectData.project.kpis.totalActivities : false,
+            allDocumentsValidated: true, // TODO: Implement document validation status
+            allSubsidiesCompleted: subsidyRequests.every(s => s.status === 'approved' || s.status === 'rejected' || s.status === 'closed'),
+            totalActivities: projectData?.project?.kpis?.totalActivities || 0,
+            totalSubsidies: subsidyRequests.length
+          }}
         />
 
         {/* KPI Cards */}
@@ -1648,7 +1734,7 @@ export default function ProjectDetailsPage() {
                           onUpdateSubsidy={handleUpdateSubsidyCard}
                           allActivities={allProjectActivities}
                           subsidizedActivityIds={subsidizedActivityIds}
-                          description={t.subsidy.manageRequests}
+                          description={t('subsidy.manageRequests')}
                           onRefresh={handleRefreshSubsidies}
                           projectSubsidizedBudget={projectData?.project?.kpis?.subsidizedBudget || 0}
                         />
@@ -1663,22 +1749,32 @@ export default function ProjectDetailsPage() {
         {/* Main Content Grid - Project Activities */}
         <div className="grid grid-cols-12 gap-6">
           {/* Left Column - Activities (col-span-8) */}
-          <div className="col-span-12 lg:col-span-12 space-y-6">
-            {/* Filters Section */}
-            <ProjectActivitiesFilters
-              subsidyFilter={subsidyFilter}
-              statusFilter={statusFilter}
-              priorityFilter={priorityFilter}
-              tagFilter={tagFilter}
-              searchQuery={searchQuery}
-              onSubsidyChange={setSubsidyFilter}
-              onStatusChange={setStatusFilter}
-              onPriorityChange={setPriorityFilter}
-              onTagChange={setTagFilter}
-              onSearchChange={setSearchQuery}
-              onClearFilters={clearFilters}
-              onAddActivity={handleAddActivity}
-            />
+          <div className="bg-card text-card-foreground flex gap-6 rounded-xl border p-3 shadow-sm h-full flex flex-col col-span-12 lg:col-span-12 space-y-6">
+            <div className="grid flex-1 gap-1 mb-0">
+              {/* <div className="mb-2">
+                <CardTitle>{t('activity.title')}</CardTitle>
+                <CardDescription>
+                  {t('activity.description')}
+                </CardDescription>
+              </div> */}
+
+              {/* Filters Section */}
+              <ProjectActivitiesFilters
+                subsidyFilter={subsidyFilter}
+                statusFilter={statusFilter}
+                priorityFilter={priorityFilter}
+                tagFilter={tagFilter}
+                searchQuery={searchQuery}
+                onSubsidyChange={setSubsidyFilter}
+                onStatusChange={setStatusFilter}
+                onPriorityChange={setPriorityFilter}
+                onTagChange={setTagFilter}
+                onSearchChange={setSearchQuery}
+                onClearFilters={clearFilters}
+                onAddActivity={handleAddActivity}
+              />
+            </div>
+
 
             {/* Activities Table */}
             <ProjectActivitiesTable
@@ -1703,7 +1799,7 @@ export default function ProjectDetailsPage() {
               batchActions={[
                 {
                   id: 'apply',
-                  label: t.common.apply,
+                  label: t('common.apply'),
                   icon: <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
                   onClick: handleBatchEdit,
                   variant: 'outline'
@@ -1711,7 +1807,7 @@ export default function ProjectDetailsPage() {
               ]}
               batchPrimaryAction={{
                 id: 'request-subsidy',
-                label: t.subsidy.requestSubsidy,
+                label: t('subsidy.requestSubsidy'),
                 icon: <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
                 onClick: handleBatchSubsidyRequest,
                 variant: 'default',
@@ -1720,7 +1816,7 @@ export default function ProjectDetailsPage() {
               batchSummary={
                 <div className="flex items-center gap-3 text-xs">
                   <div>
-                    <span className="text-gray-500 dark:text-gray-500">{t.common.total}: </span>
+                    <span className="text-gray-500 dark:text-gray-500">{t('common.total')}: </span>
                     <span className="font-medium text-gray-700 dark:text-gray-400">
                       {new Intl.NumberFormat(locale, {
                         style: 'currency',
@@ -1731,7 +1827,7 @@ export default function ProjectDetailsPage() {
                   </div>
                   <span className="text-gray-400">•</span>
                   <div>
-                    <span className="text-gray-500 dark:text-gray-500">{t.filters.subsidized}: </span>
+                    <span className="text-gray-500 dark:text-gray-500">{t('filters.subsidized')}: </span>
                     <span className="font-medium text-gray-700 dark:text-gray-400">
                       {selectedActivities.filter(act => act.is_subsidized).length}
                     </span>
@@ -1747,190 +1843,88 @@ export default function ProjectDetailsPage() {
           </div> */}
         </div>
         
-        {/* Modals */}
-        <EditProjectModal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          onSuccess={handleProjectUpdateSuccess}
-          project={project}
-        />
+        {/* Project Modals */}
+        <ProjectModalsWrapper
+          // Modal states
+          isEditModalOpen={isEditModalOpen}
+          isDeleteProjectModalOpen={isDeleteProjectModalOpen}
+          isExpiredModalOpen={isExpiredModalOpen}
+          isEventModalOpen={isEventModalOpen}
+          isCommunicationModalOpen={isCommunicationModalOpen}
+          isAddSubsidyModalOpen={isAddSubsidyModalOpen}
+          isEditSubsidyModalOpen={isEditSubsidyModalOpen}
+          isDeleteSubsidyModalOpen={isDeleteSubsidyModalOpen}
+          isDeleteSubsidyRequestModalOpen={isDeleteSubsidyRequestModalOpen}
+          isAddActivityModalOpen={isAddActivityModalOpen}
+          isEditActivityModalOpen={isEditActivityModalOpen}
+          isDeleteActivityModalOpen={isDeleteActivityModalOpen}
+          isUploadReceiptModalOpen={isUploadReceiptModalOpen}
+          isViewReceiptsModalOpen={isViewReceiptsModalOpen}
+          isCreateReportModalOpen={isCreateReportModalOpen}
+          isRegisterActivityModalOpen={isRegisterActivityModalOpen}
+          isRequestSubsidyModalOpen={isRequestSubsidyModalOpen}
+          isSelectActivitiesModalOpen={isSelectActivitiesModalOpen}
 
-        <DeleteProjectModal
-          isOpen={isDeleteProjectModalOpen}
-          onClose={() => setIsDeleteProjectModalOpen(false)}
-          onConfirm={handleDeleteProjectSuccess}
-          project={project ? {
-            ...project,
-            activities: allProjectActivities.length,
-            subsidyRequests: subsidyRequests.length,
-            volunteers: projectUsers.length,
-            documents: 0 // TODO: Adicionar contagem de documentos quando disponível
-          } : null}
-        />
+          // Modal handlers
+          setIsEditModalOpen={setIsEditModalOpen}
+          setIsDeleteProjectModalOpen={setIsDeleteProjectModalOpen}
+          setIsExpiredModalOpen={setIsExpiredModalOpen}
+          setIsEventModalOpen={setIsEventModalOpen}
+          setIsCommunicationModalOpen={setIsCommunicationModalOpen}
+          setIsAddSubsidyModalOpen={setIsAddSubsidyModalOpen}
+          setIsEditSubsidyModalOpen={setIsEditSubsidyModalOpen}
+          setIsDeleteSubsidyModalOpen={setIsDeleteSubsidyModalOpen}
+          setIsDeleteSubsidyRequestModalOpen={setIsDeleteSubsidyRequestModalOpen}
+          setIsAddActivityModalOpen={setIsAddActivityModalOpen}
+          setIsEditActivityModalOpen={setIsEditActivityModalOpen}
+          setIsDeleteActivityModalOpen={setIsDeleteActivityModalOpen}
+          setIsUploadReceiptModalOpen={setIsUploadReceiptModalOpen}
+          setIsViewReceiptsModalOpen={setIsViewReceiptsModalOpen}
+          setIsCreateReportModalOpen={setIsCreateReportModalOpen}
+          setIsRegisterActivityModalOpen={setIsRegisterActivityModalOpen}
+          setIsRequestSubsidyModalOpen={setIsRequestSubsidyModalOpen}
+          setIsSelectActivitiesModalOpen={setIsSelectActivitiesModalOpen}
 
-        {project && (
-          <ProjectExpiredModal
-            isOpen={isExpiredModalOpen}
-            onClose={() => setIsExpiredModalOpen(false)}
-            projectTitle={project.title}
-            endDate={project.end_at}
-            onExtendDate={() => {
-              setIsExpiredModalOpen(false)
-              setIsEditModalOpen(true)
-            }}
-          />
-        )}
-        
-        <CreateEventModal
-          isOpen={isEventModalOpen}
-          onClose={() => setIsEventModalOpen(false)}
-          onSubmit={handleEventSubmit}
+          // Data
           project={project}
-        />
-        
-        <CreateCommunicationModal
-          isOpen={isCommunicationModalOpen}
-          onClose={() => setIsCommunicationModalOpen(false)}
-          onSubmit={handleCommunicationSubmit}
-          project={project}
-        />
-        
-        {/* Subsidy Management Modals */}
-        <AddSubsidyModal
-          isOpen={isAddSubsidyModalOpen}
-          onClose={() => setIsAddSubsidyModalOpen(false)}
-          onSubmit={handleSubsidySubmit}
-          project={project}
-        />
-        
-        <EditSubsidyModal
-          isOpen={isEditSubsidyModalOpen}
-          onClose={() => {
-            setIsEditSubsidyModalOpen(false)
-            setSelectedSubsidy(undefined)
-          }}
-          onSubmit={handleEditSubsidySubmit}
-          subsidy={selectedSubsidy}
-        />
-        
-        <DeleteSubsidyModal
-          isOpen={isDeleteSubsidyModalOpen}
-          onClose={() => {
-            setIsDeleteSubsidyModalOpen(false)
-            setSelectedSubsidy(undefined)
-          }}
-          onConfirm={handleDeleteSubsidyConfirm}
-          subsidy={selectedSubsidy}
-        />
-        
-        {/* Activity Management Modals */}
-        <AddActivityModal
-          isOpen={isAddActivityModalOpen}
-          onClose={() => {
-            setIsAddActivityModalOpen(false)
-            setSelectedSubsidy(undefined)
-          }}
-          onSubmit={handleActivitySubmit}
-          subsidy={selectedSubsidy}
-        />
-        
-        <UploadReceiptModal
-          isOpen={isUploadReceiptModalOpen}
-          onClose={() => {
-            setIsUploadReceiptModalOpen(false)
-            setSelectedActivity(undefined)
-          }}
-          onSubmit={handleReceiptSubmit}
-          activity={selectedActivity}
-        />
-        
-        <ViewReceiptsModal
-          isOpen={isViewReceiptsModalOpen}
-          onClose={() => {
-            setIsViewReceiptsModalOpen(false)
-            setSelectedActivity(undefined)
-          }}
-          activity={selectedActivity}
-          onEditReceipt={handleEditReceipt}
-          onDeleteReceipt={handleDeleteReceipt}
-        />
-        
-        <EditActivityModal
-          isOpen={isEditActivityModalOpen}
-          onClose={() => {
-            setIsEditActivityModalOpen(false)
-            setSelectedActivity(undefined)
-          }}
-          onSubmit={handleEditActivitySubmit}
-          activity={selectedActivity}
-        />
-        
-        <DeleteActivityModal
-          isOpen={isDeleteActivityModalOpen}
-          onOpenChangeAction={(open) => {
-            setIsDeleteActivityModalOpen(open)
-            if (!open) setSelectedActivity(undefined)
-          }}
-          activity={transformActivityToProjectActivity(selectedActivity)}
-        />
-        
-        <CreateReportModal
-          isOpen={isCreateReportModalOpen}
-          onClose={() => setIsCreateReportModalOpen(false)}
-          onSubmit={handleReportSubmit}
-          project={project}
-        />
-        
-        <RegisterActivityModal
-          isOpen={isRegisterActivityModalOpen}
-          onClose={() => setIsRegisterActivityModalOpen(false)}
-          onSubmit={handleRegisterActivitySubmit}
-          projectId={projectId}
-          availableUsers={institutionUsers}
-        />
-
-        <RequestSubsidyModal
-          isOpen={isRequestSubsidyModalOpen}
-          onClose={() => {
-            setIsRequestSubsidyModalOpen(false)
-            setSelectedActivities([])
-          }}
           selectedActivities={selectedActivities}
+          selectedSubsidyCard={selectedSubsidyCard}
+          selectedActivity={selectedActivity}
+          selectedReceipt={selectedReceipt}
+          allProjectActivities={allProjectActivities}
+          subsidizedActivityIds={subsidizedActivityIds}
+          institutionUsers={institutionUsers}
           projectId={projectId}
-          institutionId={projectData?.project?.institution_id || currentInstitutionData?.id || ""}
-          departmentId={projectData?.project?.department_id}
-          institutionName={projectData?.project?.Institution?.name}
-          departmentName={projectData?.project?.department?.name}
-          churchId={projectData?.project?.Church?.id || projectData?.project?.department?.church?.id}
-          churchName={projectData?.project?.Church?.name || projectData?.project?.department?.church?.name}
-          onSubmit={handleSubsidyRequestSubmit}
-          allActivities={allProjectActivities}
-          subsidizedActivityIds={subsidizedActivityIds}
-          availableBudget={(() => {
-            const used = (subsidyRequests || []).filter(s => s.status !== 'rejected').reduce((sum, s) => sum + Number(s.requested_amount || 0), 0)
-            const available = (projectData?.project?.kpis?.subsidizedBudget || 0) - used
-            return Math.max(0, available)
-          })()}
-        />
+          projectData={projectData}
+          currentInstitutionData={currentInstitutionData}
+          subsidyRequests={subsidyRequests}
+          projectUsers={projectUsers}
 
-        {/* Subsidy Request Card Modals - View is handled by SubsidyRequestsContainer */}
-        <DeleteSubsidyRequestModal
-          isOpen={isDeleteSubsidyRequestModalOpen}
-          onOpenChangeAction={setIsDeleteSubsidyRequestModalOpen}
-          subsidy={selectedSubsidyCard}
-          onSuccess={handleDeleteSubsidyRequestSuccess}
-        />
+          // Event handlers
+          handleProjectUpdateSuccess={handleProjectUpdateSuccess}
+          handleDeleteProjectSuccess={handleDeleteProjectSuccess}
+          handleEventSubmit={handleEventSubmit}
+          handleCommunicationSubmit={handleCommunicationSubmit}
+          handleSubsidySubmit={handleSubsidySubmit}
+          handleEditSubsidySubmit={handleEditSubsidySubmit}
+          handleDeleteSubsidyConfirm={handleDeleteSubsidyConfirm}
+          handleActivitySubmit={handleActivitySubmit}
+          handleEditActivitySubmit={handleEditActivitySubmit}
+          handleReceiptSubmit={handleReceiptSubmit}
+          handleReportSubmit={handleReportSubmit}
+          handleRegisterActivitySubmit={handleRegisterActivitySubmit}
+          handleSubsidyRequestSubmit={handleSubsidyRequestSubmit}
+          handleActivitiesSelected={handleActivitiesSelected}
+          handleDeleteSubsidyRequestSuccess={handleDeleteSubsidyRequestSuccess}
+          handleEditReceipt={handleEditReceipt}
+          handleDeleteReceipt={handleDeleteReceipt}
 
-        {/* Modal de Seleção de Atividades */}
-        <SelectActivitiesModal
-          isOpen={isSelectActivitiesModalOpen}
-          onClose={() => setIsSelectActivitiesModalOpen(false)}
-          activities={allProjectActivities}
-          onConfirm={handleActivitiesSelected}
-          title="Selecionar Atividades para Subsídio"
-          description="Selecione as atividades subsidiadas que deseja incluir na solicitação de subsídio."
-          filterSubsidized={true}
-          subsidizedActivityIds={subsidizedActivityIds}
+          // State setters
+          setSelectedActivities={setSelectedActivities}
+          setSelectedActivity={setSelectedActivity}
+
+          // Transform functions
+          transformActivityToProjectActivity={transformActivityToProjectActivity}
         />
 
         {/* Add User Modal */}

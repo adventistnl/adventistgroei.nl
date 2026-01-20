@@ -89,20 +89,30 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
   const [chartType, setChartType] = React.useState<"area" | "bar">("area")
   const { isHidden } = useComponentPrivacy(PRIVACY_CONFIG)
   
+
   // Extrair lista única de departamentos de todos os dados
   const allDepartments = React.useMemo(() => {
-    if (!data || data.length === 0) return []
+
+    
+    if (!data || data.length === 0) {
+
+      return []
+    }
     
     const deptMap = new Map<string, string>()
     data.forEach(dataPoint => {
+
       dataPoint.departments?.forEach(dept => {
         if (!deptMap.has(dept.departmentId)) {
           deptMap.set(dept.departmentId, dept.departmentName)
+         
         }
       })
     })
     
-    return Array.from(deptMap.entries()).map(([id, name]) => ({ id, name }))
+    const result = Array.from(deptMap.entries()).map(([id, name]) => ({ id, name }))
+
+    return result
   }, [data])
 
   // State para departamentos selecionados (todos por padrão)
@@ -132,28 +142,54 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
 
   // Transformar dados para formato compatível com o gráfico
   const transformedData = React.useMemo(() => {
-    if (!data || data.length === 0) return []
+  
+    
+    if (!data || data.length === 0) {
 
-    return data.map(dataPoint => {
-      const transformed: any = {
+      return []
+    }
+
+    const transformed = data.map(dataPoint => {
+
+      
+      const transformedPoint: any = {
         date: dataPoint.date,
-        month: dataPoint.month
+        month: dataPoint.month,
+        totalAmount: 0 // Total para este mês
       }
       
-      // Adicionar cada departamento como propriedade
+      // Adicionar cada departamento como propriedade e calcular total
       dataPoint.departments?.forEach(dept => {
-        transformed[dept.departmentId] = dept.amount
+        transformedPoint[dept.departmentId] = dept.amount
+        transformedPoint.totalAmount += dept.amount
+      
       })
       
-      return transformed
+      // Garantir que departamentos sem valor tenham 0
+      allDepartments.forEach(dept => {
+        if (!(dept.id in transformedPoint)) {
+          transformedPoint[dept.id] = 0
+         
+        }
+      })
+      
+      
+      return transformedPoint
     })
-  }, [data])
+    
+   
+    return transformed
+  }, [data, allDepartments])
 
   const filteredData = React.useMemo(() => {
     if (!transformedData || transformedData.length === 0) return []
 
     const monthsToShow = timeRange === "3m" ? 3 : timeRange === "6m" ? 6 : 12
-    return transformedData.slice(-monthsToShow)
+    
+    // Filtrar apenas os últimos N meses, mas manter a ordem cronológica
+    const recentData = transformedData.slice(-monthsToShow)
+    
+    return recentData
   }, [transformedData, timeRange])
 
   const totalSpending = React.useMemo(() => {
@@ -165,6 +201,17 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
       return acc + itemTotal
     }, 0)
   }, [filteredData, selectedDepartments])
+
+  // Calcular estatísticas para a descrição
+  const monthsWithActivity = React.useMemo(() => {
+    return filteredData.filter(item => item.totalAmount > 0).length
+  }, [filteredData])
+
+  const averageMonthlySpending = React.useMemo(() => {
+    const monthsWithSpending = filteredData.filter(item => item.totalAmount > 0)
+    if (monthsWithSpending.length === 0) return 0
+    return totalSpending / monthsWithSpending.length
+  }, [filteredData, totalSpending])
 
   // Handlers para seleção de departamentos
   const handleToggleDepartment = (deptId: string) => {
@@ -194,7 +241,18 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
             </CardTitle>
           </div>
           <CardDescription>
-            {t("annual_budget.charts.spending_over_time.subtitle", { year })}
+            {monthsWithActivity > 0 ? (
+              <>
+                {t("annual_budget.charts.spending_over_time.subtitle", { year })} • {" "}
+                {monthsWithActivity} {monthsWithActivity === 1 ? t("common.month") : t("common.months")} {t("annual_budget.charts.spending_over_time.with_approvals")} • {" "}
+                {t("common.total")}: {formatCurrency(totalSpending)}
+                {averageMonthlySpending > 0 && (
+                  <> • {t("annual_budget.charts.spending_over_time.monthly_average")}: {formatCurrency(averageMonthlySpending)}</>
+                )}
+              </>
+            ) : (
+              `${t("annual_budget.charts.spending_over_time.subtitle", { year })} • ${t("annual_budget.charts.spending_over_time.no_approvals")}`
+            )}
           </CardDescription>
         </div>
         <div className="flex items-center gap-2">
@@ -225,7 +283,7 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-9">
                 <Filter className="w-4 h-4 mr-2" />
-                Departments
+                {t("common.filter")}
                 {selectedDepartments.length > 0 && selectedDepartments.length < allDepartments.length && (
                   <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 flex items-center justify-center">
                     {selectedDepartments.length}
@@ -235,7 +293,7 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel className="flex items-center justify-between">
-                Select Departments
+                {t("annual_budget.table.headers.department_name")}
                 <div className="flex gap-1">
                   <Button
                     variant="ghost"
@@ -243,7 +301,7 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
                     className="h-6 px-2 text-xs"
                     onClick={handleSelectAll}
                   >
-                    All
+                    {t("common.all")}
                   </Button>
                   <Button
                     variant="ghost"
@@ -251,7 +309,7 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
                     className="h-6 px-2 text-xs"
                     onClick={handleClearAll}
                   >
-                    None
+                    {t("common.none")}
                   </Button>
                 </div>
               </DropdownMenuLabel>
@@ -284,7 +342,7 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
               )}
             >
               <Activity className="w-4 h-4 mr-1" />
-              {/* {t("annual_budget.charts.spending_over_time.chart_types.area")} */}
+              {t("annual_budget.charts.spending_over_time.chart_types.area")}
             </Button>
             <Button
               variant="ghost"
@@ -298,7 +356,7 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
               )}
             >
               <BarChart3 className="w-4 h-4 mr-1" />
-              {/* {t("annual_budget.charts.spending_over_time.chart_types.bar")} */}
+              {t("annual_budget.charts.spending_over_time.chart_types.bar")}
             </Button>
           </div>
 
@@ -360,7 +418,10 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
                       <ChartTooltipContent
                         labelFormatter={(value) => `${value} ${year}`}
                         indicator="dot"
-                        formatter={(value) => formatCurrency(typeof value === 'number' ? value : 0)}
+                        formatter={(value, name) => [
+                          formatCurrency(typeof value === 'number' ? value : 0),
+                          chartConfig[name as string]?.label || name
+                        ]}
                       />
                     }
                   />
@@ -393,7 +454,10 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
                       <ChartTooltipContent
                         labelFormatter={(value) => `${value} ${year}`}
                         indicator="dashed"
-                        formatter={(value) => formatCurrency(typeof value === 'number' ? value : 0)}
+                        formatter={(value, name) => [
+                          formatCurrency(typeof value === 'number' ? value : 0),
+                          chartConfig[name as string]?.label || name
+                        ]}
                       />
                     }
                   />

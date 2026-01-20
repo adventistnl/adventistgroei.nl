@@ -24,6 +24,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 
 import { useTranslation } from "react-i18next"
+import { projectTranslations } from "@/lib/translations/projects"
 
 export interface ConfirmationDialogProps {
   isOpen: boolean
@@ -73,10 +74,28 @@ export function ConfirmationDialog({
   effects = [],
   additionalWarning
 }: ConfirmationDialogProps) {
-  const { t } = useTranslation()
+  const { i18n } = useTranslation()
+  const [isConfirmed, setIsConfirmed] = React.useState(false)
   
-  const finalConfirmText = confirmText || t('common.confirm')
-  const finalCancelText = cancelText || t('common.cancel')
+  // Get translations from project translations based on current language
+  const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+  
+  const finalConfirmText = confirmText || t.common.confirm || 'Confirm'
+  const finalCancelText = cancelText || t.common.cancel || 'Cancel'
+
+  // Reset confirmation when dialog opens/closes
+  React.useEffect(() => {
+    if (isOpen) {
+      setIsConfirmed(false)
+    }
+  }, [isOpen])
+
+  const handleConfirm = () => {
+    if (isConfirmed) {
+      onConfirm()
+      setIsConfirmed(false)
+    }
+  }
 
   const getSeverityColor = () => {
     switch (severity) {
@@ -113,17 +132,32 @@ export function ConfirmationDialog({
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent className="sm:max-w-[400px]">
-        <AlertDialogHeader className="text-center">
-          <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
+        <AlertDialogHeader className="flex-row items-center gap-2">
+          <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
             <AlertTriangle className="w-6 h-6 text-yellow-600" />
           </div>
           <AlertDialogTitle className="text-gray-900">
             {title}
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-gray-600 text-sm">
-            {description}
-          </AlertDialogDescription>
         </AlertDialogHeader>
+
+        <AlertDialogDescription className="text-gray-600 text-sm">
+          {description}
+        </AlertDialogDescription>
+        
+        {/* Confirmation checkbox */}
+        <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-md border border-gray-200 dark:border-gray-700">
+          <input
+            type="checkbox"
+            id="confirm-action"
+            checked={isConfirmed}
+            onChange={(e) => setIsConfirmed(e.target.checked)}
+            className="w-4 h-4 mt-0.5 text-gray-900 bg-white border-gray-300 rounded focus:ring-gray-500 dark:focus:ring-gray-400 dark:bg-gray-700 dark:border-gray-600"
+          />
+          <label htmlFor="confirm-action" className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed cursor-pointer">
+            {t.common.confirmAction || 'Confirmo que desejo executar esta ação e entendo as consequências.'}
+          </label>
+        </div>
         
         <AlertDialogFooter className="flex gap-3 pt-6">
           <AlertDialogCancel 
@@ -134,8 +168,9 @@ export function ConfirmationDialog({
           </AlertDialogCancel>
           
           <AlertDialogAction
-            onClick={onConfirm}
-            className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500"
+            onClick={handleConfirm}
+            disabled={!isConfirmed}
+            className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {finalConfirmText}
           </AlertDialogAction>

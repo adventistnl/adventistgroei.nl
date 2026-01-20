@@ -5,17 +5,13 @@ import { useTranslation } from "react-i18next"
 import { useMutation } from "@apollo/client"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  AlertTriangle,
-  Activity
-} from "lucide-react"
+import { AlertTriangle, Activity } from "lucide-react"
 import { DELETE_PROJECT_ACTIVITY } from "@/graphql/mutations/PROJECT_ACTIVITY_MUTATIONS"
 import { GET_PROJECT_BY_ID_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { ActivityTags } from "@/types/graphql-global-types"
 import { projectTranslations } from "@/lib/translations/projects"
-
+import { useCurrency } from "@/contexts/currency-context"
 import toast from "react-hot-toast"
 
 // Project Activity Data interface
@@ -54,10 +50,12 @@ export function DeleteActivityModal({
   activity,
   onSuccess
 }: DeleteActivityModalProps) {
-  const { t, i18n } = useTranslation()
+  const { i18n } = useTranslation()
+  const { formatCurrency } = useCurrency()
   const [isLoading, setIsLoading] = useState(false)
-  const [understoodConsequences, setUnderstoodConsequences] = useState(false)
-  const [finalConfirmation, setFinalConfirmation] = useState('')
+  const [understood, setUnderstood] = useState(false)
+
+  const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
 
   const [deleteActivity] = useMutation(DELETE_PROJECT_ACTIVITY, {
     refetchQueries: [
@@ -72,16 +70,15 @@ export function DeleteActivityModal({
   const handleSubmit = async () => {
     if (!activity) return
     setIsLoading(true)
-    const loadingToast = toast.loading(t('activities.toasts.deleting'))
+    const loadingToast = toast.loading(t.deleteActivity.deleting)
     try {
       await deleteActivity({
         variables: { id: activity.id }
       })
 
       toast.dismiss(loadingToast)
-      toast.success(t('activities.toasts.deleted'), {
+      toast.success(t.toasts?.activityDeleted || "Activity deleted successfully!", {
         duration: 3000,
-        icon: '🗑️'
       })
       if (onSuccess) {
         onSuccess(activity)
@@ -100,11 +97,10 @@ export function DeleteActivityModal({
       const extensions = graphQLError?.extensions
       const errorCode = extensions?.context?.additional?.errorCode
       
-      const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
-      let errorMessage = t_project.errors?.genericDeleteError || 'Failed to delete activity'
+      let errorMessage = t.errors?.genericDeleteError || 'Failed to delete activity'
       
       if (errorCode === 'ACTIVITY_HAS_APPROVED_SUBSIDIES') {
-        errorMessage = t_project.errors?.cannotDeleteActivityWithApprovedSubsidies || graphQLError?.message
+        errorMessage = t.errors?.cannotDeleteActivityWithApprovedSubsidies || graphQLError?.message
       } else if (graphQLError?.message) {
         errorMessage = graphQLError.message
       } else if (error?.message) {
@@ -121,8 +117,7 @@ export function DeleteActivityModal({
 
   const handleClose = () => {
     if (!isLoading) {
-      setUnderstoodConsequences(false)
-      setFinalConfirmation('')
+      setUnderstood(false)
       onOpenChangeAction(false)
     }
   }
@@ -130,128 +125,81 @@ export function DeleteActivityModal({
   // Reset state when modal opens with new activity
   React.useEffect(() => {
     if (isOpen) {
-      setUnderstoodConsequences(false)
-      setFinalConfirmation('')
+      setUnderstood(false)
     }
   }, [isOpen, activity?.id])
-
-  const isDeleteEnabled = understoodConsequences && finalConfirmation.toLowerCase() === t('activities.modal.delete.confirmation_text').toLowerCase()
-
-  const getActivityTagIcon = () => {
-    return <Activity className="w-4 h-4 text-gray-600" />
-  }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
 
   if (!activity) return null
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[70vh] max-h-[90vh] overflow-y-auto overflow-x-hidden p-6">
-        <div className="w-full max-w-full">
-          <DialogHeader className="space-y-3 pb-4 px-0">
-            <DialogTitle className="text-gray-900 break-words pr-8">
-              {t('activities.modal.delete.title')}
-            </DialogTitle>
-            <DialogDescription className="text-gray-600 break-words pr-8">
-              {t('activities.modal.delete.description')}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-6 w-full max-w-full">
-            {/* Activity Information - Simple */}
-            <div className="p-4 border rounded-lg bg-gray-50 w-full max-w-full">
-              <div className="flex items-center gap-3 min-w-0 max-w-full">
-                <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                  {getActivityTagIcon()}
-                </div>
-                <div className="flex-1 min-w-0 overflow-hidden max-w-full">
-                  <h4 className="font-medium text-base truncate max-w-full">{activity.name}</h4>
-                  <p className="text-sm text-gray-600 truncate max-w-full">{activity.description}</p>
-                  <p className="text-xs text-gray-500 mt-1 break-words max-w-full">
-                    {t('activities.budget')}: {formatCurrency(activity.budget_amount)}
-                  </p>
-                </div>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>{t.deleteActivity.title}</DialogTitle>
+          <DialogDescription>
+            {t.deleteActivity.description}
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          {/* Activity Info */}
+          <div className="p-3 border rounded-lg bg-muted/30">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                <Activity className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-medium text-sm truncate">{activity.name}</h4>
+                <p className="text-xs text-muted-foreground truncate">{activity.description}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t.activitiesTable.budget}: {formatCurrency(activity.budget_amount)}
+                </p>
               </div>
             </div>
+          </div>
 
-            {/* Simple Warning */}
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg w-full max-w-full">
-              <div className="flex items-start gap-3 min-w-0 max-w-full">
-                <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                <div className="min-w-0 flex-1 overflow-hidden max-w-full">
-                  <p className="text-sm font-medium text-red-600 break-words max-w-full">
-                    {t('activities.modal.delete.permanent_warning.title')}
-                  </p>
-                  <p className="text-sm text-red-700 mt-1 break-words max-w-full">
-                    {t('activities.modal.delete.permanent_warning.description')}
-                  </p>
-                </div>
-              </div>
+          {/* Warning */}
+          <div className="flex items-start gap-2 p-3 bg-red-50/50 dark:bg-red-950/10 border border-red-200 dark:border-red-800 rounded-lg">
+            <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-red-800 dark:text-red-300">{t.deleteActivity.warning}</p>
+              <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                {t.deleteActivity.warningDescription}
+              </p>
             </div>
+          </div>
 
-            {/* Confirmation */}
-            <div className="space-y-4 w-full max-w-full">
-              <div className="flex items-start gap-3 min-w-0 max-w-full">
-                <Checkbox
-                  id="understand-consequences"
-                  checked={understoodConsequences}
-                  onCheckedChange={(checked) => setUnderstoodConsequences(checked === true)}
-                  className="mt-0.5 border-gray-400 data-[state=checked]:bg-gray-600 data-[state=checked]:border-gray-600 flex-shrink-0"
-                />
-                <label htmlFor="understand-consequences" className="text-sm cursor-pointer min-w-0 flex-1 max-w-full">
-                  <span className="font-medium text-gray-900 break-words max-w-full inline-block">
-                    {t('activities.modal.delete.understand_consequences')}
-                  </span>
-                </label>
-              </div>
+          {/* Confirmation Checkbox */}
+          <div className="flex mt-4 rounded-lg items-start gap-3 p-4 border-2 border-gray-400 dark:border-gray-500 ">
+            <Checkbox
+              id="understand"
+              checked={understood}
+              onCheckedChange={(checked) => setUnderstood(checked === true)}
+              className="mt-0.5 border-2 border-gray-400 dark:border-gray-500 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
+            />
+            <label htmlFor="understand" className="text-sm cursor-pointer flex-1">
+              <span className="font-medium">{t.deleteActivity.understand}</span>
+            </label>
+          </div>
 
-              {/* Final Confirmation Input */}
-              {understoodConsequences && (
-                <div className="space-y-2 w-full max-w-full">
-                  <label className="text-sm font-medium text-gray-700 break-words max-w-full inline-block">
-                    {t('activities.modal.delete.type_confirmation')}
-                  </label>
-                  <Input
-                    type="text"
-                    value={finalConfirmation}
-                    onChange={(e) => setFinalConfirmation(e.target.value)}
-                    placeholder={t('activities.modal.delete.confirmation_placeholder')}
-                    className="w-full min-w-0 max-w-full"
-                    disabled={isLoading}
-                  />
-                  <p className="text-xs text-gray-500 break-words max-w-full">
-                    {t('activities.modal.delete.confirmation_help')}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 mt-6 border-t border-gray-200 w-full max-w-full">
-              <Button 
-                variant="outline" 
-                onClick={handleClose} 
-                disabled={isLoading}
-                className="w-full sm:w-auto sm:min-w-[100px] whitespace-nowrap text-sm"
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleSubmit}
-                disabled={isLoading || !isDeleteEnabled}
-                className="w-full sm:w-auto sm:min-w-[140px] whitespace-nowrap text-sm"
-              >
-                {isLoading ? t('activities.modal.delete.deleting') : t('activities.modal.delete.delete_activity')}
-              </Button>
-            </div>
+          {/* Action Buttons */}
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4 border-t">
+            <Button 
+              variant="outline" 
+              onClick={handleClose} 
+              disabled={isLoading}
+              className="w-full sm:w-auto"
+            >
+              {t.common?.cancel || "Cancel"}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleSubmit}
+              disabled={isLoading || !understood}
+              className="w-full bg-red-600 hover:bg-red-700 text-white sm:w-auto"
+            >
+              {isLoading ? t.deleteActivity.deleting : t.deleteActivity.deleteButton}
+            </Button>
           </div>
         </div>
       </DialogContent>

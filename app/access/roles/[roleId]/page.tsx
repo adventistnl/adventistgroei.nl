@@ -8,7 +8,7 @@ import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { AlertTriangle, ArrowLeft, CheckCircle, X, Shield, Crown, Settings, ChevronDown, ChevronRight, Save, Circle, Search, Tag, Lock } from "lucide-react"
+import { AlertTriangle, ArrowLeft, CheckCircle, X, Shield, Crown, Settings, ChevronDown, ChevronRight, Save, Circle, Search, Tag, Lock, Building } from "lucide-react"
 import { CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -28,6 +28,7 @@ import { GET_ROLE_BY_ID_QUERY } from "@/graphql/queries/GET_ROLES_QUERY"
 import { Role } from "@/types/Role"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { accessTranslations } from "@/lib/translations/access"
+import { useInstitution } from "@/contexts/institution-context"
 
 function RolePermissionsPage({ roleId }: { roleId: string }) {
   const { t, i18n } = useTranslation();
@@ -53,6 +54,8 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [crudFilter, setCrudFilter] = useState<string>('all')
+  const { currentInstitutionData, loading: institutionLoading } = useInstitution()
+  
 
   const updateRole = async (variables: UpdateRoleVariables) => {
     await useUpdateRoleMutate({ variables });
@@ -192,7 +195,7 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
   const handleSelectAll = () => {
     const allNonEssentialPermissions = permissions.filter(p => !p.is_essential);
     if (allNonEssentialPermissions.length === 0) {
-      toast.error('All permissions are essential and cannot be modified', { duration: 2500 });
+      toast.error(tAccess.confirmation.all_essential_error, { duration: 2500 });
       return;
     }
     const allPermissionIds = allNonEssentialPermissions.map(p => p.id);
@@ -208,7 +211,7 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
     const removableIds = permissions.filter(p => !p.is_essential).map(p => p.id);
     
     if (removableIds.length === 0) {
-      toast.error('All permissions are essential and cannot be removed', { duration: 2500 });
+      toast.error(tAccess.confirmation.all_essential_remove_error, { duration: 2500 });
       return;
     }
     
@@ -217,7 +220,7 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
     setAddPermissions([]); // Limpa as permissões a serem adicionadas
     setHasUnsavedChanges(true);
     if (essentialIds.length > 0) {
-      toast.success(`${tAccess.toasts.all_cleared} — preserved ${essentialIds.length} essential permission(s)`, { duration: 2500 });
+      toast.success(`${tAccess.toasts.all_cleared} — ${essentialIds.length} ${tAccess.confirmation.preserved_essential}`, { duration: 2500 });
     } else {
       toast.success(tAccess.toasts.all_cleared, { duration: 2000 });
     }
@@ -273,9 +276,24 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
   };
 
 
+  const handleToggleAllGroups = () => {
+    const allGroupNames = filteredPermissionGroups.map(group => group.group);
+    const hasExpandedGroups = expandedGroups.length > 0;
+    
+    if (hasExpandedGroups) {
+      // Close all groups
+      setExpandedGroups([]);
+      toast.success(tAccess.toasts.all_closed || 'All groups closed', { duration: 2000 });
+    } else {
+      // Open all groups
+      setExpandedGroups(allGroupNames);
+      toast.success(tAccess.toasts.all_opened || 'All groups opened', { duration: 2000 });
+    }
+  };
+
   const handleCancel = () => {
     if (hasUnsavedChanges) {
-      if (confirm('You have unsaved changes. Are you sure you want to leave?')) {
+      if (confirm(tAccess.confirmation.unsaved_changes_message)) {
         router.push('/access')
       }
     } else {
@@ -342,17 +360,29 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
             className="w-fit"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            {tAccess.buttons.back}
           </Button>
 
           {/* Header */}
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 mb-4">
             <h2 className="text-xl sm:text-2xl font-bold text-foreground">
               {tAccess.role_permissions}
             </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              {currentRole.name}
-            </p>
+            {currentInstitutionData && (
+              <div className="flex items-center gap-2 mt-2">
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                  <Shield className="w-3 h-3 mr-1" />
+                  {currentRole.name}
+                </Badge>
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                  <Building className="w-3 h-3 mr-1" />
+                  {currentInstitutionData.name}
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  {currentInstitutionData.denomination}
+                </Badge>
+              </div>
+            )}
           </div>
 
           {/* Role Information Card - Minimalist */}
@@ -397,9 +427,33 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
           </Card>
 
           {/* Search and Filter - New Section */}
-          <div className="space-y-3">
-            {/* Action buttons - Above search */}
-            <div className="flex gap-2">
+          <div className="flex-col bg-card text-card-foreground rounded-xl border p-3 shadow-sm  sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+
+            {/* Search bar and CRUD filter */}
+            <div className="flex sm:flex-row flex-1 sm:flex-nowrap gap-2 sm:gap-3 w-full sm:w-auto">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder={tAccess.search.placeholder}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 border shadow-sm "
+                />
+              </div>
+              <Select value={crudFilter} onValueChange={setCrudFilter}>
+                <SelectTrigger className="w-full sm:w-[140px]">
+                  <SelectValue placeholder={tAccess.search.crud_type} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{tAccess.search.all_types}</SelectItem>
+                  <SelectItem value="create">{tAccess.search.create}</SelectItem>
+                  <SelectItem value="read">{tAccess.search.read_view}</SelectItem>
+                  <SelectItem value="update">{tAccess.search.update_edit}</SelectItem>
+                  <SelectItem value="delete">{tAccess.search.delete}</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Action buttons - Above search */}
               <Button 
                 variant="outline"
                 onClick={handleSelectAll}
@@ -409,7 +463,7 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
               >
                 <CheckCircle className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">{tAccess.permissions.select_all}</span>
-                <span className="sm:hidden">Select</span>
+                <span className="sm:hidden">{tAccess.buttons.select}</span>
               </Button>
               <Button 
                 variant="outline"
@@ -420,38 +474,35 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
               >
                 <X className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">{tAccess.permissions.clear_all}</span>
-                <span className="sm:hidden">Clear</span>
+                <span className="sm:hidden">{tAccess.buttons.clear}</span>
               </Button>
-            </div>
+              <Button
+                variant="outline"
+                onClick={handleToggleAllGroups}
+                disabled={filteredPermissionGroups.length === 0}
+                size="sm"
+                className="flex-1 sm:flex-initial"
+              >
+                {expandedGroups.length > 0 ? (
+                  <>
+                    <ChevronDown className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">{tAccess.buttons.close_all}</span>
+                    <span className="sm:hidden">{tAccess.buttons.close}</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronRight className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">{tAccess.buttons.open_all}</span>
+                    <span className="sm:hidden">{tAccess.buttons.open}</span>
+                  </>
+                )}
+              </Button>
 
-            {/* Search bar and CRUD filter */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search permissions..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Select value={crudFilter} onValueChange={setCrudFilter}>
-                <SelectTrigger className="w-full sm:w-[140px]">
-                  <SelectValue placeholder="CRUD Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="create">Create</SelectItem>
-                  <SelectItem value="read">Read/View</SelectItem>
-                  <SelectItem value="update">Update/Edit</SelectItem>
-                  <SelectItem value="delete">Delete</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
+          </div>
+
             {/* Quick Tags - Scrollable container */}
             {allTags.length > 0 && (
-              <div className="flex items-start gap-2">
+              <div className="flex items-start gap-2 pt-4 border-t mt-4">
                 <Tag className="w-4 h-4 text-muted-foreground mt-1.5 flex-shrink-0" />
                 <div className="flex-1 overflow-x-auto pb-2 -mb-2">
                   <div className="flex gap-1.5 min-w-max">
@@ -469,6 +520,8 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
                 </div>
               </div>
             )}
+     
+
           </div>
 
           {/* Permission Groups */}
@@ -482,27 +535,27 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
               
               // Get section title based on the actual group category
               const getCategoryTitle = (groupName: string) => {
-                if (!groupName || typeof groupName !== 'string') return 'Permissions'
+                if (!groupName || typeof groupName !== 'string') return tAccess.permissions.title
                 
                 // The group name IS the category (USER, ROLE, PERMISSION, etc.)
                 const category = groupName.trim().toUpperCase()
                 
-                // Map categories to readable titles
+                // Map categories to translated titles
                 const categoryTitles: Record<string, string> = {
-                  'USER': 'User Management',
-                  'USERS': 'User Management',
-                  'ROLE': 'Role Management',
-                  'ROLES': 'Role Management',
-                  'PERMISSION': 'Permission Management',
-                  'PERMISSIONS': 'Permission Management',
-                  'INSTITUTION': 'Institution Management',
-                  'INSTITUTIONS': 'Institution Management',
-                  'REGION': 'Region Management',
-                  'REGIONS': 'Region Management',
-                  'CHURCH': 'Church Management',
-                  'CHURCHES': 'Church Management',
-                  'DEPARTMENT': 'Department Management',
-                  'DEPARTMENTS': 'Department Management',
+                  'USER': tAccess.groups.user_management,
+                  'USERS': tAccess.groups.user_management,
+                  'ROLE': tAccess.groups.role_management,
+                  'ROLES': tAccess.groups.role_management,
+                  'PERMISSION': tAccess.groups.permission_management,
+                  'PERMISSIONS': tAccess.groups.permission_management,
+                  'INSTITUTION': tAccess.groups.institution_management,
+                  'INSTITUTIONS': tAccess.groups.institution_management,
+                  'REGION': tAccess.groups.region_management,
+                  'REGIONS': tAccess.groups.region_management,
+                  'CHURCH': tAccess.groups.church_management,
+                  'CHURCHES': tAccess.groups.church_management,
+                  'DEPARTMENT': tAccess.groups.department_management,
+                  'DEPARTMENTS': tAccess.groups.department_management,
                 }
                 
                 return categoryTitles[category] || groupName
@@ -511,7 +564,6 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
               return (
                 <div key={group.group} className="space-y-3">
                
-                  
                   {/* Container with card background */}
                   <Card className="border-none shadow-none">
                        {/* Section Title - Only once above container */}
@@ -536,7 +588,7 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
                         onClick={() => toggleGroup(group.group)}
                         className="h-7 px-2 sm:px-3 text-xs"
                       >
-                        {isExpanded ? 'Close' : 'Open'} Permissions
+                        {isExpanded ? tAccess.groups.close_permissions : tAccess.groups.open_permissions}
                       </Button>
                     </div>
                   </div>
@@ -681,7 +733,7 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
                   >
                     <Save className="w-4 h-4 sm:mr-2" />
                     <span className="hidden sm:inline">{tAccess.actions.save_changes}</span>
-                    <span className="sm:hidden">Save</span>
+                    <span className="sm:hidden">{tAccess.buttons.save}</span>
                   </Button>
                 </div>
               </div>

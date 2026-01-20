@@ -89,6 +89,7 @@ import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { useInstitution } from "@/contexts/institution-context"
 import { projectRegisterTranslations } from "@/lib/translations/project-register"
+import { projectTranslations } from "@/lib/translations/projects"
 import { LanguageSelector } from "@/components/shared/language-selector"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -111,6 +112,7 @@ import { EventRegistrationForm, EventFormData } from "@/components/shared/event-
 import { CommunicationForm, CommunicationFormData } from "@/components/shared/communication-form"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { UserMultiSelector, User } from "@/components/shared/user-multi-selector"
+import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
 import { ProjectDataStep } from "@/components/projects/steps/project-data-step"
 import type { ProjectFormData, ProjectActivity } from "@/components/projects/types"
 type FormData = ProjectFormData
@@ -124,6 +126,8 @@ import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
 import { ProjectType, LanguagePreference, EventType } from "@/types/globalTypes"
 import "@/lib/i18n"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 // Predefined activities with translation keys
 // The 'key' field is used to fetch translations, tagKeys are database keys
@@ -332,6 +336,7 @@ function ProjectRegisterContent() {
     institution_contribution: 0,
     subsidy_percentage: 35,
     is_special_case: false,
+    church_department_id: null,
   })
   
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -369,6 +374,9 @@ function ProjectRegisterContent() {
   
   // Ref for activity form to scroll into view
   const activityFormRef = useRef<HTMLDivElement>(null)
+  
+  // Ref for user selector dialog
+  const userSelectorRef = useRef<HTMLButtonElement>(null)
 
   // Draft persistence (sessionStorage)
   const DRAFT_KEY = `project_register_draft:${projectId || 'new'}`
@@ -464,6 +472,27 @@ function ProjectRegisterContent() {
       }))
     }
   }, [isSpecialProject, isChurchPlanting])
+  
+  // Update currentActivity default assignee when project responsible changes
+  useEffect(() => {
+    if (formData.responsible_id && !editingActivityId) {
+      // Only update if not currently editing an activity and the assignee_ids is empty or only has one item
+      setCurrentActivity(prev => {
+        // Check if current assignee_ids is empty or needs to be updated with project owner
+        const shouldUpdate = !prev.assignee_ids || 
+                             prev.assignee_ids.length === 0 || 
+                             (prev.assignee_ids.length === 1 && prev.assignee_ids[0] !== formData.responsible_id)
+        
+        if (shouldUpdate) {
+          return {
+            ...prev,
+            assignee_ids: [formData.responsible_id]
+          }
+        }
+        return prev
+      })
+    }
+  }, [formData.responsible_id, editingActivityId])
   
   // Functions for activity group management
   const moveActivityBetweenGroups = (activityId: string, toGroup: 'subsidized' | 'nonSubsidized' | 'trash') => {
@@ -756,8 +785,6 @@ function ProjectRegisterContent() {
         assignee_ids: currentActivity.assignee_ids || [], // Include assignees
         tags: currentActivity.tags!
       }
-      
-      console.log('💾 Saving activity:', newActivity.name, 'with assignee_ids:', newActivity.assignee_ids)
 
       setFormData(prev => ({
         ...prev,
@@ -767,16 +794,19 @@ function ProjectRegisterContent() {
     }
 
     // Reset current activity and editing state with fresh references
+    // Pre-populate assignee_ids with project responsible (owner) as default
+    const defaultAssigneeIds = formData.responsible_id ? [formData.responsible_id] : []
+    
     const resetActivity = {
       name: "",
       description: "",
       budget_amount: 0,
       request_subsidy: false,
-      assignee_ids: [], // Fresh empty array
+      assignee_ids: defaultAssigneeIds, // Pre-fill with project owner
       tags: []
     }
     
-    console.log('🔄 Resetting currentActivity, assignee_ids:', resetActivity.assignee_ids)
+    console.log('Resetting currentActivity, assignee_ids:', resetActivity.assignee_ids)
     setCurrentActivity(resetActivity)
     setEditingActivityId(null)
   }
@@ -811,11 +841,15 @@ function ProjectRegisterContent() {
     // Convert tagKeys to translated tags for display (store keys in database)
     const translatedTags = predefinedActivity.tagKeys.map(tagKey => t(`projectRegister.tags.${tagKey}`))
     
+    // Pre-populate assignee_ids with project responsible (owner) if available
+    const defaultAssigneeIds = formData.responsible_id ? [formData.responsible_id] : []
+    
     setCurrentActivity({
       name: translatedName,
       description: translatedDescription,
       budget_amount: predefinedActivity.budget_amount,
       request_subsidy: predefinedActivity.request_subsidy,
+      assignee_ids: defaultAssigneeIds, // Pre-fill with project owner
       tags: predefinedActivity.tagKeys // Store English keys for database compatibility
     })
     
@@ -855,6 +889,22 @@ function ProjectRegisterContent() {
 
   const handleSubmit = async () => {
     if (!validateStep(4)) return
+
+    if (!formData.responsible_id) {
+        toast.error(t('projectRegister.validation.responsiblePersonInvalid') || translations.validation.responsiblePersonRequired)
+      return
+    }
+    
+    // Validate that the responsible user exists in the users list
+    const selectedUser = users.find(u => u.id === formData.responsible_id)
+    if (!selectedUser) {
+      toast.error(t('projectRegister.validation.responsiblePersonInvalid') || translations.validation.responsiblePersonRequired)
+      return
+    }
+    
+
+
+
 
     setIsLoading(true)
     const loadingToast = toast.loading(isEditing ? translations.toast.updatingProject : translations.toast.creatingProject)
@@ -915,8 +965,6 @@ function ProjectRegisterContent() {
         }
         // If both are empty, finalAssigneeIds remains empty array (backend will add creator)
 
-        console.log('Activity:', activity.name, 'assignee_ids:', finalAssigneeIds)
-
         return {
           name: activity.name,
           description: activity.description,
@@ -957,7 +1005,22 @@ function ProjectRegisterContent() {
         location_church_plant: formData.location_church_plant,
         special_budget: formData.special_budget,
         church_id: formData.church_id,
+        church_department_id: formData.church_department_id,
       }
+
+      // DEBUG: Log project owner data before mutation
+      console.log('🔍 Project Creation Debug BEFORE MUTATION:', {
+        title: formData.title,
+        responsible_id: formData.responsible_id,
+        owner_id: variables.owner_id,
+        responsibleUser: users.find(u => u.id === formData.responsible_id),
+        hasOwner: !!formData.responsible_id,
+        isOwnerIdValid: typeof variables.owner_id === 'string' && variables.owner_id.length > 0,
+        totalUsers: users.length,
+        institutionId: institutionId,
+      })
+      
+      console.log('📤 FULL VARIABLES BEING SENT TO BACKEND:', JSON.stringify(variables, null, 2))
 
       // Add event data if registering as event
       if (formData.register_as_event && formData.event) {
@@ -973,13 +1036,41 @@ function ProjectRegisterContent() {
       }
 
       // Execute mutation
-      await createProjectMutation({ variables })
+      const result = await createProjectMutation({ variables })
+
+      // DEBUG: Log mutation result
+      console.log('✅ Project Creation Success AFTER MUTATION:', {
+        fullResult: result,
+        projectId: result?.data?.createProject?.id,
+        projectTitle: result?.data?.createProject?.title,
+        ownerId: result?.data?.createProject?.owner_id,
+        variablesSentToBackend: {
+          owner_id: variables.owner_id,
+          title: variables.title,
+          responsible_id: formData.responsible_id
+        }
+      })
 
       toast.dismiss(loadingToast)
 
-    } catch (error) {
+    } catch (error: any) {
       toast.dismiss(loadingToast)
-      console.error('Failed to create project:', error)
+      console.error('❌ Failed to create project - Full Error:', error)
+      console.error('❌ Error details:', {
+        message: error.message,
+        graphQLErrors: error.graphQLErrors,
+        networkError: error.networkError,
+        extraInfo: error.extraInfo
+      })
+      
+      // Check if error is related to owner field
+      if (error.message?.includes('owner') || error.message?.includes('Owner')) {
+        console.error('🚨 OWNER FIELD ERROR DETECTED:', {
+          formData_responsible_id: formData.responsible_id,
+          variables_owner_id: variables.owner_id,
+          userExists: users.find(u => u.id === formData.responsible_id) ? 'YES' : 'NO'
+        })
+      }
       // Error toast is handled by mutation onError
     } finally {
       setIsLoading(false)
@@ -1417,31 +1508,87 @@ function ProjectRegisterContent() {
                   <Users className="w-4 h-4 text-muted-foreground" />
                   {t('projectRegister.activityForm.activityResponsibles')} <span className="text-red-500">*</span>
                 </Label>
-                <UserMultiSelector
-                  availableUsers={users?.map((user: any) => ({
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    avatar: user.avatar,
-                    role: user.role
-                  })) || []}
-                  selectedUsers={users?.filter((user: any) => 
-                    currentActivity.assignee_ids?.includes(user.id)
-                  ).map((user: any) => ({
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    avatar: user.avatar,
-                    role: user.role
-                  })) || []}
-                  onUsersChange={handleUsersChange}
-                  buttonLabel={t('projectRegister.activityForm.selectResponsibles')}
-                  dialogTitle={t('projectRegister.activityForm.activityResponsibles')}
-                  searchPlaceholder={t('projectRegister.activityForm.searchUsers')}
-                  activityName={currentActivity.name}
-                  activityType="Atividade do Projeto"
-                  disabled={!users || users.length === 0}
-                />
+                
+                {/* Hidden UserMultiSelector for dialog functionality */}
+                <div className="hidden">
+                  <UserMultiSelector
+                    ref={userSelectorRef}
+                    availableUsers={users?.map((user: any) => ({
+                      id: user.id,
+                      name: user.name,
+                      email: user.email,
+                      avatar: user.avatar,
+                      role: user.role
+                    })) || []}
+                    selectedUsers={users?.filter((user: any) => 
+                      currentActivity.assignee_ids?.includes(user.id)
+                    ).map((user: any) => ({
+                      id: user.id,
+                      name: user.name,
+                      email: user.email,
+                      avatar: user.avatar,
+                      role: user.role
+                    })) || []}
+                    onUsersChange={handleUsersChange}
+                    buttonLabel={t('projectRegister.activityForm.selectResponsibles')}
+                    dialogTitle={t('projectRegister.activityForm.activityResponsibles')}
+                    searchPlaceholder={t('projectRegister.activityForm.searchUsers')}
+                    activityName={currentActivity.name}
+                    activityType="Atividade do Projeto"
+                    disabled={!users || users.length === 0}
+                  />
+                </div>
+                
+                {/* Avatar Group Display */}
+                {users?.filter((user: any) => 
+                  currentActivity.assignee_ids?.includes(user.id)
+                ).length > 0 ? (
+                  <div 
+                    className="p-3 rounded-lg border bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors group"
+                    onClick={() => {
+                      // Click on the UserMultiSelector trigger button
+                      userSelectorRef.current?.click();
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <UsersAvatarGroup
+                        users={users?.filter((user: any) => 
+                          currentActivity.assignee_ids?.includes(user.id)
+                        ).map((user: any) => ({
+                          id: user.id,
+                          name: user.name,
+                          email: user.email,
+                          avatar: user.avatar,
+                          role: user.role,
+                          initials: user.initials
+                        })) || []}
+                        maxDisplay={4}
+                        size="md"
+                        showLabel={false}
+                        showAddButton={false}
+                      />
+                      <div className="flex items-center gap-1 ml-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                        <Plus className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">
+                          {t('projectRegister.activityForm.clickToEdit') || 'Clique para editar'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div 
+                    className="p-3 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/10 cursor-pointer hover:border-muted-foreground/50 transition-colors"
+                    onClick={() => {
+                      // Click on the UserMultiSelector trigger button
+                      userSelectorRef.current?.click();
+                    }}
+                  >
+                    <p className="text-sm text-muted-foreground text-center">
+                      {t('projectRegister.activityForm.addResponsibles') || 'Adicionar responsáveis para a atividade'}
+                    </p>
+                  </div>
+                )}
+                
                 <p className="text-xs text-muted-foreground">
                   {t('projectRegister.activityForm.responsiblesDescription')}
                 </p>
@@ -2397,7 +2544,7 @@ function ProjectRegisterContent() {
                       <Home className="w-5 h-5 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">{translations.summary.church}</p>
+                      <p className="text-sm text-muted-foreground">{translations.summary.selfContribution}</p>
                       <p className="text-2xl font-bold text-foreground">€ {selfContribution.toLocaleString()}</p>
                     </div>
                   </div>
@@ -2412,7 +2559,7 @@ function ProjectRegisterContent() {
                       <Building className="w-5 h-5 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">{translations.summary.institution}</p>
+                      <p className="text-sm text-muted-foreground">{translations.summary.requestContribution}</p>
                       <p className="text-2xl font-bold text-foreground">€ {requestContribution.toLocaleString()}</p>
                     </div>
                   </div>
@@ -2841,9 +2988,31 @@ function ProjectRegisterLoading() {
 
 // Main component with Suspense wrapper
 export default function ProjectRegisterPage() {
+  const { i18n } = useTranslation()
+  const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+  
   return (
-    <Suspense fallback={<ProjectRegisterLoading />}>
-      <ProjectRegisterContent />
-    </Suspense>
+    <WithPermission 
+      requiredPermissions={[PermissionResolverName.CreateProject]}
+      fallback={
+        <AppLayout>
+          <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-foreground mb-2">{t.accessDenied.title}</h2>
+              <p className="text-muted-foreground mb-4">
+                {t.accessDenied.noPermission}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {t.accessDenied.contactAdmin}
+              </p>
+            </div>
+          </div>
+        </AppLayout>
+      }
+    >
+      <Suspense fallback={<ProjectRegisterLoading />}>
+        <ProjectRegisterContent />
+      </Suspense>
+    </WithPermission>
   )
 }

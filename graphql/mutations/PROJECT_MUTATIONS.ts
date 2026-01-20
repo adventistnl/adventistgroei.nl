@@ -25,6 +25,7 @@ export const CREATE_PROJECT_MUTATION = gql`
     $location_church_plant: String
     $special_budget: Float
     $church_id: String
+    $church_department_id: String
   ) {
     createProject(
       data: {
@@ -43,6 +44,7 @@ export const CREATE_PROJECT_MUTATION = gql`
         is_event: $is_event
         institution_id: $institution_id
         church_id: $church_id
+        church_department_id: $church_department_id
         owner_id: $owner_id
         deadline: $deadline
         event: $event
@@ -132,17 +134,9 @@ export const UPDATE_PROJECT_MUTATION = gql`
       id
       title
       description
-      budget
-      subsidized_budget
-      balance
-      type
-      status
-      is_private
-      required_volunteers
-      start_at
-      end_at
-      deadline
-      language_preference
+      department_id
+      owner_id
+      institution_id
       updated_at
     }
   }

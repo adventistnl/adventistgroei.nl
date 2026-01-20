@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, forwardRef } from "react"
 import { UserPlus, Search, Check, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -58,9 +58,12 @@ export interface UserMultiSelectorProps {
 
   /** Tipo de atividade */
   activityType?: string
+
+  /** Data attribute para identificação do botão */
+  buttonDataAttribute?: string
 }
 
-export function UserMultiSelector({
+export const UserMultiSelector = forwardRef<HTMLButtonElement, UserMultiSelectorProps>(({
   availableUsers,
   selectedUsers,
   onUsersChange,
@@ -71,7 +74,8 @@ export function UserMultiSelector({
   maxSelections,
   activityName,
   activityType,
-}: UserMultiSelectorProps) {
+  buttonDataAttribute,
+}, ref) => {
   const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -135,6 +139,7 @@ export function UserMultiSelector({
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
+          ref={ref}
           type="button"
           variant="outline"
           size="sm"
@@ -143,6 +148,7 @@ export function UserMultiSelector({
             "gap-2",
             disabled && "opacity-50 cursor-not-allowed"
           )}
+          {...(buttonDataAttribute && { [buttonDataAttribute]: "true" })}
         >
           {typeof buttonLabel === 'string' ? (
             <>
@@ -349,4 +355,6 @@ export function UserMultiSelector({
       </DialogContent>
     </Dialog>
   )
-}
+})
+
+UserMultiSelector.displayName = "UserMultiSelector"

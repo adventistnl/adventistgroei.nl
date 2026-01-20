@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ProjectType, LanguagePreference, ActivityTags, ActivityStatus, ActivityPriority, EntityType } from "./globalTypes";
+import { ProjectType, LanguagePreference, ProjectStatus, ActivityTags, ActivityStatus, ActivityPriority, EntityType } from "./globalTypes";
 
 // ====================================================
 // GraphQL query operation: GetProjectById
@@ -16,14 +16,41 @@ export interface GetProjectById_project_owner {
   email: string;
 }
 
-export interface GetProjectById_project_department {
-  __typename: "Department";
+export interface GetProjectById_project_department_church {
+  __typename: "Church";
   id: string;
   name: string;
 }
 
+export interface GetProjectById_project_department {
+  __typename: "Department";
+  id: string;
+  name: string;
+  church: GetProjectById_project_department_church | null;
+}
+
+export interface GetProjectById_project_church_department_church {
+  __typename: "Church";
+  id: string;
+  name: string;
+}
+
+export interface GetProjectById_project_church_department {
+  __typename: "Department";
+  id: string;
+  name: string;
+  description: string;
+  church: GetProjectById_project_church_department_church | null;
+}
+
 export interface GetProjectById_project_Institution {
   __typename: "Institution";
+  id: string;
+  name: string;
+}
+
+export interface GetProjectById_project_Church {
+  __typename: "Church";
   id: string;
   name: string;
 }
@@ -50,6 +77,16 @@ export interface GetProjectById_project_activities_activity_funding {
   entity_id: string;
 }
 
+export interface GetProjectById_project_activities_activity_documents {
+  __typename: "ActivityDocuments";
+  id: string;
+  file_url: string;
+  filename: string;
+  type: string;
+  is_validated: boolean;
+  drive_file_id: string | null;
+}
+
 export interface GetProjectById_project_activities {
   __typename: "ProjectActivity";
   id: string;
@@ -66,6 +103,7 @@ export interface GetProjectById_project_activities {
   updated_at: any;
   assignees: GetProjectById_project_activities_assignees[] | null;
   activity_funding: GetProjectById_project_activities_activity_funding | null;
+  activity_documents: GetProjectById_project_activities_activity_documents[] | null;
 }
 
 export interface GetProjectById_project_subsidies_subsidy_status {
@@ -174,6 +212,8 @@ export interface GetProjectById_project_kpis {
   subsidizedActivities: number;
   subsidyRate: number;
   subsidyRequestsCount: number;
+  approvedSubsidyRequestsCount: number;
+  totalSubsidyAmount: number;
   daysRemaining: number;
   endDate: any;
   projectStatus: string;
@@ -185,6 +225,7 @@ export interface GetProjectById_project {
   title: string;
   description: string;
   budget: any;
+  subsidized_budget: any;
   type: ProjectType;
   is_private: boolean;
   required_volunteers: boolean;
@@ -193,14 +234,18 @@ export interface GetProjectById_project {
   deadline: any | null;
   language_preference: LanguagePreference;
   department_id: string;
+  church_department_id: string | null;
   owner_id: string;
   institution_id: string | null;
   event_id: string | null;
+  status: ProjectStatus;
   created_at: any;
   updated_at: any;
   owner: GetProjectById_project_owner;
   department: GetProjectById_project_department;
+  church_department: GetProjectById_project_church_department | null;
   Institution: GetProjectById_project_Institution | null;
+  Church: GetProjectById_project_Church | null;
   activities: GetProjectById_project_activities[] | null;
   subsidies: GetProjectById_project_subsidies[] | null;
   special_projects: GetProjectById_project_special_projects[] | null;

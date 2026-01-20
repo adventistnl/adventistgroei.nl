@@ -7,6 +7,7 @@ export const GET_PROJECTS_QUERY = gql`
       title
       description
       budget
+      subsidized_budget
       type
       is_private
       required_volunteers
@@ -15,6 +16,7 @@ export const GET_PROJECTS_QUERY = gql`
       deadline
       language_preference
       department_id
+      church_department_id
       owner_id
       institution_id
       event_id
@@ -29,6 +31,15 @@ export const GET_PROJECTS_QUERY = gql`
       department {
         id
         name
+        church {
+          id
+          name
+        }
+      }
+      church_department {
+        id
+        name
+        description
         church {
           id
           name
@@ -82,6 +93,7 @@ export const GET_PROJECT_BY_ID_QUERY = gql`
       title
       description
       budget
+      subsidized_budget
       type
       is_private
       required_volunteers
@@ -90,6 +102,7 @@ export const GET_PROJECT_BY_ID_QUERY = gql`
       deadline
       language_preference
       department_id
+      church_department_id
       owner_id
       institution_id
       event_id
@@ -104,6 +117,15 @@ export const GET_PROJECT_BY_ID_QUERY = gql`
       department {
         id
         name
+        church {
+          id
+          name
+        }
+      }
+      church_department {
+        id
+        name
+        description
         church {
           id
           name
