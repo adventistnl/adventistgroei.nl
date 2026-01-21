@@ -112,7 +112,12 @@ export const institutionTranslations = {
         title: "Churches by Region",
         description: "Distribution across regions",
         noData: "No church data available for this institution",
-        churchesLabel: "Churches"
+        noDataDescription: "No churches found in any region",
+        churchesLabel: "Churches",
+        noRegion: "No Region",
+        unknownRegion: "Unknown Region",
+        selectRegion: "Select region",
+        churches: "churches"
       },
       userDistribution: {
         title: "User Distribution by Entity",
@@ -136,7 +141,54 @@ export const institutionTranslations = {
       regionsDetails: "Geographic divisions containing provinces and churches",
       activeChurches: "active churches",
       with: "with",
-      churchesDetails: "Local congregations with specialized ministry departments"
+      churchesDetails: "Local congregations with specialized ministry departments",
+      usersByRole: {
+        title: "Users by Role",
+        description: "Distribution across all user types",
+        noData: "No User Data Available",
+        noDataDescription: "No users with roles found",
+        users: "Users",
+        total: "Total",
+        showing: "Showing",
+        of: "of",
+        roles: "roles",
+        page: "Page",
+        allRoles: "All Roles",
+        selectRole: "Select role",
+        topN: {
+          all: "All",
+          top3: "Top 3",
+          top5: "Top 5",
+          top10: "Top 10"
+        },
+        sortOrder: {
+          mostUsers: "Most Users",
+          leastUsers: "Least Users"
+        },
+        noRole: "No Role",
+        totalUsersAcross: "Total users",
+        across: "across",
+        trendingUp: "Trending up by",
+        thisMonth: "this month",
+        viewBar: "Bar",
+        viewPie: "Pie"
+      }
+    },
+    leadershipCard: {
+      title: "Institution Leaders",
+      description: "Leaders managing this institution",
+      no_leaders: "No institutional leaders found",
+      leadership_roles: "Leadership Roles",
+      no_roles: "No leadership roles assigned",
+      view_contact: "View Contact"
+    },
+    activityHeatmap: {
+      title: "Activity Heatmap",
+      description: "Daily activity intensity based on projects created and users registered",
+      no_data: "No activity data available",
+      less: "Less",
+      more: "More",
+      days_with_activity: "days with activity"
     }
   },
   nl: {
@@ -252,7 +304,12 @@ export const institutionTranslations = {
         title: "Kerken per Regio",
         description: "Verdeling over regio's",
         noData: "Geen kerkgegevens beschikbaar voor deze instelling",
-        churchesLabel: "Kerken"
+        noDataDescription: "Geen kerken gevonden in welke regio dan ook",
+        churchesLabel: "Kerken",
+        noRegion: "Geen Regio",
+        unknownRegion: "Onbekende Regio",
+        selectRegion: "Selecteer regio",
+        churches: "kerken"
       },
       userDistribution: {
         title: "Gebruikersverdeling per Entiteit",
@@ -276,8 +333,55 @@ export const institutionTranslations = {
       regionsDetails: "Geografische afdelingen met provincies en kerken",
       activeChurches: "actieve kerken",
       with: "met",
-      churchesDetails: "Lokale gemeenten met gespecialiseerde bedieningen"
+      churchesDetails: "Lokale gemeenten met gespecialiseerde bedieningen",
+      usersByRole: {
+        title: "Gebruikers per Rol",
+        description: "Verdeling over alle gebruikerstypes",
+        noData: "Geen Gebruikersgegevens Beschikbaar",
+        noDataDescription: "Geen gebruikers met rollen gevonden",
+        users: "Gebruikers",
+        total: "Totaal",
+        showing: "Tonen",
+        of: "van",
+        roles: "rollen",
+        page: "Pagina",
+        allRoles: "Alle Rollen",
+        selectRole: "Selecteer rol",
+        topN: {
+          all: "Alle",
+          top3: "Top 3",
+          top5: "Top 5",
+          top10: "Top 10"
+        },
+        sortOrder: {
+          mostUsers: "Meeste Gebruikers",
+          leastUsers: "Minste Gebruikers"
+        },
+        noRole: "Geen Rol",
+        totalUsersAcross: "Totaal gebruikers",
+        across: "over",
+        trendingUp: "Stijgend met",
+        thisMonth: "deze maand",
+        viewBar: "Staaf",
+        viewPie: "Cirkel"
+      }
     },
+    leadershipCard: {
+      title: "Institutionele Leiders",
+      description: "Leiders die deze instelling beheren",
+      no_leaders: "Geen institutionele leiders gevonden",
+      leadership_roles: "Leiderschapsrollen",
+      no_roles: "Geen leiderschapsrollen toegewezen",
+      view_contact: "Contact Bekijken"
+    },
+    activityHeatmap: {
+      title: "Activiteit Heatmap",
+      description: "Dagelijkse activiteitsintensiteit op basis van gecreëerde projecten en geregistreerde gebruikers",
+      no_data: "Geen activiteitsgegevens beschikbaar",
+      less: "Minder",
+      more: "Meer",
+      days_with_activity: "dagen met activiteit"
+    }
   },
   pt: {
     // Modal titles and descriptions
@@ -392,7 +496,12 @@ export const institutionTranslations = {
         title: "Igrejas por Região",
         description: "Distribuição por regiões",
         noData: "Nenhum dado de igreja disponível para esta instituição",
-        churchesLabel: "Igrejas"
+        noDataDescription: "Nenhuma igreja encontrada em qualquer região",
+        churchesLabel: "Igrejas",
+        noRegion: "Sem Região",
+        unknownRegion: "Região Desconhecida",
+        selectRegion: "Selecionar região",
+        churches: "igrejas"
       },
       userDistribution: {
         title: "Distribuição de Usuários por Entidade",
@@ -416,7 +525,54 @@ export const institutionTranslations = {
       regionsDetails: "Divisões geográficas contendo províncias e igrejas",
       activeChurches: "igrejas ativas",
       with: "com",
-      churchesDetails: "Congregações locais com departamentos ministeriais especializados"
+      churchesDetails: "Congregações locais com departamentos ministeriais especializados",
+      usersByRole: {
+        title: "Usuários por Função",
+        description: "Distribuição entre todos os tipos de usuários",
+        noData: "Nenhum Dado de Usuário Disponível",
+        noDataDescription: "Nenhum usuário com funções encontrado",
+        users: "Usuários",
+        total: "Total",
+        showing: "Mostrando",
+        of: "de",
+        roles: "funções",
+        page: "Página",
+        allRoles: "Todas as Funções",
+        selectRole: "Selecionar função",
+        topN: {
+          all: "Todos",
+          top3: "Top 3",
+          top5: "Top 5",
+          top10: "Top 10"
+        },
+        sortOrder: {
+          mostUsers: "Mais Usuários",
+          leastUsers: "Menos Usuários"
+        },
+        noRole: "Sem Função",
+        totalUsersAcross: "Total de usuários",
+        across: "entre",
+        trendingUp: "Crescendo",
+        thisMonth: "este mês",
+        viewBar: "Barras",
+        viewPie: "Pizza"
+      }
+    },
+    leadershipCard: {
+      title: "Líderes da Instituição",
+      description: "Líderes que gerenciam esta instituição",
+      no_leaders: "Nenhum líder institucional encontrado",
+      leadership_roles: "Funções de Liderança",
+      no_roles: "Nenhuma função de liderança atribuída",
+      view_contact: "Ver Contato"
+    },
+    activityHeatmap: {
+      title: "Mapa de Calor de Atividades",
+      description: "Intensidade diária de atividades baseada em projetos criados e usuários registrados",
+      no_data: "Nenhum dado de atividade disponível",
+      less: "Menos",
+      more: "Mais",
+      days_with_activity: "dias com atividade"
     }
   }
 }

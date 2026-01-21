@@ -519,8 +519,8 @@ export type Church = {
   institution: Institution;
   institution_id: Scalars['String']['output'];
   is_deleted: Scalars['Boolean']['output'];
-  leader: User;
-  leader_id: Scalars['String']['output'];
+  leader?: Maybe<User>;
+  leader_id?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   projects?: Maybe<Array<Project>>;
   region?: Maybe<Region>;
@@ -595,24 +595,6 @@ export type ChurchListRelationFilter = {
   some?: InputMaybe<ChurchWhereInput>;
 };
 
-export type ChurchModel = {
-  __typename?: 'ChurchModel';
-  contact_id?: Maybe<Scalars['String']['output']>;
-  created_at: Scalars['DateTime']['output'];
-  created_by: Scalars['String']['output'];
-  deleted_at?: Maybe<Scalars['DateTime']['output']>;
-  deleted_by?: Maybe<Scalars['String']['output']>;
-  id: Scalars['String']['output'];
-  institution_id: Scalars['String']['output'];
-  is_deleted: Scalars['Boolean']['output'];
-  leader?: Maybe<UserModel>;
-  name: Scalars['String']['output'];
-  region_id?: Maybe<Scalars['String']['output']>;
-  type?: Maybe<ChurchType>;
-  updated_at: Scalars['DateTime']['output'];
-  updated_by: Scalars['String']['output'];
-};
-
 export type ChurchNullableScalarRelationFilter = {
   is?: InputMaybe<ChurchWhereInput>;
   isNot?: InputMaybe<ChurchWhereInput>;
@@ -636,7 +618,7 @@ export type ChurchOrderByWithRelationInput = {
   institution_id?: InputMaybe<SortOrder>;
   is_deleted?: InputMaybe<SortOrder>;
   leader?: InputMaybe<UserOrderByWithRelationInput>;
-  leader_id?: InputMaybe<SortOrder>;
+  leader_id?: InputMaybe<SortOrderInput>;
   name?: InputMaybe<SortOrder>;
   projects?: InputMaybe<ProjectOrderByRelationAggregateInput>;
   region?: InputMaybe<RegionOrderByWithRelationInput>;
@@ -681,8 +663,8 @@ export type ChurchWhereInput = {
   institution?: InputMaybe<InstitutionScalarRelationFilter>;
   institution_id?: InputMaybe<StringFilter>;
   is_deleted?: InputMaybe<BoolFilter>;
-  leader?: InputMaybe<UserScalarRelationFilter>;
-  leader_id?: InputMaybe<StringFilter>;
+  leader?: InputMaybe<UserNullableScalarRelationFilter>;
+  leader_id?: InputMaybe<StringNullableFilter>;
   name?: InputMaybe<StringFilter>;
   projects?: InputMaybe<ProjectListRelationFilter>;
   region?: InputMaybe<RegionNullableScalarRelationFilter>;
@@ -2072,7 +2054,7 @@ export type Mutation = {
   approveAnnualBudget: ApproveBudgetResponse;
   approveSubsidyRequest: SubsidyRequest;
   batchUpdateProjectActivities: Array<ProjectActivity>;
-  createChurch: ChurchModel;
+  createChurch: Church;
   createCommunication: Communication;
   createContact: Contact;
   createDepartment: Department;
@@ -2091,7 +2073,7 @@ export type Mutation = {
   createUser: UserModel;
   deleteActivityDocument: ActivityDocuments;
   deleteAnnualBudget: DeleteBudgetResponse;
-  deleteChurch: ChurchModel;
+  deleteChurch: Church;
   deleteCommunication: Communication;
   deleteContact: Contact;
   deleteDepartment: Department;
@@ -2122,7 +2104,7 @@ export type Mutation = {
   /** Send an invitation email */
   sendInviteEmail: Scalars['Boolean']['output'];
   toggleBudgetLock: ToggleLockBudgetResponse;
-  updateChurch: ChurchModel;
+  updateChurch: Church;
   updateCommunication: Communication;
   updateContact: Contact;
   updateDepartment: Department;
@@ -3578,9 +3560,9 @@ export type Query = {
   annualBudgets: Array<AnnualBudget>;
   budgetDistribution: BudgetDistribution;
   budgetKPIs: BudgetKpIs;
-  church?: Maybe<ChurchModel>;
+  church?: Maybe<Church>;
   churchActivityTimeline: Array<Scalars['JSON']['output']>;
-  churches: Array<ChurchModel>;
+  churches: Array<Church>;
   communication?: Maybe<Communication>;
   communications: Array<Communication>;
   contact?: Maybe<Contact>;

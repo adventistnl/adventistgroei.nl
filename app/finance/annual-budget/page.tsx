@@ -98,6 +98,7 @@ import {
   useBudgetDashboardData
 } from "@/hooks/graphql/use-annual-budget-queries"
 import { GetBudgetDashboardData_annualBudgets } from "@/types/GetBudgetDashboardData"
+import { StatusBadge } from "@/components/ui/status-badge"
 
 /**
  * PÁGINA DE GESTÃO DE ORÇAMENTO ANUAL
@@ -1239,20 +1240,76 @@ export default function AnnualBudgetPage() {
       },
     },
     {
-      id: "entity_type",
+      id: "balance_status",
       header: () => (
         <div className="text-center font-medium text-foreground">
-          {t('annual_budget.table.headers.entity_type')}
+          {t('annual_budget.table.headers.balance_status') || 'Balance Status'}
         </div>
       ),
       cell: ({ row }) => {
         const departmentData = row.original
         const isDisabled = !departmentData.hasBudgetRecord
-        return (
-          <div className={`text-center ${isDisabled ? 'opacity-50' : ''}`}>
-            <div className="text-sm font-medium text-foreground">
-              Department
+        
+        if (!departmentData.hasBudgetRecord || !departmentData.annualBudget) {
+          return (
+            <div className="flex justify-center">
+              <StatusBadge
+                label="No Budget"
+                variant="neutral"
+                size="sm"
+              />
             </div>
+          )
+        }
+        
+        const plannedBudget = departmentData.annualBudget?.planned_budget || 0
+        const allocatedAmount = departmentData.annualBudget?.allocated_amount || 0
+        const spentAmount = departmentData.spentAmount || 0
+        
+        // Calculate remaining balance: planned - (allocated + spent)
+        const balance = plannedBudget - (allocatedAmount + spentAmount)
+        const utilizationRate = plannedBudget > 0 ? ((allocatedAmount + spentAmount) / plannedBudget) * 100 : 0
+        
+        // Determine status based on balance and utilization
+        let status: { label: string; variant: "success" | "warning" | "error" | "neutral" | "info" } = {
+          label: "Healthy",
+          variant: "success"
+        }
+        
+        if (balance < 0) {
+          // Over budget - spent more than planned
+          status = {
+            label: `Over Budget`,
+            variant: "error"
+          }
+        } else if (utilizationRate >= 90) {
+          // At risk - 90% or more utilized
+          status = {
+            label: `At Risk`,
+            variant: "warning"
+          }
+        } else if (utilizationRate >= 75) {
+          // Warning - 75-89% utilized
+          status = {
+            label: `Good`,
+            variant: "info"
+          }
+        } else {
+          // Healthy - less than 75% utilized
+          status = {
+            label: `Healthy`,
+            variant: "success"
+          }
+        }
+        
+        return (
+          <div className="flex justify-center">
+            <StatusBadge
+              label={status.label}
+              variant={status.variant}
+              showDot
+              size="sm"
+            />
           </div>
         )
       },

@@ -51,6 +51,14 @@ import { DepartmentProjectOverTimeChart } from "@/components/institutions/charts
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { UseTable } from "@/components/ui/use-table"
 import { EntityInfoCard } from "@/components/shared/entity-info-card"
+import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -265,6 +273,19 @@ export default function ChurchDepartmentsPage() {
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentData | null>(null)
   const [selectedContact, setSelectedContact] = useState<ContactData | null>(null)
 
+  // Filter states - PageFilters
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({
+    church: "all",
+    status: "true" // Default to active departments
+  })
+  
+  // Year filter state
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const [availableYears, setAvailableYears] = useState<number[]>(() => {
+    const currentYear = new Date().getFullYear()
+    return [currentYear, currentYear - 1, currentYear - 2].sort((a, b) => b - a)
+  })
+
   usePageTitle({
     title: t.church_page?.title || "Church Departments"
   })
@@ -367,15 +388,51 @@ export default function ChurchDepartmentsPage() {
     return enriched
   }, [departments, projectsByDepartmentMap, departmentActivityMap])
 
+  // Filter data based on church, status, and year
+  const filteredDepartments = useMemo(() => {
+    let filtered = enrichedDepartments
+    
+    // Apply church filter
+    if (filterValues.church !== "all") {
+      filtered = filtered.filter(dept => dept.church_id === filterValues.church)
+    }
+    
+    // Apply status filter
+    if (filterValues.status !== "all") {
+      const isActive = filterValues.status === "true"
+      filtered = filtered.filter(dept => !dept.is_deleted === isActive)
+    }
+    
+    return filtered
+  }, [enrichedDepartments, filterValues])
+
+  // Filter projects by year
+  const projectsByYear = useMemo(() => {
+    return projects.filter(project => {
+      const createdDate = new Date(project.created_at || project.start_at)
+      return createdDate.getFullYear() === selectedYear
+    })
+  }, [projects, selectedYear])
+
+  // Filter users by year for detail view
+  const usersByYear = useMemo(() => {
+    if (!selectedDepartmentDetail?.users) return []
+    
+    return selectedDepartmentDetail.users.filter(user => {
+      const createdDate = new Date(user.created_at)
+      return createdDate.getFullYear() === selectedYear
+    })
+  }, [selectedDepartmentDetail?.users, selectedYear])
+
   // Dados para KPI Cards Carrossel
   const kpiCardsData: KPICardData[] = useMemo(() => {
     if (!kpis) return []
 
     const kpiCardsTranslations = (t.church_page as any)?.kpi_cards || {}
 
-    // Total de membros únicos em todos os departamentos de igreja
+    // Total de membros únicos em todos os departamentos de igreja (filtered)
     const uniqueMemberIds = new Set<string>()
-    departments.forEach(dept => {
+    filteredDepartments.forEach(dept => {
       dept.users?.forEach(user => {
         if (!user.is_deleted) {
           uniqueMemberIds.add(user.id)
@@ -384,8 +441,11 @@ export default function ChurchDepartmentsPage() {
     })
     const totalMembers = uniqueMemberIds.size
 
-    // Contar projetos reais da API (não usar KPI hook)
-    const churchProjects = projects.filter((p: any) => p.church_department_id)
+    // Contar projetos reais da API filtrados por ano e departamentos filtrados
+    const filteredDeptIds = new Set(filteredDepartments.map(d => d.id))
+    const churchProjects = projectsByYear.filter((p: any) => 
+      p.church_department_id && filteredDeptIds.has(p.church_department_id)
+    )
     const totalProjects = churchProjects.length
     const openProjects = churchProjects.filter((p: any) => 
       p.status !== 'CONCLUDED' && p.status !== 'EXPIRED'
@@ -398,7 +458,7 @@ export default function ChurchDepartmentsPage() {
       {
         id: "total_departments",
         title: kpiCardsTranslations.total_departments || "Church Departments",
-        value: departments.length,
+        value: filteredDepartments.length,
         icon: Layers,
         subtitle: kpiCardsTranslations.total_departments_subtitle || "Total church departments"
       },
@@ -424,7 +484,7 @@ export default function ChurchDepartmentsPage() {
         subtitle: kpiCardsTranslations.completed_projects_subtitle || "Successfully completed"
       }
     ]
-  }, [departments, projects, t]);
+  }, [filteredDepartments, projectsByYear, t]);
 
   // Dados para gráficos (apenas nome e orçamento)
   const chartData = useMemo(() => {
@@ -463,6 +523,77 @@ export default function ChurchDepartmentsPage() {
 
     loadData()
   }, [])
+
+  // Configure PageFilters
+  const pageFilters: FilterConfig[] = useMemo(() => {
+    const filters: FilterConfig[] = []
+    
+    // Add church filter
+    if (churches.length > 0) {
+      filters.push({
+        id: "church",
+        label: t.labels?.church || "Church",
+        type: "select",
+        placeholder: t.fields?.search_church || "Select church...",
+        icon: Building,
+        options: [
+          { label: t.common?.all || "All", value: "all" },
+          ...churches.map(church => ({
+            label: church.name,
+            value: church.id
+          }))
+        ]
+      })
+    }
+    
+    // Add status filter
+    filters.push({
+      id: "status",
+      label: t.common?.status || "Status",
+      type: "select",
+      placeholder: "Select status...",
+      icon: Shield,
+      options: [
+        { label: t.common?.all || "All", value: "all" },
+        { label: t.common?.active || "Active", value: "true" },
+        { label: t.common?.inactive || "Inactive", value: "false" }
+      ]
+    })
+    
+    return filters
+  }, [churches, t])
+
+  const handleFilterChange = (filterId: string, value: any) => {
+    setFilterValues(prev => ({
+      ...prev,
+      [filterId]: value
+    }))
+  }
+
+  const handleClearFilters = () => {
+    setFilterValues({ church: "all", status: "true" })
+    toast.success(t.common?.filters_cleared || "Filters cleared", { duration: 1500 })
+  }
+
+  const handleAddYear = () => {
+    const currentYear = new Date().getFullYear()
+    const maxAllowedYear = currentYear + 2
+    const nextYear = Math.max(...availableYears) + 1
+
+    if (nextYear > maxAllowedYear) {
+      toast.error(`Cannot add years beyond ${maxAllowedYear}`)
+      return
+    }
+
+    if (availableYears.includes(nextYear)) {
+      toast.error(`Year ${nextYear} already exists`)
+      return
+    }
+
+    setAvailableYears(prev => [...prev, nextYear].sort((a, b) => b - a))
+    setSelectedYear(nextYear)
+    toast.success(`Year ${nextYear} added successfully`)
+  }
 
   /**
    * Handlers para ações
@@ -576,6 +707,59 @@ export default function ChurchDepartmentsPage() {
   }
 
   if (!currentInstitutionData) return <NotFound />
+  
+  // Year Filter Component
+  const YearFilter = ({ showAddButton = true }: { showAddButton?: boolean }) => {
+    const currentYear = new Date().getFullYear()
+    const maxAllowedYear = currentYear + 2
+    const canAddMore = Math.max(...availableYears) < maxAllowedYear
+
+    return (
+      <div className="mb-6">
+        <div className="flex items-center gap-3 overflow-x-auto pb-2 scroll-smooth" style={{ scrollbarWidth: 'thin' }}>
+          {availableYears.map((year) => (
+            <Button
+              key={year}
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedYear(year)}
+              className={`
+                flex-shrink-0 min-w-[80px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
+                ${
+                  selectedYear === year 
+                    ? 'bg-primary text-primary-foreground border-primary shadow-md hover:bg-primary/90' 
+                    : 'bg-muted text-muted-foreground border-muted hover:bg-muted/80 hover:text-foreground hover:border-muted-foreground/50'
+                }
+              `}
+            >
+              {year}
+            </Button>
+          ))}
+          
+          {/* Add New Year Button */}
+          {showAddButton && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddYear}
+              disabled={!canAddMore}
+              className={`
+                flex-shrink-0 min-w-[100px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
+                ${
+                  canAddMore 
+                    ? 'border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground hover:border-muted-foreground/60 hover:bg-muted/50' 
+                    : 'opacity-40 cursor-not-allowed border-dashed border-muted-foreground/20 text-muted-foreground/50'
+                }
+              `}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {t.common?.add_year || "Add Year"}
+            </Button>
+          )}
+        </div>
+      </div>
+    )
+  }
   
   // Colunas da tabela de departamentos
   const departmentColumns: ColumnDef<any>[] = [
@@ -702,33 +886,41 @@ export default function ChurchDepartmentsPage() {
           <span className="font-medium text-gray-900">{t.common?.actions || "Actions"}</span>
         </div>
       ),
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <MoreHorizontal className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => handleViewDetails(row.original.id)}>
-              <Eye className="w-4 h-4 mr-2" />
-              {t.actions?.view_details || "View Details"}
-            </DropdownMenuItem>
-            <WithPermission requiredPermissions={[PermissionResolverName.UpdateDepartment]}>
-              <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
-                <Edit className="w-4 h-4 mr-2" />
-                {t.actions?.edit_department || "Edit Department"}
+      cell: ({ row }) => {
+        const isActive = !row.original.is_deleted
+        
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => handleViewDetails(row.original.id)}>
+                <Eye className="w-4 h-4 mr-2" />
+                {t.actions?.view_details || "View Details"}
               </DropdownMenuItem>
-            </WithPermission>
-            <WithPermission requiredPermissions={[PermissionResolverName.DeleteDepartment]}>
-              <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
-                <Trash2 className="w-4 h-4 mr-2" />
-                {t.actions?.delete_department || "Delete Department"}
-              </DropdownMenuItem>
-            </WithPermission>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
+              {isActive && (
+                <>
+                  <WithPermission requiredPermissions={[PermissionResolverName.UpdateDepartment]}>
+                    <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      {t.actions?.edit_department || "Edit Department"}
+                    </DropdownMenuItem>
+                  </WithPermission>
+                  <WithPermission requiredPermissions={[PermissionResolverName.DeleteDepartment]}>
+                    <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      {t.modals?.delete?.deactivate_department || "Deactivate Department"}
+                    </DropdownMenuItem>
+                  </WithPermission>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )
+      },
     },
   ]
 
@@ -913,32 +1105,49 @@ export default function ChurchDepartmentsPage() {
 
         {/* Header - Only show in List View */}
         {viewMode === 'list' && (
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
-                {t.page?.title || "Church Departments"}
-              </h2>
-              <p className="text-muted-foreground text-0.875rem sm:text-1rem">
-                {t.page?.description || "Manage church-level departments and ministries"}
-              </p>
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
+                  {t.page?.title || "Church Departments"}
+                </h2>
+                <p className="text-muted-foreground text-0.875rem sm:text-1rem">
+                  {t.page?.description || "Manage church-level departments and ministries"}
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-3">
+
+                <PageFilters
+                  filters={pageFilters}
+                  values={filterValues}
+                  onChange={handleFilterChange}
+                  onClear={handleClearFilters}
+                  triggerLabel={t.common?.filters || "Filters"}
+                />
+            
+
+                <WithPermission requiredPermissions={[PermissionResolverName.CreateDepartment]}>
+                  <Button onClick={handleCreate}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    {t.create_department || "Create Church Department"}
+                  </Button>
+                </WithPermission>
+                
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                >
+                  <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
             </div>
             
+            {/* Filters Row */}
             <div className="flex items-center gap-3">
-              <WithPermission requiredPermissions={[PermissionResolverName.CreateDepartment]}>
-                <Button onClick={handleCreate}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  {t.create_department || "Create Church Department"}
-                </Button>
-              </WithPermission>
-              
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={handleRefresh}
-                disabled={refreshing}
-              >
-                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-              </Button>
+              <YearFilter showAddButton={false} />
             </div>
           </div>
         )}
@@ -948,12 +1157,16 @@ export default function ChurchDepartmentsPage() {
           <>
             {/* Detail View KPI Cards usando KPICards component com carrossel */}
             {(() => {
-              const projects = (selectedDepartmentDetail as any).projects || [];
-              const openProjectsCount = projects.filter((p: any) => 
-                p.status !== 'COMPLETED' && !p.is_completed
+              // Filter projects by year for detail view
+              const departmentProjects = projectsByYear.filter((p: any) => 
+                p.church_department_id === selectedDepartmentDetail.id
+              );
+              
+              const openProjectsCount = departmentProjects.filter((p: any) => 
+                p.status !== 'CONCLUDED' && p.status !== 'EXPIRED'
               ).length;
-              const completedProjectsCount = projects.filter((p: any) => 
-                p.status === 'COMPLETED' || p.is_completed
+              const completedProjectsCount = departmentProjects.filter((p: any) => 
+                p.status === 'CONCLUDED'
               ).length;
               
               const kpiCardsTranslations = ((t as any).church_page?.kpi_cards) || {}
@@ -968,7 +1181,7 @@ export default function ChurchDepartmentsPage() {
                 {
                   id: "total_projects",
                   title: kpiCardsTranslations.total_projects || "Total Projects",
-                  value: projects.length,
+                  value: departmentProjects.length,
                   icon: TrendingUp,
                   subtitle: kpiCardsTranslations.total_projects_subtitle || "All registered projects",
                 },
@@ -1085,13 +1298,16 @@ export default function ChurchDepartmentsPage() {
                         loading={isLoading || projectsLoading} 
                         departments={viewMode === 'detail' && selectedDepartmentDetail 
                           ? [selectedDepartmentDetail] 
-                          : departments
+                          : filteredDepartments
                         }
                         projects={viewMode === 'detail' && selectedDepartmentDetail
-                          ? projects.filter((p: any) => p.church_department_id === selectedDepartmentDetail.id)
-                          : projects
+                          ? projectsByYear.filter((p: any) => p.church_department_id === selectedDepartmentDetail.id)
+                          : projectsByYear.filter((p: any) => {
+                              const filteredDeptIds = new Set(filteredDepartments.map(d => d.id))
+                              return filteredDeptIds.has(p.church_department_id)
+                            })
                         }
-                        selectedYear={new Date().getFullYear()}
+                        selectedYear={selectedYear}
                       />
                     ),
                   colSpan: viewMode === 'detail' ? "col-span-12 lg:col-span-7" : "col-span-12 lg:col-span-8",
@@ -1101,7 +1317,7 @@ export default function ChurchDepartmentsPage() {
                     id: "DepartmentInfoAndProjects",
                     component: (
                       <div className="flex flex-col gap-4 h-[calc(100vh-24rem)] min-h-[600px]">
-                        <div className="h-[20%] min-h-[80px]">
+                        <div className="h-[23%] min-h-[100px]">
                           <DepartmentLeaderInfoCard
                             department={{
                               id: selectedDepartmentDetail.id,
@@ -1118,9 +1334,9 @@ export default function ChurchDepartmentsPage() {
                             showHeader={false}
                           />
                         </div>
-                        <div className="flex-1 h-[80%] min-h-[420px]">
+                        <div className="flex-1 h-[77%] min-h-[400px]">
                           <DepartmentProjectsCard
-                            projects={projects as any}
+                            projects={projectsByYear as any}
                             departmentId={selectedDepartmentDetail.id}
                             departmentName={selectedDepartmentDetail.name}
                             loading={projectsLoading}
@@ -1168,13 +1384,13 @@ export default function ChurchDepartmentsPage() {
                   {t.detail?.members_table?.title || "Department Members"}
                 </CardTitle>
                 <CardDescription>
-                  {`${t.detail?.members_table?.description || "List of all members in"} ${selectedDepartmentDetail.name}`}
+                  {i18n.t('departments.detail.members_table.description', { name: selectedDepartmentDetail.name }) || `List of all members in ${selectedDepartmentDetail.name}`}
                 </CardDescription>
               </CardHeader>
               <CardContent className="overflow-hidden p-0">
                 <UseTable
                   columns={userColumns}
-                  data={selectedDepartmentDetail.users || []}
+                  data={usersByYear}
                   searchKey="name"
                   emptyEntityName={selectedDepartmentDetail.name}
                   filters={[
@@ -1205,28 +1421,10 @@ export default function ChurchDepartmentsPage() {
               <CardContent className="overflow-hidden p-0">
                 <UseTable
                   columns={departmentColumns}
-                  data={enrichedDepartments}
+                  data={filteredDepartments}
                   searchKey="name"
                   emptyEntityName={t.entity_name || "Church Departments"}
-                  filters={[
-                {
-                  id: "church_id",
-                  title: t.labels?.church || "Church",
-                  options: churches.map(church => ({
-                    label: church.name,
-                    value: church.id
-                  }))
-                },
-                {
-                  id: "status",
-                  title: t.common?.status || "Status",
-                  options: [
-                    { label: t.common?.active || "Active", value: "true" },
-                    { label: t.common?.inactive || "Inactive", value: "false" }
-                  ]
-                }
-              ]}
-            />
+                />
           </CardContent>
         </Card>
           </>

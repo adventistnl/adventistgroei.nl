@@ -202,7 +202,7 @@ export function EditDepartmentModal({
   }
 
   const handleSave = async () => {
-    if (!department || !validateStep(1) || !validateStep(2) || !validateStep(3)) {
+    if (!department || !validateStep(1) || !validateStep(2)) {
       toast.error(t.validation.please_fix_errors)
       return
     }

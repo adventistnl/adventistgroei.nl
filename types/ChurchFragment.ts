@@ -335,7 +335,7 @@ export interface ChurchFragment {
   name: string;
   region_id: string | null;
   contact_id: string | null;
-  leader_id: string;
+  leader_id: string | null;
   created_at: any;
   updated_at: any;
   created_by: string;
@@ -344,7 +344,7 @@ export interface ChurchFragment {
   deleted_at: any | null;
   deleted_by: string | null;
   type: ChurchType;
-  leader: ChurchFragment_leader;
+  leader: ChurchFragment_leader | null;
   contact: ChurchFragment_contact | null;
   departments: ChurchFragment_departments[] | null;
   region: ChurchFragment_region | null;

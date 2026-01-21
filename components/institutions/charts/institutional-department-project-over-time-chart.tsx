@@ -30,61 +30,59 @@ import { useChartColors } from "@/lib/chart-colors"
 import { departmentTranslations } from "@/lib/translations/departments"
 import { TrendingUp, Activity, BarChart3 } from "lucide-react"
 
-interface DepartmentProjectOverTimeChartProps {
+interface InstitutionalDepartmentProjectOverTimeChartProps {
   loading?: boolean
   departments?: any[]
   projects?: any[]
   selectedYear?: number
 }
 
-export function DepartmentProjectOverTimeChart({ 
+export function InstitutionalDepartmentProjectOverTimeChart({ 
   loading, 
   departments = [], 
   projects = [],
   selectedYear = new Date().getFullYear() 
-}: DepartmentProjectOverTimeChartProps) {
+}: InstitutionalDepartmentProjectOverTimeChartProps) {
   const [timeRange, setTimeRange] = React.useState("90d")
   const [chartType, setChartType] = React.useState<"area" | "bar">("area")
   const { i18n } = useTranslation()
   const currentLanguage = i18n?.language || 'en'
   const t = departmentTranslations[currentLanguage as keyof typeof departmentTranslations] || departmentTranslations.en
 
-  // Filtrar apenas departamentos ativos de igreja (com church_id)
-  const churchDepartments = React.useMemo(() => {
+  // Filtrar apenas departamentos institucionais ativos (sem church_id)
+  const institutionalDepartments = React.useMemo(() => {
     if (!departments || departments.length === 0) return []
 
     const filtered = departments.filter((dept: any) => 
-      dept && dept.id && dept.name && !dept.is_deleted && dept.church_id
+      dept && dept.id && dept.name && !dept.is_deleted && !dept.church_id
     )
     
-    console.log('📊 [DepartmentProjectOverTimeChart] Church Departments:', {
+    console.log('📊 [InstitutionalDepartmentProjectOverTimeChart] Institutional Departments:', {
       total: departments.length,
       filtered: filtered.length,
       departmentsList: filtered.map(d => ({ 
         id: d.id, 
-        name: d.name, 
-        church_id: d.church_id,
-        church_name: d.church_name 
+        name: d.name
       }))
     })
     
     return filtered
   }, [departments])
 
-  // Filtrar projetos vinculados a church departments
-  const churchDepartmentProjects = React.useMemo(() => {
+  // Filtrar projetos vinculados a institutional departments
+  const institutionalDepartmentProjects = React.useMemo(() => {
     if (!projects || projects.length === 0) return []
     
-    const churchDeptIds = new Set(churchDepartments.map(d => d.id))
+    const institutionalDeptIds = new Set(institutionalDepartments.map(d => d.id))
     const filtered = projects.filter((p: any) => 
-      p.church_department_id && churchDeptIds.has(p.church_department_id)
+      p.department_id && institutionalDeptIds.has(p.department_id)
     )
     
-    console.log('📊 [DepartmentProjectOverTimeChart] Projects filtered:', {
+    console.log('📊 [InstitutionalDepartmentProjectOverTimeChart] Projects filtered:', {
       totalProjects: projects.length,
-      churchDepartmentProjects: filtered.length,
+      institutionalDepartmentProjects: filtered.length,
       byDepartment: filtered.reduce((acc: any, p: any) => {
-        const dept = churchDepartments.find(d => d.id === p.church_department_id)
+        const dept = institutionalDepartments.find(d => d.id === p.department_id)
         const deptName = dept?.name || 'Unknown'
         acc[deptName] = (acc[deptName] || 0) + 1
         return acc
@@ -92,11 +90,11 @@ export function DepartmentProjectOverTimeChart({
     })
     
     return filtered
-  }, [projects, churchDepartments])
+  }, [projects, institutionalDepartments])
 
   // Gerar dados de criação de projetos ao longo do tempo
   const chartData = React.useMemo(() => {
-    if (churchDepartments.length === 0 || churchDepartmentProjects.length === 0) {
+    if (institutionalDepartments.length === 0 || institutionalDepartmentProjects.length === 0) {
       return []
     }
 
@@ -104,20 +102,20 @@ export function DepartmentProjectOverTimeChart({
     const dailyCounts = new Map<string, any>()
 
     // Contar projetos por data e departamento
-    churchDepartmentProjects.forEach((project: any) => {
+    institutionalDepartmentProjects.forEach((project: any) => {
       const createdDate = new Date(project.created_at || project.start_at)
       const dateKey = createdDate.toISOString().split('T')[0] // YYYY-MM-DD format
       
       if (!dailyCounts.has(dateKey)) {
         const dateData: any = { date: dateKey }
-        churchDepartments.forEach(dept => {
+        institutionalDepartments.forEach(dept => {
           const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
           dateData[deptKey] = 0
         })
         dailyCounts.set(dateKey, dateData)
       }
 
-      const dept = churchDepartments.find(d => d.id === project.church_department_id)
+      const dept = institutionalDepartments.find(d => d.id === project.department_id)
       if (dept) {
         const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
         const dateData = dailyCounts.get(dateKey)!
@@ -130,7 +128,7 @@ export function DepartmentProjectOverTimeChart({
       new Date(a.date).getTime() - new Date(b.date).getTime()
     )
     
-    console.log('📊 [DepartmentProjectOverTimeChart] Chart data:', {
+    console.log('📊 [InstitutionalDepartmentProjectOverTimeChart] Chart data:', {
       totalDays: sortedData.length,
       dateRange: sortedData.length > 0 ? {
         start: sortedData[0]?.date,
@@ -140,22 +138,22 @@ export function DepartmentProjectOverTimeChart({
     })
     
     return sortedData
-  }, [churchDepartmentProjects, churchDepartments])
+  }, [institutionalDepartmentProjects, institutionalDepartments])
   
   const { generatePalette } = useChartColors()
 
   // Gerar cores dinâmicas para cada departamento
   const departmentColors = React.useMemo(() => {
-    const palette = generatePalette(churchDepartments.length)
+    const palette = generatePalette(institutionalDepartments.length)
     const colorMap: { [key: string]: string } = {}
 
-    churchDepartments.forEach((dept, index) => {
+    institutionalDepartments.forEach((dept, index) => {
       const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
       colorMap[deptKey] = palette[index]
     })
 
     return colorMap
-  }, [churchDepartments, generatePalette])
+  }, [institutionalDepartments, generatePalette])
 
   // Configuração dinâmica do gráfico baseada nos departamentos reais
   const chartConfig = React.useMemo(() => {
@@ -165,7 +163,7 @@ export function DepartmentProjectOverTimeChart({
       }
     }
 
-    churchDepartments.forEach((dept) => {
+    institutionalDepartments.forEach((dept) => {
       const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
       config[deptKey] = {
         label: dept.name,
@@ -174,7 +172,7 @@ export function DepartmentProjectOverTimeChart({
     })
 
     return config
-  }, [churchDepartments, departmentColors, t.charts])
+  }, [institutionalDepartments, departmentColors, t.charts])
 
   // Filtrar dados baseado no intervalo de tempo
   const filteredData = React.useMemo(() => {
@@ -225,7 +223,7 @@ export function DepartmentProjectOverTimeChart({
         allDays.push(dataMap.get(dateKey))
       } else {
         const emptyDay: any = { date: dateKey }
-        churchDepartments.forEach(dept => {
+        institutionalDepartments.forEach(dept => {
           emptyDay[dept.name.toLowerCase().replace(/\s+/g, '_')] = 0
         })
         allDays.push(emptyDay)
@@ -234,11 +232,11 @@ export function DepartmentProjectOverTimeChart({
       currentDate.setDate(currentDate.getDate() + 1)
     }
     
-    console.log('📊 [DepartmentProjectOverTimeChart] Filtered data:', {
+    console.log('📊 [InstitutionalDepartmentProjectOverTimeChart] Filtered data:', {
       timeRange,
       totalDays: allDays.length,
       daysWithProjects: allDays.filter(d => 
-        churchDepartments.some(dept => {
+        institutionalDepartments.some(dept => {
           const key = dept.name.toLowerCase().replace(/\s+/g, '_')
           return d[key] > 0
         })
@@ -246,25 +244,25 @@ export function DepartmentProjectOverTimeChart({
     })
     
     return allDays
-  }, [chartData, timeRange, churchDepartments])
+  }, [chartData, timeRange, institutionalDepartments])
 
   // Calcular totais por departamento
   const totalByDepartment = React.useMemo(() => {
     const totals: Record<string, number> = {}
     
-    churchDepartments.forEach(dept => {
+    institutionalDepartments.forEach(dept => {
       totals[dept.name.toLowerCase().replace(/\s+/g, '_')] = 0
     })
     
     filteredData.forEach(day => {
-      churchDepartments.forEach(dept => {
+      institutionalDepartments.forEach(dept => {
         const key = dept.name.toLowerCase().replace(/\s+/g, '_')
         totals[key] += (day[key] || 0)
       })
     })
     
     return totals
-  }, [filteredData, churchDepartments])
+  }, [filteredData, institutionalDepartments])
 
   const topDepartment = React.useMemo(() => {
     const entries = Object.entries(totalByDepartment)
@@ -287,11 +285,11 @@ export function DepartmentProjectOverTimeChart({
   // Helper para obter label do intervalo de tempo
   const getTimeRangeLabel = (range: string) => {
     switch (range) {
-      case "7d": return "last 7 days"
-      case "30d": return "last 30 days"
-      case "90d": return "last 3 months"
-      case "180d": return "last 6 months"
-      case "365d": return "last 12 months"
+      case "7d": return t.charts?.time_ranges?.last_7_days || "last 7 days"
+      case "30d": return t.charts?.time_ranges?.last_30_days || "last 30 days"
+      case "90d": return t.charts?.time_ranges?.last_3_months || "last 3 months"
+      case "180d": return t.charts?.time_ranges?.last_6_months || "last 6 months"
+      case "365d": return t.charts?.time_ranges?.last_12_months || "last 12 months"
       default: return "last 3 months"
     }
   }
@@ -339,13 +337,13 @@ export function DepartmentProjectOverTimeChart({
     )
   }
 
-  if (churchDepartments.length === 0 || filteredData.length === 0) {
+  if (institutionalDepartments.length === 0 || filteredData.length === 0) {
     return (
       <Card className="h-full flex flex-col min-h-[500px]">
         <CardHeader className="border-b py-5">
           <CardTitle>{t.charts?.projects_over_time?.title || "Projects Created Over Time"}</CardTitle>
           <CardDescription>
-            {t.charts?.projects_over_time?.description || "Project creation timeline by church departments"}
+            {t.charts?.projects_over_time?.description || "Project creation timeline by institutional departments"}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex items-center justify-center px-2 pt-4 sm:px-6 sm:pt-6">
@@ -398,7 +396,7 @@ export function DepartmentProjectOverTimeChart({
         <div className="grid flex-1 gap-1">
           <CardTitle>{t.charts?.projects_over_time?.title || "Projects Created Over Time"}</CardTitle>
           <CardDescription>
-            {t.charts?.projects_over_time?.description || `Project creation timeline by church departments - ${getTimeRangeLabel(timeRange)}`}
+            {t.charts?.projects_over_time?.description || `Project creation timeline by institutional departments - ${getTimeRangeLabel(timeRange)}`}
           </CardDescription>
         </div>
         <div className="flex items-center gap-2">
@@ -430,11 +428,11 @@ export function DepartmentProjectOverTimeChart({
               <SelectValue placeholder="Last 3 months" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
-              <SelectItem value="7d" className="rounded-lg">Last 7 days</SelectItem>
-              <SelectItem value="30d" className="rounded-lg">Last 30 days</SelectItem>
-              <SelectItem value="90d" className="rounded-lg">Last 3 months</SelectItem>
-              <SelectItem value="180d" className="rounded-lg">Last 6 months</SelectItem>
-              <SelectItem value="365d" className="rounded-lg">Last 12 months</SelectItem>
+              <SelectItem value="7d" className="rounded-lg">{t.charts?.time_ranges?.last_7_days || "Last 7 days"}</SelectItem>
+              <SelectItem value="30d" className="rounded-lg">{t.charts?.time_ranges?.last_30_days || "Last 30 days"}</SelectItem>
+              <SelectItem value="90d" className="rounded-lg">{t.charts?.time_ranges?.last_3_months || "Last 3 months"}</SelectItem>
+              <SelectItem value="180d" className="rounded-lg">{t.charts?.time_ranges?.last_6_months || "Last 6 months"}</SelectItem>
+              <SelectItem value="365d" className="rounded-lg">{t.charts?.time_ranges?.last_12_months || "Last 12 months"}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -447,7 +445,7 @@ export function DepartmentProjectOverTimeChart({
           {chartType === "area" ? (
             <AreaChart data={filteredData}>
               <defs>
-                {churchDepartments.map((dept) => {
+                {institutionalDepartments.map((dept) => {
                   const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
                   return (
                     <linearGradient key={dept.id} id={`fill${deptKey}`} x1="0" y1="0" x2="0" y2="1">
@@ -505,7 +503,7 @@ export function DepartmentProjectOverTimeChart({
                   />
                 }
               />
-              {churchDepartments.map((dept) => {
+              {institutionalDepartments.map((dept) => {
                 const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
                 return (
                   <Area
@@ -570,7 +568,7 @@ export function DepartmentProjectOverTimeChart({
                 }
               />
               <ChartLegend content={<ChartLegendContent />} />
-              {churchDepartments.map((dept) => {
+              {institutionalDepartments.map((dept) => {
                 const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
                 return (
                   <Bar
@@ -592,7 +590,7 @@ export function DepartmentProjectOverTimeChart({
           {totalProjects} {t.stats?.projects || "projects"} {getTimeRangeLabel(timeRange)}
         </div>
         <div className="text-muted-foreground">
-          Top: <span className="font-medium text-foreground">{topDepartment.name}</span> ({topDepartment.total} {t.stats?.projects || "projects"})
+          {t.common?.top || "Top"}: <span className="font-medium text-foreground">{topDepartment.name}</span> ({topDepartment.total} {t.stats?.projects || "projects"})
         </div>
       </CardFooter>
     </Card>

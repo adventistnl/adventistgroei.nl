@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { PrivacyWrapper } from "@/components/shared/privacy-wrapper"
 import { 
   FileText, 
   ChevronDown, 
@@ -47,6 +48,7 @@ interface DepartmentProjectsCardProps {
   departmentId?: string
   departmentName: string
   loading?: boolean
+  privacyConfig?: any
 }
 
 /**
@@ -63,7 +65,8 @@ export function DepartmentProjectsCard({
   projects = [],
   departmentId,
   departmentName,
-  loading = false 
+  loading = false,
+  privacyConfig
 }: DepartmentProjectsCardProps) {
   const { i18n } = useTranslation()
   const currentLanguage = i18n?.language || 'en'
@@ -95,10 +98,29 @@ export function DepartmentProjectsCard({
         )
       : projects
 
+    // Debug: Log financial data from projects
+    console.log('💰 [Department Projects Card] Financial Data Analysis:', {
+      departmentId,
+      departmentName,
+      totalProjects: deptProjects.length,
+      projectsWithBudget: deptProjects.filter(p => p.budget && p.budget > 0).length,
+      projectsWithSubsidy: deptProjects.filter(p => p.subsidized_budget && p.subsidized_budget > 0).length,
+      projectsWithoutFinancialData: deptProjects.filter(p => !p.budget && !p.subsidized_budget).length,
+      projectDetails: deptProjects.map(p => ({
+        id: p.id,
+        title: p.title,
+        status: p.status,
+        budget: p.budget || 0,
+        subsidized_budget: p.subsidized_budget || 0,
+        hasBudget: !!p.budget && p.budget > 0,
+        hasSubsidy: !!p.subsidized_budget && p.subsidized_budget > 0
+      }))
+    })
+
     // Agrupar por status - CORRIGIDO
     // In Progress: apenas IN_PROGRESS, PLANNING, EXECUTION
     const inProgress = deptProjects.filter(p => 
-      ['IN_PROGRESS', 'PLANNING', 'EXECUTION'].includes(p.status)
+      ['IN_PROGRESS', 'ON_HOLD'].includes(p.status)
     )
     
     // Completed: apenas CONCLUDED
@@ -106,7 +128,7 @@ export function DepartmentProjectsCard({
     
     // Others: todos os outros status (DRAFT, EXPIRED, CANCELLED, ON_HOLD, IN_REVIEW, etc.)
     const others = deptProjects.filter(p => 
-      !['IN_PROGRESS', 'PLANNING', 'EXECUTION', 'CONCLUDED'].includes(p.status)
+      !['IN_PROGRESS', 'ON_HOLD','IN_REVIEW', 'CONCLUDED'].includes(p.status)
     )
 
     // Calcular totais monetários
@@ -114,6 +136,29 @@ export function DepartmentProjectsCard({
     const totalSubsidy = deptProjects.reduce((sum, p) => sum + Number(p.subsidized_budget || 0), 0)
     const inProgressBudget = inProgress.reduce((sum, p) => sum + Number(p.budget || 0), 0)
     const completedBudget = completed.reduce((sum, p) => sum + Number(p.budget || 0), 0)
+
+    // Debug: Log calculated totals
+    console.log('📊 [Department Projects Card] Calculated Financial Totals:', {
+      departmentId,
+      departmentName,
+      totalBudget,
+      totalSubsidy,
+      inProgressBudget,
+      completedBudget,
+      contributionPercentage: totalBudget > 0 ? (totalSubsidy / totalBudget) * 100 : 0,
+      budgetDistribution: {
+        inProgress: {
+          count: inProgress.length,
+          budget: inProgressBudget,
+          percentage: totalBudget > 0 ? (inProgressBudget / totalBudget) * 100 : 0
+        },
+        completed: {
+          count: completed.length,
+          budget: completedBudget,
+          percentage: totalBudget > 0 ? (completedBudget / totalBudget) * 100 : 0
+        }
+      }
+    })
 
     return {
       inProgress: inProgress.sort((a, b) => 
@@ -135,37 +180,37 @@ export function DepartmentProjectsCard({
       completedBudget,
       contributionPercentage: totalBudget > 0 ? (totalSubsidy / totalBudget) * 100 : 0
     }
-  }, [projects, departmentId])
+  }, [projects, departmentId, departmentName])
 
   const getStatusInfo = (status: string) => {
     const statusMap: Record<string, { label: string; variant: "default" | "success" | "warning" | "error"; icon: any }> = {
       'IN_PROGRESS': { 
-        label: 'In Progress', 
+        label: t.projects?.status?.in_progress || 'In Progress', 
         variant: 'default',
         icon: Clock
       },
-      'PLANNING': { 
-        label: 'Planning', 
+      'ON_HOLD': { 
+        label: t.projects?.status?.on_hold || 'On Hold', 
         variant: 'default',
         icon: Target
       },
-      'EXECUTION': { 
-        label: 'Execution', 
+      'IN_REVIEW': { 
+        label: t.projects?.status?.in_review || 'In Review', 
         variant: 'default',
         icon: Clock
       },
       'CONCLUDED': { 
-        label: 'Concluded', 
+        label: t.projects?.status?.concluded || 'Concluded', 
         variant: 'success',
         icon: CheckCircle2
       },
       'EXPIRED': { 
-        label: 'Expired', 
+        label: t.projects?.status?.expired || 'Expired', 
         variant: 'error',
         icon: AlertCircle
       },
       'CANCELLED': { 
-        label: 'Cancelled', 
+        label: t.projects?.status?.cancelled || 'Cancelled', 
         variant: 'error',
         icon: AlertCircle
       },
@@ -182,7 +227,7 @@ export function DepartmentProjectsCard({
     if (projectsList.length === 0) {
       return (
         <div className="text-sm text-muted-foreground italic py-2">
-          No projects
+          {t.projects?.no_projects || "No projects"}
         </div>
       )
     }
@@ -239,7 +284,7 @@ export function DepartmentProjectsCard({
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] text-muted-foreground truncate">
-                        Owner: <span className="text-foreground font-medium">{project.owner.name}</span>
+                        {t.projects?.owner_label || "Owner:"} <span className="text-foreground font-medium">{project.owner.name}</span>
                       </p>
                     </div>
                   </>
@@ -247,7 +292,7 @@ export function DepartmentProjectsCard({
                   <>
                     <User className="h-3.5 w-3.5 text-muted-foreground" />
                     <p className="text-[10px] text-muted-foreground">
-                      No owner assigned
+                      {t.projects?.no_owner || "No owner assigned"}
                     </p>
                   </>
                 )}
@@ -270,35 +315,81 @@ export function DepartmentProjectsCard({
 
   if (loading) {
     return (
-      <Card className="h-full">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            <span className="h-5 bg-muted rounded animate-pulse w-32" />
-          </CardTitle>
+      <Card className="h-full flex flex-col">
+        <CardHeader className="pb-3 flex-shrink-0">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2 flex-1">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-muted-foreground" />
+                <div className="h-5 bg-muted rounded animate-pulse w-40" />
+              </div>
+              <div className="h-3 bg-muted rounded animate-pulse w-56" />
+            </div>
+            <div className="h-8 w-32 bg-muted rounded animate-pulse" />
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
+        
+        <CardContent className="flex-1 overflow-hidden flex flex-col pb-0">
+          {/* KPI Stats Skeleton */}
+          <div className="grid grid-cols-3 gap-2 mb-3 flex-shrink-0">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-16 bg-muted rounded animate-pulse" />
+              <div key={i} className="p-2.5 rounded-md border bg-card">
+                <div className="h-6 bg-muted rounded animate-pulse mb-1" />
+                <div className="h-3 bg-muted rounded animate-pulse w-16" />
+              </div>
+            ))}
+          </div>
+
+          <Separator className="flex-shrink-0" />
+
+          {/* Projects List Skeleton */}
+          <div className="flex-1 overflow-y-auto space-y-3 mt-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="h-10 bg-muted rounded animate-pulse" />
+                <div className="pl-2 space-y-2">
+                  {[...Array(2)].map((_, j) => (
+                    <div key={j} className="p-3 rounded-md border bg-card">
+                      <div className="space-y-2">
+                        <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
+                        <div className="h-3 bg-muted rounded animate-pulse w-full" />
+                        <div className="h-3 bg-muted rounded animate-pulse w-1/2" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </CardContent>
+
+        {/* Footer Skeleton */}
+        <div className="border-t bg-muted/30 p-3 flex-shrink-0">
+          <div className="grid grid-cols-2 gap-3">
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="space-y-1">
+                <div className="h-3 bg-muted rounded animate-pulse w-20" />
+                <div className="h-5 bg-muted rounded animate-pulse w-24" />
+              </div>
+            ))}
+          </div>
+        </div>
       </Card>
     )
   }
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="pb-3">
+      {/* Fixed Header */}
+      <CardHeader className="pb-3 flex-shrink-0">
         <div className="flex items-start justify-between">
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
               <FileText className="w-4 h-4 text-muted-foreground" />
-              Department Projects
+              {t.projects?.title || "Department Projects"}
             </CardTitle>
             <CardDescription className="text-xs mt-1">
-              {departmentName}
+              {t.projects?.description?.replace('{{departmentName}}', departmentName) || `All projects linked to ${departmentName}`}
             </CardDescription>
           </div>
           <Button
@@ -307,29 +398,65 @@ export function DepartmentProjectsCard({
             className="h-8 gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" />
-            Create Project
+            {t.projects?.create_button || "Create Project"}
           </Button>
         </div>
       </CardHeader>
       
-      <CardContent className="flex-1 overflow-auto space-y-3 pb-0">
+      {/* Scrollable Content Area */}
+      <CardContent className="flex-1 overflow-hidden flex flex-col pb-0">
         {groupedProjects.total === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <AlertCircle className="h-12 w-12 text-muted-foreground/50 mb-3" />
-            <p className="text-sm text-muted-foreground">
-              No projects found for this department
-            </p>
+          <div className="flex-1 flex flex-col items-center justify-center py-8 text-center space-y-6">
+            {/* Empty state illustration */}
+            <div className="relative w-full max-w-sm bg-muted/20 rounded-lg flex items-center justify-center">
+              <div className="space-y-3 w-full px-6">
+                {/* Empty project cards stack */}
+                <div className="space-y-2">
+                  {[...Array(3)].map((_, i) => (
+                    <div 
+                      key={i}
+                      className="h-12 bg-muted/40 rounded-md relative"
+                      style={{ 
+                        opacity: 1 - (i * 0.3),
+                        transform: `translateY(-${i * 2}px)`
+                      }}
+                    >
+                      <div className="absolute inset-0 flex items-center px-3 gap-2">
+                        <div className="h-6 w-6 bg-muted/60 rounded" />
+                        <div className="flex-1 space-y-1">
+                          <div className="h-2 bg-muted/60 rounded w-2/3" />
+                          <div className="h-1.5 bg-muted/60 rounded w-1/2" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            {/* Message */}
+            <div className="space-y-2 max-w-sm">
+              <div className="flex items-center justify-center gap-2">
+                <FileText className="h-5 w-5 text-muted-foreground" />
+                <h3 className="font-semibold text-foreground">
+                  {t.projects?.empty_state?.title || "No Projects Yet"}
+                </h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {t.projects?.empty_state?.description || "This department doesn't have any projects. Click 'Create Project' to get started."}
+              </p>
+            </div>
           </div>
         ) : (
           <>
-            {/* Summary Stats */}
-            <div className="grid grid-cols-3 gap-2 mb-3">
+            {/* Fixed KPI Summary Stats */}
+            <div className="grid grid-cols-3 gap-2 mb-3 flex-shrink-0">
               <div className="p-2.5 rounded-md border bg-card">
                 <div className="text-xl font-semibold">
                   {groupedProjects.inProgress.length}
                 </div>
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                  In Progress
+                  {t.projects?.kpi?.in_progress || "In Progress"}
                 </div>
               </div>
               <div className="p-2.5 rounded-md border bg-card">
@@ -337,7 +464,7 @@ export function DepartmentProjectsCard({
                   {groupedProjects.completed.length}
                 </div>
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                  Completed
+                  {t.projects?.kpi?.completed || "Completed"}
                 </div>
               </div>
               <div className="p-2.5 rounded-md border bg-card">
@@ -345,15 +472,16 @@ export function DepartmentProjectsCard({
                   {groupedProjects.total}
                 </div>
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                  Total
+                  {t.common?.total || "Total"}
                 </div>
               </div>
             </div>
 
-            <Separator />
+            <Separator className="flex-shrink-0" />
 
-            {/* In Progress Projects */}
-            {groupedProjects.inProgress.length > 0 && (
+            {/* Scrollable Projects Area */}
+            <div className="flex-1 overflow-y-auto space-y-3 mt-3">
+              {/* In Progress Projects */}
               <div className="space-y-2">
                 <Button
                   variant="ghost"
@@ -363,7 +491,7 @@ export function DepartmentProjectsCard({
                   <div className="flex items-center gap-2">
                     <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="font-medium text-sm">
-                      In Progress
+                      {t.projects?.sections?.in_progress || "In Progress"}
                     </span>
                     <Badge variant="outline" className="ml-2 h-5 text-xs">
                       {groupedProjects.inProgress.length}
@@ -381,10 +509,8 @@ export function DepartmentProjectsCard({
                   </div>
                 )}
               </div>
-            )}
 
-            {/* Completed Projects */}
-            {groupedProjects.completed.length > 0 && (
+              {/* Completed Projects */}
               <div className="space-y-2">
                 <Button
                   variant="ghost"
@@ -394,7 +520,7 @@ export function DepartmentProjectsCard({
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="font-medium text-sm">
-                      Completed
+                      {t.projects?.sections?.completed || "Completed"}
                     </span>
                     <Badge variant="outline" className="ml-2 h-5 text-xs">
                       {groupedProjects.completed.length}
@@ -412,33 +538,149 @@ export function DepartmentProjectsCard({
                   </div>
                 )}
               </div>
-            )}
 
-            {/* Other Status Projects */}
-            {groupedProjects.others.length > 0 && (
-              <div className="space-y-2">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-between p-2 h-auto hover:bg-accent/50"
-                  onClick={() => setExpandedStatus(expandedStatus === 'OTHERS' ? null : 'OTHERS')}
-                >
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="font-medium text-sm">
-                      Others
+              {/* Other Status Projects */}
+              {groupedProjects.others.length > 0 && (
+                <div className="space-y-2">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-2 h-auto hover:bg-accent/50"
+                    onClick={() => setExpandedStatus(expandedStatus === 'OTHERS' ? null : 'OTHERS')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="font-medium text-sm">
+                        {t.projects?.sections?.others || "Others"}
+                      </span>
+                      <Badge variant="outline" className="ml-2 h-5 text-xs">
+                        {groupedProjects.others.length}
+                      </Badge>
+                    </div>
+                    {expandedStatus === 'OTHERS' ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                  {expandedStatus === 'OTHERS' && (
+                    <div className="pl-2">
+                      {renderProjectsList(groupedProjects.others)}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </CardContent>
+
+      {/* Fixed Financial Footer */}
+      {groupedProjects.total > 0 && privacyConfig && (
+        <PrivacyWrapper
+          config={privacyConfig}
+          showToggle={false}
+          className="border-t bg-muted/30"
+          fallback={
+            <div className="border-t bg-muted/30 p-3 flex-shrink-0">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2 w-2 rounded-full bg-foreground/60" />
+                    <span className="text-xs text-muted-foreground">
+                      {t.projects?.footer?.total_budget || "Total Budget"}
                     </span>
-                    <Badge variant="outline" className="ml-2 h-5 text-xs">
+                  </div>
+                  <div className="flex items-center justify-center gap-1 blur-[1px] opacity-40">
+                    {[...Array(8)].map((_, i) => (
+                      <div key={i} className="w-1 h-1 rounded-full bg-gray-400" />
+                    ))}
+                  </div>
+                </div>
 
-      {/* Financial Footer */}
-      {groupedProjects.total > 0 && (
-        <div className="border-t bg-muted/30 p-3 mt-auto">
+                <div className="flex flex-col items-end space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2 w-2 rounded-full bg-foreground/60" />
+                    <span className="text-xs text-muted-foreground">
+                      {t.projects?.footer?.total_subsidy || "Total Subsidy"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center gap-1 blur-[1px] opacity-40">
+                    {[...Array(8)].map((_, i) => (
+                      <div key={i} className="w-1 h-1 rounded-full bg-gray-400" />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="col-span-2 border-t pt-2 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">
+                      {t.projects?.footer?.distribution || "Budget Distribution"}
+                    </span>
+                    <div className="flex items-center justify-center gap-1 blur-[1px] opacity-40">
+                      {[...Array(6)].map((_, i) => (
+                        <div key={i} className="w-1 h-1 rounded-full bg-gray-400" />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        >
+          <div className="p-3 flex-shrink-0">
+            <div className="grid grid-cols-2 gap-3">
+              {/* Total Budget */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <div className="h-2 w-2 rounded-full bg-foreground/60" />
+                  <span className="text-xs text-muted-foreground">
+                    {t.projects?.footer?.total_budget || "Total Budget"}
+                  </span>
+                </div>
+                <div className="text-base font-semibold">
+                  {formatCurrency(groupedProjects.totalBudget)}
+                </div>
+              </div>
+
+              {/* Total Subsidy Requested */}
+              <div className="flex flex-col items-end space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <div className="h-2 w-2 rounded-full bg-foreground/60" />
+                  <span className="text-xs text-muted-foreground">
+                    {t.projects?.footer?.total_subsidy || "Total Subsidy"}
+                  </span>
+                </div>
+                <div className="text-base font-semibold">
+                  {formatCurrency(groupedProjects.totalSubsidy)}
+                </div>
+              </div>
+
+              {/* Budget Distribution */}
+              <div className="col-span-2 border-t space-y-1.5">
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-xs text-muted-foreground">
+                    {t.projects?.footer?.distribution || "Budget Distribution"}
+                  </span>
+                  <span className="text-xs font-medium">
+                    {groupedProjects.contributionPercentage.toFixed(1)}% {t.projects?.footer?.subsidized || "subsidized"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </PrivacyWrapper>
+      )}
+      
+      {/* Footer sem privacidade quando privacyConfig não está disponível */}
+      {groupedProjects.total > 0 && !privacyConfig && (
+        <div className="border-t bg-muted/30 p-3 flex-shrink-0">
           <div className="grid grid-cols-2 gap-3">
             {/* Total Budget */}
             <div className="space-y-1">
               <div className="flex items-center gap-1.5">
                 <div className="h-2 w-2 rounded-full bg-foreground/60" />
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                  Total Budget
+                  {t.projects?.financial?.total_budget || "Total Project Budget"}
                 </span>
               </div>
               <div className="text-base font-semibold">
@@ -447,11 +689,11 @@ export function DepartmentProjectsCard({
             </div>
 
             {/* Total Subsidy Requested */}
-            <div className="space-y-1">
+            <div className="flex flex-col items-end space-y-1">
               <div className="flex items-center gap-1.5">
                 <div className="h-2 w-2 rounded-full bg-foreground/60" />
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                  Subsidy Requested
+                  {t.projects?.financial?.contribution_requested || "Contribution Requested"}
                 </span>
               </div>
               <div className="text-base font-semibold">
@@ -460,36 +702,11 @@ export function DepartmentProjectsCard({
             </div>
 
             {/* Budget Distribution */}
-            <div className="col-span-2 space-y-1.5">
-              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                <span>In Progress: {formatCurrency(groupedProjects.inProgressBudget)}</span>
-                <span>Completed: {formatCurrency(groupedProjects.completedBudget)}</span>
-              </div>
-              
-              {/* Progress Bar */}
-              <div className="h-1.5 bg-muted rounded-full overflow-hidden flex">
-                {groupedProjects.totalBudget > 0 && (
-                  <>
-                    <div 
-                      className="bg-foreground/60"
-                      style={{ 
-                        width: `${(groupedProjects.inProgressBudget / groupedProjects.totalBudget) * 100}%` 
-                      }}
-                    />
-                    <div 
-                      className="bg-foreground/40"
-                      style={{ 
-                        width: `${(groupedProjects.completedBudget / groupedProjects.totalBudget) * 100}%` 
-                      }}
-                    />
-                  </>
-                )}
-              </div>
-
+            <div className="col-span-2 border-t space-y-1.5">
               {/* Contribution Percentage */}
               <div className="flex items-center justify-between pt-1">
                 <span className="text-[10px] text-muted-foreground">
-                  Contribution Rate
+                  {t.projects?.financial?.contribution_rate || "Contribution Rate"}
                 </span>
                 <span className="text-xs font-medium">
                   {groupedProjects.contributionPercentage.toFixed(1)}%
@@ -499,25 +716,6 @@ export function DepartmentProjectsCard({
           </div>
         </div>
       )}
-                      {groupedProjects.others.length}
-                    </Badge>
-                  </div>
-                  {expandedStatus === 'OTHERS' ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-                {expandedStatus === 'OTHERS' && (
-                  <div className="pl-2">
-                    {renderProjectsList(groupedProjects.others)}
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
-      </CardContent>
     </Card>
   )
 }

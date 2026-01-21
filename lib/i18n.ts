@@ -5,6 +5,7 @@ import { projectTranslations } from './translations/projects'
 import { subsidyManagementTranslations } from './translations/subsidy-management'
 import { dynamicFieldsTranslations } from './translations/dynamic-fields'
 import { projectDetailsTranslations } from './translations/project-details'
+import { institutionTranslations } from './translations/institutions'
 
 // Recursos de tradução
 const resources = {
@@ -13,6 +14,7 @@ const resources = {
       ...projectTranslations.en,
       ...projectDetailsTranslations.en,
       dynamicFields: dynamicFieldsTranslations.en,
+      institutions: institutionTranslations.en,
       dashboard: {
         title: "General Dashboard",
         subtitle: "Overview of key system metrics",
@@ -1601,6 +1603,7 @@ const resources = {
             usage_percentage: "Usage %",
             lock_status: "Lock Status",
             budget_status: "Budget Status",
+            balance_status: "Balance Status",
             actions: "Actions",
             allocated_amount: "Allocated Amount"
           },
@@ -1977,6 +1980,7 @@ const resources = {
       ...projectTranslations.nl,
       ...projectDetailsTranslations.nl,
       dynamicFields: dynamicFieldsTranslations.nl,
+      institutions: institutionTranslations.nl,
       dashboard: {
         title: "Algemeen Dashboard",
         subtitle: "Overzicht van belangrijke systeemstatistieken",
@@ -3557,6 +3561,7 @@ const resources = {
             usage_percentage: "Gebruik %",
             lock_status: "Vergrendelstatus",
             budget_status: "Budgetstatus",
+            balance_status: "Saldo Status",
             actions: "Acties",
             allocated_amount: "Totaal bedrag"
           },
@@ -3758,6 +3763,7 @@ const resources = {
       ...projectTranslations.pt,
       ...projectDetailsTranslations.pt,
       dynamicFields: dynamicFieldsTranslations.pt,
+      institutions: institutionTranslations.pt,
       common: {
         ...projectTranslations.pt.common,
         language: "Idioma",
@@ -4014,6 +4020,7 @@ const resources = {
             department_name: "Nome do Departamento",
             entity_type: "Tipo",
             budget_total: "Orçamento Total",
+            balance_status: "Saldo Status",
             spent_amount: "Total Gasto",
             usage_percentage: "Uso %",
             lock_status: "Status de Bloqueio",

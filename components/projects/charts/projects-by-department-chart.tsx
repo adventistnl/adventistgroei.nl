@@ -34,7 +34,7 @@ interface ProjectsByDepartmentChartProps {
   departments: any[]
 }
 
-export function ProjectsByDepartmentChart({ data, departments }: ProjectsByDepartmentChartProps) {
+export function ProjectsByDepartmentChart({ data = [], departments = [] }: ProjectsByDepartmentChartProps) {
   const { i18n } = useTranslation()
   const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
   const id = "projects-by-department"

@@ -15,6 +15,7 @@ import {
   Mail,
   ChevronLeft,
   ChevronRight,
+  Users,
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { useChurches } from "@/hooks/use-churches"
@@ -24,6 +25,7 @@ import { UpdateChurch, UpdateChurchVariables } from "@/types/UpdateChurch"
 import { ChurchTypeSelector } from "./church-type-selector"
 import { RegionSelector } from "./region-selector"
 import { ProvinceAndCitySelector } from "./province-and-city-selector"
+import { LeaderSelector } from "./leader-selector"
 import { Church, ChurchType } from "@/types/graphql-global-types"
 import { churchTranslations } from "@/lib/translations/churches"
 
@@ -49,6 +51,7 @@ export function EditChurchModal({
   const [formData, setFormData] = useState<UpdateChurchVariables>({
     id: '',
     name: '',
+    leader_id: '',
     contactName: '',
     phone: '',
     email: '',
@@ -78,7 +81,7 @@ export function EditChurchModal({
       setFormData({
         id: church.id,
         name: church.name,
-        region_id: church.region_id || '',
+        leader_id: church.leader_id || '',
         contactName: contactData?.name || '',
         phone: contactData?.phone || '',
         email: contactData?.email || '',
@@ -130,7 +133,7 @@ export function EditChurchModal({
     if (step === 2) {
       // Step 2: Geographic data - cidade obrigatória
       if (!formData.city?.trim()) {
-        newErrors.city = tChurch.validation.city_required || 'Cidade é obrigatória'
+        newErrors.city = 'Cidade é obrigatória'
       }
     }
 
@@ -181,6 +184,7 @@ export function EditChurchModal({
       const variables: UpdateChurchVariables = {
         id: formData.id!,
         name: formData.name!.trim(),
+        leader_id: formData.leader_id || null,
         city: formData.city,
         email: formData.email,
         phone: formData.phone,
@@ -222,7 +226,7 @@ export function EditChurchModal({
       setFormData({
         id: church.id,
         name: church.name,
-        region_id: church.region_id || '',
+        leader_id: church.leader_id || '',
         contactName: contactData?.name || '',
         phone: contactData?.phone || '',
         email: contactData?.email || '',
@@ -242,7 +246,7 @@ export function EditChurchModal({
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        // Step 1: Basic Data
+        // Step 1: Basic Data (Name, Leader, Church Type)
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
@@ -268,6 +272,16 @@ export function EditChurchModal({
                   <p className="text-sm text-red-600">{errors.name}</p>
                 )}
               </div>
+
+              {/* Leader Selector */}
+              <LeaderSelector
+                value={formData.leader_id || ''}
+                onValueChange={(value) => handleInputChange('leader_id', value)}
+                users={currentInstitutionData?.users || []}
+                isLoading={isLoading}
+                error={errors.leader_id}
+                required={false}
+              />
 
               <ChurchTypeSelector
                 isSpecialChurch={isSpecialChurch}

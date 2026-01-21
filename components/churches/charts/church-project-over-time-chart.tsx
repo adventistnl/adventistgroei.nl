@@ -2,7 +2,9 @@
 
 import * as React from "react"
 import { useTranslation } from "react-i18next"
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Bar, BarChart } from "recharts"
+import { Activity, BarChart3, TrendingUp } from "lucide-react"
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+
 import {
   Card,
   CardContent,
@@ -26,102 +28,132 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
+import { churchTranslations } from "@/lib/translations/churches"
 import { useChartColors } from "@/lib/chart-colors"
-import { departmentTranslations } from "@/lib/translations/departments"
-import { TrendingUp, Activity, BarChart3 } from "lucide-react"
 
-interface DepartmentProjectOverTimeChartProps {
+interface ChurchProjectOverTimeChartProps {
   loading?: boolean
-  departments?: any[]
+  churches?: any[]
   projects?: any[]
   selectedYear?: number
 }
 
-export function DepartmentProjectOverTimeChart({ 
+export function ChurchProjectOverTimeChart({ 
   loading, 
-  departments = [], 
+  churches = [], 
   projects = [],
   selectedYear = new Date().getFullYear() 
-}: DepartmentProjectOverTimeChartProps) {
+}: ChurchProjectOverTimeChartProps) {
   const [timeRange, setTimeRange] = React.useState("90d")
   const [chartType, setChartType] = React.useState<"area" | "bar">("area")
   const { i18n } = useTranslation()
   const currentLanguage = i18n?.language || 'en'
-  const t = departmentTranslations[currentLanguage as keyof typeof departmentTranslations] || departmentTranslations.en
+  const t = churchTranslations[currentLanguage as keyof typeof churchTranslations] || churchTranslations.en
 
-  // Filtrar apenas departamentos ativos de igreja (com church_id)
-  const churchDepartments = React.useMemo(() => {
-    if (!departments || departments.length === 0) return []
+  // Filtrar apenas igrejas ativas
+  const activeChurches = React.useMemo(() => {
+    if (!churches || churches.length === 0) return []
 
-    const filtered = departments.filter((dept: any) => 
-      dept && dept.id && dept.name && !dept.is_deleted && dept.church_id
+    const filtered = churches.filter((church: any) => 
+      church && church.id && church.name && !church.is_deleted
     )
     
-    console.log('📊 [DepartmentProjectOverTimeChart] Church Departments:', {
-      total: departments.length,
+    console.log('📊 [ChurchProjectOverTimeChart] Active Churches:', {
+      total: churches.length,
       filtered: filtered.length,
-      departmentsList: filtered.map(d => ({ 
-        id: d.id, 
-        name: d.name, 
-        church_id: d.church_id,
-        church_name: d.church_name 
+      churchesList: filtered.map(c => ({ 
+        id: c.id, 
+        name: c.name
       }))
     })
     
     return filtered
-  }, [departments])
+  }, [churches])
 
-  // Filtrar projetos vinculados a church departments
-  const churchDepartmentProjects = React.useMemo(() => {
+  // Filtrar projetos vinculados a churches (tanto diretamente quanto por departamentos de igreja)
+  const churchProjects = React.useMemo(() => {
     if (!projects || projects.length === 0) return []
     
-    const churchDeptIds = new Set(churchDepartments.map(d => d.id))
-    const filtered = projects.filter((p: any) => 
-      p.church_department_id && churchDeptIds.has(p.church_department_id)
-    )
+    const churchIds = new Set(activeChurches.map(c => c.id))
     
-    console.log('📊 [DepartmentProjectOverTimeChart] Projects filtered:', {
+    // Buscar projetos que:
+    // 1. Têm church_id direto OU
+    // 2. Têm church_department_id vinculado a uma igreja ativa OU
+    // 3. Através do objeto Church/church
+    const filtered = projects.filter((p: any) => {
+      const directChurchId = p.church_id || p.church?.id || p.Church?.id
+      
+      // Se tem church_id direto
+      if (directChurchId && churchIds.has(directChurchId)) {
+        return true
+      }
+      
+      // Se tem church_department_id, procurar a church através dos departments
+      if (p.church_department_id) {
+        const churchDept = activeChurches.find(church => 
+          church.departments?.some((d: any) => d.id === p.church_department_id)
+        )
+        if (churchDept) {
+          return true
+        }
+      }
+      
+      return false
+    })
+    
+    console.log('📊 [ChurchProjectOverTimeChart] Projects filtered:', {
       totalProjects: projects.length,
-      churchDepartmentProjects: filtered.length,
-      byDepartment: filtered.reduce((acc: any, p: any) => {
-        const dept = churchDepartments.find(d => d.id === p.church_department_id)
-        const deptName = dept?.name || 'Unknown'
-        acc[deptName] = (acc[deptName] || 0) + 1
+      churchProjects: filtered.length,
+      byChurch: filtered.reduce((acc: any, p: any) => {
+        const churchId = p.church_id || p.church?.id || p.Church?.id
+        const church = activeChurches.find(c => c.id === churchId)
+        const churchName = church?.name || 'Unknown'
+        acc[churchName] = (acc[churchName] || 0) + 1
         return acc
       }, {})
     })
     
     return filtered
-  }, [projects, churchDepartments])
+  }, [projects, activeChurches])
 
   // Gerar dados de criação de projetos ao longo do tempo
   const chartData = React.useMemo(() => {
-    if (churchDepartments.length === 0 || churchDepartmentProjects.length === 0) {
+    if (activeChurches.length === 0 || churchProjects.length === 0) {
       return []
     }
 
     // Criar mapa para armazenar contagem diária
     const dailyCounts = new Map<string, any>()
 
-    // Contar projetos por data e departamento
-    churchDepartmentProjects.forEach((project: any) => {
+    // Contar projetos por data e igreja
+    churchProjects.forEach((project: any) => {
       const createdDate = new Date(project.created_at || project.start_at)
       const dateKey = createdDate.toISOString().split('T')[0] // YYYY-MM-DD format
       
       if (!dailyCounts.has(dateKey)) {
         const dateData: any = { date: dateKey }
-        churchDepartments.forEach(dept => {
-          const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
-          dateData[deptKey] = 0
+        activeChurches.forEach(church => {
+          const churchKey = church.name.toLowerCase().replace(/\s+/g, '_')
+          dateData[churchKey] = 0
         })
         dailyCounts.set(dateKey, dateData)
       }
 
-      const dept = churchDepartments.find(d => d.id === project.church_department_id)
-      if (dept) {
-        const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
+      // Identificar a igreja do projeto
+      const churchId = project.church_id || project.church?.id || project.Church?.id
+      let church = activeChurches.find(c => c.id === churchId)
+      
+      // Se não encontrou pela church_id, tentar pelo church_department_id
+      if (!church && project.church_department_id) {
+        church = activeChurches.find(c => 
+          c.departments?.some((d: any) => d.id === project.church_department_id)
+        )
+      }
+      
+      if (church) {
+        const churchKey = church.name.toLowerCase().replace(/\s+/g, '_')
         const dateData = dailyCounts.get(dateKey)!
-        dateData[deptKey] += 1
+        dateData[churchKey] += 1
       }
     })
 
@@ -130,7 +162,7 @@ export function DepartmentProjectOverTimeChart({
       new Date(a.date).getTime() - new Date(b.date).getTime()
     )
     
-    console.log('📊 [DepartmentProjectOverTimeChart] Chart data:', {
+    console.log('📊 [ChurchProjectOverTimeChart] Chart data:', {
       totalDays: sortedData.length,
       dateRange: sortedData.length > 0 ? {
         start: sortedData[0]?.date,
@@ -140,24 +172,24 @@ export function DepartmentProjectOverTimeChart({
     })
     
     return sortedData
-  }, [churchDepartmentProjects, churchDepartments])
+  }, [churchProjects, activeChurches])
   
   const { generatePalette } = useChartColors()
 
-  // Gerar cores dinâmicas para cada departamento
-  const departmentColors = React.useMemo(() => {
-    const palette = generatePalette(churchDepartments.length)
+  // Gerar cores dinâmicas para cada igreja
+  const churchColors = React.useMemo(() => {
+    const palette = generatePalette(activeChurches.length)
     const colorMap: { [key: string]: string } = {}
 
-    churchDepartments.forEach((dept, index) => {
-      const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
-      colorMap[deptKey] = palette[index]
+    activeChurches.forEach((church, index) => {
+      const churchKey = church.name.toLowerCase().replace(/\s+/g, '_')
+      colorMap[churchKey] = palette[index]
     })
 
     return colorMap
-  }, [churchDepartments, generatePalette])
+  }, [activeChurches, generatePalette])
 
-  // Configuração dinâmica do gráfico baseada nos departamentos reais
+  // Configuração dinâmica do gráfico baseada nas igrejas reais
   const chartConfig = React.useMemo(() => {
     const config: any = {
       totalProjects: {
@@ -165,16 +197,16 @@ export function DepartmentProjectOverTimeChart({
       }
     }
 
-    churchDepartments.forEach((dept) => {
-      const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
-      config[deptKey] = {
-        label: dept.name,
-        color: departmentColors[deptKey],
+    activeChurches.forEach((church) => {
+      const churchKey = church.name.toLowerCase().replace(/\s+/g, '_')
+      config[churchKey] = {
+        label: church.name,
+        color: churchColors[churchKey],
       }
     })
 
     return config
-  }, [churchDepartments, departmentColors, t.charts])
+  }, [activeChurches, churchColors, t.charts])
 
   // Filtrar dados baseado no intervalo de tempo
   const filteredData = React.useMemo(() => {
@@ -225,8 +257,8 @@ export function DepartmentProjectOverTimeChart({
         allDays.push(dataMap.get(dateKey))
       } else {
         const emptyDay: any = { date: dateKey }
-        churchDepartments.forEach(dept => {
-          emptyDay[dept.name.toLowerCase().replace(/\s+/g, '_')] = 0
+        activeChurches.forEach(church => {
+          emptyDay[church.name.toLowerCase().replace(/\s+/g, '_')] = 0
         })
         allDays.push(emptyDay)
       }
@@ -234,64 +266,64 @@ export function DepartmentProjectOverTimeChart({
       currentDate.setDate(currentDate.getDate() + 1)
     }
     
-    console.log('📊 [DepartmentProjectOverTimeChart] Filtered data:', {
+    console.log('📊 [ChurchProjectOverTimeChart] Filtered data:', {
       timeRange,
       totalDays: allDays.length,
       daysWithProjects: allDays.filter(d => 
-        churchDepartments.some(dept => {
-          const key = dept.name.toLowerCase().replace(/\s+/g, '_')
+        activeChurches.some(church => {
+          const key = church.name.toLowerCase().replace(/\s+/g, '_')
           return d[key] > 0
         })
       ).length
     })
     
     return allDays
-  }, [chartData, timeRange, churchDepartments])
+  }, [chartData, timeRange, activeChurches])
 
-  // Calcular totais por departamento
-  const totalByDepartment = React.useMemo(() => {
+  // Calcular totais por igreja
+  const totalByChurch = React.useMemo(() => {
     const totals: Record<string, number> = {}
     
-    churchDepartments.forEach(dept => {
-      totals[dept.name.toLowerCase().replace(/\s+/g, '_')] = 0
+    activeChurches.forEach(church => {
+      totals[church.name.toLowerCase().replace(/\s+/g, '_')] = 0
     })
     
     filteredData.forEach(day => {
-      churchDepartments.forEach(dept => {
-        const key = dept.name.toLowerCase().replace(/\s+/g, '_')
+      activeChurches.forEach(church => {
+        const key = church.name.toLowerCase().replace(/\s+/g, '_')
         totals[key] += (day[key] || 0)
       })
     })
     
     return totals
-  }, [filteredData, churchDepartments])
+  }, [filteredData, activeChurches])
 
-  const topDepartment = React.useMemo(() => {
-    const entries = Object.entries(totalByDepartment)
+  const topChurch = React.useMemo(() => {
+    const entries = Object.entries(totalByChurch)
     if (entries.length === 0) return { name: '', total: 0 }
     
-    const top = entries.reduce((max, [dept, total]) => 
-      total > max.total ? { dept, total } : max
-    , { dept: '', total: 0 })
+    const top = entries.reduce((max, [church, total]) => 
+      total > max.total ? { church, total } : max
+    , { church: '', total: 0 })
     
     return {
-      name: chartConfig[top.dept as keyof typeof chartConfig]?.label || top.dept,
+      name: chartConfig[top.church as keyof typeof chartConfig]?.label || top.church,
       total: top.total
     }
-  }, [totalByDepartment, chartConfig])
+  }, [totalByChurch, chartConfig])
 
   const totalProjects = React.useMemo(() => {
-    return Object.values(totalByDepartment).reduce((sum, val) => sum + val, 0)
-  }, [totalByDepartment])
+    return Object.values(totalByChurch).reduce((sum, val) => sum + val, 0)
+  }, [totalByChurch])
 
   // Helper para obter label do intervalo de tempo
   const getTimeRangeLabel = (range: string) => {
     switch (range) {
-      case "7d": return "last 7 days"
-      case "30d": return "last 30 days"
-      case "90d": return "last 3 months"
-      case "180d": return "last 6 months"
-      case "365d": return "last 12 months"
+      case "7d": return t.charts?.timeRanges?.last7Days || "last 7 days"
+      case "30d": return t.charts?.timeRanges?.last30Days || "last 30 days"
+      case "90d": return t.charts?.timeRanges?.last3Months || "last 3 months"
+      case "180d": return t.charts?.timeRanges?.last6Months || "last 6 months"
+      case "365d": return t.charts?.timeRanges?.last12Months || "last 12 months"
       default: return "last 3 months"
     }
   }
@@ -339,13 +371,13 @@ export function DepartmentProjectOverTimeChart({
     )
   }
 
-  if (churchDepartments.length === 0 || filteredData.length === 0) {
+  if (activeChurches.length === 0 || filteredData.length === 0) {
     return (
       <Card className="h-full flex flex-col min-h-[500px]">
         <CardHeader className="border-b py-5">
-          <CardTitle>{t.charts?.projects_over_time?.title || "Projects Created Over Time"}</CardTitle>
+          <CardTitle>{t.charts?.projectsOverTime?.title || "Projects Created Over Time"}</CardTitle>
           <CardDescription>
-            {t.charts?.projects_over_time?.description || "Project creation timeline by church departments"}
+            {t.charts?.projectsOverTime?.description || "Project creation timeline by churches"}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex items-center justify-center px-2 pt-4 sm:px-6 sm:pt-6">
@@ -353,17 +385,17 @@ export function DepartmentProjectOverTimeChart({
             {/* Empty state illustration */}
             <div className="relative h-[240px] w-full bg-muted/20 rounded-lg flex items-center justify-center">
               <div className="space-y-2 w-full px-8">
-                {/* Empty chart bars */}
+                {/* Empty bars */}
                 <div className="flex items-end justify-around gap-2 h-32">
-                  {[...Array(8)].map((_, i) => (
+                  {[...Array(5)].map((_, i) => (
                     <div 
                       key={i}
                       className="bg-muted/40 rounded-t w-full"
-                      style={{ height: `${20 + (i % 3) * 15}%` }}
+                      style={{ height: `${30 + (i * 10)}%` }}
                     />
                   ))}
                 </div>
-                {/* X-axis line */}
+                {/* Axis line */}
                 <div className="h-px bg-muted" />
               </div>
             </div>
@@ -373,11 +405,11 @@ export function DepartmentProjectOverTimeChart({
               <div className="flex items-center justify-center gap-2">
                 <Activity className="h-5 w-5 text-muted-foreground" />
                 <h3 className="font-semibold text-foreground">
-                  {t.charts?.no_data?.title || "No Project Data Available"}
+                  {t.charts?.noData?.title || "No Project Data Available"}
                 </h3>
               </div>
               <p className="text-sm text-muted-foreground">
-                {t.charts?.no_data?.description || "Projects will appear here once they are created in the selected time period."}
+                {t.charts?.noData?.description || "Projects will appear here once they are created in the selected time period."}
               </p>
             </div>
           </div>
@@ -385,7 +417,7 @@ export function DepartmentProjectOverTimeChart({
         <CardFooter className="flex-col items-start gap-1 text-xs pt-3 border-t">
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <TrendingUp className="h-3 w-3" />
-            0 {t.stats?.projects || "projects"} {getTimeRangeLabel(timeRange)}
+            0 {t.page?.totalProjects || "projects"} {getTimeRangeLabel(timeRange)}
           </div>
         </CardFooter>
       </Card>
@@ -396,9 +428,9 @@ export function DepartmentProjectOverTimeChart({
     <Card className="h-full flex flex-col">
       <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
         <div className="grid flex-1 gap-1">
-          <CardTitle>{t.charts?.projects_over_time?.title || "Projects Created Over Time"}</CardTitle>
+          <CardTitle>{t.charts?.projectsOverTime?.title || "Projects Created Over Time"}</CardTitle>
           <CardDescription>
-            {t.charts?.projects_over_time?.description || `Project creation timeline by church departments - ${getTimeRangeLabel(timeRange)}`}
+            {t.charts?.projectsOverTime?.description || `Project creation timeline by churches - ${getTimeRangeLabel(timeRange)}`}
           </CardDescription>
         </div>
         <div className="flex items-center gap-2">
@@ -430,11 +462,21 @@ export function DepartmentProjectOverTimeChart({
               <SelectValue placeholder="Last 3 months" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
-              <SelectItem value="7d" className="rounded-lg">Last 7 days</SelectItem>
-              <SelectItem value="30d" className="rounded-lg">Last 30 days</SelectItem>
-              <SelectItem value="90d" className="rounded-lg">Last 3 months</SelectItem>
-              <SelectItem value="180d" className="rounded-lg">Last 6 months</SelectItem>
-              <SelectItem value="365d" className="rounded-lg">Last 12 months</SelectItem>
+              <SelectItem value="7d" className="rounded-lg">
+                {t.charts?.timeRanges?.last7Days || "Last 7 days"}
+              </SelectItem>
+              <SelectItem value="30d" className="rounded-lg">
+                {t.charts?.timeRanges?.last30Days || "Last 30 days"}
+              </SelectItem>
+              <SelectItem value="90d" className="rounded-lg">
+                {t.charts?.timeRanges?.last3Months || "Last 3 months"}
+              </SelectItem>
+              <SelectItem value="180d" className="rounded-lg">
+                {t.charts?.timeRanges?.last6Months || "Last 6 months"}
+              </SelectItem>
+              <SelectItem value="365d" className="rounded-lg">
+                {t.charts?.timeRanges?.last12Months || "Last 12 months"}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -447,12 +489,12 @@ export function DepartmentProjectOverTimeChart({
           {chartType === "area" ? (
             <AreaChart data={filteredData}>
               <defs>
-                {churchDepartments.map((dept) => {
-                  const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
+                {activeChurches.map((church) => {
+                  const churchKey = church.name.toLowerCase().replace(/\s+/g, '_')
                   return (
-                    <linearGradient key={dept.id} id={`fill${deptKey}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={departmentColors[deptKey]} stopOpacity={0.8} />
-                      <stop offset="95%" stopColor={departmentColors[deptKey]} stopOpacity={0.1} />
+                    <linearGradient key={church.id} id={`fill${churchKey}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={churchColors[churchKey]} stopOpacity={0.8} />
+                      <stop offset="95%" stopColor={churchColors[churchKey]} stopOpacity={0.1} />
                     </linearGradient>
                   )
                 })}
@@ -505,15 +547,15 @@ export function DepartmentProjectOverTimeChart({
                   />
                 }
               />
-              {churchDepartments.map((dept) => {
-                const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
+              {activeChurches.map((church) => {
+                const churchKey = church.name.toLowerCase().replace(/\s+/g, '_')
                 return (
                   <Area
-                    key={dept.id}
-                    dataKey={deptKey}
+                    key={church.id}
+                    dataKey={churchKey}
                     type="natural"
-                    fill={`url(#fill${deptKey})`}
-                    stroke={departmentColors[deptKey]}
+                    fill={`url(#fill${churchKey})`}
+                    stroke={churchColors[churchKey]}
                     strokeWidth={2}
                     stackId="a"
                   />
@@ -570,13 +612,13 @@ export function DepartmentProjectOverTimeChart({
                 }
               />
               <ChartLegend content={<ChartLegendContent />} />
-              {churchDepartments.map((dept) => {
-                const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
+              {activeChurches.map((church) => {
+                const churchKey = church.name.toLowerCase().replace(/\s+/g, '_')
                 return (
                   <Bar
-                    key={dept.id}
-                    dataKey={deptKey}
-                    fill={departmentColors[deptKey]}
+                    key={church.id}
+                    dataKey={churchKey}
+                    fill={churchColors[churchKey]}
                     stackId="a"
                     radius={[0, 0, 0, 0]}
                   />
@@ -589,10 +631,10 @@ export function DepartmentProjectOverTimeChart({
       <CardFooter className="flex-col items-start gap-1 text-xs pt-3 border-t">
         <div className="flex items-center gap-1.5 font-medium">
           <TrendingUp className="h-3 w-3" />
-          {totalProjects} {t.stats?.projects || "projects"} {getTimeRangeLabel(timeRange)}
+          {totalProjects} {t.page?.totalProjects || "projects"} {getTimeRangeLabel(timeRange)}
         </div>
         <div className="text-muted-foreground">
-          Top: <span className="font-medium text-foreground">{topDepartment.name}</span> ({topDepartment.total} {t.stats?.projects || "projects"})
+          Top: <span className="font-medium text-foreground">{topChurch.name}</span> ({topChurch.total} {t.page?.totalProjects || "projects"})
         </div>
       </CardFooter>
     </Card>

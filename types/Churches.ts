@@ -9,14 +9,23 @@ import { ChurchType } from "./globalTypes";
 // GraphQL query operation: Churches
 // ====================================================
 
+export interface Churches_churches_leader {
+  __typename: "User";
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface Churches_churches {
-  __typename: "ChurchModel";
+  __typename: "Church";
   id: string;
   institution_id: string;
   name: string;
   region_id: string | null;
   contact_id: string | null;
-  type: ChurchType | null;
+  leader_id: string | null;
+  leader: Churches_churches_leader | null;
+  type: ChurchType;
   created_at: any;
   updated_at: any;
   created_by: string;

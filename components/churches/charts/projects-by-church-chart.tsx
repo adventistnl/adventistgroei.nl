@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { Label, Pie, PieChart, Sector } from "recharts"
 import { PieSectorDataItem } from "recharts/types/polar/Pie"
 import {
@@ -25,7 +26,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Layers } from "lucide-react"
+import { Layers, TrendingUp } from "lucide-react"
+import { getProjectColor } from "@/lib/chart-colors"
+import { churchTranslations } from "@/lib/translations/churches"
 
 interface ProjectsByChurchChartProps {
   data?: any[]
@@ -44,52 +47,23 @@ export function ProjectsByChurchChart({
   mode = 'churches',
   onItemClick
 }: ProjectsByChurchChartProps) {
-  // Mock data: Projects by church
-  const mockProjectsData = [
-    { 
-      church: "Campinas",
-      fullName: "Igreja de Campinas",
-      projects: 15,
-      activeProjects: 12,
-      completedProjects: 3,
-      fill: "#8b5cf6" // purple
-    },
-    { 
-      church: "Central SP",
-      fullName: "Igreja Central de São Paulo",
-      projects: 12,
-      activeProjects: 9,
-      completedProjects: 3,
-      fill: "#3b82f6" // blue
-    },
-    { 
-      church: "Rio",
-      fullName: "Igreja do Rio de Janeiro",
-      projects: 10,
-      activeProjects: 7,
-      completedProjects: 3,
-      fill: "#ef4444" // red
-    },
-    { 
-      church: "Vila Madalena",
-      fullName: "Igreja de Vila Madalena",
-      projects: 8,
-      activeProjects: 6,
-      completedProjects: 2,
-      fill: "#10b981" // green
-    },
-    { 
-      church: "Mooca",
-      fullName: "Igreja da Mooca",
-      projects: 6,
-      activeProjects: 4,
-      completedProjects: 2,
-      fill: "#f59e0b" // orange
-    },
-  ]
-
+  const { i18n } = useTranslation()
   const id = mode === 'departments' ? "projects-by-department" : "projects-by-church"
-  const chartData = React.useMemo(() => data || mockProjectsData, [data, mockProjectsData])
+  
+  // Get translations for current language
+  const currentLanguage = i18n?.language || 'en'
+  const tChurch = churchTranslations[currentLanguage as keyof typeof churchTranslations] || churchTranslations.en
+  
+  // Process data and apply getProjectColor for consistency
+  const chartData = React.useMemo(() => {
+    if (!data || data.length === 0) return []
+    
+    // Apply getProjectColor to each item
+    return data.map((item: any, index: number) => ({
+      ...item,
+      fill: getProjectColor(index)
+    }))
+  }, [data])
   
   // Gera chartConfig dinamicamente baseado nos dados
   const chartConfig = React.useMemo(() => {
@@ -127,41 +101,144 @@ export function ProjectsByChurchChart({
 
   if (loading) {
     return (
-      <Card data-chart={id} className="h-full flex flex-col">
-        <CardHeader className="flex-row items-start space-y-0 pb-0">
+      <Card data-chart={id} className="h-full flex flex-col min-h-[500px]">
+        <CardHeader className="flex-row items-start space-y-0 pb-0 border-b py-5">
           <div className="grid gap-1 flex-1">
-            <div className="h-6 bg-muted rounded w-48 animate-pulse" />
-            <div className="h-4 bg-muted rounded w-32 animate-pulse mt-2" />
+            <div className="flex items-center gap-2">
+              <div className="h-5 w-5 bg-muted rounded animate-pulse" />
+              <div className="h-6 bg-muted rounded w-48 animate-pulse" />
+            </div>
+            <div className="h-4 bg-muted rounded w-64 animate-pulse mt-2" />
           </div>
+          <div className="h-9 w-[160px] bg-muted rounded-lg animate-pulse" />
         </CardHeader>
-        <CardContent className="flex flex-1 justify-center pb-0">
-          <div className="w-[300px] h-[300px] bg-muted rounded-full animate-pulse" />
+        <CardContent className="flex flex-1 justify-center items-center pb-0 px-2 pt-4 sm:px-6 sm:pt-6">
+          <div className="space-y-4 w-full max-w-[300px]">
+            {/* Pie chart skeleton */}
+            <div className="w-[300px] h-[300px] bg-muted/30 rounded-full animate-pulse relative overflow-hidden mx-auto">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-[120px] h-[120px] bg-background rounded-full" />
+              </div>
+              {/* Animated segments */}
+              <div className="absolute top-0 left-1/2 w-px h-full bg-muted/20" />
+              <div className="absolute top-1/2 left-0 w-full h-px bg-muted/20" />
+              <div className="absolute top-1/4 left-1/4 w-px h-full bg-muted/20 rotate-45 origin-center" />
+              <div className="absolute top-1/4 right-1/4 w-px h-full bg-muted/20 -rotate-45 origin-center" />
+            </div>
+          </div>
         </CardContent>
+        <CardFooter className="flex-col gap-2 text-xs pt-4 border-t">
+          <div className="w-full flex items-center justify-between">
+            <div className="h-3 bg-muted rounded w-32 animate-pulse" />
+            <div className="h-3 bg-muted rounded w-12 animate-pulse" />
+          </div>
+          <div className="w-full flex items-center justify-between">
+            <div className="h-3 bg-muted rounded w-40 animate-pulse" />
+            <div className="h-3 bg-muted rounded w-24 animate-pulse" />
+          </div>
+          <div className="w-full flex items-center justify-between">
+            <div className="h-3 bg-muted rounded w-28 animate-pulse" />
+            <div className="h-3 bg-muted rounded w-20 animate-pulse" />
+          </div>
+        </CardFooter>
+      </Card>
+    )
+  }
+
+  // Empty state when no data
+  if (!chartData || chartData.length === 0) {
+    return (
+      <Card data-chart={id} className="h-full flex flex-col min-h-[500px]">
+        <CardHeader className="flex-row items-start space-y-0 pb-0 border-b py-5">
+          <div className="grid gap-1 flex-1">
+            <CardTitle className="flex items-center gap-2">
+              <Layers className="w-5 h-5 text-gray-600" />
+              {title || (mode === 'departments' ? tChurch.charts.projectsByChurch.titleDepartments : tChurch.charts.projectsByChurch.title)}
+            </CardTitle>
+            <CardDescription>
+              {description || (mode === 'departments' 
+                ? tChurch.charts.projectsByChurch.descriptionDepartments
+                : tChurch.charts.projectsByChurch.description)}
+            </CardDescription>
+          </div>
+          {/* Select disabled in empty state */}
+          <Select disabled>
+            <SelectTrigger
+              className="ml-auto h-9 w-[160px] rounded-lg pl-2.5 opacity-50"
+              aria-label={mode === 'departments' ? tChurch.charts.projectsByChurch.selectDepartment : tChurch.charts.projectsByChurch.selectChurch}
+            >
+              <SelectValue placeholder={mode === 'departments' ? tChurch.charts.projectsByChurch.selectPlaceholderDept : tChurch.charts.projectsByChurch.selectPlaceholder} />
+            </SelectTrigger>
+          </Select>
+        </CardHeader>
+        <CardContent className="flex flex-1 justify-center items-center pb-0 px-2 pt-4 sm:px-6 sm:pt-6">
+          <div className="text-center space-y-6 max-w-md">
+            {/* Empty state illustration */}
+            <div className="relative h-[240px] w-full flex items-center justify-center">
+              <div className="space-y-4">
+                {/* Empty pie chart illustration */}
+                <div className="w-[200px] h-[200px] border-[12px] border-muted/30 rounded-full mx-auto relative">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-[100px] h-[100px] bg-muted/10 rounded-full border-4 border-muted/20 flex items-center justify-center">
+                      <Layers className="w-12 h-12 text-muted-foreground/30" />
+                    </div>
+                  </div>
+                  {/* Empty segments visual */}
+                  <div className="absolute top-0 left-1/2 w-px h-full bg-muted/20" />
+                  <div className="absolute top-1/2 left-0 w-full h-px bg-muted/20" />
+                  <div className="absolute top-0 left-0 w-full h-full">
+                    <div className="absolute top-1/4 left-1/4 w-px h-1/2 bg-muted/15 rotate-45 origin-bottom" />
+                    <div className="absolute top-1/4 right-1/4 w-px h-1/2 bg-muted/15 -rotate-45 origin-bottom" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Message */}
+            <div className="space-y-2 px-4">
+              <h3 className="text-lg font-semibold text-foreground">
+                {tChurch.charts.projectsByChurch.noData.title}
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {tChurch.charts.projectsByChurch.noData.description}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="flex-col gap-2 text-xs pt-4 border-t">
+          <div className="w-full flex items-center justify-between text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-3 h-3" />
+              <span>{tChurch.charts.projectsByChurch.footer.totalProjects}</span>
+            </div>
+            <span className="font-semibold">0</span>
+          </div>
+        </CardFooter>
       </Card>
     )
   }
 
   return (
-    <Card data-chart={id} className="h-full flex flex-col">
+    <Card data-chart={id} className="h-full flex flex-col min-h-[500px]">
       <ChartStyle id={id} config={chartConfig} />
-      <CardHeader className="flex-row items-start space-y-0 pb-0">
+      <CardHeader className="flex-row items-start space-y-0 pb-0 border-b py-5">
         <div className="grid gap-1 flex-1">
           <CardTitle className="flex items-center gap-2">
-            <Layers className="w-5 h-5" />
-            {title || (mode === 'departments' ? 'Projetos por Departamento' : 'Projetos por Igreja')}
+            <Layers className="w-5 h-5 text-gray-600" />
+            {title || (mode === 'departments' ? tChurch.charts.projectsByChurch.titleDepartments : tChurch.charts.projectsByChurch.title)}
           </CardTitle>
           <CardDescription>
             {description || (mode === 'departments' 
-              ? 'Qual departamento tem mais projetos ativos' 
-              : 'Qual igreja tem mais projetos ativos')}
+              ? tChurch.charts.projectsByChurch.descriptionDepartments
+              : tChurch.charts.projectsByChurch.description)}
           </CardDescription>
         </div>
         <Select value={activeItem} onValueChange={setActiveItem}>
           <SelectTrigger
-            className="ml-auto h-7 w-[160px] rounded-lg pl-2.5"
-            aria-label={mode === 'departments' ? "Select a department" : "Select a church"}
+            className="ml-auto h-9 w-[160px] rounded-lg pl-2.5"
+            aria-label={mode === 'departments' ? tChurch.charts.projectsByChurch.selectDepartment : tChurch.charts.projectsByChurch.selectChurch}
           >
-            <SelectValue placeholder={mode === 'departments' ? "Select department" : "Select church"} />
+            <SelectValue placeholder={mode === 'departments' ? tChurch.charts.projectsByChurch.selectPlaceholderDept : tChurch.charts.projectsByChurch.selectPlaceholder} />
           </SelectTrigger>
           <SelectContent align="end" className="rounded-xl">
             {itemKeys.map((key: string) => {
@@ -189,7 +266,7 @@ export function ProjectsByChurchChart({
           </SelectContent>
         </Select>
       </CardHeader>
-      <CardContent className="flex flex-1 justify-center pb-0">
+      <CardContent className="flex flex-1 justify-center items-center pb-0 px-2 pt-4 sm:px-6 sm:pt-6">
         <ChartContainer
           id={id}
           config={chartConfig}
@@ -255,14 +332,14 @@ export function ProjectsByChurchChart({
                           y={(viewBox.cy || 0) + 24}
                           className="fill-muted-foreground"
                         >
-                          Projects
+                          {tChurch.charts.projectsByChurch.chart.projects}
                         </tspan>
                         <tspan
                           x={viewBox.cx}
                           y={(viewBox.cy || 0) + 44}
                           className="fill-muted-foreground text-xs"
                         >
-                          {activeData.activeProjects} active
+                          {activeData.activeProjects} {tChurch.charts.projectsByChurch.chart.activeLabel}
                         </tspan>
                       </text>
                     )
@@ -277,7 +354,7 @@ export function ProjectsByChurchChart({
         {/* Minimalist footer - show selected church data */}
         <div className="w-full flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Total Projects</span>
+            <span className="text-muted-foreground">{tChurch.charts.projectsByChurch.footer.totalProjects}</span>
           </div>
           <span className="font-semibold text-gray-900">
             {totalProjects.toLocaleString()}
@@ -290,10 +367,10 @@ export function ProjectsByChurchChart({
               className="w-2 h-2 rounded-full" 
               style={{ backgroundColor: chartData[activeIndex]?.fill }}
             ></div>
-            <span className="text-muted-foreground">Selected: {chartData[activeIndex]?.fullName}</span>
+            <span className="text-muted-foreground">{tChurch.charts.projectsByChurch.footer.selected} {chartData[activeIndex]?.fullName}</span>
           </div>
           <span className="font-medium">
-            {chartData[activeIndex]?.projects.toLocaleString()} projects
+            {chartData[activeIndex]?.projects.toLocaleString()} {tChurch.charts.projectsByChurch.footer.projects}
             <span className="text-muted-foreground ml-1">
               ({Math.round((chartData[activeIndex]?.projects / totalProjects) * 100)}%)
             </span>
@@ -302,13 +379,13 @@ export function ProjectsByChurchChart({
         
         <div className="w-full flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Status:</span>
+            <span className="text-muted-foreground">{tChurch.charts.projectsByChurch.footer.status}</span>
             <span className="font-medium text-green-600">
-              {chartData[activeIndex]?.activeProjects} active
+              {chartData[activeIndex]?.activeProjects} {tChurch.charts.projectsByChurch.footer.active}
             </span>
             <span className="text-muted-foreground">•</span>
             <span className="font-medium text-gray-600">
-              {chartData[activeIndex]?.completedProjects} completed
+              {chartData[activeIndex]?.completedProjects} {tChurch.charts.projectsByChurch.footer.completed}
             </span>
           </div>
         </div>

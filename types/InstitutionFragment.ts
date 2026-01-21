@@ -513,7 +513,7 @@ export interface InstitutionFragment_churches {
   name: string;
   region_id: string | null;
   contact_id: string | null;
-  leader_id: string;
+  leader_id: string | null;
   created_at: any;
   updated_at: any;
   created_by: string;
@@ -522,7 +522,7 @@ export interface InstitutionFragment_churches {
   deleted_at: any | null;
   deleted_by: string | null;
   type: ChurchType;
-  leader: InstitutionFragment_churches_leader;
+  leader: InstitutionFragment_churches_leader | null;
   contact: InstitutionFragment_churches_contact | null;
   departments: InstitutionFragment_churches_departments[] | null;
   region: InstitutionFragment_churches_region | null;

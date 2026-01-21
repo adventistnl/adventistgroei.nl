@@ -103,7 +103,8 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
     if (!institutions && !currentInstitutionData) {
       fetchInstitutionData();
     }
-  }, [institutions, currentInstitutionData, fetchInstitutionData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [institutions, currentInstitutionData]);
   
   if (!institutions || !currentInstitutionData) {
     return (
@@ -215,9 +216,6 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
                 ) : (
               // Usuário sem permissão: mostrar apenas nome + ícone (não interativo)
               <div className="flex items-center gap-2">
-                <div className="flex size-6 items-center justify-center rounded-md bg-sidebar-primary/10">
-                  <Building2 className="sidebar-icon text-sidebar-primary" />
-                </div>
                 <div className="min-w-0">
                   <div title={currentInstitutionData.name} className="font-medium text-sm truncate max-w-[160px]">{truncateText(currentInstitutionData.name, 32)}</div>
                   <div className="text-xs text-muted-foreground truncate max-w-[160px]">{t('institution_switcher.churches_and_users', { defaultValue: '{{churches}} churches • {{users}} users', churches: currentInstitutionData.churches_count, users: currentInstitutionData.users_count })}</div>

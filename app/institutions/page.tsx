@@ -2,16 +2,44 @@
 
 import React, { useState, useMemo, Suspense } from "react"
 import { useTranslation } from "react-i18next"
+import { useQuery } from "@apollo/client"
 import { ColumnDef } from "@tanstack/react-table"
+import toast from "react-hot-toast"
+import "@/lib/i18n"
+
+// Layouts & Hooks
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
+import { useInstitution } from "@/contexts/institution-context"
+import { useInstitutionKPI } from "@/hooks/KPI/use-institution-kpi"
+
+// UI Components
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { UseTable } from "@/components/ui/use-table"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
+// Icons
 import { 
-  Building, 
-  Plus, 
+  Building,
+  Plus,
   MoreHorizontal,
   Edit,
   Trash2,
@@ -25,68 +53,57 @@ import {
   Layers,
   DollarSign,
   ChevronRight,
-  Building2,
-  Map
+  Calendar
 } from "lucide-react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import toast from "react-hot-toast"
-import "@/lib/i18n"
-import { cn } from "@/lib/utils"
 
-// Components - Lazy load heavy components
+// Utils & Config
+import { cn } from "@/lib/utils"
+import { createPrivacyConfig } from "@/config/privacy-roles.config"
+
+// Shared Components
+import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
+import { InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
-import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { GridContainer } from "@/components/shared/grid-container"
-import { UseTable } from "@/components/ui/use-table"
-import { StatusBadge } from "@/components/ui/status-badge"
 import { EntityInfoCard, EntityInfoCardAction } from "@/components/shared/entity-info-card"
 
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { UsersByStructureOverviewChart } from "@/components/charts/dashboard"
-import { HierarchicalStructureCard } from "@/components/charts/dashboard/hierarchical-structure-card"
-
-// Lazy load modals
+// Modals - Lazy loaded
 const ContactViewEditModal = React.lazy(() => import("@/components/modals/contact").then(module => ({ default: module.ContactViewEditModal })))
 const EditInstitutionModal = React.lazy(() => import("@/components/modals/institution").then(module => ({ default: module.EditInstitutionModal })))
 const DeleteInstitutionModal = React.lazy(() => import("@/components/modals/institution").then(module => ({ default: module.DeleteInstitutionModal })))
 const RegisterInstitutionModal = React.lazy(() => import("@/components/modals/institution").then(module => ({ default: module.RegisterInstitutionModal })))
 
-// Lazy load charts
-const DepartmentActivityChart = React.lazy(() => import("@/components/institutions/charts").then(module => ({ default: module.DepartmentActivityChart })))
+// Charts - Lazy loaded
 const UsersByRoleChart = React.lazy(() => import("@/components/institutions/charts").then(module => ({ default: module.UsersByRoleChart })))
 const ChurchesByRegionChart = React.lazy(() => import("@/components/institutions/charts").then(module => ({ default: module.ChurchesByRegionChart })))
-const UserDistributionByEntityChart = React.lazy(() => import("@/components/institutions/charts").then(module => ({ default: module.UserDistributionByEntityChart })))
+const InstitutionLeadersCard = React.lazy(() => import("@/components/institutions/institution-leaders-card").then(module => ({ default: module.InstitutionLeadersCard })))
+const ActivityHeatmapCard = React.lazy(() => import("@/components/institutions/activity-heatmap-card").then(module => ({ default: module.ActivityHeatmapCard })))
+const UsersRegistrationOverTimeChart = React.lazy(() => import("@/components/institutions/charts").then(module => ({ default: module.UsersRegistrationOverTimeChart })))
+const ProjectsOverTimeChart = React.lazy(() => import("@/components/projects/charts/projects-over-time-chart").then(module => ({ default: module.ProjectsOverTimeChart })))
 
+// GraphQL Queries
+import { GET_INSTITUTIONS_QUERY } from "@/graphql/queries/INSTITUTIONS_QUERY"
+import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
+
+// Types & Permissions
 import { Institutions_institutions } from "@/types/Institutions"
-import { useInstitution } from "@/contexts/institution-context"
-import { useInstitutionKPI } from "@/hooks/KPI/use-institution-kpi"
-import InstitutionsLoading from "./loading"
 import { Contact, PermissionResolverName } from "@/types/graphql-global-types"
 import { WithPermission } from "@/hocs/with-permission"
 import { AccessDenied } from "@/components/access/access-denied"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-
-// Additional imports for tabs
+import InstitutionsLoading from "./loading"
 
 
 export default function InstitutionsPage() {
+  // ============================================================================
+  // HOOKS & CONTEXT
+  // ============================================================================
   const { t } = useTranslation()
   const { institutions: institutionsData, currentInstitutionData, loading: isLoading, updateInstitutionContact, refetchInstitutionById} = useInstitution();
   const scrollContainerRef = React.useRef<HTMLDivElement>(null)
 
-  // State
+  // ============================================================================
+  // STATE MANAGEMENT
+  // ============================================================================
   const [refreshing, setRefreshing] = useState(false)
   const [selectedInstitutionId, setSelectedInstitutionId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'overview' | 'detail'>('overview')
@@ -98,6 +115,148 @@ export default function InstitutionsPage() {
   const [isDeleteInstitutionModalOpen, setIsDeleteInstitutionModalOpen] = useState(false)
   const [deleteInstitutionId, setDeleteInstitutionId] = useState<string | null>(null)
 
+  // Filter states - usando objeto para PageFilters
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({
+    language: "all",
+    status: "true", // Default to active institutions
+    budget_status: "all"
+  })
+  
+  // Year filter states
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const [availableYears, setAvailableYears] = useState<number[]>(() => {
+    const currentYear = new Date().getFullYear()
+    return [currentYear, currentYear - 1, currentYear - 2].sort((a, b) => b - a)
+  })
+
+  // ============================================================================
+  // GRAPHQL QUERIES
+  // ============================================================================
+  const { data: allInstitutionsData, loading: allInstitutionsLoading } = useQuery(GET_INSTITUTIONS_QUERY, {
+    fetchPolicy: 'cache-and-network'
+  })
+
+  // Query to fetch ALL projects with complete data for the chart
+  const { data: allProjectsData, loading: allProjectsLoading } = useQuery(GET_PROJECTS_QUERY, {
+    variables: { institutionId: currentInstitutionData?.id },
+    skip: !currentInstitutionData?.id,
+    fetchPolicy: 'cache-and-network'
+  })
+
+  // ============================================================================
+  // DATA PROCESSING & FILTERING
+  // ============================================================================
+  const institutionsWithUsers = React.useMemo(() => {
+    return allInstitutionsData?.institutions || []
+  }, [allInstitutionsData])
+
+  // Process projects data for the current institution
+  const institutionProjects = React.useMemo(() => {
+    return allProjectsData?.projects || []
+  }, [allProjectsData])
+
+  // Filter institutions by year (based on created_at)
+  // Use institutionsWithUsers for KPIs (has complete data with churches, departments, users)
+  const institutionsByYear = React.useMemo(() => {
+    return institutionsWithUsers.filter((institution: any) => {
+      const createdYear = new Date(institution.created_at).getFullYear()
+      return createdYear <= selectedYear
+    })
+  }, [institutionsWithUsers, selectedYear])
+
+  // Filter projects by year
+  const projectsByYear = React.useMemo(() => {
+    return institutionProjects.filter((project: any) => {
+      const projectYear = new Date(project.created_at || project.start_at).getFullYear()
+      return projectYear === selectedYear
+    })
+  }, [institutionProjects, selectedYear])
+
+  // Apply PageFilters to institutions (MUST be before lists that depend on it)
+  const filteredInstitutions = React.useMemo(() => {
+    let filtered = institutionsByYear
+
+    // Apply language filter
+    if (filterValues.language !== "all") {
+      filtered = filtered.filter((inst: any) => inst.language_preference === filterValues.language)
+    }
+
+    // Apply status filter
+    if (filterValues.status !== "all") {
+      const isActive = filterValues.status === "true"
+      filtered = filtered.filter((inst: any) => !inst.is_deleted === isActive)
+    }
+
+    // Apply budget status filter
+    if (filterValues.budget_status !== "all") {
+      const hasBudget = filterValues.budget_status === "true"
+      filtered = filtered.filter((inst: any) => !!inst.has_budget_record === hasBudget)
+    }
+
+    return filtered
+  }, [institutionsByYear, filterValues])
+
+  // Extract ALL churches from filtered institutions (following church-departments pattern)
+  const allChurches = React.useMemo(() => {
+    return filteredInstitutions.flatMap((inst: any) => 
+      (inst.churches || []).map((church: any) => ({
+        ...church,
+        institution_id: inst.id,
+        institution_name: inst.name
+      }))
+    )
+  }, [filteredInstitutions])
+
+  // Extract ALL departments from filtered institutions
+  const allDepartments = React.useMemo(() => {
+    return filteredInstitutions.flatMap((inst: any) => 
+      (inst.departments || []).map((dept: any) => ({
+        ...dept,
+        institution_id: inst.id,
+        institution_name: inst.name
+      }))
+    )
+  }, [filteredInstitutions])
+
+  // Separate Institution Departments and Church Departments (following church-departments pattern)
+  const institutionDepartmentsList = React.useMemo(() => {
+    // Institution departments are those WITHOUT church_id (null or undefined)
+    return allDepartments.filter((dept: any) => !dept.church_id && !dept.is_deleted)
+  }, [allDepartments])
+
+  const churchDepartmentsList = React.useMemo(() => {
+    // Church departments are those WITH church_id (has value)
+    // Following church-departments pattern: departments extracted from churches.departments
+    // But here we filter from all departments where church_id exists
+    return allDepartments.filter((dept: any) => dept.church_id && !dept.is_deleted)
+  }, [allDepartments])
+
+  // ADDITIONAL: Extract church departments DIRECTLY from churches (like church-departments page)
+  const churchDepartmentsFromChurches = React.useMemo(() => {
+    return filteredInstitutions.flatMap((inst: any) => 
+      (inst.churches || []).flatMap((church: any) => 
+        (church.departments || []).map((dept: any) => ({
+          ...dept,
+          church_id: church.id,
+          church_name: church.name,
+          institution_id: inst.id,
+          institution_name: inst.name
+        }))
+      )
+    ).filter((dept: any) => !dept.is_deleted)
+  }, [filteredInstitutions])
+
+  // Extract ALL users from filtered institutions
+  const allUsers = React.useMemo(() => {
+    return filteredInstitutions.flatMap((inst: any) => 
+      (inst.users || []).map((user: any) => ({
+        ...user,
+        institution_id: inst.id,
+        institution_name: inst.name
+      }))
+    )
+  }, [filteredInstitutions])
+
   // Computed state - institution being displayed
   const displayedInstitution = useMemo(() => {
     if (selectedInstitutionId) {
@@ -107,7 +266,9 @@ export default function InstitutionsPage() {
   }, [selectedInstitutionId, institutionsData, currentInstitutionData])
   const institutionKPIs = useInstitutionKPI(displayedInstitution);
 
-  // Initialize selectedInstitutionId with currentInstitutionData.id when available
+  // ============================================================================
+  // EFFECTS
+  // ============================================================================
   React.useEffect(() => {
     if (currentInstitutionData && !selectedInstitutionId) {
       setSelectedInstitutionId(currentInstitutionData.id)
@@ -121,7 +282,9 @@ export default function InstitutionsPage() {
     }
   }, [currentInstitutionData?.id, selectedInstitutionId, viewMode])
 
-  // Function to handle institution selection
+  // ============================================================================
+  // EVENT HANDLERS
+  // ============================================================================
   const handleViewInstitutionDetails = (institutionId: string) => {
     setSelectedInstitutionId(institutionId)
     setViewMode('detail')
@@ -144,35 +307,99 @@ export default function InstitutionsPage() {
     })
   }
 
+  // ============================================================================
+  // KPI CALCULATIONS
+  // ============================================================================
+  const kpiCardsData: KPICardData[] = useMemo(() => {
+    // Calculate KPIs from DIRECT lists (following church-departments pattern)
+    // This ensures KPIs show the SAME data as the table
+    
+    // Total active churches from direct list
+    const totalChurches = allChurches.filter((c: any) => !c.is_deleted).length
+    
+    // Institution Departments from direct list (already filtered for active)
+    const institutionDepartments = institutionDepartmentsList.length
+    
+    // Church Departments from churches.departments (following church-departments pattern)
+    const churchDepartments = churchDepartmentsFromChurches.length
+    
+    // Total active users from direct list
+    const totalUsers = allUsers.filter((u: any) => !u.is_deleted).length
+    
+    // Year Progress calculation
+    const now = new Date()
+    const startOfYear = new Date(selectedYear, 0, 1)
+    const endOfYear = new Date(selectedYear, 11, 31)
+    const totalDays = 365 + (selectedYear % 4 === 0 ? 1 : 0)
+    
+    // Only calculate progress if selected year is current year or past
+    const currentYear = now.getFullYear()
+    let daysPassed = 0
+    let percentage = 0
+    
+    if (selectedYear === currentYear) {
+      daysPassed = Math.floor((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24)) + 1
+      percentage = Math.round((daysPassed / totalDays) * 100)
+    } else if (selectedYear < currentYear) {
+      daysPassed = totalDays
+      percentage = 100
+    }
 
-  // Dados para KPI Cards Carrossel
-  const kpiCardsData: KPICardData[] = useMemo(() => [
-    {
-      id: "total_churches",
-      title: t('institutions.kpis.total_churches'),
-      value: institutionKPIs.totalChurches,
-      icon: Church,
-      subtitle: t('churches.active_churches'),
-      trend: undefined
-    },
-    {
-      id: "total_departments",
-      title: t('institutions.kpis.total_departments'),
-      value: institutionKPIs.totalDepartments,
-      icon: Shield,
-      subtitle: t('departments.title'),
-      trend: undefined
-    },
-    {
-      id: "total_users",
-      title: t('institutions.kpis.total_users'),
-      value: institutionKPIs.totalUsers,
-      icon: Users,
-      subtitle: t('users.registered_users'),
-      trend: undefined
-    },
-  ], [institutionKPIs, t])
+    return [
+      {
+        id: "total_institutions",
+        title: t('institutions.kpis.total_institutions') || "Total Institutions",
+        value: filteredInstitutions.length,
+        icon: Building,
+        subtitle: `${t('common.in')} ${selectedYear}`,
+        trend: undefined
+      },
+      {
+        id: "total_churches",
+        title: t('institutions.kpis.total_churches') || "Total Churches",
+        value: totalChurches,
+        icon: Church,
+        subtitle: t('churches.active_churches') || "Active churches",
+        trend: undefined
+      },
+      {
+        id: "institution_departments",
+        title: t('institutions.kpis.institution_departments') || "Institution Departments",
+        value: institutionDepartments,
+        icon: Shield,
+        subtitle: t('institutions.kpis.institution_level') || "Institution level",
+        trend: undefined
+      },
+      {
+        id: "church_departments",
+        title: t('institutions.kpis.church_departments') || "Church Departments",
+        value: churchDepartments,
+        icon: Layers,
+        subtitle: t('institutions.kpis.church_level') || "Church level",
+        trend: undefined
+      },
+      {
+        id: "total_users",
+        title: t('institutions.kpis.total_users') || "Total Users",
+        value: totalUsers,
+        icon: Users,
+        subtitle: t('users.registered_users') || "Registered users",
+        trend: undefined
+      },
+      {
+        id: "year_progress",
+        title: `${t('common.year_progress') || 'Year Progress'} - ${selectedYear}`,
+        value: `${daysPassed} / ${totalDays} ${t('common.days') || 'days'}`,
+        icon: Calendar,
+        subtitle: `${percentage}%.`,
+        trend: undefined
+      },
+    ]
+  }, [filteredInstitutions, selectedYear, t, allChurches, institutionDepartmentsList, churchDepartmentsFromChurches, allUsers])
 
+  // ============================================================================
+  // PAGE CONFIGURATION
+  // ============================================================================
   const pageTitle = useMemo(() => (
     <span className="flex items-center gap-2">
       {t('common.structure_organization')}
@@ -186,7 +413,11 @@ export default function InstitutionsPage() {
     showBreadcrumbsInHeader: true
   })
 
-  // Local filter state used by charts/tabs
+  const budgetPrivacyConfig = React.useMemo(() => 
+    createPrivacyConfig('institutions-table-budget', 'FINANCIAL_DATA'),
+    []
+  )
+
   const [activeTab, setActiveTab] = useState<string>("structure-chart")
 
   const kpis = React.useMemo(() => {
@@ -320,6 +551,7 @@ export default function InstitutionsPage() {
         name={displayedInstitution.name}
         description={displayedInstitution.denomination}
         icon={Building}
+        invertTheme={true}
         actions={institutionCardActions}
         accentColor="gray"
         badges={[
@@ -335,12 +567,12 @@ export default function InstitutionsPage() {
           },
           {
             label: `${t('institutions.entity_info.established')} ${new Date(displayedInstitution.created_at).getFullYear()}`,
-            variant: "outline",
+            variant: "default",
             className: "text-xs font-normal"
           },
           {
             label: displayedInstitution.language_preference.toUpperCase(),
-            variant: "outline",
+            variant: "default",
             className: "text-xs font-mono"
           }
         ]}
@@ -348,7 +580,9 @@ export default function InstitutionsPage() {
     )
   }, [displayedInstitution, institutionCardActions, t])
 
-  // Colunas da tabela
+  // ============================================================================
+  // TABLE CONFIGURATION
+  // ============================================================================
   const columns: ColumnDef<Institutions_institutions>[] = [
     {
       id: "name",
@@ -445,12 +679,23 @@ export default function InstitutionsPage() {
         const institution = row.original;
         const budgetAmount = institution.current_year_budget || 0;
         const hasBudget = budgetAmount > 0;
+        
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const { useComponentPrivacy } = require('@/contexts/privacy-context')
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const { isHidden } = useComponentPrivacy(budgetPrivacyConfig)
 
         return (
           <div className="text-center">
-            <div className="text-sm font-semibold">
-              {hasBudget ? `$${budgetAmount.toLocaleString()}` : '-'}
-            </div>
+            {isHidden ? (
+              <div className="text-sm font-semibold text-muted-foreground">
+                ••••••
+              </div>
+            ) : (
+              <div className="text-sm font-semibold">
+                {hasBudget ? `$${budgetAmount.toLocaleString()}` : '-'}
+              </div>
+            )}
           </div>
         )
       },
@@ -518,6 +763,7 @@ export default function InstitutionsPage() {
       header: t('institutions.table.actions'),
       cell: ({ row }) => {
         const institution = row.original;
+        const isInactive = institution.is_deleted;
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -534,29 +780,33 @@ export default function InstitutionsPage() {
                 <Eye className="mr-2 h-4 w-4" />
                 {t('actions.view_details')}
               </DropdownMenuItem>
-              <WithPermission requiredPermissions={[PermissionResolverName.UpdateInstitution]}>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setEditInstitutionId(institution.id);
-                    setIsEditInstitutionModalOpen(true);
-                  }}
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  {t('common.edit')}
-                </DropdownMenuItem>
-              </WithPermission>
-              <WithPermission requiredPermissions={[PermissionResolverName.DeleteInstitution]}>
-                <DropdownMenuItem
-                  className="text-red-600"
-                  onClick={() => {
-                    setDeleteInstitutionId(institution.id);
-                    setIsDeleteInstitutionModalOpen(true);
-                  }}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {t('common.delete')}
-                </DropdownMenuItem>
-              </WithPermission>
+              {!isInactive && (
+                <>
+                  <WithPermission requiredPermissions={[PermissionResolverName.UpdateInstitution]}>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setEditInstitutionId(institution.id);
+                        setIsEditInstitutionModalOpen(true);
+                      }}
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      {t('common.edit')}
+                    </DropdownMenuItem>
+                  </WithPermission>
+                  <WithPermission requiredPermissions={[PermissionResolverName.DeleteInstitution]}>
+                    <DropdownMenuItem
+                      className="text-red-600"
+                      onClick={() => {
+                        setDeleteInstitutionId(institution.id);
+                        setIsDeleteInstitutionModalOpen(true);
+                      }}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {t('common.deactivate')}
+                    </DropdownMenuItem>
+                  </WithPermission>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         );
@@ -564,7 +814,74 @@ export default function InstitutionsPage() {
     },
   ]
 
-  // Filterable columns for DataTable
+  // Configure PageFilters
+  const pageFilters: FilterConfig[] = useMemo(() => [
+    {
+      id: "language",
+      label: t('common.language'),
+      type: "select",
+      placeholder: t('common.all_languages') || "All Languages",
+      icon: Globe,
+      options: [
+        { label: t('common.all') || "All", value: "all" },
+        { label: t('common.english'), value: "en" },
+        { label: t('common.dutch'), value: "nl" },
+        { label: "Português", value: "pt" },
+      ],
+      defaultValue: "all"
+    },
+    {
+      id: "status",
+      label: t('common.status'),
+      type: "select",
+      placeholder: t('common.select_status') || "Select status",
+      icon: Shield,
+      options: [
+        { label: t('common.all') || "All", value: "all" },
+        { label: t('common.active'), value: "true" },
+        { label: t('common.inactive'), value: "false" },
+      ],
+      defaultValue: "true"
+    }
+  ], [t])
+
+  const handleFilterChange = (filterId: string, value: any) => {
+    setFilterValues(prev => ({
+      ...prev,
+      [filterId]: value
+    }))
+  }
+
+  const handleClearFilters = () => {
+    setFilterValues({
+      language: "all",
+      status: "true",
+      budget_status: "all"
+    })
+    toast.success(t('common.filters_cleared') || "Filters cleared", { duration: 1500 })
+  }
+
+  const handleAddYear = () => {
+    const currentYear = new Date().getFullYear()
+    const maxAllowedYear = currentYear + 2
+    const nextYear = Math.max(...availableYears) + 1
+
+    if (nextYear > maxAllowedYear) {
+      toast.error(`Cannot add year beyond ${maxAllowedYear}`)
+      return
+    }
+
+    if (availableYears.includes(nextYear)) {
+      toast.error(`Year ${nextYear} already exists`)
+      return
+    }
+
+    setAvailableYears(prev => [...prev, nextYear].sort((a, b) => b - a))
+    setSelectedYear(nextYear)
+    toast.success(`Year ${nextYear} added successfully`)
+  }
+
+  // Filterable columns for DataTable (mantido para compatibilidade, mas não usado)
   const filterableColumns = [
     {
       id: "language",
@@ -593,6 +910,9 @@ export default function InstitutionsPage() {
     }
   ]
 
+  // ============================================================================
+  // RENDER CONDITIONS
+  // ============================================================================
   if (isLoading) {
     return (
       <AppLayout>
@@ -620,6 +940,62 @@ export default function InstitutionsPage() {
     return <InstitutionsLoading />
   }
 
+  // ============================================================================
+  // SUB-COMPONENTS
+  // ============================================================================
+  const YearFilter = ({ showAddButton = true }: { showAddButton?: boolean }) => {
+    const currentYear = new Date().getFullYear()
+    const maxAllowedYear = currentYear + 2
+    const canAddMore = Math.max(...availableYears) < maxAllowedYear
+
+    return (
+      <div className="flex items-center gap-3 overflow-x-auto pb-2 scroll-smooth" style={{ scrollbarWidth: 'thin' }}>
+        {availableYears.map((year) => (
+          <Button
+            key={year}
+            variant="outline"
+            size="sm"
+            onClick={() => setSelectedYear(year)}
+            className={`
+              flex-shrink-0 min-w-[80px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
+              ${
+                selectedYear === year 
+                  ? 'bg-primary text-primary-foreground border-primary shadow-md hover:bg-primary/90' 
+                  : 'bg-muted text-muted-foreground border-muted hover:bg-muted/80 hover:text-foreground hover:border-muted-foreground/50'
+              }
+            `}
+          >
+            {year}
+          </Button>
+        ))}
+        
+        {/* Add New Year Button */}
+        {showAddButton && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleAddYear}
+            disabled={!canAddMore}
+            className={`
+              flex-shrink-0 min-w-[100px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
+              ${
+                canAddMore 
+                  ? 'border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground hover:border-muted-foreground/60 hover:bg-muted/50' 
+                  : 'opacity-40 cursor-not-allowed border-dashed border-muted-foreground/20 text-muted-foreground/50'
+              }
+            `}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            {t('common.add_year') || "Add Year"}
+          </Button>
+        )}
+      </div>
+    )
+  }
+
+  // ============================================================================
+  // MAIN RENDER
+  // ============================================================================
   return (
     <AppLayout>
       <WithPermission requiredPermissions={[PermissionResolverName.Institutions]} fallback={<AccessDenied/>}>
@@ -651,36 +1027,54 @@ export default function InstitutionsPage() {
           </Breadcrumb>
         )}
 
+
+
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold text-foreground mb-2">
-              {t('institutions.page_header.title')}
-            </h2>
-            <p className="text-muted-foreground text-0.875rem sm:text-1rem">
-              {t('institutions.page_header.subtitle')}
-            </p>
+        <div className="flex flex-col justify-between items-start gap-4">
+          <div className="flex w-full justify-between">
+            <div>
+              <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold text-foreground mb-2">
+                {t('institutions.page_header.title')}
+              </h2>
+              <p className="text-muted-foreground text-0.875rem sm:text-1rem">
+                {t('institutions.page_header.subtitle')}
+              </p>
+            </div>
+
+  
+
+            <div className="flex items-center gap-3">
+              <PageFilters
+                filters={pageFilters}
+                values={filterValues}
+                onChange={handleFilterChange}
+                onClear={handleClearFilters}
+                triggerLabel={t('common.filters') || "Filters"}
+                align="end"
+              />
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={handleRefresh}
+                disabled={refreshing}
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
+              
+              <WithPermission requiredPermissions={[PermissionResolverName.CreateInstitution]}>
+                <RegisterInstitutionModal onSuccess={handleInstitutionCreated}>
+                  <Button className="bg-primary hover:bg-primary/80">
+                    <Plus className="w-4 h-4 mr-2" />
+                    {t('institutions.page_header.new_institution')}
+                  </Button>
+                </RegisterInstitutionModal>
+              </WithPermission>
+            </div>
+
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
-            
-            <WithPermission requiredPermissions={[PermissionResolverName.CreateInstitution]}>
-              <RegisterInstitutionModal onSuccess={handleInstitutionCreated}>
-                <Button className="bg-primary hover:bg-primary/80">
-                  <Plus className="w-4 h-4 mr-2" />
-                  {t('institutions.page_header.new_institution')}
-                </Button>
-              </RegisterInstitutionModal>
-            </WithPermission>
-          </div>
+          {/* Year Filter */}
+          <YearFilter showAddButton={false} />
         </div>
 
         {/* KPI Cards Carousel */}
@@ -699,124 +1093,119 @@ export default function InstitutionsPage() {
            <GridContainer
             items={[
               {
-                id: "UserDistributionByEntityChart-full-width",
+                id: "users-registration-over-time-chart",
                 component: (
-                  <Suspense fallback={<div>Loading...</div>}>
-                    <UserDistributionByEntityChart
-                      institutionData={displayedInstitution}
-                      loading={isLoading}
-                    />
-                  </Suspense>
+                  <UsersRegistrationOverTimeChart
+                    institutions={institutionsWithUsers}
+                    loading={allInstitutionsLoading}
+                    selectedYear={selectedYear}
+                  />
                 ),
                 colSpan: "col-span-12 lg:col-span-8",
               },
-              {
-                id: "structure-tabs-panel",
+               {
+                id: "institution-leaders-card-top",
                 component: (
-                  <div className="space-y-4 h-full flex flex-col">
-                    {/* Tabs - Chart vs Info */}
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="structure-chart" className="gap-2">
-                          <Building2 className="w-4 h-4" />
-                          Chart
-                        </TabsTrigger>
-                        <TabsTrigger value="structure-info" className="gap-2">
-                          <Map className="w-4 h-4" />
-                          Info
-                        </TabsTrigger>
-                      </TabsList>
-                    </Tabs>
-
-                    {/* Content based on active tab */}
-                    <div className="flex-1 min-h-0">
-                      {activeTab === "structure-chart" ? (
-                        <UsersByStructureOverviewChart
-                          loading={isLoading}
-                          users={displayedInstitution?.users || []}
-                          institutions={[displayedInstitution].filter(Boolean)}
-                          departments={displayedInstitution?.departments || []}
-                          regions={displayedInstitution?.regions || []}
-                          churches={displayedInstitution?.churches || []}
-                        />
-                      ) : (
-                        <HierarchicalStructureCard
-                          title={t('institutions.analytics.hierarchyTitle') || "Hierarchical Structure"}
-                          description={t('institutions.analytics.hierarchyDescription') || "The institutional structure follows a clear hierarchy"}
-                          icon={Map}
-                          loading={isLoading}
-                          levels={[
-                          {
-                            title: t('institutions.analytics.institutionLevel') || 'Institution Level',
-                            icon: Building2,
-                            description: `${kpis.totalInstitutions} ${t('institutions.analytics.institutionsWith')} ${kpis.institutionDepartments} ${t('institutions.analytics.departments')}`,
-                            details: t('institutions.analytics.institutionDetails') || 'Top-level organizational units managing all operations',
-                            borderColor: 'border-primary/30',
-                            indent: 0
-                          },
-                          {
-                            title: t('regions.title') || 'Regions',
-                            icon: Map,
-                            description: `${kpis.totalRegions} ${t('institutions.analytics.regionsManaging')} ${kpis.activeChurches} ${t('churches.title')}`,
-                            details: t('institutions.analytics.regionsDetails') || 'Geographic divisions containing provinces and churches',
-                            borderColor: 'border-blue-500/30',
-                            indent: 1
-                          },
-                          {
-                            title: t('churches.title') || 'Churches',
-                            icon: Church,
-                            description: `${kpis.activeChurches} ${t('institutions.analytics.activeChurches')} ${t('institutions.analytics.with')} ${kpis.churchDepartments} ${t('institutions.analytics.departments')}`,
-                            details: t('institutions.analytics.churchesDetails') || 'Local congregations with specialized ministry departments',
-                            borderColor: 'border-green-500/30',
-                            indent: 2
-                          }
-                        ]}
-                        footer={
-                          <div className="p-3 bg-muted/30 rounded-lg">
-                            <div className="text-xs font-medium mb-1">{t('institutions.analytics.hierarchyFlow') || "Hierarchy Flow:"}:</div>
-                            <div className="text-xs text-muted-foreground font-mono">
-                              Institution → Regions → Provinces → Churches → Departments
-                            </div>
-                          </div>
-                        }
-                      />
-                    )}
-                    </div>
-                  </div>
+                  <InstitutionLeadersCard
+                    users={currentInstitutionData?.users || []}
+                    institutionName={currentInstitutionData?.name || ''}
+                    loading={isLoading}
+                    selectedYear={selectedYear}
+                  />
                 ),
                 colSpan: "col-span-12 lg:col-span-4",
-              },
+              }
+              
             ]}
             gap="lg"
-          />
-          <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
-            <UsersByRoleChart
-              data={displayedInstitution?.institutionChartsData?.usersByRole}
-              monthlyUserGrowth={displayedInstitution?.institutionChartsData?.monthlyUserGrowth}
-              loading={isLoading}
-            />
-            <ChurchesByRegionChart
-              data={displayedInstitution?.institutionChartsData?.churchesByRegion}
-              loading={isLoading}
-            />
-          </ResponsiveGridCarousel>
+          />         
+
+          <GridContainer
+            items={[
+              {
+                id: "activity-heatmap-card",
+                component: (
+                  <ActivityHeatmapCard
+                    projects={institutionProjects}
+                    users={currentInstitutionData?.users || []}
+                    loading={allProjectsLoading || isLoading}
+                    selectedYear={selectedYear}
+                  />
+                ),
+                colSpan: "col-span-12 lg:col-span-3",
+              },
+              {
+                id: "projects-over-time-chart",
+                component: (
+                  <ProjectsOverTimeChart
+                    data={institutionProjects}
+                    institutions={institutionsWithUsers}
+                    loading={allProjectsLoading}
+                    selectedYear={selectedYear}
+                  />
+                ),
+                colSpan: "col-span-12 lg:col-span-9",
+              }
+              
+            ]}
+            gap="lg"
+          />     
+
+          <GridContainer
+            items={[
+              {
+                id: "users-by-role-chart",
+                component: (
+                  <UsersByRoleChart
+                      users={currentInstitutionData?.users || []}
+                      data={displayedInstitution?.institutionChartsData?.usersByRole}
+                      monthlyUserGrowth={displayedInstitution?.institutionChartsData?.monthlyUserGrowth}
+                      loading={isLoading}
+                      selectedYear={selectedYear}
+                    />
+                ),
+                colSpan: "col-span-12 lg:col-span-6",
+              },
+
+               {
+                id: "institution-leaders-card-bottom",
+                component: (
+                  <ChurchesByRegionChart
+                    churches={currentInstitutionData?.churches || []}
+                    regions={currentInstitutionData?.regions || []}
+                    data={displayedInstitution?.institutionChartsData?.churchesByRegion}
+                    loading={isLoading}
+                  />
+                ),
+                colSpan: "col-span-12 lg:col-span-6",
+              }
+            ]}
+            gap="lg"
+          />    
 
         <Separator />
 
         {/* Institutions Table */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building className="w-5 h-5" />
-              {t('institutions.table_card.title')}
-            </CardTitle>
-            <CardDescription>{t('institutions.table_card.description')}</CardDescription>
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-1">
+                <CardTitle className="flex items-center gap-2">
+                  <Building className="w-5 h-5" />
+                  {t('institutions.table_card.title')}
+                </CardTitle>
+                <CardDescription>{t('institutions.table_card.description')}</CardDescription>
+              </div>
+              <InlinePrivacyToggle 
+                config={budgetPrivacyConfig}
+                className="flex-shrink-0"
+              />
+            </div>
           </CardHeader>
           <CardContent className="overflow-hidden">
             <UseTable
               columns={columns}
-              data={institutionsData}
-              filters={filterableColumns}
+              data={filteredInstitutions}
               searchKey="name"
             />
           </CardContent>

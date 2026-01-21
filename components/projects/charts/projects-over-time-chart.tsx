@@ -4,6 +4,7 @@ import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { projectTranslations } from "@/lib/translations/projects"
 import { TrendingUp, Building2, Activity, BarChart3 } from "lucide-react"
+import { getProjectColor } from "@/lib/chart-colors"
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { Button } from "@/components/ui/button"
 import {
@@ -32,15 +33,17 @@ import {
 
 interface ProjectsOverTimeChartProps {
   data: any[]
-  departments: any[]
+  institutions?: any[]
+  departments?: any[]
   loading?: boolean
   selectedYear?: number
 }
 
 export function ProjectsOverTimeChart({ 
-  data, 
-  departments,
-  loading,
+  data = [], 
+  institutions = [],
+  departments = [],
+  loading = false,
   selectedYear
 }: ProjectsOverTimeChartProps) {
   const { i18n } = useTranslation()
@@ -48,38 +51,99 @@ export function ProjectsOverTimeChart({
   const [timeRange, setTimeRange] = React.useState("90d")
   const [chartType, setChartType] = React.useState<"area" | "bar">("area")
   
-  // Use departments directly - they should already be filtered by the parent component
-  // The parent page filters to only institutional departments (with institution_id and no church_id)
-  const institutionalDepartments = React.useMemo(() => {
-    // Ensure departments are valid and have required fields
-    const filtered = departments.filter(dept => dept && dept.id && dept.name)
-    
-    console.log('📊 [ProjectsOverTimeChart] Departments received:', {
-      total: departments.length,
-      filtered: filtered.length,
-      departmentsList: filtered.map(d => ({ id: d.id, name: d.name, institution_id: d.institution_id, church_id: d.church_id }))
+  // DEBUG: Validate API data on component mount
+  React.useEffect(() => {
+    console.log('🔍 [ProjectsOverTimeChart] API DATA VALIDATION:', {
+      receivedData: {
+        projectsCount: data?.length || 0,
+        institutionsCount: institutions?.length || 0,
+        projectsIsArray: Array.isArray(data),
+        institutionsIsArray: Array.isArray(institutions),
+        projectsType: typeof data,
+        institutionsType: typeof institutions,
+      },
+      projectsSample: data?.slice(0, 3).map(p => ({
+        id: p?.id,
+        title: p?.title,
+        department_id: p?.department_id,
+        institution_id: p?.institution_id,
+        created_at: p?.created_at,
+        status: p?.status,
+      })),
+      institutionsSample: institutions?.slice(0, 3).map(i => ({
+        id: i?.id,
+        name: i?.name,
+      })),
+      selectedYear,
+      loading,
     })
+  }, [data, institutions, selectedYear, loading])
+  
+  // Determine grouping mode: departments (for projects page) or institutions (for institutions page)
+  const groupingMode = React.useMemo(() => {
+    if (departments.length > 0) return 'departments'
+    if (institutions.length > 0) return 'institutions'
+    return 'none'
+  }, [departments.length, institutions.length])
+
+  // Use departments or institutions based on what's available
+  const activeGroups = React.useMemo(() => {
+    if (groupingMode === 'departments') {
+      // Filter valid departments
+      if (!departments || !Array.isArray(departments)) {
+        console.warn('⚠️ [ProjectsOverTimeChart] departments is not a valid array:', {
+          departmentsType: typeof departments,
+          departmentsValue: departments
+        })
+        return []
+      }
+      
+      const filtered = departments.filter(dept => dept && dept.id && dept.name)
+      
+      console.log('📊 [ProjectsOverTimeChart] Departments received (grouping by departments):', {
+        total: departments.length,
+        filtered: filtered.length,
+        departmentsList: filtered.map(d => ({ id: d.id, name: d.name }))
+      })
+      
+      return filtered
+    } else if (groupingMode === 'institutions') {
+      // Filter valid institutions
+      if (!institutions || !Array.isArray(institutions)) {
+        console.warn('⚠️ [ProjectsOverTimeChart] institutions is not a valid array:', {
+          institutionsType: typeof institutions,
+          institutionsValue: institutions
+        })
+        return []
+      }
+      
+      const filtered = institutions.filter(inst => inst && inst.id && inst.name)
+      
+      console.log('📊 [ProjectsOverTimeChart] Institutions received (grouping by institutions):', {
+        total: institutions.length,
+        filtered: filtered.length,
+        institutionsList: filtered.map(i => ({ id: i.id, name: i.name }))
+      })
+      
+      return filtered
+    }
     
-    return filtered
-  }, [departments])
+    return []
+  }, [institutions, departments, groupingMode])
   
   // Use selectedYear if provided, otherwise use current year
   const chartYear = selectedYear || new Date().getFullYear()
 
-  // Generate dynamic chart config based on institutional departments - using system colors
+  // Generate dynamic chart config based on active groups (departments or institutions)
   const chartConfig: ChartConfig = React.useMemo(() => {
-    const colors = [
-      "var(--chart-1)",      // Blue
-      "var(--chart-2)",      // Teal
-      "var(--chart-3)",      // Dark Gray / Orange
-      "var(--chart-4)",      // Yellow / Purple
-      "var(--chart-5)",      // Orange / Red
-      "var(--chart-2-light)",
-      "var(--chart-2-dark)",
-      "var(--chart-2-muted)",
-      "var(--chart-2-accent)",
-      "var(--chart-2-green)",
-    ]
+    console.log('📊 [ProjectsOverTimeChart] Generating chartConfig with getProjectColor:', {
+      groupingMode,
+      groupsCount: activeGroups.length,
+      groups: activeGroups.map((g, idx) => ({
+        name: g.name,
+        color: getProjectColor(idx)
+      }))
+    })
 
     const config: ChartConfig = {
       totalProjects: {
@@ -87,74 +151,121 @@ export function ProjectsOverTimeChart({
       }
     }
 
-    institutionalDepartments.forEach((dept, index) => {
-      const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
-      config[deptKey] = {
-        label: dept.name,
-        color: colors[index % colors.length]
+    activeGroups.forEach((group, index) => {
+      const groupKey = group.name.toLowerCase().replace(/\s+/g, '_')
+      config[groupKey] = {
+        label: group.name,
+        color: getProjectColor(index)
       }
     })
 
     return config
-  }, [institutionalDepartments, t.charts.projects])
+  }, [activeGroups, groupingMode, t.charts.projects])
 
-  // Transform data to show dates on X-axis and institutional departments as separate areas
+  // Transform data to show dates on X-axis and groups (departments/institutions) as separate areas
   const chartData = React.useMemo(() => {
     console.log('📊 [ProjectsOverTimeChart] Data received:', {
+      groupingMode,
       totalProjects: data.length,
+      selectedYear,
       sampleProjects: data.slice(0, 3).map(p => ({
         id: p.id,
         title: p.title,
+        institution_id: p.institution_id,
         department_id: p.department_id,
-        church_department_id: p.church_department_id,
         created_at: p.created_at,
         start_at: p.start_at
       }))
     })
     
-    // Get all projects that belong to institutional departments
-    // Include ANY project that has a department_id matching institutional departments
-    // This includes both pure institutional projects and church projects (which also have a department_id)
-    const institutionalProjects = data.filter(project => {
-      // INCLUDE all projects that have a department_id matching institutional departments
-      const projectDept = institutionalDepartments.find(d => d.id === project.department_id)
-      return projectDept !== undefined
-    })
+    // Filter projects based on grouping mode and selected year
+    let filteredProjects: any[]
     
-    console.log('📊 [ProjectsOverTimeChart] Institutional projects filtered:', {
-      total: institutionalProjects.length,
-      includesChurchProjects: institutionalProjects.filter(p => p.church_department_id || p.church_department).length,
-      pureInstitutionalProjects: institutionalProjects.filter(p => !p.church_department_id && !p.church_department).length,
-      byDepartment: institutionalProjects.reduce((acc, p) => {
-        const dept = institutionalDepartments.find(d => d.id === p.department_id)
-        const deptName = dept?.name || 'Unknown'
-        acc[deptName] = (acc[deptName] || 0) + 1
-        return acc
-      }, {} as Record<string, number>)
-    })
+    if (groupingMode === 'departments') {
+      // Filter projects by department_id and selected year
+      filteredProjects = data.filter(project => {
+        const projectDept = activeGroups.find(d => d.id === project.department_id)
+        if (projectDept === undefined) return false
+        
+        // Filter by selected year if provided
+        if (selectedYear) {
+          const projectDate = new Date(project.created_at || project.start_at)
+          const projectYear = projectDate.getFullYear()
+          return projectYear === selectedYear
+        }
+        
+        return true
+      })
+      
+      console.log('📊 [ProjectsOverTimeChart] Department projects filtered:', {
+        total: filteredProjects.length,
+        selectedYear,
+        byDepartment: filteredProjects.reduce((acc, p) => {
+          const dept = activeGroups.find(d => d.id === p.department_id)
+          const deptName = dept?.name || 'Unknown'
+          acc[deptName] = (acc[deptName] || 0) + 1
+          return acc
+        }, {} as Record<string, number>)
+      })
+    } else if (groupingMode === 'institutions') {
+      // Filter projects by institution_id and selected year
+      filteredProjects = data.filter(project => {
+        const projectInst = activeGroups.find(i => i.id === project.institution_id)
+        if (projectInst === undefined) return false
+        
+        // Filter by selected year if provided
+        if (selectedYear) {
+          const projectDate = new Date(project.created_at || project.start_at)
+          const projectYear = projectDate.getFullYear()
+          return projectYear === selectedYear
+        }
+        
+        return true
+      })
+      
+      console.log('📊 [ProjectsOverTimeChart] Institution projects filtered:', {
+        total: filteredProjects.length,
+        selectedYear,
+        byInstitution: filteredProjects.reduce((acc, p) => {
+          const inst = activeGroups.find(i => i.id === p.institution_id)
+          const instName = inst?.name || 'Unknown'
+          acc[instName] = (acc[instName] || 0) + 1
+          return acc
+        }, {} as Record<string, number>)
+      })
+    } else {
+      filteredProjects = []
+    }
 
     // Create a map to store daily counts
     const dailyCounts = new Map<string, any>()
 
-    // Count projects by date and department
-    institutionalProjects.forEach(project => {
+    // Count projects by date and group (department or institution)
+    filteredProjects.forEach(project => {
       const createdDate = new Date(project.created_at || project.start_at)
       const dateKey = createdDate.toISOString().split('T')[0] // YYYY-MM-DD format
       
       if (!dailyCounts.has(dateKey)) {
         const dateData: any = { date: dateKey }
-        institutionalDepartments.forEach(dept => {
-          const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
-          dateData[deptKey] = 0
+        activeGroups.forEach(group => {
+          const groupKey = group.name.toLowerCase().replace(/\s+/g, '_')
+          dateData[groupKey] = 0
         })
         dailyCounts.set(dateKey, dateData)
       }
 
-      const dept = institutionalDepartments.find(d => d.id === project.department_id)
-      if (dept) {
-        const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
+      // Find the group based on grouping mode
+      let group: any
+      if (groupingMode === 'departments') {
+        group = activeGroups.find(d => d.id === project.department_id)
+      } else if (groupingMode === 'institutions') {
+        group = activeGroups.find(i => i.id === project.institution_id)
+      }
+      
+      if (group) {
+        const groupKey = group.name.toLowerCase().replace(/\s+/g, '_')
         const dateData = dailyCounts.get(dateKey)!
-        dateData[deptKey] += 1
+        dateData[groupKey] += 1
       }
     })
 
@@ -164,6 +275,7 @@ export function ProjectsOverTimeChart({
     )
     
     console.log('📊 [ProjectsOverTimeChart] Chart data transformed:', {
+      groupingMode,
       totalDays: sortedData.length,
       dateRange: sortedData.length > 0 ? {
         start: sortedData[0]?.date,
@@ -173,20 +285,44 @@ export function ProjectsOverTimeChart({
     })
     
     return sortedData
-  }, [data, institutionalDepartments])
+  }, [data, activeGroups, groupingMode, selectedYear])
 
-  // Filter data based on time range - fixed timezone issue
+  // Filter data based on time range
   const filteredData = React.useMemo(() => {
     if (chartData.length === 0) return []
     
-    // Get today's date in local timezone (not UTC)
-    const today = new Date()
-    const year = today.getFullYear()
-    const month = String(today.getMonth() + 1).padStart(2, '0')
-    const day = String(today.getDate()).padStart(2, '0')
-    const todayStr = `${year}-${month}-${day}` // YYYY-MM-DD in local timezone
+    // Define date range based on selected year
+    let endDate: Date
+    let endDateStr: string
     
-    // Calculate days to subtract based on time range
+    if (selectedYear) {
+      // If a specific year is selected, limit to that year
+      const today = new Date()
+      const isCurrentYear = selectedYear === today.getFullYear()
+      
+      if (isCurrentYear) {
+        // For current year, use today as end date
+        endDate = today
+      } else {
+        // For past/future years, use December 31st
+        endDate = new Date(selectedYear, 11, 31) // Month 11 = December
+      }
+      
+      const year = endDate.getFullYear()
+      const month = String(endDate.getMonth() + 1).padStart(2, '0')
+      const day = String(endDate.getDate()).padStart(2, '0')
+      endDateStr = `${year}-${month}-${day}`
+    } else {
+      // If no year selected, use today
+      const today = new Date()
+      const year = today.getFullYear()
+      const month = String(today.getMonth() + 1).padStart(2, '0')
+      const day = String(today.getDate()).padStart(2, '0')
+      endDateStr = `${year}-${month}-${day}`
+      endDate = today
+    }
+    
+    // Calculate start date based on time range
     const daysMap: Record<string, number> = {
       "7d": 7,
       "30d": 30,
@@ -196,27 +332,36 @@ export function ProjectsOverTimeChart({
     }
     const daysToSubtract = daysMap[timeRange] || 90
     
-    // Start date (X days ago from today) - in local timezone
-    const startDate = new Date(today)
+    // Start date (X days ago from end date)
+    const startDate = new Date(endDate)
     startDate.setDate(startDate.getDate() - daysToSubtract)
+    
+    // If selected year is set, ensure start date is not before January 1st of that year
+    if (selectedYear) {
+      const yearStart = new Date(selectedYear, 0, 1) // Month 0 = January
+      if (startDate < yearStart) {
+        startDate.setTime(yearStart.getTime())
+      }
+    }
+    
     const startYear = startDate.getFullYear()
     const startMonth = String(startDate.getMonth() + 1).padStart(2, '0')
     const startDay = String(startDate.getDate()).padStart(2, '0')
-    const startDateStr = `${startYear}-${startMonth}-${startDay}` // YYYY-MM-DD in local timezone
+    const startDateStr = `${startYear}-${startMonth}-${startDay}`
     
     console.log('📊 [ProjectsOverTimeChart] Time range setup:', {
       timeRange,
-      todayRaw: today.toString(),
-      todayStr,
+      selectedYear,
+      endDateStr,
       startDateStr,
       chartDataDates: chartData.map(d => d.date)
     })
     
     // Filter existing data within time range - using string comparison
     const filtered = chartData.filter(item => {
-      const inRange = item.date >= startDateStr && item.date <= todayStr
+      const inRange = item.date >= startDateStr && item.date <= endDateStr
       if (!inRange) {
-        console.log(`📊 Excluding ${item.date} (not in range ${startDateStr} to ${todayStr})`)
+        console.log(`📊 Excluding ${item.date} (not in range ${startDateStr} to ${endDateStr})`)
       }
       return inRange
     })
@@ -232,7 +377,7 @@ export function ProjectsOverTimeChart({
     const allDays: any[] = []
     const currentDate = new Date(startDate)
     
-    while (currentDate <= today) {
+    while (currentDate <= endDate) {
       const y = currentDate.getFullYear()
       const m = String(currentDate.getMonth() + 1).padStart(2, '0')
       const d = String(currentDate.getDate()).padStart(2, '0')
@@ -242,8 +387,8 @@ export function ProjectsOverTimeChart({
         allDays.push(dataMap.get(dateKey))
       } else {
         const emptyDay: any = { date: dateKey }
-        institutionalDepartments.forEach(dept => {
-          emptyDay[dept.name.toLowerCase().replace(/\s+/g, '_')] = 0
+        activeGroups.forEach(group => {
+          emptyDay[group.name.toLowerCase().replace(/\s+/g, '_')] = 0
         })
         allDays.push(emptyDay)
       }
@@ -252,8 +397,8 @@ export function ProjectsOverTimeChart({
     }
     
     const daysWithData = allDays.filter(d => {
-      return institutionalDepartments.some(dept => {
-        const key = dept.name.toLowerCase().replace(/\s+/g, '_')
+      return activeGroups.some(group => {
+        const key = group.name.toLowerCase().replace(/\s+/g, '_')
         return d[key] > 0
       })
     })
@@ -266,21 +411,21 @@ export function ProjectsOverTimeChart({
     })
     
     return allDays
-  }, [chartData, timeRange, institutionalDepartments])
+  }, [chartData, timeRange, activeGroups, selectedYear])
 
-  // Calculate total by department - simplified and direct
-  const totalByDepartment = React.useMemo(() => {
+  // Calculate total by group (department or institution)
+  const totalByGroup = React.useMemo(() => {
     const totals: Record<string, number> = {}
     
-    // Initialize all departments with 0
-    institutionalDepartments.forEach(dept => {
-      totals[dept.name.toLowerCase().replace(/\s+/g, '_')] = 0
+    // Initialize all groups with 0
+    activeGroups.forEach(group => {
+      totals[group.name.toLowerCase().replace(/\s+/g, '_')] = 0
     })
     
     // Sum all values from filteredData
     filteredData.forEach(day => {
-      institutionalDepartments.forEach(dept => {
-        const key = dept.name.toLowerCase().replace(/\s+/g, '_')
+      activeGroups.forEach(group => {
+        const key = group.name.toLowerCase().replace(/\s+/g, '_')
         totals[key] += (day[key] || 0)
       })
     })
@@ -288,6 +433,7 @@ export function ProjectsOverTimeChart({
     const totalProjects = Object.values(totals).reduce((sum, val) => sum + val, 0)
     
     console.log('📊 [ProjectsOverTimeChart] Totals calculated:', {
+      groupingMode,
       timeRange,
       totals,
       totalProjects,
@@ -296,25 +442,25 @@ export function ProjectsOverTimeChart({
     })
     
     return totals
-  }, [filteredData, institutionalDepartments, timeRange])
+  }, [filteredData, activeGroups, timeRange])
 
-  const topDepartment = React.useMemo(() => {
-    const entries = Object.entries(totalByDepartment)
+  const topGroup = React.useMemo(() => {
+    const entries = Object.entries(totalByGroup)
     if (entries.length === 0) return { name: '', total: 0 }
     
-    const top = entries.reduce((max, [dept, total]) => 
-      total > max.total ? { dept, total } : max
-    , { dept: '', total: 0 })
+    const top = entries.reduce((max, [group, total]) => 
+      total > max.total ? { group, total } : max
+    , { group: '', total: 0 })
     
     return {
-      name: chartConfig[top.dept as keyof typeof chartConfig]?.label || top.dept,
+      name: chartConfig[top.group as keyof typeof chartConfig]?.label || top.group,
       total: top.total
     }
-  }, [totalByDepartment, chartConfig])
+  }, [totalByGroup, chartConfig])
 
   const totalProjects = React.useMemo(() => {
-    return Object.values(totalByDepartment).reduce((sum, val) => sum + val, 0)
-  }, [totalByDepartment])
+    return Object.values(totalByGroup).reduce((sum, val) => sum + val, 0)
+  }, [totalByGroup])
 
   // Helper function to get time range label
   const getTimeRangeLabel = (range: string) => {
@@ -349,7 +495,7 @@ export function ProjectsOverTimeChart({
     )
   }
 
-  if (institutionalDepartments.length === 0 || filteredData.length === 0) {
+  if (activeGroups.length === 0 || filteredData.length === 0) {
     return (
       <Card className="h-full flex flex-col">
         <CardHeader>
@@ -436,18 +582,18 @@ export function ProjectsOverTimeChart({
           {chartType === "area" ? (
             <AreaChart data={filteredData}>
               <defs>
-                {institutionalDepartments.map((dept) => {
-                  const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
+                {activeGroups.map((group) => {
+                  const groupKey = group.name.toLowerCase().replace(/\s+/g, '_')
                   return (
-                    <linearGradient key={dept.id} id={`fill${deptKey}`} x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient key={group.id} id={`fill${groupKey}`} x1="0" y1="0" x2="0" y2="1">
                       <stop
                         offset="5%"
-                        stopColor={chartConfig[deptKey]?.color}
+                        stopColor={chartConfig[groupKey]?.color}
                         stopOpacity={0.8}
                       />
                       <stop
                         offset="95%"
-                        stopColor={chartConfig[deptKey]?.color}
+                        stopColor={chartConfig[groupKey]?.color}
                         stopOpacity={0.1}
                       />
                     </linearGradient>
@@ -502,16 +648,16 @@ export function ProjectsOverTimeChart({
                   />
                 }
               />
-              {institutionalDepartments.map((dept) => {
-                const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
+              {activeGroups.map((group) => {
+                const groupKey = group.name.toLowerCase().replace(/\s+/g, '_')
                 
                 return (
                   <Area
-                    key={dept.id}
-                    dataKey={deptKey}
+                    key={group.id}
+                    dataKey={groupKey}
                     type="natural"
-                    fill={`url(#fill${deptKey})`}
-                    stroke={chartConfig[deptKey]?.color}
+                    fill={`url(#fill${groupKey})`}
+                    stroke={chartConfig[groupKey]?.color}
                     strokeWidth={2}
                     stackId="a"
                   />
@@ -569,16 +715,16 @@ export function ProjectsOverTimeChart({
                 }
               />
               <ChartLegend content={<ChartLegendContent />} />
-              {institutionalDepartments.map((dept, index) => {
-                const deptKey = dept.name.toLowerCase().replace(/\s+/g, '_')
-                const isLast = index === institutionalDepartments.length - 1
+              {activeGroups.map((group, index) => {
+                const groupKey = group.name.toLowerCase().replace(/\s+/g, '_')
+                const isLast = index === activeGroups.length - 1
                 
                 return (
                   <Bar
-                    key={dept.id}
-                    dataKey={deptKey}
+                    key={group.id}
+                    dataKey={groupKey}
                     stackId="a"
-                    fill={chartConfig[deptKey]?.color}
+                    fill={chartConfig[groupKey]?.color}
                     radius={isLast ? [4, 4, 0, 0] : [0, 0, 0, 0]}
                   />
                 )
@@ -593,7 +739,7 @@ export function ProjectsOverTimeChart({
           {totalProjects} {t.charts.projects.toLowerCase()} {getTimeRangeLabel(timeRange)}
         </div>
         <div className="text-muted-foreground">
-          {t.charts.top}: <span className="font-medium text-foreground">{topDepartment.name}</span> ({topDepartment.total} {t.charts.projects.toLowerCase()})
+          {t.charts.top}: <span className="font-medium text-foreground">{topGroup.name}</span> ({topGroup.total} {t.charts.projects.toLowerCase()})
         </div>
       </CardFooter>
     </Card>
