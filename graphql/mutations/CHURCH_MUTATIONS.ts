@@ -4,6 +4,7 @@ export const CREATE_CHURCH_MUTATION = gql`
   mutation CreateChurch(
     $institution_id: String!
     $name: String!
+    $leader_id: String!
     $email: String!
     $phone: String!
     $contactName: String!
@@ -16,6 +17,7 @@ export const CREATE_CHURCH_MUTATION = gql`
       data: {
         institution_id: $institution_id
         name: $name
+        leader_id: $leader_id
         type: $type
         contact: {
           email: $email
@@ -33,6 +35,11 @@ export const CREATE_CHURCH_MUTATION = gql`
       region_id
       type
       created_at
+      leader {
+        id
+        name
+        email
+      }
     }
   }
 `;
@@ -41,6 +48,7 @@ export const UPDATE_CHURCH_MUTATION = gql`
   mutation UpdateChurch(
     $id: String!
     $name: String
+    $leader_id: String
     $email: String
     $phone: String
     $contactName: String
@@ -53,6 +61,7 @@ export const UPDATE_CHURCH_MUTATION = gql`
       id: $id
       data: {
         name: $name
+        leader_id: $leader_id
         type: $type
         contact: {
           email: $email
@@ -70,6 +79,11 @@ export const UPDATE_CHURCH_MUTATION = gql`
       region_id
       type
       updated_at
+      leader {
+        id
+        name
+        email
+      }
     }
   }
 `;

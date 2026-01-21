@@ -1,22 +1,10 @@
 import { gql } from '@apollo/client';
+import { USER_MODEL_FRAGMENT } from '../fragments/INSTITUTIONS_FRAGMENTS';
 
 export const GET_USER_QUERY = gql`
   query User($id: String!) {
     user(id: $id) {
-      id
-      institution_id
-      church_id
-      name
-      email
-      language_preference
-      contact_id
-      created_at
-      updated_at
-      created_by
-      updated_by
-      is_deleted
-      deleted_at
-      deleted_by
+      ...UserModelFragment
       contact {
         id
         name
@@ -35,57 +23,18 @@ export const GET_USER_QUERY = gql`
         created_at
         updated_at
       }
-      institution {
-        id
-        name
-        denomination
-        description
-        language_preference
-        contact_id
-        created_at
-        updated_at
-        created_by
-        updated_by
-      }
-      church {
-        id
-        type
-        institution_id
-        name
-        region_id
-        contact_id
-        created_at
-        updated_at
-        created_by
-        updated_by
-        is_deleted
-        deleted_at
-        deleted_by
-      }
     }
   }
+  ${USER_MODEL_FRAGMENT}
 `;
 
 export const GET_ALL_USERS_QUERY = gql`
   query Users($institution_id: String) {
     users(institution_id: $institution_id) {
-        id
-        institution_id
-        password
-        church_id
-        name
-        email
-        language_preference
-        contact_id
-        created_at
-        updated_at
-        created_by
-        updated_by
-        is_deleted
-        deleted_at
-        deleted_by
+      ...UserModelFragment
     }
   }
+  ${USER_MODEL_FRAGMENT}
 `;
 
 

@@ -30,19 +30,19 @@ import { useChartColors } from "@/lib/chart-colors"
 import { departmentTranslations } from "@/lib/translations/departments"
 import { TrendingUp, Activity, BarChart3 } from "lucide-react"
 
-interface DepartmentProjectOverTimeChartProps {
+interface DepartmentActivityChartProps {
   loading?: boolean
   departments?: any[]
   projects?: any[]
   selectedYear?: number
 }
 
-export function DepartmentProjectOverTimeChart({ 
+export function DepartmentActivityChart({ 
   loading, 
   departments = [], 
   projects = [],
   selectedYear = new Date().getFullYear() 
-}: DepartmentProjectOverTimeChartProps) {
+}: DepartmentActivityChartProps) {
   const [timeRange, setTimeRange] = React.useState("90d")
   const [chartType, setChartType] = React.useState<"area" | "bar">("area")
   const { i18n } = useTranslation()
@@ -57,7 +57,7 @@ export function DepartmentProjectOverTimeChart({
       dept && dept.id && dept.name && !dept.is_deleted && dept.church_id
     )
     
-    console.log('📊 [DepartmentProjectOverTimeChart] Church Departments:', {
+    console.log('📊 [DepartmentActivityChart] Church Departments:', {
       total: departments.length,
       filtered: filtered.length,
       departmentsList: filtered.map(d => ({ 
@@ -80,7 +80,7 @@ export function DepartmentProjectOverTimeChart({
       p.church_department_id && churchDeptIds.has(p.church_department_id)
     )
     
-    console.log('📊 [DepartmentProjectOverTimeChart] Projects filtered:', {
+    console.log('📊 [DepartmentActivityChart] Projects filtered:', {
       totalProjects: projects.length,
       churchDepartmentProjects: filtered.length,
       byDepartment: filtered.reduce((acc: any, p: any) => {
@@ -130,7 +130,7 @@ export function DepartmentProjectOverTimeChart({
       new Date(a.date).getTime() - new Date(b.date).getTime()
     )
     
-    console.log('📊 [DepartmentProjectOverTimeChart] Chart data:', {
+    console.log('📊 [DepartmentActivityChart] Chart data:', {
       totalDays: sortedData.length,
       dateRange: sortedData.length > 0 ? {
         start: sortedData[0]?.date,
@@ -234,7 +234,7 @@ export function DepartmentProjectOverTimeChart({
       currentDate.setDate(currentDate.getDate() + 1)
     }
     
-    console.log('📊 [DepartmentProjectOverTimeChart] Filtered data:', {
+    console.log('📊 [DepartmentActivityChart] Filtered data:', {
       timeRange,
       totalDays: allDays.length,
       daysWithProjects: allDays.filter(d => 
@@ -286,13 +286,14 @@ export function DepartmentProjectOverTimeChart({
 
   // Helper para obter label do intervalo de tempo
   const getTimeRangeLabel = (range: string) => {
+    const timePeriodsKey = t.charts?.projects_over_time?.time_periods
     switch (range) {
-      case "7d": return "last 7 days"
-      case "30d": return "last 30 days"
-      case "90d": return "last 3 months"
-      case "180d": return "last 6 months"
-      case "365d": return "last 12 months"
-      default: return "last 3 months"
+      case "7d": return (timePeriodsKey?.last_7_days || "last 7 days").toLowerCase()
+      case "30d": return (timePeriodsKey?.last_30_days || "last 30 days").toLowerCase()
+      case "90d": return (timePeriodsKey?.last_3_months || "last 3 months").toLowerCase()
+      case "180d": return (timePeriodsKey?.last_6_months || "last 6 months").toLowerCase()
+      case "365d": return (timePeriodsKey?.last_12_months || "last 12 months").toLowerCase()
+      default: return (timePeriodsKey?.last_3_months || "last 3 months").toLowerCase()
     }
   }
 
@@ -316,12 +317,12 @@ export function DepartmentProjectOverTimeChart({
         <CardHeader className="border-b py-5">
           <CardTitle>{t.charts?.projects_over_time?.title || "Projects Created Over Time"}</CardTitle>
           <CardDescription>
-            {t.charts?.projects_over_time?.description || "Project creation timeline by church departments"}
+            {t.charts?.projects_over_time?.description || "Visualization of project creation by department over time"}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex items-center justify-center">
           <div className="text-center text-muted-foreground text-sm">
-            No project data available
+            {t.charts?.projects_over_time?.no_data || "No project data available"}
           </div>
         </CardContent>
       </Card>
@@ -334,7 +335,7 @@ export function DepartmentProjectOverTimeChart({
         <div className="grid flex-1 gap-1">
           <CardTitle>{t.charts?.projects_over_time?.title || "Projects Created Over Time"}</CardTitle>
           <CardDescription>
-            {t.charts?.projects_over_time?.description || `Project creation timeline by church departments - ${getTimeRangeLabel(timeRange)}`}
+            {t.charts?.projects_over_time?.description || "Visualization of project creation by department over time"}
           </CardDescription>
         </div>
         <div className="flex items-center gap-2">
@@ -345,6 +346,7 @@ export function DepartmentProjectOverTimeChart({
               size="sm"
               onClick={() => setChartType("area")}
               className="h-7 px-2"
+              title={t.charts?.projects_over_time?.chart_type_area || "Area Chart"}
             >
               <Activity className="w-3 h-3" />
             </Button>
@@ -353,6 +355,7 @@ export function DepartmentProjectOverTimeChart({
               size="sm"
               onClick={() => setChartType("bar")}
               className="h-7 px-2"
+              title={t.charts?.projects_over_time?.chart_type_bar || "Bar Chart"}
             >
               <BarChart3 className="w-3 h-3" />
             </Button>
@@ -363,14 +366,24 @@ export function DepartmentProjectOverTimeChart({
               className="w-[160px] rounded-lg sm:ml-auto"
               aria-label="Select time range"
             >
-              <SelectValue placeholder="Last 3 months" />
+              <SelectValue placeholder={t.charts?.projects_over_time?.time_periods?.last_3_months || "Last 3 months"} />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
-              <SelectItem value="7d" className="rounded-lg">Last 7 days</SelectItem>
-              <SelectItem value="30d" className="rounded-lg">Last 30 days</SelectItem>
-              <SelectItem value="90d" className="rounded-lg">Last 3 months</SelectItem>
-              <SelectItem value="180d" className="rounded-lg">Last 6 months</SelectItem>
-              <SelectItem value="365d" className="rounded-lg">Last 12 months</SelectItem>
+              <SelectItem value="7d" className="rounded-lg">
+                {t.charts?.projects_over_time?.time_periods?.last_7_days || "Last 7 days"}
+              </SelectItem>
+              <SelectItem value="30d" className="rounded-lg">
+                {t.charts?.projects_over_time?.time_periods?.last_30_days || "Last 30 days"}
+              </SelectItem>
+              <SelectItem value="90d" className="rounded-lg">
+                {t.charts?.projects_over_time?.time_periods?.last_3_months || "Last 3 months"}
+              </SelectItem>
+              <SelectItem value="180d" className="rounded-lg">
+                {t.charts?.projects_over_time?.time_periods?.last_6_months || "Last 6 months"}
+              </SelectItem>
+              <SelectItem value="365d" className="rounded-lg">
+                {t.charts?.projects_over_time?.time_periods?.last_12_months || "Last 12 months"}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -418,12 +431,10 @@ export function DepartmentProjectOverTimeChart({
                 tickLine={false}
                 axisLine={false}
                 tickMargin={10}
-                allowDecimals={false}
                 tickFormatter={(value) => {
-                  const intValue = Math.floor(value)
-                  if (intValue === 0) return "0"
-                  if (intValue >= 1000) return `${Math.floor(intValue / 1000)}k`
-                  return intValue.toString()
+                  if (value === 0) return "0"
+                  if (value >= 1000) return `${(value / 1000).toFixed(1)}k`
+                  return value.toString()
                 }}
               />
               <ChartTooltip
@@ -483,12 +494,10 @@ export function DepartmentProjectOverTimeChart({
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                allowDecimals={false}
                 tickFormatter={(value) => {
-                  const intValue = Math.floor(value)
-                  if (intValue === 0) return "0"
-                  if (intValue >= 1000) return `${Math.floor(intValue / 1000)}k`
-                  return intValue.toString()
+                  if (value === 0) return "0"
+                  if (value >= 1000) return `${(value / 1000).toFixed(1)}k`
+                  return value.toString()
                 }}
               />
               <ChartTooltip
@@ -525,10 +534,10 @@ export function DepartmentProjectOverTimeChart({
       <CardFooter className="flex-col items-start gap-1 text-xs pt-3 border-t">
         <div className="flex items-center gap-1.5 font-medium">
           <TrendingUp className="h-3 w-3" />
-          {totalProjects} {t.stats?.projects || "projects"} {getTimeRangeLabel(timeRange)}
+          {totalProjects} {t.charts?.projects_over_time?.footer?.total_projects || t.stats?.projects || "projects"} {t.charts?.projects_over_time?.footer?.in_period || "in"} {getTimeRangeLabel(timeRange)}
         </div>
         <div className="text-muted-foreground">
-          Top: <span className="font-medium text-foreground">{topDepartment.name}</span> ({topDepartment.total} {t.stats?.projects || "projects"})
+          {t.charts?.projects_over_time?.footer?.top_department || "Top"}: <span className="font-medium text-foreground">{topDepartment.name}</span> ({topDepartment.total} {t.charts?.projects_over_time?.footer?.total_projects || t.stats?.projects || "projects"})
         </div>
       </CardFooter>
     </Card>

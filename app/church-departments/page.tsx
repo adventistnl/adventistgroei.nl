@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { 
   Layers, 
@@ -29,7 +30,9 @@ import {
   MapPin,
   User,
   FileText,
-  CheckCircle2
+  CheckCircle2,
+  Eye,
+  Crown
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -45,12 +48,9 @@ import { useInstitution } from "@/contexts/institution-context"
 import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
 import { DepartmentsKPICards, KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
 import { DepartmentProjectOverTimeChart } from "@/components/institutions/charts/department-project-over-time-chart"
-import { DepartmentLeadersCard } from "@/components/charts/department-leaders-card"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { UseTable } from "@/components/ui/use-table"
 import { EntityInfoCard } from "@/components/shared/entity-info-card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Crown } from "lucide-react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -59,7 +59,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { Eye } from "lucide-react"
 
 import { CreateDepartment } from "@/types/CreateDepartment"
 import NotFound from "@/components/shared/not-found"
@@ -74,6 +73,9 @@ import { useDepartmentKPIs } from "@/hooks/use-department-kpis"
 import { GridContainer } from "@/components/shared/grid-container"
 import { useQuery } from "@apollo/client"
 import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
+import { DepartmentLeadersCard } from "@/components/modals/department/department-leaders-card"
+import { DepartmentProjectsCard } from "@/components/modals/department/department-projects-card"
+import { DepartmentLeaderInfoCard } from "@/components/modals/department/department-leader-info-card"
 
 
 /**
@@ -84,8 +86,11 @@ export default function ChurchDepartmentsPage() {
   const { currentInstitutionData, refetchInstitutionById } = useInstitution();
   const churches: ChurchData[] = currentInstitutionData?.churches || [];
   
+  // Interface estendida para incluir church_name
+  type ExtendedDepartmentData = DepartmentData & { church_name?: string };
+  
   // Extrair departamentos das igrejas e adicionar church_name
-  const departments: DepartmentData[] = churches.flatMap(church => 
+  const departments: ExtendedDepartmentData[] = churches.flatMap(church => 
     church.departments?.map(department => ({ 
       ...department, 
       church_name: church.name 
@@ -96,7 +101,8 @@ export default function ChurchDepartmentsPage() {
   const { 
     data: projectsData, 
     loading: projectsLoading, 
-    error: projectsError 
+    error: projectsError,
+    refetch: refetchProjects
   } = useQuery(GET_PROJECTS_QUERY, {
     variables: { institutionId: currentInstitutionData?.id },
     skip: !currentInstitutionData?.id
@@ -367,48 +373,58 @@ export default function ChurchDepartmentsPage() {
 
     const kpiCardsTranslations = (t.church_page as any)?.kpi_cards || {}
 
-    // Total de churches únicas que têm departamentos
-    const uniqueChurches = new Set(departments.map(d => d.church_id));
-    const totalChurches = uniqueChurches.size;
+    // Total de membros únicos em todos os departamentos de igreja
+    const uniqueMemberIds = new Set<string>()
+    departments.forEach(dept => {
+      dept.users?.forEach(user => {
+        if (!user.is_deleted) {
+          uniqueMemberIds.add(user.id)
+        }
+      })
+    })
+    const totalMembers = uniqueMemberIds.size
+
+    // Contar projetos reais da API (não usar KPI hook)
+    const churchProjects = projects.filter((p: any) => p.church_department_id)
+    const totalProjects = churchProjects.length
+    const openProjects = churchProjects.filter((p: any) => 
+      p.status !== 'CONCLUDED' && p.status !== 'EXPIRED'
+    ).length
+    const completedProjects = churchProjects.filter((p: any) => 
+      p.status === 'CONCLUDED'
+    ).length
 
     return [
       {
         id: "total_departments",
         title: kpiCardsTranslations.total_departments || "Church Departments",
-        value: kpis.totalDepartments,
+        value: departments.length,
         icon: Layers,
         subtitle: kpiCardsTranslations.total_departments_subtitle || "Total church departments"
       },
       {
-        id: "total_churches",
-        title: kpiCardsTranslations.total_churches || "Total Churches",
-        value: totalChurches,
-        icon: Home,
-        subtitle: kpiCardsTranslations.total_churches_subtitle || "Churches with departments"
+        id: "total_members",
+        title: kpiCardsTranslations.total_members || "Total Members",
+        value: totalMembers,
+        icon: Users,
+        subtitle: kpiCardsTranslations.total_members_subtitle || "Active department members"
       },
       {
         id: "total_projects",
         title: kpiCardsTranslations.total_projects || "Total Projects",
-        value: kpis.totalProjects,
+        value: totalProjects,
         icon: TrendingUp,
         subtitle: kpiCardsTranslations.total_projects_subtitle || "All registered projects"
       },
       {
-        id: "open_projects",
-        title: kpiCardsTranslations.open_projects || "Open Projects",
-        value: kpis.openProjects,
-        icon: FileText,
-        subtitle: kpiCardsTranslations.open_projects_subtitle || "Projects in progress"
-      },
-      {
         id: "completed_projects",
         title: kpiCardsTranslations.completed_projects || "Completed Projects",
-        value: kpis.completedProjects,
+        value: completedProjects,
         icon: CheckCircle2,
         subtitle: kpiCardsTranslations.completed_projects_subtitle || "Successfully completed"
       }
     ]
-  }, [kpis, departments, t]);
+  }, [departments, projects, t]);
 
   // Dados para gráficos (apenas nome e orçamento)
   const chartData = useMemo(() => {
@@ -456,9 +472,17 @@ export default function ChurchDepartmentsPage() {
     const refreshToast = toast.loading(t.common?.refreshing || "Refreshing...")
     
     try {
+      // Refetch institution data (departments, churches, users)
       await refetchInstitutionById()
+      
+      // Refetch projects data
+      if (refetchProjects) {
+        await refetchProjects()
+      }
+      
       toast.success(t.common?.data_refreshed || "Data refreshed", { duration: 2000 })
     } catch (error) {
+      console.error('Error refreshing data:', error)
       toast.error(t.common?.error_refreshing || "Error refreshing")
     } finally {
       toast.dismiss(refreshToast)
@@ -479,12 +503,16 @@ export default function ChurchDepartmentsPage() {
     if (department) {
       setSelectedDepartmentDetail(department);
       setViewMode('detail');
+      // Scroll suave para o topo da página
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
   
   const handleBackToList = () => {
     setViewMode('list');
     setSelectedDepartmentDetail(null);
+    // Scroll suave para o topo da página ao voltar para a lista
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   
   const handleEdit = (id: string) => {
@@ -707,31 +735,27 @@ export default function ChurchDepartmentsPage() {
   // Colunas da tabela de usuários (para detail view)
   const userColumns: ColumnDef<any>[] = [
     {
-      id: "avatar",
-      header: t.users?.table?.avatar || "Avatar",
-      cell: ({ row }) => {
-        const user = row.original
-        return (
-          <Avatar className="w-8 h-8">
-            <AvatarImage src="/placeholder-user.jpg" />
-            <AvatarFallback>
-              {user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || '??'}
-            </AvatarFallback>
-          </Avatar>
-        )
-      },
-    },
-    {
-      id: "name",
+      id: "user",
       accessorKey: "name",
-      header: t.users?.table?.name || "Name",
+      header: () => (
+        <div className="flex items-center gap-2">
+          <User className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-gray-900">{t.users?.table?.name || "User"}</span>
+        </div>
+      ),
       cell: ({ row }) => {
         const user = row.original
         return (
-          <div>
-            <div className="font-medium">{user.name}</div>
-            <div className="text-xs text-muted-foreground">
-              {user.email || '-'}
+          <div className="flex items-center gap-3">
+            <Avatar className="h-9 w-9 border">
+              <AvatarImage src="/placeholder-user.jpg" />
+              <AvatarFallback className="text-xs">
+                {user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || '??'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col min-w-0">
+              <span className="font-medium text-sm truncate">{user.name}</span>
+              <span className="text-xs text-muted-foreground truncate">{user.email || '-'}</span>
             </div>
           </div>
         )
@@ -765,34 +789,13 @@ export default function ChurchDepartmentsPage() {
         return (
           <div className="flex flex-wrap gap-1 justify-center">
             {user.user_roles?.map((role: any) => (
-              <Badge 
-                key={role.id} 
-                variant={role.role.key_code === 'ADMIN' ? 'default' : 'secondary'}
-                className="text-xs"
-              >
-                {role.role.key_code === 'ADMIN' && <Crown className="w-3 h-3 mr-1" />}
-                {role.role.name}
-              </Badge>
+              <StatusBadge
+                key={role.id}
+                label={role.role.name}
+                variant="default"
+                size="sm"
+              />
             )) || <span className="text-xs text-muted-foreground">{t.users?.table?.no_roles || "No roles"}</span>}
-          </div>
-        )
-      },
-    },
-    {
-      id: "gender",
-      header: () => (
-        <div className="text-center font-medium text-gray-900">
-          {t.users?.table?.gender || "Gender"}
-        </div>
-      ),
-      cell: ({ row }) => {
-        const user = row.original;
-        const genderLabel = user.gender ? `${user.gender.charAt(0).toUpperCase()}${user.gender.slice(1).toLowerCase()}` : 'N/A';
-        return (
-          <div className="text-center">
-            <Badge variant="outline" className="text-xs">
-              {genderLabel}
-            </Badge>
           </div>
         )
       },
@@ -813,6 +816,7 @@ export default function ChurchDepartmentsPage() {
               label={isActive ? t.users?.table?.active || "Active" : t.users?.table?.inactive || "Inactive"}
               variant={isActive ? "success" : "error"}
               showDot
+              size="sm"
             />
           </div>
         )
@@ -821,6 +825,34 @@ export default function ChurchDepartmentsPage() {
         if (value === "all") return true
         const isActive = !row.original.is_deleted
         return value === "true" ? isActive : !isActive
+      },
+    },
+    {
+      id: "actions",
+      header: () => (
+        <div className="flex items-center justify-center gap-2">
+          <span className="font-medium text-gray-900">{t.labels?.actions || "Actions"}</span>
+        </div>
+      ),
+      cell: ({ row }) => {
+        const user = row.original
+        return (
+          <div className="flex justify-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleViewContact(user.id)}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  {t.labels?.viewContact || "View Contact"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )
       },
     },
   ]
@@ -941,13 +973,6 @@ export default function ChurchDepartmentsPage() {
                   subtitle: kpiCardsTranslations.total_projects_subtitle || "All registered projects",
                 },
                 {
-                  id: "open_projects",
-                  title: kpiCardsTranslations.open_projects || "Open Projects",
-                  value: openProjectsCount,
-                  icon: Calendar,
-                  subtitle: kpiCardsTranslations.open_projects_subtitle || "Projects in progress",
-                },
-                {
                   id: "completed_projects",
                   title: kpiCardsTranslations.completed_projects || "Completed Projects",
                   value: completedProjectsCount,
@@ -962,10 +987,11 @@ export default function ChurchDepartmentsPage() {
                   name={selectedDepartmentDetail.name}
                   description={selectedDepartmentDetail.description || t.detail?.info_card?.no_description || "No description available"}
                   icon={Layers}
+                  invertTheme={true}
                   badges={[
                     {
                       label: churches.find(c => c.id === selectedDepartmentDetail.church_id)?.name || t.labels?.institutional || "Institutional",
-                      variant: "outline",
+                      variant: "default",
                       className: "text-xs"
                     },
                     {
@@ -1006,12 +1032,45 @@ export default function ChurchDepartmentsPage() {
             })()}
           </>
         ) : (
-            <KPICards
-              data={kpiCardsData}
-              isLoading={isLoading}
-              minCardsForCarousel={2}
-              showCarousel={true}
-            />
+            (() => {
+              const now = new Date()
+              const startOfYear = new Date(now.getFullYear(), 0, 1)
+              const totalDays = 365 + (now.getFullYear() % 4 === 0 ? 1 : 0)
+              const daysPassed = Math.floor((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24)) + 1
+              const percentage = Math.round((daysPassed / totalDays) * 100)
+              
+              const YearProgressCard = (
+                <EntityInfoCard
+                  headerTitle={`Year progress  - ${now.getFullYear()}`}
+                  name={`${daysPassed} / ${totalDays} days`}
+                  description={`${percentage}%`}
+                  icon={Calendar}
+                  invertTheme={true}
+                  badges={[
+                    {
+                      label: `Day ${daysPassed}/${totalDays}`,
+                      variant: "default",
+                      className: "text-xs font-medium"
+                    },
+                    {
+                      label: `Q${Math.ceil((now.getMonth() + 1) / 3)} ${now.getFullYear()}`,
+                      variant: "default",
+                      className: "text-xs "
+                    }
+                  ]}
+                />
+              )
+              
+              return (
+                <KPICards
+                  data={kpiCardsData}
+                  isLoading={isLoading}
+                  minCardsForCarousel={2}
+                  showCarousel={true}
+                  customFirstCard={YearProgressCard}
+                />
+              )
+            })()
         )}
 
         <Separator />
@@ -1024,24 +1083,74 @@ export default function ChurchDepartmentsPage() {
                     component: (
                       <DepartmentProjectOverTimeChart 
                         loading={isLoading || projectsLoading} 
-                        departments={departments}
-                        projects={projects}
+                        departments={viewMode === 'detail' && selectedDepartmentDetail 
+                          ? [selectedDepartmentDetail] 
+                          : departments
+                        }
+                        projects={viewMode === 'detail' && selectedDepartmentDetail
+                          ? projects.filter((p: any) => p.church_department_id === selectedDepartmentDetail.id)
+                          : projects
+                        }
                         selectedYear={new Date().getFullYear()}
                       />
                     ),
-                  colSpan: "col-span-12 lg:col-span-8",
+                  colSpan: viewMode === 'detail' ? "col-span-12 lg:col-span-7" : "col-span-12 lg:col-span-8",
                 },
-                {
-                  id: "DepartmentLeadersCard",
+                ...(viewMode === 'detail' && selectedDepartmentDetail ? [
+                  {
+                    id: "DepartmentInfoAndProjects",
+                    component: (
+                      <div className="flex flex-col gap-4 h-[calc(100vh-24rem)] min-h-[600px]">
+                        <div className="h-[20%] min-h-[80px]">
+                          <DepartmentLeaderInfoCard
+                            department={{
+                              id: selectedDepartmentDetail.id,
+                              name: selectedDepartmentDetail.name,
+                              leader_id: selectedDepartmentDetail.leader_id
+                            }}
+                            users={(currentInstitutionData?.users || []).filter(user => !user.is_deleted).map(u => ({
+                              id: u.id,
+                              name: u.name,
+                              email: u.email,
+                              language_preference: u.language_preference || undefined
+                            }))}
+                            loading={isLoading}
+                            showHeader={false}
+                          />
+                        </div>
+                        <div className="flex-1 h-[80%] min-h-[420px]">
+                          <DepartmentProjectsCard
+                            projects={projects as any}
+                            departmentId={selectedDepartmentDetail.id}
+                            departmentName={selectedDepartmentDetail.name}
+                            loading={projectsLoading}
+                          />
+                        </div>
+                      </div>
+                    ),
+                    colSpan: "col-span-12 lg:col-span-5",
+                  }
+                ] : [
+                  {
+                    id: "DepartmentLeadersCard",
                     component: (
                       <DepartmentLeadersCard 
-                        institutionId={currentInstitutionData?.id} 
-                        loading={isLoading}
+                        users={(currentInstitutionData?.users || []).filter(user => !user.is_deleted) as any}
+                        departments={departments.map(d => ({
+                          id: d.id,
+                          name: d.name,
+                          church_id: d.church_id,
+                          church_name: d.church_name,
+                          leader_id: d.leader_id
+                        })) as any}
                         departmentType="church"
+                        departmentName={t.page?.title || "Church Departments"}
+                        loading={isLoading}
                       />
                     ),
-                  colSpan: "col-span-12 lg:col-span-4",
-                },
+                    colSpan: "col-span-12 lg:col-span-4",
+                  }
+                ])
               ]}
             gap="lg"
           />

@@ -9,6 +9,13 @@ import { ChurchType } from "./globalTypes";
 // GraphQL mutation operation: UpdateChurch
 // ====================================================
 
+export interface UpdateChurch_updateChurch_leader {
+  __typename: "UserModel";
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface UpdateChurch_updateChurch {
   __typename: "ChurchModel";
   id: string;
@@ -17,6 +24,7 @@ export interface UpdateChurch_updateChurch {
   region_id: string | null;
   type: ChurchType | null;
   updated_at: any;
+  leader: UpdateChurch_updateChurch_leader | null;
 }
 
 export interface UpdateChurch {
@@ -26,6 +34,7 @@ export interface UpdateChurch {
 export interface UpdateChurchVariables {
   id: string;
   name?: string | null;
+  leader_id?: string | null;
   email?: string | null;
   phone?: string | null;
   contactName?: string | null;

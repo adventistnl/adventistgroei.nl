@@ -67,13 +67,16 @@ export const departmentTranslations = {
       church: "Church", 
       description: "Description",
       annual_budget: "Annual Budget",
+      leader: "Department Leader",
       contact_name: "Contact Name",
       contact_email: "Contact Email",
       contact_phone: "Phone",
       city: "City",
       is_institution_department: "Institutional Department",
       search_church: "Search church...",
-      no_church_found: "No church found."
+      no_church_found: "No church found.",
+      search_leader: "Search leader...",
+      no_leader_found: "No users found."
     },
     
     // Placeholders
@@ -82,6 +85,7 @@ export const departmentTranslations = {
       church: "Select church",
       description: "Describe the department purpose and activities", 
       annual_budget: "Enter annual budget",
+      leader: "Select department leader",
       contact_name: "Enter contact name",
       contact_email: "contact@example.com",
       contact_phone: "+31 123 456 789",
@@ -105,6 +109,7 @@ export const departmentTranslations = {
       name: "Name",
       description: "Description",
       church: "Church",
+      leader: "Leader",
       email: "Email",
       phone: "Phone"
     },
@@ -144,6 +149,7 @@ export const departmentTranslations = {
       name_required: "Department name is required",
       name_min_length: "Department name must be at least 2 characters",
       church_required: "Church is required for church departments",
+      leader_required: "Department leader is required",
       description_required: "Description is required",
       description_min_length: "Description must be at least 10 characters",
       contact_name_required: "Contact name is required",
@@ -195,20 +201,24 @@ export const departmentTranslations = {
     
     // Charts
     charts: {
-      activity_overview: {
+      projects_over_time: {
         title: "Department Activity Overview",
-        description: "Activity metrics based on real budget allocation and active users data",
+        description: "Visualization of project creation by department over time",
+        chart_type_area: "Area Chart",
+        chart_type_bar: "Bar Chart",
         time_periods: {
-          last_12_months: "Last 12 months",
+          last_7_days: "Last 7 days",
+          last_30_days: "Last 30 days",
+          last_3_months: "Last 3 months",
           last_6_months: "Last 6 months",
-          last_3_months: "Last 3 months"
+          last_12_months: "Last 12 months"
         },
-        categories: {
-          finance: "Finance",
-          education: "Education",  
-          youth: "Youth",
-          missions: "Missions"
-        }
+        footer: {
+          total_projects: "projects",
+          top_department: "Top",
+          in_period: "in"
+        },
+        no_data: "No project data available"
       }
     },
     
@@ -224,6 +234,18 @@ export const departmentTranslations = {
       members_table: {
         title: "Department Members",
         description: "List of all members in {{name}}"
+      },
+      leaders_card: {
+        title: "Department Leaders",
+        description: "Department leaders and their assigned departments",
+        no_leaders: "No leaders assigned",
+        department: "department",
+        departments: "departments",
+        managed_departments: "Managed Departments",
+        no_departments: "No departments assigned",
+        see_more: "See More",
+        view_contact: "View Contact",
+        all_roles: "All Roles"
       },
       title_suffix: "Details",
       no_description: "Department details and members"
@@ -250,6 +272,8 @@ export const departmentTranslations = {
       kpi_cards: {
         total_departments: "Church Departments",
         total_departments_subtitle: "Total church departments",
+        total_members: "Total Members",
+        total_members_subtitle: "Active department members",
         total_churches: "Total Churches",
         total_churches_subtitle: "Churches with departments",
         total_projects: "Total Projects",
@@ -438,13 +462,16 @@ export const departmentTranslations = {
       church: "Kerk",
       description: "Beschrijving",
       annual_budget: "Jaarlijks Budget",
+      leader: "Afdeling Leider",
       contact_name: "Contactnaam",
       contact_email: "Contact E-mail",
       contact_phone: "Telefoon",
       city: "Stad",
       is_institution_department: "Institutionele Afdeling",
       search_church: "Zoek kerk...",
-      no_church_found: "Geen kerk gevonden."
+      no_church_found: "Geen kerk gevonden.",
+      search_leader: "Zoek leider...",
+      no_leader_found: "Geen gebruikers gevonden."
     },
 
     // Department Type
@@ -460,6 +487,7 @@ export const departmentTranslations = {
       church: "Selecteer kerk",
       description: "Beschrijf het doel en de activiteiten van de afdeling",
       annual_budget: "Voer jaarlijks budget in",
+      leader: "Selecteer afdeling leider",
       contact_name: "Voer contactnaam in",
       contact_email: "contact@example.com",
       contact_phone: "+31 123 456 789",
@@ -476,6 +504,7 @@ export const departmentTranslations = {
       name: "Naam",
       description: "Beschrijving",
       church: "Kerk",
+      leader: "Leider",
       email: "E-mail",
       phone: "Telefoon"
     },
@@ -515,6 +544,7 @@ export const departmentTranslations = {
       name_required: "Afdeling naam is verplicht",
       name_min_length: "Afdeling naam moet minimaal 2 karakters zijn",
       church_required: "Kerk is verplicht voor kerkafdeling",
+      leader_required: "Afdeling leider is verplicht",
       description_required: "Beschrijving is verplicht",
       description_min_length: "Beschrijving moet minimaal 10 karakters zijn",
       contact_name_required: "Contactnaam is verplicht",
@@ -580,6 +610,25 @@ export const departmentTranslations = {
           youth: "Jeugd",
           missions: "Missies"
         }
+      },
+      projects_over_time: {
+        title: "Projecten Aangemaakt in de Tijd",
+        description: "Visualisatie van projectcreatie per afdeling in de loop van de tijd",
+        chart_type_area: "Vlakdiagram",
+        chart_type_bar: "Staafdiagram",
+        time_periods: {
+          last_7_days: "Laatste 7 dagen",
+          last_30_days: "Laatste 30 dagen",
+          last_3_months: "Laatste 3 maanden",
+          last_6_months: "Laatste 6 maanden",
+          last_12_months: "Laatste 12 maanden"
+        },
+        footer: {
+          total_projects: "projecten",
+          top_department: "Top",
+          in_period: "in"
+        },
+        no_data: "Geen projectgegevens beschikbaar"
       }
     },
     
@@ -595,6 +644,18 @@ export const departmentTranslations = {
       members_table: {
         title: "Afdeling Leden",
         description: "Lijst van alle leden in {{name}}"
+      },
+      leaders_card: {
+        title: "Afdeling Leiders",
+        description: "Afdeling leiders en hun toegewezen afdelingen",
+        no_leaders: "Geen leiders toegewezen",
+        department: "afdeling",
+        departments: "afdelingen",
+        managed_departments: "Beheerde Afdelingen",
+        no_departments: "Geen afdelingen toegewezen",
+        see_more: "Meer Zien",
+        view_contact: "Contact Bekijken",
+        all_roles: "Alle Rollen"
       },
       title_suffix: "Details",
       no_description: "Afdeling details en leden"
@@ -621,6 +682,8 @@ export const departmentTranslations = {
       kpi_cards: {
         total_departments: "Kerkafdelingen",
         total_departments_subtitle: "Totaal kerkafdelingen",
+        total_members: "Totaal Leden",
+        total_members_subtitle: "Actieve afdeling leden",
         total_churches: "Totaal Kerken",
         total_churches_subtitle: "Kerken met afdelingen",
         total_projects: "Totaal Projecten",
@@ -809,13 +872,16 @@ export const departmentTranslations = {
       church: "Igreja",
       description: "Descrição", 
       annual_budget: "Orçamento Anual",
+      leader: "Líder do Departamento",
       contact_name: "Nome do Contato",
       contact_email: "E-mail de Contato",
       contact_phone: "Telefone",
       city: "Cidade",
       is_institution_department: "Departamento Institucional",
       search_church: "Buscar igreja...",
-      no_church_found: "Nenhuma igreja encontrada."
+      no_church_found: "Nenhuma igreja encontrada.",
+      search_leader: "Buscar líder...",
+      no_leader_found: "Nenhum usuário encontrado."
     },
     
     // Department Type
@@ -831,6 +897,7 @@ export const departmentTranslations = {
       church: "Selecione a igreja",
       description: "Descreva o propósito e atividades do departamento",
       annual_budget: "Digite o orçamento anual",
+      leader: "Selecione o líder do departamento",
       contact_name: "Digite o nome do contato",
       contact_email: "contato@example.com",
       contact_phone: "+55 11 9999-9999",
@@ -847,6 +914,7 @@ export const departmentTranslations = {
       name: "Nome",
       description: "Descrição",
       church: "Igreja",
+      leader: "Líder",
       email: "E-mail",
       phone: "Telefone"
     },
@@ -886,6 +954,7 @@ export const departmentTranslations = {
       name_required: "Nome do departamento é obrigatório",
       name_min_length: "Nome do departamento deve ter no mínimo 2 caracteres",
       church_required: "Igreja é obrigatória para departamento de igreja",
+      leader_required: "Líder do departamento é obrigatório",
       description_required: "Descrição é obrigatória",
       description_min_length: "Descrição deve ter no mínimo 10 caracteres",
       contact_name_required: "Nome do contato é obrigatório",
@@ -951,6 +1020,25 @@ export const departmentTranslations = {
           youth: "Juventude",
           missions: "Missões"
         }
+      },
+      projects_over_time: {
+        title: "Projetos Criados ao Longo do Tempo",
+        description: "Visualização da criação de projetos por departamento ao longo do tempo",
+        chart_type_area: "Gráfico de Área",
+        chart_type_bar: "Gráfico de Barras",
+        time_periods: {
+          last_7_days: "Últimos 7 dias",
+          last_30_days: "Últimos 30 dias",
+          last_3_months: "Últimos 3 meses",
+          last_6_months: "Últimos 6 meses",
+          last_12_months: "Últimos 12 meses"
+        },
+        footer: {
+          total_projects: "projetos",
+          top_department: "Top",
+          in_period: "em"
+        },
+        no_data: "Nenhum dado de projeto disponível"
       }
     },
     
@@ -966,6 +1054,18 @@ export const departmentTranslations = {
       members_table: {
         title: "Membros do Departamento",
         description: "Lista de todos os membros em {{name}}"
+      },
+      leaders_card: {
+        title: "Líderes do Departamento",
+        description: "Líderes de departamento e seus departamentos atribuídos",
+        no_leaders: "Nenhum líder atribuído",
+        department: "departamento",
+        departments: "departamentos",
+        managed_departments: "Departamentos Gerenciados",
+        no_departments: "Nenhum departamento atribuído",
+        see_more: "Ver Mais",
+        view_contact: "Ver Contato",
+        all_roles: "Todas as Funções"
       },
       title_suffix: "Detalhes",
       no_description: "Detalhes do departamento e membros"
@@ -992,6 +1092,8 @@ export const departmentTranslations = {
       kpi_cards: {
         total_departments: "Departamentos da Igreja",
         total_departments_subtitle: "Total de departamentos da igreja",
+        total_members: "Total de Membros",
+        total_members_subtitle: "Membros ativos do departamento",
         total_churches: "Total de Igrejas",
         total_churches_subtitle: "Igrejas com departamentos",
         total_projects: "Total de Projetos",

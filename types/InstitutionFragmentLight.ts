@@ -3,11 +3,13 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { LanguagePreference } from "./globalTypes";
+
 // ====================================================
-// GraphQL query operation: User
+// GraphQL fragment: InstitutionFragmentLight
 // ====================================================
 
-export interface User_user_contact {
+export interface InstitutionFragmentLight_contact {
   __typename: "Contact";
   id: string;
   name: string | null;
@@ -25,30 +27,20 @@ export interface User_user_contact {
   is_primary: boolean;
   created_at: any;
   updated_at: any;
+  created_by: string;
+  updated_by: string;
+  is_deleted: boolean;
+  deleted_at: any | null;
+  deleted_by: string | null;
 }
 
-export interface User_user_institution {
+export interface InstitutionFragmentLight {
   __typename: "Institution";
   id: string;
   name: string;
-}
-
-export interface User_user_church {
-  __typename: "Church";
-  id: string;
-  name: string;
-}
-
-export interface User_user {
-  __typename: "UserModel";
-  id: string;
-  institution_id: string;
-  password: string | null;
-  church_id: string | null;
-  department_id: string | null;
-  name: string;
-  email: string;
-  language_preference: string;
+  denomination: string;
+  description: string | null;
+  language_preference: LanguagePreference;
   contact_id: string | null;
   created_at: any;
   updated_at: any;
@@ -57,15 +49,11 @@ export interface User_user {
   is_deleted: boolean;
   deleted_at: any | null;
   deleted_by: string | null;
-  contact: User_user_contact | null;
-  institution: User_user_institution | null;
-  church: User_user_church | null;
-}
-
-export interface User {
-  user: User_user | null;
-}
-
-export interface UserVariables {
-  id: string;
+  churches_count: number;
+  departments_count: number;
+  users_count: number;
+  total_budget: number;
+  current_year_budget: number;
+  has_budget_record: boolean;
+  contact: InstitutionFragmentLight_contact | null;
 }

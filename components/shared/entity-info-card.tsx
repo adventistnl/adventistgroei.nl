@@ -57,6 +57,9 @@ export interface EntityInfoCardProps {
   
   /** Callback quando o card é clicado */
   onClick?: () => void
+  
+  /** Inverter tema: dark bg com light text no light mode, e vice-versa */
+  invertTheme?: boolean
 }
 
 // Aliases para compatibilidade com código existente
@@ -92,6 +95,7 @@ export function EntityInfoCard(props: EntityInfoCardProps) {
     accentColor = "gray",
     className,
     onClick,
+    invertTheme = false,
   } = props
   
   // Backward compatibility - casting para acessar props antigas
@@ -185,8 +189,7 @@ export function EntityInfoCard(props: EntityInfoCardProps) {
     <Card 
       className={cn(
         "w-full h-full flex flex-col relative",
-        colors.bg,
-        colors.border,
+        invertTheme ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900 border-gray-800 dark:border-gray-200" : cn(colors.bg, colors.border),
         onClick && "cursor-pointer hover:shadow-md transition-shadow",
         className
       )}
@@ -196,7 +199,10 @@ export function EntityInfoCard(props: EntityInfoCardProps) {
         {/* Header - Título do card, Action Button e Ícone */}
         <div className="flex items-center justify-between">
           {/* Título do Header */}
-          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          <h4 className={cn(
+            "text-xs font-medium uppercase tracking-wide",
+            invertTheme ? "text-white/70 dark:text-gray-900/70" : "text-muted-foreground"
+          )}>
             {headerTitle}
           </h4>
 
@@ -209,7 +215,10 @@ export function EntityInfoCard(props: EntityInfoCardProps) {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-7 w-7 p-0 hover:bg-background/80"
+                    className={cn(
+                      "h-7 w-7 p-0",
+                      invertTheme ? "hover:bg-white/20 dark:hover:bg-gray-900/20 text-white dark:text-gray-900" : "hover:bg-background/80"
+                    )}
                   >
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
@@ -235,8 +244,14 @@ export function EntityInfoCard(props: EntityInfoCardProps) {
             )}
             
             {/* Ícone Dinâmico */}
-            <div className={cn("p-1.5 rounded-md border", colors.iconBg, colors.border)}>
-              <Icon className={cn("h-4 w-4", colors.icon)} />
+            <div className={cn(
+              "p-1.5 rounded-md border",
+              invertTheme ? "bg-white/20 dark:bg-gray-900/20 border-white/30 dark:border-gray-900/30" : cn(colors.iconBg, colors.border)
+            )}>
+              <Icon className={cn(
+                "h-4 w-4",
+                invertTheme ? "text-white dark:text-gray-900" : colors.icon
+              )} />
             </div>
           </div>
         </div>
@@ -249,7 +264,10 @@ export function EntityInfoCard(props: EntityInfoCardProps) {
           </h3>
           
           {/* Descrição */}
-          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+          <p className={cn(
+            "text-xs leading-relaxed line-clamp-2",
+            invertTheme ? "text-white/80 dark:text-gray-900/80" : "text-muted-foreground"
+          )}>
             {displayDescription}
           </p>
         </div>
@@ -260,7 +278,7 @@ export function EntityInfoCard(props: EntityInfoCardProps) {
             {displayBadges.map((badge, index) => (
               <Badge 
                 key={index}
-                variant={badge.variant || "outline"}
+                variant={badge.variant || "default"}
                 className={badge.className}
               >
                 {badge.label}
