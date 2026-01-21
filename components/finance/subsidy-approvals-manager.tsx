@@ -88,6 +88,8 @@ import { APPROVE_SUBSIDY_REQUEST, REJECT_SUBSIDY_REQUEST, UPDATE_SUBSIDY_REQUEST
 import { GET_ALL_SUBSIDY_STATUSES } from "@/graphql/queries/SUBSIDY_STATUS_QUERIES"
 import { InlinePrivacyToggle, PrivacyWrapper } from "@/components/shared/privacy-wrapper"
 import { PrivacyConfig } from "@/contexts/privacy-context"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 interface SubsidyRequest {
   id: string
@@ -883,20 +885,24 @@ export function SubsidyApprovalsManager({
               {(row.original.status === 'pending' || row.original.status === 'in_review') && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={() => handleApprove(row.original.id)}
-                    className="text-green-600"
-                  >
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    {translations.actions.approve}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => handleReject(row.original.id)}
-                    className="text-red-600"
-                  >
-                    <XCircle className="mr-2 h-4 w-4" />
-                    {translations.actions.reject}
-                  </DropdownMenuItem>
+                  <WithPermission requiredPermissions={[PermissionResolverName.ApproveSubsidyRequest]}>
+                    <DropdownMenuItem 
+                      onClick={() => handleApprove(row.original.id)}
+                      className="text-green-600"
+                    >
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      {translations.actions.approve}
+                    </DropdownMenuItem>
+                  </WithPermission>
+                  <WithPermission requiredPermissions={[PermissionResolverName.RejectSubsidyRequest]}>
+                    <DropdownMenuItem 
+                      onClick={() => handleReject(row.original.id)}
+                      className="text-red-600"
+                    >
+                      <XCircle className="mr-2 h-4 w-4" />
+                      {translations.actions.reject}
+                    </DropdownMenuItem>
+                  </WithPermission>
                 </>
               )}
             </DropdownMenuContent>

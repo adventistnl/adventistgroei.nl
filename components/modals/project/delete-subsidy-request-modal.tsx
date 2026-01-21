@@ -26,6 +26,8 @@ import { ptBR } from "date-fns/locale"
 import { useCurrency } from "@/contexts/currency-context"
 import { DELETE_SUBSIDY_REQUEST } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
 import { projectTranslations } from "@/lib/translations/projects"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 export interface DeleteSubsidyRequestModalProps {
   isOpen: boolean
@@ -309,28 +311,30 @@ export function DeleteSubsidyRequestModal({
             >
               {t_project.subsidy.deleteRequest.buttons.cancel}
             </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={isLoading || !isDeleteEnabled}
-              size="sm"
-              className={`min-w-[140px] text-xs ${
-                isDeleteEnabled 
-                  ? 'bg-red-600 hover:bg-red-700 text-white' 
-                  : 'bg-red-600/40 text-white/60 cursor-not-allowed hover:bg-red-600/40'
-              }`}
-            >
-              {isLoading ? (
-                <>
-                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1" />
-                  {t_project.subsidy.deleteRequest.buttons.deleting}
-                </>
-              ) : (
-                <>
-                  <Trash2 className="w-3 h-3 mr-1" />
-                  {t_project.subsidy.deleteRequest.buttons.delete}
-                </>
-              )}
-            </Button>
+            <WithPermission requiredPermissions={[PermissionResolverName.DeleteSubsidyRequest]}>
+              <Button
+                onClick={handleSubmit}
+                disabled={isLoading || !isDeleteEnabled}
+                size="sm"
+                className={`min-w-[140px] text-xs ${
+                  isDeleteEnabled 
+                    ? 'bg-red-600 hover:bg-red-700 text-white' 
+                    : 'bg-red-600/40 text-white/60 cursor-not-allowed hover:bg-red-600/40'
+                }`}
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1" />
+                    {t_project.subsidy.deleteRequest.buttons.deleting}
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3 h-3 mr-1" />
+                    {t_project.subsidy.deleteRequest.buttons.delete}
+                  </>
+                )}
+              </Button>
+            </WithPermission>
           </div>
         </div>
       </DialogContent>

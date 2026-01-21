@@ -277,14 +277,18 @@ export default function RegionsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleEdit(row.original)}>
-                <Edit className="w-4 h-4 mr-2" />
-                {tRegion.messages.edit_region}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDelete(row.original)}>
-                <Trash2 className="w-4 h-4 mr-2" />
-                {tRegion.messages.delete_region}
-              </DropdownMenuItem>
+              <WithPermission requiredPermissions={[PermissionResolverName.UpdateRegion]}>
+                <DropdownMenuItem onClick={() => handleEdit(row.original)}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  {tRegion.messages.edit_region}
+                </DropdownMenuItem>
+              </WithPermission>
+              <WithPermission requiredPermissions={[PermissionResolverName.DeleteRegion]}>
+                <DropdownMenuItem onClick={() => handleDelete(row.original)}>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {tRegion.messages.delete_region}
+                </DropdownMenuItem>
+              </WithPermission>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -331,14 +335,16 @@ export default function RegionsPage() {
         </div>
           
           <div className="flex items-center gap-3">
-            <AddRegionModal
-              onSuccess={handleRegionCreated}
-            >
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                {tStructure.createRegion}
-              </Button>
-            </AddRegionModal>
+            <WithPermission requiredPermissions={[PermissionResolverName.CreateRegion]}>
+              <AddRegionModal
+                onSuccess={handleRegionCreated}
+              >
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  {tStructure.createRegion}
+                </Button>
+              </AddRegionModal>
+            </WithPermission>
             <Button
               variant="outline"
               size="icon"

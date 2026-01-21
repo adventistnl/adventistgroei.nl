@@ -831,14 +831,18 @@ export default function ChurchesPage() {
               <ContactRound className="w-4 h-4 mr-2" />
               {tStructure.viewContact}
             </DropdownMenuItem> */}
-            <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
-              <Edit className="w-4 h-4 mr-2" />
-              {tChurch.messages.edit_church}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
-              <Trash2 className="w-4 h-4 mr-2" />
-              {tChurch.messages.delete_church}
-            </DropdownMenuItem>
+            <WithPermission requiredPermissions={[PermissionResolverName.UpdateChurch]}>
+              <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
+                <Edit className="w-4 h-4 mr-2" />
+                {tChurch.messages.edit_church}
+              </DropdownMenuItem>
+            </WithPermission>
+            <WithPermission requiredPermissions={[PermissionResolverName.DeleteChurch]}>
+              <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
+                <Trash2 className="w-4 h-4 mr-2" />
+                {tChurch.messages.delete_church}
+              </DropdownMenuItem>
+            </WithPermission>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -1201,10 +1205,12 @@ export default function ChurchesPage() {
             </div>
             
             <div className="flex items-center gap-3">
-              <Button onClick={handleCreate}>
-                <Plus className="w-4 h-4 mr-2" />
-                {tStructure.createChurch}
-              </Button>
+              <WithPermission requiredPermissions={[PermissionResolverName.CreateChurch]}>
+                <Button onClick={handleCreate}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  {tStructure.createChurch}
+                </Button>
+              </WithPermission>
               
               <Button 
                 variant="outline" 
