@@ -5,9 +5,13 @@ import { Church, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { RegistrationLayout } from "./registration-layout"
+import { Progress } from "@/components/ui/progress"
+
+import { cn } from "@/lib/utils"
 
 interface LoadingStateProps {
   message: string
+  className?: string
 }
 
 interface InvalidInviteStateProps {
@@ -21,17 +25,17 @@ interface InvalidInviteStateProps {
  * Estado de loading inicial
  * Exibe animação de carregamento com ícone da igreja
  */
-export function LoadingState({ message }: LoadingStateProps) {
+export function LoadingState({ message, className }: LoadingStateProps) {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center">
-        <div className="relative">
-          <div className="w-16 h-16 border-4 border-muted border-t-primary rounded-full animate-spin mx-auto mb-6"></div>
+    <div className={cn("min-h-screen bg-background flex items-center justify-center p-4", className)}>
+      <div className="text-center space-y-8">
+        <div className="relative mx-auto w-20 h-20">
+          <div className="w-20 h-20 border-4 border-muted border-t-primary rounded-full animate-spin"></div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <Church className="w-6 h-6 text-primary" />
+            <Church className="w-8 h-8 text-primary" />
           </div>
         </div>
-        <p className="text-muted-foreground text-lg">{message}</p>
+        <p className="text-muted-foreground text-base">{message}</p>
       </div>
     </div>
   )
@@ -43,10 +47,10 @@ export function LoadingState({ message }: LoadingStateProps) {
  */
 export function ValidatingInviteState({ message }: LoadingStateProps) {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4 mx-auto" />
-        <p className="text-muted-foreground">{message}</p>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="text-center space-y-6">
+        <div className="w-12 h-12 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-muted-foreground text-sm">{message}</p>
       </div>
     </div>
   )
@@ -55,6 +59,7 @@ export function ValidatingInviteState({ message }: LoadingStateProps) {
 /**
  * Estado de convite inválido
  * Exibe erro e botão para voltar ao login
+ * Auto-redireciona após 10 segundos com barra de progresso
  */
 export function InvalidInviteState({ 
   title, 
@@ -62,17 +67,66 @@ export function InvalidInviteState({
   buttonText, 
   onGoToLogin 
 }: InvalidInviteStateProps) {
+  const [progress, setProgress] = React.useState(0)
+  const [secondsLeft, setSecondsLeft] = React.useState(10)
+
+  React.useEffect(() => {
+    // Atualizar progresso a cada 100ms para animação suave
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(progressInterval)
+          return 100
+        }
+        return prev + 1
+      })
+    }, 100)
+
+    // Atualizar segundos restantes a cada 1 segundo
+    const secondsInterval = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(secondsInterval)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    // Redirecionar após 10 segundos
+    const redirectTimer = setTimeout(() => {
+      onGoToLogin()
+    }, 10000)
+
+    return () => {
+      clearInterval(progressInterval)
+      clearInterval(secondsInterval)
+      clearTimeout(redirectTimer)
+    }
+  }, [onGoToLogin])
+
   return (
     <RegistrationLayout>
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Card className="w-full max-w-md shadow-2xl">
-          <CardHeader className="text-center">
-            <AlertTriangle className="w-12 h-12 text-destructive mx-auto mb-4" />
-            <CardTitle>{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
+      <div className="flex items-center justify-center min-h-[70vh] p-4">
+        <Card className="w-full max-w-md border-destructive/20">
+          <CardHeader className="text-center space-y-6 pb-8">
+            <div className="mx-auto w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
+              <AlertTriangle className="w-8 h-8 text-destructive" />
+            </div>
+            <div className="space-y-3">
+              <CardTitle className="text-xl">{title}</CardTitle>
+              <CardDescription className="text-base">{description}</CardDescription>
+            </div>
           </CardHeader>
-          <CardContent>
-            <Button onClick={onGoToLogin} className="w-full">
+          <CardContent className="space-y-6">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Redirecting in</span>
+                <span className="font-mono font-semibold text-primary">{secondsLeft}s</span>
+              </div>
+              <Progress value={progress} className="h-2" />
+            </div>
+            <Button onClick={onGoToLogin} className="w-full" size="lg">
               {buttonText}
             </Button>
           </CardContent>

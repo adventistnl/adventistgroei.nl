@@ -1,9 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Bell, X, Check, Clock, AlertCircle, CheckCircle, Info, ArrowRight } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,6 +20,74 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import toast from "react-hot-toast"
 
+// Translations object
+const notificationsTranslations = {
+  en: {
+    title: "Notifications",
+    subtitle: "Stay updated with your church management system",
+    markAllRead: "Mark all read",
+    markedAsRead: "Notification marked as read",
+    allMarkedAsRead: "All notifications marked as read",
+    more: "More...",
+    emptyTitle: "No notifications",
+    emptyMessage: "You're all caught up! Check back later for updates.",
+    types: {
+      info: "info",
+      success: "success",
+      warning: "warning",
+      error: "error"
+    }
+  },
+  pt: {
+    title: "Notificações",
+    subtitle: "Fique atualizado com o sistema de gestão da igreja",
+    markAllRead: "Marcar todas como lidas",
+    markedAsRead: "Notificação marcada como lida",
+    allMarkedAsRead: "Todas as notificações marcadas como lidas",
+    more: "Mais...",
+    emptyTitle: "Sem notificações",
+    emptyMessage: "Você está em dia! Volte mais tarde para atualizações.",
+    types: {
+      info: "info",
+      success: "sucesso",
+      warning: "aviso",
+      error: "erro"
+    }
+  },
+  nl: {
+    title: "Meldingen",
+    subtitle: "Blijf op de hoogte van uw kerkbeheersysteem",
+    markAllRead: "Alles als gelezen markeren",
+    markedAsRead: "Melding gemarkeerd als gelezen",
+    allMarkedAsRead: "Alle meldingen gemarkeerd als gelezen",
+    more: "Meer...",
+    emptyTitle: "Geen meldingen",
+    emptyMessage: "Je bent helemaal bij! Kom later terug voor updates.",
+    types: {
+      info: "info",
+      success: "succes",
+      warning: "waarschuwing",
+      error: "fout"
+    }
+  },
+  es: {
+    title: "Notificaciones",
+    subtitle: "Mantente actualizado con el sistema de gestión de la iglesia",
+    markAllRead: "Marcar todas como leídas",
+    markedAsRead: "Notificación marcada como leída",
+    allMarkedAsRead: "Todas las notificaciones marcadas como leídas",
+    more: "Más...",
+    emptyTitle: "Sin notificaciones",
+    emptyMessage: "¡Estás al día! Vuelve más tarde para actualizaciones.",
+    types: {
+      info: "info",
+      success: "éxito",
+      warning: "advertencia",
+      error: "error"
+    }
+  }
+}
+
 interface Notification {
   id: string
   title: string
@@ -28,6 +97,12 @@ interface Notification {
   timestamp: string
   actionLabel?: string
   actionHref?: string
+}
+
+interface NotificationsSidebarProps {
+  notifications?: Notification[] // Optional prop to receive real notifications
+  onNotificationRead?: (id: string) => void // Callback when notification is marked as read
+  onAllRead?: () => void // Callback when all notifications are marked as read
 }
 
 const mockNotifications: Notification[] = [
@@ -91,10 +166,25 @@ const mockNotifications: Notification[] = [
   }
 ]
 
-export function NotificationsSidebar() {
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications)
+export function NotificationsSidebar({ 
+  notifications: externalNotifications,
+  onNotificationRead,
+  onAllRead 
+}: NotificationsSidebarProps = {}) {
+  const { i18n } = useTranslation()
+  const t = notificationsTranslations[i18n.language as keyof typeof notificationsTranslations] || notificationsTranslations.en
+  
+  // Use external notifications if provided, otherwise use mock data
+  const [notifications, setNotifications] = useState<Notification[]>(externalNotifications || mockNotifications)
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
+
+  // Update notifications when external prop changes
+  useEffect(() => {
+    if (externalNotifications) {
+      setNotifications(externalNotifications)
+    }
+  }, [externalNotifications])
 
   const unreadCount = notifications.filter(n => n.status === "unread").length
 
@@ -109,7 +199,12 @@ export function NotificationsSidebar() {
       )
     )
     
-    toast.success("✅ Notification marked as read", {
+    // Call external callback if provided
+    if (onNotificationRead) {
+      onNotificationRead(id)
+    }
+    
+    toast.success(`✅ ${t.markedAsRead}`, {
       duration: 2000
     })
   }
@@ -127,7 +222,12 @@ export function NotificationsSidebar() {
       prev.map(notification => ({ ...notification, status: "read" as const }))
     )
     
-    toast.success("✅ All notifications marked as read", {
+    // Call external callback if provided
+    if (onAllRead) {
+      onAllRead()
+    }
+    
+    toast.success(`✅ ${t.allMarkedAsRead}`, {
       duration: 3000
     })
   }
@@ -135,28 +235,16 @@ export function NotificationsSidebar() {
   const getNotificationIcon = (type: Notification["type"]) => {
     switch (type) {
       case "success":
-        return <CheckCircle className="w-4 h-4 text-green-500" />
+        return <CheckCircle className="w-4 h-4 text-muted-foreground" />
       case "warning":
-        return <AlertCircle className="w-4 h-4 text-yellow-500" />
+        return <AlertCircle className="w-4 h-4 text-muted-foreground" />
       case "error":
-        return <AlertCircle className="w-4 h-4 text-red-500" />
+        return <AlertCircle className="w-4 h-4 text-muted-foreground" />
       default:
-        return <Info className="w-4 h-4 text-blue-500" />
+        return <Info className="w-4 h-4 text-muted-foreground" />
     }
   }
 
-  const getNotificationBadgeColor = (type: Notification["type"]) => {
-    switch (type) {
-      case "success":
-        return "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-      case "warning":
-        return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
-      case "error":
-        return "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
-      default:
-        return "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-    }
-  }
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -174,37 +262,40 @@ export function NotificationsSidebar() {
         </Button>
       </SheetTrigger>
       
-      <SheetContent className="w-[400px] sm:w-[540px]">
-        <SheetHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <SheetTitle className="flex items-center gap-2">
-                <Bell className="w-5 h-5" />
-                Notifications
-              </SheetTitle>
-              <SheetDescription>
-                Stay updated with your church management system
-              </SheetDescription>
-            </div>
-            {unreadCount > 0 && (
-              <Button variant="ghost" size="sm" onClick={markAllAsRead}>
-                <Check className="w-4 h-4 mr-2" />
-                Mark all read
-              </Button>
-            )}
+      <SheetContent className="w-[400px] sm:w-[540px] p-6">
+        <SheetHeader className="space-y-3">
+          <div className="space-y-2">
+            <SheetTitle className="flex items-center gap-2 text-lg">
+              <Bell className="w-5 h-5" />
+              {t.title}
+            </SheetTitle>
+            <SheetDescription className="text-sm">
+              {t.subtitle}
+            </SheetDescription>
           </div>
+          {unreadCount > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={markAllAsRead}
+              className="w-full justify-start text-muted-foreground hover:text-foreground"
+            >
+              <Check className="w-4 h-4 mr-2" />
+              {t.markAllRead}
+            </Button>
+          )}
         </SheetHeader>
 
         <Separator className="my-4" />
 
-        <ScrollArea className="h-[calc(100vh-120px)]">
-          <div className="space-y-2">
+        <ScrollArea className="h-[calc(100vh-180px)] pr-4">
+          <div className="space-y-3">
             {notifications.map((notification) => (
               <div 
                 key={notification.id} 
-                className={`p-4 border rounded-lg transition-all hover:bg-muted/50 cursor-pointer ${
+                className={`p-4 border rounded-lg transition-all hover:bg-muted/30 cursor-pointer ${
                   notification.status === "unread" 
-                    ? "border-l-4 border-l-primary bg-primary/5" 
+                    ? "border-l-4 border-l-foreground/20 bg-muted/10" 
                     : "border-l-4 border-l-transparent"
                 }`}
                 onClick={() => toggleExpanded(notification.id)}
@@ -214,9 +305,9 @@ export function NotificationsSidebar() {
                     {getNotificationIcon(notification.type)}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h4 className="text-sm font-medium truncate">{notification.title}</h4>
+                        <h4 className="text-sm font-medium truncate text-foreground">{notification.title}</h4>
                         {notification.status === "unread" && (
-                          <div className="w-2 h-2 bg-primary rounded-full shrink-0" />
+                          <div className="w-2 h-2 bg-foreground/60 rounded-full shrink-0" />
                         )}
                       </div>
                       
@@ -230,9 +321,9 @@ export function NotificationsSidebar() {
                             </div>
                             <Badge 
                               variant="outline" 
-                              className="text-xs"
+                              className="text-xs border-border/60 bg-muted/50"
                             >
-                              {notification.type}
+                              {t.types[notification.type]}
                             </Badge>
                           </div>
                         </div>
@@ -241,8 +332,8 @@ export function NotificationsSidebar() {
                           <p className="text-xs text-muted-foreground line-clamp-1 flex-1">
                             {notification.message}
                           </p>
-                          <button className="text-xs text-primary hover:underline ml-2 shrink-0">
-                            More...
+                          <button className="text-xs text-foreground/60 hover:text-foreground hover:underline ml-2 shrink-0">
+                            {t.more}
                           </button>
                         </div>
                       )}
@@ -253,12 +344,14 @@ export function NotificationsSidebar() {
             ))}
 
             {notifications.length === 0 && (
-              <div className="text-center py-12">
-                <Bell className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">No notifications</h3>
-                <p className="text-muted-foreground">
-                  You're all caught up! Check back later for updates.
-                </p>
+              <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center py-12 px-4">
+                  <Bell className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2 text-foreground">{t.emptyTitle}</h3>
+                  <p className="text-sm text-muted-foreground max-w-[280px]">
+                    {t.emptyMessage}
+                  </p>
+                </div>
               </div>
             )}
           </div>

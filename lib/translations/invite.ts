@@ -13,6 +13,7 @@ export const inviteTranslations = {
     personalMessageDesc: "This message will be included in the invitation email",
     generateLink: "Generate Link",
     copyLink: "Copy Link",
+    generateLinkButton: "Generate Link",
     cancel: "Cancel",
     sendInvitation: "Send Invitation",
     creating: "Creating...",
@@ -27,7 +28,16 @@ export const inviteTranslations = {
     selectRoleToGenerate: "Select a role to generate the shareable link",
     shareableLinkTitle: "Shareable Link",
     shareableLinkDesc: "Copy and share this link with new members",
-    generateLinkError: "Error generating invite link"
+    generateLinkError: "Error generating invite link",
+    missingChurchOrDepartment: "Please ensure at least one church and one department are registered.",
+    emailInUse: "There is already an account with this email address.",
+    filterAll: "All Roles",
+    filterAdministration: "Administration",
+    filterChurch: "Church",
+    filterInstitutional: "Institutional",
+    filterLeadership: "Leadership",
+    filterMember: "Members",
+    filterByCategory: "Filter by Category"
   },
   nl: {
     title: "Nieuwe Lid Uitnodigen",
@@ -43,6 +53,7 @@ export const inviteTranslations = {
     personalMessageDesc: "Dit bericht wordt opgenomen in de uitnodigingsmail",
     generateLink: "Link Genereren",
     copyLink: "Link Kopiëren",
+    generateLinkButton: "Link Genereren",
     cancel: "Annuleren",
     sendInvitation: "Uitnodiging Verzenden",
     creating: "Aanmaken...",
@@ -57,7 +68,16 @@ export const inviteTranslations = {
     selectRoleToGenerate: "Selecteer een rol om de deelbare link te genereren",
     shareableLinkTitle: "Deelbare Link",
     shareableLinkDesc: "Kopieer en deel deze link met nieuwe leden",
-    generateLinkError: "Fout bij het genereren van de uitnodigingslink"
+    generateLinkError: "Fout bij het genereren van de uitnodigingslink",
+    emailInUse: "Er is al een account met dit e-mailadres.",
+    missingChurchOrDepartment: "Zorg ervoor dat er minstens één kerk en één afdeling zijn geregistreerd.",
+    filterAll: "Alle Rollen",
+    filterAdministration: "Administratie",
+    filterChurch: "Kerk",
+    filterInstitutional: "Institutioneel",
+    filterLeadership: "Leiderschap",
+    filterMember: "Leden",
+    filterByCategory: "Filteren op Categorie"
   },
   pt: {
     title: "Convidar Novo Membro",
@@ -73,6 +93,7 @@ export const inviteTranslations = {
     personalMessageDesc: "Esta mensagem será incluída no e-mail de convite",
     generateLink: "Gerar Link",
     copyLink: "Copiar Link",
+    generateLinkButton: "Gerar Link",
     cancel: "Cancelar",
     sendInvitation: "Enviar Convite",
     creating: "Criando...",
@@ -87,6 +108,15 @@ export const inviteTranslations = {
     selectRoleToGenerate: "Selecione uma função para gerar o link compartilhável",
     shareableLinkTitle: "Link Compartilhável",
     shareableLinkDesc: "Copie e compartilhe este link com novos membros",
-    generateLinkError: "Erro ao gerar link de convite"
+    generateLinkError: "Erro ao gerar link de convite",
+    emailInUse: "Já existe uma conta com este endereço de e-mail.",
+    missingChurchOrDepartment: "Certifique-se de que pelo menos uma igreja e um departamento estejam registrados.",
+    filterAll: "Todas as Funções",
+    filterAdministration: "Administração",
+    filterChurch: "Igreja",
+    filterInstitutional: "Institucional",
+    filterLeadership: "Liderança",
+    filterMember: "Membros",
+    filterByCategory: "Filtrar por Categoria"
   }
 }

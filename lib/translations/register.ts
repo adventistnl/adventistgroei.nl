@@ -38,13 +38,25 @@ export const registerTranslations = {
     languagePreference: "Language Preference",
     selectLanguage: "Select your preferred language",
     institution: "Institution",
+    institutionDepartment: "Institution Department",
     selectInstitution: "Select your institution",
     department: "Department",
     selectDepartment: "Select your department",
     selectInstitutionFirst: "Select an institution first",
     church: "Church",
+    churchDepartment: "Church Department",
     selectChurch: "Select your church",
     selectDepartmentFirst: "Select a department first",
+    personalInfoSubtitle: "Affiliation Information",
+    affiliationInfoDesc: "Your institutional and church associations from the invitation",
+    showAffiliationInfo: "Show Affiliation Information",
+    hideAffiliationInfo: "Hide Affiliation Information",
+    noGenderSelected: "No gender found",
+    // Gender selection
+    genderSelection: "Gender Selection",
+    genderSelectionDesc: "Please select your gender.",
+    genderLabel: "Gender",
+    genderPlaceholder: "Select your gender",
     
     // Languages
     languages: {
@@ -74,7 +86,13 @@ export const registerTranslations = {
     reviewPersonalData: "Personal Data",
     reviewInstitutionData: "Institution Data",
     reviewRole: "Role",
-    reviewLanguage: "Language"
+    reviewLanguage: "Language",
+    
+    // Gender
+    gender: {
+      FEMALE: "Female",
+      MALE: "Male",
+    }
   },
   nl: {
     title: "Lid Registratie",
@@ -115,13 +133,25 @@ export const registerTranslations = {
     languagePreference: "Taal Voorkeur",
     selectLanguage: "Selecteer je gewenste taal",
     institution: "Instituut",
+    institutionDepartment: "Instituut Afdeling",
     selectInstitution: "Selecteer je instituut",
     department: "Afdeling",
     selectDepartment: "Selecteer je afdeling",
     selectInstitutionFirst: "Selecteer eerst een instituut",
     church: "Kerk",
+    churchDepartment: "Kerk Afdeling",
     selectChurch: "Selecteer je kerk",
     selectDepartmentFirst: "Selecteer eerst een afdeling",
+    personalInfoSubtitle: "Affiliatie Informatie",
+    affiliationInfoDesc: "Uw institutionele en kerkelijke associaties uit de uitnodiging",
+    showAffiliationInfo: "Toon Affiliatie Informatie",
+    hideAffiliationInfo: "Verberg Affiliatie Informatie",
+    noGenderSelected: "Geen geslacht gevonden",
+    // Gender selection
+    genderSelection: "Geslachtsselectie",
+    genderSelectionDesc: "Selecteer uw geslacht.",
+    genderLabel: "Geslacht",
+    genderPlaceholder: "Selecteer uw geslacht",
     
     // Languages
     languages: {
@@ -151,7 +181,13 @@ export const registerTranslations = {
     reviewPersonalData: "Persoonlijke Gegevens",
     reviewInstitutionData: "Instituut Gegevens",
     reviewRole: "Rol",
-    reviewLanguage: "Taal"
+    reviewLanguage: "Taal",
+    
+    // Gender
+    gender: {
+      FEMALE: "Vrouw",
+      MALE: "Man",
+    }
   },
   pt: {
     title: "Registro de Membro",
@@ -192,13 +228,25 @@ export const registerTranslations = {
     languagePreference: "Preferência de Idioma",
     selectLanguage: "Selecione seu idioma preferido",
     institution: "Instituição",
+    institutionDepartment: "Departamento da Instituição",
     selectInstitution: "Selecione sua instituição",
     department: "Departamento",
     selectDepartment: "Selecione seu departamento",
     selectInstitutionFirst: "Selecione uma instituição primeiro",
     church: "Igreja",
+    churchDepartment: "Departamento da Igreja",
     selectChurch: "Selecione sua igreja",
     selectDepartmentFirst: "Selecione um departamento primeiro",
+    personalInfoSubtitle: "Informações de vínculo",
+    affiliationInfoDesc: "Suas associações institucionais e eclesiásticas do convite",
+    showAffiliationInfo: "Mostrar Informações de Vínculo",
+    hideAffiliationInfo: "Ocultar Informações de Vínculo",
+    noGenderSelected: "Nenhum gênero encontrado",
+    // Gender selection
+    genderSelection: "Seleção de Gênero",
+    genderSelectionDesc: "Por favor, selecione seu gênero.",
+    genderLabel: "Gênero",
+    genderPlaceholder: "Selecione seu gênero",
     
     // Languages
     languages: {
@@ -228,6 +276,12 @@ export const registerTranslations = {
     reviewPersonalData: "Dados Pessoais",
     reviewInstitutionData: "Dados da Instituição", 
     reviewRole: "Função",
-    reviewLanguage: "Idioma"
+    reviewLanguage: "Idioma",
+    
+    // Gender
+    gender: {
+      FEMALE: "Feminino",
+      MALE: "Masculino",
+    }
   }
 }

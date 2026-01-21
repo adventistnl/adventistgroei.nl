@@ -1,0 +1,47 @@
+/* tslint:disable */
+/* eslint-disable */
+// @generated
+// This file was automatically generated and should not be edited.
+
+// ====================================================
+// GraphQL mutation operation: UpdateRole
+// ====================================================
+
+export interface UpdateRole_updateRole_permissions_data {
+  __typename: "PermissionModel";
+  is_essential: boolean | null;
+  id: string;
+  name: string;
+  description: string;
+  key_code: string;
+  group: string | null;
+}
+
+export interface UpdateRole_updateRole_permissions {
+  __typename: "PermissionGroupPermissionsModel";
+  group: string;
+  data: UpdateRole_updateRole_permissions_data[];
+}
+
+export interface UpdateRole_updateRole {
+  __typename: "RoleModel";
+  id: string;
+  name: string;
+  description: string;
+  is_fixed: boolean;
+  key_code: string;
+  permissions: UpdateRole_updateRole_permissions[];
+}
+
+export interface UpdateRole {
+  updateRole: UpdateRole_updateRole;
+}
+
+export interface UpdateRoleVariables {
+  id: string;
+  name?: string | null;
+  description?: string | null;
+  key_code?: string | null;
+  addPermissionIds?: string[] | null;
+  removePermissionIds?: string[] | null;
+}

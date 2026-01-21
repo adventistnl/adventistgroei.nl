@@ -22,4 +22,7 @@ export interface InviteUserVariables {
   institution_id: string;
   inviter_id: string;
   language_preference: string;
+  church_id?: string | null;
+  church_department_id?: string | null;
+  institution_department_id?: string | null;
 }

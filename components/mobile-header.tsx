@@ -5,7 +5,7 @@ import { useState } from "react"
 import { GlobalSearch, useGlobalSearch, MobileSearchTrigger } from "@/components/global-search"
 import { ResponsiveBreadcrumbs } from "@/components/responsive-breadcrumbs"
 import { ChatUsersSelector } from "@/components/chat/chat-users-selector"
-import { LanguageSelector } from "@/components/language-selector"
+import { LanguageSelector } from "@/components/shared/language-selector"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { NotificationsSidebar } from "@/components/notifications-sidebar"
 import { InviteModal } from "@/components/modals/invite-modal"
@@ -20,6 +20,8 @@ import {
   MessageCircle
 } from "lucide-react"
 import toast from "react-hot-toast"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 export function MobileHeader() {
   // Ativar comando de teclado global para busca
@@ -41,7 +43,6 @@ export function MobileHeader() {
   }
 
   const handleInviteSent = (inviteData: any) => {
-    console.log('Invitation sent from mobile header:', inviteData)
     toast.success("Invitation sent successfully!", {
       duration: 3000,
       icon: '📧'
@@ -93,14 +94,16 @@ export function MobileHeader() {
               <LanguageSelector />
               
               {/* Invite Button - Destaque Principal */}
-              <InviteModal onInviteSent={handleInviteSent}>
-                <Button 
-                  size="sm"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg h-9 px-2"
-                >
-                  <UserPlus className="w-4 h-4" />
-                </Button>
-              </InviteModal>
+              <WithPermission requiredPermissions={[PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail]} partialPermissionCheck >
+                <InviteModal onInviteSent={handleInviteSent}>
+                  <Button 
+                    size="sm"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg h-9 px-2"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                  </Button>
+                </InviteModal>
+              </WithPermission>
             </div>
           </div>
         </div>
@@ -108,7 +111,7 @@ export function MobileHeader() {
 
       {/* Desktop Header - Mantém o header original para desktop */}
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 hidden md:block">
-        <div className="w-full px-6 py-3">
+        <div className="w-full px-6 py-2">
           <div className="flex h-12 items-center justify-between gap-6">
             
             {/* Left Section - Breadcrumb & Sidebar Toggle */}
@@ -153,16 +156,18 @@ export function MobileHeader() {
               <LanguageSelector />
 
               {/* Invite Button - Destaque */}
+              <WithPermission requiredPermissions={[PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail]} partialPermissionCheck >
               <InviteModal onInviteSent={handleInviteSent}>
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  className="flex items-center gap-2 h-9 px-4 ml-2 bg-primary hover:bg-primary/90 shadow-md"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  <span>Invite</span>
-                </Button>
-              </InviteModal>
+                  <Button 
+                    variant="default" 
+                    size="sm"
+                    className="flex items-center gap-2 h-9 px-4 ml-2 bg-primary hover:bg-primary/90 shadow-md"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>Invite</span>
+                  </Button>
+                </InviteModal>
+              </WithPermission>
             </div>
           </div>
         </div>

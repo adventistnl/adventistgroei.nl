@@ -130,7 +130,7 @@ export function ResponsiveGridCarousel({
   // Renderizar Grid para desktop com layout inteligente
   const renderGrid = () => (
     <div className={cn(
-      "w-full mx-auto p-4 overflow-hidden",
+      "w-full mx-auto overflow-hidden",
       className
     )}>
       <div className={cn(
@@ -157,7 +157,7 @@ export function ResponsiveGridCarousel({
 
   // Renderizar Carousel para mobile/tablet
   const renderCarousel = () => (
-    <div className={cn("w-full mx-auto p-4 overflow-hidden", className)}>
+    <div className={cn("w-full mx-auto py-4 overflow-hidden", className)}>
       <Carousel
         plugins={autoplayPlugin.current ? [autoplayPlugin.current] : []}
         className="w-full"

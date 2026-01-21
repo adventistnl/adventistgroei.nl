@@ -1,27 +1,31 @@
 "use client"
 
-import * as React from "react"
-import { useState } from "react"
+import React, { useState, useMemo } from "react"
 import { useTranslation } from "react-i18next"
+import { useCurrency } from "@/contexts/currency-context"
 import { ColumnDef } from "@tanstack/react-table"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { StatusBadge, StatusBadgeVariant } from "@/components/ui/status-badge"
+import { UseTable } from "@/components/ui/use-table"
 import {
-  MoreHorizontal,
-  Eye,
-  Edit,
-  Trash2,
-  FileText,
-  DollarSign,
   Activity,
+  MoreHorizontal,
+  Trash2,
+  Settings,
   CheckCircle,
   Clock,
   AlertCircle,
-  Plus
+  Wrench,
+  Package,
+  GraduationCap,
+  DollarSign,
+  Tag,
+  CircleDollarSign,
+  Wallet,
+  Flag,
+  Users
 } from "lucide-react"
-
-import { DataTable } from "@/components/ui/data-table"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,138 +34,356 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
-import { projectTranslations } from "@/lib/translations/projects"
-import { 
-  mockSubsidyRequests, 
-  mockSubsidyActivities, 
-  mockSubsidyReceipts,
-  mockSubsidyStatuses
-} from "@/data/mockData"
-import { ProjectTableData } from "@/components/projects/projects-table"
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
-export interface ActivityTableData {
+import toast from "react-hot-toast"
+import { ProjectTableData } from "@/components/projects/projects-table"
+import { mockProjectActivities, getActivitiesByProjectId } from "@/data/mockData"
+import { ActivityDetailsModal } from "@/components/modals/project/activity-details-modal"
+import { DeleteActivityModal } from "@/components/modals/project/delete-activity-modal"
+import { ActivityTags } from "@/types/graphql-global-types"
+import { projectTranslations } from "@/lib/translations/projects"
+
+// Schema-based interfaces
+export interface ProjectActivityData {
   id: string
-  subsidy_request_id: string
+  project_id: string
   name: string
   description: string
+  tags?: ActivityTags[]
+  custom_tags?: string[]
   budget_amount: number
+  deadline: string
   status: string
+  priority: string
   created_at: string
   updated_at: string
-  approvedAmount: number
-  receiptsCount: number
-  pendingAmount: number
+  created_by?: string
+  updated_by?: string
+  is_deleted?: boolean
+  deleted_at?: string | null
+  deleted_by?: string | null
+  completed_at?: string | null
+  // Additional fields
+  is_subsidized: boolean
+  subsidy_amount?: number
+  spent_amount?: number
+  institution_requested_amount?: number
+  // institution_requested_amount removed (duplicate)
+  activity_funding?: Array<{
+    id: string
+    entity_contribution_amount: number
+    entity_contribution_percent: number
+    entity_type: string
+    entity_id: string
+  }>
+  activity_documents?: Array<{
+    id: string
+    file_url: string
+    filename: string
+    type: string
+    drive_file_id?: string
+  }>
+  // Múltiplos responsáveis via tabela de relacionamento
+  assignees?: Array<{
+    id: string
+    user: {
+      id: string
+      name: string
+      email: string
+    }
+  }>
+  // Array de IDs para envio de atualização
+  assignee_ids?: string[]
+  // Legacy: manter para compatibilidade
+  assigned_users?: Array<{
+    id: string
+    name: string
+    email?: string
+    avatar?: string
+    initials?: string
+    role?: string
+  }>
+}
+
+export interface SubsidyReceiptData {
+  id: string
+  project_activities_id: string
+  file_path: string
+  amount: number
+  approved: boolean
+  created_at: string
+  updated_at: string
+  created_by?: string
+  updated_by?: string
+  is_deleted?: boolean
+  deleted_at?: string | null
+  deleted_by?: string | null
 }
 
 interface ProjectActivitiesTableProps {
   project: ProjectTableData
-  onEditActivity?: (activity: ActivityTableData) => void
-  onDeleteActivity?: (activity: ActivityTableData) => void
-  onAddActivity?: () => void
+  activities?: ProjectActivityData[] // Optional: if provided, use these activities instead of mock data
+  subsidies?: Array<{
+    id: string
+    status: string  // 'pending' | 'approved' | 'rejected' | 'in_review' | 'closed'
+    items?: Array<{
+      id: string
+      activity_id?: string
+      project_activity_id?: string
+      activity?: {
+        id: string
+      }
+    }>
+  }> // Subsidy data to check if activity can be deleted
+  filterSubsidized?: boolean
+  statusFilter?: string
+  priorityFilter?: string
+  tagFilter?: string
+  searchQuery?: string
+  onEditActivity?: (activity: ProjectActivityData) => void
+  onDeleteActivity?: (activity: ProjectActivityData) => void
+  onViewActivity?: (activity: ProjectActivityData) => void
+  onUploadReceipt?: (activity: ProjectActivityData) => void
+  onSaveActivity?: (data: Partial<ProjectActivityData>) => void
+  institutionUsers?: Array<{
+    id: string
+    name: string
+    email: string
+    avatar?: string
+    role?: string
+  }>
+  enableRowSelection?: boolean
+  selectedActivities?: ProjectActivityData[] // Controlled selection
+  onSelectionChange?: (selectedActivities: ProjectActivityData[]) => void
+  // Batch editing props
+  batchEditFields?: any[]
+  batchActions?: any[]
+  batchPrimaryAction?: any
+  batchSummary?: React.ReactNode
 }
 
-export function ProjectActivitiesTable({ 
-  project, 
-  onEditActivity, 
-  onDeleteActivity, 
-  onAddActivity 
+// Mock receipts data
+const mockReceipts: SubsidyReceiptData[] = [
+  {
+    id: "rec-1",
+    project_activities_id: "act-1",
+    file_path: "/uploads/receipts/receipt-1.pdf",
+    amount: 5000,
+    approved: true,
+    created_at: "2024-03-20T10:30:00Z",
+    updated_at: "2024-03-21T14:20:00Z"
+  },
+  {
+    id: "rec-2",
+    project_activities_id: "act-1",
+    file_path: "/uploads/receipts/receipt-2.pdf",
+    amount: 3500,
+    approved: false,
+    created_at: "2024-04-05T16:15:00Z",
+    updated_at: "2024-04-05T16:15:00Z"
+  },
+  {
+    id: "rec-3",
+    project_activities_id: "act-4",
+    file_path: "/uploads/receipts/receipt-3.pdf",
+    amount: 12000,
+    approved: true,
+    created_at: "2024-03-10T09:45:00Z",
+    updated_at: "2024-03-12T11:30:00Z"
+  }
+]
+
+export function ProjectActivitiesTable({
+  project,
+  activities,
+  subsidies = [],
+  filterSubsidized,
+  statusFilter = "all",
+  priorityFilter = "all",
+  tagFilter = "all",
+  searchQuery = "",
+  onEditActivity,
+  onDeleteActivity,
+  onViewActivity,
+  onUploadReceipt,
+  onSaveActivity,
+  institutionUsers = [],
+  enableRowSelection = false,
+  selectedActivities,
+  onSelectionChange,
+  batchEditFields,
+  batchActions,
+  batchPrimaryAction,
+  batchSummary
 }: ProjectActivitiesTableProps) {
-  const { i18n } = useTranslation()
-  const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+  const { t, i18n } = useTranslation()
+  const { selectedCurrency, formatCurrency } = useCurrency()
+  const langKey = i18n.language as keyof typeof projectTranslations
+  const pt = projectTranslations[langKey] || projectTranslations.en
+  
+  const [isViewActivityModalOpen, setIsViewActivityModalOpen] = useState(false)
+  const [selectedActivityForView, setSelectedActivityForView] = useState<ProjectActivityData | null>(null)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [selectedActivityForDelete, setSelectedActivityForDelete] = useState<ProjectActivityData | null>(null)
 
-  const [selectedActivity, setSelectedActivity] = useState<ActivityTableData | null>(null)
-  const [isReceiptsSheetOpen, setIsReceiptsSheetOpen] = useState(false)
+  // Get project activities - use provided activities or fallback to mock data
+  const projectActivities = activities || (getActivitiesByProjectId(project.id) as ProjectActivityData[])
 
-  // Get project activities with calculated data
-  const projectActivities: ActivityTableData[] = React.useMemo(() => {
-    const subsidyRequests = mockSubsidyRequests.filter(req => req.project_id === project.id)
-    const activities = subsidyRequests.flatMap(req => 
-      mockSubsidyActivities.filter(act => act.subsidy_request_id === req.id)
-    )
+  // Filter activities based on subsidy status
+  const currentActivities = filterSubsidized !== undefined 
+    ? projectActivities.filter(activity => activity.is_subsidized === filterSubsidized)
+    : projectActivities
 
-    return activities.map(activity => {
-      const receipts = mockSubsidyReceipts.filter(rec => rec.subsidy_activities_id === activity.id)
-      const approvedReceipts = receipts.filter(rec => rec.approved)
-      const approvedAmount = approvedReceipts.reduce((sum, rec) => sum + rec.amount, 0)
-      const pendingAmount = activity.budget_amount - approvedAmount
-
-      return {
-        ...activity,
-        approvedAmount,
-        receiptsCount: receipts.length,
-        pendingAmount: Math.max(0, pendingAmount)
-      }
+  // Apply filters
+  const filteredActivities = useMemo(() => {
+    return currentActivities.filter((activity: ProjectActivityData) => {
+      const matchesStatus = statusFilter === "all" || activity.status === statusFilter
+      const matchesPriority = priorityFilter === "all" || activity.priority === priorityFilter
+      const matchesTag = tagFilter === "all" || activity.tags?.includes(tagFilter as ActivityTags)
+      const matchesSearch = searchQuery === "" || 
+        activity.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        activity.description.toLowerCase().includes(searchQuery.toLowerCase())
+      
+      return matchesStatus && matchesPriority && matchesTag && matchesSearch
     })
-  }, [project.id])
+  }, [currentActivities, statusFilter, priorityFilter, tagFilter, searchQuery])
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      approved: { 
-        label: "Aprovado", 
-        className: "bg-green-100 text-green-700 border-green-200",
-        icon: CheckCircle
-      },
-      pending: { 
-        label: "Pendente", 
-        className: "bg-yellow-100 text-yellow-700 border-yellow-200",
-        icon: Clock
-      },
-      under_review: { 
-        label: "Em Análise", 
-        className: "bg-blue-100 text-blue-700 border-blue-200",
-        icon: Eye
-      },
-      rejected: { 
-        label: "Rejeitado", 
-        className: "bg-red-100 text-red-700 border-red-200",
-        icon: AlertCircle
-      },
-      completed: { 
-        label: "Concluído", 
-        className: "bg-gray-100 text-gray-700 border-gray-200",
-        icon: CheckCircle
-      }
+  // Helper functions
+  const getActivityTagIcon = (tag?: ActivityTags) => {
+    if (!tag) return <Activity className="w-4 h-4" />
+
+    switch (tag) {
+      case ActivityTags.Reform: return <Wrench className="w-4 h-4" />
+      case ActivityTags.Equipment: return <Wrench className="w-4 h-4" />
+      case ActivityTags.Materials: return <Package className="w-4 h-4" />
+      case ActivityTags.Training: return <GraduationCap className="w-4 h-4" />
+      default: return <Activity className="w-4 h-4" />
     }
-    
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending
-    const Icon = config.icon
-    
-    return (
-      <Badge variant="outline" className={config.className}>
-        <Icon className="w-3 h-3 mr-1" />
-        {config.label}
-      </Badge>
-    )
   }
 
-  const handleViewReceipts = (activity: ActivityTableData) => {
-    setSelectedActivity(activity)
-    setIsReceiptsSheetOpen(true)
+  const getActivityTagLabel = (tag?: ActivityTags) => {
+    if (!tag) return ''
+    return pt.activityTags[tag] || tag
   }
 
-  const getActivityReceipts = (activityId: string) => {
-    return mockSubsidyReceipts.filter(rec => rec.subsidy_activities_id === activityId)
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      "TODO": "To Do",
+      "todo": "To Do",
+      "IN_PROGRESS": pt.filters.inProgress,
+      "in_progress": pt.filters.inProgress,
+      "COMPLETED": pt.filters.completed,
+      "completed": pt.filters.completed,
+      "ON_HOLD": pt.filters.onHold,
+      "on_hold": pt.filters.onHold
+    }
+
+    return labels[status] || status
   }
 
-  const columns: ColumnDef<ActivityTableData>[] = [
+  // Monochromatic design - all elements use gray tones except subsidy indicator
+  const getActivityTagColor = (tag?: ActivityTags) => {
+    if (!tag) return "bg-gray-100 text-gray-800 border-gray-200"
+
+    const colors: Record<ActivityTags, string> = {
+      [ActivityTags.Reform]: 'bg-purple-50 text-purple-700 border-purple-200',
+      [ActivityTags.Equipment]: 'bg-blue-50 text-blue-700 border-blue-200',
+      [ActivityTags.Materials]: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+      [ActivityTags.Training]: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      [ActivityTags.Travel]: 'bg-green-50 text-green-700 border-green-200',
+      [ActivityTags.Event]: 'bg-pink-50 text-pink-700 border-pink-200',
+      [ActivityTags.Transport]: 'bg-orange-50 text-orange-700 border-orange-200',
+      [ActivityTags.Marketing]: 'bg-red-50 text-red-700 border-red-200',
+      [ActivityTags.Services]: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+      [ActivityTags.Feeding]: 'bg-gray-50 text-gray-700 border-gray-200',
+      [ActivityTags.Accommodation]: 'bg-gray-50 text-gray-700 border-gray-200',
+    }
+    return colors[tag] || "bg-gray-100 text-gray-800 border-gray-200"
+  }
+
+  const getStatusVariant = (status: string): StatusBadgeVariant => {
+    const statusLower = status.toLowerCase()
+    switch (statusLower) {
+      case "completed": return "success"
+      case "in_progress": return "info"
+      case "todo": return "default"  // grey
+      case "on_hold": return "neutral"
+      default: return "default"
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    const statusLower = status.toLowerCase()
+    switch (statusLower) {
+      case "completed": return CheckCircle
+      case "in_progress": return Clock
+      case "todo":
+      case "pending": return AlertCircle
+      case "on_hold": return Settings
+      default: return Activity
+    }
+  }
+
+  const getPriorityVariant = (priority: string): StatusBadgeVariant => {
+    const priorityLower = priority.toLowerCase()
+    switch (priorityLower) {
+      case "urgent": return "error"   // red
+      case "high": return "warning"   // yellow
+      case "medium": return "neutral" // brown
+      case "low": return "default"    // grey
+      default: return "default"
+    }
+  }
+  const getPriorityLabel = (priority: string) => {
+    const labels: Record<string, string> = {
+      "urgent": pt.filters.urgent,
+      "high": pt.filters.high,
+      "medium": pt.filters.medium,
+      "low": pt.filters.low
+    }
+    return labels[priority.toLowerCase()] || priority
+  }
+
+  // Event handlers
+  const handleManageActivity = (activity: ProjectActivityData) => {
+    setSelectedActivityForView(activity)
+    setIsViewActivityModalOpen(true)
+  }
+
+  const handleDeleteActivity = (activity: ProjectActivityData) => {
+    setSelectedActivityForDelete(activity)
+    setIsDeleteModalOpen(true)
+  }
+
+
+
+  // Table columns
+  const columns: ColumnDef<ProjectActivityData>[] = [
     {
       id: "name",
       accessorKey: "name",
-      header: t.details.activityName,
+      header: pt.activitiesTable.activity,
+      meta: {
+        responsive: "always", // Always show this column
+      },
       cell: ({ row }) => (
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-            <Activity className="w-4 h-4 text-blue-600" />
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center shrink-0">
+            <Activity className="w-4 h-4 text-gray-600" />
           </div>
-          <div>
-            <div className="font-medium text-sm">{row.original.name}</div>
-            <div className="text-xs text-muted-foreground line-clamp-1">
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-left">{row.original.name}</div>
+            <div className="text-xs text-muted-foreground line-clamp-2 text-left mt-1">
               {row.original.description}
             </div>
           </div>
@@ -169,78 +391,202 @@ export function ProjectActivitiesTable({
       ),
     },
     {
-      id: "budget",
+      id: "tags",
+      accessorKey: "tags",
+      header: pt.activitiesTable.category,
+      meta: {
+        responsive: "desktop", // Hide on mobile
+      },
+      cell: ({ row }) => (
+        <div className="flex flex-wrap gap-1">
+          {row.original.tags && row.original.tags.length > 0 ? (
+            row.original.tags.map((tag: ActivityTags, index: number) => {
+              const variant = tag === ActivityTags.Reform ? 'info' :
+                             tag === ActivityTags.Equipment ? 'info' :
+                             tag === ActivityTags.Materials ? 'info' :
+                             tag === ActivityTags.Training ? 'success' : 'neutral'
+              return (
+                <StatusBadge
+                  key={`${tag}-${index}`}
+                  label={getActivityTagLabel(tag)}
+                  variant={variant}
+                  showDot={true}
+                  size="sm"
+                />
+              )
+            })
+          ) : (
+            <span className="text-xs text-muted-foreground">{pt.filters.sem_categoria}</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "subsidy_status",
+      header: pt.activitiesTable.subsidy_status,
+      meta: {
+        responsive: "desktop", // Hide on mobile
+      },
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+            row.original.is_subsidized 
+              ? 'bg-green-100 border-2 border-green-300 dark:bg-green-950 dark:border-green-800' 
+              : 'bg-gray-100 border-2 border-gray-300 dark:bg-gray-800 dark:border-gray-600'
+          }`}>
+            <span className={`text-sm font-bold ${
+              row.original.is_subsidized ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'
+            }`}>
+              {selectedCurrency.symbol}
+            </span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "budget_amount",
       accessorKey: "budget_amount",
-      header: t.details.activityBudget,
+      header: pt.activitiesTable.budget,
+      meta: {
+        responsive: "desktop", // Hide on mobile
+      },
       cell: ({ row }) => (
-        <div className="text-center">
-          <div className="font-medium">
-            R$ {row.original.budget_amount.toLocaleString()}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            Planejado
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: "approved",
-      header: t.details.approvedAmount,
-      cell: ({ row }) => (
-        <div className="text-center">
-          <div className="font-medium text-green-600">
-            R$ {row.original.approvedAmount.toLocaleString()}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            {((row.original.approvedAmount / row.original.budget_amount) * 100).toFixed(0)}%
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: "receipts",
-      header: t.details.receiptsCount,
-      cell: ({ row }) => (
-        <div className="text-center">
-          <div className="font-medium">{row.original.receiptsCount}</div>
-          <div className="text-xs text-muted-foreground">
-            recibos
-          </div>
-        </div>
+        <div className="font-medium">{formatCurrency(row.original.budget_amount)}</div>
       ),
     },
     {
       id: "status",
       accessorKey: "status",
-      header: t.details.activityStatus,
-      cell: ({ row }) => getStatusBadge(row.original.status),
+      header: pt.activitiesTable.status,
+      meta: {
+        responsive: "desktop", // Hide on mobile
+      },
+      cell: ({ row }) => (
+        <StatusBadge
+          label={getStatusLabel(row.original.status)}
+          variant={getStatusVariant(row.original.status)}
+          showDot={true}
+          size="sm"
+        />
+      ),
+    },
+    {
+      id: "priority",
+      accessorKey: "priority",
+      header: pt.activitiesTable.priority,
+      meta: {
+        responsive: "desktop", // Hide on mobile
+      },
+      cell: ({ row }) => (
+        <StatusBadge
+          label={getPriorityLabel(row.original.priority)}
+          variant={getPriorityVariant(row.original.priority)}
+          icon={Flag}
+          size="sm"
+        />
+      ),
+    },
+    {
+      id: "assigned_users",
+      header: pt.filters.assignees,
+      meta: {
+        responsive: "desktop", // Hide on mobile
+      },
+      cell: ({ row }) => {
+        // Prioridade: assignees (nova estrutura) > assigned_users (legacy)
+        let assignedUsers: Array<{ id: string; name: string; email?: string; avatar?: string; initials?: string; role?: string }> = []
+        
+        if (row.original.assignees && row.original.assignees.length > 0) {
+          // Nova estrutura: assignees da tabela de relacionamento
+          assignedUsers = row.original.assignees.map(a => ({
+            id: a.user.id,
+            name: a.user.name,
+            email: a.user.email,
+          }))
+        } else if (row.original.assigned_users && row.original.assigned_users.length > 0) {
+          // Legacy: assigned_users
+          assignedUsers = row.original.assigned_users
+        }
+        
+        const maxDisplay = 3
+        const displayedUsers = assignedUsers.slice(0, maxDisplay)
+        const remainingCount = assignedUsers.length - maxDisplay
+        
+        if (assignedUsers.length === 0) {
+          return (
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              {pt.filters.none}
+            </span>
+          )
+        }
+        
+        return (
+          <div className="flex items-center -space-x-2">
+            {displayedUsers.map((user, index) => (
+              <TooltipProvider key={user.id}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Avatar 
+                      className="size-7 border-2 border-background cursor-pointer"
+                      style={{ zIndex: displayedUsers.length - index }}
+                    >
+                      <AvatarImage src={user.avatar} alt={user.name} />
+                      <AvatarFallback className="text-[9px] bg-muted text-foreground font-medium">
+                        {user.initials || user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    <div>
+                      <p className="font-medium">{user.name}</p>
+                      {user.email && (
+                        <p className="text-gray-400 text-[10px]">{user.email}</p>
+                      )}
+                      {user.role && (
+                        <p className="text-gray-400 text-[10px]">{user.role}</p>
+                      )}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ))}
+            {remainingCount > 0 && (
+              <div className="size-7 rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-background flex items-center justify-center">
+                <span className="text-[9px] font-medium text-gray-600 dark:text-gray-300">
+                  +{remainingCount}
+                </span>
+              </div>
+            )}
+          </div>
+        )
+      },
     },
     {
       id: "actions",
-      header: "Ações",
+      header: pt.activitiesTable.actions,
+      meta: {
+        responsive: "always", // Always show this column
+      },
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <Button variant="ghost" size="sm">
               <MoreHorizontal className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => handleViewReceipts(row.original)}>
-              <FileText className="w-4 h-4 mr-2" />
-              {t.details.viewReceipts}
+            <DropdownMenuItem onClick={() => handleManageActivity(row.original)}>
+              <Settings className="w-4 h-4 mr-2" />
+              {pt.activitiesTable.manage_activity}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEditActivity?.(row.original)}>
-              <Edit className="w-4 h-4 mr-2" />
-              {t.details.editActivity}
-            </DropdownMenuItem>
+            
             <DropdownMenuSeparator />
             <DropdownMenuItem 
-              onClick={() => onDeleteActivity?.(row.original)}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={() => handleDeleteActivity(row.original)}
+              className="text-red-600 focus:text-red-600"
             >
               <Trash2 className="w-4 h-4 mr-2" />
-              {t.details.deleteActivity}
+              {pt.activitiesTable.remove}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -249,154 +595,58 @@ export function ProjectActivitiesTable({
   ]
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="w-5 h-5" />
-              {t.details.subsidyActivities}
-            </CardTitle>
-            <CardDescription>
-              Lista detalhada das atividades de subsídio do projeto
-            </CardDescription>
-          </div>
-          <Button onClick={onAddActivity} size="sm" className="gap-2">
-            <Plus className="w-4 h-4" />
-            {t.details.addActivity}
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {projectActivities.length > 0 ? (
-            <DataTable
-              columns={columns}
-              data={projectActivities}
-              searchKey="name"
-              searchPlaceholder="Buscar atividades..."
-              filterableColumns={[
-                {
-                  id: "status",
-                  title: "Status",
-                  options: [
-                    { label: "Aprovado", value: "approved" },
-                    { label: "Pendente", value: "pending" },
-                    { label: "Em Análise", value: "under_review" },
-                    { label: "Rejeitado", value: "rejected" },
-                    { label: "Concluído", value: "completed" }
-                  ]
-                }
-              ]}
-            />
-          ) : (
-            <div className="text-center py-12">
-              <Activity className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-muted-foreground mb-2">
-                {t.details.noActivities}
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                {t.details.noActivitiesDesc}
-              </p>
-              <Button onClick={onAddActivity} className="gap-2">
-                <Plus className="w-4 h-4" />
-                {t.details.addActivity}
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+    <>
+      <UseTable
+        columns={columns}
+        data={filteredActivities}
+        showSearch={false}
+        showColumnToggle={false}
+        onRowClick={enableRowSelection ? undefined : handleManageActivity}
+        enableRowSelection={enableRowSelection}
+        selectedRows={selectedActivities}
+        onSelectionChange={onSelectionChange}
+        batchEditFields={batchEditFields}
+        batchActions={batchActions}
+        batchPrimaryAction={batchPrimaryAction}
+        batchSummary={batchSummary}
+        emptyMessage={
+          filterSubsidized 
+            ? (statusFilter !== "all" || priorityFilter !== "all" || tagFilter !== "all" || searchQuery !== ""
+                ? pt.activitiesTable.adjust_filters
+                : pt.activitiesTable.create_first_subsidized)
+            : (statusFilter !== "all" || priorityFilter !== "all" || tagFilter !== "all" || searchQuery !== ""
+                ? pt.activitiesTable.adjust_filters
+                : pt.activitiesTable.create_first_non_subsidized)
+        }
+      />
 
-      {/* Receipts Sheet */}
-      <Sheet open={isReceiptsSheetOpen} onOpenChange={setIsReceiptsSheetOpen}>
-        <SheetContent className="sm:max-w-[600px]">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Recibos da Atividade
-            </SheetTitle>
-            <SheetDescription>
-              {selectedActivity?.name}
-            </SheetDescription>
-          </SheetHeader>
-          
-          {selectedActivity && (
-            <div className="mt-6 space-y-4">
-              {/* Activity Summary */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Resumo da Atividade</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Orçamento:</span>
-                      <p className="font-medium">R$ {selectedActivity.budget_amount.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Aprovado:</span>
-                      <p className="font-medium text-green-600">R$ {selectedActivity.approvedAmount.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Pendente:</span>
-                      <p className="font-medium text-yellow-600">R$ {selectedActivity.pendingAmount.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Status:</span>
-                      <div className="mt-1">{getStatusBadge(selectedActivity.status)}</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+      {/* View Activity Modal */}
+      <ActivityDetailsModal
+        isOpen={isViewActivityModalOpen}
+        onClose={() => setIsViewActivityModalOpen(false)}
+        activity={selectedActivityForView}
+        project={project}
+        institutionUsers={institutionUsers}
+        onSave={(updatedActivity) => {
+          if (onSaveActivity) {
+            onSaveActivity(updatedActivity)
+          }
+          setIsViewActivityModalOpen(false)
+        }}
+      />
 
-              {/* Receipts List */}
-              <div className="space-y-3">
-                <h4 className="font-medium">Recibos ({selectedActivity.receiptsCount})</h4>
-                {getActivityReceipts(selectedActivity.id).map((receipt, index) => (
-                  <Card key={receipt.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                            receipt.approved ? "bg-green-100" : "bg-yellow-100"
-                          }`}>
-                            <FileText className={`w-4 h-4 ${
-                              receipt.approved ? "text-green-600" : "text-yellow-600"
-                            }`} />
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">{receipt.description}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(receipt.receipt_date).toLocaleDateString('pt-BR')}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">R$ {receipt.amount.toLocaleString()}</p>
-                          <Badge 
-                            variant="outline" 
-                            className={receipt.approved ? 
-                              "text-green-600 border-green-200 bg-green-50" : 
-                              "text-yellow-600 border-yellow-200 bg-yellow-50"
-                            }
-                          >
-                            {receipt.approved ? "Aprovado" : "Pendente"}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-                
-                {getActivityReceipts(selectedActivity.id).length === 0 && (
-                  <div className="text-center py-8">
-                    <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-muted-foreground">Nenhum recibo encontrado</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
-    </div>
+      {/* Delete Activity Modal */}
+      <DeleteActivityModal
+        isOpen={isDeleteModalOpen}
+        onOpenChangeAction={setIsDeleteModalOpen}
+        activity={selectedActivityForDelete}
+        onSuccess={(deletedActivity) => {
+          if (onDeleteActivity) {
+            onDeleteActivity(deletedActivity)
+          }
+          setSelectedActivityForDelete(null)
+        }}
+      />
+    </>
   )
 }

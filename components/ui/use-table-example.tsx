@@ -6,7 +6,7 @@ import { UseTable } from "./use-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, Edit, Trash2, Eye, Users, Shield, Activity } from "lucide-react"
+import { MoreHorizontal, Edit, Trash2, Eye, Users, Shield, Activity, UserX } from "lucide-react"
 
 /**
  * Exemplo de uso do componente UseTable
@@ -200,8 +200,8 @@ export function UseTableExample() {
                 Edit User
               </DropdownMenuItem>
               <DropdownMenuItem className="text-red-600">
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete User
+                <UserX  className="mr-2 h-4 w-4" />
+                Deactivate User
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -244,7 +244,6 @@ export function UseTableExample() {
   ]
 
   const handleRowClick = (user: MockUser) => {
-    console.log("Row clicked:", user)
     // Aqui você pode abrir um modal, navegar para detalhes, etc.
   }
 

@@ -20,7 +20,6 @@ export function ExampleRoleModalUsage() {
 
   // Success handlers
   const handleCreateSuccess = (roleData: any) => {
-    console.log('Role created:', roleData)
     // Here you would typically:
     // 1. Add the new role to your state/cache
     // 2. Refetch roles data
@@ -29,7 +28,6 @@ export function ExampleRoleModalUsage() {
   }
 
   const handleEditSuccess = (roleData: any) => {
-    console.log('Role updated:', roleData)
     // Here you would typically:
     // 1. Update the role in your state/cache
     // 2. Refetch roles data
@@ -37,9 +35,7 @@ export function ExampleRoleModalUsage() {
   }
 
   const handleDeleteSuccess = (deletedRole: Role, reassignmentRoleId?: string) => {
-    console.log('Role deleted:', deletedRole.name)
     if (reassignmentRoleId) {
-      console.log('Users reassigned to role:', reassignmentRoleId)
     }
     // Here you would typically:
     // 1. Remove the role from your state/cache
@@ -50,7 +46,7 @@ export function ExampleRoleModalUsage() {
 
   const handleEditPermissions = (role: Role) => {
     // Navigate to permissions page
-    window.location.href = `/access/permissions/${role.id}`
+    window.location.href = `/access/roles/${role.id}`
   }
 
   const openEditModal = (role: Role) => {
@@ -116,25 +112,8 @@ export function ExampleRoleModalUsage() {
 }
 
 /**
- * Usage in other components:
- * 
- * 1. Import the modals you need:
- *    import { CreateRoleModal, EditRoleModal, DeleteRoleModal } from "@/components/modals/role"
- * 
- * 2. Add state for modal visibility and selected role:
- *    const [isCreateOpen, setIsCreateOpen] = useState(false)
- *    const [selectedRole, setSelectedRole] = useState<Role | null>(null)
- * 
- * 3. Add success handlers:
- *    const handleSuccess = (data) => { /* your logic */ }
- * 
- * 4. Use the modals in your JSX:
- *    <CreateRoleModal 
- *      isOpen={isCreateOpen} 
- *      onOpenChange={setIsCreateOpen}
- *      onSuccess={handleSuccess}
- *    />
- * 
- * 5. Trigger modals with buttons or actions:
- *    <Button onClick={() => setIsCreateOpen(true)}>Create Role</Button>
+ * Example usage of Role Modals
+ *
+ * This file demonstrates how to use the role modal components
+ * in any page or component throughout the application.
  */

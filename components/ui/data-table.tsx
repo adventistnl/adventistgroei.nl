@@ -56,6 +56,17 @@ interface DataTableProps<TData, TValue> {
   }[]
   onRowClick?: (row: TData) => void
   className?: string
+  translations?: {
+    search?: string
+    clearFilters?: string
+    columns?: string
+    rowsPerPage?: string
+    showingResults?: (from: number, to: number, total: number) => string
+    previous?: string
+    next?: string
+    noResults?: string
+    all?: string
+  }
 }
 
 export function DataTable<TData, TValue>({
@@ -66,6 +77,7 @@ export function DataTable<TData, TValue>({
   filterableColumns = [],
   onRowClick,
   className = "",
+  translations
 }: DataTableProps<TData, TValue>) {
   const { t } = useTranslation()
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -73,25 +85,19 @@ export function DataTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
   const [globalFilter, setGlobalFilter] = React.useState("")
-
   const table = useReactTable({
     data,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: "includesString",
     state: {
       sorting,
       columnFilters,
-      columnVisibility,
-      rowSelection,
       globalFilter,
     },
     initialState: {
@@ -107,6 +113,12 @@ export function DataTable<TData, TValue>({
     table.resetColumnFilters()
   }
 
+  const clearAllFilters = () => {
+    setGlobalFilter("");
+    setColumnFilters([]);
+    table.resetColumnFilters();
+  };
+
   const hasActiveFilters = globalFilter !== "" || columnFilters.length > 0
 
   return (
@@ -118,10 +130,14 @@ export function DataTable<TData, TValue>({
           <div className="relative flex-1 sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder={searchPlaceholder || t('common.search')}
+              type="text"
+              placeholder={searchPlaceholder || translations?.search || "Search..."}
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
               className="pl-10"
+              autoComplete="new-password" // Valor alternativo para desativar autofill
+              name={`disable-autofill-${Math.random().toString(36).substring(2, 15)}`} // Nome único
+              id={`disable-autofill-${Math.random().toString(36).substring(2, 15)}`} // ID único
             />
             {globalFilter && (
               <Button
@@ -141,15 +157,16 @@ export function DataTable<TData, TValue>({
               <Select
                 key={column.id}
                 value={filterValue || "all"}
-                onValueChange={(value) =>
+                onValueChange={(value) => {
                   table.getColumn(column.id)?.setFilterValue(value === "all" ? "" : value)
+                }
                 }
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder={column.title} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All {column.title}</SelectItem>
+                  <SelectItem value="all">{translations?.all || "All"} {column.title}</SelectItem>
                   {column.options.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
@@ -163,7 +180,7 @@ export function DataTable<TData, TValue>({
           {/* Clear Filters */}
           {hasActiveFilters && (
             <Button variant="ghost" onClick={clearFilters} className="h-8 px-2 lg:px-3">
-              {t('common.clear_filters')}
+              {translations?.clearFilters || "Clear filters"}
               <X className="ml-2 h-4 w-4" />
             </Button>
           )}
@@ -174,7 +191,7 @@ export function DataTable<TData, TValue>({
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="ml-auto h-8">
               <Settings2 className="mr-2 h-4 w-4" />
-              {t('common.columns')}
+              {translations?.columns || "Columns"}
               <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -190,7 +207,7 @@ export function DataTable<TData, TValue>({
                     checked={column.getIsVisible()}
                     onCheckedChange={(value) => column.toggleVisibility(!!value)}
                   >
-                    {column.id}
+                    {typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id}
                   </DropdownMenuCheckboxItem>
                 )
               })}
@@ -257,7 +274,7 @@ export function DataTable<TData, TValue>({
               ) : (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="h-24 text-center">
-                    {t('institutions.table.no_results')}
+                    {translations?.noResults || "No results found."}
                   </TableCell>
                 </TableRow>
               )}
@@ -270,7 +287,7 @@ export function DataTable<TData, TValue>({
       {/* Pagination */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center space-x-2">
-          <p className="text-sm font-medium">Rows per page</p>
+          <p className="text-sm font-medium">{translations?.rowsPerPage || "Rows per page"}</p>
           <Select
             value={`${table.getState().pagination.pageSize}`}
             onValueChange={(value) => {
@@ -291,14 +308,14 @@ export function DataTable<TData, TValue>({
         </div>
         
         <div className="flex items-center justify-center text-sm font-medium">
-          {t('institutions.table.showing_results', {
-            from: table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1,
-            to: Math.min(
+          {translations?.showingResults ? translations.showingResults(
+            table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1,
+            Math.min(
               (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
               table.getFilteredRowModel().rows.length
             ),
-            total: table.getFilteredRowModel().rows.length,
-          })}
+            table.getFilteredRowModel().rows.length
+          ) : `Showing ${table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to ${Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, table.getFilteredRowModel().rows.length)} of ${table.getFilteredRowModel().rows.length} results`}
         </div>
 
         <div className="flex items-center space-x-2">
@@ -308,7 +325,7 @@ export function DataTable<TData, TValue>({
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            Previous
+            {translations?.previous || "Previous"}
           </Button>
           <Button
             variant="outline"
@@ -316,7 +333,7 @@ export function DataTable<TData, TValue>({
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            Next
+            {translations?.next || "Next"}
           </Button>
         </div>
       </div>

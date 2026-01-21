@@ -1,30 +1,42 @@
 "use client"
 
-import React, { createContext, useContext, useState, useCallback, useMemo, use, useEffect } from 'react'
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react'
 import { Building2 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { useGetInstitutionsQuery } from '@/hooks/graphql/use-get-institutions-query'
-
-interface Institution {
-  id: string
-  name: string
-  denomination: string
-  language_preference: "en" | "nl"
-  logo: React.ElementType
-  description: string
-  regions_count: number
-  churches_count: number
-  members_count: number
-  active_users: number
-  created_at: string
-}
+import { useInstitutions } from '@/hooks/use-institutions'
+import { InstitutionById_institution } from '@/types/InstitutionById'
+import { Institutions_institutions } from '@/types/Institutions'
+import { useUpdateInstitutionContactMutation, useUpdateInstitutionMutation } from '@/hooks/graphql/use-institution-mutation'
+import { ErrorLike } from '@apollo/client'
+import { UpdateInstitutionContact } from '@/types/UpdateInstitutionContact'
+import { useUser } from "@/hooks/use-user";
+import { useAuth } from './auth-context'
 
 interface InstitutionContextType {
-  institutions: Institution[]
-  activeInstitution: Institution
-  setActiveInstitution: (institution: Institution) => void
-  switchInstitution: (institutionId: string) => void
-  addInstitution: (institution: Omit<Institution, 'id' | 'created_at'>) => void
+  institutions: Institutions_institutions[];
+  switchInstitution: (institutionId: string) => void;
+  addInstitution: (institution: any) => void;
+  loading: boolean;
+  error?: any;
+  createInstitution: (...args: any[]) => any;
+  createLoading?: boolean;
+  createError?: any;
+  createdInstitution?: any;
+  deleteInstitution: (...args: any[]) => any;
+  deleteLoading?: boolean;
+  deleteError?: any;
+  deletedInstitution?: any;
+  updateInstitution: ReturnType<typeof useUpdateInstitutionMutation>[0];
+  updateLoading?: boolean;
+  updateError?: any;
+  updatedInstitution?: any;
+  refetchInstitutions: () => void;
+  refetchInstitutionById: () => void;
+  currentInstitutionData: InstitutionById_institution | null;
+  updateInstitutionContact: ReturnType<typeof useUpdateInstitutionContactMutation>[0]
+  updatedInstitutionContact: UpdateInstitutionContact | null | undefined
+  updateContactLoading: boolean
+  updateContactError: ErrorLike | undefined
 }
 
 const InstitutionContext = createContext<InstitutionContextType | undefined>(undefined)
@@ -37,89 +49,165 @@ export const useInstitution = () => {
   return context
 }
 
-// Dados mockados das instituições
-const MOCK_INSTITUTIONS: Institution[] = [
-  {
-    id: "4053124b-5b65-4a38-a559-924f72519a52",
-    name: "União Sul-Paulista",
-    denomination: "SDA",
-    language_preference: "en",
-    logo: Building2,
-    description: "Church Growth International - Southeast Division",
-    regions_count: 12,
-    churches_count: 89,
-    members_count: 28500,
-    active_users: 1250,
-    created_at: "2020-01-15"
-  },
-]
-
 export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [institutions, setInstitutions] = useState<Institution[]>([])
-  const [activeInstitution, setActiveInstitution] = useState<Institution>(MOCK_INSTITUTIONS[0])
-  const { data } = useGetInstitutionsQuery();
+  // Estado para instituição ativa
+  const { user: authUser } = useAuth();
+  const { user  } = useUser({});
+  
+  // Calcular institutions ANTES de tudo
+  const {
+    institutions: rawInstitutions,
+    currentInstitutionData,
+    loading,
+    error,
+    createInstitution,
+    createLoading,
+    createError,
+    createdInstitution,
+    deleteInstitution,
+    deleteLoading,
+    deleteError,
+    deletedInstitution,
+    refetchInstitutions,
+    refetchInstitutionById,
+    updateInstitution,
+    updateLoading,
+    updateError,
+    updatedInstitution,
+    updateContactError,
+    updateContactLoading,
+    updateInstitutionContact,
+    updatedInstitutionContact
+  } = useInstitutions(undefined); // Passar undefined inicialmente para carregar lista
+  
+  // Mapear institutions com logo
+  const institutions = React.useMemo(() => {
+    return (rawInstitutions || []).map(inst => ({
+      ...inst,
+      logo: Building2,
+    }));
+  }, [rawInstitutions]);
 
+  // Definir activeInstitutionId com fallback inteligente
+  const [activeInstitutionId, setActiveInstitutionId] = useState<string | undefined>(() => {
+    // Priorizar authUser.institution_id, depois user.institution_id, depois primeiro da lista
+    if (authUser?.institution_id) return authUser.institution_id;
+    if (user?.institution_id) return user.institution_id;
+    return undefined; // Será definido pelo useEffect quando institutions carregar
+  });
+  
+  // Agora buscar dados da instituição específica
+  const {
+    currentInstitutionData: specificInstitutionData,
+    loading: specificLoading,
+    refetchInstitutionById: refetchSpecificInstitution
+  } = useInstitutions(activeInstitutionId);
+
+  // Atualizar activeInstitutionId quando necessário
   useEffect(() => {
-    if (data && data.institutions) {
-      const fetchedInstitutions: Institution[] = data.institutions.map(inst => ({
-        id: inst?.id,
-        name: inst?.name,
-        denomination: inst?.denomination,
-        language_preference: inst?.language_preference,
-        logo: Building2,
-        description: inst?.name,
-        regions_count: 0,
-        churches_count: 0,
-        members_count: 0,
-        active_users: 0,
-        created_at: inst?.created_at
-
-      }))
-      setInstitutions(fetchedInstitutions)
+    if (!activeInstitutionId) {
+      if (authUser?.institution_id) {
+        console.log('[InstitutionContext] Setting activeInstitutionId from authUser:', authUser.institution_id);
+        setActiveInstitutionId(authUser.institution_id);
+      } else if (user?.institution_id) {
+        console.log('[InstitutionContext] Setting activeInstitutionId from user:', user.institution_id);
+        setActiveInstitutionId(user.institution_id);
+      } else if (institutions.length > 0) {
+        console.log('[InstitutionContext] Setting activeInstitutionId from first institution:', institutions[0].id);
+        setActiveInstitutionId(institutions[0].id);
+      }
     }
-  }, [data])
-  const switchInstitution = useCallback((institutionId: string) => {
-    const institution = institutions.find(inst => inst.id === institutionId)
-    if (institution && institution.id !== activeInstitution.id) {
-      setActiveInstitution(institution)
-      
+  }, [authUser, user, institutions, activeInstitutionId]);
+  
+  // Log de debug para monitorar estados
+  useEffect(() => {
+    console.log('[InstitutionContext] State:', {
+      activeInstitutionId,
+      institutionsCount: institutions.length,
+      hasCurrentData: !!specificInstitutionData,
+      loading,
+      specificLoading
+    });
+  }, [activeInstitutionId, institutions, specificInstitutionData, loading, specificLoading]);
+
+
+  // Troca de instituição
+  const switchInstitution = useCallback(async (institutionId: string) => {
+    const institution = institutions.find(inst => inst.id === institutionId);
+    if (institution && institution.id !== activeInstitutionId) {
+      setActiveInstitutionId(institution.id);
+
       toast.success(
-        `🏢 Switched to ${institution.name}\n📊 Loading institution data...`,
+        `Switched to ${institution.name}\n📊 Loading institution data...`,
         {
           duration: 4000,
           style: { minWidth: '300px' }
         }
-      )
+      );
     }
-  }, [activeInstitution.id, institutions])
+  }, [activeInstitutionId, institutions]);
 
-  const addInstitution = useCallback((institutionData: Omit<Institution, 'id' | 'created_at'>) => {
-    const newInstitution: Institution = {
-      ...institutionData,
-      id: institutionData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
-      created_at: new Date().toISOString(),
-      // Default values for new institution
-      regions_count: 0,
-      churches_count: 0,
-      members_count: 0,
-      active_users: 0,
-    }
-
-    setInstitutions(prev => [...prev, newInstitution])
-    
-    toast.success(
-      `🎉 Institution "${newInstitution.name}" added successfully!`,
-      { duration: 4000 }
-    )
-  }, [])
+  // Adiciona instituição (apenas local, para efeito imediato; persistência via createInstitution)
+  const addInstitution = useCallback((institutionData: any) => {
+    // Chama a mutation do hook para criar na API
+    // O objeto institutionData deve conter os campos de CreateInstitutionVariables
+    createInstitution({ variables: institutionData });
+    // O hook já irá atualizar a lista ao receber o novo dado
+  }, [createInstitution]);
 
   const value: InstitutionContextType = useMemo(() => ({
     institutions,
-    activeInstitution,
-    setActiveInstitution,
     switchInstitution,
     addInstitution,
-  }), [institutions, activeInstitution, switchInstitution, addInstitution])
+    loading: loading || specificLoading,
+    error,
+    createInstitution,
+    createLoading,
+    createError,
+    createdInstitution,
+    deleteInstitution,
+    deleteLoading,
+    deleteError,
+    deletedInstitution,
+    updateInstitution,
+    updateLoading,
+    updateError,
+    updatedInstitution,
+    refetchInstitutions,
+    refetchInstitutionById: refetchSpecificInstitution,
+    currentInstitutionData: specificInstitutionData || currentInstitutionData,
+    updateInstitutionContact,
+    updatedInstitutionContact,
+    updateContactLoading,
+    updateContactError
+  }), [
+    institutions,
+    switchInstitution,
+    addInstitution,
+    loading,
+    specificLoading,
+    error,
+    createInstitution,
+    createLoading,
+    createError,
+    createdInstitution,
+    deleteInstitution,
+    deleteLoading,
+    deleteError,
+    deletedInstitution,
+    updateInstitution,
+    updateLoading,
+    updateError,
+    updatedInstitution,
+    refetchInstitutions,
+    refetchSpecificInstitution,
+    specificInstitutionData,
+    currentInstitutionData,
+    updateInstitutionContact,
+    updatedInstitutionContact,
+    updateContactLoading,
+    updateContactError
+  ]);
 
   return (
     <InstitutionContext.Provider value={value}>

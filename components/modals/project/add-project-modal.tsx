@@ -3,13 +3,15 @@
 import * as React from "react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { 
-  CalendarIcon, 
-  ChevronLeft, 
-  ChevronRight, 
-  Globe, 
-  Building, 
-  DollarSign, 
+import { useMutation } from "@apollo/client"
+import { toast } from "react-hot-toast"
+import {
+  CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  Globe,
+  Building,
+  DollarSign,
   Settings,
   CheckCircle,
   Calendar,
@@ -52,6 +54,8 @@ import { cn } from "@/lib/utils"
 import { projectTranslations } from "@/lib/translations/projects"
 import { mockDepartments } from "@/data/mockData"
 import { ProjectTableData } from "@/components/projects/projects-table"
+import { CREATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
+import { ProjectType, LanguagePreference, EventType } from "@/types/globalTypes"
 
 export interface ProjectFormData {
   title: string
@@ -99,6 +103,19 @@ export function AddProjectModal({ isOpen, onClose, onSubmit }: AddProjectModalPr
   const { i18n } = useTranslation()
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
 
+  const [createProjectMutation, { loading }] = useMutation(CREATE_PROJECT_MUTATION, {
+    onCompleted: (data) => {
+      toast.success("Projeto criado com sucesso!")
+      handleClose()
+      // Call the parent onSubmit callback
+      onSubmit(formData)
+    },
+    onError: (error) => {
+      console.error("Error creating project:", error)
+      toast.error(`Erro ao criar projeto: ${error.message}`)
+    },
+  })
+
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState<ProjectFormData>({
     title: "",
@@ -107,7 +124,7 @@ export function AddProjectModal({ isOpen, onClose, onSubmit }: AddProjectModalPr
     budget: 0,
     start_at: new Date(),
     end_at: new Date(),
-    language_preference: "pt",
+    language_preference: "en",
     is_private: false,
     required_volunteers: false,
     is_event: false,
@@ -227,29 +244,44 @@ export function AddProjectModal({ isOpen, onClose, onSubmit }: AddProjectModalPr
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (currentStep === steps.length - 1 && validateForm()) {
-      onSubmit(formData)
-      // Reset form
-      setFormData({
-        title: "",
-        description: "",
-        department_id: "",
-        budget: 0,
-        start_at: new Date(),
-        end_at: new Date(),
-        language_preference: "pt",
-        is_private: false,
-        required_volunteers: false,
-        is_event: false,
-        type: "Local",
-      })
-      setCurrentStep(0)
-      setCreateEvent(false)
-      setCreateCommunication(false)
-      setErrors({})
+      try {
+        // Prepare variables for mutation
+        const variables: any = {
+          title: formData.title,
+          description: formData.description,
+          department_id: formData.department_id,
+          budget: formData.budget,
+          type: formData.type as ProjectType,
+          start_at: formData.start_at.toISOString(),
+          end_at: formData.end_at.toISOString(),
+          language_preference: formData.language_preference as LanguagePreference,
+          is_private: formData.is_private,
+          required_volunteers: formData.required_volunteers,
+          is_event: formData.is_event,
+        }
+
+        // Add event data if is_event is true
+        if (formData.is_event && formData.event) {
+          variables.event = {
+            title: formData.event.title,
+            description: formData.event.description,
+            type: formData.event.type as EventType,
+            max_participants: formData.event.max_participants,
+            ticket_amount: formData.event.ticket_amount,
+            location: formData.event.location,
+            subscription_expires_at: formData.event.subscription_expires_at.toISOString(),
+          }
+        }
+
+        // Execute mutation
+        await createProjectMutation({ variables })
+      } catch (error) {
+        console.error("Failed to create project:", error)
+      }
     } else {
       handleNext()
     }
@@ -263,7 +295,7 @@ export function AddProjectModal({ isOpen, onClose, onSubmit }: AddProjectModalPr
       budget: 0,
       start_at: new Date(),
       end_at: new Date(),
-      language_preference: "pt",
+      language_preference: "en",
       is_private: false,
       required_volunteers: false,
       is_event: false,
@@ -472,7 +504,6 @@ export function AddProjectModal({ isOpen, onClose, onSubmit }: AddProjectModalPr
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="pt">Português</SelectItem>
             <SelectItem value="en">English</SelectItem>
             <SelectItem value="nl">Nederlands</SelectItem>
           </SelectContent>
@@ -731,9 +762,9 @@ export function AddProjectModal({ isOpen, onClose, onSubmit }: AddProjectModalPr
               )}
             </Button>
             
-            <Button type="submit" className="gap-2">
+            <Button type="submit" className="gap-2" disabled={loading}>
               {currentStep === steps.length - 1 ? (
-                "Criar Projeto"
+                loading ? "Criando..." : "Criar Projeto"
               ) : (
                 <>
                   Próximo

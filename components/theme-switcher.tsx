@@ -2,8 +2,8 @@
 
 import * as React from "react"
 import { Moon, Sun } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
-import { Switch } from "@/components/ui/switch"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,14 +13,13 @@ import {
 import toast from "react-hot-toast"
 
 export function ThemeSwitcher() {
+  const { t, ready } = useTranslation()
   const [isDark, setIsDark] = React.useState(false)
 
   // Carregar tema salvo ao inicializar
   React.useEffect(() => {
     const savedTheme = localStorage.getItem('theme')
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    
-    const shouldBeDark = savedTheme === 'dark' || (!savedTheme && systemPrefersDark)
+    const shouldBeDark = savedTheme === 'dark'
     setIsDark(shouldBeDark)
     
     // Aplicar tema ao documento
@@ -31,22 +30,21 @@ export function ThemeSwitcher() {
     }
   }, [])
 
-  const toggleTheme = () => {
-    const newTheme = !isDark
-    setIsDark(newTheme)
+  const setTheme = (theme: 'light' | 'dark') => {
+    setIsDark(theme === 'dark')
     
     // Aplicar tema ao documento
-    if (newTheme) {
+    if (theme === 'dark') {
       document.documentElement.classList.add('dark')
       localStorage.setItem('theme', 'dark')
-      toast.success('Dark mode activated', {
+      toast.success(t('common.theme_dark_activated') || 'Dark mode activated', {
         duration: 2000,
         style: { background: '#1f2937', color: '#f9fafb' }
       })
     } else {
       document.documentElement.classList.remove('dark')
       localStorage.setItem('theme', 'light')
-      toast.success('Light mode activated', {
+      toast.success(t('common.theme_light_activated') || 'Light mode activated', {
         duration: 2000,
         style: { background: '#ffffff', color: '#1f2937' }
       })
@@ -59,43 +57,17 @@ export function ThemeSwitcher() {
         <Button variant="outline" size="icon" className="relative h-9 w-9">
           <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
           <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
+          <span className="sr-only">{t('common.theme') || 'Theme'}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem onClick={() => {
-          setIsDark(false)
-          document.documentElement.classList.remove('dark')
-          localStorage.setItem('theme', 'light')
-          toast.success('Light theme applied')
-        }}>
+      <DropdownMenuContent align="end" className="w-40">
+        <DropdownMenuItem onClick={() => setTheme('light')}>
           <Sun className="mr-2 h-4 w-4" />
-          <span>Light</span>
+          <span>{t('common.light_mode') || 'Light'}</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => {
-          setIsDark(true)
-          document.documentElement.classList.add('dark')
-          localStorage.setItem('theme', 'dark')
-          toast.success('Dark theme applied')
-        }}>
+        <DropdownMenuItem onClick={() => setTheme('dark')}>
           <Moon className="mr-2 h-4 w-4" />
-          <span>Dark</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => {
-          const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-          setIsDark(systemPrefersDark)
-          if (systemPrefersDark) {
-            document.documentElement.classList.add('dark')
-          } else {
-            document.documentElement.classList.remove('dark')
-          }
-          localStorage.removeItem('theme')
-          toast.success('System theme applied')
-        }}>
-          <div className="mr-2 h-4 w-4 flex items-center justify-center">
-            <div className="h-2 w-2 rounded-full bg-current" />
-          </div>
-          <span>System</span>
+          <span>{t('common.dark_mode') || 'Dark'}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

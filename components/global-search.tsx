@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Search, Command as CommandIcon, ArrowRight, BarChart3, Users, Calendar, DollarSign, Building, File, MessageSquare, Settings, User } from "lucide-react"
+import { Search, Command as CommandIcon, ArrowRight, BarChart3, Users, Calendar, DollarSign, Building, File, MessageSquare, Settings, User, MapPin } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import {
   Command,
@@ -45,9 +45,9 @@ const getNavStructure = (t: any) => [
     icon: Building,
     items: [
       { title: t.pages.institutions, url: "/institutions", icon: Building, description: t.descriptions.institutions },
-      { title: t.pages.regions, url: "/regions", icon: Building, description: t.descriptions.regions },
+      { title: t.pages.regions, url: "/regions-example", icon: MapPin, description: t.descriptions.regions },
       { title: t.pages.churches, url: "/churches", icon: Building, description: t.descriptions.churches },
-      { title: t.pages.departments, url: "/departments", icon: Building, description: t.descriptions.departments },
+      { title: t.pages.departments, url: "/institutional-departments", icon: Building, description: t.descriptions.departments },
     ]
   },
   { 

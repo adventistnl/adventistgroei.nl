@@ -3,49 +3,31 @@
 import React, { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { structureTranslations } from "@/lib/translations/structure"
+import { regionTranslations } from "@/lib/translations/regions"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { 
   MapPin, 
-  AlertTriangle, 
   Trash2, 
-  Shield, 
-  Users, 
   Building, 
-  Calendar,
-  CheckCircle,
-  X,
-  Eye,
-  EyeOff
+  ChevronDown,
+  ChevronRight,
+  Unlink,
+  Database,
+  TrendingDown,
 } from "lucide-react"
 import toast from "react-hot-toast"
-
-export interface RegionData {
-  id: string
-  institution_id: string
-  name: string
-  parent_region_id?: string | null
-  contact_id?: string | null
-  created_at: string
-  updated_at: string
-  created_by: string
-  updated_by: string
-  is_deleted: boolean
-  deleted_at?: string | null
-  deleted_by?: string | null
-}
+import { Regions_regions } from "@/types/Regions"
+import { useRegions } from "@/hooks/use-regions"
 
 export interface DeleteRegionModalProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  region: RegionData
-  onSuccess: (region: RegionData) => void
+  region: Regions_regions
+  onSuccess: (regionId: string) => void
 }
 
 export function DeleteRegionModal({
@@ -56,58 +38,42 @@ export function DeleteRegionModal({
 }: DeleteRegionModalProps) {
   const { i18n } = useTranslation()
   const currentLanguage = i18n?.language || 'en'
+  const { deleteRegion } = useRegions();
   const t = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
+  const tRegion = regionTranslations[currentLanguage as keyof typeof regionTranslations] || regionTranslations.en
   const [isLoading, setIsLoading] = useState(false)
-  const [showConsequences, setShowConsequences] = useState(false)
-  const [understandConsequences, setUnderstandConsequences] = useState(false)
+  const [consequencesOpen, setConsequencesOpen] = useState(false)
+  const [understoodConsequences, setUnderstoodConsequences] = useState(false)
   const [confirmationText, setConfirmationText] = useState('')
-  const [showConfirmation, setShowConfirmation] = useState(false)
 
-  const isConfirmationValid = confirmationText === 'delete region'
-
-  const handleViewConsequences = () => {
-    setShowConsequences(true)
-  }
-
-  const handleUnderstandConsequences = () => {
-    setUnderstandConsequences(true)
-    setShowConfirmation(true)
-  }
+  const isDeleteEnabled = understoodConsequences && confirmationText.toLowerCase() === 'delete region'
 
   const handleDelete = async () => {
-    if (!understandConsequences || !isConfirmationValid) {
-      toast.error(t.regions.modals.delete.confirmation_help)
-      return
-    }
+    if (!region) return
 
     setIsLoading(true)
-    const loadingToast = toast.loading(t.regions.toasts.deactivating)
+    const loadingToast = toast.loading(tRegion.toasts.deactivating)
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-
-      const deletedRegion: RegionData = {
-        ...region,
-        is_deleted: true,
-        deleted_at: new Date().toISOString(),
-        deleted_by: 'current_user',
-        updated_at: new Date().toISOString(),
-        updated_by: 'current_user'
-      }
-
-      toast.dismiss(loadingToast)
-      toast.success(t.regions.toasts.deactivated, {
-        duration: 3000,
-        icon: '✅'
+      const result = await deleteRegion({
+        variables: {
+          id: region.id
+        }
       })
 
-      onSuccess(deletedRegion)
-      onOpenChange(false)
+      if (result.data?.deleteRegion) {
+        toast.dismiss(loadingToast)
+        toast.success(tRegion.toasts.deactivated, {
+          duration: 3000
+        })
 
+        onSuccess(result.data?.deleteRegion.id)
+        onOpenChange(false)
+      }
     } catch (error) {
       toast.dismiss(loadingToast)
-      toast.error(t.regions.toasts.deactivate_failed)
+      console.error('Error deleting region:', error)
+      toast.error(tRegion.toasts.deactivate_failed)
     } finally {
       setIsLoading(false)
     }
@@ -115,247 +81,178 @@ export function DeleteRegionModal({
 
   const handleClose = () => {
     if (!isLoading) {
-      setShowConsequences(false)
-      setUnderstandConsequences(false)
+      setConsequencesOpen(false)
+      setUnderstoodConsequences(false)
       setConfirmationText('')
-      setShowConfirmation(false)
       onOpenChange(false)
     }
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="space-y-3">
-          <DialogTitle className="flex items-center gap-2 text-red-600">
-            <AlertTriangle className="w-5 h-5" />
-            {t.regions.modals.delete.deactivate_title}
+      <DialogContent className="w-[95vw] max-w-lg max-h-[95vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0 pb-4">
+          <DialogTitle className="text-lg mb-2">
+            {tRegion.modals.delete.deactivate_title}
           </DialogTitle>
-          <DialogDescription>
-            {t.regions.modals.delete.deactivate_description}
+          <DialogDescription className="text-sm text-muted-foreground">
+            {tRegion.modals.delete.deactivate_description}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Region Information */}
-          <Card className="border-red-200 dark:border-red-800">
-            <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-red-600" />
-                  {t.regions.labels.region} Information
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                  <MapPin className="w-5 h-5 text-red-600" />
-                </div>
-                <div>
-                  <div className="font-medium">{region.name}</div>
-                  <div className="text-sm text-muted-foreground">
-                    Created: {new Date(region.created_at).toLocaleDateString()}
-                  </div>
-                </div>
+        {/* Conteúdo - Scrollable */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="space-y-6 p-1">
+            {/* Region Information */}
+            <div className="flex items-start gap-4 p-4 bg-muted/50 rounded-lg border">
+              {/* Ícone */}
+              <div className="w-12 h-12 bg-background rounded-full flex items-center justify-center flex-shrink-0 border">
+                <MapPin className="w-6 h-6 text-muted-foreground" />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Consequences Section */}
-          {!showConsequences ? (
-            <Card className="border-orange-200 dark:border-orange-800">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2 text-orange-600">
-                  <AlertTriangle className="w-4 h-4" />
-                  {t.regions.modals.delete.affected_components}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+              
+              {/* Informações */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-semibold text-foreground mb-1">
+                  {region.name}
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  This action will affect multiple components of your organization. 
-                  Please review the consequences before proceeding.
+                  {new Date(region.created_at).toLocaleDateString()}
                 </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-950 rounded-lg">
-                    <Building className="w-5 h-5 text-orange-600" />
-                    <div>
-                      <div className="font-medium text-sm">Churches</div>
-                      <div className="text-xs text-muted-foreground">~15 churches affected</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-950 rounded-lg">
-                    <Users className="w-5 h-5 text-orange-600" />
-                    <div>
-                      <div className="font-medium text-sm">Members</div>
-                      <div className="text-xs text-muted-foreground">~2,500 members affected</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-950 rounded-lg">
-                    <Calendar className="w-5 h-5 text-orange-600" />
-                    <div>
-                      <div className="font-medium text-sm">Events</div>
-                      <div className="text-xs text-muted-foreground">~8 upcoming events</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-950 rounded-lg">
-                    <Shield className="w-5 h-5 text-orange-600" />
-                    <div>
-                      <div className="font-medium text-sm">Budget</div>
-                      <div className="text-xs text-muted-foreground">$125,000 allocated</div>
-                    </div>
-                  </div>
-                </div>
+              </div>
+            </div>
 
-                <Button 
-                  variant="outline" 
-                  onClick={handleViewConsequences}
-                  className="w-full border-orange-300 text-orange-700 hover:bg-orange-50"
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  {t.regions.modals.delete.view_consequences}
+            {/* Collapsible Consequences */}
+            <Collapsible open={consequencesOpen} onOpenChange={setConsequencesOpen}>
+              <CollapsibleTrigger asChild>
+                <Button variant="outline" className="w-full justify-between" size="sm">
+                  <span className="flex items-center gap-2 text-xs">
+                    {tRegion.modals.delete.view_consequences}
+                  </span>
+                  {consequencesOpen ? (
+                    <ChevronDown className="w-4 h-4" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4" />
+                  )}
                 </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="border-red-200 dark:border-red-800">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2 text-red-600">
-                  <AlertTriangle className="w-4 h-4" />
-                  {t.regions.modals.delete.consequences.church_access}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
-                  <div className="p-4 bg-red-50 dark:bg-red-950 rounded-lg">
-                    <h4 className="font-medium text-red-800 dark:text-red-200 mb-2">
-                      {t.regions.modals.delete.consequences.church_access}
-                    </h4>
-                    <p className="text-sm text-red-700 dark:text-red-300">
-                      {t.regions.modals.delete.consequences.church_access_desc}
-                    </p>
-                  </div>
-
-                  <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                    <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">
-                      {t.regions.modals.delete.consequences.data_preservation}
-                    </h4>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
-                      {t.regions.modals.delete.consequences.data_preservation_desc}
-                    </p>
-                  </div>
-
-                  <div className="p-4 bg-yellow-50 dark:bg-yellow-950 rounded-lg">
-                    <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-                      {t.regions.modals.delete.consequences.member_impact}
-                    </h4>
-                    <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                      {t.regions.modals.delete.consequences.member_impact_desc}
-                    </p>
-                  </div>
-
-                  <div className="p-4 bg-purple-50 dark:bg-purple-950 rounded-lg">
-                    <h4 className="font-medium text-purple-800 dark:text-purple-200 mb-2">
-                      {t.regions.modals.delete.consequences.event_impact}
-                    </h4>
-                    <p className="text-sm text-purple-700 dark:text-purple-300">
-                      {t.regions.modals.delete.consequences.event_impact_desc}
-                    </p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg">
-                  <h4 className="font-medium text-green-800 dark:text-green-200 mb-2 flex items-center gap-2">
-                    <Shield className="w-4 h-4" />
-                    {t.regions.modals.delete.soft_delete.title}
-                  </h4>
-                  <p className="text-sm text-green-700 dark:text-green-300">
-                    {t.regions.modals.delete.soft_delete.description}
-                  </p>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="understand"
-                    checked={understandConsequences}
-                    onCheckedChange={(checked) => setUnderstandConsequences(checked === true)}
-                    disabled={isLoading}
-                  />
-                  <Label htmlFor="understand" className="text-sm">
-                    {t.regions.modals.delete.understand_consequences}
-                  </Label>
-                </div>
-
-                {understandConsequences && (
-                  <Button 
-                    variant="outline" 
-                    onClick={handleUnderstandConsequences}
-                    className="w-full"
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    {t.regions.modals.delete.acknowledge_text}
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Confirmation Section */}
-          {showConfirmation && (
-            <Card className="border-red-200 dark:border-red-800">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2 text-red-600">
-                  <Trash2 className="w-4 h-4" />
-                  Final Confirmation
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-4 bg-red-50 dark:bg-red-950 rounded-lg">
-                  <p className="text-sm text-red-700 dark:text-red-300 mb-3">
-                    {t.regions.modals.delete.type_confirmation}
-                  </p>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmation" className="text-sm font-medium">
-                      Type: <code className="bg-red-100 dark:bg-red-900 px-2 py-1 rounded text-xs">delete region</code>
-                    </Label>
-                    <Input
-                      id="confirmation"
-                      value={confirmationText}
-                      onChange={(e) => setConfirmationText(e.target.value)}
-                      placeholder={t.regions.modals.delete.confirmation_placeholder}
-                      disabled={isLoading}
-                      className={isConfirmationValid ? 'border-green-500' : 'border-red-500'}
-                    />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-3 mt-4">
+                {/* Churches Disconnection */}
+                <div className="flex items-start gap-3 p-3 border rounded-lg">
+                  <Unlink className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm text-foreground">{tRegion.modals.delete.churches_disconnected}</p>
                     <p className="text-xs text-muted-foreground">
-                      {t.regions.modals.delete.confirmation_help}
+                      {tRegion.modals.delete.churches_disconnected_desc}
                     </p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
-            <Button variant="outline" onClick={handleClose} disabled={isLoading} className="w-full sm:w-auto">
-              <X className="w-4 h-4 mr-2" />
+                {/* Data Preservation */}
+                <div className="flex items-start gap-3 p-3 border rounded-lg">
+                  <Database className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm text-foreground">{tRegion.modals.delete.region_archived}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {tRegion.modals.delete.region_archived_desc}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Orphaned Churches */}
+                <div className="flex items-start gap-3 p-3 border rounded-lg">
+                  <Building className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm text-foreground">{tRegion.modals.delete.orphaned_churches}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {tRegion.modals.delete.orphaned_churches_desc}
+                    </p>
+                  </div>
+                </div>
+
+                {/* KPI Impact */}
+                <div className="flex items-start gap-3 p-3 border rounded-lg">
+                  <TrendingDown className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm text-foreground">{tRegion.modals.delete.data_impact}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {tRegion.modals.delete.data_impact_desc}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Confirmation Checkbox - Inside Collapsible */}
+                <div className="space-y-4 pt-4 border-t mt-4">
+                  <div className="flex items-start gap-3 p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-950">
+                    <Checkbox
+                      id="understand-consequences"
+                      checked={understoodConsequences}
+                      onCheckedChange={(checked) => setUnderstoodConsequences(checked === true)}
+                      className="mt-0.5 border-2 border-gray-400 dark:border-gray-500 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
+                    />
+                    <label htmlFor="understand-consequences" className="text-sm cursor-pointer">
+                      <span className="font-medium text-foreground">
+                        {tRegion.modals.delete.understand_consequences}
+                      </span>
+                      <br />
+                      <span className="text-muted-foreground">
+                        {tRegion.modals.delete.acknowledge_text || "I acknowledge that this action will affect related churches and cannot be easily undone."}
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Final Confirmation Input - Inside Collapsible */}
+                  {understoodConsequences && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">
+                        {tRegion.modals.delete.type_confirmation}
+                      </label>
+                      <Input
+                        type="text"
+                        value={confirmationText}
+                        onChange={(e) => setConfirmationText(e.target.value)}
+                        placeholder={tRegion.modals.delete.confirmation_placeholder}
+                        className="h-10"
+                        disabled={isLoading}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {tRegion.modals.delete.confirmation_help}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+        </div>
+
+        {/* Botões de Ação - Fixos no rodapé */}
+        <div className="flex-shrink-0 border-t pt-4 mt-6">
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={handleClose} disabled={isLoading} size="sm" className="text-xs">
               {t.common.cancel}
             </Button>
-
-            {showConfirmation && isConfirmationValid && (
-              <Button 
-                onClick={handleDelete} 
-                disabled={isLoading || !understandConsequences}
-                className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                {isLoading ? t.regions.modals.delete.deactivating : t.regions.modals.delete.deactivate_region}
-              </Button>
-            )}
+            <Button
+              onClick={handleDelete}
+              disabled={isLoading || !isDeleteEnabled}
+              size="sm"
+              className={`min-w-[140px] text-xs ${
+                isDeleteEnabled 
+                  ? 'bg-red-600 hover:bg-red-700 text-white' 
+                  : 'bg-red-600/40 text-white/60 cursor-not-allowed hover:bg-red-600/40'
+              }`}
+            >
+              {isLoading ? (
+                <>
+                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1" />
+                  {tRegion.modals.delete.deactivating}
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-3 h-3 mr-1" />
+                  {tRegion.modals.delete.deactivate_region}
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </DialogContent>

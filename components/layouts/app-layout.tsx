@@ -35,22 +35,22 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <ProtectedRoute>
-      <SidebarProvider>
+      <SidebarProvider className="h-full">
         <AppSidebar />
-        <SidebarInset>
+        <SidebarInset className="flex flex-col h-full overflow-hidden">
           {/* Mobile Header - Visível apenas em dispositivos móveis */}
-          <div className="md:hidden">
+          <div className="md:hidden shrink-0">
             <MobileHeader />
           </div>
           
           {/* Desktop Header - Visível apenas em desktop */}
-          <div className="hidden md:block">
+          <div className="hidden md:block shrink-0">
             <ModernHeader />
           </div>
           
           {/* Breadcrumbs - Apenas no desktop */}
           {breadcrumbs && breadcrumbs.length > 1 && (
-            <div className="hidden md:block px-6 pt-4">
+            <div className="hidden md:block px-6 pt-4 shrink-0">
               <Breadcrumb>
                 <BreadcrumbList>
                   {breadcrumbs.map((breadcrumb, index) => (
@@ -74,7 +74,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             </div>
           )}
           
-          <div className="flex flex-1 flex-col gap-4 p-6 pt-4">
+          <div className="flex-1 overflow-y-auto p-6 pt-4">
             {children}
           </div>
         </SidebarInset>

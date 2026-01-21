@@ -8,10 +8,12 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { AlertTriangle, Trash2, Shield, ChevronDown, ChevronRight, Lock, Database, UserX } from "lucide-react"
+import { AlertTriangle, ChevronDown, ChevronRight, Database, Lock, Shield, UserX } from "lucide-react"
 import toast from "react-hot-toast"
-import { User } from "@/data/usersData"
+import { InstitutionById_institution_users as User } from "@/types/InstitutionById"
+import { useUser } from '@/hooks/use-user';
+import { useInstitution } from "@/contexts/institution-context"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@radix-ui/react-collapsible"
 
 export interface DeleteUserModalProps {
   isOpen: boolean
@@ -27,25 +29,28 @@ export function DeleteUserModal({
   onSuccess
 }: DeleteUserModalProps) {
   const { t } = useTranslation()
+  const { deleteUserById } = useUser({}); // Corrigido para usar o hook useUser
+  const { refetchInstitutionById } = useInstitution(); // Hook para refetch
   const [isLoading, setIsLoading] = useState(false)
-  const [consequencesOpen, setConsequencesOpen] = useState(false)
   const [understoodConsequences, setUnderstoodConsequences] = useState(false)
   const [finalConfirmation, setFinalConfirmation] = useState('')
+  const [consequencesOpen, setConsequencesOpen] = useState(false)
 
   const handleSubmit = async () => {
     if (!user) return
 
     setIsLoading(true)
-    const loadingToast = toast.loading(t('users.toasts.deleting_user'))
+    const loadingToast = toast.loading('Deactivating user...')
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      await deleteUserById(user.id)
+
+      refetchInstitutionById(); // Refetch após sucesso
+
       toast.dismiss(loadingToast)
-      toast.success(t('users.toasts.user_deleted'), {
+      toast.success('User deactivated successfully', {
         duration: 3000,
-        icon: '🗑️'
+        icon: '✓'
       })
       
       // Call success callback if provided
@@ -58,7 +63,7 @@ export function DeleteUserModal({
       
     } catch (error) {
       toast.dismiss(loadingToast)
-      toast.error(t('users.toasts.user_delete_failed'))
+      toast.error('Failed to deactivate user')
     } finally {
       setIsLoading(false)
     }
@@ -66,27 +71,26 @@ export function DeleteUserModal({
 
   const handleClose = () => {
     if (!isLoading) {
-      setConsequencesOpen(false)
       setUnderstoodConsequences(false)
       setFinalConfirmation('')
       onOpenChange(false)
     }
   }
 
-  const isDeleteEnabled = understoodConsequences && finalConfirmation.toLowerCase() === 'delete user'
+  const isDeleteEnabled = understoodConsequences && finalConfirmation.toUpperCase() === 'DEACTIVATE'
 
   if (!user) return null
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="space-y-3">
-          <DialogTitle className="flex items-center gap-2 text-red-600">
-            <UserX className="w-5 h-5" />
-            {t('users.modals.delete_user.deactivate_title')}
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <UserX className="w-5 h-5 text-red-600" />
+            Deactivate User Account
           </DialogTitle>
-          <DialogDescription className="text-base">
-            {t('users.modals.delete_user.deactivate_description')}
+          <DialogDescription>
+            This will deactivate the user account and revoke access
           </DialogDescription>
         </DialogHeader>
         
@@ -105,9 +109,9 @@ export function DeleteUserModal({
                   <h4 className="font-semibold text-lg truncate">{user.name}</h4>
                   <p className="text-sm text-muted-foreground font-mono truncate">{user.email}</p>
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {user.user_roles.map((role) => (
+                    {user.user_roles?.map((role) => (
                       <Badge key={role.id} variant="outline" className="text-xs">
-                        {role.name}
+                        {role.role.name}
                       </Badge>
                     ))}
                   </div>
@@ -121,7 +125,7 @@ export function DeleteUserModal({
             <CollapsibleTrigger asChild>
               <Button variant="outline" className="w-full justify-between">
                 <span className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-orange-600" />
+                  <AlertTriangle className="w-4 h-4 text-red-600" />
                   {t('users.modals.delete_user.view_consequences')}
                 </span>
                 {consequencesOpen ? (
@@ -157,9 +161,9 @@ export function DeleteUserModal({
                 
                 {/* Role Consequence */}
                 <div className="flex items-start gap-3 p-3 border rounded-lg">
-                  <Shield className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                  <Shield className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-orange-600">{t('users.modals.delete_user.consequences.role_assignments')}</p>
+                    <p className="font-medium text-sm text-red-600">{t('users.modals.delete_user.consequences.role_assignments')}</p>
                     <p className="text-xs text-muted-foreground">
                       {t('users.modals.delete_user.consequences.role_assignments_desc')}
                     </p>
@@ -183,59 +187,48 @@ export function DeleteUserModal({
           </div>
 
           {/* Confirmation Checkbox */}
-          <div className="space-y-4">
-            <div className="flex items-start gap-3 p-3 border border-red-200 dark:border-red-800 rounded-lg bg-red-50/50 dark:bg-red-950/20">
+          <div className="space-y-3">
+            <div className="flex items-start gap-2">
               <Checkbox
                 id="understand-consequences"
                 checked={understoodConsequences}
                 onCheckedChange={(checked) => setUnderstoodConsequences(checked === true)}
-                className="mt-0.5"
+                className="mt-0.5 border border-red-600"
               />
               <label htmlFor="understand-consequences" className="text-sm cursor-pointer">
-                <span className="font-medium text-red-800 dark:text-red-200">
-                  {t('users.modals.delete_user.understand_consequences')}
-                </span>
-                <br />
-                <span className="text-red-700 dark:text-red-300">
-                  {t('users.modals.delete_user.acknowledge_text')}
-                </span>
+                I understand this will deactivate the user account
               </label>
             </div>
 
-            {/* Final Confirmation Input */}
             {understoodConsequences && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-red-600">
-                  {t('users.modals.delete_user.type_confirmation')}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">
+                  Type <span className="font-mono text-red-600">DEACTIVATE</span> to confirm
                 </label>
                 <input
                   type="text"
                   value={finalConfirmation}
                   onChange={(e) => setFinalConfirmation(e.target.value)}
-                  placeholder={t('users.modals.delete_user.confirmation_placeholder')}
-                  className="w-full px-3 py-2 border border-red-300 bg-background rounded-md text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                  placeholder="Type DEACTIVATE"
+                  className="w-full px-3 py-2 border bg-background rounded-md text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500"
                   disabled={isLoading}
                 />
-                <p className="text-xs text-muted-foreground">
-                  {t('users.modals.delete_user.confirmation_help')}
-                </p>
               </div>
             )}
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
-            <Button variant="outline" onClick={handleClose} disabled={isLoading} className="w-full sm:w-auto">
-              {t('common.cancel')}
+          <div className="flex justify-end gap-2 pt-3">
+            <Button variant="outline" onClick={handleClose} disabled={isLoading}>
+              Cancel
             </Button>
             <Button
-              variant="destructive"
               onClick={handleSubmit}
               disabled={isLoading || !isDeleteEnabled}
-              className="w-full sm:w-auto"
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
               <UserX className="w-4 h-4 mr-2" />
-              {isLoading ? t('users.modals.delete_user.deactivating') : t('users.modals.delete_user.deactivate_user')}
+              {isLoading ? 'Deactivating...' : 'Deactivate User'}
             </Button>
           </div>
         </div>

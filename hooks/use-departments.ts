@@ -1,16 +1,21 @@
 import { useMemo } from "react";
-import { useGetDepartmentsQuery } from "@/hooks/graphql/use-get-departments-query";
+import { useCreateDepartmentMutation, useGetDepartmentsQuery } from "@/hooks/graphql/use-departments";
 import { Departments_departments } from "@/types/Departments";
-import { ErrorLike } from "@apollo/client";
+import { ApolloCache, ErrorLike } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
+import { CreateDepartment, CreateDepartmentVariables } from "@/types/CreateDepartment";
 
 interface iDepartments {
   departments: Departments_departments[];
   loading: boolean;
   error: ErrorLike | undefined;
+  createDepartment: useMutation.MutationFunction<CreateDepartment, CreateDepartmentVariables, ApolloCache>
 }
 
 export function useDepartments(): iDepartments {
   const { data, loading, error } = useGetDepartmentsQuery();
+  const [ createDepartment ] = useCreateDepartmentMutation();
+
   const departments = useMemo(() => {
     if (!data || !data.departments) {
       return [];
@@ -24,5 +29,6 @@ export function useDepartments(): iDepartments {
     departments,
     loading,
     error,
+    createDepartment
   };
 }

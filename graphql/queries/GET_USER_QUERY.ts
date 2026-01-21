@@ -1,46 +1,40 @@
 import { gql } from '@apollo/client';
+import { USER_MODEL_FRAGMENT } from '../fragments/INSTITUTIONS_FRAGMENTS';
 
 export const GET_USER_QUERY = gql`
   query User($id: String!) {
     user(id: $id) {
-      id
-      institution_id
-      church_id
-      name
-      email
-      language_preference
-      contact_id
-      created_at
-      updated_at
-      created_by
-      updated_by
-      is_deleted
-      deleted_at
-      deleted_by
+      ...UserModelFragment
+      contact {
+        id
+        name
+        phone
+        mobile
+        email
+        country
+        city
+        state
+        address
+        full_address
+        postal_code
+        website
+        notes
+        is_primary
+        created_at
+        updated_at
+      }
     }
   }
+  ${USER_MODEL_FRAGMENT}
 `;
 
 export const GET_ALL_USERS_QUERY = gql`
-  query Users {
-    users {
-        id
-        institution_id
-        password
-        church_id
-        name
-        email
-        language_preference
-        contact_id
-        created_at
-        updated_at
-        created_by
-        updated_by
-        is_deleted
-        deleted_at
-        deleted_by
+  query Users($institution_id: String) {
+    users(institution_id: $institution_id) {
+      ...UserModelFragment
     }
   }
+  ${USER_MODEL_FRAGMENT}
 `;
 
 

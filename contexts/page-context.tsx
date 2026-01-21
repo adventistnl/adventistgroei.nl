@@ -1,12 +1,12 @@
 "use client"
 
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react'
+import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react'
 
 interface PageContextType {
-  pageTitle: string
-  setPageTitle: (title: string) => void
-  breadcrumbs: { name: string; href?: string }[]
-  setBreadcrumbs: (breadcrumbs: { name: string; href?: string }[]) => void
+  pageTitle: ReactNode
+  setPageTitle: (title: ReactNode) => void
+  breadcrumbs: { name: ReactNode; href?: string; onClick?: () => void }[]
+  setBreadcrumbs: (breadcrumbs: { name: ReactNode; href?: string; onClick?: () => void }[]) => void
 }
 
 const PageContext = createContext<PageContextType | undefined>(undefined)
@@ -20,8 +20,8 @@ export const usePageContext = () => {
 }
 
 export const PageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [pageTitle, setPageTitle] = useState('Dashboard')
-  const [breadcrumbs, setBreadcrumbs] = useState<{ name: string; href?: string }[]>([
+  const [pageTitle, setPageTitle] = useState<ReactNode>('Dashboard')
+  const [breadcrumbs, setBreadcrumbs] = useState<{ name: ReactNode; href?: string; onClick?: () => void }[]>([
     { name: 'Dashboard', href: '/dashboard' }
   ])
 

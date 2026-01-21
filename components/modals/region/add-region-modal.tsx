@@ -1,151 +1,171 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { structureTranslations } from "@/lib/translations/structure"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { regionTranslations } from "@/lib/translations/regions"
+import { cn } from "@/lib/utils"
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
+import { Textarea } from "@/components/ui/textarea"
+import { Progress } from "@/components/ui/progress"
+import { ColorPicker } from "@/components/ui/color-picker"
 import { 
   MapPin, 
-  Plus, 
-  Save, 
-  X, 
-  Globe, 
-  Calendar,
-  Building,
-  User,
-  Phone,
-  Mail,
-  Home
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Check,
+  X,
+  ChevronsUpDown,
+  Globe
 } from "lucide-react"
 import toast from "react-hot-toast"
+import { useRegions } from "@/hooks/use-regions"
+import { CreateRegionVariables } from "@/types/CreateRegion"
+import { countries, states, cities } from "@/data/geographicData"
+import { TerritoryBase, TerritoryMap } from "@/types/Terrytory"
 
-export interface RegionData {
-  id: string
-  institution_id: string
-  name: string
-  parent_region_id?: string | null
-  contact_id?: string | null
-  created_at: string
-  updated_at: string
-  created_by: string
-  updated_by: string
-  is_deleted: boolean
-  deleted_at?: string | null
-  deleted_by?: string | null
+// Types needed for this component
+interface Province extends TerritoryBase {
+  cities: TerritoryBase[]
 }
 
-export interface ContactData {
-  id: string
-  name?: string | null
-  phone?: string | null
-  mobile?: string | null
-  email?: string | null
-  country?: string | null
-  city?: string | null
-  address?: string | null
-  full_address?: string | null
-  postal_code?: string | null
-  website?: string | null
-  notes?: string | null
-  is_primary: boolean
-  created_at: string
-  updated_at: string
-  created_by: string
-  updated_by: string
-  is_deleted: boolean
-  deleted_at?: string | null
-  deleted_by?: string | null
-}
+// Transform geographicData to the format expected by this component
+const transformToProvinces = (countryCode: string): Province[] => {
+  const provincesForCountry = states[countryCode as keyof typeof states];
+  if (!provincesForCountry) return [];
+  
+  return provincesForCountry.map(state => ({
+    code: state.code,
+    name: state.name,
+    cities: cities[state.code as keyof typeof cities]?.map(city => ({
+      code: city.code,
+      name: city.name
+    })) || []
+  }));
+};
 
 export interface AddRegionModalProps {
-  isOpen: boolean
-  onOpenChange: (open: boolean) => void
-  institutionId: string
-  parentRegions?: RegionData[]
-  onSave?: (region: RegionData) => void
+  children: React.ReactNode
+  onSuccess: (data: CreateRegionVariables) => void
 }
 
 export function AddRegionModal({
-  isOpen,
-  onOpenChange,
-  institutionId,
-  parentRegions = [],
-  onSave
+  children,
+  onSuccess
 }: AddRegionModalProps) {
-  const { i18n } = useTranslation()
-  const currentLanguage = i18n?.language || 'en'
-  const t = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
+  const { createRegion, regions } = useRegions();
+
+  const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [formData, setFormData] = useState<Partial<RegionData & { contact: Partial<ContactData> }>>({
-    institution_id: institutionId,
-    name: '',
-    parent_region_id: null,
-    contact: {
-      name: '',
-      phone: '',
-      mobile: '',
-      email: '',
-      country: '',
-      city: '',
-      address: '',
-      full_address: '',
-      postal_code: '',
-      website: '',
-      notes: '',
-      is_primary: true
-    }
+  const [currentStep, setCurrentStep] = useState(1)
+  const [isCountryPopoverOpen, setIsCountryPopoverOpen] = useState(false)
+  
+  // Form Data
+  const [formData, setFormData] = useState<CreateRegionVariables>({
+    name: "",
+    description: "",
+    color: "#475569", // Slate dark
+    territory: { NL: {} }
   })
+  
+  // Country, Province and City Selection State
+  const [selectedCountry, setSelectedCountry] = useState<string>("NL")
+  const [selectedProvinces, setSelectedProvinces] = useState<Set<string>>(new Set())
+  const [selectedCities, setSelectedCities] = useState<Record<string, Set<string>>>({})
+  const [expandedProvinces, setExpandedProvinces] = useState<Set<string>>(new Set())
+  const [searchQuery, setSearchQuery] = useState("")
+  
   const [errors, setErrors] = useState<Record<string, string>>({})
 
+  const totalSteps = 4 // País, Nome/Descrição/Cor, Províncias, Review
+  const { i18n } = useTranslation()
+  
+  // Get translations for current language
+  const currentLanguage = i18n?.language || 'en'
+  const tRegion = regionTranslations[currentLanguage as keyof typeof regionTranslations] || regionTranslations.en
+  
+  // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        institution_id: institutionId,
-        name: '',
-        parent_region_id: null,
-        contact: {
-          name: '',
-          phone: '',
-          mobile: '',
-          email: '',
-          country: '',
-          city: '',
-          address: '',
-          full_address: '',
-          postal_code: '',
-          website: '',
-          notes: '',
-          is_primary: true
-        }
+        name: "",
+        description: "",
+        color: "#475569",
+        territory: { NL: {} }
       })
+      setSelectedCountry("NL")
+      setSelectedProvinces(new Set())
+      setSelectedCities({})
+      setSearchQuery("")
       setErrors({})
+      setCurrentStep(1)
+      setIsCountryPopoverOpen(false)
     }
-  }, [isOpen, institutionId])
+  }, [isOpen])
 
-  const handleInputChange = (field: string, value: string | boolean) => {
-    if (field.startsWith('contact.')) {
-      const contactField = field.replace('contact.', '')
-      setFormData(prev => ({
-        ...prev,
-        contact: {
-          ...prev.contact,
-          [contactField]: value
-        }
-      }))
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [field]: value
-      }))
-    }
+  // Collapse expanded provinces when country changes
+  useEffect(() => {
+    setExpandedProvinces(new Set())
+  }, [selectedCountry])
+
+  // Get provinces for selected country
+  const provincesForSelectedCountry = useMemo(() => {
+    return transformToProvinces(selectedCountry);
+  }, [selectedCountry]);
+
+  // Build a map of cityCode -> regionName for cities already registered in other regions (by country)
+  const cityOwnersByCountry = useMemo(() => {
+    const map: Record<string, Record<string, string>> = {}
+    if (!regions || regions.length === 0) return map
+
+    regions.forEach(r => {
+      if (!r.territory) return
+      Object.entries(r.territory).forEach(([countryCode, provinces]) => {
+        if (!provinces) return
+        Object.entries(provinces as Record<string, any> || {}).forEach(([provCode, cityCodes]) => {
+          if (!cityCodes || !Array.isArray(cityCodes)) return
+          cityCodes.forEach((cityCode: string) => {
+            map[countryCode] = map[countryCode] || {}
+            if (!map[countryCode][cityCode]) {
+              map[countryCode][cityCode] = r.name || 'Unknown'
+            }
+          })
+        })
+      })
+    })
+
+    return map
+  }, [regions])
+
+  // Input handlers
+  const handleInputChange = (field: keyof CreateRegionVariables, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
     
     // Clear error when user starts typing
     if (errors[field]) {
@@ -156,61 +176,202 @@ export function AddRegionModal({
     }
   }
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {}
+  // Province selection handlers
+  const toggleProvinceSimple = (provinceCode: string) => {
+    const province = provincesForSelectedCountry.find(p => p.code === provinceCode)
+    if (!province) return
 
-    if (!formData.name?.trim()) {
-      newErrors.name = t.regions.validation.name_required
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = t.regions.validation.name_min_length
+    // If any city in the province is already owned by another region, block selecting the whole province
+    const occupiedCities = province.cities.filter(c => !!cityOwnersByCountry[selectedCountry]?.[c.code])
+    if (occupiedCities.length > 0) {
+      const owner = cityOwnersByCountry[selectedCountry][occupiedCities[0].code]
+      const names = occupiedCities.map(c => c.name).slice(0, 5).join(', ')
+      toast.error(tRegion.messages?.cities_conflict?.replace?.('{{list}}', names) || `Some cities are already registered: ${names}`)
+      setErrors(prev => ({ ...prev, territory: tRegion.validation?.cities_conflict || 'Some selected cities are already registered in other regions' }))
+      return
     }
 
-    if (formData.contact?.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact.email)) {
-      newErrors['contact.email'] = t.regions.validation.email_invalid
+    setSelectedProvinces(prev => {
+      const newSet = new Set(prev)
+
+      if (newSet.has(provinceCode)) {
+        // Deselect province and remove its cities
+        newSet.delete(provinceCode)
+        setSelectedCities(prevCities => {
+          const newCities = { ...prevCities }
+          delete newCities[provinceCode]
+          return newCities
+        })
+      } else {
+        // Select province and ALL its cities automatically
+        newSet.add(provinceCode)
+        setSelectedCities(prevCities => ({
+          ...prevCities,
+          [provinceCode]: new Set(province.cities.map(c => c.code))
+        }))
+      }
+      return newSet
+    })
+  }
+
+  // Toggle city selection
+  const toggleCity = (provinceCode: string, cityCode: string) => {
+    // Prevent toggling a city that is already owned by another region
+    const owner = cityOwnersByCountry[selectedCountry]?.[cityCode]
+    if (owner) {
+      toast.error(tRegion.messages?.city_in_use?.replace?.('{{region}}', owner) || `City already registered in ${owner}`)
+      return
+    }
+
+    setSelectedCities(prev => {
+      const citiesInProvince = prev[provinceCode] || new Set();
+      const newCities = new Set(citiesInProvince);
+
+      let added = false
+      if (newCities.has(cityCode)) {
+        newCities.delete(cityCode);
+      } else {
+        newCities.add(cityCode);
+        added = true
+      }
+
+      // Keep provinces set in sync: if we added a city, ensure province is selected; if removed last city, remove province
+      setSelectedProvinces(prevProvinces => {
+        const next = new Set(prevProvinces)
+        if (added) next.add(provinceCode)
+        else if (!added && newCities.size === 0) next.delete(provinceCode)
+        return next
+      })
+
+      return {
+        ...prev,
+        [provinceCode]: newCities
+      };
+    });
+  }
+
+  // Filtered provinces for search
+  const filteredProvinces = useMemo(() => {
+    if (!searchQuery.trim()) return provincesForSelectedCountry
+    
+    const query = searchQuery.toLowerCase()
+    return provincesForSelectedCountry.filter(province => 
+      province.name.toLowerCase().includes(query) ||
+      province.cities.some(city => city.name.toLowerCase().includes(query))
+    )
+  }, [searchQuery, provincesForSelectedCountry])
+
+  // Build territory object
+  const buildTerritoryObject = (): TerritoryMap => {
+    const territory: TerritoryMap = { [selectedCountry]: {} };
+    
+    selectedProvinces.forEach(provinceCode => {
+      const cityCodes = selectedCities[provinceCode]
+      if (cityCodes && cityCodes.size > 0) {
+        territory[selectedCountry][provinceCode] = Array.from(cityCodes)
+      }
+    })
+    
+    return territory
+  }
+
+  const validateStep = (step: number) => {
+    const newErrors: Record<string, string> = {}
+
+    if (step === 1) {
+      if (!selectedCountry) {
+        newErrors.country = tRegion.validation.country_required
+      }
+    }
+
+    if (step === 2) {
+      if (!formData.name?.trim()) {
+        newErrors.name = tRegion.validation.name_required
+      } else if (formData.name.trim().length < 2) {
+        newErrors.name = tRegion.validation.name_min_length
+      }
+    }
+
+    if (step === 3) {
+      if (selectedProvinces.size === 0) {
+        newErrors.territory = tRegion.validation.province_required
+      }
     }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => Math.min(prev + 1, totalSteps))
+    }
+  }
+
+  const handlePrevious = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 1))
+  }
+
   const handleSave = async () => {
-    if (!validateForm()) return
+    // Validate all steps
+    if (!validateStep(1) || !validateStep(2) || !validateStep(3)) {
+      toast.error(tRegion.validation.please_fix_errors)
+      return
+    }
 
     setIsLoading(true)
-    const loadingToast = toast.loading(t.regions.toasts.creating)
+    const loadingToast = toast.loading(tRegion.toasts.creating)
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      const newRegion: RegionData = {
-        id: `region_${Date.now()}`,
-        institution_id: institutionId,
-        name: formData.name!.trim(),
-        parent_region_id: formData.parent_region_id || null,
-        contact_id: null, // Will be set after contact creation
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        created_by: 'current_user',
-        updated_by: 'current_user',
-        is_deleted: false
-      }
-
-      toast.dismiss(loadingToast)
-      toast.success(t.regions.toasts.created, {
-        duration: 3000,
-        icon: '🗺️'
+      // Build territory object
+      const territory = buildTerritoryObject()
+      // Validate conflicts: ensure no selected city is already registered in other regions
+      const conflicts: string[] = []
+      Object.entries(selectedCities).forEach(([provCode, citySet]) => {
+        Array.from(citySet || []).forEach(cityCode => {
+          const owner = cityOwnersByCountry[selectedCountry]?.[cityCode]
+          if (owner) {
+            const province = provincesForSelectedCountry.find(p => p.code === provCode)
+            const cityName = province?.cities.find(c => c.code === cityCode)?.name || cityCode
+            conflicts.push(`${cityName} (${owner})`)
+          }
+        })
       })
 
-      if (onSave) {
-        onSave(newRegion)
+      if (conflicts.length > 0) {
+        toast.dismiss(loadingToast)
+        const list = conflicts.slice(0, 5).join(', ')
+        toast.error(tRegion.messages?.cities_conflict?.replace?.('{{list}}', list) || `Some selected cities are already registered: ${list}`)
+        setErrors(prev => ({ ...prev, territory: tRegion.validation?.cities_conflict || 'Some selected cities are already registered in other regions' }))
+        setIsLoading(false)
+        return
+      }
+      
+      // Update formData with territory
+      const finalData: CreateRegionVariables = {
+        name: formData.name,
+        description: formData.description || undefined,
+        color: formData.color || undefined,
+        territory
       }
 
-      onOpenChange(false)
+      const res = await createRegion({
+        variables: finalData
+      })
+      if (!res.data) throw new Error(tRegion.toasts.create_failed)
 
+      toast.dismiss(loadingToast)
+      toast.success(tRegion.toasts.created, { duration: 4000 })
+      
+      // Call success callback
+      onSuccess(finalData)
+
+      // Close modal
+      setIsOpen(false)
     } catch (error) {
       toast.dismiss(loadingToast)
-      toast.error(t.regions.toasts.create_failed)
+      toast.error(tRegion.toasts.create_failed)
+      console.error("Error creating region:", error)
     } finally {
       setIsLoading(false)
     }
@@ -218,298 +379,544 @@ export function AddRegionModal({
 
   const handleCancel = () => {
     setFormData({
-      institution_id: institutionId,
-      name: '',
-      parent_region_id: null,
-      contact: {
-        name: '',
-        phone: '',
-        mobile: '',
-        email: '',
-        country: '',
-        city: '',
-        address: '',
-        full_address: '',
-        postal_code: '',
-        website: '',
-        notes: '',
-        is_primary: true
-      }
+      name: "",
+      description: "",
+      color: "#475569",
+      territory: { NL: {} }
     })
+    setSelectedCountry("NL")
+    setSelectedProvinces(new Set())
+    setSelectedCities({})
+    setSearchQuery("")
     setErrors({})
-    onOpenChange(false)
+    setCurrentStep(1)
+    setIsCountryPopoverOpen(false)
+    setIsOpen(false)
   }
 
-  return (
-    <Dialog open={isOpen} onOpenChange={!isLoading ? onOpenChange : undefined}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="space-y-3">
-          <DialogTitle className="flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-green-600" />
-            {t.regions.modals.create.title}
-          </DialogTitle>
-          <DialogDescription>
-            {t.regions.modals.create.description}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-6">
-          {/* Region Preview */}
-          <Card className="border-muted">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <Avatar className="w-16 h-16">
-                  <AvatarImage src="/placeholder-logo.svg" />
-                  <AvatarFallback className="text-lg bg-green-100 text-green-600">
-                    <MapPin className="w-6 h-6" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-lg truncate">
-                    {formData.name || t.regions.placeholders.name}
-                  </h4>
-                  <p className="text-sm text-muted-foreground truncate">
-                    {formData.parent_region_id 
-                      ? parentRegions.find(r => r.id === formData.parent_region_id)?.name || t.regions.placeholders.parent_region
-                      : t.regions.placeholders.parent_region
-                    }
-                  </p>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    <Badge variant="outline" className="text-xs">
-                      <Globe className="w-3 h-3 mr-1" />
-                      {formData.contact?.country || t.regions.placeholders.contact_country}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      {new Date().getFullYear()}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Form Fields */}
-          <div className="space-y-4">
-            {/* Basic Information */}
-            <div className="space-y-4">
-              <h5 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-                {t.regions.sections.basic_info}
-              </h5>
-              
+  const renderStepContent = () => {
+    switch (currentStep) {
+      // STEP 1: Seleção de País
+      case 1:
+        return (
+          <div className="space-y-8 animate-in fade-in-0 duration-300">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-semibold text-foreground">{tRegion.steps.step_1_title}</h3>
+              <p className="text-sm text-muted-foreground">{tRegion.steps.step_1_description}</p>
+            </div>
+            <div className="space-y-6 max-w-md mx-auto">
               <div className="space-y-2">
-                <Label htmlFor="name">
-                  {t.regions.fields.name} *
+                <Label htmlFor="country" className="flex items-center gap-2 text-sm">
+                  <Globe className="w-4 h-4 text-muted-foreground" />
+                  {tRegion.fields.country} *
+                </Label>
+                <Popover open={isCountryPopoverOpen} onOpenChange={setIsCountryPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={isCountryPopoverOpen}
+                      className={cn(
+                        "w-full h-12 text-base justify-between font-normal",
+                        !selectedCountry && "text-muted-foreground",
+                        errors.country && "border-red-500"
+                      )}
+                      disabled={isLoading}
+                    >
+                      {selectedCountry
+                        ? countries.find(c => c.code === selectedCountry)?.name
+                        : tRegion.placeholders.country_placeholder}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder={tRegion.messages.search_country} />
+                      <CommandList>
+                        <CommandEmpty>{tRegion.messages.no_country_found}</CommandEmpty>
+                        <CommandGroup>
+                          {countries.map((country) => (
+                            <CommandItem
+                              key={country.code}
+                              value={country.name}
+                              onSelect={() => setSelectedCountry(country.code)}
+                            >
+                              {country.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                {errors.country && (
+                  <p className="text-xs text-red-600">{errors.country}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+
+      // STEP 2: Nome, Descrição e Cor
+      case 2:
+        return (
+          <div className="space-y-8 animate-in fade-in-0 duration-300">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-semibold text-foreground">{tRegion.steps.step_2_title}</h3>
+              <p className="text-sm text-muted-foreground">{tRegion.steps.step_2_description}</p>
+            </div>
+            
+            <div className="space-y-6 max-w-md mx-auto">
+              {/* Nome */}
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm font-medium">
+                  {tRegion.fields.name} *
                 </Label>
                 <Input
+                  key={`name-${isOpen ? 'open' : 'closed'}`}
                   id="name"
-                  value={formData.name || ''}
+                  value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder={t.regions.placeholders.name}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  placeholder={tRegion.placeholders.name}
                   disabled={isLoading}
-                  className={`w-full ${errors.name ? 'border-red-500' : ''}`}
+                  className={errors.name ? 'border-red-500' : ''}
+                  autoComplete="off"
+                  spellCheck={false}
                 />
                 {errors.name && (
-                  <p className="text-sm text-red-600">{errors.name}</p>
+                  <p className="text-xs text-red-600">{errors.name}</p>
                 )}
               </div>
 
+              {/* Descrição */}
               <div className="space-y-2">
-                <Label htmlFor="parent_region_id">
-                  {t.regions.fields.parent_region}
+                <Label htmlFor="description" className="text-sm font-medium">
+                  {tRegion.fields.description}
                 </Label>
-                <Select
-                  value={formData.parent_region_id || ''}
-                    onValueChange={(value) => handleInputChange('parent_region_id', value === 'none' ? '' : value)}
+                <Textarea
+                  key={`description-${isOpen ? 'open' : 'closed'}`}
+                  id="description"
+                  value={formData.description || ""}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  placeholder={tRegion.placeholders.description}
                   disabled={isLoading}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t.regions.placeholders.parent_region} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{t.regions.placeholders.no_parent}</SelectItem>
-                    {parentRegions.map((region) => (
-                      <SelectItem key={region.id} value={region.id}>
-                        {region.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Contact Information */}
-            <div className="space-y-4">
-              <h5 className="font-medium text-sm text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-                <User className="w-4 h-4" />
-                {t.regions.sections.contact_info}
-              </h5>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="contact_name">
-                    {t.regions.fields.contact_name}
-                  </Label>
-                  <Input
-                    id="contact_name"
-                    value={formData.contact?.name || ''}
-                    onChange={(e) => handleInputChange('contact.name', e.target.value)}
-                    placeholder={t.regions.placeholders.contact_name}
-                    disabled={isLoading}
-                    className="w-full"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="contact_email">
-                    {t.regions.fields.contact_email}
-                  </Label>
-                  <Input
-                    id="contact_email"
-                    type="email"
-                    value={formData.contact?.email || ''}
-                    onChange={(e) => handleInputChange('contact.email', e.target.value)}
-                    placeholder={t.regions.placeholders.contact_email}
-                    disabled={isLoading}
-                    className={`w-full ${errors['contact.email'] ? 'border-red-500' : ''}`}
-                  />
-                  {errors['contact.email'] && (
-                    <p className="text-sm text-red-600">{errors['contact.email']}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="contact_phone">
-                    {t.regions.fields.contact_phone}
-                  </Label>
-                  <Input
-                    id="contact_phone"
-                    value={formData.contact?.phone || ''}
-                    onChange={(e) => handleInputChange('contact.phone', e.target.value)}
-                    placeholder={t.regions.placeholders.contact_phone}
-                    disabled={isLoading}
-                    className="w-full"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="contact_mobile">
-                    {t.regions.fields.contact_mobile}
-                  </Label>
-                  <Input
-                    id="contact_mobile"
-                    value={formData.contact?.mobile || ''}
-                    onChange={(e) => handleInputChange('contact.mobile', e.target.value)}
-                    placeholder={t.regions.placeholders.contact_mobile}
-                    disabled={isLoading}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="contact_country">
-                    {t.regions.fields.contact_country}
-                  </Label>
-                  <Input
-                    id="contact_country"
-                    value={formData.contact?.country || ''}
-                    onChange={(e) => handleInputChange('contact.country', e.target.value)}
-                    placeholder={t.regions.placeholders.contact_country}
-                    disabled={isLoading}
-                    className="w-full"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="contact_city">
-                    {t.regions.fields.contact_city}
-                  </Label>
-                  <Input
-                    id="contact_city"
-                    value={formData.contact?.city || ''}
-                    onChange={(e) => handleInputChange('contact.city', e.target.value)}
-                    placeholder={t.regions.placeholders.contact_city}
-                    disabled={isLoading}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="contact_address">
-                  {t.regions.fields.contact_address}
-                </Label>
-                <Input
-                  id="contact_address"
-                  value={formData.contact?.address || ''}
-                  onChange={(e) => handleInputChange('contact.address', e.target.value)}
-                  placeholder={t.regions.placeholders.contact_address}
-                  disabled={isLoading}
-                  className="w-full"
+                  className="min-h-[100px] resize-none"
+                  autoComplete="off"
+                  spellCheck={false}
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="contact_postal_code">
-                    {t.regions.fields.contact_postal_code}
-                  </Label>
-                  <Input
-                    id="contact_postal_code"
-                    value={formData.contact?.postal_code || ''}
-                    onChange={(e) => handleInputChange('contact.postal_code', e.target.value)}
-                    placeholder={t.regions.placeholders.contact_postal_code}
-                    disabled={isLoading}
-                    className="w-full"
-                  />
-                </div>
+              {/* Color Picker Component */}
+              <ColorPicker
+                value={formData.color || "#475569"}
+                onChange={(color) => handleInputChange('color', color)}
+                disabled={isLoading}
+                label={tRegion.fields.color}
+                showPreview={true}
+              />
+            </div>
+          </div>
+        )
 
-                <div className="space-y-2">
-                  <Label htmlFor="contact_website">
-                    {t.regions.fields.contact_website}
-                  </Label>
-                  <Input
-                    id="contact_website"
-                    type="url"
-                    value={formData.contact?.website || ''}
-                    onChange={(e) => handleInputChange('contact.website', e.target.value)}
-                    placeholder={t.regions.placeholders.contact_website}
-                    disabled={isLoading}
-                    className="w-full"
-                  />
+      // STEP 3: Seleção de Províncias e Cidades
+      case 3:
+        return (
+          <div className="space-y-6 animate-in fade-in-0 duration-300">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-medium text-foreground">{tRegion.steps.step_3_title}</h3>
+              <p className="text-sm text-muted-foreground">
+                {tRegion.steps.step_3_description}
+              </p>
+            </div>
+
+            <div className="max-w-2xl mx-auto space-y-4">
+              {/* Search Bar - Minimalista */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder={tRegion.messages.search_province_city}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 h-10 border-slate-200 focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
+                />
+              </div>
+
+              {/* Selected Provinces - Summary */}
+              {selectedProvinces.size > 0 && (
+                <div className="border border-slate-200 rounded-lg p-3 bg-slate-50/50">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-medium text-slate-600">
+                      {selectedProvinces.size} {tRegion.messages.selected}{selectedProvinces.size !== 1 ? 's' : ''} ({Array.from(selectedProvinces).reduce((sum, pc) => sum + (selectedCities[pc]?.size || 0), 0)} {tRegion.messages.cities})
+                    </span>
+                  </div>
+                  
+                  {/* Provinces Horizontal Scroll */}
+                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
+                    {Array.from(selectedProvinces).map(provinceCode => {
+                      const province = provincesForSelectedCountry.find(p => p.code === provinceCode)
+                      if (!province) return null
+                      
+                      const cityCount = selectedCities[provinceCode]?.size || 0
+
+                      return (
+                        <div
+                          key={provinceCode}
+                          className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-300 rounded-md hover:border-slate-400 transition-colors group"
+                        >
+                          <div className="w-1.5 h-1.5 rounded-full bg-slate-800" />
+                          <span className="text-sm font-medium text-slate-900 whitespace-nowrap">
+                            {province.name}
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            ({cityCount})
+                          </span>
+                          <button
+                            onClick={() => toggleProvinceSimple(provinceCode)}
+                            className="ml-1 opacity-0 group-hover:opacity-100 hover:bg-slate-100 rounded-full p-0.5 transition-all"
+                          >
+                            <X className="w-3 h-3 text-slate-600" />
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
+              )}
+
+              {/* Province Selection List */}
+              <div className="border border-slate-200 rounded-lg max-h-[400px] overflow-y-auto">
+                {filteredProvinces.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Search className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-sm text-slate-500">
+                      No province found
+                    </p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {filteredProvinces.map((province) => {
+                      const isSelected = selectedProvinces.has(province.code)
+                      const citiesInProvince = selectedCities[province.code] || new Set()
+
+                      // Determine if the entire province should be disabled (all cities occupied)
+                      const provinceOccupied = province.cities.every(c => !!cityOwnersByCountry[selectedCountry]?.[c.code])
+
+                      return (
+                        <div key={province.code} className="border-b last:border-b-0">
+                          {/* Province Row */}
+                          <button
+                            onClick={() => toggleProvinceSimple(province.code)}
+                            disabled={isLoading || provinceOccupied}
+                            title={provinceOccupied ? (tRegion.messages?.province_all_cities_occupied?.replace?.('{{province}}', province.name) || 'All cities in this province are already registered') : undefined}
+                            className={`w-full flex items-center justify-between px-4 py-3 transition-colors ${
+                              isSelected ? 'bg-slate-50' : 'hover:bg-slate-50'
+                            } ${provinceOccupied ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            <div className="flex items-center gap-3 flex-1">
+                              <span
+                                role="button"
+                                onClick={(e) => { e.stopPropagation(); if (!provinceOccupied && !isLoading) {
+                                  setExpandedProvinces(prev => {
+                                    const next = new Set(prev)
+                                    if (next.has(province.code)) next.delete(province.code)
+                                    else next.add(province.code)
+                                    return next
+                                  })
+                                } }}
+                                className={`mr-2 p-1 rounded transition-colors ${provinceOccupied ? 'opacity-50' : 'hover:bg-slate-100'}`}
+                                title={provinceOccupied ? undefined : (expandedProvinces.has(province.code) ? 'Collapse' : 'Expand')}
+                              >
+                                <ChevronRight className={`w-4 h-4 transition-transform ${expandedProvinces.has(province.code) ? 'rotate-90' : ''}`} />
+                              </span>
+
+                              <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-colors ${
+                                isSelected ? 'bg-slate-900' : 'bg-slate-300'
+                              }`} />
+                              
+                              <div className="text-left">
+                                <p className="font-medium text-sm text-slate-900">{province.name}</p>
+                                <p className="text-xs text-slate-500">{province.cities.length} cities</p>
+                              </div>
+                            </div>
+
+                            <div className={`w-4 h-4 rounded border transition-all ${
+                              isSelected 
+                                ? 'bg-slate-900 border-slate-900' 
+                                : 'border-slate-300'
+                            } flex items-center justify-center`}>
+                              {isSelected && (
+                                <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                              )}
+                            </div>
+                          </button>
+
+                          {/* Cities List - Expandable when province is selected or expanded */}
+                          {(isSelected || expandedProvinces.has(province.code)) && (
+                            <div className="bg-slate-50/50 px-4 py-3 border-t border-slate-100">
+                              <p className="text-xs font-medium text-slate-600 mb-2">Cities:</p>
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                {province.cities.map((city) => {
+                                  const isCitySelected = citiesInProvince.has(city.code)
+                                  const owner = cityOwnersByCountry[selectedCountry]?.[city.code]
+                                  const isCityOccupied = !!owner
+
+                                  return (
+                                    <button
+                                      key={city.code}
+                                      onClick={() => toggleCity(province.code, city.code)}
+                                      disabled={isLoading || isCityOccupied}
+                                      title={isCityOccupied ? (tRegion.messages?.city_in_use?.replace?.('{{region}}', owner) || `Already registered in ${owner}`) : undefined}
+                                      className={cn(
+                                        "text-left px-2 py-1.5 rounded text-xs font-medium transition-colors",
+                                        isCitySelected
+                                          ? "bg-slate-900 text-white"
+                                          : "bg-white border border-slate-200 text-slate-700 hover:border-slate-300",
+                                        isCityOccupied ? 'opacity-50 cursor-not-allowed' : ''
+                                      )}
+                                    >
+                                      {city.name}
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Error Message */}
+              {errors.territory && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-sm text-red-700">{errors.territory}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+
+      // STEP 4: Review - Minimalista
+      case 4:
+        const territory = buildTerritoryObject()
+        const totalCities = Object.values(selectedCities).reduce((sum, set) => sum + set.size, 0)
+        const countryName = countries.find(c => c.code === selectedCountry)?.name || selectedCountry
+
+        return (
+          <div className="space-y-8 animate-in fade-in-0 duration-300">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-semibold text-foreground">{tRegion.steps.step_4_title}</h3>
+              <p className="text-sm text-muted-foreground">
+                {tRegion.steps.step_4_description}
+              </p>
+            </div>
+
+            <div className="max-w-lg mx-auto space-y-6">
+              {/* Basic Information */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  {tRegion.sections.basic_info}
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between py-2 border-b border-border/50">
+                    <span className="text-sm text-muted-foreground">{tRegion.fields.name}</span>
+                    <span className="text-sm font-medium text-right max-w-[60%]">{formData.name}</span>
+                  </div>
+                  {formData.description && (
+                    <div className="flex justify-between py-2 border-b border-border/50">
+                      <span className="text-sm text-muted-foreground">{tRegion.fields.description}</span>
+                      <span className="text-sm font-medium text-right max-w-[60%] line-clamp-3">
+                        {formData.description}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between py-2 border-b border-border/50">
+                    <span className="text-sm text-muted-foreground">{tRegion.fields.color}</span>
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-4 h-4 rounded-full border"
+                        style={{ backgroundColor: formData.color || "#475569" }}
+                      />
+                      <span className="text-xs font-mono text-muted-foreground">{formData.color || "#475569"}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Territory Information */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  {tRegion.labels.coverage}
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between py-2 border-b border-border/50">
+                    <span className="text-sm text-muted-foreground">{tRegion.fields.country}</span>
+                    <span className="text-sm font-medium">{countryName}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-border/50">
+                    <span className="text-sm text-muted-foreground">{tRegion.fields.provinces}</span>
+                    <span className="text-sm font-medium">{selectedProvinces.size}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-border/50">
+                    <span className="text-sm text-muted-foreground">{tRegion.table.cities}</span>
+                    <span className="text-sm font-medium">{totalCities}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Province List */}
+              {selectedProvinces.size > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Selected Provinces
+                  </h4>
+                  <div className="space-y-2">
+                    {Array.from(selectedProvinces).map(provinceCode => {
+                      const province = provincesForSelectedCountry.find(p => p.code === provinceCode)
+                      if (!province) return null
+
+                      const citiesSet = selectedCities[provinceCode]
+                      const cityCount = citiesSet?.size || 0
+                      const cityNames = Array.from(citiesSet || [])
+                        .map(cc => province.cities.find(c => c.code === cc)?.name)
+                        .filter(Boolean)
+                        .join(", ")
+
+                      return (
+                        <div 
+                          key={provinceCode}
+                          className="p-3 border border-slate-200 rounded-lg bg-slate-50/50"
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-2 h-2 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: formData.color || "#475569" }}
+                              />
+                              <span className="font-medium text-sm">{province.name}</span>
+                            </div>
+                            <span className="text-xs font-medium text-slate-600 bg-white px-2 py-1 rounded">
+                              {cityCount} cities
+                            </span>
+                          </div>
+                          {cityNames && (
+                            <p className="text-xs text-slate-600 ml-4 line-clamp-2">
+                              {cityNames}
+                            </p>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+
+      default:
+        return null
+    }
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={!isLoading ? setIsOpen : undefined}>
+      <DialogTrigger asChild>
+        {children}
+      </DialogTrigger>
+      <DialogContent className="w-[95vw] max-w-2xl max-h-[95vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0 pb-4">
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <MapPin className="w-5 h-5 text-muted-foreground" />
+            Add New Region
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
+            Create a new region in your institution
+          </DialogDescription>
+          
+          {/* Progress Bar */}
+          <div className="mt-4 space-y-2">
+            <div className="flex justify-between items-center text-xs text-muted-foreground">
+              <span>{tRegion.steps.step} {currentStep} {tRegion.steps.of} {totalSteps}</span>
+              <span>{Math.round((currentStep / totalSteps) * 100)}%</span>
+            </div>
+            <Progress value={(currentStep / totalSteps) * 100} className="h-1" />
+          </div>
+        </DialogHeader>
+
+        {/* Conteúdo dos Steps - Scrollable */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="space-y-6 p-1">
+            {/* Step Content */}
+            {renderStepContent()}
+          </div>
+        </div>
+
+        {/* Botões de Navegação - Fixos no rodapé */}
+        <div className="flex-shrink-0 border-t pt-4 mt-6">
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2">
+              {currentStep > 1 && (
+              <Button 
+                variant="outline" 
+                onClick={handlePrevious} 
+                disabled={isLoading}
+                size="sm"
+                className="flex items-center gap-1"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                {tRegion.buttons.previous}
+              </Button>
+              )}
+              <Button 
+                variant="ghost" 
+                onClick={handleCancel} 
+                disabled={isLoading}
+                size="sm"
+              >
+                Cancel
+              </Button>
+            </div>
+
+            <div className="flex gap-2">
+              {currentStep < totalSteps ? (
+                <Button 
+                  onClick={handleNext} 
+                  disabled={isLoading}
+                  size="sm"
+                  className="flex items-center gap-1"
+                >
+                  {tRegion.buttons.next}
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              ) : (
+                <Button 
+                  onClick={handleSave} 
+                  disabled={isLoading}
+                  size="sm"
+                  className="min-w-[120px]"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                      {tRegion.buttons.creating}
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      {tRegion.buttons.create_region}
+                    </>
+                  )}
+                </Button>
+              )}            
               </div>
             </div>
           </div>
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
-            <Button 
-              variant="outline" 
-              onClick={handleCancel} 
-              disabled={isLoading}
-              className="w-full sm:w-auto"
-            >
-              <X className="w-4 h-4 mr-2" />
-              {t.common.cancel}
-            </Button>
-            <Button 
-              onClick={handleSave} 
-              disabled={isLoading}
-              className="w-full sm:w-auto"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {isLoading ? t.regions.creating : t.common.save}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
+        </DialogContent>
+      </Dialog>
+    )
 }

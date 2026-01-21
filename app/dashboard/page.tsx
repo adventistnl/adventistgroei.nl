@@ -3,522 +3,121 @@
 import * as React from "react"
 import { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
+import { useQuery } from "@apollo/client"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
-import { LanguageSelector } from "@/components/language-selector"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useInstitution } from "@/contexts/institution-context"
+import { useCurrency } from "@/contexts/currency-context"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import {
+import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
+import { 
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { 
   Users, 
   TrendingUp, 
-  DollarSign, 
-  Calendar,
-  Building,
+  TrendingDown,
+  Building2,
   MapPin,
   UserCheck,
-  MessageSquare,
-  FileText,
-  Activity,
-  ArrowUpRight,
   Plus,
   RefreshCw,
-  Download,
-  BarChart3,
-  Globe,
-  Clock,
-  CheckCircle,
-  AlertCircle
+  Shield,
+  Lock,
+  Crown,
+  Building,
+  Map,
+  Church,
+  Filter,
+  DollarSign
 } from "lucide-react"
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Legend,
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis
-} from "recharts"
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
-  type ChartConfig,
-} from "@/components/ui/chart"
-import {
-  growthData,
-  usersByInstitutionData,
-  budgetVsSubsidyData,
-  subsidyStatusData,
-  eventParticipationData,
-  communicationFlowData,
-  dashboardMetrics,
-  recentActivities,
-  geographicDistribution,
-  departmentPerformanceData,
-  institutionSpecificData
-} from "@/data/mockData"
-import { useInstitution } from "@/contexts/institution-context"
+import { toast } from "sonner"
 import { KPICards } from "@/components/shared/kpi-cards-carousel"
+import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
+import { QuickActions, QuickAction } from "@/components/shared/quick-actions"
+import { YearFilter } from "@/components/shared/year-filter"
+import { SectionHeader } from "@/components/shared/section-header"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
-import { UseTable } from "@/components/ui/use-table"
-import { ColumnDef } from "@tanstack/react-table"
-import toast from "react-hot-toast"
-import "@/lib/i18n"
+import { DateTimeDisplay } from "@/components/shared/date-time-display"
+import { CalendarCard } from "@/components/shared/calendar-card"
+import { CalendarHeatmap } from "@/components/shared/calendar-heatmap"
+import { RoleDistributionChart, PermissionsByGroupChart, UserActivityChart } from "@/components/access/access-charts"
+import { BudgetSection } from "@/components/budget"
+import { UserStructureGrowthChart, UsersByStructureOverviewChart, UserDistributionBarChart } from "@/components/charts/dashboard"
+import { HierarchicalStructureCard } from "@/components/charts/dashboard/hierarchical-structure-card"
+import { StructureBarChart, GrowthLineChart } from "@/components/charts/generic"
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart"
+import { BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts"
 
-// Dados para o gráfico interativo de crescimento
-const interactiveGrowthData = [
-  { date: "2024-01-01", churches: 156, members: 45000, regions: 28 },
-  { date: "2024-01-05", churches: 158, members: 45200, regions: 28 },
-  { date: "2024-01-10", churches: 159, members: 45400, regions: 28 },
-  { date: "2024-01-15", churches: 161, members: 45800, regions: 29 },
-  { date: "2024-01-20", churches: 162, members: 46000, regions: 29 },
-  { date: "2024-01-25", churches: 164, members: 46300, regions: 29 },
-  { date: "2024-01-30", churches: 165, members: 46500, regions: 30 },
-  { date: "2024-02-01", churches: 166, members: 46700, regions: 30 },
-  { date: "2024-02-05", churches: 168, members: 47000, regions: 30 },
-  { date: "2024-02-10", churches: 169, members: 47200, regions: 30 },
-  { date: "2024-02-15", churches: 171, members: 47500, regions: 31 },
-  { date: "2024-02-20", churches: 172, members: 47800, regions: 31 },
-  { date: "2024-02-25", churches: 174, members: 48100, regions: 31 },
-  { date: "2024-02-28", churches: 175, members: 48300, regions: 32 },
-  { date: "2024-03-01", churches: 176, members: 48500, regions: 32 },
-  { date: "2024-03-05", churches: 178, members: 48800, regions: 32 },
-  { date: "2024-03-10", churches: 179, members: 49000, regions: 32 },
-  { date: "2024-03-15", churches: 181, members: 49300, regions: 33 },
-  { date: "2024-03-20", churches: 182, members: 49600, regions: 33 },
-  { date: "2024-03-25", churches: 184, members: 49900, regions: 33 },
-  { date: "2024-03-30", churches: 185, members: 50100, regions: 34 },
-  { date: "2024-04-01", churches: 186, members: 50300, regions: 34 },
-  { date: "2024-04-05", churches: 188, members: 50600, regions: 34 },
-  { date: "2024-04-10", churches: 189, members: 50800, regions: 34 },
-  { date: "2024-04-15", churches: 191, members: 51100, regions: 35 },
-  { date: "2024-04-20", churches: 192, members: 51400, regions: 35 },
-  { date: "2024-04-25", churches: 194, members: 51700, regions: 35 },
-  { date: "2024-04-30", churches: 195, members: 51900, regions: 36 },
-  { date: "2024-05-01", churches: 196, members: 52100, regions: 36 },
-  { date: "2024-05-05", churches: 198, members: 52400, regions: 36 },
-  { date: "2024-05-10", churches: 199, members: 52700, regions: 36 },
-  { date: "2024-05-15", churches: 201, members: 53000, regions: 37 },
-  { date: "2024-05-20", churches: 202, members: 53300, regions: 37 },
-  { date: "2024-05-25", churches: 204, members: 53600, regions: 37 },
-  { date: "2024-05-30", churches: 205, members: 53800, regions: 38 },
-  { date: "2024-06-01", churches: 206, members: 54000, regions: 38 },
-  { date: "2024-06-05", churches: 208, members: 54300, regions: 38 },
-  { date: "2024-06-10", churches: 209, members: 54600, regions: 38 },
-  { date: "2024-06-15", churches: 211, members: 54900, regions: 39 },
-  { date: "2024-06-20", churches: 212, members: 55200, regions: 39 },
-  { date: "2024-06-25", churches: 214, members: 55500, regions: 39 },
-  { date: "2024-06-30", churches: 215, members: 55800, regions: 40 },
+// GraphQL Queries
+import { GET_INSTITUTIONS_LIGHT_QUERY } from "@/graphql/queries/INSTITUTIONS_QUERY"
+import { GET_REGIONS_QUERY } from "@/graphql/queries/REGIONS_QUERY"
+import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
+import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
+import { GET_ALL_USERS_QUERY } from "@/graphql/queries/GET_USER_QUERY"
+import { GET_ALL_ROLES_QUERY } from "@/graphql/queries/GET_ROLES_QUERY"
+
+import { structureTranslations } from "@/lib/translations/structure"
+import { GridContainer } from "@/components/shared/grid-container"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { format } from "date-fns"
+import { ptBR, nl, enUS } from "date-fns/locale"
+
+// Month names
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
 ]
-
-// Mock data para usuários
-const mockUsers = [
-  { id: 1, name: "João Silva", email: "joao@example.com", role: "Admin", status: "Active", lastLogin: "2024-01-15" },
-  { id: 2, name: "Maria Santos", email: "maria@example.com", role: "Manager", status: "Active", lastLogin: "2024-01-14" },
-  { id: 3, name: "Pedro Costa", email: "pedro@example.com", role: "User", status: "Inactive", lastLogin: "2024-01-10" },
-  { id: 4, name: "Ana Oliveira", email: "ana@example.com", role: "Manager", status: "Active", lastLogin: "2024-01-15" },
-  { id: 5, name: "Carlos Lima", email: "carlos@example.com", role: "User", status: "Active", lastLogin: "2024-01-13" },
-  { id: 6, name: "Lucia Ferreira", email: "lucia@example.com", role: "Admin", status: "Active", lastLogin: "2024-01-15" },
-  { id: 7, name: "Roberto Alves", email: "roberto@example.com", role: "User", status: "Pending", lastLogin: "2024-01-12" },
-  { id: 8, name: "Fernanda Rocha", email: "fernanda@example.com", role: "Manager", status: "Active", lastLogin: "2024-01-14" },
-]
-
-// Colunas para a tabela de usuários
-const userColumns: ColumnDef<any>[] = [
-  {
-    accessorKey: "name",
-    header: "Name",
-  },
-  {
-    accessorKey: "email",
-    header: "Email",
-  },
-  {
-    accessorKey: "role",
-    header: "Role",
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const status = row.getValue("status") as string
-      const color = status === "Active" ? "bg-green-100 text-green-700" : 
-                   status === "Inactive" ? "bg-red-100 text-red-700" : 
-                   "bg-yellow-100 text-yellow-700"
-      return (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}>
-          {status}
-        </span>
-      )
-    },
-  },
-  {
-    accessorKey: "lastLogin",
-    header: "Last Login",
-    cell: ({ row }) => {
-      const date = new Date(row.getValue("lastLogin"))
-      return date.toLocaleDateString()
-    },
-  },
-]
-
-
-// Configurações dos gráficos com cores distintas
-const interactiveGrowthChartConfig = {
-  visitors: {
-    label: "Growth Metrics",
-  },
-  churches: {
-    label: "Churches",
-    color: "#3b82f6", // Blue
-  },
-  members: {
-    label: "Members",
-    color: "#10b981", // Green
-  },
-} satisfies ChartConfig
-
-const usersChartConfig = {
-  users: {
-    label: "Users",
-    color: "#f59e0b", // Amber
-  },
-} satisfies ChartConfig
-
-const budgetChartConfig = {
-  budget: {
-    label: "Budget",
-    color: "#10b981", // Green
-  },
-  subsidies_requested: {
-    label: "Requested",
-    color: "#f59e0b", // Amber
-  },
-  subsidies_approved: {
-    label: "Approved",
-    color: "#3b82f6", // Blue
-  },
-} satisfies ChartConfig
-
-const subsidyStatusChartConfig = {
-  approved: {
-    label: "Approved",
-    color: "#22c55e", // Green
-  },
-  pending: {
-    label: "Pending",
-    color: "#f59e0b", // Amber
-  },
-  under_review: {
-    label: "Under Review",
-    color: "#3b82f6", // Blue
-  },
-  rejected: {
-    label: "Rejected",
-    color: "#ef4444", // Red
-  },
-} satisfies ChartConfig
-
-const eventsChartConfig = {
-  evangelism: {
-    label: "Evangelism",
-    color: "#ef4444", // Red
-  },
-  show: {
-    label: "Shows",
-    color: "#3b82f6", // Blue
-  },
-  conference: {
-    label: "Conferences",
-    color: "#10b981", // Green
-  },
-  workshop: {
-    label: "Workshops",
-    color: "#8b5cf6", // Purple
-  },
-} satisfies ChartConfig
-
-const communicationChartConfig = {
-  communications: {
-    label: "Communications",
-    color: "#3b82f6", // Blue
-  },
-  direct_messages: {
-    label: "Direct Messages",
-    color: "#10b981", // Green
-  },
-  announcements: {
-    label: "Announcements",
-    color: "#f59e0b", // Amber
-  },
-} satisfies ChartConfig
-
-const departmentPerformanceChartConfig = {
-  efficiency: {
-    label: "Efficiency",
-    color: "#8b5cf6", // Purple
-  },
-  budget_used: {
-    label: "Budget Used %",
-    color: "#f59e0b", // Amber
-  },
-  events_completed: {
-    label: "Events Completed",
-    color: "#10b981", // Green
-  },
-} satisfies ChartConfig
-
-// Componentes individuais dos gráficos
-const GrowthChart = () => (
-  <Card className="h-full">
-    <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
-      <div className="grid flex-1 gap-1">
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="w-5 h-5" />
-          Growth Analysis
-        </CardTitle>
-        <CardDescription>
-          Detailed growth analysis with time filtering
-        </CardDescription>
-      </div>
-    </CardHeader>
-    <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-      <ChartContainer
-        config={interactiveGrowthChartConfig}
-        className="aspect-auto h-[300px] w-full"
-      >
-        <AreaChart data={interactiveGrowthData.slice(-30)}>
-          <defs>
-            <linearGradient id="fillChurches" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
-            </linearGradient>
-            <linearGradient id="fillMembers" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey="date"
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-            minTickGap={32}
-            tickFormatter={(value) => {
-              const date = new Date(value)
-              return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
-            }}
-          />
-          <ChartTooltip
-            cursor={false}
-            content={
-              <ChartTooltipContent
-                labelFormatter={(value) => {
-                  return new Date(value).toLocaleDateString("en-US", {
-                    month: "short", day: "numeric", year: "numeric"
-                  })
-                }}
-                indicator="dot"
-              />
-            }
-          />
-          <Area dataKey="members" type="natural" fill="url(#fillMembers)" stroke="#10b981" stackId="a" />
-          <Area dataKey="churches" type="natural" fill="url(#fillChurches)" stroke="#3b82f6" stackId="a" />
-          <Legend />
-        </AreaChart>
-      </ChartContainer>
-    </CardContent>
-  </Card>
-)
-
-const UsersChart = () => (
-  <Card className="h-full">
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-      <div>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="w-5 h-5" />
-          User Distribution
-        </CardTitle>
-        <CardDescription className="mt-1">
-          Active users by institution
-        </CardDescription>
-      </div>
-    </CardHeader>
-    <CardContent>
-      <ChartContainer config={usersChartConfig} className="h-[300px] w-full">
-        <BarChart accessibilityLayer data={usersByInstitutionData}>
-          <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey="institution"
-            tickLine={false}
-            tickMargin={10}
-            axisLine={false}
-            angle={-45}
-            textAnchor="end"
-            height={80}
-            fontSize={10}
-          />
-          <YAxis tickLine={false} axisLine={false} tickMargin={8} fontSize={11} />
-          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-          <Bar dataKey="users" fill="#f59e0b" radius={6} />
-        </BarChart>
-      </ChartContainer>
-    </CardContent>
-  </Card>
-)
-
-const SubsidyStatusChart = () => (
-  <Card className="h-full">
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-      <div>
-        <CardTitle className="flex items-center gap-2">
-          <DollarSign className="w-5 h-5" />
-          Subsidy Status
-        </CardTitle>
-        <CardDescription className="mt-1">
-          Request status breakdown
-        </CardDescription>
-      </div>
-    </CardHeader>
-    <CardContent>
-      <ChartContainer config={subsidyStatusChartConfig} className="h-[300px] w-full">
-        <PieChart>
-          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-          <Pie
-            data={subsidyStatusData}
-            dataKey="value"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            innerRadius={50}
-            outerRadius={90}
-            strokeWidth={2}
-            paddingAngle={2}
-          >
-            {subsidyStatusData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
-            ))}
-            <Legend />
-          </Pie>
-        </PieChart>
-      </ChartContainer>
-    </CardContent>
-  </Card>
-)
-
-const BudgetChart = () => (
-  <Card className="h-full">
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-      <div>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="w-5 h-5" />
-          Budget Analysis
-        </CardTitle>
-        <CardDescription className="mt-1">
-          Budget allocation vs subsidy requests
-        </CardDescription>
-      </div>
-    </CardHeader>
-    <CardContent>
-      <ChartContainer config={budgetChartConfig} className="h-[300px] w-full">
-        <BarChart accessibilityLayer data={budgetVsSubsidyData}>
-          <CartesianGrid vertical={false} />
-          <XAxis dataKey="department" tickLine={false} tickMargin={10} axisLine={false} fontSize={11} />
-          <YAxis
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-            tickFormatter={(value) => `R$ ${Number(value).toLocaleString()}`}
-            fontSize={11}
-          />
-          <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-          <Legend />
-          <Bar dataKey="budget" fill="#10b981" radius={4} />
-          <Bar dataKey="subsidies_requested" fill="#f59e0b" radius={4} />
-          <Bar dataKey="subsidies_approved" fill="#3b82f6" radius={4} />
-        </BarChart>
-      </ChartContainer>
-    </CardContent>
-  </Card>
-)
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
-  const { activeInstitution } = useInstitution()
-  const [isLoading, setIsLoading] = useState(true)
-  const [selectedPeriod, setSelectedPeriod] = useState("6m")
-  const [refreshing, setRefreshing] = useState(false)
-  
-  // Estados para filtros individuais de cada gráfico
-  const [growthPeriod, setGrowthPeriod] = useState("6m")
-  const [usersPeriod, setUsersPeriod] = useState("all")
-  const [budgetPeriod, setBudgetPeriod] = useState("current")
-  const [subsidyPeriod, setSubsidyPeriod] = useState("all")
-  const [eventsPeriod, setEventsPeriod] = useState("6m")
-  const [commPeriod, setCommPeriod] = useState("3m")
+  const { currentInstitutionData, institutions } = useInstitution()  
+  const { formatCurrency, selectedCurrency } = useCurrency()
+  const currentLanguage = i18n?.language || 'en'
+  const ts = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
 
-  // Dados específicos da instituição ativa
-  const currentInstitutionData = React.useMemo(() => {
-    return institutionSpecificData[activeInstitution.id as keyof typeof institutionSpecificData] || institutionSpecificData.usp
-  }, [activeInstitution.id])
+  // Filter States
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const [selectedMonth, setSelectedMonth] = useState<string>("all")
+  const [selectedRegion, setSelectedRegion] = useState<string>("all")
+  const [activeTab, setActiveTab] = useState<string>("structure-chart")
+  const [availableYears, setAvailableYears] = useState<number[]>(() => {
+    const current = new Date().getFullYear()
+    return [current, current - 1, current - 2]
+  })
 
-  // Dados para KPI Cards
-  const kpiCardsData = [
-    {
-      id: "total-users",
-      title: "Total Users",
-      value: "2,847",
-      change: "+12%",
-      trend: { value: 12, isPositive: true },
-      icon: Users,
-    },
-    {
-      id: "active-churches",
-      title: "Active Churches",
-      value: "156",
-      change: "28 regions",
-      trend: { value: 0, isPositive: true },
-      icon: MapPin,
-    },
-    {
-      id: "pending-subsidies",
-      title: "Pending Subsidies",
-      value: "23",
-      change: "85% utilized",
-      trend: { value: -5, isPositive: false },
-      icon: DollarSign,
-    },
-    {
-      id: "active-members",
-      title: "Active Members",
-      value: "54,200",
-      change: "Last 30 days",
-      trend: { value: 8, isPositive: true },
-      icon: UserCheck,
-    },
-  ]
+  // Filter values state for PageFilters component
+  const [filterValues, setFilterValues] = useState<Record<string, any>>({
+    month: "all",
+    region: "all"
+  })
+
+  // GraphQL Queries
+  const { data: institutionsData, loading: institutionsLoading, refetch: refetchInstitutions } = useQuery(GET_INSTITUTIONS_LIGHT_QUERY)
+  const { data: regionsData, loading: regionsLoading, refetch: refetchRegions } = useQuery(GET_REGIONS_QUERY)
+  const { data: churchesData, loading: churchesLoading, refetch: refetchChurches } = useQuery(GET_CHURCHES_QUERY)
+  const { data: departmentsData, loading: departmentsLoading, refetch: refetchDepartments } = useQuery(GET_DEPARTMENTS_QUERY, {
+    variables: { institution_id: currentInstitutionData?.id }
+  })
+  const { data: usersData, loading: usersLoading, refetch: refetchUsers } = useQuery(GET_ALL_USERS_QUERY, {
+    variables: { institution_id: currentInstitutionData?.id }
+  })
+  const { data: rolesData, loading: rolesLoading, refetch: refetchRoles } = useQuery(GET_ALL_ROLES_QUERY)
+
+  // Mock Budget KPIs Query - replace with actual hook when available
+  const isLoading = institutionsLoading || regionsLoading || churchesLoading || departmentsLoading || usersLoading || rolesLoading
 
   const breadcrumbs = useMemo(() => [
     { name: t('dashboard.title') }
@@ -529,99 +128,388 @@ export default function DashboardPage() {
     breadcrumbs
   })
 
-  // Simular carregamento de dados
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      const loadingToast = toast.loading(t('common.loading'))
+  // Extract data from queries
+  const allInstitutions = institutionsData?.institutions || []
+  const allRegions = regionsData?.regions || []
+  const allChurches = churchesData?.churches || []
+  const allDepartments = departmentsData?.departments || []
+  const allUsers = usersData?.users || []
+  const allRoles = rolesData?.roles || []
+
+  // Filter data by selected year and month
+  const filteredUsers = useMemo(() => {
+    const monthFilter = filterValues.month || selectedMonth
+    return allUsers.filter((user: any) => {
+      const createdDate = new Date(user.created_at)
+      const yearMatch = createdDate.getFullYear() === selectedYear
       
-      try {
-        // Simular delay de API
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-        toast.dismiss(loadingToast)
-        toast.success("📊 Dashboard loaded successfully!", {
-          duration: 3000
-        })
-        
-        setIsLoading(false)
-        
-      } catch (error) {
-        toast.dismiss(loadingToast)
-        toast.error(t('common.error'))
-        setIsLoading(false)
-      }
-    }
+      if (monthFilter === "all") return yearMatch
+      
+      const monthMatch = createdDate.getMonth() === parseInt(monthFilter)
+      return yearMatch && monthMatch
+    })
+  }, [allUsers, selectedYear, selectedMonth, filterValues.month])
 
-    loadDashboardData()
-  }, [t])
-
-  const handleRefresh = async () => {
-    setRefreshing(true)
+  const filteredChurches = useMemo(() => {
+    const regionFilter = filterValues.region || selectedRegion
+    let filtered = allChurches.filter((church: any) => !church.is_deleted)
     
-    const refreshToast = toast.loading("🔄 Refreshing data...")
+    if (regionFilter !== "all") {
+      filtered = filtered.filter((church: any) => church.region_id === regionFilter)
+    }
+    
+    return filtered
+  }, [allChurches, selectedRegion, filterValues.region])
+
+  // Get displayedInstitution from context - use this for institution-specific data
+  const displayedInstitution = currentInstitutionData
+
+  // Calculate KPIs - use displayedInstitution when available for better accuracy
+  const kpis = useMemo(() => {
+    // Use institution-specific data if available
+    const institutionUsers = displayedInstitution?.users || allUsers
+    const institutionDepts = displayedInstitution?.departments || allDepartments
+    const institutionChurches = displayedInstitution?.churches || allChurches
+    // Note: regions come from separate query, not from institution object
+    const institutionRegions = allRegions
+
+    const activeUsers = institutionUsers.filter((user: any) => !user.is_deleted).length
+    const newUsersThisYear = institutionUsers.filter((user: any) => {
+      const createdDate = new Date(user.created_at)
+      return createdDate.getFullYear() === selectedYear && !user.is_deleted
+    }).length
+    
+    const previousYearUsers = institutionUsers.filter((user: any) => {
+      const createdDate = new Date(user.created_at)
+      return createdDate.getFullYear() === selectedYear - 1 && !user.is_deleted
+    }).length
+
+    const userGrowthRate = previousYearUsers > 0 
+      ? Math.round(((newUsersThisYear - previousYearUsers) / previousYearUsers) * 100)
+      : 100
+
+    const institutionDepartments = institutionDepts.filter((dept: any) => !dept.church_id && !dept.is_deleted).length
+    const churchDepartments = institutionDepts.filter((dept: any) => dept.church_id && !dept.is_deleted).length
+    const activeChurches = institutionChurches.filter((c: any) => !c.is_deleted).length
+    const activeRegions = institutionRegions.filter((r: any) => !r.is_deleted).length
+
+    return {
+      totalInstitutions: displayedInstitution ? 1 : allInstitutions.length,
+      totalRegions: activeRegions,
+      activeChurches: filteredChurches.length > 0 ? filteredChurches.length : activeChurches,
+      totalDepartments: institutionDepartments + churchDepartments,
+      institutionDepartments,
+      churchDepartments,
+      totalUsers: institutionUsers.filter((u: any) => !u.is_deleted).length,
+      activeUsers,
+      newUsersThisYear,
+      userGrowthRate,
+      totalRoles: allRoles.length,
+      totalPermissions: allRoles.reduce((sum: number, role: any) => {
+        return sum + (role.permissions?.reduce((pSum: number, group: any) => pSum + (group.data?.length || 0), 0) || 0)
+      }, 0)
+    }
+  }, [displayedInstitution, allInstitutions, allRegions, allChurches, allDepartments, filteredChurches, allUsers, allRoles, selectedYear])
+
+  // User Growth Over Time (Monthly data for selected year)
+  const userGrowthData = useMemo(() => {
+    const institutionUsers = displayedInstitution?.users || allUsers
+    
+    const monthlyData = MONTHS.map((month, index) => ({
+      month: month.substring(0, 3),
+      users: 0,
+      newUsers: 0
+    }))
+
+    institutionUsers.forEach((user: any) => {
+      const createdDate = new Date(user.created_at)
+      if (createdDate.getFullYear() === selectedYear && !user.is_deleted) {
+        const monthIndex = createdDate.getMonth()
+        monthlyData[monthIndex].newUsers += 1
+      }
+    })
+
+    // Calculate cumulative users
+    let cumulative = 0
+    monthlyData.forEach(month => {
+      cumulative += month.newUsers
+      month.users = cumulative
+    })
+
+    return monthlyData
+  }, [displayedInstitution, allUsers, selectedYear])
+
+  // User Distribution by Structure
+  const userDistributionData = useMemo(() => {
+    const distribution: any[] = []
+    const institutionUsers = displayedInstitution?.users || filteredUsers
+    const institutions = displayedInstitution ? [displayedInstitution] : allInstitutions
+
+    // Group by institution
+    const byInstitution: Record<string, number> = {}
+    
+    institutionUsers.forEach((user: any) => {
+      const institutionName = institutions.find((i: any) => i.id === user.institution_id)?.name || 'Unknown'
+      byInstitution[institutionName] = (byInstitution[institutionName] || 0) + 1
+    })
+
+    Object.entries(byInstitution).forEach(([name, count]) => {
+      distribution.push({ name, users: count })
+    })
+
+    return distribution
+  }, [displayedInstitution, filteredUsers, allInstitutions])
+
+  // Role Distribution Data for Charts
+  const roleDistributionData = useMemo(() => {
+    const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
+    
+    return allRoles.map((role: any, index: number) => ({
+      name: role.name,
+      value: role.users?.filter((u: any) => !u.is_deleted).length || 0,
+      color: role.color || COLORS[index % COLORS.length]
+    }))
+  }, [allRoles])
+
+  // Permissions by Group Data
+  const permissionsByGroupData = useMemo(() => {
+    const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+    const groupMap: Record<string, number> = {}
+
+    allRoles.forEach((role: any) => {
+      role.permissions?.forEach((permGroup: any) => {
+        const group = permGroup.group || 'Other'
+        groupMap[group] = (groupMap[group] || 0) + (permGroup.data?.length || 0)
+      })
+    })
+
+    return Object.entries(groupMap).map(([group, permissions], index) => ({
+      group,
+      permissions,
+      color: COLORS[index % COLORS.length]
+    }))
+  }, [allRoles])
+
+  // Refresh all data
+  const handleRefresh = async () => {
+    const refreshToast = toast.loading("Refreshing dashboard data...")
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      await Promise.all([
+        refetchInstitutions(),
+        refetchRegions(),
+        refetchChurches(),
+        refetchDepartments(),
+        refetchUsers(),
+        refetchRoles()
+      ])
       
       toast.dismiss(refreshToast)
-      toast.success("✅ Data refreshed successfully!", {
-        duration: 2000
-      })
-      
+      toast.success("Dashboard data refreshed successfully")
     } catch (error) {
       toast.dismiss(refreshToast)
-      toast.error("❌ Failed to refresh data")
-    } finally {
-      setRefreshing(false)
+      toast.error("Failed to refresh dashboard data")
     }
   }
 
-  // Componente para seletor de período
-  const PeriodSelector = ({ value, onChange, options }: {
-    value: string
-    onChange: (value: string) => void
-    options: { value: string; label: string }[]
-  }) => (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-32 h-8 text-xs">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  )
+  const handleAddYear = () => {
+    const currentYear = new Date().getFullYear()
+    const maxAllowedYear = currentYear + 2
+    const nextYear = Math.max(...availableYears) + 1
 
-  const quickActions = [
-    { icon: Users, label: t('actions.add_member'), href: "/members", color: "text-blue-600" },
-    { icon: Calendar, label: t('actions.create_event'), href: "/events", color: "text-green-600" },
-    { icon: DollarSign, label: t('actions.manage_subsidies'), href: "/subsidies", color: "text-yellow-600" },
-    { icon: FileText, label: t('actions.view_reports'), href: "/reports", color: "text-purple-600" },
-    { icon: MessageSquare, label: t('actions.send_communication'), href: "/communications", color: "text-pink-600" },
-    { icon: Building, label: t('actions.manage_departments'), href: "/departments", color: "text-indigo-600" }
+    if (nextYear > maxAllowedYear) {
+      toast.error(`Cannot add years beyond ${maxAllowedYear}`)
+      return
+    }
+
+    if (availableYears.includes(nextYear)) {
+      toast.error(`Year ${nextYear} already exists`)
+      return
+    }
+
+    setAvailableYears(prev => [...prev, nextYear].sort((a, b) => b - a))
+    setSelectedYear(nextYear)
+    toast.success(`Year ${nextYear} added successfully`)
+  }
+
+  // Filter configuration for PageFilters component
+  const filterConfigs: FilterConfig[] = useMemo(() => [
+    {
+      id: "month",
+      label: "Month",
+      type: "select",
+      placeholder: "Select month",
+      defaultValue: "all",
+      options: [
+        { label: "All months", value: "all" },
+        ...MONTHS.map((month, index) => ({
+          label: month,
+          value: index.toString()
+        }))
+      ]
+    },
+    {
+      id: "region",
+      label: "Region",
+      type: "select",
+      placeholder: "Select region",
+      icon: MapPin,
+      defaultValue: "all",
+      description: "Filter churches by region",
+      options: [
+        { label: "All regions", value: "all" },
+        ...allRegions.map((region: any) => ({
+          label: region.name,
+          value: region.id
+        }))
+      ]
+    }
+  ], [allRegions])
+
+  // Handle filter changes
+  const handleFilterChange = (filterId: string, value: any) => {
+    setFilterValues(prev => ({ ...prev, [filterId]: value }))
+    
+    // Update legacy state for backward compatibility
+    if (filterId === "month") {
+      setSelectedMonth(value)
+    } else if (filterId === "region") {
+      setSelectedRegion(value)
+    }
+  }
+
+  // Handle clear filters
+  const handleClearFilters = () => {
+    setFilterValues({ month: "all", region: "all" })
+    setSelectedMonth("all")
+    setSelectedRegion("all")
+    toast.success("Filters cleared")
+  }
+
+  // KPI Cards Data
+  const kpiCardsData = [
+    {
+      id: "total-institutions",
+      title: "Total Institutions",
+      value: kpis.totalInstitutions,
+      icon: Building2,
+      subtitle: "Active organizations",
+      trend: {
+        value: 0,
+        isPositive: true
+      }
+    },
+    {
+      id: "total-regions",
+      title: "Total Regions",
+      value: kpis.totalRegions,
+      icon: Map,
+      subtitle: `${kpis.activeChurches} churches`,
+      trend: {
+        value: 0,
+        isPositive: true
+      }
+    },
+    {
+      id: "active-churches",
+      title: "Active Churches",
+      value: kpis.activeChurches,
+      icon: Church,
+      subtitle: selectedRegion === "all" ? "All regions" : "Selected region",
+      trend: {
+        value: 0,
+        isPositive: true
+      }
+    },
+    {
+      id: "departments",
+      title: "Departments",
+      value: kpis.totalDepartments,
+      icon: Building,
+      subtitle: `${kpis.institutionDepartments} inst. | ${kpis.churchDepartments} church`,
+      trend: {
+        value: 0,
+        isPositive: true
+      }
+    },
+    {
+      id: "total-users",
+      title: "Total Users",
+      value: kpis.totalUsers,
+      icon: Users,
+      subtitle: `${kpis.newUsersThisYear} new this year`,
+      trend: {
+        value: kpis.userGrowthRate,
+        isPositive: kpis.userGrowthRate >= 0
+      }
+    },
+    {
+      id: "active-users",
+      title: "Active Users",
+      value: kpis.activeUsers,
+      icon: UserCheck,
+      subtitle: "Currently active",
+      trend: {
+        value: 0,
+        isPositive: true
+      }
+    }
   ]
+
+  // Quick Actions Configuration
+  const quickActions: QuickAction[] = [
+    {
+      id: "new-user",
+      label: "New User",
+      icon: Plus,
+      onClick: () => {
+        toast.info("New User modal - Coming soon")
+      }
+    },
+    {
+      id: "new-project",
+      label: "New Project",
+      icon: Plus,
+      onClick: () => {
+        toast.info("New Project modal - Coming soon")
+      }
+    },
+    {
+      id: "new-institution",
+      label: "New Institution",
+      icon: Building2,
+      onClick: () => {
+        toast.info("New Institution modal - Coming soon")
+      }
+    },
+    {
+      id: "new-church",
+      label: "New Church",
+      icon: Church,
+      onClick: () => {
+        toast.info("New Church modal - Coming soon")
+      }
+    }
+  ]
+
+  // Handle add year
+  const handleAddYearCallback = (newYear: number) => {
+    setAvailableYears(prev => [...prev, newYear].sort((a, b) => b - a))
+    setSelectedYear(newYear)
+  }
 
   if (isLoading) {
     return (
       <AppLayout>
         <div className="space-y-8">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-muted rounded w-1/3"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-6">
-                    <div className="h-4 bg-muted rounded w-2/3 mb-2"></div>
-                    <div className="h-8 bg-muted rounded w-1/2 mb-2"></div>
-                    <div className="h-3 bg-muted rounded w-3/4"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+          <div className="flex justify-between items-center">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} className="h-32" />
+            ))}
           </div>
         </div>
       </AppLayout>
@@ -630,91 +518,327 @@ export default function DashboardPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h2 className="text-3xl font-bold text-foreground mb-2">
-              {t('dashboard.title')}
-            </h2>
-            <p className="text-muted-foreground">
-              {t('dashboard.subtitle')}
-            </p>
+      <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">
+        {/* Header with Filters */}
+        <div className="flex flex-col gap-4">
+          {/* Title and Institution Info */}
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+              <div className="flex-1">
+                <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold text-foreground mb-2">Dashboard</h2>
+                <p className="text-muted-foreground text-sm">
+                  Strategic institutional overview for {selectedYear}
+                  {selectedMonth !== "all" && ` - ${MONTHS[parseInt(selectedMonth)]}`}
+                  {selectedRegion !== "all" && ` - ${allRegions.find((r: any) => r.id === selectedRegion)?.name || 'Region'}`}
+                </p>
+                {currentInstitutionData && (
+                  <div className="flex items-center gap-2 mt-3">
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                      <Building className="w-3 h-3 mr-1" />
+                      {currentInstitutionData.name}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {currentInstitutionData.denomination}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+                          {/* Action Buttons - Right Side */}
+            <div className="flex items-center gap-2">
+              <PageFilters
+                filters={filterConfigs}
+                values={filterValues}
+                onChange={handleFilterChange}
+                onClear={handleClearFilters}
+                triggerLabel="Filters"
+                align="end"
+                width={320}
+              />
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                className="gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </div>
+            </div>
           </div>
-          
-          <div className="flex items-center gap-3">
-            <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1m">1 Month</SelectItem>
-                <SelectItem value="3m">3 Months</SelectItem>
-                <SelectItem value="6m">6 Months</SelectItem>
-                <SelectItem value="1y">1 Year</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
+          <div/>
+
+          {/* Year Filter and Action Buttons Row */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            {/* Year Filter - Left Side */}
+            <div className="flex-1">
+              <YearFilter
+                availableYears={availableYears}
+                selectedYear={selectedYear}
+                onYearChange={setSelectedYear}
+                onAddYear={handleAddYearCallback}
+                showAddButton={false}
+              />
+            </div>
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <KPICards 
-          data={kpiCardsData}
-          isLoading={isLoading}
-          minCardsForCarousel={4}
-          showCarousel={true}
+        <Separator />
+
+        {/* Date & Time Display */}
+        <DateTimeDisplay 
+          locale={currentLanguage === 'pt' ? 'pt-BR' : currentLanguage === 'nl' ? 'nl-NL' : 'en-US'}
+          showSeconds={false}
         />
 
-        {/* Charts Section */}
-        <div className="space-y-6">
-          <h3 className="text-xl font-semibold">Analytics Overview</h3>
-          <ResponsiveGridCarousel autoplayDelay={4000} className="p-4">
-            <GrowthChart />
-            {/* <UsersChart /> */}
-            <SubsidyStatusChart />
-            <BudgetChart />
-          </ResponsiveGridCarousel>
-        </div>
-
-        {/* Users Table */}
-        <div className="space-y-4">
-          <h3 className="text-xl font-semibold">User Management</h3>
-          <UseTable
-            columns={userColumns}
-            data={mockUsers}
-            searchKey="name"
-            filters={[
-              {
-                id: "role",
-                title: "Role",
-                options: [
-                  { label: "Admin", value: "Admin" },
-                  { label: "Manager", value: "Manager" },
-                  { label: "User", value: "User" }
-                ]
-              },
-              {
-                id: "status",
-                title: "Status",
-                options: [
-                  { label: "Active", value: "Active" },
-                  { label: "Inactive", value: "Inactive" },
-                  { label: "Pending", value: "Pending" }
-                ]
-              }
-            ]}
+        {/* Section 1: System Overview KPIs */}
+        <div>
+          <SectionHeader
+            title="System Overview"
+            icon={Building2}
+            description="Key performance indicators and system statistics"
+          />
+          <KPICards 
+            data={kpiCardsData}
+            isLoading={isLoading}
+            variant="default"
+          />
+          {/* Quick Actions - Below */}
+          <QuickActions 
+            actions={quickActions}
+            title="Quick Actions:"
+            showTitle={true}
+            size="sm"
           />
         </div>
 
+        <Separator />
+
+        {/* Section 2: Institutional Structure */}
+        <div>
+          <SectionHeader
+            title="Institutional Structure"
+            icon={Map}
+            description="Organizational hierarchy and distribution"
+          />
+
+          <GridContainer
+            items={[
+              {
+                id: "UserStructureGrowthChart-reduced-width",
+                component: (
+                  <UserStructureGrowthChart
+                    loading={isLoading}
+                    users={displayedInstitution?.users || allUsers}
+                    departments={displayedInstitution?.departments || allDepartments}
+                    regions={allRegions}
+                    churches={displayedInstitution?.churches || allChurches}
+                    selectedYear={selectedYear}
+                  />
+                ),
+                colSpan: "col-span-12 lg:col-span-5",
+              },
+              {
+                id: "structure-tabs-panel",
+                component: (
+                  <div className="space-y-4 h-full flex flex-col">
+                    {/* Tabs - Chart vs Info */}
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="structure-chart" className="gap-2">
+                          <Building2 className="w-4 h-4" />
+                          Chart
+                        </TabsTrigger>
+                        <TabsTrigger value="structure-info" className="gap-2">
+                          <Map className="w-4 h-4" />
+                          Info
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+
+                    {/* Content based on active tab */}
+                    <div className="flex-1 min-h-0">
+                      {activeTab === "structure-chart" ? (
+                        <UsersByStructureOverviewChart
+                          loading={isLoading}
+                          users={displayedInstitution?.users || allUsers}
+                          institutions={displayedInstitution ? [displayedInstitution] : allInstitutions}
+                          departments={displayedInstitution?.departments || allDepartments}
+                          regions={allRegions}
+                          churches={displayedInstitution?.churches || allChurches}
+                        />
+                      ) : (
+                        <HierarchicalStructureCard
+                          title="Hierarchical Structure"
+                          description="The institutional structure follows a clear hierarchy"
+                          icon={Map}
+                          loading={isLoading}
+                          levels={[
+                          {
+                            title: 'Institution Level',
+                            icon: Building2,
+                            description: `${kpis.totalInstitutions} institution${kpis.totalInstitutions !== 1 ? 's' : ''} with ${kpis.institutionDepartments} department${kpis.institutionDepartments !== 1 ? 's' : ''}`,
+                            details: 'Top-level organizational units managing all operations',
+                            borderColor: 'border-primary/30',
+                            indent: 0
+                          },
+                          {
+                            title: 'Regions',
+                            icon: Map,
+                            description: `${kpis.totalRegions} region${kpis.totalRegions !== 1 ? 's' : ''} managing ${kpis.activeChurches} church${kpis.activeChurches !== 1 ? 'es' : ''}`,
+                            details: 'Geographic divisions containing provinces and churches',
+                            borderColor: 'border-blue-500/30',
+                            indent: 1
+                          },
+                          {
+                            title: 'Churches',
+                            icon: Church,
+                            description: `${kpis.activeChurches} active church${kpis.activeChurches !== 1 ? 'es' : ''} with ${kpis.churchDepartments} department${kpis.churchDepartments !== 1 ? 's' : ''}`,
+                            details: 'Local congregations with specialized ministry departments',
+                            borderColor: 'border-green-500/30',
+                            indent: 2
+                          }
+                        ]}
+                        footer={
+                          <div className="p-3 bg-muted/30 rounded-lg">
+                            <div className="text-xs font-medium mb-1">Hierarchy Flow:</div>
+                            <div className="text-xs text-muted-foreground font-mono">
+                              Institution → Regions → Churches → Departments
+                            </div>
+                          </div>
+                        }
+                      />
+                    )}
+                    </div>
+                  </div>
+                ),
+                colSpan: "col-span-12 lg:col-span-4",
+              },
+              {
+                id: "calendar-combined",
+                component: (
+                  <div className="flex flex-col h-full space-y-4">
+                    {/* Calendar Heatmap - Acima com altura menor */}
+                    <div className="flex-shrink-0 h-[200px]">
+                      <CalendarHeatmap
+                        title={currentLanguage === 'pt' ? 'Mapa de Atividades' : currentLanguage === 'nl' ? 'Activiteitenkaart' : 'Progress year map'}
+                        description={currentLanguage === 'pt' ? 'Visualização de atividades ao longo do ano' : currentLanguage === 'nl' ? 'Visualisatie van activiteiten gedurende het jaar' : 'Progress visualization throughout the year'}
+                        variant="full"
+                        colorScheme="mono"
+                        showLegend={true}
+                        showNavigation={false}
+                        size="sm"
+                        containerSize="md"
+                        fixedSize={false}
+                        locale={currentLanguage}
+                        year={selectedYear}
+                        className="h-full"
+                        onDayClick={(date, activity) => {
+                          if (activity && activity.count > 0) {
+                            toast.info(`${activity.count} ${currentLanguage === 'pt' ? 'atividades em' : currentLanguage === 'nl' ? 'activiteiten op' : 'activities on'} ${format(date, 'PPP', { locale: currentLanguage === 'pt' ? ptBR : currentLanguage === 'nl' ? nl : enUS })}`)
+                          }
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Calendar Card - Abaixo com altura maior */}
+                    <div className="flex-1">
+                      <CalendarCard
+                        title={currentLanguage === 'pt' ? 'Calendário' : currentLanguage === 'nl' ? 'Kalender' : 'Calendar'}
+                        description={currentLanguage === 'pt' ? 'Navegue pelas datas' : currentLanguage === 'nl' ? 'Navigeer door data' : 'Navigate through dates'}
+                        locale={currentLanguage === 'pt' ? 'pt-BR' : currentLanguage === 'nl' ? 'nl-NL' : 'en-US'}
+                        className="h-full"
+                        onDateSelect={(date) => {
+                          if (date) {
+                            toast.info(`${currentLanguage === 'pt' ? 'Data selecionada:' : currentLanguage === 'nl' ? 'Geselecteerde datum:' : 'Selected date:'} ${format(date, 'PPP', { locale: currentLanguage === 'pt' ? ptBR : currentLanguage === 'nl' ? nl : enUS })}`)
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                ),
+                colSpan: "col-span-12 lg:col-span-3",
+              },
+            ]}
+            gap="lg"
+          />
+        </div>
+
+        <Separator />
+
+        {/* Section 3: Budget Overview */}
+        <BudgetSection
+          selectedYear={selectedYear}
+          currentLanguage={currentLanguage}
+        />
+
+        <Separator />
+
+        {/* Section 4: Users Overview */}
+        <div>
+          <SectionHeader
+            title="Users Overview"
+            icon={Users}
+            description="User statistics, growth trends and distribution"
+          />
+          
+          <ResponsiveGridCarousel
+            enableAutoplay={false}
+            gap="gap-6"
+            className="w-full"
+          >
+            {/* User Growth Over Time */}
+            <div className="h-full min-h-[400px] md:min-h-[450px] lg:min-h-[500px]">
+              <GrowthLineChart
+                title="User Growth Over Time"
+                description={`New user registrations throughout ${selectedYear}`}
+                icon={TrendingUp}
+                data={userGrowthData}
+                lines={[
+                  { dataKey: 'users', label: 'Total Users', color: '#3b82f6' },
+                  { dataKey: 'newUsers', label: 'New Users', color: '#10b981' }
+                ]}
+                loading={isLoading}
+                xAxisKey="month"
+                footer={
+                  <div className="flex items-center gap-1">
+                    <TrendingUp className="w-4 h-4" />
+                    Growth rate: {kpis.userGrowthRate}% compared to previous year
+                  </div>
+                }
+              />
+            </div>
+
+            {/* User Distribution by Structure */}
+            <div className="h-full min-h-[400px] md:min-h-[450px] lg:min-h-[500px]">
+              <UserDistributionBarChart
+                users={displayedInstitution?.users || allUsers}
+                departments={displayedInstitution?.departments || allDepartments}
+                regions={allRegions}
+                churches={displayedInstitution?.churches || allChurches}
+                institutions={displayedInstitution ? [displayedInstitution] : allInstitutions}
+                loading={isLoading}
+              />
+            </div>
+          </ResponsiveGridCarousel>
+        </div>
+
+        <Separator />
+
+        {/* Section 5: Governance & Compliance */}
+        <div>
+          <SectionHeader
+            title="Governance & Compliance"
+            icon={Shield}
+            description="Role distribution and permission management"
+          />
+          
+          {/* Role Distribution */}
+          <RoleDistributionChart 
+            data={roleDistributionData}
+            loading={rolesLoading}
+          />
+        </div>
       </div>
     </AppLayout>
   )

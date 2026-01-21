@@ -288,7 +288,6 @@ export default function SubsidiesPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (validateStep2()) {
-      console.log("[v0] Submitting subsidy request:", formData)
       setIsNewRequestModalOpen(false)
       setCurrentStep(1)
       setFormData({
@@ -1218,7 +1217,6 @@ export default function SubsidiesPage() {
                     <Button
                       onClick={() => {
                         // Handle PDF download
-                        console.log("[v0] Downloading PDF report for request:", selectedRequest.id)
                         setIsReportModalOpen(false)
                       }}
                       className="bg-foreground text-background hover:bg-foreground/90"

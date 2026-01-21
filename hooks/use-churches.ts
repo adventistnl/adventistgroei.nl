@@ -1,16 +1,26 @@
 import { useMemo } from "react";
-import { useGetChurchesQuery } from "@/hooks/graphql/use-get-churches-query";
+import { useCreateChurchMutation, useGetChurchesQuery, useUpdateChurchMutation, useDeleteChurchMutation } from "@/hooks/graphql/use-churches";
 import { Churches_churches } from "@/types/Churches";
-import { ErrorLike } from "@apollo/client";
+import { ApolloCache, ErrorLike } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
+import { CreateChurch, CreateChurchVariables } from "@/types/CreateChurch";
+import { UpdateChurch, UpdateChurchVariables } from "@/types/UpdateChurch";
 
 interface iChurches {
   churches: Churches_churches[];
   loading: boolean;
   error: ErrorLike | undefined;
+  createChurch: useMutation.MutationFunction<CreateChurch, CreateChurchVariables, ApolloCache>
+  updateChurch: useMutation.MutationFunction<UpdateChurch, UpdateChurchVariables, ApolloCache>
+  deleteChurch: useMutation.MutationFunction<any, { id: string }, ApolloCache>
 }
 
 export function useChurches(): iChurches {
   const { data, loading, error } = useGetChurchesQuery();
+  const [ createChurch ] = useCreateChurchMutation();
+  const [ updateChurch ] = useUpdateChurchMutation();
+  const [ deleteChurch ] = useDeleteChurchMutation();
+
   const churches = useMemo(() => {
     if (!data || !data.churches) {
       return [];
@@ -24,5 +34,8 @@ export function useChurches(): iChurches {
     churches,
     loading,
     error,
+    createChurch,
+    updateChurch,
+    deleteChurch
   };
 }

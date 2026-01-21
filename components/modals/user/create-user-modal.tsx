@@ -11,16 +11,18 @@ import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Users, Plus } from "lucide-react"
 import toast from "react-hot-toast"
-import { Institution, Church, Region, Department, Role } from "@/data/usersData"
+import { InstitutionById_institution_churches, InstitutionById_institution_departments } from "@/types/InstitutionById"
+import { Institutions_institutions } from "@/types/Institutions"
+import { Role_role } from "@/types/Role"
+import { useLanguageOptions } from '@/hooks/use-language-preferences';
 
 export interface CreateUserModalProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  institutions: Institution[]
-  churches: Church[]
-  regions: Region[]
-  departments: Department[]
-  roles: Role[]
+  institutions: Institutions_institutions[]
+  churches: InstitutionById_institution_churches[]
+  departments: InstitutionById_institution_departments[]
+  roles: Role_role[]
   onSuccess?: (userData: UserFormData) => void
 }
 
@@ -41,12 +43,13 @@ export function CreateUserModal({
   onOpenChange,
   institutions,
   churches,
-  regions,
   departments,
   roles,
   onSuccess
 }: CreateUserModalProps) {
   const { t } = useTranslation()
+  const languageOptions = useLanguageOptions(); // Usando o novo hook
+
   const [isLoading, setIsLoading] = useState(false)
   const [userForm, setUserForm] = useState<UserFormData>({
     name: '',
@@ -65,10 +68,6 @@ export function CreateUserModal({
     church.institution_id === userForm.institution_id
   )
   
-  const filteredRegions = regions.filter(region => 
-    region.institution_id === userForm.institution_id
-  )
-
   const filteredDepartments = departments.filter(dept => 
     dept.institution_id === userForm.institution_id
   )
@@ -209,10 +208,11 @@ export function CreateUserModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="pt">Português</SelectItem>
-                  <SelectItem value="es">Español</SelectItem>
-                  <SelectItem value="nl">Nederlands</SelectItem>
+                  {languageOptions.map((lang) => (
+                    <SelectItem key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -243,25 +243,6 @@ export function CreateUserModal({
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="user-region">{t('users.modals.create_user.region')}</Label>
-                <Select 
-                  value={userForm.region_id} 
-                  onValueChange={(value) => setUserForm(prev => ({ ...prev, region_id: value }))}
-                  disabled={isLoading || !userForm.institution_id}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select region" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredRegions.map((region) => (
-                      <SelectItem key={region.id} value={region.id}>
-                        {region.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

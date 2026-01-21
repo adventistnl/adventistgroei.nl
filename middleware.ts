@@ -13,29 +13,30 @@ const whitelist = ['/login', '/register', '/forgot-password', '/forgot-password/
  */
 const routePermissions: Record<string, { resolvers: PermissionResolverName[] }> = {
   '/access': { resolvers: [] },
-  '/access/permissions/[roleId]': { resolvers: [] },
+  '/access/roles/[roleId]': { resolvers: [] },
   '/annual-reports': { resolvers: [] },
-  '/communications': { resolvers: [PermissionResolverName.Communications] },
+  '/communications': { resolvers: [] },
   '/dashboard': { resolvers: [] },
   '/events': { resolvers: [] },
   '/events/[id]': { resolvers: [] },
-  '/mission-projects': { resolvers: [PermissionResolverName.Projects] },
+  '/mission-projects': { resolvers: [] },
   '/my-subsidies': { resolvers: [] },
   '/profile': { resolvers: [] },
-  '/projects': { resolvers: [PermissionResolverName.Projects] },
-  '/projects/[id]': { resolvers: [PermissionResolverName.Project] },
-  '/regions': { resolvers: [PermissionResolverName.Regions] },
+  '/projects': { resolvers: [] },
+  '/projects/[id]': { resolvers: [] },
+  '/regions-example': { resolvers: [] },
   '/reports': { resolvers: [] },
-  '/settings': { resolvers: [PermissionResolverName.Settings] },
+  '/settings': { resolvers: [] },
   '/structure': { resolvers: [] },
   '/structure/[id]': { resolvers: [] },
   '/subsidies': { resolvers: [] },
   '/subsidies/activities': { resolvers: [] },
   '/subsidies/new': { resolvers: [] },
   '/subsidies/receipts': { resolvers: [] },
-  '/users': { resolvers: [PermissionResolverName.Users] },
-  '/users/[id]': { resolvers: [PermissionResolverName.User] },
+  '/users': { resolvers: [] },
+  '/users/[id]': { resolvers: [] },
   '/volunteers': { resolvers: [] },
+  '/institutions': { resolvers: [] },
 }
 
 /**
@@ -61,46 +62,54 @@ function getRequiredPermissions(pathname: string): { resolvers: string[] } {
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Handle Chrome DevTools specific requests to avoid 404 logs
+  if (pathname.startsWith('/.well-known/')) {
+    return new NextResponse('{}', {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   // Permitir acesso às rotas na whitelist sem verificar cookies
   if (whitelist.includes(pathname)) {
     return NextResponse.next();
   }
 
+  // Verificação rápida de token básico
   const token = req.cookies.get('auth-token');
-  const userPermissions = req.cookies.get('auth-permissions');
-
-  if (!token || !userPermissions) {
+  if (!token) {
     return NextResponse.redirect(new URL('/login', req.url));
   }
 
-  if (token) {
+  // Validação rápida do token (apenas expiração)
+  try {
     const isTokenValid = validateToken(token.value);
     if (!isTokenValid) {
       return NextResponse.redirect(new URL('/login', req.url));
     }
-  }
-
-  let permissions: string[] = [];
-  try {
-    permissions = JSON.parse(userPermissions.value || '[]');
-  } catch (error) {
+  } catch {
     return NextResponse.redirect(new URL('/login', req.url));
   }
 
+  // Para rotas que requerem permissões específicas, fazer validação completa
   const { resolvers } = getRequiredPermissions(pathname);
+  if (resolvers.length > 0) {
+    const userPermissions = req.cookies.get('auth-permissions');
+    if (!userPermissions) {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
 
+    let permissions: string[] = [];
+    try {
+      permissions = JSON.parse(userPermissions.value || '[]');
+    } catch {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
 
-  // Permitir acesso se nenhuma permissão for necessária
-  if (resolvers.length === 0) {
-    return NextResponse.next();
-  }
-
-  // Verificar se o usuário possui pelo menos uma das permissões necessárias
-  const hasResolverPermission = resolvers.some(resolver => permissions.includes(resolver));
-
-
-  if (!hasResolverPermission) {
-    return NextResponse.redirect(new URL('/unauthorized', req.url));
+    const hasResolverPermission = resolvers.some(resolver => permissions.includes(resolver));
+    if (!hasResolverPermission) {
+      return NextResponse.redirect(new URL('/unauthorized', req.url));
+    }
   }
 
   // Permitir acesso total a recursos estáticos e internos do Next.js
@@ -120,8 +129,20 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Redirecionar root para login apenas se necessário
+  // Redirecionar root baseado no status de autenticação
   if (pathname === '/') {
+    const token = req.cookies.get('auth-token');
+    if (token) {
+      try {
+        const isTokenValid = validateToken(token.value);
+        if (isTokenValid) {
+          return NextResponse.redirect(new URL('/dashboard', req.url));
+        }
+      } catch {
+        // Token inválido, redirecionar para login
+        return NextResponse.redirect(new URL('/login', req.url));
+      }
+    }
     return NextResponse.redirect(new URL('/login', req.url));
   }
 

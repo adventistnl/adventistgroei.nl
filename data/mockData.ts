@@ -1,5 +1,6 @@
 // Mock data para Church Growth International Dashboard
 // Baseado na estrutura ERD fornecida
+import { ActivityTags } from "@/types/graphql-global-types"
 
 // Dados de crescimento ao longo do tempo
 export const growthData = [
@@ -144,7 +145,7 @@ export const budgetVsSubsidyData = [
 // Status das solicitações de subsídio
 export const subsidyStatusData = [
   {
-    name: "Approved",
+    name: "Accepted",
     value: 420,
     percentage: 52.5,
     color: "#22c55e"
@@ -295,8 +296,8 @@ export const recentActivities = [
   },
   {
     id: "2",
-    type: "subsidy_approved",
-    description: "Subsidy approved for Evangelism Department",
+    type: "subsidy_accepted",
+    description: "Subsidy accepted for Evangelism Department",
     user: "Pastor João Santos",
     amount: 15000,
     timestamp: "2024-08-27T09:15:00Z",
@@ -480,7 +481,7 @@ export const mockDepartments = [
 export const mockSubsidyStatuses = [
   { id: "1", name: "Pending Review", description: "Awaiting initial review", order: 1, color: "#f59e0b" },
   { id: "2", name: "Under Review", description: "Currently being reviewed", order: 2, color: "#3b82f6" },
-  { id: "3", name: "Approved", description: "Request approved", order: 3, color: "#22c55e" },
+  { id: "3", name: "Accepted", description: "Request accepted", order: 3, color: "#22c55e" },
   { id: "4", name: "Rejected", description: "Request rejected", order: 4, color: "#ef4444" },
   { id: "5", name: "Completed", description: "Project completed", order: 5, color: "#6b7280" }
 ]
@@ -883,7 +884,7 @@ export const mockSubsidyActivities = [
     name: "Material de Evangelismo",
     description: "Impressão de folhetos e materiais evangelísticos",
     budget_amount: 5000,
-    status: "approved",
+    status: "accepted",
     created_at: "2024-01-20T10:30:00Z",
     updated_at: "2024-01-20T10:30:00Z"
   },
@@ -903,7 +904,7 @@ export const mockSubsidyActivities = [
     name: "Transporte",
     description: "Custos de transporte para evangelistas",
     budget_amount: 3000,
-    status: "approved",
+    status: "accepted",
     created_at: "2024-01-20T10:40:00Z",
     updated_at: "2024-01-20T10:40:00Z"
   },
@@ -923,7 +924,7 @@ export const mockSubsidyActivities = [
     name: "Capacitação de Professores",
     description: "Treinamento para educadores locais",
     budget_amount: 10000,
-    status: "approved",
+    status: "accepted",
     created_at: "2024-01-25T15:00:00Z",
     updated_at: "2024-01-25T15:00:00Z"
   },
@@ -943,7 +944,7 @@ export const mockSubsidyActivities = [
     name: "Medicamentos",
     description: "Compra de medicamentos básicos",
     budget_amount: 8000,
-    status: "approved",
+    status: "accepted",
     created_at: "2024-02-01T09:45:00Z",
     updated_at: "2024-02-01T09:45:00Z"
   },
@@ -1500,4 +1501,323 @@ export const institutionSpecificData = {
       subsidyAmount: 26000
     }
   }
+}
+
+// Mock Activities for Projects
+export const mockProjectActivities = [
+  // Activities for Project 1 - Campanha Evangelística Centro-Oeste
+  {
+    id: "act-1",
+    project_id: "1",
+    name: "Reforma do Auditório Principal",
+    description: "Renovação completa do auditório com sistema de som e iluminação moderna para as reuniões evangelísticas",
+    budget_amount: 15000,
+    spent_amount: 12500,
+    is_subsidized: true,
+    subsidy_amount: 10000,
+    subsidy_percentage: 66.67,
+    tags: [ActivityTags.Reform],
+    deadline: "2024-05-30",
+    status: "in_progress",
+    priority: "high",
+    start_date: "2024-03-15",
+    end_date: "2024-05-30",
+    created_at: "2024-03-01T10:30:00Z",
+    updated_at: "2024-04-15T14:20:00Z",
+    assigned_users: [
+      {
+        id: '1',
+        name: 'João Silva',
+        email: 'joao.silva@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=1',
+        role: 'Coordenador'
+      },
+      {
+        id: '2',
+        name: 'Maria Santos',
+        email: 'maria.santos@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=5',
+        role: 'Tesoureiro'
+      },
+      {
+        id: '3',
+        name: 'Pedro Costa',
+        email: 'pedro.costa@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=3',
+        role: 'Secretário'
+      }
+    ]
+  },
+  {
+    id: "act-2",
+    project_id: "1",
+    name: "Compra de Material Evangelístico",
+    description: "Aquisição de livros, folhetos e materiais audiovisuais para distribuição durante a campanha",
+    budget_amount: 5000,
+    spent_amount: 4800,
+    is_subsidized: true,
+    subsidy_amount: 3000,
+    subsidy_percentage: 60,
+    tags: [ActivityTags.Materials],
+    deadline: "2024-03-31",
+    status: "completed",
+    priority: "medium",
+    start_date: "2024-03-01",
+    end_date: "2024-03-31",
+    created_at: "2024-03-01T10:30:00Z",
+    updated_at: "2024-03-31T16:45:00Z",
+    assigned_users: [
+      {
+        id: '4',
+        name: 'Ana Oliveira',
+        email: 'ana.oliveira@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=9',
+        role: 'Membro'
+      }
+    ]
+  },
+  {
+    id: "act-3",
+    project_id: "1",
+    name: "Treinamento de Evangelistas",
+    description: "Capacitação dos membros voluntários para atuarem como evangelistas locais",
+    budget_amount: 3000,
+    spent_amount: 2800,
+    is_subsidized: false,
+    subsidy_amount: 0,
+    subsidy_percentage: 0,
+    tags: [ActivityTags.Training],
+    deadline: "2024-03-10",
+    status: "completed",
+    priority: "high",
+    start_date: "2024-02-15",
+    end_date: "2024-03-10",
+    created_at: "2024-02-15T09:15:00Z",
+    updated_at: "2024-03-10T18:30:00Z"
+  },
+  // Activities for Project 2 - Programa Educacional Adventista
+  {
+    id: "act-4",
+    project_id: "2",
+    name: "Construção de Biblioteca Comunitária",
+    description: "Edificação de biblioteca para atender as necessidades educacionais da comunidade",
+    budget_amount: 25000,
+    spent_amount: 18000,
+    is_subsidized: true,
+    subsidy_amount: 18000,
+    subsidy_percentage: 72,
+    tags: [ActivityTags.Reform],
+    deadline: "2024-08-15",
+    status: "in_progress",
+    priority: "high",
+    start_date: "2024-02-20",
+    end_date: "2024-08-15",
+    created_at: "2024-02-15T11:20:00Z",
+    updated_at: "2024-04-20T15:10:00Z",
+    assigned_users: [
+      {
+        id: '5',
+        name: 'Carlos Ferreira',
+        email: 'carlos.ferreira@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=7',
+        role: 'Diácono'
+      },
+      {
+        id: '6',
+        name: 'Beatriz Lima',
+        email: 'beatriz.lima@adventist.nl',
+        initials: 'BL',
+        role: 'Anciã'
+      },
+      {
+        id: '1',
+        name: 'João Silva',
+        email: 'joao.silva@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=1',
+        role: 'Coordenador'
+      },
+      {
+        id: '2',
+        name: 'Maria Santos',
+        email: 'maria.santos@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=5',
+        role: 'Tesoureiro'
+      }
+    ]
+  },
+  {
+    id: "act-5",
+    project_id: "2",
+    name: "Aquisição de Livros Didáticos",
+    description: "Compra de materiais educacionais e livros para as diferentes faixas etárias",
+    budget_amount: 8000,
+    spent_amount: 6500,
+    is_subsidized: true,
+    subsidy_amount: 5000,
+    subsidy_percentage: 62.5,
+    tags: [ActivityTags.Materials],
+    deadline: "2024-07-31",
+    status: "in_progress",
+    priority: "medium",
+    start_date: "2024-03-01",
+    end_date: "2024-07-31",
+    created_at: "2024-02-15T11:20:00Z",
+    updated_at: "2024-04-10T13:25:00Z",
+    assigned_users: [
+      {
+        id: '3',
+        name: 'Pedro Costa',
+        email: 'pedro.costa@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=3',
+        role: 'Secretário'
+      },
+      {
+        id: '4',
+        name: 'Ana Oliveira',
+        email: 'ana.oliveira@adventist.nl',
+        avatar: 'https://i.pravatar.cc/150?img=9',
+        role: 'Membro'
+      }
+    ]
+  },
+  {
+    id: "act-6",
+    project_id: "2",
+    name: "Capacitação de Professores Voluntários",
+    description: "Treinamento pedagógico para voluntários que atuarão como educadores",
+    budget_amount: 4000,
+    spent_amount: 3200,
+    is_subsidized: false,
+    subsidy_amount: 0,
+    subsidy_percentage: 0,
+    tags: [ActivityTags.Training],
+    deadline: "2024-03-30",
+    status: "completed",
+    priority: "high",
+    start_date: "2024-02-15",
+    end_date: "2024-03-30",
+    created_at: "2024-02-15T11:20:00Z",
+    updated_at: "2024-03-30T17:45:00Z"
+  },
+  // Activities for Project 3 - Clínica Móvel de Saúde
+  {
+    id: "act-7",
+    project_id: "3",
+    name: "Adaptação do Veículo Médico",
+    description: "Modificação estrutural de van para funcionamento como clínica móvel",
+    budget_amount: 20000,
+    spent_amount: 0,
+    is_subsidized: true,
+    subsidy_amount: 15000,
+    subsidy_percentage: 75,
+    tags: [ActivityTags.Reform],
+    deadline: "2024-06-30",
+    status: "pending",
+    priority: "high",
+    start_date: "2024-04-01",
+    end_date: "2024-06-30",
+    created_at: "2024-01-20T16:45:00Z",
+    updated_at: "2024-01-20T16:45:00Z"
+  },
+  {
+    id: "act-8",
+    project_id: "3",
+    name: "Compra de Equipamentos Médicos",
+    description: "Aquisição de equipamentos básicos para atendimento médico itinerante",
+    budget_amount: 12000,
+    spent_amount: 0,
+    is_subsidized: true,
+    subsidy_amount: 8000,
+    subsidy_percentage: 66.67,
+    tags: [ActivityTags.Materials],
+    deadline: "2024-07-15",
+    status: "pending",
+    priority: "high",
+    start_date: "2024-05-01",
+    end_date: "2024-07-15",
+    created_at: "2024-01-20T16:45:00Z",
+    updated_at: "2024-01-20T16:45:00Z"
+  },
+  {
+    id: "act-9",
+    project_id: "3",
+    name: "Treinamento de Profissionais de Saúde",
+    description: "Capacitação de enfermeiros e médicos voluntários para atendimento móvel",
+    budget_amount: 2500,
+    spent_amount: 0,
+    is_subsidized: false,
+    subsidy_amount: 0,
+    subsidy_percentage: 0,
+    tags: [ActivityTags.Training],
+    deadline: "2024-06-15",
+    status: "pending",
+    priority: "medium",
+    start_date: "2024-06-01",
+    end_date: "2024-06-15",
+    created_at: "2024-01-20T16:45:00Z",
+    updated_at: "2024-01-20T16:45:00Z"
+  },
+  // Activities for Project 4 - Projeto Comunicação Digital
+  {
+    id: "act-10",
+    project_id: "4",
+    name: "Desenvolvimento de Website Institucional",
+    description: "Criação de nova plataforma web moderna e responsiva",
+    budget_amount: 8000,
+    spent_amount: 6000,
+    is_subsidized: false,
+    subsidy_amount: 0,
+    subsidy_percentage: 0,
+    tags: [ActivityTags.Reform],
+    deadline: "2024-05-31",
+    status: "in_progress",
+    priority: "high",
+    start_date: "2024-01-15",
+    end_date: "2024-05-31",
+    created_at: "2024-01-05T09:15:00Z",
+    updated_at: "2024-04-10T14:30:00Z"
+  },
+  {
+    id: "act-11",
+    project_id: "4",
+    name: "Produção de Conteúdo Digital",
+    description: "Criação de vídeos, podcasts e materiais gráficos para redes sociais",
+    budget_amount: 6000,
+    spent_amount: 4500,
+    is_subsidized: false,
+    subsidy_amount: 0,
+    subsidy_percentage: 0,
+    tags: [ActivityTags.Materials],
+    deadline: "2024-06-15",
+    status: "in_progress",
+    priority: "medium",
+    start_date: "2024-02-01",
+    end_date: "2024-06-15",
+    created_at: "2024-01-05T09:15:00Z",
+    updated_at: "2024-04-05T11:20:00Z"
+  },
+  {
+    id: "act-12",
+    project_id: "4",
+    name: "Treinamento em Mídias Sociais",
+    description: "Capacitação da equipe para gestão profissional das redes sociais",
+    budget_amount: 2000,
+    spent_amount: 2000,
+    is_subsidized: false,
+    subsidy_amount: 0,
+    subsidy_percentage: 0,
+    tags: [ActivityTags.Training],
+    deadline: "2024-01-25",
+    status: "completed",
+    priority: "medium",
+    start_date: "2024-01-10",
+    end_date: "2024-01-25",
+    created_at: "2024-01-05T09:15:00Z",
+    updated_at: "2024-01-25T16:45:00Z"
+  }
+]
+
+// Helper function to get activities by project ID
+export const getActivitiesByProjectId = (projectId: string) => {
+  return mockProjectActivities.filter(activity => activity.project_id === projectId)
 }

@@ -30,27 +30,80 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { projectTranslations } from "@/lib/translations/projects"
-import { mockDepartments } from "@/data/mockData"
+import { useQuery } from "@apollo/client"
+import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
+import { useInstitution } from "@/contexts/institution-context"
+import { useCurrency } from "@/contexts/currency-context"
+import { format } from "date-fns"
+import { ptBR, enUS, nl } from "date-fns/locale"
 
 export interface ProjectTableData {
   id: string
   department_id: string
+  church_department_id?: string
   title: string
   description: string
   budget: number
+  subsidized_budget?: number
   is_private: boolean
   required_volunteers: boolean
   start_at: string
   end_at: string
+  created_at?: string
   language_preference: string
   institutionId: string
-  status: "active" | "upcoming" | "completed"
+  // Names for display
+  institutionName?: string
+  departmentName?: string
+  status: string  // ProjectStatus from backend (DRAFT, IN_PROGRESS, etc.)
   subsidyRequests?: number
   subsidyAmount?: number
   activities?: number
   is_event?: boolean
   type?: "Local" | "Global"
   eventId?: string | null
+  // Relations
+  Institution?: {
+    id: string
+    name: string
+  }
+  institution?: {
+    id: string
+    name: string
+  }
+  department?: {
+    id: string
+    name: string
+    church?: {
+      id: string
+      name: string
+    }
+  }
+  Church?: {
+    id: string
+    name: string
+  }
+  church?: {
+    id: string
+    name: string
+  }
+  owner?: {
+    id: string
+    name: string
+    email: string
+  }
+  owner_id?: string // Direct owner_id field from API
+  church_id?: string // Direct church_id field from API
+  church_department?: {
+    id: string
+    name: string
+    description?: string
+    church?: {
+      id: string
+      name: string
+    }
+  }
+  activitiesData?: any[] // Full activities data with assignees for collaborators column
 }
 
 interface ProjectsTableProps {
@@ -63,40 +116,72 @@ interface ProjectsTableProps {
   onDuplicate?: (project: ProjectTableData) => void
 }
 
-export function ProjectsTable({ 
-  data, 
-  onView, 
-  onEdit, 
-  onDelete, 
-  onCreateEvent, 
-  onCreateCommunication, 
-  onDuplicate 
+export function ProjectsTable({
+  data,
+  onView,
+  onEdit,
+  onDelete,
+  onCreateEvent,
+  onCreateCommunication,
+  onDuplicate
 }: ProjectsTableProps) {
   const { i18n } = useTranslation()
+  const { currentInstitutionData } = useInstitution()
+  const { formatCurrency } = useCurrency()
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
 
+  const dateLocale = React.useMemo(() => {
+    switch (i18n.language) {
+      case 'pt': return ptBR
+      case 'nl': return nl
+      default: return enUS
+    }
+  }, [i18n.language])
+
+  const institutionId = currentInstitutionData?.id
+
+  // Fetch departments
+  const { data: departmentsData } = useQuery(GET_DEPARTMENTS_QUERY, {
+    variables: { institution_id: institutionId },
+    skip: !institutionId
+  })
+
+  const departments = departmentsData?.departments || []
+
   const getDepartmentName = (departmentId: string) => {
-    const department = mockDepartments.find(d => d.id === departmentId)
+    const department = departments.find(d => d.id === departmentId)
     return department?.name || "Unknown"
   }
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      active: { 
-        label: t.active, 
-        className: "bg-green-100 text-green-700 border-green-200 hover:bg-green-200" 
+    const statusConfig: Record<string, { label: string; className: string }> = {
+      DRAFT: { 
+        label: t.status?.draft || 'Draft', 
+        className: "bg-gray-100 text-gray-700 border-gray-200" 
       },
-      upcoming: { 
-        label: t.upcoming, 
-        className: "bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" 
+      IN_PROGRESS: { 
+        label: t.status?.inProgress || 'In Progress', 
+        className: "bg-green-100 text-green-700 border-green-200" 
       },
-      completed: { 
-        label: t.completed, 
-        className: "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200" 
-      }
+      IN_REVIEW: { 
+        label: t.status?.inReview || 'In Review', 
+        className: "bg-blue-100 text-blue-700 border-blue-200" 
+      },
+      ON_HOLD: { 
+        label: t.status?.onHold || 'On Hold', 
+        className: "bg-amber-100 text-amber-700 border-amber-200" 
+      },
+      EXPIRED: { 
+        label: t.status?.expired || 'Expired', 
+        className: "bg-red-100 text-red-700 border-red-200" 
+      },
+      CONCLUDED: { 
+        label: t.status?.concluded || 'Concluded', 
+        className: "bg-slate-100 text-slate-700 border-slate-200" 
+      },
     }
     
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.active
+    const config = statusConfig[status] || statusConfig.DRAFT
     return (
       <Badge variant="outline" className={config.className}>
         {config.label}
@@ -120,7 +205,7 @@ export function ProjectsTable({
           </div>
           <div>
             <div className="font-medium text-sm">{row.original.title}</div>
-            <div className="text-xs text-muted-foreground line-clamp-1">
+            <div className="text-xs text-muted-foreground max-w-xs truncate line-clamp-2">
               {row.original.description}
             </div>
           </div>
@@ -143,26 +228,26 @@ export function ProjectsTable({
     {
       id: "budget",
       accessorKey: "budget",
-      header: "Orçamento",
+      header: t.table.budget,
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <DollarSign className="w-4 h-4 text-green-600" />
           <span className="font-medium">
-            R$ {row.original.budget.toLocaleString()}
+            {formatCurrency(row.original.budget)}
           </span>
         </div>
       ),
     },
     {
       id: "dates",
-      header: "Período",
+      header: t.table.period,
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-muted-foreground" />
           <div className="text-sm">
-            <div>{new Date(row.original.start_at).toLocaleDateString('pt-BR')}</div>
+            <div>{format(new Date(row.original.start_at), "P", { locale: dateLocale })}</div>
             <div className="text-xs text-muted-foreground">
-              até {new Date(row.original.end_at).toLocaleDateString('pt-BR')}
+              - {format(new Date(row.original.end_at), "P", { locale: dateLocale })}
             </div>
           </div>
         </div>
@@ -177,7 +262,7 @@ export function ProjectsTable({
             {row.original.subsidyRequests || 0}
           </div>
           <div className="text-xs text-muted-foreground">
-            R$ {(row.original.subsidyAmount || 0).toLocaleString()}
+            {formatCurrency(row.original.subsidyAmount || 0)}
           </div>
         </div>
       ),
@@ -190,11 +275,11 @@ export function ProjectsTable({
           {row.original.required_volunteers ? (
             <Badge variant="outline" className="text-purple-600 border-purple-200">
               <Users className="w-3 h-3 mr-1" />
-              Sim
+              {t.table.yes}
             </Badge>
           ) : (
             <Badge variant="outline" className="text-gray-600 border-gray-200">
-              Não
+              {t.table.no}
             </Badge>
           )}
         </div>
@@ -262,7 +347,7 @@ export function ProjectsTable({
         {
           id: "department_id",
           title: t.table.department,
-          options: mockDepartments.map(dept => ({
+          options: departments.map(dept => ({
             label: dept.name,
             value: dept.id
           }))
@@ -277,6 +362,20 @@ export function ProjectsTable({
           ]
         }
       ]}
+      translations={{
+        search: t.searchProjects,
+        clearFilters: t.table.clearFilters,
+        columns: t.table.columns,
+        rowsPerPage: t.table.rowsPerPage,
+        showingResults: (from, to, total) => t.table.showingResults
+          .replace('{{from}}', from.toString())
+          .replace('{{to}}', to.toString())
+          .replace('{{total}}', total.toString()),
+        previous: t.table.previous,
+        next: t.table.next,
+        noResults: t.table.noResults,
+        all: t.filters?.allDepartments?.split(' ')?.[0] || "All" // "Todos" / "Alle" / "All"
+      }}
     />
   )
 }

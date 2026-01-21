@@ -1,0 +1,893 @@
+"use client"
+
+import React from "react"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Calendar } from "@/components/ui/calendar"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@/components/ui/radio-group"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import { Switch } from "@/components/ui/switch"
+import { CalendarIcon, Globe, Target, Clock, Megaphone, Plus, Check, Building, Languages, Users, Home, FileText, Mail, AlertCircle, Zap } from "lucide-react"
+import { format } from "date-fns"
+import { ptBR } from "date-fns/locale"
+import { cn } from "@/lib/utils"
+
+export interface CommunicationFormData {
+  title: string
+  content: string
+  type: string
+  priority: string
+  language_preference: "en" | "nl" | "pt" | "es" | "fr" | "de"
+  is_scheduled: boolean
+  schedule_at?: Date
+  target_type: "institution" | "region" | "department" | "church" | "user"
+  target_id?: string
+}
+
+interface CommunicationFormProps {
+  data: CommunicationFormData
+  onChange: (data: CommunicationFormData) => void
+  errors?: Record<string, string>
+  institutions?: Array<{ id: string; name: string }>
+  departments?: Array<{ id: string; name: string }>
+  churches?: Array<{ id: string; name: string }>
+  regions?: Array<{ id: string; name: string }>
+  users?: Array<{ id: string; name: string }>
+}
+
+// Communication templates
+const COMMUNICATION_TEMPLATES = [
+  {
+    id: "project-announcement",
+    title: "Anúncio de Projeto",
+    description: "Template para anunciar novos projetos",
+    type: "announcement",
+    priority: "medium",
+    content: `Estamos animados em anunciar um novo projeto em nossa comunidade!
+
+🎯 **Título do Projeto:** [TÍTULO]
+
+📝 **Descrição:**
+[DESCRIÇÃO DETALHADA]
+
+📅 **Cronograma:** 
+- Início: [DATA_INÍCIO]
+- Conclusão prevista: [DATA_FIM]
+
+👥 **Como Participar:**
+[INSTRUÇÕES PARA PARTICIPAÇÃO]
+
+Para mais informações, entre em contato conosco.
+
+Que Deus abençoe este projeto! 🙏`
+  },
+  {
+    id: "event-invitation",
+    title: "Convite para Evento",
+    description: "Template para convidar para eventos",
+    type: "invitation",
+    priority: "high",
+    content: `📅 **CONVITE ESPECIAL** 📅
+
+Você está convidado para nosso evento especial:
+
+🎉 **[NOME DO EVENTO]**
+
+📍 **Local:** [LOCAL]
+🕐 **Data e Hora:** [DATA E HORA]
+
+📋 **Programação:**
+[DETALHES DA PROGRAMAÇÃO]
+
+💰 **Investimento:** [VALOR OU GRATUITO]
+
+Para confirmar sua presença, responda até [DATA LIMITE].
+
+Esperamos você! ✨`
+  },
+  {
+    id: "subsidy-request",
+    title: "Solicitação de Subsídio",
+    description: "Template para comunicar solicitações de subsídio",
+    type: "request",
+    priority: "medium",
+    content: `💰 **SOLICITAÇÃO DE SUBSÍDIO**
+
+Estamos solicitando apoio financeiro para nosso projeto:
+
+📊 **Detalhes Financeiros:**
+- Orçamento total: R$ [VALOR_TOTAL]
+- Contribuição da igreja: R$ [VALOR_IGREJA] ([PERCENTUAL]%)
+- Subsídio solicitado: R$ [VALOR_SUBSIDIO] ([PERCENTUAL]%)
+
+🎯 **Justificativa:**
+[EXPLICAÇÃO DA NECESSIDADE]
+
+📈 **Impacto Esperado:**
+[BENEFÍCIOS PARA A COMUNIDADE]
+
+Agradecemos pela consideração desta solicitação.`
+  },
+  {
+    id: "volunteer-call",
+    title: "Chamada para Voluntários",
+    description: "Template para recrutar voluntários",
+    type: "call-to-action",
+    priority: "medium",
+    content: `🙋‍♂️ **PRECISAMOS DE VOCÊ!** 🙋‍♀️
+
+Estamos procurando voluntários para nosso projeto:
+
+✋ **Posições Disponíveis:**
+[LISTA DE POSIÇÕES]
+
+📋 **Requisitos:**
+[LISTA DE REQUISITOS]
+
+⏰ **Compromisso de Tempo:**
+[DETALHES DE TEMPO]
+
+🎁 **Benefícios:**
+- Desenvolvimento pessoal
+- Experiência prática
+- Certificado de participação
+- Networking com a comunidade
+
+Para se voluntariar, entre em contato até [DATA LIMITE].
+
+Juntos fazemos a diferença! 🤝`
+  },
+  {
+    id: "progress-update",
+    title: "Atualização de Progresso",
+    description: "Template para informar progresso do projeto",
+    type: "update",
+    priority: "low",
+    content: `📊 **ATUALIZAÇÃO DO PROJETO**
+
+Queremos compartilhar o progresso do nosso projeto:
+
+✅ **Concluído:**
+[ATIVIDADES FINALIZADAS]
+
+🔄 **Em Andamento:**
+[ATIVIDADES ATUAIS]
+
+📅 **Próximos Passos:**
+[ATIVIDADES FUTURAS]
+
+📈 **Progresso Geral:** [PERCENTUAL]% concluído
+
+💡 **Destaques:**
+[CONQUISTAS IMPORTANTES]
+
+Agradecemos o apoio contínuo de todos! 🙏`
+  }
+]
+
+export function CommunicationForm({
+  data,
+  onChange,
+  errors = {},
+  institutions = [],
+  departments = [],
+  churches = [],
+  regions = [],
+  users = []
+}: CommunicationFormProps) {
+  const [openLanguage, setOpenLanguage] = React.useState(false)
+  const [openType, setOpenType] = React.useState(false)
+  const [openPriority, setOpenPriority] = React.useState(false)
+  const [openTargetType, setOpenTargetType] = React.useState(false)
+  const [openTarget, setOpenTarget] = React.useState(false)
+
+  const languageOptions = [
+    { code: "nl", name: "Nederlands", flag: "🇳🇱" },
+    { code: "en", name: "English", flag: "🇬🇧" },
+    { code: "pt", name: "Português", flag: "🇵🇹" },
+    { code: "es", name: "Español", flag: "🇪🇸" },
+    { code: "fr", name: "Français", flag: "🇫🇷" },
+    { code: "de", name: "Deutsch", flag: "🇩🇪" }
+  ]
+
+  const communicationTypeOptions = [
+    { value: "announcement", name: "Anúncio", icon: Megaphone },
+    { value: "invitation", name: "Convite", icon: Mail },
+    { value: "update", name: "Atualização", icon: FileText },
+    { value: "reminder", name: "Lembrete", icon: Clock },
+    { value: "urgent", name: "Urgente", icon: AlertCircle }
+  ]
+
+  const priorityOptions = [
+    { value: "low", name: "Baixa", icon: Target, color: "text-green-600" },
+    { value: "medium", name: "Média", icon: Clock, color: "text-yellow-600" },
+    { value: "high", name: "Alta", icon: AlertCircle, color: "text-orange-600" },
+    { value: "urgent", name: "Urgente", icon: Zap, color: "text-red-600" }
+  ]
+
+  const targetTypeOptions = [
+    { value: "institution", name: "Instituição", icon: Building },
+    { value: "region", name: "Região", icon: Globe },
+    { value: "department", name: "Departamento", icon: Building },
+    { value: "church", name: "Igreja", icon: Home },
+    { value: "user", name: "Usuário Específico", icon: Users }
+  ]
+
+  const handleChange = (field: keyof CommunicationFormData, value: any) => {
+    onChange({ ...data, [field]: value })
+  }
+
+  const handleTemplateSelect = (template: typeof COMMUNICATION_TEMPLATES[0]) => {
+    onChange({
+      ...data,
+      title: template.title,
+      content: template.content,
+      type: template.type,
+      priority: template.priority
+    })
+  }
+
+  const getTargetOptions = () => {
+    switch (data.target_type) {
+      case "institution":
+        return institutions
+      case "department":
+        return departments
+      case "church":
+        return churches
+      case "region":
+        return regions
+      case "user":
+        return users
+      default:
+        return []
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Basic Info - Grid responsivo */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+        <div className="space-y-4">
+          <Label htmlFor="communication_title" className="flex items-center gap-2 text-base font-medium">
+            <Megaphone className="w-4 h-4 text-muted-foreground" />
+            Título da Comunicação *
+          </Label>
+          <Input
+            id="communication_title"
+            value={data.title}
+            onChange={(e) => handleChange("title", e.target.value)}
+            placeholder="Digite o título da comunicação"
+            className={`h-12 border-2 ${errors.title ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors`}
+          />
+          {errors.title && <p className="text-sm text-red-600">{errors.title}</p>}
+        </div>
+
+        <div className="space-y-4">
+          <Label className="flex items-center gap-2 text-base font-medium">
+            <Languages className="w-4 h-4 text-muted-foreground" />
+            Idioma da Comunicação *
+          </Label>
+          <Popover open={openLanguage} onOpenChange={setOpenLanguage}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={openLanguage}
+                className={`h-12 w-full justify-between border-2 ${errors.language_preference ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors`}
+              >
+                {data.language_preference
+                  ? languageOptions.find((lang) => lang.code === data.language_preference)?.name
+                  : "Selecione o idioma"}
+                <Languages className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Pesquisar idioma..." />
+                <CommandList>
+                  <CommandEmpty>Nenhum idioma encontrado.</CommandEmpty>
+                  <CommandGroup>
+                    {languageOptions.map((lang) => (
+                      <CommandItem
+                        key={lang.code}
+                        value={lang.name}
+                        onSelect={() => {
+                          handleChange("language_preference", lang.code)
+                          setOpenLanguage(false)
+                        }}
+                      >
+                        <div className="flex items-center gap-3 w-full">
+                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm">
+                            {lang.flag}
+                          </div>
+                          <div className="flex-1">
+                            <span className="font-medium">{lang.name}</span>
+                            <div className="text-xs text-muted-foreground uppercase">{lang.code}</div>
+                          </div>
+                          {data.language_preference === lang.code && (
+                            <Check className="ml-auto h-4 w-4" />
+                          )}
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+          {errors.language_preference && <p className="text-sm text-red-600">{errors.language_preference}</p>}
+        </div>
+      </div>
+
+      {/* Type and Priority - Grid responsivo */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+        <div className="space-y-4">
+          <Label className="flex items-center gap-2 text-base font-medium">
+            <FileText className="w-4 h-4 text-muted-foreground" />
+            Tipo de Comunicação *
+          </Label>
+          <Popover open={openType} onOpenChange={setOpenType}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={openType}
+                className={`h-12 w-full justify-between border-2 ${errors.type ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors`}
+              >
+                {data.type
+                  ? communicationTypeOptions.find((type) => type.value === data.type)?.name
+                  : "Selecione o tipo"}
+                <FileText className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Pesquisar tipo..." />
+                <CommandList>
+                  <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
+                  <CommandGroup>
+                    {communicationTypeOptions.map((type) => {
+                      const IconComponent = type.icon
+                      return (
+                        <CommandItem
+                          key={type.value}
+                          value={type.name}
+                          onSelect={() => {
+                            handleChange("type", type.value)
+                            setOpenType(false)
+                          }}
+                        >
+                          <div className="flex items-center gap-3 w-full">
+                            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                              <IconComponent className="w-4 h-4 text-primary" />
+                            </div>
+                            <div className="flex-1">
+                              <span className="font-medium">{type.name}</span>
+                            </div>
+                            {data.type === type.value && (
+                              <Check className="ml-auto h-4 w-4" />
+                            )}
+                          </div>
+                        </CommandItem>
+                      )
+                    })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+          {errors.type && <p className="text-sm text-red-600">{errors.type}</p>}
+        </div>
+
+        <div className="space-y-4">
+          <Label className="flex items-center gap-2 text-base font-medium">
+            <AlertCircle className="w-4 h-4 text-muted-foreground" />
+            Prioridade *
+          </Label>
+          <Popover open={openPriority} onOpenChange={setOpenPriority}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={openPriority}
+                className={`h-12 w-full justify-between border-2 ${errors.priority ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors`}
+              >
+                {data.priority
+                  ? priorityOptions.find((priority) => priority.value === data.priority)?.name
+                  : "Selecione a prioridade"}
+                <AlertCircle className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Pesquisar prioridade..." />
+                <CommandList>
+                  <CommandEmpty>Nenhuma prioridade encontrada.</CommandEmpty>
+                  <CommandGroup>
+                    {priorityOptions.map((priority) => {
+                      const IconComponent = priority.icon
+                      return (
+                        <CommandItem
+                          key={priority.value}
+                          value={priority.name}
+                          onSelect={() => {
+                            handleChange("priority", priority.value)
+                            setOpenPriority(false)
+                          }}
+                        >
+                          <div className="flex items-center gap-3 w-full">
+                            <div className={`w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center`}>
+                              <IconComponent className={`w-4 h-4 ${priority.color}`} />
+                            </div>
+                            <div className="flex-1">
+                              <span className="font-medium">{priority.name}</span>
+                            </div>
+                            {data.priority === priority.value && (
+                              <Check className="ml-auto h-4 w-4" />
+                            )}
+                          </div>
+                        </CommandItem>
+                      )
+                    })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+          {errors.priority && <p className="text-sm text-red-600">{errors.priority}</p>}
+        </div>
+      </div>
+
+      {/* Target Audience - Grid responsivo */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+        <div className="space-y-4">
+          <Label className="flex items-center gap-2 text-base font-medium">
+            <Target className="w-4 h-4 text-muted-foreground" />
+            Tipo de Público *
+          </Label>
+          <Popover open={openTargetType} onOpenChange={setOpenTargetType}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={openTargetType}
+                className={`h-12 w-full justify-between border-2 ${errors.target_type ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors`}
+              >
+                {data.target_type
+                  ? targetTypeOptions.find((target) => target.value === data.target_type)?.name
+                  : "Selecione o tipo de público"}
+                <Target className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Pesquisar tipo de público..." />
+                <CommandList>
+                  <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
+                  <CommandGroup>
+                    {targetTypeOptions.map((targetType) => {
+                      const IconComponent = targetType.icon
+                      return (
+                        <CommandItem
+                          key={targetType.value}
+                          value={targetType.name}
+                          onSelect={() => {
+                            handleChange("target_type", targetType.value)
+                            handleChange("target_id", "") // Reset target when type changes
+                            setOpenTargetType(false)
+                          }}
+                        >
+                          <div className="flex items-center gap-3 w-full">
+                            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                              <IconComponent className="w-4 h-4 text-primary" />
+                            </div>
+                            <div className="flex-1">
+                              <span className="font-medium">{targetType.name}</span>
+                            </div>
+                            {data.target_type === targetType.value && (
+                              <Check className="ml-auto h-4 w-4" />
+                            )}
+                          </div>
+                        </CommandItem>
+                      )
+                    })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+          {errors.target_type && <p className="text-sm text-red-600">{errors.target_type}</p>}
+        </div>
+
+        <div className="space-y-4">
+          <Label className="flex items-center gap-2 text-base font-medium">
+            <Users className="w-4 h-4 text-muted-foreground" />
+            Alvo Específico
+          </Label>
+          <Popover open={openTarget} onOpenChange={setOpenTarget}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={openTarget}
+                className={`h-12 w-full justify-between border-2 ${errors.target_id ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors`}
+                disabled={!data.target_type}
+              >
+                {data.target_id
+                  ? getTargetOptions().find((target) => target.id === data.target_id)?.name
+                  : data.target_type ? "Selecione o alvo específico" : "Selecione primeiro o tipo de público"}
+                <Users className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Pesquisar alvo..." />
+                <CommandList>
+                  <CommandEmpty>Nenhum alvo encontrado.</CommandEmpty>
+                  <CommandGroup>
+                    {getTargetOptions().map((target) => (
+                      <CommandItem
+                        key={target.id}
+                        value={target.name}
+                        onSelect={() => {
+                          handleChange("target_id", target.id)
+                          setOpenTarget(false)
+                        }}
+                      >
+                        <div className="flex items-center gap-3 w-full">
+                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                            <Users className="w-4 h-4 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <span className="font-medium">{target.name}</span>
+                          </div>
+                          {data.target_id === target.id && (
+                            <Check className="ml-auto h-4 w-4" />
+                          )}
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+          {errors.target_id && <p className="text-sm text-red-600">{errors.target_id}</p>}
+        </div>
+      </div>
+
+      {/* Communication Templates */}
+      <div className="space-y-4">
+        <h4 className="font-medium flex items-center gap-2">
+          <Plus className="w-4 h-4 text-muted-foreground" />
+          Templates de Comunicação
+        </h4>
+        
+        <Carousel className="w-full max-w-full">
+          <CarouselContent className="-ml-2 md:-ml-4">
+            {COMMUNICATION_TEMPLATES.map((template) => (
+              <CarouselItem key={template.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
+                <Card 
+                  className="cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/50 border-2 h-full"
+                  onClick={() => handleTemplateSelect(template)}
+                >
+                  <CardContent className="p-4 h-full flex flex-col">
+                    <div className="space-y-3 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <h5 className="font-medium text-sm line-clamp-2 flex-1">{template.title}</h5>
+                        <Badge variant="outline" className="text-xs shrink-0">
+                          {template.type}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-3 flex-1">
+                        {template.description}
+                      </p>
+                      <div className="flex justify-between items-center">
+                        <Badge variant={template.priority === 'high' ? 'destructive' : template.priority === 'medium' ? 'default' : 'secondary'} className="text-xs">
+                          {template.priority === 'high' ? 'Alta' : template.priority === 'medium' ? 'Média' : 'Baixa'} Prioridade
+                        </Badge>
+                        <Button size="sm" variant="ghost" className="h-6 px-2 text-xs">
+                          Usar Template
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious className="hidden sm:flex" />
+          <CarouselNext className="hidden sm:flex" />
+        </Carousel>
+      </div>
+
+      {/* Schedule Communication Toggle */}
+      <div className="space-y-4 p-4 border-2 rounded-lg">
+        <div className="flex items-center space-x-3">
+          <Switch
+            id="schedule"
+            checked={data.is_scheduled}
+            onCheckedChange={(checked) => handleChange("is_scheduled", checked)}
+            className="data-[state=checked]:bg-primary"
+          />
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-muted-foreground" />
+            <Label htmlFor="schedule" className="text-base font-medium cursor-pointer">
+              Agendar Comunicação
+            </Label>
+          </div>
+        </div>
+
+        {data.is_scheduled && (
+          <div className="space-y-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="scheduled_date" className="flex items-center gap-2 text-sm font-medium">
+                  <CalendarDays className="w-4 h-4 text-muted-foreground" />
+                  Data de Envio *
+                </Label>
+                <Input
+                  id="scheduled_date"
+                  type="date"
+                  value={data.scheduled_date}
+                  onChange={(e) => handleChange("scheduled_date", e.target.value)}
+                  className={`h-12 border-2 ${errors.scheduled_date ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors`}
+                />
+                {errors.scheduled_date && (
+                  <p className="text-sm text-red-600">{errors.scheduled_date}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="scheduled_time" className="flex items-center gap-2 text-sm font-medium">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  Horário de Envio *
+                </Label>
+                <Input
+                  id="scheduled_time"
+                  type="time"
+                  value={data.scheduled_time}
+                  onChange={(e) => handleChange("scheduled_time", e.target.value)}
+                  className={`h-12 border-2 ${errors.scheduled_time ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors`}
+                />
+                {errors.scheduled_time && (
+                  <p className="text-sm text-red-600">{errors.scheduled_time}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Message Content */}
+      <div className="space-y-4">
+        <Label htmlFor="content" className="flex items-center gap-2 text-base font-medium">
+          <PenTool className="w-4 h-4 text-muted-foreground" />
+          Conteúdo da Mensagem *
+        </Label>
+        <div className="border-2 rounded-lg p-4 min-h-[300px] bg-background">
+          <Textarea
+            id="content"
+            value={data.content}
+            onChange={(e) => handleChange("content", e.target.value)}
+            placeholder="Digite o conteúdo da comunicação aqui..."
+            rows={12}
+            className={`min-h-[250px] border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 ${errors.content ? "text-red-600" : ""}`}
+          />
+        </div>
+        {errors.content && <p className="text-sm text-red-600 mt-2">{errors.content}</p>}
+      </div>
+          <Input
+            id="comm_title"
+            value={data.title}
+            onChange={(e) => handleChange("title", e.target.value)}
+            placeholder="Digite o título da comunicação"
+            className={`h-12 border-2 ${errors.title ? 'border-red-500' : 'border-border'}`}
+          />
+          {errors.title && <p className="text-sm text-red-600">{errors.title}</p>}
+        </div>
+
+        <div className="space-y-4">
+          <Label className="flex items-center gap-2 text-base font-medium">
+            <Globe className="w-4 h-4 text-muted-foreground" />
+            Idioma
+          </Label>
+          <RadioGroup
+            value={data.language_preference}
+            onValueChange={(value: "en" | "nl") => handleChange("language_preference", value)}
+            className="flex gap-6"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="en" id="comm_en" />
+              <Label htmlFor="comm_en" className="cursor-pointer">Inglês</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="nl" id="comm_nl" />
+              <Label htmlFor="comm_nl" className="cursor-pointer">Holandês</Label>
+            </div>
+          </RadioGroup>
+        </div>
+      </div>
+
+      {/* Type and Priority */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <Label htmlFor="comm_type" className="text-base font-medium">
+            Tipo de Comunicação
+          </Label>
+          <Select
+            value={data.type}
+            onValueChange={(value) => handleChange("type", value)}
+          >
+            <SelectTrigger className="h-12 border-2">
+              <SelectValue placeholder="Selecione o tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="announcement">Anúncio</SelectItem>
+              <SelectItem value="invitation">Convite</SelectItem>
+              <SelectItem value="request">Solicitação</SelectItem>
+              <SelectItem value="call-to-action">Chamada para Ação</SelectItem>
+              <SelectItem value="update">Atualização</SelectItem>
+              <SelectItem value="newsletter">Newsletter</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-4">
+          <Label htmlFor="comm_priority" className="text-base font-medium">
+            Prioridade
+          </Label>
+          <Select
+            value={data.priority}
+            onValueChange={(value) => handleChange("priority", value)}
+          >
+            <SelectTrigger className="h-12 border-2">
+              <SelectValue placeholder="Selecione a prioridade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="low">Baixa</SelectItem>
+              <SelectItem value="medium">Média</SelectItem>
+              <SelectItem value="high">Alta</SelectItem>
+              <SelectItem value="urgent">Urgente</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="space-y-4">
+        <Label htmlFor="comm_content" className="flex items-center gap-2 text-base font-medium">
+          <Megaphone className="w-4 h-4 text-muted-foreground" />
+          Conteúdo da Comunicação *
+        </Label>
+        <Textarea
+          id="comm_content"
+          value={data.content}
+          onChange={(e) => handleChange("content", e.target.value)}
+          placeholder="Digite o conteúdo da comunicação"
+          className={`min-h-[200px] border-2 ${errors.content ? 'border-red-500' : 'border-border'}`}
+        />
+        {errors.content && <p className="text-sm text-red-600">{errors.content}</p>}
+      </div>
+
+      {/* Schedule */}
+      <div className="space-y-4">
+        <Label className="flex items-center gap-2 text-base font-medium">
+          <Clock className="w-4 h-4 text-muted-foreground" />
+          Agendar Publicação
+        </Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full md:w-auto h-12 justify-start text-left font-normal border-2",
+                !data.schedule_at && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {data.schedule_at ? (
+                format(data.schedule_at, "PPP", { locale: ptBR })
+              ) : (
+                <span>Publicar agora ou agendar</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={data.schedule_at}
+              onSelect={(date) => handleChange("schedule_at", date)}
+              locale={ptBR}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Target Audience */}
+      <div className="space-y-4">
+        <Label className="flex items-center gap-2 text-base font-medium">
+          <Target className="w-4 h-4 text-muted-foreground" />
+          Público Alvo
+        </Label>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <Label className="text-sm font-medium">Tipo de Público</Label>
+            <Select
+              value={data.target_type}
+              onValueChange={(value: "institution" | "region" | "department" | "church" | "user") => {
+                handleChange("target_type", value)
+                handleChange("target_id", "") // Reset target when type changes
+              }}
+            >
+              <SelectTrigger className="h-12 border-2">
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="institution">Instituição</SelectItem>
+                <SelectItem value="region">Região</SelectItem>
+                <SelectItem value="department">Departamento</SelectItem>
+                <SelectItem value="church">Igreja</SelectItem>
+                <SelectItem value="user">Usuário Específico</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-4">
+            <Label className="text-sm font-medium">Alvo Específico</Label>
+            <Select
+              value={data.target_id || ""}
+              onValueChange={(value) => handleChange("target_id", value)}
+            >
+              <SelectTrigger className="h-12 border-2">
+                <SelectValue placeholder="Selecione o alvo" />
+              </SelectTrigger>
+              <SelectContent>
+                {getTargetOptions().map((option) => (
+                  <SelectItem key={option.id} value={option.id}>
+                    {option.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

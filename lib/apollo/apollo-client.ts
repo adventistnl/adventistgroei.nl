@@ -1,22 +1,18 @@
 import { config } from "@/config/global";
-import { HttpLink, } from "@apollo/client";
-import { SetContextLink } from "@apollo/client/link/context";
-import {
-  ApolloClient,
-  InMemoryCache,
-  
-} from "@apollo/client-integration-nextjs";
+import { ApolloClient, InMemoryCache } from "@apollo/client";
+import { setContext } from "@apollo/client/link/context";
+import { createUploadLink } from "apollo-upload-client";
 import { useCookies } from "@/hooks/use-cookies";
 
 // have a function to create a client for you
 export function makeClient() {
   const { getCookies } = useCookies();
-  const httpLink = new HttpLink({
+  const uploadLink = createUploadLink({
     uri: config.graphqlApiUrl,
     fetchOptions: {},
   });
 
-  const authLink = new SetContextLink((operation, prevContext) => {
+  const authLink = setContext((operation, prevContext) => {
     let token = "";
     if (typeof window !== "undefined") {
       const cookies = getCookies();
@@ -26,12 +22,34 @@ export function makeClient() {
       ...prevContext,
       headers: {
         Authorization: token ? `Bearer ${token}` : "",
+        "apollo-require-preflight": "true",
       },
     };
   });
 
   return new ApolloClient({
-    cache: new InMemoryCache(),
-    link: authLink.concat(httpLink),
+    cache: new InMemoryCache({
+      typePolicies: {
+        RoleModel: {
+          fields: {
+            permissions: {
+              merge(existing = [], incoming) {
+                // Evitar duplicação com base no campo 'group'
+                const merged = [...existing, ...incoming];
+                const uniquePermissions = merged.reduce((acc: any[], item: any) => {
+                  if (!acc.some((perm: any) => perm.group === item.group)) {
+                    acc.push(item);
+                  }
+                  return acc;
+                }, []);
+
+                return uniquePermissions;
+              },
+            },
+          },
+        },
+      },
+    }),
+    link: authLink.concat(uploadLink),
   });
 }

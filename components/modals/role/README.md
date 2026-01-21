@@ -44,7 +44,7 @@ import { EditRoleModal } from "@/components/modals/role"
   role={selectedRole}
   users={users}
   onSuccess={(roleData) => console.log('Role updated:', roleData)}
-  onEditPermissions={(role) => navigate(`/permissions/${role.id}`)}
+  onEditPermissions={(role) => navigate(`/roles/${role.id}`)}
 />
 ```
 

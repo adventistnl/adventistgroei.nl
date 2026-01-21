@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useMemo, Suspense } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { AppLayout } from "@/components/layouts/app-layout"
@@ -12,23 +12,21 @@ import { Separator } from "@/components/ui/separator"
 import { 
   Building, 
   Plus, 
-  RefreshCw, 
   MoreHorizontal,
   Edit,
   Trash2,
   Eye,
-  MapPin,
   Users,
   Church,
   Globe,
-  Mail,
-  Phone,
-  Layers,
-  Home,
-  DollarSign,
-  TrendingUp,
   Shield,
-  Calendar
+  RefreshCw,
+  Home,
+  Layers,
+  DollarSign,
+  ChevronRight,
+  Building2,
+  Map
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -38,347 +36,320 @@ import {
 } from "@/components/ui/dropdown-menu"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
+import { cn } from "@/lib/utils"
 
-// Components
-import { InstitutionsKPI } from "@/components/institutions/institutions-kpi"
-import { InstitutionsCharts } from "@/components/institutions/institutions-charts"
+// Components - Lazy load heavy components
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
-import { DataTable } from "@/components/ui/data-table"
-import { InstitutionModal } from "@/components/modals/institution-modal"
-import { InstitutionProfileHeader } from "@/components/shared"
-import { ViewContactModal, ContactData } from "@/components/modals/contact"
-import { EditInstitutionModal, DeleteInstitutionModal } from "@/components/modals/institution"
+import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
+import { GridContainer } from "@/components/shared/grid-container"
+import { UseTable } from "@/components/ui/use-table"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { EntityInfoCard, EntityInfoCardAction } from "@/components/shared/entity-info-card"
 
-// Data
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { UsersByStructureOverviewChart } from "@/components/charts/dashboard"
+import { HierarchicalStructureCard } from "@/components/charts/dashboard/hierarchical-structure-card"
+
+// Lazy load modals
+const ContactViewEditModal = React.lazy(() => import("@/components/modals/contact").then(module => ({ default: module.ContactViewEditModal })))
+const EditInstitutionModal = React.lazy(() => import("@/components/modals/institution").then(module => ({ default: module.EditInstitutionModal })))
+const DeleteInstitutionModal = React.lazy(() => import("@/components/modals/institution").then(module => ({ default: module.DeleteInstitutionModal })))
+const RegisterInstitutionModal = React.lazy(() => import("@/components/modals/institution").then(module => ({ default: module.RegisterInstitutionModal })))
+
+// Lazy load charts
+const DepartmentActivityChart = React.lazy(() => import("@/components/institutions/charts").then(module => ({ default: module.DepartmentActivityChart })))
+const UsersByRoleChart = React.lazy(() => import("@/components/institutions/charts").then(module => ({ default: module.UsersByRoleChart })))
+const ChurchesByRegionChart = React.lazy(() => import("@/components/institutions/charts").then(module => ({ default: module.ChurchesByRegionChart })))
+const UserDistributionByEntityChart = React.lazy(() => import("@/components/institutions/charts").then(module => ({ default: module.UserDistributionByEntityChart })))
+
+import { Institutions_institutions } from "@/types/Institutions"
+import { useInstitution } from "@/contexts/institution-context"
+import { useInstitutionKPI } from "@/hooks/KPI/use-institution-kpi"
+import InstitutionsLoading from "./loading"
+import { Contact, PermissionResolverName } from "@/types/graphql-global-types"
+import { WithPermission } from "@/hocs/with-permission"
+import { AccessDenied } from "@/components/access/access-denied"
 import {
-  getInstitutionData,
-  getInstitutionKPIs,
-  getChurchesByRegionData,
-  getUsersByRoleData,
-  getSubsidyRequestsOverTime,
-  getMonthlySubsidyData,
-} from "@/data/institutionsData"
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 
-// Types
-interface InstitutionWithDetails {
-  id: string
-  name: string
-  denomination: string
-  language_preference: string
-  contact_id: string
-  created_at: string
-  updated_at: string
-  created_by?: string
-  updated_by?: string
-  is_deleted?: boolean
-  contact?: {
-    name?: string
-    country: string
-    city: string
-    email: string
-    phone: string
-    mobile?: string
-    address?: string
-    full_address?: string
-    postal_code?: string
-    website?: string
-    notes?: string
-  }
-  regions_count: number
-  churches_count: number
-  users_count: number
-  members_count: number
-  total_subsidy_budget: number
-  annual_department_budget: number
-  pending_subsidies: number
-}
+// Additional imports for tabs
 
-/**
- * PÁGINA DE GESTÃO DE INSTITUIÇÕES
- * Interface dedicada para gerenciar instituições religiosas
- */
+
 export default function InstitutionsPage() {
-  const { t, i18n } = useTranslation()
-  const [isLoading, setIsLoading] = useState(true)
+  const { t } = useTranslation()
+  const { institutions: institutionsData, currentInstitutionData, loading: isLoading, updateInstitutionContact, refetchInstitutionById} = useInstitution();
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null)
+
+  // State
   const [refreshing, setRefreshing] = useState(false)
-  const [selectedInstitution, setSelectedInstitution] = useState<string>("all")
+  const [selectedInstitutionId, setSelectedInstitutionId] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'overview' | 'detail'>('overview')
   
   // Modal states
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
   const [isEditInstitutionModalOpen, setIsEditInstitutionModalOpen] = useState(false)
+  const [editInstitutionId, setEditInstitutionId] = useState<string | null>(null)
   const [isDeleteInstitutionModalOpen, setIsDeleteInstitutionModalOpen] = useState(false)
-  const [selectedContact, setSelectedContact] = useState<ContactData | null>(null)
-  
-  // Data states
-  const [institutionsData, setInstitutionsData] = useState<InstitutionWithDetails[]>([])
-  const [kpiData, setKpiData] = useState<any>(null)
-  const [chartData, setChartData] = useState<any>({
-    churchesByRegion: [],
-    usersByRole: [],
-    subsidyOverTime: [],
-    monthlySubsidies: []
-  })
-  
-  // Get current active institution
-  const activeInstitution = useMemo(() => {
-    if (selectedInstitution === "all" || institutionsData.length === 0) {
-      return institutionsData[0] || null
+  const [deleteInstitutionId, setDeleteInstitutionId] = useState<string | null>(null)
+
+  // Computed state - institution being displayed
+  const displayedInstitution = useMemo(() => {
+    if (selectedInstitutionId) {
+      return institutionsData.find(inst => inst.id === selectedInstitutionId) || null
     }
-    return institutionsData.find(inst => inst.id === selectedInstitution) || institutionsData[0] || null
-  }, [selectedInstitution, institutionsData])
+    return currentInstitutionData
+  }, [selectedInstitutionId, institutionsData, currentInstitutionData])
+  const institutionKPIs = useInstitutionKPI(displayedInstitution);
 
-  const breadcrumbs = useMemo(() => [
-    { name: "Structure & Organization" },
-    { name: "Institutions" }
-  ], [])
-
-  // Dados para KPI Cards Carrossel
-  const kpiCardsData: KPICardData[] = useMemo(() => {
-    if (!kpiData) return []
-    
-    return [
-      {
-        id: "total_institutions",
-        title: "Total Institutions",
-        value: kpiData.totalInstitutions || 0,
-        icon: Building,
-        subtitle: "Active institutions",
-        trend: {
-          value: 8,
-          isPositive: true,
-          label: "vs. last month"
-        }
-      },
-      {
-        id: "total_regions",
-        title: "Total Regions",
-        value: kpiData.totalRegions || 0,
-        icon: MapPin,
-        subtitle: "Geographic regions",
-        trend: {
-          value: 12,
-          isPositive: true,
-          label: "vs. last month"
-        }
-      },
-      {
-        id: "total_churches",
-        title: "Total Churches",
-        value: kpiData.totalChurches || 0,
-        icon: Church,
-        subtitle: "Active churches",
-        trend: {
-          value: 15,
-          isPositive: true,
-          label: "vs. last month"
-        }
-      },
-      {
-        id: "total_users",
-        title: "Total Users",
-        value: kpiData.totalUsers || 0,
-        icon: Users,
-        subtitle: "Registered users",
-        trend: {
-          value: 22,
-          isPositive: true,
-          label: "vs. last month"
-        }
-      },
-      {
-        id: "total_members",
-        title: "Total Members",
-        value: `${((kpiData.totalMembers || 0) / 1000).toFixed(1)}K`,
-        icon: Users,
-        subtitle: "Church members",
-        trend: {
-          value: 5,
-          isPositive: true,
-          label: "vs. last month"
-        }
-      },
-      {
-        id: "subsidy_budget",
-        title: "Subsidy Budget",
-        value: `$${((kpiData.totalSubsidyBudget || 0) / 1000).toFixed(0)}K`,
-        icon: DollarSign,
-        subtitle: "Total subsidy budget",
-        trend: {
-          value: 18,
-          isPositive: true,
-          label: "vs. last year"
-        }
-      },
-      {
-        id: "department_budget",
-        title: "Department Budget",
-        value: `$${((kpiData.totalDepartmentBudget || 0) / 1000).toFixed(0)}K`,
-        icon: Shield,
-        subtitle: "Department budgets",
-        trend: {
-          value: 10,
-          isPositive: true,
-          label: "vs. last year"
-        }
-      },
-      {
-        id: "pending_subsidies",
-        title: "Pending Subsidies",
-        value: kpiData.pendingSubsidies || 0,
-        icon: Calendar,
-        subtitle: "Awaiting approval",
-        trend: {
-          value: 3,
-          isPositive: false,
-          label: "vs. last month"
-        }
-      }
-    ]
-  }, [kpiData])
-
-  usePageTitle({
-    title: "Institutions Management",
-    breadcrumbs
-  })
-
-  /**
-   * Carregamento inicial dos dados
-   */
-  useEffect(() => {
-    const loadData = async () => {
-      const loadingToast = toast.loading(t('institutions.toasts.loaded'))
-      
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        
-        const institutionsList = getInstitutionData()
-        setInstitutionsData(institutionsList)
-        updateDataForInstitution("all")
-        
-        toast.dismiss(loadingToast)
-        toast.success(t('institutions.toasts.loaded'), { duration: 3000 })
-        setIsLoading(false)
-        
-      } catch (error) {
-        toast.dismiss(loadingToast)
-        toast.error(t('institutions.toasts.error_loading'))
-        setIsLoading(false)
-      }
+  // Initialize selectedInstitutionId with currentInstitutionData.id when available
+  React.useEffect(() => {
+    if (currentInstitutionData && !selectedInstitutionId) {
+      setSelectedInstitutionId(currentInstitutionData.id)
     }
+  }, [currentInstitutionData, selectedInstitutionId])
 
-    loadData()
-  }, [t])
+  // Sync selectedInstitutionId with currentInstitutionData changes (from global switcher) - only in overview mode
+  React.useEffect(() => {
+    if (viewMode === 'overview' && currentInstitutionData && currentInstitutionData.id !== selectedInstitutionId) {
+      setSelectedInstitutionId(currentInstitutionData.id)
+    }
+  }, [currentInstitutionData?.id, selectedInstitutionId, viewMode])
 
-  /**
-   * Atualizar dados quando filtro de instituição muda
-   */
-  const updateDataForInstitution = (institutionId: string) => {
-    const targetId = institutionId === "all" ? undefined : institutionId
+  // Function to handle institution selection
+  const handleViewInstitutionDetails = (institutionId: string) => {
+    setSelectedInstitutionId(institutionId)
+    setViewMode('detail')
     
-    const kpis = getInstitutionKPIs(targetId)
-    setKpiData(kpis)
+    // Scroll to top of the page smoothly
+    window.scrollTo({ 
+      top: 0, 
+      behavior: 'smooth' 
+    })
     
-    const churchesByRegion = getChurchesByRegionData(targetId)
-    const usersByRole = getUsersByRoleData(targetId)
-    const subsidyOverTime = getSubsidyRequestsOverTime(targetId)
-    const monthlySubsidies = getMonthlySubsidyData(targetId)
-    
-    setChartData({
-      churchesByRegion,
-      usersByRole,
-      subsidyOverTime,
-      monthlySubsidies
+    toast.success(t('institutions.toasts.institution_details_loaded'))
+  }
+
+  // Function to go back to overview
+  const handleBackToOverview = () => {
+    setViewMode('overview')
+    window.scrollTo({ 
+      top: 0, 
+      behavior: 'smooth' 
     })
   }
 
-  /**
-   * Handlers para ações
-   */
+
+  // Dados para KPI Cards Carrossel
+  const kpiCardsData: KPICardData[] = useMemo(() => [
+    {
+      id: "total_churches",
+      title: t('institutions.kpis.total_churches'),
+      value: institutionKPIs.totalChurches,
+      icon: Church,
+      subtitle: t('churches.active_churches'),
+      trend: undefined
+    },
+    {
+      id: "total_departments",
+      title: t('institutions.kpis.total_departments'),
+      value: institutionKPIs.totalDepartments,
+      icon: Shield,
+      subtitle: t('departments.title'),
+      trend: undefined
+    },
+    {
+      id: "total_users",
+      title: t('institutions.kpis.total_users'),
+      value: institutionKPIs.totalUsers,
+      icon: Users,
+      subtitle: t('users.registered_users'),
+      trend: undefined
+    },
+  ], [institutionKPIs, t])
+
+  const pageTitle = useMemo(() => (
+    <span className="flex items-center gap-2">
+      {t('common.structure_organization')}
+      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+      {t('institutions.title')}
+    </span>
+  ), [t])
+
+  usePageTitle({
+    title: pageTitle,
+    showBreadcrumbsInHeader: true
+  })
+
+  // Local filter state used by charts/tabs
+  const [activeTab, setActiveTab] = useState<string>("structure-chart")
+
+  const kpis = React.useMemo(() => {
+    if (!displayedInstitution) return {
+      totalInstitutions: 0,
+      totalRegions: 0,
+      activeChurches: 0,
+      totalDepartments: 0,
+      institutionDepartments: 0,
+      churchDepartments: 0,
+      totalUsers: 0
+    }
+
+    const institutionDepartments = displayedInstitution.departments?.filter((d: any) => !d.church_id && !d.is_deleted).length || 0
+    const churchDepartments = displayedInstitution.departments?.filter((d: any) => d.church_id && !d.is_deleted).length || 0
+    const activeChurches = displayedInstitution.churches?.filter((c: any) => !c.is_deleted).length || 0
+    const activeRegions = displayedInstitution.regions?.filter((r: any) => !r.is_deleted).length || 0
+
+    return {
+      totalInstitutions: 1,
+      totalRegions: activeRegions,
+      activeChurches,
+      totalDepartments: institutionDepartments + churchDepartments,
+      institutionDepartments,
+      churchDepartments,
+      totalUsers: displayedInstitution.users?.filter((u: any) => !u.is_deleted).length || 0
+    }
+  }, [displayedInstitution])
+
+  // Refresh handler
   const handleRefresh = async () => {
     setRefreshing(true)
-    const refreshToast = toast.loading("🔄 Refreshing data...")
+    const refreshToast = toast.loading(t('institutions.toasts.refreshing_data'))
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      const institutionsList = getInstitutionData()
-      setInstitutionsData(institutionsList)
-      updateDataForInstitution(selectedInstitution)
-      
-      toast.dismiss(refreshToast)
-      toast.success("✅ Data refreshed successfully!", { duration: 2000 })
-      
+      await refetchInstitutionById()
+      toast.success(t('institutions.toasts.data_refreshed'), { duration: 2000 })
     } catch (error) {
-      toast.dismiss(refreshToast)
-      toast.error("❌ Failed to refresh data")
+      toast.error(t('institutions.toasts.error_refreshing_data'))
     } finally {
+      toast.dismiss(refreshToast)
       setRefreshing(false)
     }
   }
 
   const handleInstitutionCreated = (data: any) => {
-    handleRefresh()
+    // Toast já exibido no modal
   }
 
   const handleEditInstitution = () => {
-    if (activeInstitution) {
+    if (displayedInstitution) {
       setIsEditInstitutionModalOpen(true)
     }
   }
 
   const handleDeleteInstitution = () => {
-    if (activeInstitution) {
+    if (displayedInstitution) {
       setIsDeleteInstitutionModalOpen(true)
     }
   }
 
   const handleViewInstitutionContact = () => {
-    if (activeInstitution && activeInstitution.contact) {
-      const contactData: ContactData = {
-        id: activeInstitution.contact_id || '',
-        name: activeInstitution.contact?.name || null,
-        phone: activeInstitution.contact?.phone || null,
-        mobile: activeInstitution.contact?.mobile || null,
-        email: activeInstitution.contact?.email || null,
-        country: activeInstitution.contact?.country || null,
-        city: activeInstitution.contact?.city || null,
-        address: activeInstitution.contact?.address || null,
-        full_address: activeInstitution.contact?.full_address || null,
-        postal_code: activeInstitution.contact?.postal_code || null,
-        website: activeInstitution.contact?.website || null,
-        notes: activeInstitution.contact?.notes || null,
-        is_primary: true,
-        created_at: activeInstitution.created_at,
-        updated_at: activeInstitution.updated_at,
-        created_by: activeInstitution.created_by || '',
-        updated_by: activeInstitution.updated_by || '',
-        is_deleted: false,
-        deleted_at: null,
-        deleted_by: null
-      }
-      setSelectedContact(contactData)
+    if (displayedInstitution) {
+      // Sempre abrir o modal de contato, mesmo se não houver dados existentes
+      // O modal permite criar novos dados de contato se não existirem
       setIsContactModalOpen(true)
+    } else {
+      toast.error(t('institutions.toasts.no_institution_selected'))
     }
   }
 
   const handleContactSaved = (contactData: any) => {
+    refetchInstitutionById()
     toast.success(t('contacts.toasts.updated'))
-    handleRefresh()
   }
 
   const handleInstitutionSaved = (institutionData: any) => {
-    toast.success(t('institutions.toasts.updated'))
-    handleRefresh()
+    // Toast já exibido no modal
   }
 
   const handleInstitutionDeleted = (institutionData: any) => {
     toast.success(t('institutions.toasts.deactivated'))
-    handleRefresh()
   }
 
+  // Ações para o Entity Info Card
+  const institutionCardActions: EntityInfoCardAction[] = useMemo(() => [
+    {
+      label: t('institutions.actions.view_contact_details'),
+      icon: Eye,
+      onClick: handleViewInstitutionContact,
+      showSeparatorAfter: true
+    },
+    {
+      label: t('institutions.actions.manage_churches'),
+      icon: Home,
+      onClick: () => {}
+    },
+    {
+      label: t('institutions.actions.manage_departments'),
+      icon: Layers,
+      onClick: () => {}
+    },
+    {
+      label: t('institutions.actions.manage_annual_budgets'),
+      icon: DollarSign,
+      onClick: () => {},
+      showSeparatorAfter: true
+    },
+    {
+      label: t('institutions.actions.edit_institution'),
+      icon: Edit,
+      onClick: handleEditInstitution
+    },
+    {
+      label: t('institutions.actions.delete_institution'),
+      icon: Trash2,
+      onClick: handleDeleteInstitution,
+      variant: "destructive"
+    }
+  ], [t, handleViewInstitutionContact, handleEditInstitution, handleDeleteInstitution])
+
+  // Custom First Card com informações da instituição
+  const customFirstCard = useMemo(() => {
+    if (!displayedInstitution) return null
+    
+    const isActive = !displayedInstitution.is_deleted
+    
+    return (
+      <EntityInfoCard
+        headerTitle={t('institutions.entity_info.header_title')}
+        name={displayedInstitution.name}
+        description={displayedInstitution.denomination}
+        icon={Building}
+        actions={institutionCardActions}
+        accentColor="gray"
+        badges={[
+          {
+            label: isActive ? t('institutions.entity_info.active') : t('institutions.entity_info.inactive'),
+            variant: isActive ? "default" : "secondary",
+            className: cn(
+              "text-xs",
+              isActive 
+                ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800" 
+                : "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700"
+            )
+          },
+          {
+            label: `${t('institutions.entity_info.established')} ${new Date(displayedInstitution.created_at).getFullYear()}`,
+            variant: "outline",
+            className: "text-xs font-normal"
+          },
+          {
+            label: displayedInstitution.language_preference.toUpperCase(),
+            variant: "outline",
+            className: "text-xs font-mono"
+          }
+        ]}
+      />
+    )
+  }, [displayedInstitution, institutionCardActions, t])
+
   // Colunas da tabela
-  const columns: ColumnDef<InstitutionWithDetails>[] = [
+  const columns: ColumnDef<Institutions_institutions>[] = [
     {
       id: "name",
       accessorKey: "name",
@@ -406,13 +377,11 @@ export default function InstitutionsPage() {
       header: t('institutions.table.country'),
       cell: ({ row }) => {
         const country = row.original.contact?.country
-        const city = row.original.contact?.city
         return (
           <div className="flex items-center gap-2">
             <Globe className="w-4 h-4 text-muted-foreground" />
             <div>
               <div className="font-medium">{country}</div>
-              <div className="text-xs text-muted-foreground">{city}</div>
             </div>
           </div>
         )
@@ -424,7 +393,7 @@ export default function InstitutionsPage() {
       header: t('institutions.table.language'),
       cell: ({ row }) => {
         const lang = row.original.language_preference
-        const langLabel = lang === "en" ? "English" : lang === "nl" ? "Nederlands" : lang
+        const langLabel = lang === "en" ? t('common.english') : lang === "nl" ? t('common.dutch') : lang
         return (
           <Badge variant="outline">
             {langLabel}
@@ -433,80 +402,164 @@ export default function InstitutionsPage() {
       },
     },
     {
-      id: "regions",
-      accessorKey: "regions_count",
-      header: t('institutions.table.regions'),
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.regions_count}</span>
-        </div>
-      ),
-    },
-    {
       id: "churches",
       accessorKey: "churches_count",
-      header: t('institutions.table.churches'),
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Church className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.churches_count}</span>
+      header: () => (
+        <div className="text-center font-medium">
+          {t('institutions.table.churches')}
         </div>
       ),
+      cell: ({ row }) => {
+        const count = row.original.churches_count || 0
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <Church className="w-4 h-4 text-muted-foreground" />
+            <span className="font-medium">{count}</span>
+          </div>
+        )
+      },
     },
     {
       id: "users",
       accessorKey: "users_count",
-      header: t('institutions.table.users'),
+      header: () => (
+        <div className="text-center font-medium">
+          {t('institutions.table.users')}
+        </div>
+      ),
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center gap-2">
           <Users className="w-4 h-4 text-muted-foreground" />
           <span className="font-medium">{row.original.users_count}</span>
         </div>
       ),
     },
     {
-      id: "members",
-      accessorKey: "members_count",
-      header: t('institutions.table.members'),
-      cell: ({ row }) => (
-        <span className="font-medium">
-          {row.original.members_count.toLocaleString()}
-        </span>
+      id: "budget",
+      header: () => (
+        <div className="text-center font-medium">
+          {t('institutions.table.budget')}
+        </div>
       ),
+      cell: ({ row }) => {
+        const institution = row.original;
+        const budgetAmount = institution.current_year_budget || 0;
+        const hasBudget = budgetAmount > 0;
+
+        return (
+          <div className="text-center">
+            <div className="text-sm font-semibold">
+              {hasBudget ? `$${budgetAmount.toLocaleString()}` : '-'}
+            </div>
+          </div>
+        )
+      },
+    },
+    {
+      id: "budget_status",
+      header: () => (
+        <div className="text-center font-medium">
+          {t('institutions.table.budget_status')}
+        </div>
+      ),
+      cell: ({ row }) => {
+        const institution = row.original;
+        const hasBudget = institution.has_budget_record;
+
+        return (
+          <div className="flex justify-center">
+            <StatusBadge
+              label={hasBudget ? t('annual_budget.table.budget_status_labels.completed') : t('annual_budget.table.budget_status_labels.missing')}
+              variant={hasBudget ? "success" : "neutral"}
+              showDot
+            />
+          </div>
+        )
+      },
+      filterFn: (row, id, value) => {
+        // For filtering: "completed" = true, "missing" = false
+        if (value === undefined || value === null || value === "") {
+          return true
+        }
+        const institution = row.original;
+        const hasBudget = institution.has_budget_record;
+        return hasBudget === value
+      },
+    },
+    {
+      id: "status",
+      accessorKey: "is_deleted",
+      header: () => (
+        <div className="text-center font-medium">
+          {t('common.status')}
+        </div>
+      ),
+      cell: ({ row }) => {
+        const isActive = !row.original.is_deleted
+        return (
+          <div className="flex justify-center">
+            <StatusBadge
+              label={isActive ? t('common.active') : t('common.inactive')}
+              variant={isActive ? "success" : "neutral"}
+              showDot
+            />
+          </div>
+        )
+      },
+      filterFn: (row, id, value) => {
+        // Convert string to boolean for filtering
+        if (value === "all") return true
+        const isActive = !row.original.is_deleted
+        return value === "true" ? isActive : !isActive
+      },
     },
     {
       id: "actions",
       header: t('institutions.table.actions'),
       cell: ({ row }) => {
-        const institution = row.original
+        const institution = row.original;
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" data-action-button>
                 <MoreHorizontal className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
                 onClick={() => {
-                  toast.success(t('institutions.toasts.institution_details_loaded'))
+                  handleViewInstitutionDetails(institution.id)
                 }}
               >
                 <Eye className="mr-2 h-4 w-4" />
                 {t('actions.view_details')}
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Edit className="mr-2 h-4 w-4" />
-                {t('common.edit')}
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600">
-                <Trash2 className="mr-2 h-4 w-4" />
-                {t('common.delete')}
-              </DropdownMenuItem>
+              <WithPermission requiredPermissions={[PermissionResolverName.UpdateInstitution]}>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setEditInstitutionId(institution.id);
+                    setIsEditInstitutionModalOpen(true);
+                  }}
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  {t('common.edit')}
+                </DropdownMenuItem>
+              </WithPermission>
+              <WithPermission requiredPermissions={[PermissionResolverName.DeleteInstitution]}>
+                <DropdownMenuItem
+                  className="text-red-600"
+                  onClick={() => {
+                    setDeleteInstitutionId(institution.id);
+                    setIsDeleteInstitutionModalOpen(true);
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {t('common.delete')}
+                </DropdownMenuItem>
+              </WithPermission>
             </DropdownMenuContent>
           </DropdownMenu>
-        )
+        );
       },
     },
   ]
@@ -515,11 +568,27 @@ export default function InstitutionsPage() {
   const filterableColumns = [
     {
       id: "language",
-      title: t('institutions.filters.language'),
+      title: t('common.language'),
       options: [
-        { label: "English", value: "en" },
-        { label: "Nederlands", value: "nl" },
+        { label: t('common.english'), value: "en" },
+        { label: t('common.dutch'), value: "nl" },
         { label: "Português", value: "pt" },
+      ]
+    },
+    {
+      id: "status",
+      title: t('common.status'),
+      options: [
+        { label: t('common.active'), value: "true" },
+        { label: t('common.inactive'), value: "false" },
+      ]
+    },
+    {
+      id: "budget_status",
+      title: t('institutions.table.budget_status'),
+      options: [
+        { label: t('annual_budget.table.budget_status_labels.completed'), value: "true" },
+        { label: t('annual_budget.table.budget_status_labels.missing'), value: "false" },
       ]
     }
   ]
@@ -547,43 +616,53 @@ export default function InstitutionsPage() {
     )
   }
 
-  const selectedInstitutionName = selectedInstitution === "all" 
-    ? undefined 
-    : institutionsData.find(i => i.id === selectedInstitution)?.name
+  if (!displayedInstitution) {
+    return <InstitutionsLoading />
+  }
 
   return (
     <AppLayout>
-      <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">
+      <WithPermission requiredPermissions={[PermissionResolverName.Institutions]} fallback={<AccessDenied/>}>
+      
+      <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden" ref={scrollContainerRef}>
+        {/* Breadcrumbs Navigation - Only show in detail view */}
+        {viewMode === 'detail' && displayedInstitution && (
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleBackToOverview();
+                  }}
+                  className="cursor-pointer hover:text-foreground"
+                >
+                  {t('institutions.breadcrumb.see_all') || "See All Institutions"}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage className="font-semibold">
+                  {displayedInstitution.name}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold text-foreground mb-2">
-              Institutions Management
+              {t('institutions.page_header.title')}
             </h2>
             <p className="text-muted-foreground text-0.875rem sm:text-1rem">
-              Manage religious institutions and their organizational structure
+              {t('institutions.page_header.subtitle')}
             </p>
-            {activeInstitution && selectedInstitution !== "all" && (
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                  <Building className="w-3 h-3 mr-1" />
-                  Viewing: {activeInstitution.name}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {activeInstitution.denomination}
-                </Badge>
-              </div>
-            )}
           </div>
 
           <div className="flex items-center gap-3">
-            <InstitutionModal onSuccess={handleInstitutionCreated}>
-              <Button className="bg-gray-900 hover:bg-gray-800 text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                {t('actions.create_institution')}
-              </Button>
-            </InstitutionModal>
-            
             <Button 
               variant="outline" 
               size="icon"
@@ -592,124 +671,204 @@ export default function InstitutionsPage() {
             >
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             </Button>
+            
+            <WithPermission requiredPermissions={[PermissionResolverName.CreateInstitution]}>
+              <RegisterInstitutionModal onSuccess={handleInstitutionCreated}>
+                <Button className="bg-primary hover:bg-primary/80">
+                  <Plus className="w-4 h-4 mr-2" />
+                  {t('institutions.page_header.new_institution')}
+                </Button>
+              </RegisterInstitutionModal>
+            </WithPermission>
           </div>
         </div>
 
-        {/* Institution Profile Header */}
-        {activeInstitution && (
-          <InstitutionProfileHeader
-            institution={activeInstitution}
-            onEdit={handleEditInstitution}
-            onDelete={handleDeleteInstitution}
-            onViewContact={handleViewInstitutionContact}
-            onManageRegions={() => window.location.href = '/regions'}
-            onManageChurches={() => window.location.href = '/churches'}
-            onManageDepartments={() => window.location.href = '/departments'}
-          />
-        )}
-
-        {/* KPI Cards Carrossel */}
+        {/* KPI Cards Carousel */}
         <KPICards 
           data={kpiCardsData}
           isLoading={isLoading}
-          minCardsForCarousel={4}
+          minCardsForCarousel={3}
           showCarousel={true}
+          customFirstCard={customFirstCard}
         />
 
         <Separator />
 
         {/* Charts Section */}
-        <InstitutionsCharts
-          churchesByRegionData={chartData.churchesByRegion}
-          usersByRoleData={chartData.usersByRole}
-          subsidyOverTimeData={chartData.subsidyOverTime}
-          monthlySubsidiesData={chartData.monthlySubsidies}
-          loading={isLoading}
-          institutionName={selectedInstitutionName}
-        />
+
+           <GridContainer
+            items={[
+              {
+                id: "UserDistributionByEntityChart-full-width",
+                component: (
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <UserDistributionByEntityChart
+                      institutionData={displayedInstitution}
+                      loading={isLoading}
+                    />
+                  </Suspense>
+                ),
+                colSpan: "col-span-12 lg:col-span-8",
+              },
+              {
+                id: "structure-tabs-panel",
+                component: (
+                  <div className="space-y-4 h-full flex flex-col">
+                    {/* Tabs - Chart vs Info */}
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="structure-chart" className="gap-2">
+                          <Building2 className="w-4 h-4" />
+                          Chart
+                        </TabsTrigger>
+                        <TabsTrigger value="structure-info" className="gap-2">
+                          <Map className="w-4 h-4" />
+                          Info
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+
+                    {/* Content based on active tab */}
+                    <div className="flex-1 min-h-0">
+                      {activeTab === "structure-chart" ? (
+                        <UsersByStructureOverviewChart
+                          loading={isLoading}
+                          users={displayedInstitution?.users || []}
+                          institutions={[displayedInstitution].filter(Boolean)}
+                          departments={displayedInstitution?.departments || []}
+                          regions={displayedInstitution?.regions || []}
+                          churches={displayedInstitution?.churches || []}
+                        />
+                      ) : (
+                        <HierarchicalStructureCard
+                          title={t('institutions.analytics.hierarchyTitle') || "Hierarchical Structure"}
+                          description={t('institutions.analytics.hierarchyDescription') || "The institutional structure follows a clear hierarchy"}
+                          icon={Map}
+                          loading={isLoading}
+                          levels={[
+                          {
+                            title: t('institutions.analytics.institutionLevel') || 'Institution Level',
+                            icon: Building2,
+                            description: `${kpis.totalInstitutions} ${t('institutions.analytics.institutionsWith')} ${kpis.institutionDepartments} ${t('institutions.analytics.departments')}`,
+                            details: t('institutions.analytics.institutionDetails') || 'Top-level organizational units managing all operations',
+                            borderColor: 'border-primary/30',
+                            indent: 0
+                          },
+                          {
+                            title: t('regions.title') || 'Regions',
+                            icon: Map,
+                            description: `${kpis.totalRegions} ${t('institutions.analytics.regionsManaging')} ${kpis.activeChurches} ${t('churches.title')}`,
+                            details: t('institutions.analytics.regionsDetails') || 'Geographic divisions containing provinces and churches',
+                            borderColor: 'border-blue-500/30',
+                            indent: 1
+                          },
+                          {
+                            title: t('churches.title') || 'Churches',
+                            icon: Church,
+                            description: `${kpis.activeChurches} ${t('institutions.analytics.activeChurches')} ${t('institutions.analytics.with')} ${kpis.churchDepartments} ${t('institutions.analytics.departments')}`,
+                            details: t('institutions.analytics.churchesDetails') || 'Local congregations with specialized ministry departments',
+                            borderColor: 'border-green-500/30',
+                            indent: 2
+                          }
+                        ]}
+                        footer={
+                          <div className="p-3 bg-muted/30 rounded-lg">
+                            <div className="text-xs font-medium mb-1">{t('institutions.analytics.hierarchyFlow') || "Hierarchy Flow:"}:</div>
+                            <div className="text-xs text-muted-foreground font-mono">
+                              Institution → Regions → Provinces → Churches → Departments
+                            </div>
+                          </div>
+                        }
+                      />
+                    )}
+                    </div>
+                  </div>
+                ),
+                colSpan: "col-span-12 lg:col-span-4",
+              },
+            ]}
+            gap="lg"
+          />
+          <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
+            <UsersByRoleChart
+              data={displayedInstitution?.institutionChartsData?.usersByRole}
+              monthlyUserGrowth={displayedInstitution?.institutionChartsData?.monthlyUserGrowth}
+              loading={isLoading}
+            />
+            <ChurchesByRegionChart
+              data={displayedInstitution?.institutionChartsData?.churchesByRegion}
+              loading={isLoading}
+            />
+          </ResponsiveGridCarousel>
+
+        <Separator />
 
         {/* Institutions Table */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building className="w-5 h-5" />
-              Institutions List
+              {t('institutions.table_card.title')}
             </CardTitle>
-            <CardDescription>Complete list of institutions with management actions</CardDescription>
+            <CardDescription>{t('institutions.table_card.description')}</CardDescription>
           </CardHeader>
           <CardContent className="overflow-hidden">
-            <DataTable
+            <UseTable
               columns={columns}
               data={institutionsData}
+              filters={filterableColumns}
               searchKey="name"
-              searchPlaceholder="Search institutions..."
-              filterableColumns={filterableColumns}
             />
           </CardContent>
         </Card>
 
         {/* Contact Modal */}
-        {selectedContact && (
-          <ViewContactModal
-            isOpen={isContactModalOpen}
-            onOpenChange={setIsContactModalOpen}
-            contact={selectedContact}
-            entityName={activeInstitution?.name}
-            entityType="Institution"
-          />
+        {displayedInstitution && (
+          <Suspense fallback={<div>Loading...</div>}>
+            <ContactViewEditModal
+              isOpen={isContactModalOpen}
+              onOpenChange={setIsContactModalOpen}
+              contact={(displayedInstitution.contact || null) as Contact | null}
+              entityName={displayedInstitution.name || t('institutions.title')}
+              entityType={t('institutions.title')}
+              onSave={handleContactSaved}
+              entityId={displayedInstitution.id}
+              updateMutation={updateInstitutionContact}
+            />
+          </Suspense>
         )}
 
         {/* Edit Institution Modal */}
-        {activeInstitution && (
+        <Suspense fallback={<div>Loading...</div>}>
           <EditInstitutionModal
             isOpen={isEditInstitutionModalOpen}
-            onOpenChange={setIsEditInstitutionModalOpen}
-            institution={{
-              id: activeInstitution.id,
-              name: activeInstitution.name,
-              denomination: activeInstitution.denomination,
-              language_preference: activeInstitution.language_preference as "en" | "nl",
-              contact_id: activeInstitution.contact_id,
-              created_at: activeInstitution.created_at,
-              updated_at: activeInstitution.updated_at,
-              created_by: activeInstitution.created_by || '',
-              updated_by: activeInstitution.updated_by || '',
-              is_deleted: activeInstitution.is_deleted || false,
-              deleted_at: null,
-              deleted_by: null
+            onOpenChange={(open) => {
+              setIsEditInstitutionModalOpen(open);
+              if (!open) setEditInstitutionId(null);
             }}
+            institution={
+              (institutionsData.find(i => i.id === (editInstitutionId || displayedInstitution?.id)) || null) as any
+            }
             onSave={handleInstitutionSaved}
           />
-        )}
+        </Suspense>
 
         {/* Delete Institution Modal */}
-        {activeInstitution && (
+        <Suspense fallback={<div>Loading...</div>}>
           <DeleteInstitutionModal
             isOpen={isDeleteInstitutionModalOpen}
-            onOpenChange={setIsDeleteInstitutionModalOpen}
-            institution={{
-              id: activeInstitution.id,
-              name: activeInstitution.name,
-              denomination: activeInstitution.denomination,
-              language_preference: activeInstitution.language_preference as "en" | "nl",
-              contact_id: activeInstitution.contact_id,
-              created_at: activeInstitution.created_at,
-              updated_at: activeInstitution.updated_at,
-              created_by: activeInstitution.created_by || '',
-              updated_by: activeInstitution.updated_by || '',
-              is_deleted: activeInstitution.is_deleted || false,
-              deleted_at: null,
-              deleted_by: null,
-              regions_count: activeInstitution.regions_count,
-              churches_count: activeInstitution.churches_count,
-              users_count: activeInstitution.users_count,
-              members_count: activeInstitution.members_count,
-              departments_count: 0
+            onOpenChangeAction={(open) => {
+              setIsDeleteInstitutionModalOpen(open);
+              if (!open) setDeleteInstitutionId(null);
             }}
+            institution={
+              (institutionsData.find(i => i.id === (deleteInstitutionId || displayedInstitution?.id)) || null) as any
+            }
             onSuccess={handleInstitutionDeleted}
           />
-        )}
+        </Suspense>
       </div>
+      </WithPermission>
     </AppLayout>
   )
 }

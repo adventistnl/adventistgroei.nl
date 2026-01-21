@@ -33,6 +33,9 @@ import {
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
+import { useNavigateWithLoading } from "@/hooks/use-navigation-loading"
+import { useTranslation } from "react-i18next"
+import { structureTranslations } from "@/lib/translations/structure"
 
 interface NavUserProps {
   user: {
@@ -46,6 +49,9 @@ export const NavUser = React.memo(function NavUser({ user }: NavUserProps) {
   const { isMobile } = useSidebar()
   const { logout } = useAuth()
   const router = useRouter()
+  const { navigateWithLoading } = useNavigateWithLoading()
+  const { i18n } = useTranslation()
+  const t = structureTranslations[i18n.language as keyof typeof structureTranslations] || structureTranslations.en
 
   // Memoizar props do DropdownMenuContent para evitar re-renders
   const dropdownProps = React.useMemo(() => ({
@@ -56,21 +62,37 @@ export const NavUser = React.memo(function NavUser({ user }: NavUserProps) {
   }), [isMobile])
 
   // Memoizar handlers para estabilidade
-  const handleLogout = React.useCallback(() => {
-    logout()
-  }, [logout])
+  const handleLogout = React.useCallback(async () => {
+    // Show loading before logout action
+    navigateWithLoading('/login', {
+      message: t.navigationMessages.signingOut,
+      showToast: true
+    })
+    
+    // Execute logout logic
+    setTimeout(() => {
+      logout()
+    }, 300)
+    
+  }, [logout, navigateWithLoading])
 
   const handleProfileClick = React.useCallback(() => {
-    router.push("/profile")
-  }, [router])
+    navigateWithLoading("/profile", {
+      message: t.navigationMessages.openingProfile
+    })
+  }, [navigateWithLoading])
 
   const handleNotificationsClick = React.useCallback(() => {
-    router.push("/settings?tab=notifications")
-  }, [router])
+    navigateWithLoading("/settings?tab=notifications", {
+      message: t.navigationMessages.openingNotifications
+    })
+  }, [navigateWithLoading])
 
   const handleSettingsClick = React.useCallback(() => {
-    router.push("/settings")
-  }, [router])
+    navigateWithLoading("/settings", {
+      message: t.navigationMessages.openingSettings
+    })
+  }, [navigateWithLoading])
 
   return (
     <SidebarMenu>
@@ -111,14 +133,10 @@ export const NavUser = React.memo(function NavUser({ user }: NavUserProps) {
                 <BadgeCheck className="sidebar-icon" />
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleSettingsClick}>
-                <Settings className="sidebar-icon" />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleNotificationsClick}>
+              {/* <DropdownMenuItem onClick={handleNotificationsClick}>
                 <Bell className="sidebar-icon" />
                 Notifications
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>

@@ -1,198 +1,38 @@
 import { gql } from "@apollo/client";
+import { INSTITUTION_FRAGMENT, INSTITUTION_FRAGMENT_LIGHT } from "../fragments/INSTITUTIONS_FRAGMENTS";
 
-export const GET_INSTITUTIONS_QUERY = gql`
-query Institutions {
+export const GET_INSTITUTIONS_LIGHT_QUERY = gql`
+  query InstitutionsLight {
     institutions {
-        id
-        name
-        denomination
-        language_preference
-        contact_id
-        created_at
-        updated_at
-        created_by
-        updated_by
-        is_deleted
-        deleted_at
-        deleted_by
+      ...InstitutionFragmentLight
     }
   }
+  ${INSTITUTION_FRAGMENT_LIGHT}
 `;
 
+export const GET_INSTITUTIONS_QUERY = gql`
+  query Institutions {
+    institutions {
+      ...InstitutionFragment
+    }
+  }
+  ${INSTITUTION_FRAGMENT}
+`;
+
+export const GET_INSTITUTION_BY_ID_LIGHT_QUERY = gql`
+  query InstitutionByIdLight($id: String!) {
+    institution(id: $id) {
+      ...InstitutionFragmentLight
+    }
+  }
+  ${INSTITUTION_FRAGMENT_LIGHT}
+`;
 
 export const GET_INSTITUTION_BY_ID_FULL_DATA_QUERY = gql`
   query InstitutionById($id: String!) {
     institution(id: $id) {
-        id
-        name
-        denomination
-        language_preference
-        contact_id
-        created_at
-        updated_at
-        created_by
-        updated_by
-        is_deleted
-        deleted_at
-        deleted_by
-        contact {
-            id
-            name
-            phone
-            mobile
-            email
-            country
-            city
-            address
-            full_address
-            postal_code
-            website
-            notes
-            is_primary
-            created_at
-            updated_at
-            created_by
-            updated_by
-            is_deleted
-            deleted_at
-            deleted_by
-        }
-        subsidy_requests {
-            id
-            description
-            total_budget
-            created_at
-            updated_at
-            created_by
-            updated_by
-            is_deleted
-            deleted_at
-            deleted_by
-            institution_id
-            requester_id
-            department_id
-            church_id
-            subsidy_statuses_id
-            project_id
-        }
-        direct_messages {
-            id
-            institution_id
-            sender_id
-            title
-            content
-            status
-            sent_at
-            created_at
-            updated_at
-            created_by
-            updated_by
-            is_deleted
-            deleted_at
-            deleted_by
-        }
-        projects {
-            id
-            department_id
-            title
-            description
-            budget
-            media_link
-            language_preference
-            type
-            created_at
-            updated_at
-            created_by
-            updated_by
-            is_deleted
-            deleted_at
-            deleted_by
-            event_id
-            institution_id
-        }
-        settings {
-            id
-            institution_id
-            key
-            value
-            description
-            created_at
-            updated_at
-            created_by
-            updated_by
-            is_deleted
-            deleted_at
-            deleted_by
-        }
-        notifications {
-            id
-            institution_id
-            user_id
-            type
-            message
-            read_status
-            created_at
-            updated_at
-            created_by
-            updated_by
-            is_deleted
-            deleted_at
-            deleted_by
-        }
-        communications {
-            id
-            institution_id
-            title
-            content
-            type
-            priority
-            status
-            language_preference
-            schedule_at
-            published_at
-            author_id
-            created_at
-            updated_at
-            created_by
-            updated_by
-            is_deleted
-            deleted_at
-            deleted_by
-        }
-        departments {
-            id
-            institution_id
-            church_id
-            name
-            description
-            annual_budget
-            contact_id
-            created_at
-            updated_at
-            created_by
-            updated_by
-            is_deleted
-            deleted_at
-            deleted_by
-        }
-        users {
-            id
-            name
-            email
-            password
-            language_preference
-            created_at
-            updated_at
-            created_by
-            updated_by
-            is_deleted
-            deleted_at
-            deleted_by
-            contact_id
-            institution_id
-            church_id
-            department_id
-        }
+      ...InstitutionFragment
     }
   }
-`
+  ${INSTITUTION_FRAGMENT}
+`;

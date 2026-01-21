@@ -6,6 +6,12 @@ import { GraphQLProvider } from "@/lib/apollo/graphql-provider"
 import { AuthProvider } from "@/contexts/auth-context"
 import { PageProvider } from "@/contexts/page-context"
 import { InstitutionProvider } from "@/contexts/institution-context"
+import { NavigationLoadingProvider } from "@/contexts/navigation-loading-context"
+import { CurrencyProvider } from "@/contexts/currency-context"
+import { I18nProvider } from "@/lib/i18n/i18n-provider"
+import { PrivacyProviderWithAuth } from "@/components/shared/privacy-provider-with-auth"
+import { PrivacyDebugPanel } from "@/components/shared/privacy-debug-panel"
+import { PrivacyButtonDebugPanel } from "@/components/shared/privacy-button-debug"
 import { ToastProvider } from "@/components/ui/toast-provider"
 import "./globals.css"
 
@@ -21,18 +27,28 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <body className="antialiased font-sans">
-        <GraphQLProvider>
-          <AuthProvider>
-            <InstitutionProvider>
-              <PageProvider>
-                {children}
-                <ToastProvider />
-              </PageProvider>
-            </InstitutionProvider>
-          </AuthProvider>
-        </GraphQLProvider>
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} h-full`}>
+      <body className="antialiased font-sans h-full overflow-hidden">
+        <I18nProvider>
+          <GraphQLProvider>
+            <AuthProvider>
+              <PrivacyProviderWithAuth>
+                <InstitutionProvider>
+                  <CurrencyProvider>
+                    <PageProvider>
+                      <NavigationLoadingProvider>
+                        {children}
+                        <ToastProvider />
+                        <PrivacyDebugPanel />
+                        <PrivacyButtonDebugPanel />
+                      </NavigationLoadingProvider>
+                    </PageProvider>
+                  </CurrencyProvider>
+                </InstitutionProvider>
+              </PrivacyProviderWithAuth>
+            </AuthProvider>
+          </GraphQLProvider>
+        </I18nProvider>
       </body>
     </html>
   )

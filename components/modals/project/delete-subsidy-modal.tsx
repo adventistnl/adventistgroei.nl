@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useTranslation } from "react-i18next"
+import { useCurrency } from "@/contexts/currency-context"
 import { 
   Trash2,
   AlertTriangle,
@@ -35,13 +36,14 @@ interface DeleteSubsidyModalProps {
 
 export function DeleteSubsidyModal({ isOpen, onClose, onConfirm, subsidy }: DeleteSubsidyModalProps) {
   const { i18n } = useTranslation()
+  const { formatCurrency } = useCurrency()
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
 
   if (!subsidy) {
     return null
   }
 
-  const totalReceipts = subsidy.activities.reduce((sum, activity) => sum + activity.receiptsCount, 0)
+  const totalReceipts = subsidy.activities.reduce((sum, activity) => sum + (activity.receiptsCount || 0), 0)
   const totalActivities = subsidy.activities.length
 
   return (
@@ -59,9 +61,9 @@ export function DeleteSubsidyModal({ isOpen, onClose, onConfirm, subsidy }: Dele
             <Card>
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Pedido de Subsídio</span>
+                  <span className="text-sm font-medium">{t.subsidy.requestLabel}</span>
                   <Badge variant="outline">
-                    R$ {subsidy.total_budget.toLocaleString()}
+                    {formatCurrency(subsidy.total_budget)}
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
@@ -78,7 +80,7 @@ export function DeleteSubsidyModal({ isOpen, onClose, onConfirm, subsidy }: Dele
                   <Activity className="w-4 h-4 text-red-500" />
                   <span>{t.subsidy.deleteEffect1}</span>
                   <Badge variant="outline" className="text-red-600 border-red-200">
-                    {totalActivities} atividades
+                    {totalActivities} {t.subsidy.activitiesLower}
                   </Badge>
                 </div>
                 
@@ -86,7 +88,7 @@ export function DeleteSubsidyModal({ isOpen, onClose, onConfirm, subsidy }: Dele
                   <FileText className="w-4 h-4 text-red-500" />
                   <span>{t.subsidy.deleteEffect2}</span>
                   <Badge variant="outline" className="text-red-600 border-red-200">
-                    {totalReceipts} recibos
+                    {totalReceipts} {t.subsidy.receiptsLower}
                   </Badge>
                 </div>
                 
@@ -99,7 +101,7 @@ export function DeleteSubsidyModal({ isOpen, onClose, onConfirm, subsidy }: Dele
                   <DollarSign className="w-4 h-4 text-red-500" />
                   <span>{t.subsidy.deleteEffect4}</span>
                   <Badge variant="outline" className="text-red-600 border-red-200">
-                    R$ {subsidy.approved_amount.toLocaleString()} aprovado
+                    {formatCurrency(subsidy.approved_amount)} {t.subsidy.approvedLower}
                   </Badge>
                 </div>
               </div>
@@ -109,7 +111,7 @@ export function DeleteSubsidyModal({ isOpen, onClose, onConfirm, subsidy }: Dele
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-red-600" />
                 <span className="text-sm font-medium text-red-600">
-                  Esta ação não pode ser desfeita
+                  {t.common.irreversible}
                 </span>
               </div>
             </div>
@@ -117,14 +119,14 @@ export function DeleteSubsidyModal({ isOpen, onClose, onConfirm, subsidy }: Dele
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onClose}>
-            Cancelar
+            {t.common.cancel}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             className="bg-red-600 hover:bg-red-700 text-white"
           >
             <Trash2 className="w-4 h-4 mr-2" />
-            Excluir Permanentemente
+            {t.common.deletePermanently}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -17,7 +17,6 @@ import {
 
 interface KPIData {
   institutions_count?: number
-  regions_count: number
   churches_count: number
   users_count: number
   members_count?: number
@@ -85,20 +84,9 @@ export function InstitutionsKPI({ data, loading = false, institutionName }: Inst
       title: t('institutions.kpis.total_institutions'),
       value: formatNumber(data.institutions_count),
       icon: Building,
-      description: `${data.regions_count} ${t('institutions.kpis.total_regions').toLowerCase()}`,
+      description: `${data.institutions_count} ${t('institutions.kpis.total_institutions').toLowerCase()}`,
       color: "text-blue-600"
     }] : []),
-    
-    {
-      title: institutionName ? t('institutions.kpis.total_regions') : t('institutions.kpis.total_churches'),
-      value: institutionName ? formatNumber(data.regions_count) : formatNumber(data.churches_count),
-      icon: institutionName ? MapPin : Church,
-      description: institutionName 
-        ? `${data.churches_count} ${t('institutions.kpis.total_churches').toLowerCase()}`
-        : `${formatNumber(data.members_count || 0)} members`,
-      color: "text-green-600"
-    },
-    
     {
       title: t('institutions.kpis.total_users'),
       value: formatNumber(data.users_count),

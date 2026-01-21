@@ -9,8 +9,6 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
   type ChartConfig,
 } from "@/components/ui/chart"
 import {
@@ -29,8 +27,6 @@ import {
   Legend,
 } from "recharts"
 import { 
-  BarChart3, 
-  PieChart as PieChartIcon, 
   TrendingUp, 
   Users,
   MapPin,

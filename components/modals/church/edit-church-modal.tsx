@@ -6,165 +6,101 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { 
   Home, 
-  Edit, 
   Save, 
-  X, 
-  Globe, 
-  Calendar,
-  Building,
   User,
   Phone,
   Mail,
-  MapPin,
   ChevronLeft,
   ChevronRight,
-  Check,
-  MapPin as MapPinIcon,
-  FileText,
-  DollarSign
 } from "lucide-react"
 import toast from "react-hot-toast"
+import { useChurches } from "@/hooks/use-churches"
+import { useRegions } from "@/hooks/use-regions"
+import { useInstitution } from "@/contexts/institution-context"
+import { UpdateChurch, UpdateChurchVariables } from "@/types/UpdateChurch"
+import { ChurchTypeSelector } from "./church-type-selector"
+import { RegionSelector } from "./region-selector"
+import { ProvinceAndCitySelector } from "./province-and-city-selector"
+import { Church, ChurchType } from "@/types/graphql-global-types"
 import { churchTranslations } from "@/lib/translations/churches"
-
-export interface ChurchData {
-  id: string
-  institution_id: string
-  name: string
-  region_id: string
-  annual_budget?: number
-  contact_id?: string | null
-  created_at: string
-  updated_at: string
-  created_by: string
-  updated_by: string
-  is_deleted: boolean
-  deleted_at?: string | null
-  deleted_by?: string | null
-}
-
-export interface ContactData {
-  id: string
-  name?: string | null
-  phone?: string | null
-  mobile?: string | null
-  email?: string | null
-  country?: string | null
-  city?: string | null
-  address?: string | null
-  full_address?: string | null
-  postal_code?: string | null
-  website?: string | null
-  notes?: string | null
-  is_primary: boolean
-  created_at: string
-  updated_at: string
-  created_by: string
-  updated_by: string
-  is_deleted: boolean
-  deleted_at?: string | null
-  deleted_by?: string | null
-}
-
-export interface RegionData {
-  id: string
-  name: string
-  institution_id: string
-}
 
 export interface EditChurchModalProps {
   isOpen: boolean
-  onOpenChange: (open: boolean) => void
-  church: ChurchData | null
-  regions: RegionData[]
-  onSave?: (church: ChurchData) => void
+  onOpenChangeAction: (open: boolean) => void
+  church: Church | null
+  onSave?: (church: UpdateChurch) => void
 }
 
 export function EditChurchModal({
   isOpen,
-  onOpenChange,
+  onOpenChangeAction,
   church,
-  regions = [],
   onSave
 }: EditChurchModalProps) {
-  const { t: tCommon } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const { updateChurch } = useChurches()
+  const { regions, regionsLoading } = useRegions()
+  const { currentInstitutionData } = useInstitution()
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
-  const [formData, setFormData] = useState<Partial<ChurchData & { contact: Partial<ContactData> }>>({
-    region_id: '',
+  const [formData, setFormData] = useState<UpdateChurchVariables>({
+    id: '',
     name: '',
-    annual_budget: 0,
-    contact: {
-      name: '',
-      phone: '',
-      mobile: '',
-      email: '',
-      country: '',
-      city: '',
-      address: '',
-      full_address: '',
-      postal_code: '',
-      website: '',
-      notes: '',
-      is_primary: true
-    }
+    contactName: '',
+    phone: '',
+    email: '',
+    city: '',
+    country: '',
+    state: '',
+    type: undefined,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isSpecialChurch, setIsSpecialChurch] = useState(false)
+  const [province, setProvince] = useState("")
 
-  const totalSteps = 2
+  // Get translations for current language
+  const currentLanguage = i18n?.language || 'en'
+  const tChurch = churchTranslations[currentLanguage as keyof typeof churchTranslations] || churchTranslations.en
+
+  // Get institution country for province/city selector
+  const institutionCountry = currentInstitutionData?.contact?.country || 'NL'
+
+  const totalSteps = 3 // Basic Data, Geographic Data, Contact Data
 
   useEffect(() => {
     if (isOpen && church) {
+      const hasSpecialType = church.type === ChurchType.Plant || church.type === ChurchType.Company
+      const contactData = (church as any).contact || {}
+      
       setFormData({
         id: church.id,
-        institution_id: church.institution_id,
-        region_id: church.region_id,
         name: church.name,
-        annual_budget: church.annual_budget || 0,
-        contact: {
-          name: '',
-          phone: '',
-          mobile: '',
-          email: '',
-          country: '',
-          city: '',
-          address: '',
-          full_address: '',
-          postal_code: '',
-          website: '',
-          notes: '',
-          is_primary: true
-        }
+        region_id: church.region_id || '',
+        contactName: contactData?.name || '',
+        phone: contactData?.phone || '',
+        email: contactData?.email || '',
+        city: contactData?.city || '',
+        country: contactData?.country || institutionCountry,
+        state: contactData?.state || '',
+        type: (church.type || undefined) as any,
       })
+      setIsSpecialChurch(hasSpecialType)
+      // Extract province from state or use empty if not available
+      setProvince(contactData?.state || '')
       setErrors({})
       setCurrentStep(1)
     }
   }, [isOpen, church])
 
-  const handleInputChange = (field: string, value: string | number | boolean) => {
-    if (field.startsWith('contact.')) {
-      const contactField = field.replace('contact.', '')
-      setFormData(prev => ({
-        ...prev,
-        contact: {
-          ...prev.contact,
-          [contactField]: value
-        }
-      }))
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [field]: value
-      }))
-    }
-    
+  const handleInputChange = (field: string, value: string | boolean | number | null | undefined) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({
@@ -178,24 +114,39 @@ export function EditChurchModal({
     const newErrors: Record<string, string> = {}
 
     if (step === 1) {
+      // Step 1: Basic data
       if (!formData.name?.trim()) {
-        newErrors.name = "Church name is required"
+        newErrors.name = tChurch.validation.name_required
       } else if (formData.name.trim().length < 2) {
-        newErrors.name = "Church name must be at least 2 characters"
+        newErrors.name = tChurch.validation.name_min_length
       }
 
-      if (!formData.region_id) {
-        newErrors.region_id = "Region is required"
-      }
-
-      if (!formData.annual_budget || formData.annual_budget <= 0) {
-        newErrors.annual_budget = "Annual budget is required and must be greater than 0"
+      // Type is only required if it's a special church
+      if (isSpecialChurch && !formData.type) {
+        newErrors.type = tChurch.validation.type_required
       }
     }
 
     if (step === 2) {
-      if (formData.contact?.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact.email)) {
-        newErrors['contact.email'] = "Please enter a valid email address"
+      // Step 2: Geographic data - cidade obrigatória
+      if (!formData.city?.trim()) {
+        newErrors.city = tChurch.validation.city_required || 'Cidade é obrigatória'
+      }
+    }
+
+    if (step === 3) {
+      // Step 3: Contact data - all optional
+      // No validations needed
+    }
+
+    // Final validation before save
+    if (step === 99) { // Special value for final validation
+      if (!formData.name?.trim()) {
+        newErrors.name = tChurch.validation.name_required
+      }
+      // Province is now optional
+      if (isSpecialChurch && !formData.type) {
+        newErrors.type = tChurch.validation.type_required
       }
     }
 
@@ -209,47 +160,55 @@ export function EditChurchModal({
     }
   }
 
+  const handleSkipContacts = () => {
+    setCurrentStep(3)
+  }
+
   const handlePrevious = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1))
   }
 
   const handleSave = async () => {
-    if (!church || !validateStep(1) || !validateStep(2)) {
-      toast.error("Please fix the errors before continuing")
-      return
+    if (!validateStep(99)) {
+      toast.error(tChurch.validation.please_fix_errors)
+      return;
     }
 
     setIsLoading(true)
-    const loadingToast = toast.loading("Updating church...")
+    const loadingToast = toast.loading(tChurch.toasts.updating)
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      const updatedChurch: ChurchData = {
-        ...church,
-        region_id: formData.region_id!,
+      const variables: UpdateChurchVariables = {
+        id: formData.id!,
         name: formData.name!.trim(),
-        annual_budget: formData.annual_budget!,
-        updated_at: new Date().toISOString(),
-        updated_by: 'current_user'
+        city: formData.city,
+        email: formData.email,
+        phone: formData.phone,
+        contactName: formData.contactName,
+        country: formData.country,
+        state: formData.state,
+        type: formData.type,
+      }
+      const res = await updateChurch({ variables })
+      if (!res || !res.data) {
+        throw new Error("Failed to update church")
       }
 
       toast.dismiss(loadingToast)
-      toast.success("Church updated successfully", {
+      toast.success(tChurch.toasts.updated, {
         duration: 3000,
-        icon: '🏢'
+        icon: '⛪'
       })
 
       if (onSave) {
-        onSave(updatedChurch)
+        onSave(res.data)
       }
 
-      onOpenChange(false)
+      onOpenChangeAction(false)
 
     } catch (error) {
       toast.dismiss(loadingToast)
-      toast.error("Failed to update church")
+      toast.error(tChurch.toasts.update_failed)
     } finally {
       setIsLoading(false)
     }
@@ -257,56 +216,51 @@ export function EditChurchModal({
 
   const handleCancel = () => {
     if (church) {
+      const hasSpecialType = church.type === ChurchType.Plant || church.type === ChurchType.Company
+      const contactData = (church as any).contact || {}
+      
       setFormData({
         id: church.id,
-        institution_id: church.institution_id,
-        region_id: church.region_id,
         name: church.name,
-        annual_budget: church.annual_budget || 0,
-        contact: {
-          name: '',
-          phone: '',
-          mobile: '',
-          email: '',
-          country: '',
-          city: '',
-          address: '',
-          full_address: '',
-          postal_code: '',
-          website: '',
-          notes: '',
-          is_primary: true
-        }
+        region_id: church.region_id || '',
+        contactName: contactData?.name || '',
+        phone: contactData?.phone || '',
+        email: contactData?.email || '',
+        city: contactData?.city || '',
+        country: contactData?.country || institutionCountry,
+        state: contactData?.state || '',
+        type: (church.type || undefined) as any,
       })
+      setIsSpecialChurch(hasSpecialType)
+      setProvince(contactData?.state || '')
     }
     setErrors({})
     setCurrentStep(1)
-    onOpenChange(false)
+    onOpenChangeAction(false)
   }
-
-  const selectedRegion = regions.find(region => region.id === formData.region_id)
 
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
+        // Step 1: Basic Data
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">Basic Information</h3>
-              <p className="text-sm text-muted-foreground">Enter the church name and select the region</p>
+              <h3 className="text-lg font-medium text-foreground">{tChurch.steps.step_1_title}</h3>
+              <p className="text-sm text-muted-foreground">{tChurch.steps.step_1_description}</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="name" className="flex items-center gap-2 text-sm">
                   <Home className="w-4 h-4 text-muted-foreground" />
-                  Church Name *
+                  {tChurch.fields.name} *
                 </Label>
                 <Input
                   id="name"
                   value={formData.name || ''}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="Enter church name"
+                  placeholder={tChurch.placeholders.name}
                   disabled={isLoading}
                   className={`h-10 ${errors.name ? 'border-red-500' : ''}`}
                 />
@@ -315,127 +269,110 @@ export function EditChurchModal({
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="region_id" className="flex items-center gap-2 text-sm">
-                  <MapPin className="w-4 h-4 text-muted-foreground" />
-                  Region *
-                </Label>
-                <Select
-                  value={formData.region_id || ''}
-                  onValueChange={(value) => handleInputChange('region_id', value)}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger className={`h-10 ${errors.region_id ? 'border-red-500' : ''}`}>
-                    <SelectValue placeholder="Select region" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {regions.map((region) => (
-                      <SelectItem key={region.id} value={region.id}>
-                        {region.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.region_id && (
-                  <p className="text-sm text-red-600">{errors.region_id}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="annual_budget" className="flex items-center gap-2 text-sm">
-                  <DollarSign className="w-4 h-4 text-muted-foreground" />
-                  Annual Budget *
-                </Label>
-                <Input
-                  id="annual_budget"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.annual_budget || ''}
-                  onChange={(e) => handleInputChange('annual_budget', parseFloat(e.target.value) || 0)}
-                  placeholder="Enter annual budget"
-                  disabled={isLoading}
-                  className={`h-10 ${errors.annual_budget ? 'border-red-500' : ''}`}
-                />
-                {errors.annual_budget && (
-                  <p className="text-sm text-red-600">{errors.annual_budget}</p>
-                )}
-              </div>
+              <ChurchTypeSelector
+                isSpecialChurch={isSpecialChurch}
+                selectedType={formData.type as ChurchType | null | undefined}
+                onSpecialChurchChange={setIsSpecialChurch}
+                onTypeChange={(type) => handleInputChange('type', type)}
+                isLoading={isLoading}
+                error={errors.type}
+              />
             </div>
           </div>
         )
 
       case 2:
+        // Step 2: Geographic Data
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-medium text-foreground">Contact Details</h3>
-              <p className="text-sm text-muted-foreground">Add contact information for the church</p>
+              <h3 className="text-lg font-medium text-foreground">{tChurch.steps.step_2_title}</h3>
+              <p className="text-sm text-muted-foreground">{tChurch.steps.step_2_description}</p>
+            </div>
+            
+            <div className="space-y-4 max-w-md mx-auto">
+              <ProvinceAndCitySelector
+                provinceValue={province}
+                onProvinceChangeAction={(value: string) => {
+                  setProvince(value)
+                  handleInputChange('state', value)
+                }}
+                cityValue={formData.city || ''}
+                onCityChangeAction={(value: string) => handleInputChange('city', value)}
+                countryCode={institutionCountry}
+                isLoading={isLoading || regionsLoading}
+                provinceError={errors.province}
+                cityError={errors.city}
+              />
+
+              {/* Região removida do formulário. Será definida automaticamente pelo backend. */}
+            </div>
+          </div>
+        )
+
+      case 3:
+        // Step 3: Contact Data
+        return (
+          <div className="space-y-6 animate-in fade-in-0 duration-300">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-medium text-foreground">{tChurch.steps.step_3_title}</h3>
+              <p className="text-sm text-muted-foreground">{tChurch.steps.step_3_description}</p>
             </div>
             
             <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="contact_name" className="flex items-center gap-2 text-sm">
                   <User className="w-4 h-4 text-muted-foreground" />
-                  Contact Name
+                  {tChurch.fields.contact_name}
                 </Label>
                 <Input
                   id="contact_name"
-                  value={formData.contact?.name || ''}
-                  onChange={(e) => handleInputChange('contact.name', e.target.value)}
-                  placeholder="Enter contact name"
+                  value={formData.contactName || ''}
+                  onChange={(e) => handleInputChange('contactName', e.target.value)}
+                  placeholder={tChurch.placeholders.contact_name}
                   disabled={isLoading}
-                  className="h-10"
+                  className={`h-10 ${errors.contactName ? 'border-red-500' : ''}`}
                 />
+                {errors.contactName && (
+                  <p className="text-sm text-red-600">{errors.contactName}</p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="contact_email" className="flex items-center gap-2 text-sm">
                   <Mail className="w-4 h-4 text-muted-foreground" />
-                  Contact Email
+                  {tChurch.fields.contact_email}
                 </Label>
                 <Input
                   id="contact_email"
                   type="email"
-                  value={formData.contact?.email || ''}
-                  onChange={(e) => handleInputChange('contact.email', e.target.value)}
-                  placeholder="Enter email address"
+                  value={formData.email || ''}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  placeholder={tChurch.placeholders.contact_email}
                   disabled={isLoading}
-                  className={`h-10 ${errors['contact.email'] ? 'border-red-500' : ''}`}
+                  className={`h-10 ${errors.email ? 'border-red-500' : ''}`}
                 />
-                {errors['contact.email'] && (
-                  <p className="text-sm text-red-600">{errors['contact.email']}</p>
+                {errors.email && (
+                  <p className="text-sm text-red-600">{errors.email}</p>
                 )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="contact_phone" className="flex items-center gap-2 text-sm">
                   <Phone className="w-4 h-4 text-muted-foreground" />
-                  Phone
+                  {tChurch.fields.contact_phone}
                 </Label>
                 <Input
                   id="contact_phone"
-                  value={formData.contact?.phone || ''}
-                  onChange={(e) => handleInputChange('contact.phone', e.target.value)}
-                  placeholder="Enter phone number"
+                  value={formData.phone || ''}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  placeholder={tChurch.placeholders.contact_phone}
                   disabled={isLoading}
-                  className="h-10"
+                  className={`h-10 ${errors.phone ? 'border-red-500' : ''}`}
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="contact_city" className="flex items-center gap-2 text-sm">
-                  <MapPin className="w-4 h-4 text-muted-foreground" />
-                  City
-                </Label>
-                <Input
-                  id="contact_city"
-                  value={formData.contact?.city || ''}
-                  onChange={(e) => handleInputChange('contact.city', e.target.value)}
-                  placeholder="Enter city"
-                  disabled={isLoading}
-                  className="h-10"
-                />
+                {errors.phone && (
+                  <p className="text-sm text-red-600">{errors.phone}</p>
+                )}
               </div>
             </div>
           </div>
@@ -449,21 +386,21 @@ export function EditChurchModal({
   if (!church) return null
 
   return (
-    <Dialog open={isOpen} onOpenChange={!isLoading ? onOpenChange : undefined}>
+    <Dialog open={isOpen} onOpenChange={!isLoading ? onOpenChangeAction : undefined}>
       <DialogContent className="w-[95vw] max-w-2xl max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Home className="w-5 h-5 text-muted-foreground" />
-            Edit Church
+            {tChurch.modals.edit.title}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Update church information and contact details
+            {tChurch.modals.edit.description}
           </DialogDescription>
           
           {/* Progress Bar */}
           <div className="mt-4 space-y-2">
             <div className="flex justify-between items-center text-xs text-muted-foreground">
-              <span>Step {currentStep} of {totalSteps}</span>
+              <span>{tChurch.steps.step} {currentStep} {tChurch.steps.of} {totalSteps}</span>
               <span>{Math.round((currentStep / totalSteps) * 100)}%</span>
             </div>
             <Progress value={(currentStep / totalSteps) * 100} className="h-1" />
@@ -473,7 +410,6 @@ export function EditChurchModal({
         {/* Conteúdo dos Steps - Scrollable */}
         <div className="flex-1 overflow-y-auto min-h-0">
           <div className="space-y-6 p-1">
-            {/* Step Content */}
             {renderStepContent()}
           </div>
         </div>
@@ -491,7 +427,7 @@ export function EditChurchModal({
                   className="flex items-center gap-1 text-xs"
                 >
                   <ChevronLeft className="w-3 h-3" />
-                  Previous
+                  {tChurch.buttons.previous}
                 </Button>
               )}
               <Button 
@@ -501,11 +437,22 @@ export function EditChurchModal({
                 size="sm"
                 className="text-xs"
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
             </div>
 
             <div className="flex gap-2">
+              {currentStep === 3 && (
+                <Button 
+                  variant="ghost"
+                  onClick={handleSkipContacts} 
+                  disabled={isLoading}
+                  size="sm"
+                  className="text-muted-foreground text-xs"
+                >
+                  {tChurch.buttons.skip_for_now}
+                </Button>
+              )}
               {currentStep < totalSteps ? (
                 <Button 
                   onClick={handleNext} 
@@ -513,7 +460,7 @@ export function EditChurchModal({
                   size="sm"
                   className="flex items-center gap-1 text-xs"
                 >
-                  Next
+                  {tChurch.buttons.next}
                   <ChevronRight className="w-3 h-3" />
                 </Button>
               ) : (
@@ -526,12 +473,12 @@ export function EditChurchModal({
                   {isLoading ? (
                     <>
                       <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1" />
-                      Updating...
+                      {tChurch.buttons.updating}
                     </>
                   ) : (
                     <>
                       <Save className="w-3 h-3 mr-1" />
-                      Save
+                      {tChurch.buttons.update_church}
                     </>
                   )}
                 </Button>
