@@ -52,7 +52,6 @@ import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
 import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
 import { DepartmentsKPICards, KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
-import { DepartmentActivityChart } from "@/components/institutions/charts/department-project-over-time-chart"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { UseTable } from "@/components/ui/use-table"
 import { EntityInfoCard } from "@/components/shared/entity-info-card"
@@ -77,6 +76,7 @@ import {
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
 import { WithPermission } from "@/hocs/with-permission"
+import { DepartmentActivityChart } from "@/components/institutions/charts/department-activity-chart"
 
 
 /**
