@@ -1443,39 +1443,43 @@ export default function AnnualBudgetPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 {/* Manage/Register Budget Action - Dynamic label based on budget status */}
-                <DropdownMenuItem onClick={() => {
-                  setSelectedDepartmentData(departmentData)
-                  setIsViewEditModalOpen(true)
-                }}>
-                  <Settings className="w-4 h-4 mr-2" />
-                  {hasBudget 
-                    ? t('annual_budget.table.actions_menu.manage')
-                    : t('annual_budget.table.actions_menu.register', 'Register Budget')
-                  }
-                </DropdownMenuItem>
+                <WithPermission requiredPermissions={[PermissionResolverName.UpdateDepartmentBudget]}>
+                  <DropdownMenuItem onClick={() => {
+                    setSelectedDepartmentData(departmentData)
+                    setIsViewEditModalOpen(true)
+                  }}>
+                    <Settings className="w-4 h-4 mr-2" />
+                    {hasBudget 
+                      ? t('annual_budget.table.actions_menu.manage')
+                      : t('annual_budget.table.actions_menu.register', 'Register Budget')
+                    }
+                  </DropdownMenuItem>
+                </WithPermission>
                 
                 {/* Lock/Unlock Action - Disabled if no budget */}
-                <DropdownMenuItem 
-                  onClick={() => {
-                    if (hasBudget && departmentData.annualBudget) {
-                      handleToggleLock(departmentData.annualBudget.id)
-                    }
-                  }}
-                  disabled={!hasBudget}
-                  className={!hasBudget ? 'opacity-50 cursor-not-allowed' : ''}
-                >
-                  {isLocked ? (
-                    <>
-                      <Unlock className="w-4 h-4 mr-2" />
-                      {t('annual_budget.table.actions_menu.unlock')}
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="w-4 h-4 mr-2" />
-                      {t('annual_budget.table.actions_menu.lock')}
-                    </>
-                  )}
-                </DropdownMenuItem>
+                <WithPermission requiredPermissions={[PermissionResolverName.ToggleBudgetLock]}>
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      if (hasBudget && departmentData.annualBudget) {
+                        handleToggleLock(departmentData.annualBudget.id)
+                      }
+                    }}
+                    disabled={!hasBudget}
+                    className={!hasBudget ? 'opacity-50 cursor-not-allowed' : ''}
+                  >
+                    {isLocked ? (
+                      <>
+                        <Unlock className="w-4 h-4 mr-2" />
+                        {t('annual_budget.table.actions_menu.unlock')}
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-4 h-4 mr-2" />
+                        {t('annual_budget.table.actions_menu.lock')}
+                      </>
+                    )}
+                  </DropdownMenuItem>
+                </WithPermission>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

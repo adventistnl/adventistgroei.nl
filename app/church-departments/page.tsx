@@ -686,14 +686,18 @@ export default function ChurchDepartmentsPage() {
               <Eye className="w-4 h-4 mr-2" />
               {t.actions?.view_details || "View Details"}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
-              <Edit className="w-4 h-4 mr-2" />
-              {t.actions?.edit_department || "Edit Department"}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
-              <Trash2 className="w-4 h-4 mr-2" />
-              {t.actions?.delete_department || "Delete Department"}
-            </DropdownMenuItem>
+            <WithPermission requiredPermissions={[PermissionResolverName.UpdateDepartment]}>
+              <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
+                <Edit className="w-4 h-4 mr-2" />
+                {t.actions?.edit_department || "Edit Department"}
+              </DropdownMenuItem>
+            </WithPermission>
+            <WithPermission requiredPermissions={[PermissionResolverName.DeleteDepartment]}>
+              <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
+                <Trash2 className="w-4 h-4 mr-2" />
+                {t.actions?.delete_department || "Delete Department"}
+              </DropdownMenuItem>
+            </WithPermission>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -888,10 +892,12 @@ export default function ChurchDepartmentsPage() {
             </div>
             
             <div className="flex items-center gap-3">
-              <Button onClick={handleCreate}>
-                <Plus className="w-4 h-4 mr-2" />
-                {t.create_department || "Create Church Department"}
-              </Button>
+              <WithPermission requiredPermissions={[PermissionResolverName.CreateDepartment]}>
+                <Button onClick={handleCreate}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  {t.create_department || "Create Church Department"}
+                </Button>
+              </WithPermission>
               
               <Button 
                 variant="outline" 

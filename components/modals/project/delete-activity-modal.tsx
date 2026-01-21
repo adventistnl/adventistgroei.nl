@@ -13,6 +13,8 @@ import { ActivityTags } from "@/types/graphql-global-types"
 import { projectTranslations } from "@/lib/translations/projects"
 import { useCurrency } from "@/contexts/currency-context"
 import toast from "react-hot-toast"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 // Project Activity Data interface
 interface ProjectActivityData {
@@ -192,14 +194,16 @@ export function DeleteActivityModal({
             >
               {t.common?.cancel || "Cancel"}
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleSubmit}
-              disabled={isLoading || !understood}
-              className="w-full bg-red-600 hover:bg-red-700 text-white sm:w-auto"
-            >
-              {isLoading ? t.deleteActivity.deleting : t.deleteActivity.deleteButton}
-            </Button>
+            <WithPermission requiredPermissions={[PermissionResolverName.DeleteProjectActivity]}>
+              <Button
+                variant="destructive"
+                onClick={handleSubmit}
+                disabled={isLoading || !understood}
+                className="w-full bg-red-600 hover:bg-red-700 text-white sm:w-auto"
+              >
+                {isLoading ? t.deleteActivity.deleting : t.deleteActivity.deleteButton}
+              </Button>
+            </WithPermission>
           </div>
         </div>
       </DialogContent>

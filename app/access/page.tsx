@@ -523,13 +523,15 @@ export default function AccessManagementPage() {
                         {t('access.roles.subtitle')}
                       </CardDescription>
                     </div>
-                    <Button 
-                      onClick={() => setIsCreateRoleOpen(true)}
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      {t('access.roles.actions.create_role')}
-                    </Button>
+                    <WithPermission requiredPermissions={[PermissionResolverName.CreateRole]}>
+                      <Button 
+                        onClick={() => setIsCreateRoleOpen(true)}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        {t('access.roles.actions.create_role')}
+                      </Button>
+                    </WithPermission>
                   </div>
                 </CardHeader>
                 <CardContent className="overflow-hidden p-0">

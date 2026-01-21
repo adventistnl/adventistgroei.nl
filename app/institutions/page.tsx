@@ -534,25 +534,29 @@ export default function InstitutionsPage() {
                 <Eye className="mr-2 h-4 w-4" />
                 {t('actions.view_details')}
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setEditInstitutionId(institution.id);
-                  setIsEditInstitutionModalOpen(true);
-                }}
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                {t('common.edit')}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-red-600"
-                onClick={() => {
-                  setDeleteInstitutionId(institution.id);
-                  setIsDeleteInstitutionModalOpen(true);
-                }}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                {t('common.delete')}
-              </DropdownMenuItem>
+              <WithPermission requiredPermissions={[PermissionResolverName.UpdateInstitution]}>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setEditInstitutionId(institution.id);
+                    setIsEditInstitutionModalOpen(true);
+                  }}
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  {t('common.edit')}
+                </DropdownMenuItem>
+              </WithPermission>
+              <WithPermission requiredPermissions={[PermissionResolverName.DeleteInstitution]}>
+                <DropdownMenuItem
+                  className="text-red-600"
+                  onClick={() => {
+                    setDeleteInstitutionId(institution.id);
+                    setIsDeleteInstitutionModalOpen(true);
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {t('common.delete')}
+                </DropdownMenuItem>
+              </WithPermission>
             </DropdownMenuContent>
           </DropdownMenu>
         );
@@ -668,12 +672,14 @@ export default function InstitutionsPage() {
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             </Button>
             
-            <RegisterInstitutionModal onSuccess={handleInstitutionCreated}>
-              <Button className="bg-primary hover:bg-primary/80">
-                <Plus className="w-4 h-4 mr-2" />
-                {t('institutions.page_header.new_institution')}
-              </Button>
-            </RegisterInstitutionModal>
+            <WithPermission requiredPermissions={[PermissionResolverName.CreateInstitution]}>
+              <RegisterInstitutionModal onSuccess={handleInstitutionCreated}>
+                <Button className="bg-primary hover:bg-primary/80">
+                  <Plus className="w-4 h-4 mr-2" />
+                  {t('institutions.page_header.new_institution')}
+                </Button>
+              </RegisterInstitutionModal>
+            </WithPermission>
           </div>
         </div>
 

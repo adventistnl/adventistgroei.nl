@@ -677,16 +677,18 @@ export default function ProjectsPage() {
                 
                 {/* Only show Edit option if user is the project owner */}
                 {isProjectOwner && (
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleEditProject(project)
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <Edit className="mr-2 h-4 w-4" />
-                    {t_project.editProject}
-                  </DropdownMenuItem>
+                  <WithPermission requiredPermissions={[PermissionResolverName.UpdateProject]}>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleEditProject(project)
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      {t_project.editProject}
+                    </DropdownMenuItem>
+                  </WithPermission>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>

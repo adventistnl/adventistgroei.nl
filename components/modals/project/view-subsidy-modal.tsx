@@ -926,31 +926,35 @@ export function ViewSubsidyModal({
                       {t('charts.legend.inReview')}
                     </DropdownMenuItem>
                     
-                    <DropdownMenuItem 
-                        onClick={() => handleStatusChangeRequest('APPROVED')}
-                        disabled={!canChangeStatus('approved')}
-                        className={cn(
-                          hasRejectedDocuments() && "opacity-50 cursor-not-allowed"
-                        )}
-                    >
-                      <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
-                      <div className="flex flex-col">
-                        <span>{t('charts.legend.accepted')}</span>
-                        {hasRejectedDocuments() && (
-                          <span className="text-xs text-red-600 dark:text-red-400">
-                            {t('toasts.documentsRejected') || 'Documentos rejeitados impedem aprovação'}
-                          </span>
-                        )}
-                      </div>
-                    </DropdownMenuItem>
+                    <WithPermission requiredPermissions={[PermissionResolverName.ApproveSubsidyRequest]}>
+                      <DropdownMenuItem 
+                          onClick={() => handleStatusChangeRequest('APPROVED')}
+                          disabled={!canChangeStatus('approved')}
+                          className={cn(
+                            hasRejectedDocuments() && "opacity-50 cursor-not-allowed"
+                          )}
+                      >
+                        <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
+                        <div className="flex flex-col">
+                          <span>{t('charts.legend.accepted')}</span>
+                          {hasRejectedDocuments() && (
+                            <span className="text-xs text-red-600 dark:text-red-400">
+                              {t('toasts.documentsRejected') || 'Documentos rejeitados impedem aprovação'}
+                            </span>
+                          )}
+                        </div>
+                      </DropdownMenuItem>
+                    </WithPermission>
                     
-                    <DropdownMenuItem 
-                        onClick={() => handleStatusChangeRequest('REJECTED')}
-                        disabled={!canChangeStatus('rejected')}
-                    >
-                      <XCircle className="mr-2 h-4 w-4 text-red-500" />
-                      {t('charts.legend.rejected')}
-                    </DropdownMenuItem>
+                    <WithPermission requiredPermissions={[PermissionResolverName.RejectSubsidyRequest]}>
+                      <DropdownMenuItem 
+                          onClick={() => handleStatusChangeRequest('REJECTED')}
+                          disabled={!canChangeStatus('rejected')}
+                      >
+                        <XCircle className="mr-2 h-4 w-4 text-red-500" />
+                        {t('charts.legend.rejected')}
+                      </DropdownMenuItem>
+                    </WithPermission>
 
                      <DropdownMenuItem 
                         onClick={() => handleStatusChangeRequest('CLOSED')}
