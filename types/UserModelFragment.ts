@@ -4,42 +4,31 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL query operation: User
+// GraphQL fragment: UserModelFragment
 // ====================================================
 
-export interface User_user_contact {
+export interface UserModelFragment_contact {
   __typename: "Contact";
   id: string;
   name: string | null;
   phone: string | null;
   mobile: string | null;
   email: string | null;
-  country: string | null;
-  city: string | null;
-  state: string | null;
-  address: string | null;
-  full_address: string | null;
-  postal_code: string | null;
-  website: string | null;
-  notes: string | null;
-  is_primary: boolean;
-  created_at: any;
-  updated_at: any;
 }
 
-export interface User_user_institution {
+export interface UserModelFragment_institution {
   __typename: "Institution";
   id: string;
   name: string;
 }
 
-export interface User_user_church {
+export interface UserModelFragment_church {
   __typename: "Church";
   id: string;
   name: string;
 }
 
-export interface User_user {
+export interface UserModelFragment {
   __typename: "UserModel";
   id: string;
   institution_id: string;
@@ -57,15 +46,7 @@ export interface User_user {
   is_deleted: boolean;
   deleted_at: any | null;
   deleted_by: string | null;
-  contact: User_user_contact | null;
-  institution: User_user_institution | null;
-  church: User_user_church | null;
-}
-
-export interface User {
-  user: User_user | null;
-}
-
-export interface UserVariables {
-  id: string;
+  contact: UserModelFragment_contact | null;
+  institution: UserModelFragment_institution | null;
+  church: UserModelFragment_church | null;
 }

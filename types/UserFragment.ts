@@ -3,20 +3,29 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { LanguagePreference, GenderType } from "./globalTypes";
+import { LanguagePreference } from "./globalTypes";
 
 // ====================================================
 // GraphQL fragment: UserFragment
 // ====================================================
 
-export interface UserFragment_church {
-  __typename: "Church";
+export interface UserFragment_contact {
+  __typename: "Contact";
   id: string;
-  name: string;
+  name: string | null;
+  phone: string | null;
+  mobile: string | null;
+  email: string | null;
 }
 
 export interface UserFragment_institution {
   __typename: "Institution";
+  id: string;
+  name: string;
+}
+
+export interface UserFragment_church {
+  __typename: "Church";
   id: string;
   name: string;
 }
@@ -41,7 +50,6 @@ export interface UserFragment {
   id: string;
   name: string;
   email: string;
-  password: string;
   language_preference: LanguagePreference;
   created_at: any;
   updated_at: any;
@@ -52,8 +60,8 @@ export interface UserFragment {
   deleted_by: string | null;
   contact_id: string | null;
   institution_id: string;
-  gender: GenderType | null;
-  church: UserFragment_church | null;
+  contact: UserFragment_contact | null;
   institution: UserFragment_institution;
+  church: UserFragment_church | null;
   user_roles: UserFragment_user_roles[] | null;
 }

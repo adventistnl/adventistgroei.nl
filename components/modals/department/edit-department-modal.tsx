@@ -57,6 +57,7 @@ import toast from "react-hot-toast"
 import { departmentTranslations } from "@/lib/translations/departments"
 import { CreateDepartment, CreateDepartmentVariables } from "@/types/CreateDepartment"
 import { useUpdateDepartmentMutation } from "@/hooks/graphql/use-departments"
+import { useGetAllUsersQuery } from "@/hooks/graphql/use-get-all-users-query"
 import { cn } from "@/lib/utils"
 import {
   InstitutionById_institution_departments as DepartmentData,
@@ -67,6 +68,7 @@ import {
 // Extended interface to include new field locally
 interface ExtendedDepartmentVariables extends CreateDepartmentVariables {
   is_institution_department: boolean
+  leader_id: string
 }
 
 export interface EditDepartmentModalProps {
@@ -89,6 +91,14 @@ export function EditDepartmentModal({
   const { t: tCommon, i18n } = useTranslation();
   const [updateDepartment] = useUpdateDepartmentMutation();
 
+  // Fetch users for leader selection
+  const { data: usersData, loading: usersLoading } = useGetAllUsersQuery({
+    variables: { institution_id: department?.institution_id || '' },
+    skip: !department?.institution_id
+  });
+  
+  const users = usersData?.users || [];
+
   // Get translations for current language
   const currentLanguage = i18n?.language || 'en'
   const t = departmentTranslations[currentLanguage as keyof typeof departmentTranslations] || departmentTranslations.en
@@ -106,7 +116,9 @@ export function EditDepartmentModal({
     email: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [openChurch, setOpenChurch] = useState(false);  const totalSteps = 2;
+  const [openChurch, setOpenChurch] = useState(false);
+  const [openLeader, setOpenLeader] = useState(false);
+  const totalSteps = 2;
 
   useEffect(() => {
     if (isOpen && department) {
@@ -119,6 +131,7 @@ export function EditDepartmentModal({
         name: department.name,
         description: department.description,
         is_institution_department: isInstitutional,
+        leader_id: department.leader_id || '',
         contactName: department.contact?.name || '',
         phone: department.contact?.phone || '',
         email: department.contact?.email || '',
@@ -162,6 +175,11 @@ export function EditDepartmentModal({
       // Validate church if it's not an institutional department
       if (!formData.is_institution_department && !formData.church) {
         newErrors.church = t.validation.church_required
+      }
+
+      // Validate leader (required for all departments)
+      if (!formData.leader_id) {
+        newErrors.leader_id = t.validation.leader_required
       }
     }
 
@@ -209,6 +227,7 @@ export function EditDepartmentModal({
           name: formData.name!.trim(),
           description: formData.description!.trim(),
           church: churchValue,
+          leader_id: formData.leader_id,
           contactName: formData.contactName || null,
           email: formData.email || null,
           phone: formData.phone || null
@@ -223,6 +242,7 @@ export function EditDepartmentModal({
         church: null,
         name: formData.name!.trim(),
         description: formData.description!.trim(),
+        leader_id: formData.leader_id,
         contact: updatedDepartmentData?.contact || department.contact,
         updated_at: new Date().toISOString(),
         updated_by: 'current_user'
@@ -255,6 +275,7 @@ export function EditDepartmentModal({
         name: department.name,
         description: department.description,
         is_institution_department: isInstitutional,
+        leader_id: department.leader_id || '',
         contactName: department.contact?.name || '',
         phone: department.contact?.phone || '',
         email: department.contact?.email || '',
@@ -373,6 +394,68 @@ export function EditDepartmentModal({
                   )}
                 </div>
               )}
+
+              {/* Leader Selection - REQUIRED for all departments */}
+              <div className="space-y-2">
+                <Label htmlFor="leader" className="flex items-center gap-2 text-sm">
+                  <User className="w-4 h-4 text-muted-foreground" />
+                  {t.fields.leader} *
+                </Label>
+                <Popover open={openLeader} onOpenChange={setOpenLeader}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openLeader}
+                      className={cn(
+                        "w-full h-10 justify-between font-normal",
+                        !formData.leader_id && "text-muted-foreground",
+                        errors.leader_id && "border-red-500"
+                      )}
+                      disabled={isLoading || usersLoading}
+                    >
+                      {formData.leader_id
+                        ? users.find((user: any) => user.id === formData.leader_id)?.name
+                        : t.placeholders.leader}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder={t.fields.search_leader} />
+                      <CommandList>
+                        <CommandEmpty>{t.fields.no_leader_found}</CommandEmpty>
+                        <CommandGroup>
+                          {users.map((user: any) => (
+                            <CommandItem
+                              key={user.id}
+                              value={user.name}
+                              onSelect={() => {
+                                handleInputChange('leader_id', user.id)
+                                setOpenLeader(false)
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.leader_id === user.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div className="flex flex-col">
+                                <span>{user.name}</span>
+                                <span className="text-xs text-muted-foreground">{user.email}</span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                {errors.leader_id && (
+                  <p className="text-sm text-red-600">{errors.leader_id}</p>
+                )}
+              </div>
             </div>
           </div>
         )

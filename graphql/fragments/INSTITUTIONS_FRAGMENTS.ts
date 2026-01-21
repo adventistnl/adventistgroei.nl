@@ -89,12 +89,47 @@ export const PROJECT_FRAGMENT = gql`
   }
 `;
 
+export const USER_MODEL_FRAGMENT = gql`
+  fragment UserModelFragment on UserModel {
+    id
+    institution_id
+    password
+    church_id
+    department_id
+    name
+    email
+    language_preference
+    contact_id
+    created_at
+    updated_at
+    created_by
+    updated_by
+    is_deleted
+    deleted_at
+    deleted_by
+    contact {
+      id
+      name
+      phone
+      mobile
+      email
+    }
+    institution {
+      id
+      name
+    }
+    church {
+      id
+      name
+    }
+  }
+`;
+
 export const USER_FRAGMENT = gql`
   fragment UserFragment on User {
     id
     name
     email
-    password
     language_preference
     created_at
     updated_at
@@ -105,12 +140,18 @@ export const USER_FRAGMENT = gql`
     deleted_by
     contact_id
     institution_id
-    gender
-    church {
+    contact {
+      id
+      name
+      phone
+      mobile
+      email
+    }
+    institution {
       id
       name
     }
-    institution {
+    church {
       id
       name
     }
@@ -189,6 +230,7 @@ export const DEPARTMENT_FRAGMENT = gql`
     name
     description
     contact_id
+    leader_id
     created_at
     updated_at
     created_by
@@ -222,6 +264,7 @@ export const CHURCH_FRAGMENT = gql`
     name
     region_id
     contact_id
+    leader_id
     created_at
     updated_at
     created_by
@@ -230,11 +273,13 @@ export const CHURCH_FRAGMENT = gql`
     deleted_at
     deleted_by
     type
+    leader {
+      id
+      name
+      email
+    }
     contact {
       ...ContactFragment
-    }
-    annual_budgets {
-      ...AnnualBudgetFragment
     }
     departments {
       ...DepartmentFragment
@@ -246,11 +291,22 @@ export const CHURCH_FRAGMENT = gql`
     users {
       ...UserFragment
     }
+    subsidy_requests {
+      ...SubsidyRequestFragment
+    }
+    annual_budgets {
+      ...AnnualBudgetFragment
+    }
+    projects {
+      ...ProjectFragment
+    }
   }
   ${DEPARTMENT_FRAGMENT}
-  ${USER_FRAGMENT}
-  ${ANNUAL_BUDGET_FRAGMENT}
   ${CONTACT_FRAGMENT}
+  ${USER_FRAGMENT}
+  ${SUBSIDY_REQUEST_FRAGMENT}
+  ${ANNUAL_BUDGET_FRAGMENT}
+  ${PROJECT_FRAGMENT}
 `;
 
 export const CHURCH_KPI_DATA_FRAGMENT = gql`
@@ -300,6 +356,34 @@ export const INSTITUTION_CHARTS_DATA_FRAGMENT = gql`
       fill
     }
   }
+`;
+
+export const INSTITUTION_FRAGMENT_LIGHT = gql`
+  fragment InstitutionFragmentLight on Institution {
+    id
+    name
+    denomination
+    description
+    language_preference
+    contact_id
+    created_at
+    updated_at
+    created_by
+    updated_by
+    is_deleted
+    deleted_at
+    deleted_by
+    churches_count
+    departments_count
+    users_count
+    total_budget
+    current_year_budget
+    has_budget_record
+    contact {
+      ...ContactFragment
+    }
+  }
+  ${CONTACT_FRAGMENT}
 `;
 
 export const INSTITUTION_FRAGMENT = gql`

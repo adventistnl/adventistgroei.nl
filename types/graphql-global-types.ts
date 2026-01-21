@@ -519,6 +519,8 @@ export type Church = {
   institution: Institution;
   institution_id: Scalars['String']['output'];
   is_deleted: Scalars['Boolean']['output'];
+  leader: User;
+  leader_id: Scalars['String']['output'];
   name: Scalars['String']['output'];
   projects?: Maybe<Array<Project>>;
   region?: Maybe<Region>;
@@ -570,6 +572,7 @@ export type ChurchCount = {
 export type ChurchCreateDto = {
   contact?: InputMaybe<ContactCreateDto>;
   institution_id: Scalars['String']['input'];
+  leader_id: Scalars['String']['input'];
   name: Scalars['String']['input'];
   type?: InputMaybe<ChurchType>;
 };
@@ -602,6 +605,7 @@ export type ChurchModel = {
   id: Scalars['String']['output'];
   institution_id: Scalars['String']['output'];
   is_deleted: Scalars['Boolean']['output'];
+  leader?: Maybe<UserModel>;
   name: Scalars['String']['output'];
   region_id?: Maybe<Scalars['String']['output']>;
   type?: Maybe<ChurchType>;
@@ -631,6 +635,8 @@ export type ChurchOrderByWithRelationInput = {
   institution?: InputMaybe<InstitutionOrderByWithRelationInput>;
   institution_id?: InputMaybe<SortOrder>;
   is_deleted?: InputMaybe<SortOrder>;
+  leader?: InputMaybe<UserOrderByWithRelationInput>;
+  leader_id?: InputMaybe<SortOrder>;
   name?: InputMaybe<SortOrder>;
   projects?: InputMaybe<ProjectOrderByRelationAggregateInput>;
   region?: InputMaybe<RegionOrderByWithRelationInput>;
@@ -652,6 +658,7 @@ export type ChurchUpdateDto = {
   contact?: InputMaybe<ContactCreateDto>;
   departmens?: InputMaybe<Array<Scalars['String']['input']>>;
   institution_id?: InputMaybe<Scalars['String']['input']>;
+  leader_id?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   subsidy_requests?: InputMaybe<Array<Scalars['String']['input']>>;
   type?: InputMaybe<ChurchType>;
@@ -674,6 +681,8 @@ export type ChurchWhereInput = {
   institution?: InputMaybe<InstitutionScalarRelationFilter>;
   institution_id?: InputMaybe<StringFilter>;
   is_deleted?: InputMaybe<BoolFilter>;
+  leader?: InputMaybe<UserScalarRelationFilter>;
+  leader_id?: InputMaybe<StringFilter>;
   name?: InputMaybe<StringFilter>;
   projects?: InputMaybe<ProjectListRelationFilter>;
   region?: InputMaybe<RegionNullableScalarRelationFilter>;
@@ -1059,6 +1068,8 @@ export type Department = {
   institution: Institution;
   institution_id: Scalars['String']['output'];
   is_deleted: Scalars['Boolean']['output'];
+  leader: User;
+  leader_id: Scalars['String']['output'];
   name: Scalars['String']['output'];
   projects?: Maybe<Array<Project>>;
   subsidy_requests?: Maybe<Array<SubsidyRequest>>;
@@ -1131,6 +1142,7 @@ export type DepartmentCreateDto = {
   contact?: InputMaybe<ContactCreateDto>;
   description: Scalars['String']['input'];
   institution: Scalars['String']['input'];
+  leader_id: Scalars['String']['input'];
   name: Scalars['String']['input'];
 };
 
@@ -1188,6 +1200,8 @@ export type DepartmentOrderByWithRelationInput = {
   institution?: InputMaybe<InstitutionOrderByWithRelationInput>;
   institution_id?: InputMaybe<SortOrder>;
   is_deleted?: InputMaybe<SortOrder>;
+  leader?: InputMaybe<UserOrderByWithRelationInput>;
+  leader_id?: InputMaybe<SortOrder>;
   name?: InputMaybe<SortOrder>;
   projects?: InputMaybe<ProjectOrderByRelationAggregateInput>;
   subsidy_requests?: InputMaybe<SubsidyRequestOrderByRelationAggregateInput>;
@@ -1218,6 +1232,7 @@ export type DepartmentUpdateDto = {
   contact?: InputMaybe<ContactCreateDto>;
   description?: InputMaybe<Scalars['String']['input']>;
   institution_id?: InputMaybe<Scalars['String']['input']>;
+  leader_id?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -1241,6 +1256,8 @@ export type DepartmentWhereInput = {
   institution?: InputMaybe<InstitutionScalarRelationFilter>;
   institution_id?: InputMaybe<StringFilter>;
   is_deleted?: InputMaybe<BoolFilter>;
+  leader?: InputMaybe<UserScalarRelationFilter>;
+  leader_id?: InputMaybe<StringFilter>;
   name?: InputMaybe<StringFilter>;
   projects?: InputMaybe<ProjectListRelationFilter>;
   subsidy_requests?: InputMaybe<SubsidyRequestListRelationFilter>;
@@ -2124,6 +2141,7 @@ export type Mutation = {
   updateSubsidyRequestMessage: SubsidyStatusHistory;
   updateSubsidyStatus: SubsidyStatus;
   updateUser: UserModel;
+  updateUserDepartment: UserModel;
   uploadActivityDocument: ActivityDocuments;
   uploadSubsidyReceipt: SubsidyReceipt;
   validateActivityDocument: ActivityDocuments;
@@ -2519,6 +2537,12 @@ export type MutationUpdateSubsidyStatusArgs = {
 export type MutationUpdateUserArgs = {
   data: UserUpdateDto;
   id: Scalars['String']['input'];
+};
+
+
+export type MutationUpdateUserDepartmentArgs = {
+  departmentId?: InputMaybe<Scalars['String']['input']>;
+  userId: Scalars['String']['input'];
 };
 
 
@@ -3035,6 +3059,7 @@ export enum PermissionResolverName {
   SubsidyStatuses = 'subsidyStatuses',
   ToggleBudgetLock = 'toggleBudgetLock',
   UpdateChurch = 'updateChurch',
+  UpdateChurchLeader = 'updateChurchLeader',
   UpdateCommunication = 'updateCommunication',
   UpdateDepartment = 'updateDepartment',
   UpdateDepartmentBudget = 'updateDepartmentBudget',
@@ -3051,6 +3076,7 @@ export enum PermissionResolverName {
   UpdateSubsidyRequest = 'updateSubsidyRequest',
   UpdateSubsidyStatus = 'updateSubsidyStatus',
   UpdateUser = 'updateUser',
+  UpdateUserDepartment = 'updateUserDepartment',
   UploadActivityDocument = 'uploadActivityDocument',
   UploadSubsidyReceipt = 'uploadSubsidyReceipt',
   User = 'user',
@@ -3095,6 +3121,7 @@ export type Project = {
   balance: Scalars['Decimal']['output'];
   budget: Scalars['Decimal']['output'];
   church?: Maybe<Church>;
+  churchDepartment?: Maybe<Department>;
   church_department?: Maybe<Department>;
   church_department_id?: Maybe<Scalars['String']['output']>;
   church_id?: Maybe<Scalars['String']['output']>;
@@ -4829,6 +4856,8 @@ export type User = {
   institution_id: Scalars['String']['output'];
   is_deleted: Scalars['Boolean']['output'];
   language_preference: LanguagePreference;
+  led_church?: Maybe<Church>;
+  led_departments?: Maybe<Array<Department>>;
   name: Scalars['String']['output'];
   notifications?: Maybe<Array<Notification>>;
   password: Scalars['String']['output'];
@@ -4852,6 +4881,7 @@ export type UserCount = {
   direct_messages: Scalars['Int']['output'];
   event_recipients: Scalars['Int']['output'];
   event_registrations: Scalars['Int']['output'];
+  led_departments: Scalars['Int']['output'];
   notifications: Scalars['Int']['output'];
   project_activity_logs: Scalars['Int']['output'];
   subsidy_status_history: Scalars['Int']['output'];
@@ -4940,6 +4970,8 @@ export type UserOrderByWithRelationInput = {
   institution_id?: InputMaybe<SortOrder>;
   is_deleted?: InputMaybe<SortOrder>;
   language_preference?: InputMaybe<SortOrder>;
+  led_church?: InputMaybe<ChurchOrderByWithRelationInput>;
+  led_departments?: InputMaybe<DepartmentOrderByRelationAggregateInput>;
   name?: InputMaybe<SortOrder>;
   notifications?: InputMaybe<NotificationOrderByRelationAggregateInput>;
   password?: InputMaybe<SortOrder>;
@@ -5046,6 +5078,8 @@ export type UserWhereInput = {
   institution_id?: InputMaybe<StringFilter>;
   is_deleted?: InputMaybe<BoolFilter>;
   language_preference?: InputMaybe<EnumLanguagePreferenceFilter>;
+  led_church?: InputMaybe<ChurchNullableScalarRelationFilter>;
+  led_departments?: InputMaybe<DepartmentListRelationFilter>;
   name?: InputMaybe<StringFilter>;
   notifications?: InputMaybe<NotificationListRelationFilter>;
   password?: InputMaybe<StringFilter>;

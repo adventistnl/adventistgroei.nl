@@ -58,51 +58,15 @@ import toast from "react-hot-toast"
 import { departmentTranslations } from "@/lib/translations/departments"
 import { CreateDepartment, CreateDepartmentVariables } from "@/types/CreateDepartment"
 import { useDepartments } from "@/hooks/use-departments"
+import { useGetAllUsersQuery } from "@/hooks/graphql/use-get-all-users-query"
 import { cn } from "@/lib/utils"
 
 // Extended interface to include new field locally
 interface ExtendedDepartmentVariables extends CreateDepartmentVariables {
   responsibleUsers?: string[]
+  leader_id: string
 }
 
-// Mock user data for selection
-const MOCK_USERS = [
-  {
-    id: '1',
-    name: 'Daniel Marques',
-    email: 'daniel@example.com',
-    avatar: 'https://i.pravatar.cc/150?img=1',
-    role: 'Administrator',
-  },
-  {
-    id: '2',
-    name: 'Sarah Johnson',
-    email: 'sarah@example.com',
-    avatar: 'https://i.pravatar.cc/150?img=2',
-    role: 'Department Head',
-  },
-  {
-    id: '3',
-    name: 'Michael Chen',
-    email: 'michael@example.com',
-    avatar: 'https://i.pravatar.cc/150?img=3',
-    role: 'Coordinator',
-  },
-  {
-    id: '4',
-    name: 'Emma Williams',
-    email: 'emma@example.com',
-    avatar: 'https://i.pravatar.cc/150?img=4',
-    role: 'Team Lead',
-  },
-  {
-    id: '5',
-    name: 'James Brown',
-    email: 'james@example.com',
-    avatar: 'https://i.pravatar.cc/150?img=5',
-    role: 'Manager',
-  },
-]
 
 export interface DepartmentData {
   id: string
@@ -171,6 +135,14 @@ export function AddDepartmentModal({
   const { t: tCommon, i18n } = useTranslation();
   const { createDepartment} = useDepartments()
 
+  // Fetch users for leader selection
+  const { data: usersData, loading: usersLoading } = useGetAllUsersQuery({
+    variables: { institution_id: institutionId },
+    skip: !institutionId
+  })
+  
+  const users = usersData?.users || []
+
   // Get translations for current language
   const currentLanguage = i18n?.language || 'en'
   const t = departmentTranslations[currentLanguage as keyof typeof departmentTranslations] || departmentTranslations.en
@@ -182,6 +154,7 @@ export function AddDepartmentModal({
     church: '',
     name: '',
     description: '',
+    leader_id: '',
     contactName: '',
     phone: '',
     email: '',
@@ -189,6 +162,7 @@ export function AddDepartmentModal({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [openChurch, setOpenChurch] = useState(false);
+  const [openLeader, setOpenLeader] = useState(false);
   const [openUserSelect, setOpenUserSelect] = useState(false);
 
   // Steps: 1. Basic Info, 2. Contact (optional), 3. Review (both types have same steps)
@@ -201,6 +175,7 @@ export function AddDepartmentModal({
         church: '',
         name: '',
         description: '',
+        leader_id: '',
         contactName: '',
         phone: '',
         email: '',
@@ -246,6 +221,11 @@ export function AddDepartmentModal({
       if (departmentType === 'church' && !formData.church) {
         newErrors.church = t.validation.church_required
       }
+
+      // Validate leader (required for all departments)
+      if (!formData.leader_id) {
+        newErrors.leader_id = t.validation.leader_required
+      }
     }
 
     // Step 2 (contact) is optional - no validation
@@ -261,6 +241,9 @@ export function AddDepartmentModal({
       }
       if (departmentType === 'church' && !formData.church) {
         newErrors.church = t.validation.church_required
+      }
+      if (!formData.leader_id) {
+        newErrors.leader_id = t.validation.leader_required
       }
     }
 
@@ -293,11 +276,19 @@ export function AddDepartmentModal({
     const loadingToast = toast.loading(t.toasts.creating)
 
     try {
-      // Prepare payload
+      // Prepare payload - explicitly include only the required fields
       const finalPayload: CreateDepartmentVariables = {
-        ...formData,
-        church: departmentType === 'institutional' ? '' : formData.church
+        name: formData.name,
+        description: formData.description,
+        institution: formData.institution,
+        leader_id: formData.leader_id,
+        church: departmentType === 'institutional' ? '' : formData.church,
+        contactName: formData.contactName,
+        email: formData.email,
+        phone: formData.phone
       }
+
+      console.log('🚀 [Create Department] Payload:', finalPayload)
 
       const res = await createDepartment({ variables: finalPayload })
       toast.dismiss(loadingToast)
@@ -327,6 +318,7 @@ export function AddDepartmentModal({
       church: '',
       name: '',
       description: '',
+      leader_id: '',
       contactName: '',
       phone: '',
       email: '',
@@ -349,9 +341,6 @@ export function AddDepartmentModal({
     handleInputChange('responsibleUsers', currentUsers.filter(id => id !== userId))
   }
 
-  const selectedUsers = MOCK_USERS.filter(user => 
-    formData.responsibleUsers?.includes(user.id)
-  )
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -458,6 +447,67 @@ export function AddDepartmentModal({
                   )}
                 </div>
               )}
+
+              {/* Leader selection - REQUIRED for all departments */}
+              <div className="space-y-2">
+                <Label htmlFor="leader" className="text-sm font-medium">
+                  {t.fields.leader} *
+                </Label>
+                <Popover open={openLeader} onOpenChange={setOpenLeader}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openLeader}
+                      className={cn(
+                        "w-full justify-between font-normal",
+                        !formData.leader_id && "text-muted-foreground",
+                        errors.leader_id && "border-red-500"
+                      )}
+                      disabled={isLoading || usersLoading}
+                    >
+                      {formData.leader_id
+                        ? users.find((user: any) => user.id === formData.leader_id)?.name
+                        : t.placeholders.leader}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder={t.fields.search_leader} />
+                      <CommandList>
+                        <CommandEmpty>{t.fields.no_leader_found}</CommandEmpty>
+                        <CommandGroup>
+                          {users.map((user: any) => (
+                            <CommandItem
+                              key={user.id}
+                              value={user.name}
+                              onSelect={() => {
+                                handleInputChange('leader_id', user.id)
+                                setOpenLeader(false)
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.leader_id === user.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div className="flex flex-col">
+                                <span>{user.name}</span>
+                                <span className="text-xs text-muted-foreground">{user.email}</span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                {errors.leader_id && (
+                  <p className="text-xs text-red-600">{errors.leader_id}</p>
+                )}
+              </div>
             </div>
           </div>
         )
@@ -543,6 +593,10 @@ export function AddDepartmentModal({
                       <span className="text-sm font-medium">{churches.find(c => c.id === formData.church)?.name || '-'}</span>
                     </div>
                   )}
+                  <div className="flex justify-between py-2 border-b border-border/50">
+                    <span className="text-sm text-muted-foreground">{t.labels.leader}</span>
+                    <span className="text-sm font-medium">{users.find((u: any) => u.id === formData.leader_id)?.name || '-'}</span>
+                  </div>
                   <div className="flex justify-between py-2 border-b border-border/50">
                     <span className="text-sm text-muted-foreground">{t.labels.type}</span>
                     <Badge variant="outline" className="text-xs">

@@ -107,10 +107,32 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
   
   if (!institutions || !currentInstitutionData) {
     return (
-      <LoadingSpinner 
-        icon={Building2}
-        size="sm"
-      />
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <div className="institution-switcher flex items-center gap-2 p-2">
+            {/* Loading Spinner */}
+            <div className="institution-logo text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg bg-muted animate-pulse shrink-0r">
+              <LoadingSpinner 
+                icon={Building2}
+                size="sm"
+              />
+            </div>
+            
+
+            {/* Institution Info Skeleton */}
+            <div className="institution-select flex-1 min-w-0">
+              <div className="space-y-2">
+                {/* Title Skeleton */}
+                <div className="h-4 bg-muted rounded animate-pulse w-32"></div>
+                {/* Description Skeleton */}
+                <div className="h-3 bg-muted rounded animate-pulse w-24"></div>
+              </div>
+            </div>
+
+
+          </div>
+        </SidebarMenuItem>
+      </SidebarMenu>
     );
   }
 
@@ -213,3 +235,4 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
     </SidebarMenu>
   )
 })
+

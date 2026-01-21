@@ -39,7 +39,7 @@ export function LoginSplash({ onComplete }: LoginSplashProps) {
       fullScreen
       isExiting={isExiting}
       onExitComplete={onComplete}
-      className="space-y-8 max-w-md mx-auto px-8"
+      className="space-y-8 mx-auto px-8"
     />
   )
 }

@@ -5,6 +5,7 @@ export const CREATE_DEPARTMENT_MUTATION = gql`
     $name: String!,
     $description: String!,
     $institution: String!,
+    $leader_id: String!,
     $church: String,
     $contactName: String,
     $email: String,
@@ -15,6 +16,7 @@ export const CREATE_DEPARTMENT_MUTATION = gql`
         name: $name,
         description: $description,
         institution: $institution,
+        leader_id: $leader_id,
         church: $church,
         contact: {
           name: $contactName,
@@ -33,6 +35,7 @@ export const UPDATE_DEPARTMENT_MUTATION = gql`
     $id: String!,
     $name: String!,
     $description: String!,
+    $leader_id: String!,
     $church: String,
     $contactName: String,
     $email: String,
@@ -43,6 +46,7 @@ export const UPDATE_DEPARTMENT_MUTATION = gql`
       data: {
         name: $name,
         description: $description,
+        leader_id: $leader_id,
         church_id: $church,
         contact: {
           name: $contactName,
@@ -55,6 +59,7 @@ export const UPDATE_DEPARTMENT_MUTATION = gql`
       name
       description
       church_id
+      leader_id
       contact {
         id
         name
