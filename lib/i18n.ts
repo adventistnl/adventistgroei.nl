@@ -14,7 +14,6 @@ const resources = {
       ...projectTranslations.en,
       ...projectDetailsTranslations.en,
       dynamicFields: dynamicFieldsTranslations.en,
-      institutions: institutionTranslations.en,
       dashboard: {
         title: "General Dashboard",
         subtitle: "Overview of key system metrics",
@@ -338,7 +337,16 @@ const resources = {
         month: "month",
         months: "months",
         all: "All",
-        none: "None"
+        none: "None",
+        in: "in",
+        year_progress: "Year Progress",
+        days: "days",
+        filters: "Filters",
+        filters_cleared: "Filters cleared",
+        deactivate: "Deactivate",
+        all_languages: "All Languages",
+        select_status: "Select Status",
+        add_year: "Add Year"
       },
       kanban: {
         dropItemHere: "Drop item here",
@@ -376,10 +384,14 @@ const resources = {
         duplicateProject: "Duplicate Project"
       },
       institutions: {
+        ...institutionTranslations.en,
         title: "Institutions",
         subtitle: "Manage institutions and their relationships",
         overview: "Overview",
         all_institutions: "All Institutions",
+        breadcrumb: {
+          see_all: "See All Institutions"
+        },
         page_header: {
           title: "Institution Overview",
           subtitle: "Complete management interface for institutional structure",
@@ -400,6 +412,7 @@ const resources = {
           delete_institution: "Delete Institution"
         },
         analytics: {
+          ...institutionTranslations.en.analytics,
           title: "Institution Analytics"
         },
         table_card: {
@@ -421,7 +434,11 @@ const resources = {
           total_budget: "Total Budget",
           annual_budget: "Annual Budget",
           pending_subsidies: "Pending Subsidies",
-          budget_utilization: "Budget Utilization"
+          budget_utilization: "Budget Utilization",
+          institution_departments: "Institution Departments",
+          church_departments: "Church Departments",
+          institution_level: "Institution level",
+          church_level: "Church level"
         },
         charts: {
           churches_by_region: "Churches by Region",
@@ -1144,7 +1161,12 @@ const resources = {
           users_by_region: "Users by Region",
           users_by_region_description: "Regional user distribution",
           users_by_department: "Users by Department",
-          users_by_department_description: "Department user allocation"
+          users_by_department_description: "Department user allocation",
+          usersRegisteredOverTime: "Users Registered Over Time",
+          userRegistrationTrend: "User registration trend by institution",
+          showing: "Showing",
+          registered: "registered",
+          noUserData: "No user data available"
         },
         table: {
           title: "All Users",
@@ -1971,6 +1993,20 @@ const resources = {
           }
         }
       },
+      charts: {
+        last7Days: "Last 7 days",
+        last30Days: "Last 30 days",
+        last3Months: "Last 3 months",
+        last6Months: "Last 6 months",
+        last12Months: "Last 12 months",
+        selectTimeRange: "Select time range",
+        top: "Top"
+      },
+      contacts: {
+        toasts: {
+          updated: "Contact updated successfully"
+        }
+      },
       subsidy: subsidyManagementTranslations.en,
       projectRegister: projectRegisterTranslations.en
     }
@@ -1980,7 +2016,6 @@ const resources = {
       ...projectTranslations.nl,
       ...projectDetailsTranslations.nl,
       dynamicFields: dynamicFieldsTranslations.nl,
-      institutions: institutionTranslations.nl,
       dashboard: {
         title: "Algemeen Dashboard",
         subtitle: "Overzicht van belangrijke systeemstatistieken",
@@ -2304,7 +2339,16 @@ const resources = {
         month: "maand",
         months: "maanden",
         all: "Alle",
-        none: "Geen"
+        none: "Geen",
+        in: "in",
+        year_progress: "Jaarvoortgang",
+        days: "dagen",
+        filters: "Filters",
+        filters_cleared: "Filters gewist",
+        deactivate: "Deactiveren",
+        all_languages: "Alle Talen",
+        select_status: "Selecteer Status",
+        add_year: "Jaar Toevoegen"
       },
       kanban: {
         dropItemHere: "Item hier neerzetten",
@@ -2334,10 +2378,14 @@ const resources = {
         create_institution: "Instelling Maken"
       },
       institutions: {
+        ...institutionTranslations.nl,
         title: "Instellingen",
         subtitle: "Beheer instellingen en hun relaties",
         overview: "Overzicht",
         all_institutions: "Alle Instellingen",
+        breadcrumb: {
+          see_all: "Alle Instellingen Bekijken"
+        },
         page_header: {
           title: "Instellingoverzicht",
           subtitle: "Volledige beheerinterface voor institutionele structuur",
@@ -2358,6 +2406,7 @@ const resources = {
           delete_institution: "Instelling Verwijderen"
         },
         analytics: {
+          ...institutionTranslations.nl.analytics,
           title: "Instellingsanalyses"
         },
         table_card: {
@@ -2379,7 +2428,11 @@ const resources = {
           total_budget: "Totaal Budget",
           annual_budget: "Jaarlijks Budget",
           pending_subsidies: "Wachtende Subsidies",
-          budget_utilization: "Budgetbenutting"
+          budget_utilization: "Budgetbenutting",
+          institution_departments: "Instellingsafdelingen",
+          church_departments: "Kerkafdelingen",
+          institution_level: "Instellingsniveau",
+          church_level: "Kerkniveau"
         },
         charts: {
           churches_by_region: "Kerken per Regio",
@@ -3102,7 +3155,12 @@ const resources = {
           users_by_region: "Gebruikers per Regio",
           users_by_region_description: "Regionale gebruikersverdeling",
           users_by_department: "Gebruikers per Afdeling",
-          users_by_department_description: "Afdelingsgebruikerstoewijzing"
+          users_by_department_description: "Afdelingsgebruikerstoewijzing",
+          usersRegisteredOverTime: "Geregistreerde Gebruikers in de Tijd",
+          userRegistrationTrend: "Registratietrend per instelling",
+          showing: "Weergave",
+          registered: "geregistreerd",
+          noUserData: "Geen gebruikersgegevens beschikbaar"
         },
         table: {
           title: "Alle Gebruikers",
@@ -3752,6 +3810,20 @@ const resources = {
               delete_failed: "Verwijderen van begroting mislukt"
             }
           }
+        }
+      },
+      charts: {
+        last7Days: "Laatste 7 dagen",
+        last30Days: "Laatste 30 dagen",
+        last3Months: "Laatste 3 maanden",
+        last6Months: "Laatste 6 maanden",
+        last12Months: "Laatste 12 maanden",
+        selectTimeRange: "Selecteer tijdsbereik",
+        top: "Top"
+      },
+      contacts: {
+        toasts: {
+          updated: "Contact succesvol bijgewerkt"
         }
       },
       subsidy: subsidyManagementTranslations.nl,
