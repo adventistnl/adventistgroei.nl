@@ -10,19 +10,19 @@ import { ChurchType } from "./globalTypes";
 // ====================================================
 
 export interface CreateChurch_createChurch_leader {
-  __typename: "UserModel";
+  __typename: "User";
   id: string;
   name: string;
   email: string;
 }
 
 export interface CreateChurch_createChurch {
-  __typename: "ChurchModel";
+  __typename: "Church";
   id: string;
   name: string;
   institution_id: string;
   region_id: string | null;
-  type: ChurchType | null;
+  type: ChurchType;
   created_at: any;
   leader: CreateChurch_createChurch_leader | null;
 }

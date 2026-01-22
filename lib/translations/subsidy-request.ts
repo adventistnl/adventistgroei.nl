@@ -67,7 +67,7 @@ export const subsidyRequestTranslations = {
       totalBudget: "Total Activity Budget:",
       requestContribution: "Request Contribution:",
       selfFunded: "Remainder for Church:",
-      churchRemainder: "Church Remainder",
+      selfRemainder: "Self Remainder",
       
       // Limit info
       limitTitle: "Limit for this activity:",
@@ -79,7 +79,7 @@ export const subsidyRequestTranslations = {
       percentOfTotal: "{{percent}}% of total budget",
       totalBudgetLabel: "Total Budget",
       selfFundedLabel: "Remainder (Self-funded)",
-      churchRemainderLabel: "Church Remainder"
+      selfRemainderLabel: "Self Remainder"
     },
     
     // Activity notes
@@ -173,7 +173,7 @@ export const subsidyRequestTranslations = {
     toasts: {
       filesAdded: "{{count}} file(s) added",
       documentRemoved: "Document removed",
-      activitiesAdded: "{{count}} activity(ies) added",
+      activitiesAdded: "{{count}} activityies added",
       budgetExceeded: "The requested amount ({{requested}}) exceeds the available budget ({{available}})",
       documentAmountMismatch: "{{activity}}: Requested amount ({{requested}}) must equal the total of documents ({{total}})",
       documentsNeedAmount: "{{activity}}: All documents must have an amount filled in",
@@ -190,7 +190,7 @@ export const subsidyRequestTranslations = {
       notInformed: "Not informed",
       loading: "Loading...",
       noChurchRegistered: "No church registered",
-      activitiesAvailable: "{{count}} subsidized activity(ies) available",
+      activitiesAvailable: "{{count}} subsidized activityies available",
       noActivitiesAvailable: "No subsidized activities available",
       pendingValue: "Pending value",
       completed: "Completed",
@@ -290,7 +290,7 @@ export const subsidyRequestTranslations = {
       // Calculated values
       totalBudget: "Orçamento Total da Atividade:",
       requestContribution: "Contribuição da Instituição:",
-      selfFunded: "Restante para a Igreja:",      churchRemainder: "Restante da Igreja",      
+      selfFunded: "Restante para a Igreja:",      selfRemainder: "Restante da Igreja",      
       // Limit info
       limitTitle: "Limite para esta atividade:",
       limitMaxAllowed: "Máximo permitido:",
@@ -301,7 +301,7 @@ export const subsidyRequestTranslations = {
       percentOfTotal: "{{percent}}% do orçamento total",
       totalBudgetLabel: "Orçamento Total",
       selfFundedLabel: "Restante (Igreja)",
-      churchRemainderLabel: "Restante da Igreja"
+      selfRemainderLabel: "Restante da Igreja"
     },
     
     // Activity notes
@@ -512,7 +512,7 @@ export const subsidyRequestTranslations = {
       totalBudget: "Totaal Activiteitenbudget:",
       requestContribution: "Bijdrage Instelling:",
       selfFunded: "Restant voor Kerk:",
-      churchRemainder: "Restant Kerk",
+      selfRemainder: "Restant Kerk",
       
       // Limit info
       limitTitle: "Limiet voor deze activiteit:",
@@ -524,7 +524,7 @@ export const subsidyRequestTranslations = {
       percentOfTotal: "{{percent}}% van totaal budget",
       totalBudgetLabel: "Totaal Budget",
       selfFundedLabel: "Restant (Kerk)",
-      churchRemainderLabel: "Restant Kerk"
+      selfRemainderLabel: "Restant Kerk"
     },
     
     // Activity notes

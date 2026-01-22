@@ -63,6 +63,7 @@ export const subsidyApprovalsTranslations = {
     
     // Status labels
     status: {
+      changeStatus: "Change Status",
       pending: "Pending",
       in_review: "In Review",
       approved: "Approved",
@@ -182,6 +183,190 @@ export const subsidyApprovalsTranslations = {
     }
   },
   
+  pt: {
+    // Page title
+    pageTitle: "Aprovações de Subsídios",
+    pageDescription: "Revise e aprove solicitações de subsídios de igrejas e instituições",
+    
+    // Toasts
+    toasts: {
+      loadingError: "Erro ao carregar solicitações de subsídio",
+      refreshing: "Atualizando dados...",
+      refreshSuccess: "Dados atualizados com sucesso",
+      refreshError: "Erro ao atualizar dados",
+      approveSuccess: "Subsídio aprovado com sucesso",
+      approveError: "Erro ao aprovar: {{message}}",
+      rejectSuccess: "Subsídio rejeitado",
+      rejectError: "Erro ao rejeitar: {{message}}",
+      statusUpdateSuccess: "Status atualizado com sucesso",
+      statusUpdateError: "Erro ao atualizar status: {{message}}",
+      statusNotFound: "Status \"{{status}}\" não encontrado",
+      invalidStatus: "Status inválido",
+      inReviewNotFound: "Status \"Em Revisão\" não encontrado",
+      statusClosed: "Status Fechado não pode ser alterado",
+      inReviewToClosed: "Não é possível fechar solicitações Em Revisão",
+      mustBeFinal: "Deve estar Aprovado ou Rejeitado para Fechar",
+      finalState: "Só pode mudar para Fechado",
+      documentsPending: "Todos os documentos devem ser validados primeiro",
+      documentsRejected: "Não é possível aprovar subsídio com documentos rejeitados"
+    },
+    
+    // Default values
+    defaults: {
+      untitledRequest: "Solicitação sem título",
+      rejectionReason: "Rejeitado pelo administrador",
+      otherDepartment: "Outro"
+    },
+    
+    // KPI Cards
+    kpis: {
+      totalRequests: {
+        title: "Total de Solicitações",
+        subtitle: "Todas as solicitações de subsídio"
+      },
+      pendingReview: {
+        title: "Pendente de Revisão",
+        subtitle: "Aguardando aprovação"
+      },
+      totalRequested: {
+        title: "Total Solicitado",
+        subtitle: "Soma de todas as solicitações"
+      },
+      totalApproved: {
+        title: "Total Aprovado",
+        subtitle: "Valor aprovado"
+      },
+      approvalRate: {
+        title: "Taxa de Aprovação",
+        subtitle: "Solicitações aprovadas"
+      },
+      trend: {
+        vsLastMonth: "vs. mês passado"
+      }
+    },
+    
+    // Status labels
+    status: {
+      changeStatus: "Alterar Status",
+      pending: "Pendente",
+      in_review: "Em Revisão",
+      approved: "Aprovado",
+      closed: "Fechado",
+      rejected: "Rejeitado"
+    },
+    
+    // Priority labels
+    priority: {
+      low: "Baixa",
+      medium: "Média",
+      high: "Alta"
+    },
+    
+    // Table columns
+    table: {
+      requestTitle: "Título da Solicitação",
+      requested: "Solicitado",
+      activities: "Atividades",
+      priority: "Prioridade",
+      status: "Status",
+      date: "Data",
+      actions: "Ações"
+    },
+    
+    // Actions
+    actions: {
+      manageSubsidy: "Gerenciar Subsídio",
+      approve: "Aprovar",
+      reject: "Rejeitar",
+      viewToggle: {
+        table: "Tabela",
+        kanban: "Kanban"
+      }
+    },
+    
+    // Kanban
+    kanban: {
+      groups: {
+        pending: "Pendente",
+        in_review: "Em Revisão",
+        approved: "Aprovado",
+        closed: "Fechado",
+        rejected: "Rejeitado"
+      }
+    },
+    
+    // Status Rules (tooltips)
+    statusRules: {
+      pending: "Status inicial. Também usado quando há itens pendentes, como necessidade de enviar um novo recibo. Pode transitar para Em Revisão, Aprovado ou Rejeitado, mas nunca diretamente para Fechado.",
+      in_review: "Documento em revisão. Indica que a solicitação está sendo revisada. Pode retornar para Pendente ou avançar para Aprovado ou Rejeitado, mas nunca diretamente para Fechado.",
+      approved: "Subsídio foi aprovado e está liberado para pagamento. Esta é uma ação irreversível e só pode transitar para Fechado. Atualizações no subsídio ou arquivos ainda são possíveis.",
+      rejected: "Subsídio foi rejeitado e não será subsidiado por algum motivo. Esta é uma ação irreversível e só pode transitar para Fechado. Atualizações no subsídio ou arquivos ainda são possíveis.",
+      closed: "Status final, indicando que todas as ações necessárias para o subsídio foram concluídas. A partir daqui, nenhuma atualização ou ação de exclusão pode ser realizada no subsídio ou arquivos."
+    },
+    
+    // Card Header
+    card: {
+      title: "Solicitações de Subsídio",
+      description: "Gerencie e revise todas as solicitações de subsídio"
+    },
+    
+    // Charts
+    charts: {
+      byDepartment: {
+        title: "Solicitações ao Longo do Tempo por Departamento",
+        description: "Solicitações mensais de subsídio por todos os departamentos",
+        descriptionWithYear: "Solicitações mensais de subsídio por todos os departamentos - {{year}}",
+        noData: "Nenhum dado de departamento disponível",
+        departmentsTracked: "{{count}} departamentos rastreados",
+        top: "Top",
+        chartTypes: {
+          area: "Área",
+          bar: "Barra"
+        }
+      },
+      overTime: {
+        title: "Solicitações ao Longo do Tempo",
+        description: "Status mensal de solicitações de subsídio - {{year}}",
+        quarterFilters: {
+          all: "Todos",
+          q1: "T1",
+          q2: "T2",
+          q3: "T3",
+          q4: "T4"
+        },
+        footer: {
+          approvalRate: "Taxa de aprovação",
+          totalRequests: "Total de solicitações",
+          approved: "aprovado",
+          pending: "pendente",
+          rejected: "rejeitado",
+          in_review: "em revisão"
+        },
+        statusLabels: {
+          approved: "Aprovado",
+          pending: "Pendente",
+          rejected: "Rejeitado"
+        }
+      },
+      statusOverview: {
+        title: "Visão Geral de Status",
+        description: "Distribuição de solicitações por status atual",
+        allDescription: "Mostrando todas as distribuições de status",
+        selectStatus: "Selecionar status",
+        selectLabel: "Selecione um status",
+        requests: "Solicitações",
+        total: "Total",
+        statusLabels: {
+          pending: "Pendente",
+          in_review: "Em Revisão",
+          approved: "Aprovado",
+          rejected: "Rejeitado",
+          closed: "Fechado"
+        }
+      }
+    }
+  },
+  
   nl: {
     // Page title
     pageTitle: "Subsidie Goedkeuringen",
@@ -246,6 +431,7 @@ export const subsidyApprovalsTranslations = {
     
     // Status labels
     status: {
+      changeStatus: "Status Wijzigen",
       pending: "In Behandeling",
       in_review: "In Beoordeling",
       approved: "Goedgekeurd",

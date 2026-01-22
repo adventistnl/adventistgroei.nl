@@ -23,6 +23,9 @@ import toast from "react-hot-toast"
 import { useInstitution } from "@/contexts/institution-context"
 import type { ProjectActivityData } from "@/components/projects/project-activities-table"
 import { SelectActivitiesModal } from "./select-activities-modal"
+import { WithPermission } from "@/hocs/with-permission"
+import { useHasPermission } from "@/hooks/use-has-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 // Funding policies
 const FUNDING_POLICIES = {
@@ -120,6 +123,14 @@ export function RequestSubsidyModal({
   const { t, i18n } = useTranslation()
   const [dragActive, setDragActive] = useState(false)
   
+  // Permission checks
+  const canUpdate = useHasPermission([PermissionResolverName.UpdateSubsidyRequest])
+  const canDelete = useHasPermission([PermissionResolverName.DeleteSubsidyRequest])
+  const canCreate = useHasPermission([PermissionResolverName.CreateSubsidyRequest])
+  
+  // Determine if user can save based on mode
+  const canSave = mode === "edit" ? canUpdate : canCreate
+  
   // Usar useInstitution para obter dados da instituição (mesmo processo do project-data-step)
   const { currentInstitutionData } = useInstitution()
   
@@ -187,7 +198,8 @@ export function RequestSubsidyModal({
         finalChurchDepartmentName,
         selectedActivitiesCount: selectedActivities.length,
         subsidyRequestId,
-        availableBudget
+        availableBudget,
+        activityBudgets: selectedActivities.map(a => ({ id: a.id, name: a.name, budget: a.budget_amount }))
       })
     }
   }, [isOpen, mode, projectId, institutionId, institutionName, departmentId, departmentName, churchId, churchName, churchDepartmentId, churchDepartmentName, finalChurchDepartmentName, selectedActivities.length, subsidyRequestId, availableBudget])
@@ -348,14 +360,30 @@ export function RequestSubsidyModal({
     const hasValidDocumentAmounts = item.activity_documents.length > 0 
       ? item.activity_documents.every(doc => doc.amount && doc.amount > 0)
       : false
+    
+    // Documents must match or exceed request, but NOT exceed (with 0.01 tolerance)
     const documentsMatchOrExceedRequest = hasDocuments && docTotal >= item.requested_amount
+    const documentsDoNotExceedRequest = hasDocuments && docTotal <= item.requested_amount + 0.01
+    const documentsMatchRequest = documentsMatchOrExceedRequest && documentsDoNotExceedRequest
+    
+    console.log('🔍 [validateActivity] Validation check:', {
+      activityName: item.activity_name,
+      requestedAmount: item.requested_amount,
+      docTotal,
+      documentsMatchOrExceedRequest,
+      documentsDoNotExceedRequest,
+      documentsMatchRequest,
+      isComplete: hasRequestedAmount && hasDocuments && hasValidDocumentAmounts && documentsMatchRequest
+    })
     
     return {
       hasRequestedAmount,
       hasDocuments,
       hasValidDocumentAmounts,
       documentsMatchOrExceedRequest,
-      isComplete: hasRequestedAmount && hasDocuments && hasValidDocumentAmounts && documentsMatchOrExceedRequest,
+      documentsDoNotExceedRequest,
+      documentsMatchRequest,
+      isComplete: hasRequestedAmount && hasDocuments && hasValidDocumentAmounts && documentsMatchRequest,
       docTotal
     }
   }, [])
@@ -390,8 +418,12 @@ export function RequestSubsidyModal({
         id: "total-valid",
         label: translations.validationBadges.totalDocs,
         value: formatCurrency(validation.docTotal),
-        isValid: validation.documentsMatchOrExceedRequest,
-        variant: validation.documentsMatchOrExceedRequest ? "success" : (validation.hasDocuments ? "warning" : "neutral")
+        isValid: validation.documentsMatchRequest,
+        variant: validation.documentsMatchRequest 
+          ? "success" 
+          : (validation.documentsMatchOrExceedRequest && !validation.documentsDoNotExceedRequest) 
+            ? "error" 
+            : (validation.hasDocuments ? "warning" : "neutral")
       }
     ]
   }, [validateActivity, formatCurrency])
@@ -923,26 +955,28 @@ export function RequestSubsidyModal({
               })}
               
               {/* Add Activity Card - Minimalist */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => setIsAddActivityModalOpen(true)}
-                      className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg border-2 border-dashed border-gray-300 bg-white hover:border-gray-400 hover:bg-gray-50 transition-all flex items-center justify-center"
-                    >
-                      <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-xs">
-                      {availableActivities.length > 0 
-                        ? translations.status.activitiesAvailable.replace('{{count}}', availableActivities.length.toString())
-                        : translations.status.noActivitiesAvailable
-                      }
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <WithPermission requiredPermissions={[mode === "edit" ? PermissionResolverName.UpdateSubsidyRequest : PermissionResolverName.CreateSubsidyRequest]}>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => setIsAddActivityModalOpen(true)}
+                        className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg border-2 border-dashed border-gray-300 bg-white hover:border-gray-400 hover:bg-gray-50 transition-all flex items-center justify-center"
+                      >
+                        <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">
+                        {availableActivities.length > 0 
+                          ? translations.status.activitiesAvailable.replace('{{count}}', availableActivities.length.toString())
+                          : translations.status.noActivitiesAvailable
+                        }
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </WithPermission>
             </div>
           </div>
 
@@ -977,46 +1011,50 @@ export function RequestSubsidyModal({
                   </TooltipProvider>
                 </div>
                 {isEditingValues ? (
-                  <div className="flex gap-2">
+                  <WithPermission requiredPermissions={[mode === "edit" ? PermissionResolverName.UpdateSubsidyRequest : PermissionResolverName.CreateSubsidyRequest]}>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setIsEditingValues(false)
+                          setTempRequestedAmount(0)
+                        }}
+                        className="h-7 text-xs"
+                      >
+                        <X className="w-3 h-3 mr-1" />
+                        {translations.budget.cancelButton}
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => {
+                          handleItemChange('requested_amount', tempRequestedAmount)
+                          setIsEditingValues(false)
+                          toast.success(translations.budget.saveButton)
+                        }}
+                        className="h-7 text-xs bg-gray-900 hover:bg-gray-800"
+                      >
+                        <Check className="w-3 h-3 mr-1" />
+                        {translations.budget.saveButton}
+                      </Button>
+                    </div>
+                  </WithPermission>
+                ) : (
+                  <WithPermission requiredPermissions={[mode === "edit" ? PermissionResolverName.UpdateSubsidyRequest : PermissionResolverName.CreateSubsidyRequest]}>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        setIsEditingValues(false)
-                        setTempRequestedAmount(0)
+                        setTempRequestedAmount(currentItem.requested_amount)
+                        setIsEditingValues(true)
                       }}
                       className="h-7 text-xs"
                     >
-                      <X className="w-3 h-3 mr-1" />
-                      {translations.budget.cancelButton}
+                      <Edit2 className="w-3 h-3 mr-1" />
+                      {translations.budget.editButton}
                     </Button>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => {
-                        handleItemChange('requested_amount', tempRequestedAmount)
-                        setIsEditingValues(false)
-                        toast.success(translations.budget.saveButton)
-                      }}
-                      className="h-7 text-xs bg-gray-900 hover:bg-gray-800"
-                    >
-                      <Check className="w-3 h-3 mr-1" />
-                      {translations.budget.saveButton}
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setTempRequestedAmount(currentItem.requested_amount)
-                      setIsEditingValues(true)
-                    }}
-                    className="h-7 text-xs"
-                  >
-                    <Edit2 className="w-3 h-3 mr-1" />
-                    {translations.budget.editButton}
-                  </Button>
+                  </WithPermission>
                 )}
               </div>
 
@@ -1048,11 +1086,18 @@ export function RequestSubsidyModal({
                         value={tempRequestedAmount}
                         onChange={(e) => {
                           const value = Number(e.target.value) || 0
-                          // New logic: Limit by available project budget (dynamic based on other items)
-                          // value must be <= availableBudget - (currentTotal - currentItemAmount)
-                          const otherItemsTotal = totalRequestedAmount - currentItem.requested_amount
-                          // availableBudget already includes the current subsidy amount in edit mode (added in container)
-                          const maxAllowed = Math.max(0, availableBudget - otherItemsTotal)
+                          
+                          // Maximum is the available budget (project subsidized budget - already requested)
+                          const maxAllowed = availableBudget
+                          
+                          console.log('🎯 [RequestContribution] Input change:', {
+                            value,
+                            maxAllowed,
+                            availableBudget,
+                            activityBudget: currentItem.budget_amount,
+                            activityName: currentItem.activity_name,
+                            willBeBlocked: value > maxAllowed
+                          })
                           
                           if (value <= maxAllowed + 0.01 && value >= 0) {
                             setTempRequestedAmount(value)
@@ -1062,7 +1107,7 @@ export function RequestSubsidyModal({
                         }}
                         className="h-9 text-sm font-medium flex-1"
                         min={0}
-                        max={Math.max(0, availableBudget - (totalRequestedAmount - currentItem.requested_amount))}
+                        max={availableBudget}
                         placeholder={translations.budget.placeholder}
                       />
                       <TooltipProvider>
@@ -1072,9 +1117,17 @@ export function RequestSubsidyModal({
                               variant="outline"
                               size="sm"
                               onClick={() => {
-                          const otherItemsTotal = totalRequestedAmount - currentItem.requested_amount
-                          // availableBudget already includes the current subsidy amount in edit mode (added in container)
-                          const maxAllowed = Math.max(0, availableBudget - otherItemsTotal)
+                          // Use available budget as maximum (project subsidized budget limit)
+                          const maxAllowed = availableBudget
+                          
+                          console.log('⚡ [MAX Button] Setting max value:', {
+                            maxAllowed,
+                            availableBudget,
+                            activityBudget: currentItem.budget_amount,
+                            activityName: currentItem.activity_name,
+                            currentRequested: currentItem.requested_amount,
+                            source: 'availableBudget (project subsidized budget limit)'
+                          })
                           
                           setTempRequestedAmount(maxAllowed)
                           toast.success(translations.toasts.maxValueSet
@@ -1111,7 +1164,7 @@ export function RequestSubsidyModal({
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-1">
                         <Church className="w-3 h-3 text-gray-500" />
-                        <span className="text-gray-600">{translations.budget.churchRemainder}</span>
+                        <span className="text-gray-600">{translations.budget.selfRemainder}</span>
                       </div>
                       <span className="font-semibold text-gray-900">
                         {formatCurrency(Math.max(0, currentItem.budget_amount - tempRequestedAmount))}
@@ -1121,9 +1174,16 @@ export function RequestSubsidyModal({
 
                   {/* Info box with limit */}
                   {(() => {
-                    const otherItemsTotal = totalRequestedAmount - currentItem.requested_amount
-                    // availableBudget already includes the current subsidy amount in edit mode (added in container)
-                    const maxAllowed = Math.max(0, availableBudget - otherItemsTotal)
+                    // Use available budget as maximum (project subsidized budget limit)
+                    const maxAllowed = availableBudget
+                    
+                    console.log('ℹ️ [Info Box] Available budget limit:', {
+                      maxAllowed,
+                      availableBudget,
+                      activityBudget: currentItem.budget_amount,
+                      formatted: formatCurrency(maxAllowed)
+                    })
+                    
                     return (
                       <div className="flex items-start gap-2 text-xs text-gray-500 bg-white p-2 rounded border border-gray-200">
                         <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
@@ -1180,7 +1240,7 @@ export function RequestSubsidyModal({
                     <div className="p-3 rounded-lg border border-gray-200 bg-gray-50">
                       <div className="flex items-center gap-1 mb-1">
                         <Church className="w-3 h-3 text-gray-500" />
-                        <span className="text-xs text-gray-600">{translations.budget.churchRemainderLabel}</span>
+                        <span className="text-xs text-gray-600">{translations.budget.selfRemainderLabel}</span>
                       </div>
                       <p className="text-sm font-semibold text-gray-900">
                         {formatCurrency(Math.max(0, currentItem.budget_amount - currentItem.requested_amount))}
@@ -1251,27 +1311,29 @@ export function RequestSubsidyModal({
               <p className="text-sm text-gray-600 mb-1">
                 {uploadingReceipt ? translations.status.uploadingFile : translations.documents.dropZone.dragText}
               </p>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={uploadingReceipt}
-                onClick={() => {
-                  const input = document.createElement('input')
-                  input.type = 'file'
-                  input.multiple = true
-                  input.accept = '.pdf,.jpg,.jpeg,.png,.doc,.docx'
-                  input.onchange = (e: any) => handleFileUpload(e.target.files)
-                  input.click()
-                }}
-                className="text-xs h-7 mt-2"
-              >
-                {uploadingReceipt ? (
-                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                ) : (
-                  <Upload className="w-3 h-3 mr-1" />
-                )}
-                {uploadingReceipt ? translations.status.uploading : translations.documents.dropZone.selectButton}
-              </Button>
+              <WithPermission requiredPermissions={[mode === "edit" ? PermissionResolverName.UpdateSubsidyRequest : PermissionResolverName.CreateSubsidyRequest]}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={uploadingReceipt}
+                  onClick={() => {
+                    const input = document.createElement('input')
+                    input.type = 'file'
+                    input.multiple = true
+                    input.accept = '.pdf,.jpg,.jpeg,.png,.doc,.docx'
+                    input.onchange = (e: any) => handleFileUpload(e.target.files)
+                    input.click()
+                  }}
+                  className="text-xs h-7 mt-2"
+                >
+                  {uploadingReceipt ? (
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  ) : (
+                    <Upload className="w-3 h-3 mr-1" />
+                  )}
+                  {uploadingReceipt ? translations.status.uploading : translations.documents.dropZone.selectButton}
+                </Button>
+              </WithPermission>
               <p className="text-xs text-gray-500 mt-2">{translations.documents.dropZone.acceptedFormats}</p>
             </div>
 
@@ -1322,14 +1384,16 @@ export function RequestSubsidyModal({
                             </Badge>
                           )}
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveDocument(doc.id)}
-                          className="h-7 w-7 p-0 text-gray-400 hover:text-red-600"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                        <WithPermission requiredPermissions={[mode === "edit" ? PermissionResolverName.UpdateSubsidyRequest : PermissionResolverName.CreateSubsidyRequest]}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveDocument(doc.id)}
+                            className="h-7 w-7 p-0 text-gray-400 hover:text-red-600"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </WithPermission>
                       </div>
 
                       {/* Document Details - Collapsible */}
@@ -1508,6 +1572,47 @@ export function RequestSubsidyModal({
                 </p>
               </div>
             )}
+            
+            {/* Error if documents exceed requested amount */}
+            {(() => {
+              const validation = validateActivity(currentItem)
+              const docTotal = validation.docTotal
+              const exceeds = docTotal > currentItem.requested_amount + 0.01
+              
+              if (exceeds) {
+                const exceedMessage = i18n.language === 'en' 
+                  ? 'Document values exceed requested amount'
+                  : i18n.language === 'nl'
+                    ? 'Documentwaarden overschrijden aangevraagd bedrag'
+                    : 'Valor dos documentos excede o solicitado'
+                
+                const totalLabel = i18n.language === 'en' 
+                  ? 'Total documents'
+                  : i18n.language === 'nl'
+                    ? 'Totaal documenten'
+                    : 'Total dos documentos'
+                
+                const requestedLabel = i18n.language === 'en' 
+                  ? 'Requested'
+                  : i18n.language === 'nl'
+                    ? 'Aangevraagd'
+                    : 'Solicitado'
+                
+                return (
+                  <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                    <div className="text-xs text-red-800">
+                      <p className="font-semibold mb-1">{exceedMessage}</p>
+                      <p>
+                        {totalLabel}: <span className="font-semibold">{formatCurrency(docTotal)}</span> | 
+                        {requestedLabel}: <span className="font-semibold">{formatCurrency(currentItem.requested_amount)}</span>
+                      </p>
+                    </div>
+                  </div>
+                )
+              }
+              return null
+            })()}
           </div>
 
           {/* General Notes */}
@@ -1599,25 +1704,44 @@ export function RequestSubsidyModal({
                 >
                   {translations.buttons.cancel}
                 </Button>
-                <Button
-                  onClick={handleSubmit}
-                  size="sm"
-                  disabled={!validateAllActivities.allComplete || isSubmitting}
-                  className="h-8 sm:h-9 px-3 sm:px-4 flex-1 sm:flex-none text-xs sm:text-sm bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 animate-spin" />
-                  ) : (
-                    <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                  )}
-                  <span className="truncate">
-                    {isSubmitting
-                      ? translations.status.uploadingFiles
-                      : mode === "edit"
-                        ? translations.status.savingChanges
-                        : translations.buttons.submit}
-                  </span>
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex-1 sm:flex-none">
+                        <Button
+                          onClick={handleSubmit}
+                          size="sm"
+                          disabled={!validateAllActivities.allComplete || isSubmitting || !canSave}
+                          className="h-8 sm:h-9 px-3 sm:px-4 w-full text-xs sm:text-sm bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-50"
+                        >
+                          {isSubmitting ? (
+                            <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 animate-spin" />
+                          ) : (
+                            <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                          )}
+                          <span className="truncate">
+                            {isSubmitting
+                              ? translations.status.uploadingFiles
+                              : mode === "edit"
+                                ? translations.status.savingChanges
+                                : translations.buttons.submit}
+                          </span>
+                        </Button>
+                      </div>
+                    </TooltipTrigger>
+                    {!canSave && (
+                      <TooltipContent>
+                        <p className="text-xs max-w-[200px]">
+                          {i18n.language === 'pt'
+                            ? `Você não tem permissão para ${mode === 'edit' ? 'atualizar' : 'criar'} solicitações de subsídio. Entre em contato com o administrador para solicitar acesso.`
+                            : i18n.language === 'nl'
+                            ? `U heeft geen toestemming om subsidieaanvragen ${mode === 'edit' ? 'bij te werken' : 'aan te maken'}. Neem contact op met de beheerder om toegang aan te vragen.`
+                            : `You do not have permission to ${mode === 'edit' ? 'update' : 'create'} subsidy requests. Contact the administrator to request access.`}
+                        </p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
           </div>

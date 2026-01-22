@@ -267,7 +267,6 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
       });
       toast.success(tAccess.toasts.permissions_updated, {
         duration: 4000,
-        icon: '🎉'
       });
       setHasUnsavedChanges(false);
     } catch (error) {

@@ -107,14 +107,14 @@ export const projectFieldsTranslations = {
       exportSelection: "Export Selection",
       
       // Confirmation messages
-      confirmStatusChange: "Confirm status change for {{count}} activity(ies)?",
-      confirmPriorityChange: "Confirm priority change for {{count}} activity(ies)?",
-      confirmSubsidyChange: "Confirm subsidy status change for {{count}} activity(ies)?",
+      confirmStatusChange: "Confirm status change for {{count}} activityies?",
+      confirmPriorityChange: "Confirm priority change for {{count}} activityies?",
+      confirmSubsidyChange: "Confirm subsidy status change for {{count}} activityies?",
       
       // Success messages  
-      statusUpdateSuccess: "Status updated for {{count}} activity(ies)",
-      priorityUpdateSuccess: "Priority updated for {{count}} activity(ies)",
-      subsidyUpdateSuccess: "Subsidy status updated for {{count}} activity(ies)"
+      statusUpdateSuccess: "Status updated for {{count}} activityies",
+      priorityUpdateSuccess: "Priority updated for {{count}} activityies",
+      subsidyUpdateSuccess: "Subsidy status updated for {{count}} activityies"
     },
     
     // Field tooltips specific to project context

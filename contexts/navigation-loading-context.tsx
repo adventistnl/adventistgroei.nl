@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname, useSearchParams } from "next/navigation"
-import React, { createContext, useContext, useState, useEffect } from "react"
+import React, { createContext, useContext, useState, useEffect, Suspense } from "react"
 import { LoadingState } from "@/components/registration/registration-states"
 
 interface NavigationLoadingContextType {
@@ -17,11 +17,31 @@ interface NavigationLoadingProviderProps {
   children: React.ReactNode
 }
 
-export function NavigationLoadingProvider({ children }: NavigationLoadingProviderProps) {
-  const [isNavigating, setIsNavigating] = useState(false)
-  const [navigationMessage, setNavigationMessage] = useState("Redirecting...")
+// Internal component that uses useSearchParams - needs to be wrapped in Suspense
+function NavigationLoadingProviderInner({ 
+  children, 
+  isNavigating,
+  navigationMessage, 
+  setIsNavigating 
+}: { 
+  children: React.ReactNode
+  isNavigating: boolean
+  navigationMessage: string
+  setIsNavigating: (value: boolean) => void
+}) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
+
+  const hideNavigationLoading = () => {
+    // 1. Direct DOM manipulation
+    const overlay = document.getElementById('navigation-loading-container')
+    if (overlay) {
+      overlay.style.display = 'none'
+    }
+
+    // 2. React state update
+    setIsNavigating(false)
+  }
 
   // Auto-hide when route changes
   useEffect(() => {
@@ -40,6 +60,28 @@ export function NavigationLoadingProvider({ children }: NavigationLoadingProvide
       if (timer) clearTimeout(timer)
     }
   }, [isNavigating])
+
+  return (
+    <>
+      {children}
+      {/* 
+        Render always but hidden by default using display: none.
+        We use direct DOM manipulation to toggle display for zero-latency feedback.
+      */}
+      <div 
+        id="navigation-loading-container" 
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm"
+        style={{ display: 'none' }}
+      >
+        <LoadingState message={navigationMessage} className="bg-transparent min-h-0" />
+      </div>
+    </>
+  )
+}
+
+export function NavigationLoadingProvider({ children }: NavigationLoadingProviderProps) {
+  const [isNavigating, setIsNavigating] = useState(false)
+  const [navigationMessage, setNavigationMessage] = useState("Redirecting...")
 
   const showNavigationLoading = (message: string = "Redirecting...") => {
     // 1. Direct DOM manipulation for instant feedback (bypassing React render cycle)
@@ -75,18 +117,15 @@ export function NavigationLoadingProvider({ children }: NavigationLoadingProvide
 
   return (
     <NavigationLoadingContext.Provider value={value}>
-      {children}
-      {/* 
-        Render always but hidden by default using display: none.
-        We use direct DOM manipulation to toggle display for zero-latency feedback.
-      */}
-      <div 
-        id="navigation-loading-container" 
-        className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm"
-        style={{ display: 'none' }}
-      >
-        <LoadingState message={navigationMessage} className="bg-transparent min-h-0" />
-      </div>
+      <Suspense fallback={children}>
+        <NavigationLoadingProviderInner 
+          isNavigating={isNavigating}
+          navigationMessage={navigationMessage}
+          setIsNavigating={setIsNavigating}
+        >
+          {children}
+        </NavigationLoadingProviderInner>
+      </Suspense>
     </NavigationLoadingContext.Provider>
   )
 }

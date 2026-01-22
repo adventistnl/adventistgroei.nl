@@ -1,7 +1,6 @@
 "use client"
 
 import { ChevronRight, type LucideIcon } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useNavigateWithLoading } from "@/hooks/use-navigation-loading"
 import { useTranslation } from "react-i18next"
 import { structureTranslations } from "@/lib/translations/structure"
@@ -83,7 +82,6 @@ const NavMainItem = React.memo(function NavMainItem({
   item: NavItem
 }) {
   const { state, setOpen } = useSidebar()
-  const router = useRouter()
   const { navigateWithLoading } = useNavigateWithLoading()
   const { i18n } = useTranslation()
   const t = structureTranslations[i18n.language as keyof typeof structureTranslations] || structureTranslations.en
@@ -111,7 +109,8 @@ const NavMainItem = React.memo(function NavMainItem({
     navigateWithLoading(url, {
       message: t.navigationMessages.opening.replace('{{title}}', itemTitle)
     })
-  }, [navigateWithLoading, router, t])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigateWithLoading, t])
 
   if (!item.items || item.items.length === 0) {
     return (

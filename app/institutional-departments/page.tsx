@@ -3,8 +3,10 @@
 import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
-import { useQuery } from "@apollo/client"
+import { useQuery, useMutation } from "@apollo/client"
 import { GET_INSTITUTIONAL_DEPARTMENTS_KPIS } from "@/graphql/queries/ANNUAL_BUDGET_QUERIES"
+import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
+import { UPDATE_USER } from "@/graphql/mutations/USER_MUTATIONS"
 import {
   GetInstitutionalDepartmentsKPIs,
   GetInstitutionalDepartmentsKPIsVariables
@@ -77,6 +79,15 @@ import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
 import { WithPermission } from "@/hocs/with-permission"
 import { DepartmentActivityChart } from "@/components/institutions/charts/department-activity-chart"
+import { InstitutionalDepartmentProjectOverTimeChart } from "@/components/institutions/charts/institutional-department-project-over-time-chart"
+import { GridContainer } from "@/components/shared/grid-container"
+import { DepartmentLeaderInfoCard } from "@/components/modals/department/department-leader-info-card"
+import { DepartmentProjectsCard } from "@/components/modals/department/department-projects-card"
+import { DepartmentLeadersCard } from "@/components/modals/department/department-leaders-card"
+import { PrivacyWrapper, InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
+import { createPrivacyConfig } from "@/config/privacy-roles.config"
+import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
+import { GlobalPrivacyToggle } from "@/components/shared/global-privacy-toggle"
 
 
 /**
@@ -86,13 +97,59 @@ import { DepartmentActivityChart } from "@/components/institutions/charts/depart
 export default function DepartmentsPage() {
   const { currentInstitutionData, refetchInstitutionById } = useInstitution();
   const { formatCurrency } = useCurrency();
-  // Filtrar apenas departamentos INSTITUCIONAIS (sem church_id)
-  const allDepartments = currentInstitutionData?.departments || [];
-  const departments: DepartmentData[] = allDepartments.filter(dept => !dept.church_id);
-  const churches: ChurchData[] = currentInstitutionData?.churches || [];
   const { t, i18n } = useTranslation()
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const [availableYears, setAvailableYears] = useState<number[]>(() => {
+    const currentYear = new Date().getFullYear()
+    return [currentYear, currentYear - 1, currentYear - 2].sort((a, b) => b - a)
+  })
+  const [pageFilters, setPageFilters] = useState<Record<string, any>>({
+    status: "true", // Default: active departments only
+    budget_status: "" // Default: all
+  })
+  const [userFilters, setUserFilters] = useState<Record<string, any>>({
+    status: "true", // Default: active users only
+    roles: [], // Default: all roles
+    language: "" // Default: all languages
+  })
+  
+  // Filtrar apenas departamentos INSTITUCIONAIS (sem church_id)
+  const allDepartments = currentInstitutionData?.departments || [];
+  const unfilteredDepartments: DepartmentData[] = allDepartments.filter(dept => {
+    // Filtrar por tipo (institucional)
+    if (dept.church_id) return false;
+    
+    // Filtrar por ano baseado no created_at
+    const createdDate = new Date(dept.created_at);
+    return createdDate.getFullYear() === selectedYear;
+  });
+  
+  // Aplicar filtros de página
+  const departments: DepartmentData[] = useMemo(() => {
+    return unfilteredDepartments.filter(dept => {
+      // Filter by status
+      if (pageFilters.status !== undefined && pageFilters.status !== "") {
+        const isActive = !dept.is_deleted;
+        if (pageFilters.status === "true" && !isActive) return false;
+        if (pageFilters.status === "false" && isActive) return false;
+      }
+      
+      // Filter by budget status
+      if (pageFilters.budget_status !== undefined && pageFilters.budget_status !== "") {
+        const yearBudget = dept.annual_budgets?.find(
+          (budget: any) => budget.year === selectedYear
+        );
+        const hasBudget = yearBudget && Number(yearBudget.planned_budget) > 0;
+        if (pageFilters.budget_status === "true" && !hasBudget) return false;
+        if (pageFilters.budget_status === "false" && hasBudget) return false;
+      }
+      
+      return true;
+    });
+  }, [unfilteredDepartments, pageFilters, selectedYear]);
+  const churches: ChurchData[] = currentInstitutionData?.churches || [];
 
   // Debug: verificar se annual_budgets está chegando
   useEffect(() => {
@@ -117,7 +174,99 @@ export default function DepartmentsPage() {
   const [isViewContactModalOpen, setIsViewContactModalOpen] = useState(false)
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentData | null>(null)
   const [selectedContact, setSelectedContact] = useState<ContactData | null>(null)
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+
+  // Page Filters Configuration
+  const filterConfigs: FilterConfig[] = useMemo(() => [
+    {
+      id: "status",
+      label: tDept.common?.status || "Status",
+      type: "select",
+      placeholder: tDept.common?.select_status || "Select status",
+      options: [
+        { label: tDept.common?.all || "All", value: "" },
+        { label: tDept.common?.active || "Active", value: "true" },
+        { label: tDept.common?.inactive || "Inactive", value: "false" }
+      ],
+      defaultValue: "true"
+    },
+    {
+      id: "budget_status",
+      label: tDept.institutions?.table?.budget_status || "Budget Status",
+      type: "select",
+      placeholder: tDept.common?.select_budget_status || "Select budget status",
+      options: [
+        { label: tDept.common?.all || "All", value: "" },
+        { label: tDept.annual_budget?.table?.budget_status_labels?.completed || "With Budget", value: "true" },
+        { label: tDept.annual_budget?.table?.budget_status_labels?.missing || "No Budget", value: "false" }
+      ],
+      defaultValue: ""
+    }
+  ], [tDept])
+
+  // User Filters Configuration (Detail View)
+  const userFilterConfigs: FilterConfig[] = useMemo(() => [
+    {
+      id: "status",
+      label: tDept.common?.status || "Status",
+      type: "select",
+      placeholder: tDept.common?.select_status || "Select status",
+      options: [
+        { label: tDept.common?.all || "All", value: "" },
+        { label: tDept.users?.table?.active || "Active", value: "true" },
+        { label: tDept.users?.table?.inactive || "Inactive", value: "false" }
+      ],
+      defaultValue: "true"
+    },
+    {
+      id: "language",
+      label: tDept.users?.table?.language || "Language",
+      type: "select",
+      placeholder: tDept.common?.select_language || "Select language",
+      options: [
+        { label: tDept.common?.all || "All", value: "" },
+        { label: "English", value: "en" },
+        { label: "Nederlands", value: "nl" },
+        { label: "Português", value: "pt" }
+      ],
+      defaultValue: ""
+    },
+    {
+      id: "roles",
+      label: tDept.users?.table?.roles || "Roles",
+      type: "multi-select",
+      placeholder: tDept.common?.select_roles || "Select roles",
+      options: [
+        // Get unique roles from all users
+        ...Array.from(new Set(
+          (selectedDepartmentDetail?.users || [])
+            .flatMap(u => u.user_roles?.map(r => r.role.name) || [])
+        )).map(role => ({
+          label: role,
+          value: role
+        }))
+      ],
+      defaultValue: []
+    }
+  ], [tDept, selectedDepartmentDetail])
+
+  // Privacy configurations for financial data (table columns + KPI cards)
+  const PRIVACY_CONFIGS = useMemo(() => ({
+    // Table columns
+    financial: createPrivacyConfig('institutional-dept-financial-data', 'FINANCIAL_DATA'),
+    // KPI Cards - List View
+    total_departments: createPrivacyConfig('institutional-dept-kpi-total-departments', 'PUBLIC_DATA'),
+    plannedBudgetKPI: createPrivacyConfig('institutional-dept-kpi-planned-budget', 'FINANCIAL_DATA'),
+    allocatedBudgetKPI: createPrivacyConfig('institutional-dept-kpi-allocated-budget', 'FINANCIAL_DATA'),
+    spentBudgetKPI: createPrivacyConfig('institutional-dept-kpi-spent-budget', 'FINANCIAL_DATA'),
+    availableBudgetKPI: createPrivacyConfig('institutional-dept-kpi-available-budget', 'FINANCIAL_DATA'),
+    budgetUtilizationKPI: createPrivacyConfig('institutional-dept-kpi-budget-utilization', 'FINANCIAL_DATA'),
+    // KPI Cards - Detail View
+    detailBudgetTotalKPI: createPrivacyConfig('institutional-dept-detail-kpi-budget-total', 'FINANCIAL_DATA'),
+    detailSpentAmountKPI: createPrivacyConfig('institutional-dept-detail-kpi-spent-amount', 'FINANCIAL_DATA'),
+    members: createPrivacyConfig('institutional-dept-detail-kpi-members', 'PUBLIC_DATA'),
+    // Department Projects Card Footer
+    projectsFooterFinancial: createPrivacyConfig('institutional-dept-projects-footer-financial', 'FINANCIAL_DATA'),
+  }), [])
 
   // Buscar KPIs dos departamentos institucionais do backend
   const { data: kpisData, loading: kpisLoading, refetch: refetchKPIs } = useQuery<
@@ -130,6 +279,24 @@ export default function DepartmentsPage() {
     },
     skip: !currentInstitutionData?.id
   });
+
+  // Buscar todos os projetos para o gráfico
+  const { data: projectsData, loading: projectsLoading } = useQuery(GET_PROJECTS_QUERY, {
+    variables: { institutionId: currentInstitutionData?.id },
+    skip: !currentInstitutionData?.id
+  })
+
+  // Filtrar projetos pelo ano selecionado baseado no created_at
+  const allProjects = useMemo(() => {
+    const projects = projectsData?.projects || []
+    return projects.filter((project: any) => {
+      const createdDate = new Date(project.created_at)
+      return createdDate.getFullYear() === selectedYear
+    })
+  }, [projectsData, selectedYear])
+
+  // Mutation para atualizar usuário (usado no ContactViewEditModal)
+  const [updateUserMutation] = useMutation(UPDATE_USER)
 
   const pageTitle = useMemo(() => (
     <span className="flex items-center gap-2">
@@ -188,7 +355,9 @@ export default function DepartmentsPage() {
         value: 0,
         isPositive: true,
         label: tDept.common?.trend?.vs_previous_month || "vs. previous month"
-      }
+      },
+            privacyConfig: PRIVACY_CONFIGS.total_departments,
+      headerAction: <InlinePrivacyToggle config={PRIVACY_CONFIGS.total_departments}  className="w-6 h-6 flex-shrink-0"/>
     },
     {
       id: "planned_budget",
@@ -200,7 +369,9 @@ export default function DepartmentsPage() {
         value: 0,
         isPositive: true,
         label: tDept.common?.trend?.vs_previous_year || "vs. previous year"
-      }
+      },
+      privacyConfig: PRIVACY_CONFIGS.plannedBudgetKPI,
+      headerAction: <InlinePrivacyToggle config={PRIVACY_CONFIGS.plannedBudgetKPI}  className="w-6 h-6 flex-shrink-0"/>
     },
     {
       id: "allocated_budget",
@@ -212,7 +383,9 @@ export default function DepartmentsPage() {
         value: 0,
         isPositive: true,
         label: tDept.common?.trend?.vs_previous_year || "vs. previous year"
-      }
+      },
+      privacyConfig: PRIVACY_CONFIGS.allocatedBudgetKPI,
+      headerAction: <InlinePrivacyToggle config={PRIVACY_CONFIGS.allocatedBudgetKPI}  className="w-6 h-6 flex-shrink-0" />
     },
     {
       id: "spent_budget",
@@ -224,7 +397,9 @@ export default function DepartmentsPage() {
         value: 0,
         isPositive: true,
         label: tDept.common?.trend?.vs_previous_month || "vs. previous month"
-      }
+      },
+      privacyConfig: PRIVACY_CONFIGS.spentBudgetKPI,
+      headerAction: <InlinePrivacyToggle config={PRIVACY_CONFIGS.spentBudgetKPI} className="w-6 h-6 flex-shrink-0" />
     },
     {
       id: "available_budget",
@@ -236,7 +411,9 @@ export default function DepartmentsPage() {
         value: 0,
         isPositive: kpiData.totalAvailableBudget >= 0,
         label: tDept.common?.trend?.budget_status || "budget status"
-      }
+      },
+      privacyConfig: PRIVACY_CONFIGS.availableBudgetKPI,
+      headerAction: <InlinePrivacyToggle config={PRIVACY_CONFIGS.availableBudgetKPI}  className="w-6 h-6 flex-shrink-0"/>
     },
     {
       id: "avg_utilization",
@@ -248,7 +425,9 @@ export default function DepartmentsPage() {
         value: 0,
         isPositive: kpiData.avgUtilization < 90,
         label: tDept.common?.trend?.efficiency || "efficiency"
-      }
+      }      ,
+      privacyConfig: PRIVACY_CONFIGS.budgetUtilizationKPI,
+      headerAction: <InlinePrivacyToggle config={PRIVACY_CONFIGS.plannedBudgetKPI}  className="w-6 h-6 flex-shrink-0"/>
     }
   ], [kpiData, tDept, selectedYear]);
 
@@ -318,6 +497,55 @@ export default function DepartmentsPage() {
     }
   }
 
+  const handleFilterChange = (filterId: string, value: any) => {
+    setPageFilters(prev => ({
+      ...prev,
+      [filterId]: value
+    }));
+  };
+
+  const handleClearFilters = () => {
+    setPageFilters({
+      status: "true", // Reset to default active
+      budget_status: ""
+    });
+  };
+
+  const handleUserFilterChange = (filterId: string, value: any) => {
+    setUserFilters(prev => ({
+      ...prev,
+      [filterId]: value
+    }));
+  };
+
+  const handleClearUserFilters = () => {
+    setUserFilters({
+      status: "true", // Reset to default active
+      roles: [],
+      language: ""
+    });
+  };
+
+  const handleAddYear = () => {
+    const currentYear = new Date().getFullYear()
+    const maxAllowedYear = currentYear + 2
+    const nextYear = Math.max(...availableYears) + 1
+
+    if (nextYear > maxAllowedYear) {
+      toast.error(tDept.common?.year_filter?.cannot_add_beyond?.replace('{{year}}', maxAllowedYear.toString()) || `Cannot add years beyond ${maxAllowedYear}`)
+      return
+    }
+
+    if (availableYears.includes(nextYear)) {
+      toast.error(tDept.common?.year_filter?.year_exists?.replace('{{year}}', nextYear.toString()) || `Year ${nextYear} already exists`)
+      return
+    }
+
+    setAvailableYears(prev => [...prev, nextYear].sort((a, b) => b - a))
+    setSelectedYear(nextYear)
+    toast.success(tDept.common?.year_filter?.year_added?.replace('{{year}}', nextYear.toString()) || `Year ${nextYear} added`)
+  }
+
   const handleCreate = () => {
     setIsAddDepartmentModalOpen(true)
   }
@@ -356,25 +584,26 @@ export default function DepartmentsPage() {
   };
   
   const handleViewContact = (id: string) => {
-    const department = departments.find(d => d.id === id);
-    if (department && (department as any).contact) {
-      const contact = (department as any).contact;
+    // Buscar usuário do departamento selecionado
+    const user = selectedDepartmentDetail?.users?.find(u => u.id === id);
+    if (user) {
+      // Criar ContactData a partir das informações do usuário
       const contactData: ContactData = {
-        id: `contact_${department.id}`,
-        name: contact.name,
-        phone: contact.phone,
+        id: user.contact_id || `contact_${user.id}`,
+        name: user.name,
+        phone: user.phone || null,
         mobile: null,
-        email: contact.email,
+        email: user.email,
         country: null,
-        city: contact.city,
-        address: null,
+        city: null,
+        address: user.address || null,
         full_address: null,
         postal_code: null,
         website: null,
         notes: null,
         is_primary: true,
-        created_at: department.created_at,
-        updated_at: department.created_at,
+        created_at: user.created_at || new Date().toISOString(),
+        updated_at: user.updated_at || new Date().toISOString(),
         created_by: 'system',
         updated_by: 'system',
         is_deleted: false
@@ -401,6 +630,59 @@ export default function DepartmentsPage() {
 
   if (!currentInstitutionData) return <NotFound />
   
+  // Year Filter Component
+  const YearFilter = ({ showAddButton = true }: { showAddButton?: boolean }) => {
+    const currentYear = new Date().getFullYear()
+    const maxAllowedYear = currentYear + 2
+    const canAddMore = Math.max(...availableYears) < maxAllowedYear
+
+    return (
+      <div className="mb-6">
+        <div className="flex items-center gap-3 overflow-x-auto pb-2 scroll-smooth" style={{ scrollbarWidth: 'thin' }}>
+          {availableYears.map((year) => (
+            <Button
+              key={year}
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedYear(year)}
+              className={`
+                flex-shrink-0 min-w-[80px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
+                ${
+                  selectedYear === year 
+                    ? 'bg-primary text-primary-foreground border-primary shadow-md hover:bg-primary/90' 
+                    : 'bg-muted text-muted-foreground border-muted hover:bg-muted/80 hover:text-foreground hover:border-muted-foreground/50'
+                }
+              `}
+            >
+              {year}
+            </Button>
+          ))}
+          
+          {/* Add New Year Button */}
+          {showAddButton && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddYear}
+              disabled={!canAddMore}
+              className={`
+                flex-shrink-0 min-w-[100px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
+                ${
+                  canAddMore 
+                    ? 'border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground hover:border-muted-foreground/60 hover:bg-muted/50' 
+                    : 'opacity-40 cursor-not-allowed border-dashed border-muted-foreground/20 text-muted-foreground/50'
+                }
+              `}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {tDept.common?.year_filter?.add_year || "Add Year"}
+            </Button>
+          )}
+        </div>
+      </div>
+    )
+  }
+  
   // Colunas da tabela de departamentos
   const departmentColumns: ColumnDef<any>[] = [
     {
@@ -409,8 +691,8 @@ export default function DepartmentsPage() {
       header: tDept.common?.name || "Name",
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-            <Layers className="w-4 h-4 text-emerald-600" />
+          <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
+            <Layers className="w-4 h-4 text-muted-foreground" />
           </div>
           <div>
             <div className="font-medium">{row.original.name}</div>
@@ -418,28 +700,6 @@ export default function DepartmentsPage() {
           </div>
         </div>
       ),
-    },
-    {
-      id: "church_id",
-      accessorKey: "church_id",
-      header: () => (
-        <div className="text-center font-medium text-gray-900">
-          {tDept.churches?.church || "Church"}
-        </div>
-      ),
-      cell: ({ row }) => {
-        const church = churches.find((c: any) => c.id === row.original.church_id)
-        return (
-          <div className="flex items-center justify-center gap-2">
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">{church ? church.name : '0'}</span>
-          </div>
-        )
-      },
-      filterFn: (row, id, value) => {
-        if (!value || value === "all") return true
-        return row.getValue(id) === value
-      },
     },
     {
       id: "members",
@@ -472,16 +732,29 @@ export default function DepartmentsPage() {
         const hasBudget = plannedBudget > 0;
 
         return (
-          <div className={`text-center ${!hasBudget ? 'opacity-50' : ''}`}>
-            <div className="text-sm font-semibold text-gray-900">
-              {hasBudget ? formatCurrency(plannedBudget) : '-'}
-            </div>
-            {hasBudget && (
-              <div className="text-xs text-gray-500">
-                {tDept.annual_budget?.table?.planned || "Planned"} {selectedYear}
+          <PrivacyWrapper
+            config={PRIVACY_CONFIGS.financial}
+            showToggle={false}
+            className="inline-block"
+            fallback={
+              <div className="flex items-center justify-center gap-1 blur-[1px] opacity-40">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="w-1 h-1 rounded-full bg-gray-400" />
+                ))}
               </div>
-            )}
-          </div>
+            }
+          >
+            <div className={`text-center ${!hasBudget ? 'opacity-50' : ''}`}>
+              <div className="text-sm font-medium">
+                {hasBudget ? formatCurrency(plannedBudget) : '-'}
+              </div>
+              {hasBudget && (
+                <div className="text-xs text-muted-foreground">
+                  {tDept.annual_budget?.table?.planned || "Planned"} {selectedYear}
+                </div>
+              )}
+            </div>
+          </PrivacyWrapper>
         )
       },
     },
@@ -502,16 +775,29 @@ export default function DepartmentsPage() {
         const hasBudget = plannedBudget > 0;
 
         return (
-          <div className={`text-center ${!hasBudget ? 'opacity-50' : ''}`}>
-            <div className="text-sm font-semibold text-gray-900">
-              {hasBudget ? formatCurrency(spentAmount) : '-'}
-            </div>
-            {hasBudget && (
-              <div className="text-xs text-gray-500">
-                {tDept.common?.spent_of || "of"} {formatCurrency(plannedBudget)}
+          <PrivacyWrapper
+            config={PRIVACY_CONFIGS.financial}
+            showToggle={false}
+            className="inline-block"
+            fallback={
+              <div className="flex items-center justify-center gap-1 blur-[1px] opacity-40">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="w-1 h-1 rounded-full bg-gray-400" />
+                ))}
               </div>
-            )}
-          </div>
+            }
+          >
+            <div className={`text-center ${!hasBudget ? 'opacity-50' : ''}`}>
+              <div className="text-sm font-medium">
+                {hasBudget ? formatCurrency(spentAmount) : '-'}
+              </div>
+              {hasBudget && (
+                <div className="text-xs text-muted-foreground">
+                  {tDept.common?.spent_of || "of"} {formatCurrency(plannedBudget)}
+                </div>
+              )}
+            </div>
+          </PrivacyWrapper>
         )
       },
     },
@@ -651,31 +937,27 @@ export default function DepartmentsPage() {
   // Colunas da tabela de usuários (para detail view)
   const userColumns: ColumnDef<any>[] = [
     {
-      id: "avatar",
-      header: tDept.users?.table?.avatar || "Avatar",
-      cell: ({ row }) => {
-        const user = row.original
-        return (
-          <Avatar className="w-8 h-8">
-            <AvatarImage src="/placeholder-user.jpg" />
-            <AvatarFallback>
-              {user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || '??'}
-            </AvatarFallback>
-          </Avatar>
-        )
-      },
-    },
-    {
-      id: "name",
+      id: "user",
       accessorKey: "name",
-      header: tDept.users?.table?.name || "Name",
+      header: () => (
+        <div className="flex items-center gap-2">
+          <User className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-gray-900">{tDept.users?.table?.name || "User"}</span>
+        </div>
+      ),
       cell: ({ row }) => {
         const user = row.original
         return (
-          <div>
-            <div className="font-medium">{user.name}</div>
-            <div className="text-xs text-muted-foreground">
-              {user.email || '-'}
+          <div className="flex items-center gap-3">
+            <Avatar className="h-9 w-9 border">
+              <AvatarImage src="/placeholder-user.jpg" />
+              <AvatarFallback>
+                {user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || '??'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col min-w-0">
+              <div className="font-medium text-gray-900">{user.name}</div>
+              <div className="text-xs text-muted-foreground truncate">{user.email || '-'}</div>
             </div>
           </div>
         )
@@ -691,7 +973,7 @@ export default function DepartmentsPage() {
       ),
       cell: ({ row }) => (
         <div className="flex justify-center">
-          <Badge variant="outline" className="text-xs font-mono">
+          <Badge variant="outline" className="text-xs font-mono bg-gray-100 text-gray-700 border-gray-300">
             {row.original.language_preference?.toUpperCase() || 'N/A'}
           </Badge>
         </div>
@@ -711,32 +993,13 @@ export default function DepartmentsPage() {
             {user.user_roles?.map((role: any) => (
               <Badge 
                 key={role.id} 
-                variant={role.role.key_code === 'ADMIN' ? 'default' : 'secondary'}
-                className="text-xs"
+                variant="outline"
+                className="text-xs bg-gray-100 text-gray-700 border-gray-300"
               >
                 {role.role.key_code === 'ADMIN' && <Crown className="w-3 h-3 mr-1" />}
                 {role.role.name}
               </Badge>
             )) || <span className="text-xs text-muted-foreground">{tDept.users?.table?.no_roles || "No roles"}</span>}
-          </div>
-        )
-      },
-    },
-    {
-      id: "gender",
-      header: () => (
-        <div className="text-center font-medium text-gray-900">
-          {tDept.users?.table?.gender || "Gender"}
-        </div>
-      ),
-      cell: ({ row }) => {
-        const user = row.original;
-        const genderLabel = user.gender ? `${user.gender.charAt(0).toUpperCase()}${user.gender.slice(1).toLowerCase()}` : 'N/A';
-        return (
-          <div className="text-center">
-            <Badge variant="outline" className="text-xs">
-              {genderLabel}
-            </Badge>
           </div>
         )
       },
@@ -765,6 +1028,34 @@ export default function DepartmentsPage() {
         if (value === "all") return true
         const isActive = !row.original.is_deleted
         return value === "true" ? isActive : !isActive
+      },
+    },
+    {
+      id: "actions",
+      header: () => (
+        <div className="flex items-center justify-center gap-2">
+          <span className="font-medium text-gray-900">{tDept.common?.actions || "Actions"}</span>
+        </div>
+      ),
+      cell: ({ row }) => {
+        const user = row.original
+        return (
+          <div className="flex justify-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleViewContact(user.id)}>
+                  <ContactRound className="h-4 w-4 mr-2" />
+                  {tDept.actions?.view_contact || "View Contact"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )
       },
     },
   ]
@@ -823,9 +1114,9 @@ export default function DepartmentsPage() {
           </Breadcrumb>
         )}
 
-        {/* Header - Only show in list view */}
-        {viewMode === 'list' && (
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        {/* Header - Show in both views with different content */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          {viewMode === 'list' ? (
             <div>
               <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
                 {tDept.institution_department || "Institution Department"}
@@ -834,25 +1125,62 @@ export default function DepartmentsPage() {
                 {tDept.subtitle || "Manage departments across institutions"}
               </p>
             </div>
-            
-            <div className="flex items-center gap-3">
+          ) : (
+            <div>
+              <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
+                {selectedDepartmentDetail?.name}
+              </h2>
+              <p className="text-muted-foreground text-0.875rem sm:text-1rem">
+                {selectedDepartmentDetail?.description || (tDept.detail?.info_card?.no_description || "No description available")}
+              </p>
+            </div>
+          )}
+          
+          <div className="flex items-center gap-3">
+            <GlobalPrivacyToggle
+              variant="icon"
+              size="default"
+              showLabel={true}
+            />
+            {viewMode === 'list' && (
+              <PageFilters
+                filters={filterConfigs}
+                values={pageFilters}
+                onChange={handleFilterChange}
+                onClear={handleClearFilters}
+                triggerLabel={tDept.common?.filters || "Filters"}
+              />
+            )}
+            {viewMode === 'detail' && (
+              <PageFilters
+                filters={userFilterConfigs}
+                values={userFilters}
+                onChange={handleUserFilterChange}
+                onClear={handleClearUserFilters}
+                triggerLabel={tDept.common?.filters || "Filters"}
+              />
+            )}
+            {viewMode === 'list' && (
               <WithPermission requiredPermissions={[PermissionResolverName.CreateDepartment]}>
                 <Button onClick={handleCreate}>
                   <Plus className="w-4 h-4 mr-2" />
                   {tDept.create_department || "Create Department"}
                 </Button>
               </WithPermission>
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={handleRefresh}
-                disabled={refreshing}
-              >
-                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-              </Button>
-            </div>
+            )}
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
-        )}
+        </div>
+
+        {/* Year Filter */}
+        <YearFilter showAddButton={false} />
 
         {/* KPI Cards - Conditional Rendering */}
         {viewMode === 'detail' && selectedDepartmentDetail ? (
@@ -871,6 +1199,8 @@ export default function DepartmentsPage() {
                   value: formatCurrency(plannedBudget),
                   icon: DollarSign,
                   subtitle: tDept.kpi?.budget_total?.subtitle || "Total planned budget",
+                  privacyConfig: PRIVACY_CONFIGS.detailBudgetTotalKPI,
+                  headerAction: <InlinePrivacyToggle config={PRIVACY_CONFIGS.detailBudgetTotalKPI} className="w-6 h-6 flex-shrink-0" />
                 },
                 {
                   id: "spent_amount",
@@ -878,6 +1208,8 @@ export default function DepartmentsPage() {
                   value: formatCurrency(totalExpenses),
                   icon: TrendingUp,
                   subtitle: tDept.kpi?.spent_amount?.subtitle || "Total expenses",
+                  privacyConfig: PRIVACY_CONFIGS.detailSpentAmountKPI,
+                  headerAction: <InlinePrivacyToggle config={PRIVACY_CONFIGS.detailSpentAmountKPI} className="w-6 h-6 flex-shrink-0" />
                 },
                 {
                   id: "members",
@@ -885,6 +1217,8 @@ export default function DepartmentsPage() {
                   value: selectedDepartmentDetail.users?.length || 0,
                   icon: Users,
                   subtitle: tDept.kpi?.members?.subtitle || "Department members",
+                   privacyConfig: PRIVACY_CONFIGS.members,
+                  headerAction: <InlinePrivacyToggle config={PRIVACY_CONFIGS.members} className="w-6 h-6 flex-shrink-0" />
                 }
               ];
               
@@ -894,10 +1228,11 @@ export default function DepartmentsPage() {
                   name={selectedDepartmentDetail.name}
                   description={selectedDepartmentDetail.description || (tDept.detail?.info_card?.no_description || "No description available")}
                   icon={Layers}
+                  invertTheme={true}
                   badges={[
                     {
                       label: churches.find(c => c.id === selectedDepartmentDetail.church_id)?.name || (tDept.detail?.info_card?.institutional || "Institutional"),
-                      variant: "outline",
+                      variant: "default",
                       className: "text-xs"
                     },
                     {
@@ -913,14 +1248,16 @@ export default function DepartmentsPage() {
                       label: tDept.actions?.edit_department || "Edit Department",
                       icon: Edit,
                       onClick: () => handleEdit(selectedDepartmentDetail.id),
-                      variant: "default"
+                      variant: "default",
+                      requiredPermissions: [PermissionResolverName.UpdateDepartment]
                     },
                     {
                       label: tDept.actions?.delete_department || "Delete Department",
                       icon: Trash2,
                       onClick: () => handleDelete(selectedDepartmentDetail.id, selectedDepartmentDetail.name),
                       variant: "destructive",
-                      showSeparatorAfter: false
+                      showSeparatorAfter: false,
+                      requiredPermissions: [PermissionResolverName.DeleteDepartment]
                     }
                   ]}
                 />
@@ -938,24 +1275,137 @@ export default function DepartmentsPage() {
             })()}
           </>
         ) : (
-            <KPICards
-              data={kpiCardsData}
-              isLoading={isLoading}
-              minCardsForCarousel={2}
-              showCarousel={true}
-            />
+            (() => {
+              const now = new Date()
+              const startOfYear = new Date(now.getFullYear(), 0, 1)
+              const totalDays = 365 + (now.getFullYear() % 4 === 0 ? 1 : 0)
+              const daysPassed = Math.floor((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24)) + 1
+              const percentage = Math.round((daysPassed / totalDays) * 100)
+              
+              const YearProgressCard = (
+                <EntityInfoCard
+                  headerTitle={`Year progress  - ${now.getFullYear()}`}
+                  name={`${daysPassed} / ${totalDays} days`}
+                  description={`${percentage}%`}
+                  icon={Calendar}
+                  invertTheme={true}
+                  badges={[
+                    {
+                      label: `Day ${daysPassed}/${totalDays}`,
+                      variant: "default",
+                      className: "text-xs font-medium"
+                    },
+                    {
+                      label: `Q${Math.ceil((now.getMonth() + 1) / 3)} ${now.getFullYear()}`,
+                      variant: "default",
+                      className: "text-xs "
+                    }
+                  ]}
+                />
+              )
+              
+              return (
+                <KPICards
+                  data={kpiCardsData}
+                  isLoading={isLoading}
+                  minCardsForCarousel={2}
+                  showCarousel={true}
+                  customFirstCard={YearProgressCard}
+                />
+              )
+            })()
         )}
 
         <Separator />
 
         {/* Charts Section - Visible in both views */}
-        <ResponsiveGridCarousel autoplayDelay={5000} enableAutoplay={false}>
-          <DepartmentActivityChart
-            departments={departments}
-            selectedYear={selectedYear}
-            loading={isLoading}
-          />
-        </ResponsiveGridCarousel>
+        <GridContainer
+          items={[
+            {
+              id: "InstitutionalDepartmentProjectOverTimeChart",
+              component: (
+                <InstitutionalDepartmentProjectOverTimeChart
+                  departments={viewMode === 'detail' && selectedDepartmentDetail 
+                    ? [selectedDepartmentDetail] 
+                    : (currentInstitutionData?.departments || [])
+                  }
+                  projects={viewMode === 'detail' && selectedDepartmentDetail
+                    ? allProjects.filter((p: any) => p.department_id === selectedDepartmentDetail.id)
+                    : allProjects
+                  }
+                  loading={projectsLoading}
+                  selectedYear={selectedYear}
+                />
+              ),
+              colSpan: viewMode === 'detail' ? "col-span-12 lg:col-span-7" : "col-span-12 lg:col-span-8",
+            },
+            ...(viewMode === 'detail' && selectedDepartmentDetail ? [
+              {
+                id: "DepartmentInfoAndProjects",
+                component: (
+                  <div className="flex flex-col gap-4 h-[calc(100vh-24rem)] min-h-[600px]">
+                    <div className="h-[23%] min-h-[100px]">
+                      <DepartmentLeaderInfoCard
+                        department={{
+                          id: selectedDepartmentDetail.id,
+                          name: selectedDepartmentDetail.name,
+                          leader_id: selectedDepartmentDetail.leader_id
+                        }}
+                        users={(currentInstitutionData?.users || []).filter(user => !user.is_deleted).map(u => ({
+                          id: u.id,
+                          name: u.name,
+                          email: u.email,
+                          language_preference: u.language_preference || undefined
+                        }))}
+                        loading={isLoading}
+                        showHeader={false}
+                      />
+                    </div>
+                    <div className="flex-1 h-[77%] min-h-[400px]">
+                      <DepartmentProjectsCard
+                        projects={allProjects as any}
+                        departmentId={selectedDepartmentDetail.id}
+                        departmentName={selectedDepartmentDetail.name}
+                        loading={projectsLoading}
+                        privacyConfig={PRIVACY_CONFIGS.projectsFooterFinancial}
+                      />
+                    </div>
+                  </div>
+                ),
+                colSpan: "col-span-12 lg:col-span-5",
+              }
+            ] : [
+              {
+                id: "DepartmentLeadersOverview",
+                component: (
+                  <DepartmentLeadersCard
+                    users={(currentInstitutionData?.users || []).filter(user => !user.is_deleted).map(u => ({
+                      id: u.id,
+                      name: u.name,
+                      email: u.email,
+                      language_preference: u.language_preference || undefined,
+                      user_roles: u.user_roles,
+                      is_deleted: u.is_deleted
+                    }))}
+                    departments={departments.map(d => ({
+                      id: d.id,
+                      name: d.name,
+                      church_id: d.church_id,
+                      church_name: churches.find(c => c.id === d.church_id)?.name,
+                      leader_id: d.leader_id
+                    }))}
+                    departmentName={tDept.institution_department || "Institutional Departments"}
+                    departmentType="institution"
+                    loading={isLoading}
+                  />
+                ),
+                colSpan: "col-span-12 lg:col-span-4",
+              }
+            ])
+          ]}
+          totalColumns={12}
+          gap="md"
+        />
 
         <Separator />
 
@@ -976,19 +1426,35 @@ export default function DepartmentsPage() {
               <CardContent className="overflow-hidden p-0">
                 <UseTable
                   columns={userColumns}
-                  data={selectedDepartmentDetail.users || []}
+                  data={(() => {
+                    const users = selectedDepartmentDetail.users || [];
+                    return users.filter(user => {
+                      // Filter by status
+                      if (userFilters.status !== undefined && userFilters.status !== "") {
+                        const isActive = !user.is_deleted;
+                        if (userFilters.status === "true" && !isActive) return false;
+                        if (userFilters.status === "false" && isActive) return false;
+                      }
+                      
+                      // Filter by language
+                      if (userFilters.language !== undefined && userFilters.language !== "") {
+                        if (user.language_preference !== userFilters.language) return false;
+                      }
+                      
+                      // Filter by roles (multi-select)
+                      if (Array.isArray(userFilters.roles) && userFilters.roles.length > 0) {
+                        const userRoleNames = user.user_roles?.map(r => r.role.name) || [];
+                        const hasMatchingRole = userFilters.roles.some(selectedRole => 
+                          userRoleNames.includes(selectedRole)
+                        );
+                        if (!hasMatchingRole) return false;
+                      }
+                      
+                      return true;
+                    });
+                  })()}
                   searchKey="name"
                   emptyEntityName={selectedDepartmentDetail.name}
-                  filters={[
-                    {
-                      id: "status",
-                      title: tDept.common?.status || "Status",
-                      options: [
-                        { label: tDept.common?.active || "Active", value: "true" },
-                        { label: tDept.common?.inactive || "Inactive", value: "false" }
-                      ]
-                    }
-                  ]}
                 />
               </CardContent>
             </Card>
@@ -998,11 +1464,18 @@ export default function DepartmentsPage() {
             {/* Departments Table */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Layers className="w-5 h-5" />
-                  {tDept.table_title || "Departments"}
-                </CardTitle>
-                <CardDescription>{tDept.table_description || "Complete list of departments with management actions"}</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Layers className="w-5 h-5" />
+                      {tDept.table_title || "Departments"}
+                    </CardTitle>
+                    <CardDescription>{tDept.table_description || "Complete list of departments with management actions"}</CardDescription>
+                  </div>
+                  <InlinePrivacyToggle
+                    config={PRIVACY_CONFIGS.financial}
+                  />
+                </div>
               </CardHeader>
               <CardContent className="overflow-hidden p-0">
                 <UseTable
@@ -1010,37 +1483,8 @@ export default function DepartmentsPage() {
                   data={departments}
                   searchKey="name"
                   emptyEntityName={tDept.entity_name || "Departments"}
-                  filters={[
-                {
-                  id: "church_id",
-                  title: tDept.churches?.church || "Church",
-                  options: [
-                    { label: tDept.filters?.institutional || "Institutional", value: "institutional" },
-                    ...churches.map(church => ({
-                      label: church.name,
-                      value: church.id
-                    }))
-                  ]
-                },
-                {
-                  id: "budget_status",
-                  title: tDept.institutions?.table?.budget_status || "Budget Status",
-                  options: [
-                    { label: tDept.annual_budget?.table?.budget_status_labels?.completed, value: "true" },
-                    { label: tDept.annual_budget?.table?.budget_status_labels?.missing, value: "false" }
-                  ]
-                },
-                {
-                  id: "status",
-                  title: tDept.common?.status || "Status",
-                  options: [
-                    { label: tDept.common?.active || "Active", value: "true" },
-                    { label: tDept.common?.inactive || "Inactive", value: "false" }
-                  ]
-                }
-              ]}
-            />
-          </CardContent>
+                />
+              </CardContent>
         </Card>
           </>
         )}
@@ -1078,14 +1522,21 @@ export default function DepartmentsPage() {
         )}
         
         {/* View Contact Modal */}
-        {/* TODO: Fix ContactViewEditModal - requires updateMutation and entityId props */}
-        {/* {selectedContact && (
+        {selectedContact && (
           <ContactViewEditModal
             isOpen={isViewContactModalOpen}
             onOpenChange={setIsViewContactModalOpen}
-            contact={selectedContact as any}
+            contact={selectedContact}
+            entityName={selectedDepartmentDetail?.name}
+            entityType={tDept.institution_department || "Institutional Department"}
+            updateMutation={updateUserMutation}
+            entityId={selectedDepartmentDetail?.users?.find(u => selectedContact.email === u.email)?.id || ''}
+            onSave={() => {
+              handleRefresh();
+              setIsViewContactModalOpen(false);
+            }}
           />
-        )} */}
+        )}
         
       </div>
       </WithPermission>

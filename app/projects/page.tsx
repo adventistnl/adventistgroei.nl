@@ -1,9 +1,10 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo, Suspense } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@apollo/client"
 import { useRouter, useSearchParams } from "next/navigation"
+import { LoadingSpinner } from "@/components/shared/loading-spinner"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -50,7 +51,9 @@ import { PermissionResolverName } from "@/types/graphql-global-types"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
 import { useAuth } from "@/contexts/auth-context"
-export default function ProjectsPage() {
+
+// Internal component that uses useSearchParams - wrapped in Suspense
+function ProjectsPageContent() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -1069,5 +1072,21 @@ export default function ProjectsPage() {
 
       </div>
     </AppLayout>
+  )
+}
+
+// Main export with Suspense boundary for useSearchParams
+export default function ProjectsPage() {
+  return (
+    <Suspense fallback={
+      <LoadingSpinner
+        text="Loading projects..."
+        icon={Building2}
+        size="lg"
+        fullScreen
+      />
+    }>
+      <ProjectsPageContent />
+    </Suspense>
   )
 }

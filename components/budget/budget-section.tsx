@@ -186,12 +186,7 @@ export function BudgetSection({
       <div className="space-y-6">
         {/* First Row: Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          <BudgetOverviewCard
-            institutionId={currentInstitutionData.id}
-            year={selectedYear}
-            currentLanguage={currentLanguage}
-            departmentBudgetData={departmentBudgetData}
-          />
+
           
         </div>
         

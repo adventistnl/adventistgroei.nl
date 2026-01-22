@@ -7,6 +7,14 @@ import { Input } from "@/components/ui/input"
 import { Plus, Search } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { projectTranslations } from "@/lib/translations/projects"
+import { useHasPermission } from "@/hooks/use-has-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface ProjectActivitiesFiltersProps {
   subsidyFilter: string
@@ -40,6 +48,9 @@ export function ProjectActivitiesFilters({
   const { t, i18n } = useTranslation()
   const langKey = i18n.language as keyof typeof projectTranslations
   const pt = projectTranslations[langKey] || projectTranslations.en
+  
+  // Check permission to create project activities
+  const canCreateActivity = useHasPermission([PermissionResolverName.CreateProjectActivity])
   
   return (
     <div className="flex items-center justify-between m-0">
@@ -108,10 +119,34 @@ export function ProjectActivitiesFilters({
           {pt.filters.clear}
         </Button>
 
-        <Button onClick={onAddActivity} size="sm" className="h-9">
-          <Plus className="w-4 h-4 mr-2" />
-          {pt.filters.newActivity}
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <Button 
+                  onClick={onAddActivity} 
+                  size="sm" 
+                  className="h-9"
+                  disabled={!canCreateActivity}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {pt.filters.newActivity}
+                </Button>
+              </div>
+            </TooltipTrigger>
+            {!canCreateActivity && (
+              <TooltipContent>
+                <p className="text-xs max-w-[200px]">
+                  {i18n.language === 'pt' 
+                    ? 'Você não tem permissão para criar atividades. Entre em contato com o administrador para solicitar acesso.'
+                    : i18n.language === 'nl'
+                    ? 'U heeft geen toestemming om activiteiten aan te maken. Neem contact op met de beheerder om toegang aan te vragen.'
+                    : 'You do not have permission to create activities. Contact the administrator to request access.'}
+                </p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </div>
   )

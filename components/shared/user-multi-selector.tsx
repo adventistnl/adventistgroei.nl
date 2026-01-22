@@ -196,7 +196,7 @@ export const UserMultiSelector = forwardRef<HTMLButtonElement, UserMultiSelector
                   {t('activities.user_selector.selected')} ({tempSelectedUsers.length})
                 </p>
               </div>
-              <div className="space-y-1.5 p-3 border rounded-lg bg-muted/30">
+              <div className="max-h-[200px] overflow-y-auto space-y-1.5 p-3 border rounded-lg bg-muted/30">
                 {tempSelectedUsers.map((user) => (
                   <div
                     key={user.id}

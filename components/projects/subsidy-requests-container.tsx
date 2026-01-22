@@ -10,6 +10,8 @@ import { useSubsidyReceipts, SubsidyReceipt } from "@/hooks/use-subsidy-receipts
 import { useCurrency } from "@/contexts/currency-context"
 import { cn } from "@/lib/utils"
 import type { ProjectActivityData } from "@/components/projects/project-activities-table"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 interface SubsidyRequestsContainerProps {
   /** Array of subsidy request data */
@@ -124,8 +126,8 @@ export function SubsidyRequestsContainer({
 
   const confirmDelete = () => {
     if (!subsidyPendingDelete) return
-    // Only allow delete if NOT accepted or in_review
-    if (subsidyPendingDelete.status === "accepted" || subsidyPendingDelete.status === "in_review") {
+    // Only allow delete if NOT approved or in_review
+    if (subsidyPendingDelete.status === "approved" || subsidyPendingDelete.status === "in_review") {
       // show info via toast and close modal
       setIsConfirmDeleteOpen(false)
       setSubsidyPendingDelete(null)
@@ -256,14 +258,16 @@ export function SubsidyRequestsContainer({
 
           {/* Add Button */}
           {onAddSubsidy && (
-            <Button
-              onClick={onAddSubsidy}
-              size="sm"
-              className="gap-2 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 dark:text-gray-900"
-            >
-              <Plus className="h-4 w-4" />
-              {t("common.add")}
-            </Button>
+            <WithPermission requiredPermissions={[PermissionResolverName.CreateSubsidyRequest]}>
+              <Button
+                onClick={onAddSubsidy}
+                size="sm"
+                className="gap-2 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 dark:text-gray-900"
+              >
+                <Plus className="h-4 w-4" />
+                {t("common.add")}
+              </Button>
+            </WithPermission>
           )}
         </div>
 
@@ -299,8 +303,8 @@ export function SubsidyRequestsContainer({
           <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-2 text-[10px] text-gray-500 dark:text-gray-400 flex-shrink-0">
             <span>
               {displaySubsidies.length === 1 
-                ? t("subsidy.requestCount_one") || "1 request"
-                : t("subsidy.requestCount_other")?.replace("{{count}}", displaySubsidies.length.toString()) || `${displaySubsidies.length} requests`
+                ? t("requestCount_one") || "1 request"
+                : t("requestCount_other")?.replace("{{count}}", displaySubsidies.length.toString()) || `${displaySubsidies.length} requests`
               }
             </span>
             <span>
@@ -366,6 +370,15 @@ export function SubsidyRequestsContainer({
           // In edit mode, add back the current subsidy's amount to available budget
           const currentSubsidyAmount = selectedSubsidyForEdit?.requested_amount || 0
           const available = projectSubsidizedBudget - used + currentSubsidyAmount
+
+          console.log('💰 [Container AvailableBudget]:', {
+            projectSubsidizedBudget,
+            used,
+            currentSubsidyAmount,
+            available,
+            mode: 'edit',
+            subsidyId: selectedSubsidyForEdit?.id
+          })
 
           return available
         })()}

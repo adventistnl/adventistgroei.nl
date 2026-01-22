@@ -98,7 +98,7 @@ function areExtraFieldsValid({
   selectedInstitutionDepartment?: string | undefined;
 }): boolean {
   if (selectedRoleKeyCode === 'CHURCH_MEMBER') {
-    return Boolean(selectedChurch && selectedChurchDepartment);
+    return Boolean(selectedChurch);
   }
   if (selectedRoleKeyCode === 'INSTITUTIONAL_LEADER') {
     return Boolean(selectedInstitution && selectedInstitutionDepartment);

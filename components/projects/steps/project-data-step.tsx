@@ -428,7 +428,7 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
                         )}
                         {churchDepartments.length > 0 && !formData.church_department_id && (
                           <p className="text-sm text-red-600 mt-1">
-                            {t('projectRegister.errors.churchDepartmentRequired') || 'Selecione um departamento da igreja'}
+                            {t('projectRegister.placeholders.selectChurchDepartment')}
                           </p>
                         )}
                       </div>

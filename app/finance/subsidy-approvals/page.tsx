@@ -94,7 +94,7 @@ export default function SubsidyApprovalsPage() {
   return (
     <AppLayout>
       <WithPermission 
-        requiredPermissions={[PermissionResolverName.Institutions]} 
+        requiredPermissions={[PermissionResolverName.SubsidyRequest]} 
         fallback={<AccessDenied />}
       >
         <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">

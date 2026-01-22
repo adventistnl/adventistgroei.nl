@@ -79,6 +79,7 @@ export default function ProfilePage() {
     handleSave,
     handleCancel,
     handleFieldChange,
+    updateLoading,
   } = useProfileEditor(userProfile, refetchUser)
   // Debug when userProfile changes
   useEffect(() => {
@@ -173,6 +174,7 @@ export default function ProfilePage() {
               address={editData.address || profile.address || ""}
               language={editData.language_preference || profile.language_preference || "en"}
               isEditing={editingSection === "personal"}
+              isSaving={updateLoading}
               onEdit={() => handleEdit("personal")}
               onSave={() => handleSave("personal")}
               onCancel={handleCancel}

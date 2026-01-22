@@ -249,7 +249,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
 
     setIsLoading(true)
     const isCreating = !contact
-    const loadingMessage = isCreating ? "Creating contact..." : (t_contact.updating || "Updating contact...")
+    const loadingMessage = isCreating ? (t_contact.creating || "Creating contact...") : (t_contact.updating || "Updating contact...")
     const loadingToast = toast.loading(loadingMessage)
 
     try {
@@ -264,7 +264,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
       const res = await updateMutation({ variables: updateData })
       if (!res) throw new Error(`Failed to ${isCreating ? 'create' : 'update'} contact`)
       
-      const successMessage = isCreating ? "Contact created successfully!" : (t_contact.updated || "Contact updated successfully!")
+      const successMessage = isCreating ? (t_contact.created || "Contact created successfully!") : (t_contact.updated || "Contact updated successfully!")
       toast.success(successMessage, {
         duration: 3000
       })
@@ -712,9 +712,9 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0" align="start">
                     <Command>
-                      <CommandInput placeholder="Search countries..." />
+                      <CommandInput placeholder={t_contact.searchCountries || "Search countries..."} />
                       <CommandList>
-                        <CommandEmpty>No country found.</CommandEmpty>
+                        <CommandEmpty>{t_contact.noCountryFound || "No country found."}</CommandEmpty>
                         <CommandGroup>
                           {countryOptions.map((country) => (
                             <CommandItem
@@ -746,7 +746,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
                 <div className="space-y-2">
                   <Label htmlFor="state" className="flex items-center gap-2 text-sm text-gray-600">
                     <MapPin className="w-4 h-4 text-gray-500" />
-                    Estado/Província
+                    {t_contact.state || "State/Province"}
                   </Label>
                   <Popover open={openState} onOpenChange={setOpenState}>
                     <PopoverTrigger asChild>
@@ -762,15 +762,15 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
                       >
                         {selectedState
                           ? statesOptions.find(state => state.value === selectedState)?.label
-                          : "Select state/province"}
+                          : (t_contact.selectState || "Select state/province")}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-full p-0" align="start">
                       <Command>
-                        <CommandInput placeholder="Search states..." />
+                        <CommandInput placeholder={t_contact.searchStates || "Search states..."} />
                         <CommandList>
-                          <CommandEmpty>No state found.</CommandEmpty>
+                          <CommandEmpty>{t_contact.noStateFound || "No state found."}</CommandEmpty>
                           <CommandGroup>
                             {statesOptions.map((state) => (
                               <CommandItem
@@ -827,9 +827,9 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
                     </PopoverTrigger>
                     <PopoverContent className="w-full p-0" align="start">
                       <Command>
-                        <CommandInput placeholder="Search cities..." />
+                        <CommandInput placeholder={t_contact.searchCities || "Search cities..."} />
                         <CommandList>
-                          <CommandEmpty>No city found.</CommandEmpty>
+                          <CommandEmpty>{t_contact.noCityFound || "No city found."}</CommandEmpty>
                           <CommandGroup>
                             {citiesOptions.map((city) => (
                               <CommandItem
@@ -984,11 +984,11 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
                 
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-muted-foreground">{t_contact.created || "Created"}</p>
+                    <p className="text-muted-foreground">{t_contact.createdAt || "Created At"}</p>
                     <p className="font-medium">{contact ? formatDate(contact.created_at) : '-'}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">{t_contact.updatedAt || "Updated"}</p>
+                    <p className="text-muted-foreground">{t_contact.updatedAt || "Updated At"}</p>
                     <p className="font-medium">{contact ? formatDate(contact.updated_at) : '-'}</p>
                   </div>
                   <div>
@@ -1016,7 +1016,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
         <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg text-gray-900">
             <ContactRound className="w-5 h-5 text-gray-600" />
-            {!contact ? "Create New Contact" : (t_contact.title || "Contact Information")}
+            {!contact ? (t_contact.newContact || "Create New Contact") : (t_contact.title || "Contact Information")}
           </DialogTitle>
           <DialogDescription className="text-sm text-gray-600">
             {entityName ? (
@@ -1038,7 +1038,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
               )}
               {!contact && (
                 <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
-                  New Contact
+                  {t_contact.newContact || "New Contact"}
                 </Badge>
               )}
             </div>
@@ -1054,7 +1054,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
           {isEditing && (
             <div className="mt-4 space-y-2">
               <div className="flex justify-between items-center text-xs text-muted-foreground">
-                <span>Step {currentStep} of {totalSteps}</span>
+                <span>{t_contact.stepOf?.replace('{{current}}', String(currentStep)).replace('{{total}}', String(totalSteps)) || `Step ${currentStep} of ${totalSteps}`}</span>
                 <span>{Math.round((currentStep / totalSteps) * 100)}%</span>
               </div>
               <Progress value={(currentStep / totalSteps) * 100} className="h-1" />

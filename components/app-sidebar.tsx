@@ -16,8 +16,6 @@ import { appData } from "@/config/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { useNavigation } from "@/hooks/use-navigation"
 import { ProjectFormData } from "@/types/Project"
-import { WithPermission } from "@/hocs/with-permission"
-import { PermissionResolverName } from "@/types/graphql-global-types"
 import { useQuery } from "@apollo/client"
 import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { useInstitution } from "@/contexts/institution-context"
@@ -103,9 +101,7 @@ export const AppSidebar = React.memo(function AppSidebar({ ...props }: React.Com
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <WithPermission requiredPermissions={[PermissionResolverName.Institutions]}>
-          <InstitutionSwitcher />
-        </WithPermission>
+        <InstitutionSwitcher />
       </SidebarHeader>
       <SidebarContent>
         <NavMain sections={data.navSections} />

@@ -40,8 +40,10 @@ export const projectTranslations = {
     // Access Control
     accessDenied: {
       title: "Access Denied",
+      message: "You don't have sufficient permissions to view this page.",
       noPermission: "You don't have permission to create projects.",
-      contactAdmin: "Please contact your administrator to request access."
+      contactAdmin: "Please contact your administrator to request access.",
+      goBack: "Go Back"
     },
 
     // Rejection Dialog
@@ -181,6 +183,7 @@ export const projectTranslations = {
       volunteers: "Volunteers",
       actions: "Actions",
       budget: "Budget",
+      totalRequested: "Total Requested",
       period: "Period",
       timeline: "Timeline",
       daysLeft: "Days Left",
@@ -475,6 +478,10 @@ export const projectTranslations = {
       daysPositiveLabel: "days remaining",
       daysNegativeLabel: "days ago"
     },
+
+    manageRequests: "Manage subsidy requests",
+    requestCount_other: "requests",
+    requestCount_one: "request",
     
     // Subsidy Management
     subsidy: {
@@ -484,6 +491,10 @@ export const projectTranslations = {
       requestCount_one: "request",
       requestCount_other: "requests",
       requestedOn: "Requested on:",
+      pending: "Pending",
+      approved: "Approved",
+      rejected: "Rejected",
+      inRreview: "In Review",
       closed: "Closed",
       requestSubsidy: "Request Subsidy",
       manageRequests: "Manage subsidy requests",
@@ -494,7 +505,7 @@ export const projectTranslations = {
       approveSubsidy: "Approve Subsidy",
       rejectSubsidy: "Reject Subsidy",
       subsidyDescription: "Subsidy Description",
-      subsidyRequestDescription: "Subsidy request with {{count}} activity(ies)",
+      subsidyRequestDescription: "Subsidy request with {{count}} activityies",
       totalBudget: "Total Budget",
       requestedAmount: "Requested Amount",
       approvedAmount: "Approved Amount",
@@ -583,7 +594,8 @@ export const projectTranslations = {
       },
       validatedBy: "By {{user}} on {{date}}",
       newBadge: "New",
-      
+
+
       // Delete Subsidy Request Modal
       deleteRequest: {
         title: "Delete Subsidy Request",
@@ -645,6 +657,116 @@ export const projectTranslations = {
       }
     },
 
+    // View Subsidy Modal
+    viewSubsidyModal: {
+      // Tooltips de KPIs no header
+      tooltips: {
+        activitiesCount: "Number of activities in this request",
+        totalBudget: "Total budget of all activities",
+        requestedAmount: "Total subsidy amount requested"
+      },
+      
+      // Status transition error messages
+      errors: {
+        statusClosed: "The subsidy is already closed and cannot be modified.",
+        cannotCloseInReview: "Cannot close a subsidy under review. It must be approved or rejected first.",
+        onlyClosedFromFinalState: "Approved or rejected subsidies can only be closed.",
+        documentsPending: "All documents must be validated first",
+        documentsRejected: "Cannot approve subsidy with rejected documents",
+        statusChangeNotAllowed: "This status change is not allowed",
+        rejectionReasonRequired: "Please provide a reason for rejection"
+      },
+      
+      // Success messages
+      success: {
+        statusUpdated: "Status updated successfully",
+        subsidyApproved: "Subsidy approved successfully",
+        subsidyRejected: "Subsidy rejected successfully",
+        commentAdded: "Comment added successfully",
+        commentUpdated: "Comment updated successfully",
+        commentDeleted: "Comment deleted successfully",
+        documentValidated: "Document validated successfully",
+        documentRejected: "Document rejected successfully",
+        messageSent: "Message sent successfully"
+      },
+      
+      // Generic error messages
+      errorMessages: {
+        statusUpdate: "Error updating status: {{error}}",
+        approve: "Error approving subsidy: {{error}}",
+        reject: "Error rejecting subsidy: {{error}}",
+        messageSent: "Error sending message",
+        messageUpdate: "Error updating message",
+        messageDelete: "Error deleting message",
+        documentsLoad: "Error loading documents",
+        downloadDocument: "Error downloading document"
+      },
+      
+      // Message prefixes and formats
+      messageFormats: {
+        statusChangePrefix: "Status changed to: {{status}}",
+        statusChangeReasonPrefix: "Status changed to {{status}}. Reason: {{reason}}",
+        documentCommentPrefix: "Comment on document {{name}}: ",
+        priorityChanged: "Priority changed to: {{priority}}",
+        validatedBy: "Validated by {{user}} on {{date}}"
+      },
+      
+      // Document labels
+      documents: {
+        loading: "Loading documents...",
+        noDocuments: "No documents attached",
+        validated: "Document validated",
+        rejected: "Document rejected",
+        approve: "Approve document",
+        reject: "Reject document",
+        addComment: "Add comment",
+        download: "Download document",
+        rejecting: "Rejecting document",
+        commentOn: "Comment on: ",
+        addRejectionReason: "Please add a rejection reason"
+      },
+      
+      // Chat and history labels
+      chat: {
+        history: "History",
+        filterByActivity: "Filter by activity",
+        all: "All",
+        mention: "Mention",
+        currentStatus: "Current status",
+        currentPriority: "Current priority",
+        editingComment: "Editing comment",
+        editComment: "Edit comment",
+        deleteComment: "Delete comment",
+        newBadge: "New"
+      },
+      
+      // Message types in history
+      messageTypes: {
+        documentApproved: "Document approved",
+        documentRejected: "Document rejected",
+        documentComment: "Document comment",
+        statusUpdate: "Status update"
+      },
+      
+      // Input placeholders
+      placeholders: {
+        editComment: "Edit comment...",
+        documentComment: "Add comment about the document...",
+        rejectReason: "Rejection reason (required)...",
+        addComment: "Add comment..."
+      },
+      
+      // Confirmation dialogs
+      dialogs: {
+        deleteCommentTitle: "Delete Comment",
+        deleteCommentConfirm: "Are you sure you want to delete this comment?",
+        statusChangeTitle: "Confirm Status Change",
+        warningApproved: "You are about to approve this subsidy request. This action cannot be undone.",
+        warningClosed: "You are about to close this subsidy request. This action cannot be undone.",
+        warningGeneric: "You are about to change the status of this request.",
+        irreversibleAction: "This action is irreversible"
+      }
+    },
 
     
     // Activity Management
@@ -1108,6 +1230,7 @@ export const projectTranslations = {
       volunteers: "Vrijwilligers",
       actions: "Acties",
       budget: "Budget",
+      totalRequested: "Totaal Aangevraagd",
       period: "Periode",
       timeline: "Tijdlijn",
       daysLeft: "Dagen Over",
@@ -1402,6 +1525,10 @@ export const projectTranslations = {
       daysPositiveLabel: "dagen resterend",
       daysNegativeLabel: "dagen geleden"
     },
+
+    manageRequests: "Beheer subsidie aanvragen",
+    requestCount_one: "aanvraag",
+    requestCount_other: "aanvragen",
     
     // Subsidy Management
     subsidy: {
@@ -1411,6 +1538,10 @@ export const projectTranslations = {
       requestCount_one: "aanvraag",
       requestCount_other: "aanvragen",
       requestedOn: "Aangevraagd op:",
+      pending: "In Behandeling",
+      inReview: "In Beoordeling",
+      approved: "Goedgekeurd",
+      rejected: "Afgewezen",
       closed: "Gesloten",
       requestSubsidy: "Subsidie Aanvragen",
       manageRequests: "Beheer subsidie aanvragen",
@@ -1569,6 +1700,117 @@ export const projectTranslations = {
           delete: "Aanvraag Verwijderen",
           deleting: "Verwijderen..."
         }
+      }
+    },
+
+    // View Subsidy Modal
+    viewSubsidyModal: {
+      // Tooltips de KPIs no header
+      tooltips: {
+        activitiesCount: "Aantal activiteiten in dit verzoek",
+        totalBudget: "Totaal budget van alle activiteiten",
+        requestedAmount: "Totaal aangevraagd subsidiebedrag"
+      },
+      
+      // Status transition error messages
+      errors: {
+        statusClosed: "De subsidie is al gesloten en kan niet worden gewijzigd.",
+        cannotCloseInReview: "Kan een subsidie in behandeling niet sluiten. Het moet eerst worden goedgekeurd of afgewezen.",
+        onlyClosedFromFinalState: "Goedgekeurde of afgewezen subsidies kunnen alleen worden gesloten.",
+        documentsPending: "Alle documenten moeten eerst worden gevalideerd",
+        documentsRejected: "Kan subsidie niet goedkeuren met afgewezen documenten",
+        statusChangeNotAllowed: "Deze statuswijziging is niet toegestaan",
+        rejectionReasonRequired: "Geef een reden op voor afwijzing"
+      },
+      
+      // Success messages
+      success: {
+        statusUpdated: "Status succesvol bijgewerkt",
+        subsidyApproved: "Subsidie succesvol goedgekeurd",
+        subsidyRejected: "Subsidie succesvol afgewezen",
+        commentAdded: "Opmerking succesvol toegevoegd",
+        commentUpdated: "Opmerking succesvol bijgewerkt",
+        commentDeleted: "Opmerking succesvol verwijderd",
+        documentValidated: "Document succesvol gevalideerd",
+        documentRejected: "Document succesvol afgewezen",
+        messageSent: "Bericht succesvol verzonden"
+      },
+      
+      // Generic error messages
+      errorMessages: {
+        statusUpdate: "Fout bij het bijwerken van status: {{error}}",
+        approve: "Fout bij het goedkeuren van subsidie: {{error}}",
+        reject: "Fout bij het afwijzen van subsidie: {{error}}",
+        messageSent: "Fout bij het verzenden van bericht",
+        messageUpdate: "Fout bij het bijwerken van bericht",
+        messageDelete: "Fout bij het verwijderen van bericht",
+        documentsLoad: "Fout bij het laden van documenten",
+        downloadDocument: "Fout bij het downloaden van document"
+      },
+      
+      // Message prefixes and formats
+      messageFormats: {
+        statusChangePrefix: "Status gewijzigd naar: {{status}}",
+        statusChangeReasonPrefix: "Status gewijzigd naar {{status}}. Reden: {{reason}}",
+        documentCommentPrefix: "Opmerking over document {{name}}: ",
+        priorityChanged: "Prioriteit gewijzigd naar: {{priority}}",
+        validatedBy: "Gevalideerd door {{user}} op {{date}}"
+      },
+      
+      // Document labels
+      documents: {
+        loading: "Documenten laden...",
+        noDocuments: "Geen documenten bijgevoegd",
+        validated: "Document gevalideerd",
+        rejected: "Document afgewezen",
+        approve: "Document goedkeuren",
+        reject: "Document afwijzen",
+        addComment: "Opmerking toevoegen",
+        download: "Document downloaden",
+        rejecting: "Document afwijzen",
+        commentOn: "Opmerking over: ",
+        addRejectionReason: "Voeg een reden voor afwijzing toe"
+      },
+      
+      // Chat and history labels
+      chat: {
+        history: "Geschiedenis",
+        filterByActivity: "Filteren op activiteit",
+        all: "Alle",
+        mention: "Vermelden",
+        currentStatus: "Huidige status",
+        currentPriority: "Huidige prioriteit",
+        editingComment: "Opmerking bewerken",
+        editComment: "Opmerking bewerken",
+        deleteComment: "Opmerking verwijderen",
+        newBadge: "Nieuw"
+      },
+      
+      // Message types in history
+      messageTypes: {
+        documentApproved: "Document goedgekeurd",
+        documentRejected: "Document afgewezen",
+        documentComment: "Document opmerking",
+        statusUpdate: "Status update"
+      },
+      
+      // Input placeholders
+      placeholders: {
+        editComment: "Opmerking bewerken...",
+        documentComment: "Opmerking toevoegen over het document...",
+        rejectReason: "Reden voor afwijzing (verplicht)...",
+        addComment: "Opmerking toevoegen..."
+      },
+      
+      // Confirmation dialogs
+      dialogs: {
+        deleteCommentTitle: "Opmerking verwijderen",
+        deleteCommentConfirm: "Weet u zeker dat u deze opmerking wilt verwijderen?",
+        statusChangeTitle: "Statuswijziging bevestigen",
+        warningApproved: "U staat op het punt dit subsidieverzoek goed te keuren. Deze actie kan niet ongedaan worden gemaakt.",
+        warningClosed: "U staat op het punt dit subsidieverzoek te sluiten. Deze actie kan niet ongedaan worden gemaakt.",
+        warningGeneric: "U staat op het punt de status van dit verzoek te wijzigen.",
+        irreversibleAction: "Deze actie is onomkeerbaar"
       }
     },
     
@@ -1854,6 +2096,15 @@ export const projectTranslations = {
     english: "Engels",
     dutch: "Nederlands",
     portuguese: "Português",
+
+    // Access Control
+    accessDenied: {
+      title: "Toegang Geweigerd",
+      message: "U heeft onvoldoende rechten om deze pagina te bekijken.",
+      noPermission: "U heeft geen toestemming om projecten te maken.",
+      contactAdmin: "Neem contact op met uw beheerder om toegang aan te vragen.",
+      goBack: "Ga Terug"
+    },
   },
   
   pt: {
@@ -1892,6 +2143,15 @@ export const projectTranslations = {
       error: "Erro",
       confirm: "Confirmar",
       confirmAction: "Confirmo que desejo executar esta ação e entendo as consequências."
+    },
+
+    // Access Control
+    accessDenied: {
+      title: "Acesso Negado",
+      message: "Você não possui permissões suficientes para visualizar esta página.",
+      noPermission: "Você não tem permissão para criar projetos.",
+      contactAdmin: "Entre em contato com seu administrador para solicitar acesso.",
+      goBack: "Voltar"
     },
 
     // Rejection Dialog
@@ -2030,6 +2290,7 @@ export const projectTranslations = {
       volunteers: "Voluntários",
       actions: "Ações",
       budget: "Orçamento",
+      totalRequested: "Total Solicitado",
       period: "Período",
       timeline: "Cronograma",
       daysLeft: "Dias Restantes",
@@ -2324,6 +2585,10 @@ export const projectTranslations = {
       daysPositiveLabel: "dias restantes",
       daysNegativeLabel: "dias atrás"
     },
+
+    manageRequests: "Gerencie as solicitações de subsídio",
+    requestCount_one: "solicitação",
+    requestCount_other: "solicitações",
     
     // Subsidy Management
     subsidy: {
@@ -2333,6 +2598,10 @@ export const projectTranslations = {
       requestCount_one: "solicitação",
       requestCount_other: "solicitações",
       requestedOn: "Solicitado em:",
+      pending: "Pendente",
+      inReview: "In Beoordeling",
+      approved: "Goedgekeurd",
+      rejected: "Afgewezen",
       closed: "Encerrado",
       requestSubsidy: "Solicitar Subsídio",
       manageRequests: "Gerencie as solicitações de subsídio",
@@ -2444,6 +2713,117 @@ export const projectTranslations = {
           delete: "Excluir Solicitação",
           deleting: "Excluindo..."
         }
+      }
+    },
+
+    // View Subsidy Modal
+    viewSubsidyModal: {
+      // Tooltips de KPIs no header
+      tooltips: {
+        activitiesCount: "Número de atividades nesta solicitação",
+        totalBudget: "Orçamento total de todas as atividades",
+        requestedAmount: "Valor total solicitado de subsídio"
+      },
+      
+      // Mensagens de erro de transição de status
+      errors: {
+        statusClosed: "O subsídio já está fechado e não pode ser alterado.",
+        cannotCloseInReview: "Não é possível fechar um subsídio em revisão. É necessário aprovar ou rejeitar primeiro.",
+        onlyClosedFromFinalState: "Subsídios aprovados ou rejeitados só podem ser fechados.",
+        documentsPending: "Todos os documentos devem ser validados primeiro",
+        documentsRejected: "Não é possível aprovar subsídio com documentos rejeitados",
+        statusChangeNotAllowed: "Esta mudança de status não é permitida",
+        rejectionReasonRequired: "Por favor, forneça um motivo para a rejeição"
+      },
+      
+      // Mensagens de sucesso
+      success: {
+        statusUpdated: "Status atualizado com sucesso",
+        subsidyApproved: "Subsídio aprovado com sucesso",
+        subsidyRejected: "Subsídio rejeitado com sucesso",
+        commentAdded: "Comentário adicionado com sucesso",
+        commentUpdated: "Comentário atualizado com sucesso",
+        commentDeleted: "Comentário excluído com sucesso",
+        documentValidated: "Documento validado com sucesso",
+        documentRejected: "Documento rejeitado com sucesso",
+        messageSent: "Mensagem enviada com sucesso"
+      },
+      
+      // Mensagens de erro genéricas
+      errorMessages: {
+        statusUpdate: "Erro ao atualizar status: {{error}}",
+        approve: "Erro ao aprovar subsídio: {{error}}",
+        reject: "Erro ao rejeitar subsídio: {{error}}",
+        messageSent: "Erro ao enviar mensagem",
+        messageUpdate: "Erro ao atualizar mensagem",
+        messageDelete: "Erro ao excluir mensagem",
+        documentsLoad: "Erro ao carregar documentos",
+        downloadDocument: "Erro ao fazer download do documento"
+      },
+      
+      // Prefixos e formatações de mensagens
+      messageFormats: {
+        statusChangePrefix: "Status alterado para: {{status}}",
+        statusChangeReasonPrefix: "Status alterado para {{status}}. Motivo: {{reason}}",
+        documentCommentPrefix: "Comentário sobre documento {{name}}: ",
+        priorityChanged: "Prioridade alterada para: {{priority}}",
+        validatedBy: "Validado por {{user}} em {{date}}"
+      },
+      
+      // Labels de documentos
+      documents: {
+        loading: "Carregando documentos...",
+        noDocuments: "Nenhum documento anexado",
+        validated: "Documento validado",
+        rejected: "Documento rejeitado",
+        approve: "Aprovar documento",
+        reject: "Rejeitar documento",
+        addComment: "Adicionar comentário",
+        download: "Baixar documento",
+        rejecting: "Rejeitando documento",
+        commentOn: "Comentar sobre: ",
+        addRejectionReason: "Por favor, adicione um motivo para a rejeição"
+      },
+      
+      // Labels de chat e histórico
+      chat: {
+        history: "Histórico",
+        filterByActivity: "Filtrar por atividade",
+        all: "Todas",
+        mention: "Mencionar",
+        currentStatus: "Status atual",
+        currentPriority: "Prioridade atual",
+        editingComment: "Editando comentário",
+        editComment: "Editar comentário",
+        deleteComment: "Excluir comentário",
+        newBadge: "Novo"
+      },
+      
+      // Tipos de mensagens no histórico
+      messageTypes: {
+        documentApproved: "Documento aprovado",
+        documentRejected: "Documento rejeitado",
+        documentComment: "Comentário sobre documento",
+        statusUpdate: "Atualização de status"
+      },
+      
+      // Placeholders de inputs
+      placeholders: {
+        editComment: "Editar comentário...",
+        documentComment: "Adicionar comentário sobre o documento...",
+        rejectReason: "Motivo da rejeição (obrigatório)...",
+        addComment: "Adicionar comentário..."
+      },
+      
+      // Diálogos de confirmação
+      dialogs: {
+        deleteCommentTitle: "Excluir Comentário",
+        deleteCommentConfirm: "Tem certeza que deseja excluir este comentário?",
+        statusChangeTitle: "Confirmar Mudança de Status",
+        warningApproved: "Você está prestes a aprovar esta solicitação de subsídio. Esta ação não pode ser desfeita.",
+        warningClosed: "Você está prestes a fechar esta solicitação de subsídio. Esta ação não pode ser desfeita.",
+        warningGeneric: "Você está prestes a alterar o status desta solicitação.",
+        irreversibleAction: "Esta ação é irreversível"
       }
     },
 

@@ -15,6 +15,7 @@ import {
   Mail,
   ChevronLeft,
   ChevronRight,
+  Users,
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { useChurches } from "@/hooks/use-churches"
@@ -24,6 +25,7 @@ import { CreateChurch, CreateChurchVariables } from "@/types/CreateChurch"
 import { ChurchTypeSelector } from "./church-type-selector"
 import { RegionSelector } from "./region-selector"
 import { ProvinceAndCitySelector } from "./province-and-city-selector"
+import { LeaderSelector } from "./leader-selector"
 import { churchTranslations } from "@/lib/translations/churches"
 export interface AddChurchModalProps {
   isOpen: boolean
@@ -47,6 +49,7 @@ export function AddChurchModal({
   const [formData, setFormData] = useState<CreateChurchVariables>({
     institution_id: institutionId,
     name: '',
+    leader_id: '',
     contactName: '',
     phone: '',
     email: '',
@@ -73,7 +76,7 @@ export function AddChurchModal({
       setFormData({
         institution_id: institutionId,
         name: '',
-        region_id: null,
+        leader_id: '',
         contactName: '',
         phone: '',
         email: '',
@@ -115,6 +118,11 @@ export function AddChurchModal({
         newErrors.name = tChurch.validation.name_min_length
       }
 
+      // Leader is required
+      if (!formData.leader_id) {
+        newErrors.leader_id = tChurch.validation.leader_required
+      }
+
       // Type is only required if it's a special church
       if (isSpecialChurch && !formData.type) {
         newErrors.type = tChurch.validation.type_required
@@ -140,6 +148,10 @@ export function AddChurchModal({
     if (step === 99) { // Special value for final validation
       if (!formData.name?.trim()) {
         newErrors.name = tChurch.validation.name_required
+      }
+      // Leader is required
+      if (!formData.leader_id) {
+        newErrors.leader_id = tChurch.validation.leader_required
       }
       // Type is required if it's a special church
       if (isSpecialChurch && !formData.type) {
@@ -183,6 +195,7 @@ export function AddChurchModal({
       const variables: CreateChurchVariables = {
         institution_id: institutionId,
         name: formData.name!.trim(),
+        leader_id: formData.leader_id,
         city: formData.city,
         email: formData.email,
         phone: formData.phone,
@@ -219,6 +232,7 @@ export function AddChurchModal({
     setFormData({
       institution_id: institutionId,
       name: '',
+      leader_id: '',
       contactName: '',
       phone: '',
       email: '',
@@ -234,7 +248,7 @@ export function AddChurchModal({
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        // Step 1: Basic Data (Name, Church Type)
+        // Step 1: Basic Data (Name, Leader, Church Type)
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
@@ -260,6 +274,16 @@ export function AddChurchModal({
                   <p className="text-sm text-red-600">{errors.name}</p>
                 )}
               </div>
+
+              {/* Leader Selector */}
+              <LeaderSelector
+                value={formData.leader_id || ''}
+                onValueChange={(value) => handleInputChange('leader_id', value)}
+                users={currentInstitutionData?.users || []}
+                isLoading={isLoading}
+                error={errors.leader_id}
+                required
+              />
 
               <ChurchTypeSelector
                 isSpecialChurch={isSpecialChurch}

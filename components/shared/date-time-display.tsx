@@ -116,9 +116,9 @@ export function DateTimeDisplay({
         {/* Left Side - Current Date & Time */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
-            <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            {/* <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" /> */}
             <div className="flex items-baseline gap-2 flex-wrap">
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-lg font-bold font-large text-foreground">
                 {dayOfWeek}
               </span>
               <span className="text-xs text-muted-foreground">
@@ -157,34 +157,38 @@ export function DateTimeDisplay({
               viewBox="0 0 50 50"
               className="transform -rotate-90"
             >
-              {/* Background circle */}
+              {/* Background circle - subtle in both modes */}
               <circle
                 cx="25"
                 cy="25"
                 r={radius}
                 fill="none"
-                stroke="hsl(var(--muted))"
-                strokeWidth="4"
+                stroke="currentColor"
+                strokeWidth="5"
+                className="text-muted-foreground/20"
               />
               
-              {/* Progress circle */}
+              {/* Progress circle - vibrant with gradient effect */}
               <circle
                 cx="25"
                 cy="25"
                 r={radius}
                 fill="none"
-                stroke="hsl(var(--primary))"
-                strokeWidth="4"
+                stroke="currentColor"
+                strokeWidth="5"
                 strokeDasharray={circumference}
                 strokeDashoffset={offset}
                 strokeLinecap="round"
-                className="transition-all duration-300"
+                className="text-primary transition-all duration-500 ease-out dark:text-primary/90"
+                style={{
+                  filter: 'drop-shadow(0 0 2px hsl(var(--primary) / 0.5))'
+                }}
               />
             </svg>
             
             {/* Percentage text */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-[10px] font-bold text-foreground">
+              <span className="text-[10px] font-bold text-foreground tabular-nums">
                 {Math.round(yearProgress)}%
               </span>
             </div>

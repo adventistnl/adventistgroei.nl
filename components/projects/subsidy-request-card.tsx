@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { MoreVertical, FileText, DollarSign, Archive, Info } from "lucide-react"
+import { MoreVertical, FileText, DollarSign, Archive, Info, Eye, Pencil, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,6 +16,9 @@ import { format } from "date-fns"
 import { ptBR, enUS, nl } from "date-fns/locale"
 import { useTranslation } from "react-i18next"
 import { useCurrency } from "@/contexts/currency-context"
+import { WithPermission } from "@/hocs/with-permission"
+import { useHasPermission } from "@/hooks/use-has-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 export interface SubsidyRequestCardData {
   id: string
@@ -85,6 +88,17 @@ export function SubsidyRequestCard({
   const { formatCurrency } = useCurrency()
   const contentDisabledClass = data.archived ? "opacity-60 pointer-events-none" : ""
   
+  // Check if any action is available (for showing/hiding the menu button)
+  const hasAnyPermission = useHasPermission(
+    [
+      PermissionResolverName.SubsidyRequest,
+      PermissionResolverName.UpdateSubsidyRequest,
+      PermissionResolverName.DeleteSubsidyRequest
+    ],
+    [],
+    true // partial check - user needs at least one permission
+  )
+  
   const statusConfig: Record<
     SubsidyRequestCardData["status"],
     { label: string; className: string }
@@ -146,63 +160,72 @@ export function SubsidyRequestCard({
           </div>
         </div>
 
-        {/* Three-dot menu (always interactive) */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            >
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            {onView && (
-              <DropdownMenuItem onClick={() => onView(data.id)}>
-                {t('actions.view')}
-              </DropdownMenuItem>
-            )}
-            {onEdit && (
-              <DropdownMenuItem onClick={() => onEdit(data.id)}>
-                {t('actions.edit')}
-              </DropdownMenuItem>
-            )}
-            
-            
-            {onDelete && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => onDelete(data.id)}
-                  className="text-red-600 focus:text-red-600"
-                >
-                  {t('actions.delete')}
-                </DropdownMenuItem>
-              </>
-            )}
+        {/* Three-dot menu (only if user has any permission) */}
+        {hasAnyPermission && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {onView && (
+                <WithPermission requiredPermissions={[PermissionResolverName.SubsidyRequest]}>
+                  <DropdownMenuItem onClick={() => onView(data.id)}>
+                    <Eye className="w-4 h-4 mr-2" />
+                    {t('actions.view')}
+                  </DropdownMenuItem>
+                </WithPermission>
+              )}
+              {onEdit && (
+                <WithPermission requiredPermissions={[PermissionResolverName.UpdateSubsidyRequest]}>
+                  <DropdownMenuItem onClick={() => onEdit(data.id)}>
+                    <Pencil className="w-4 h-4 mr-2" />
+                    {t('actions.edit')}
+                  </DropdownMenuItem>
+                </WithPermission>
+              )}  
+              
+              
+              {onDelete && (
+                <WithPermission requiredPermissions={[PermissionResolverName.DeleteSubsidyRequest]}>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => onDelete(data.id)}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {t('actions.delete')}
+                  </DropdownMenuItem>
+                </WithPermission>
+              )}
 
-            {/* {onDuplicate && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onDuplicate(data.id)}>
-                  {t('actions.duplicate')}
-                </DropdownMenuItem>
-              </>
-            )} */}
+              {/* {onDuplicate && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => onDuplicate(data.id)}>
+                    {t('actions.duplicate')}
+                  </DropdownMenuItem>
+                </>
+              )} */}
 
-            {/* Archive / Unarchive action */}
-            {onArchive && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onArchive && onArchive(data.id)}>
-                  <Archive className="w-3 h-3 mr-2" />
-                  {data.archived ? t('actions.unarchive') : t('actions.archive')}
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              {/* Archive / Unarchive action */}
+              {onArchive && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => onArchive && onArchive(data.id)}>
+                    <Archive className="w-3 h-3 mr-2" />
+                    {data.archived ? t('actions.unarchive') : t('actions.archive')}
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       {/* Rest of content - disabled when archived */}

@@ -110,7 +110,7 @@ export function YearFilter({
             flex-shrink-0 min-w-[80px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
             ${
               selectedYear === year 
-                ? 'bg-primary text-primary-foreground border-primary shadow-md hover:bg-primary/90' 
+                ? 'bg-primary text-primary-foreground border-primary shadow-md hover:bg-primary/90 dark:bg-white dark:text-gray-900 dark:border-white dark:hover:bg-gray-100' 
                 : 'bg-muted text-muted-foreground border-muted hover:bg-muted/80 hover:text-foreground hover:border-muted-foreground/50'
             }
           `}

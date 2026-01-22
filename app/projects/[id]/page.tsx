@@ -72,9 +72,10 @@ import { CREATE_SUBSIDY_REQUEST, UPDATE_SUBSIDY_REQUEST, APPROVE_SUBSIDY_REQUEST
 import { useAuth } from "@/contexts/auth-context"
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
-import { ActivityTags, EntityType, ActivityPriority, ActivityStatus } from "@/types/graphql-global-types"
+import { ActivityTags, EntityType, ActivityPriority, ActivityStatus, PermissionResolverName } from "@/types/graphql-global-types"
 import { LoadingSpinner } from "@/components/shared/loading-spinner"
 import { CardDescription, CardTitle } from "@/components/ui/card"
+import { WithPermission } from "@/hocs/with-permission"
 
 // Helper functions for ActivityTags
 const getActivityTagLabel = (tag: ActivityTags): string => {
@@ -932,7 +933,7 @@ export default function ProjectDetailsPage() {
       const result = await createSubsidyRequest({
         variables: {
           data: {
-            description: data.notes || (pt.subsidy.subsidyRequestDescription || "Subsidy request with {{count}} activity(ies)").replace('{{count}}', data.items.length.toString()),
+            description: data.notes || (pt.subsidy.subsidyRequestDescription || "Subsidy request with {{count}} activityies").replace('{{count}}', data.items.length.toString()),
             total_budget: data.requested_amount,
             institution_id: data.institution_id,
             department_id: data.department_id || undefined,
@@ -948,13 +949,13 @@ export default function ProjectDetailsPage() {
       const createdSubsidyId = result.data?.createSubsidyRequest?.id
 
       if (createdSubsidyId) {
-        console.log('✅ Subsidy request created with ID:', createdSubsidyId)
+        console.log('Subsidy request created with ID:', createdSubsidyId)
         return createdSubsidyId // Return ID so modal can upload files
       }
 
-      console.log('✅ Subsidy request created successfully')
+      console.log('Subsidy request created successfully')
     } catch (error) {
-      console.error('❌ Error creating subsidy request:', error)
+      console.error('Error creating subsidy request:', error)
       throw error // Re-throw so modal can handle error
     }
   }
@@ -1003,7 +1004,7 @@ export default function ProjectDetailsPage() {
         variables: {
           id,
           data: {
-            description: data.notes || (pt.subsidy.subsidyRequestDescription || "Subsidy request with {{count}} activity(ies)").replace('{{count}}', data.items.length.toString()),
+            description: data.notes || (pt.subsidy.subsidyRequestDescription || "Subsidy request with {{count}} activityies").replace('{{count}}', data.items.length.toString()),
             total_budget: data.requested_amount,
             institution_id: data.institution_id,
             department_id: data.department_id || undefined,
@@ -1059,7 +1060,7 @@ export default function ProjectDetailsPage() {
     // Abrir modal de solicitação de subsídio com as atividades selecionadas
     setIsRequestSubsidyModalOpen(true)
     
-    toast.success(`✅ ${activities.length} atividade(s) selecionada(s)`, { duration: 2000 })
+    toast.success(`${activities.length} atividade(s) selecionada(s)`, { duration: 2000 })
   }
 
   const handleRegisterActivitySubmit = async (data: RegisterActivityFormData) => {
@@ -1734,7 +1735,7 @@ export default function ProjectDetailsPage() {
                           onUpdateSubsidy={handleUpdateSubsidyCard}
                           allActivities={allProjectActivities}
                           subsidizedActivityIds={subsidizedActivityIds}
-                          description={t('subsidy.manageRequests')}
+                          description={t('manageRequests')}
                           onRefresh={handleRefreshSubsidies}
                           projectSubsidizedBudget={projectData?.project?.kpis?.subsidizedBudget || 0}
                         />
@@ -1802,7 +1803,8 @@ export default function ProjectDetailsPage() {
                   label: t('common.apply'),
                   icon: <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
                   onClick: handleBatchEdit,
-                  variant: 'outline'
+                  variant: 'outline',
+                  requiredPermission: PermissionResolverName.UpdateProjectActivity
                 }
               ]}
               batchPrimaryAction={{
@@ -1811,7 +1813,8 @@ export default function ProjectDetailsPage() {
                 icon: <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
                 onClick: handleBatchSubsidyRequest,
                 variant: 'default',
-                disabled: !canRequestSubsidy
+                disabled: !canRequestSubsidy,
+                requiredPermission: PermissionResolverName.CreateSubsidyRequest
               }}
               batchSummary={
                 <div className="flex items-center gap-3 text-xs">
@@ -1931,7 +1934,7 @@ export default function ProjectDetailsPage() {
         <Dialog open={isAddUserModalOpen} onOpenChange={setIsAddUserModalOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Adicionar Usuário ao Projeto</DialogTitle>
+              <DialogTitle>Add User</DialogTitle>
             </DialogHeader>
             
             <div className="space-y-4">

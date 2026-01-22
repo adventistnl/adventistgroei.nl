@@ -173,16 +173,6 @@ export const departmentTranslations = {
       delete_failed: "Failed to deactivate department"
     },
     
-    // Stats
-    stats: {
-      church: "Church",
-      volunteers: "Volunteers",
-      budgets: "Budgets",
-      projects: "Projects",
-      documents: "Documents",
-      members: "Members"
-    },
-    
     // KPI Cards
     kpi: {
       budget_total: {
@@ -201,6 +191,23 @@ export const departmentTranslations = {
     
     // Charts
     charts: {
+      projects: {
+        title: "Projects per Department Over Time",
+        description: "Total number of projects created per department over time",
+        no_data: "No project data available"
+      },
+      time_ranges: {
+        select_time_range: "Select time range",
+        last_7_days: "Last 7 days",
+        last_30_days: "Last 30 days",
+        last_3_months: "Last 3 months",
+        last_6_months: "Last 6 months",
+        last_12_months: "Last 12 months"
+      },
+      no_data: {
+        title: "No Project Data Available",
+        description: "Projects will appear here once they are created in the selected time period."
+      },
       projects_over_time: {
         title: "Department Activity Overview",
         description: "Visualization of project creation by department over time",
@@ -219,6 +226,64 @@ export const departmentTranslations = {
           in_period: "in"
         },
         no_data: "No project data available"
+      }
+    },
+
+    // Department Projects Card
+    projects: {
+      title: "Department Projects",
+      description: "All projects linked to {{departmentName}}",
+      create_button: "Create Project",
+      owner_label: "Owner:",
+      status: {
+        in_progress: "In Progress",
+        on_hold: "On Hold",
+        in_review: "In Review",
+        concluded: "Concluded",
+        expired: "Expired",
+        cancelled: "Cancelled"
+      },
+      sections: {
+        in_progress: "In Progress",
+        completed: "Completed",
+        others: "Others"
+      },
+      kpi: {
+        in_progress: "In Progress",
+        completed: "Completed"
+      },
+      no_projects: "No projects",
+      no_owner: "No owner assigned",
+      empty_state: {
+        title: "No Projects Yet",
+        description: "This department doesn't have any projects. Click 'Create Project' to get started."
+      },
+      financial: {
+        total_budget: "Total Project Budget",
+        contribution_requested: "Contribution Requested",
+        contribution_rate: "Contribution Rate"
+      }
+    },
+
+    // Department Leader Info Card
+    leader_info: {
+      title: "Department Leader",
+      no_leader: {
+        title: "No Leader Assigned",
+        description: "This department doesn't have a leader yet"
+      },
+      badges: {
+        leader: "Leader",
+        inactive: "Inactive"
+      },
+      actions: {
+        view_contact: "View Contact",
+        send_email: "Send Email",
+        call: "Call"
+      },
+      status: {
+        department_inactive: "Department is currently inactive",
+        leader_inactive: "Leader account is currently inactive"
       }
     },
     
@@ -312,6 +377,18 @@ export const departmentTranslations = {
       institutional: "Institutional"
     },
 
+    // Stats
+    stats: {
+      church: "Church",
+      volunteers: "Volunteers",
+      budgets: "Budgets",
+      projects: "projects",
+      documents: "Documents",
+      members: "Members",
+      total_projects: "Total Projects",
+      top_department: "Top Department"
+    },
+
     // Leaders Section
     leaders: {
       title: "Department Leaders",
@@ -337,6 +414,7 @@ export const departmentTranslations = {
       inactive: "Inactive",
       actions: "Actions",
       annual_budget: "Annual Budget",
+      top: "Top",
       trend: {
         vs_previous_month: "vs. previous month",
         vs_previous_year: "vs. previous year"
@@ -575,7 +653,9 @@ export const departmentTranslations = {
       budgets: "Budgetten",
       projects: "Projecten",
       documents: "Documenten",
-      members: "Leden"
+      members: "Leden",
+      total_projects: "Totaal Projecten",
+      top_department: "Top Afdeling"
     },
     
     // KPI Cards
@@ -596,6 +676,23 @@ export const departmentTranslations = {
     
     // Charts
     charts: {
+      projects: {
+        title: "Projecten per Afdeling in de Tijd",
+        description: "Totaal aantal projecten aangemaakt per afdeling in de tijd",
+        no_data: "Geen projectgegevens beschikbaar"
+      },
+      time_ranges: {
+        select_time_range: "Selecteer tijdsbereik",
+        last_7_days: "Laatste 7 dagen",
+        last_30_days: "Laatste 30 dagen",
+        last_3_months: "Laatste 3 maanden",
+        last_6_months: "Laatste 6 maanden",
+        last_12_months: "Laatste 12 maanden"
+      },
+      no_data: {
+        title: "Geen Projectgegevens Beschikbaar",
+        description: "Projecten verschijnen hier zodra ze zijn aangemaakt in de geselecteerde periode."
+      },
       activity_overview: {
         title: "Afdeling Activiteiten Overzicht",
         description: "Activiteitsmetrieken gebaseerd op echte budgettoewijzing en actieve gebruikersgegevens",
@@ -629,6 +726,64 @@ export const departmentTranslations = {
           in_period: "in"
         },
         no_data: "Geen projectgegevens beschikbaar"
+      }
+    },
+
+    // Department Projects Card
+    projects: {
+      title: "Afdeling Projecten",
+      description: "Alle projecten gekoppeld aan {{departmentName}}",
+      create_button: "Project Aanmaken",
+      owner_label: "Eigenaar:",
+      status: {
+        in_progress: "In Uitvoering",
+        on_hold: "In de Wacht",
+        in_review: "In Beoordeling",
+        concluded: "Afgerond",
+        expired: "Verlopen",
+        cancelled: "Geannuleerd"
+      },
+      sections: {
+        in_progress: "In Uitvoering",
+        completed: "Afgerond",
+        others: "Anderen"
+      },
+      kpi: {
+        in_progress: "In Uitvoering",
+        completed: "Afgerond"
+      },
+      no_projects: "Geen projecten",
+      no_owner: "Geen eigenaar toegewezen",
+      empty_state: {
+        title: "Nog Geen Projecten",
+        description: "Deze afdeling heeft nog geen projecten. Klik op 'Project Aanmaken' om te beginnen."
+      },
+      financial: {
+        total_budget: "Totaal Project Budget",
+        contribution_requested: "Bijdrage Aangevraagd",
+        contribution_rate: "Bijdrage Percentage"
+      }
+    },
+
+    // Department Leader Info Card
+    leader_info: {
+      title: "Afdeling Leider",
+      no_leader: {
+        title: "Geen Leider Toegewezen",
+        description: "Deze afdeling heeft nog geen leider"
+      },
+      badges: {
+        leader: "Leider",
+        inactive: "Inactief"
+      },
+      actions: {
+        view_contact: "Contact Bekijken",
+        send_email: "E-mail Versturen",
+        call: "Bellen"
+      },
+      status: {
+        department_inactive: "Afdeling is momenteel inactief",
+        leader_inactive: "Leider account is momenteel inactief"
       }
     },
     
@@ -747,6 +902,7 @@ export const departmentTranslations = {
       inactive: "Inactief",
       actions: "Acties",
       annual_budget: "Jaarlijks Budget",
+      top: "Top",
       trend: {
         vs_previous_month: "vs. vorige maand",
         vs_previous_year: "vs. vorig jaar"
@@ -979,13 +1135,16 @@ export const departmentTranslations = {
     },
     
     // Stats
+    // Stats
     stats: {
       church: "Igreja",
       volunteers: "Voluntários",
       budgets: "Orçamentos",
-      projects: "Projetos",
+      projects: "projetos",
       documents: "Documentos",
-      members: "Membros"
+      members: "Membros",
+      total_projects: "Total de Projetos",
+      top_department: "Departamento Principal"
     },
     
     // KPI Cards
@@ -1006,6 +1165,23 @@ export const departmentTranslations = {
     
     // Charts
     charts: {
+      projects: {
+        title: "Projetos por Departamento ao Longo do Tempo",
+        description: "Total de projetos criados por departamento ao longo do tempo",
+        no_data: "Nenhum dado de projeto disponível"
+      },
+      time_ranges: {
+        select_time_range: "Selecionar período de tempo",
+        last_7_days: "Últimos 7 dias",
+        last_30_days: "Últimos 30 dias",
+        last_3_months: "Últimos 3 meses",
+        last_6_months: "Últimos 6 meses",
+        last_12_months: "Últimos 12 meses"
+      },
+      no_data: {
+        title: "Nenhum Dado de Projeto Disponível",
+        description: "Os projetos aparecerão aqui assim que forem criados no período selecionado."
+      },
       activity_overview: {
         title: "Visão Geral de Atividades do Departamento",
         description: "Métricas de atividade baseadas em dados reais de alocação de orçamento e usuários ativos",
@@ -1039,6 +1215,64 @@ export const departmentTranslations = {
           in_period: "em"
         },
         no_data: "Nenhum dado de projeto disponível"
+      }
+    },
+
+    // Department Projects Card
+    projects: {
+      title: "Projetos do Departamento",
+      description: "Todos os projetos vinculados a {{departmentName}}",
+      create_button: "Criar Projeto",
+      owner_label: "Responsável:",
+      status: {
+        in_progress: "Em Andamento",
+        on_hold: "Em Espera",
+        in_review: "Em Revisão",
+        concluded: "Concluído",
+        expired: "Expirado",
+        cancelled: "Cancelado"
+      },
+      sections: {
+        in_progress: "Em Andamento",
+        completed: "Concluídos",
+        others: "Outros"
+      },
+      kpi: {
+        in_progress: "Em Andamento",
+        completed: "Concluídos"
+      },
+      no_projects: "Sem projetos",
+      no_owner: "Nenhum responsável atribuído",
+      empty_state: {
+        title: "Ainda Não Há Projetos",
+        description: "Este departamento não possui nenhum projeto. Clique em 'Criar Projeto' para começar."
+      },
+      financial: {
+        total_budget: "Orçamento Total de Projetos",
+        contribution_requested: "Contribuição Solicitada",
+        contribution_rate: "Taxa de Contribuição"
+      }
+    },
+
+    // Department Leader Info Card
+    leader_info: {
+      title: "Líder do Departamento",
+      no_leader: {
+        title: "Nenhum Líder Atribuído",
+        description: "Este departamento ainda não possui um líder"
+      },
+      badges: {
+        leader: "Líder",
+        inactive: "Inativo"
+      },
+      actions: {
+        view_contact: "Ver Contato",
+        send_email: "Enviar E-mail",
+        call: "Ligar"
+      },
+      status: {
+        department_inactive: "Departamento está atualmente inativo",
+        leader_inactive: "Conta do líder está atualmente inativa"
       }
     },
     
@@ -1157,6 +1391,7 @@ export const departmentTranslations = {
       inactive: "Inativo",
       actions: "Ações",
       annual_budget: "Orçamento Anual",
+      top: "Top",
       trend: {
         vs_previous_month: "vs. mês anterior",
         vs_previous_year: "vs. ano anterior"

@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface DeleteChurch_deleteChurch {
-  __typename: "ChurchModel";
+  __typename: "Church";
   id: string;
   name: string;
   is_deleted: boolean;
