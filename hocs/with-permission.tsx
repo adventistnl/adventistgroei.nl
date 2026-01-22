@@ -43,9 +43,25 @@ export function WithPermission({
     partialRoleCheck
   );
 
+  // Debug: Log resultado da verificação de permissão
+  React.useEffect(() => {
+    if (requiredPermissions.length > 0 || requiredRoles.length > 0) {
+      console.log('🔐 [WithPermission] Access Check:', {
+        hasPermission,
+        requiredPermissions,
+        requiredRoles,
+        checkType: partialPermissionCheck ? 'Partial (ANY)' : 'Total (ALL)',
+        willRender: hasPermission ? '✅ GRANTED - Rendering children' : '🔒 DENIED - Rendering fallback',
+        fallbackExists: !!fallback
+      })
+    }
+  }, [hasPermission, requiredPermissions, requiredRoles, partialPermissionCheck, fallback])
+
   if (!hasPermission) {
+    console.log('🚫 [WithPermission] ACCESS DENIED - Rendering fallback')
     return <>{fallback}</>;
   }
 
+  console.log('✅ [WithPermission] ACCESS GRANTED - Rendering children')
   return <>{children}</>;
 }

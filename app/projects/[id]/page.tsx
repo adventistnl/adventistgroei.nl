@@ -933,7 +933,7 @@ export default function ProjectDetailsPage() {
       const result = await createSubsidyRequest({
         variables: {
           data: {
-            description: data.notes || (pt.subsidy.subsidyRequestDescription || "Subsidy request with {{count}} activity(ies)").replace('{{count}}', data.items.length.toString()),
+            description: data.notes || (pt.subsidy.subsidyRequestDescription || "Subsidy request with {{count}} activityies").replace('{{count}}', data.items.length.toString()),
             total_budget: data.requested_amount,
             institution_id: data.institution_id,
             department_id: data.department_id || undefined,
@@ -949,13 +949,13 @@ export default function ProjectDetailsPage() {
       const createdSubsidyId = result.data?.createSubsidyRequest?.id
 
       if (createdSubsidyId) {
-        console.log('✅ Subsidy request created with ID:', createdSubsidyId)
+        console.log('Subsidy request created with ID:', createdSubsidyId)
         return createdSubsidyId // Return ID so modal can upload files
       }
 
-      console.log('✅ Subsidy request created successfully')
+      console.log('Subsidy request created successfully')
     } catch (error) {
-      console.error('❌ Error creating subsidy request:', error)
+      console.error('Error creating subsidy request:', error)
       throw error // Re-throw so modal can handle error
     }
   }
@@ -1004,7 +1004,7 @@ export default function ProjectDetailsPage() {
         variables: {
           id,
           data: {
-            description: data.notes || (pt.subsidy.subsidyRequestDescription || "Subsidy request with {{count}} activity(ies)").replace('{{count}}', data.items.length.toString()),
+            description: data.notes || (pt.subsidy.subsidyRequestDescription || "Subsidy request with {{count}} activityies").replace('{{count}}', data.items.length.toString()),
             total_budget: data.requested_amount,
             institution_id: data.institution_id,
             department_id: data.department_id || undefined,
@@ -1060,7 +1060,7 @@ export default function ProjectDetailsPage() {
     // Abrir modal de solicitação de subsídio com as atividades selecionadas
     setIsRequestSubsidyModalOpen(true)
     
-    toast.success(`✅ ${activities.length} atividade(s) selecionada(s)`, { duration: 2000 })
+    toast.success(`${activities.length} atividade(s) selecionada(s)`, { duration: 2000 })
   }
 
   const handleRegisterActivitySubmit = async (data: RegisterActivityFormData) => {
@@ -1735,7 +1735,7 @@ export default function ProjectDetailsPage() {
                           onUpdateSubsidy={handleUpdateSubsidyCard}
                           allActivities={allProjectActivities}
                           subsidizedActivityIds={subsidizedActivityIds}
-                          description={t('subsidy.manageRequests')}
+                          description={t('manageRequests')}
                           onRefresh={handleRefreshSubsidies}
                           projectSubsidizedBudget={projectData?.project?.kpis?.subsidizedBudget || 0}
                         />
@@ -1933,7 +1933,7 @@ export default function ProjectDetailsPage() {
         <Dialog open={isAddUserModalOpen} onOpenChange={setIsAddUserModalOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Adicionar Usuário ao Projeto</DialogTitle>
+              <DialogTitle>Add User</DialogTitle>
             </DialogHeader>
             
             <div className="space-y-4">

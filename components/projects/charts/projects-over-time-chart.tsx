@@ -55,33 +55,6 @@ export function ProjectsOverTimeChart({
   const [timeRange, setTimeRange] = React.useState("90d")
   const [chartType, setChartType] = React.useState<"area" | "bar">("area")
   
-  // DEBUG: Validate API data on component mount
-  React.useEffect(() => {
-    console.log('🔍 [ProjectsOverTimeChart] API DATA VALIDATION:', {
-      receivedData: {
-        projectsCount: data?.length || 0,
-        institutionsCount: institutions?.length || 0,
-        projectsIsArray: Array.isArray(data),
-        institutionsIsArray: Array.isArray(institutions),
-        projectsType: typeof data,
-        institutionsType: typeof institutions,
-      },
-      projectsSample: data?.slice(0, 3).map(p => ({
-        id: p?.id,
-        title: p?.title,
-        department_id: p?.department_id,
-        institution_id: p?.institution_id,
-        created_at: p?.created_at,
-        status: p?.status,
-      })),
-      institutionsSample: institutions?.slice(0, 3).map(i => ({
-        id: i?.id,
-        name: i?.name,
-      })),
-      selectedYear,
-      loading,
-    })
-  }, [data, institutions, selectedYear, loading])
   
   // Determine grouping mode: departments (for projects page) or institutions (for institutions page)
   const groupingMode = React.useMemo(() => {
@@ -104,11 +77,7 @@ export function ProjectsOverTimeChart({
       
       const filtered = departments.filter(dept => dept && dept.id && dept.name)
       
-      console.log('📊 [ProjectsOverTimeChart] Departments received (grouping by departments):', {
-        total: departments.length,
-        filtered: filtered.length,
-        departmentsList: filtered.map(d => ({ id: d.id, name: d.name }))
-      })
+
       
       return filtered
     } else if (groupingMode === 'institutions') {

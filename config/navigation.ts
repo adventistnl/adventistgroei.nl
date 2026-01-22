@@ -127,8 +127,8 @@ const navSections: NavSection[] = [
         url: "#",
         icon: DollarSign,
         items: [
-          { title: "Annual Budget", url: "/finance/annual-budget", permissions: [PermissionResolverName.Settings], translationKey: "sidebar.annualBudget" },
-          { title: "Subsidy Approvals", url: "/finance/subsidy-approvals", permissions: [PermissionResolverName.SubsidyStatus], translationKey: "sidebar.subsidyApprovals" },
+          { title: "Annual Budget", url: "/finance/annual-budget", permissions: [PermissionResolverName.AnnualBudgets], translationKey: "sidebar.annualBudget" },
+          { title: "Subsidy Approvals", url: "/finance/subsidy-approvals", permissions: [PermissionResolverName.SubsidyRequests], translationKey: "sidebar.subsidyApprovals" },
         ],
         permissions: [],
         translationKey: "sidebar.financeManagement"

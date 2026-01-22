@@ -244,7 +244,21 @@ export function ProjectModalsWrapper(props: ProjectModalsWrapperProps) {
             availableBudget={(() => {
               const totalBudget = props.allProjectActivities.reduce((sum, act) => sum + act.budget_amount, 0)
               const subsidizedBudget = props.projectData?.project?.kpis?.subsidizedBudget || 0
-              return Math.max(0, totalBudget - subsidizedBudget)
+              const totalRequested = props.subsidyRequests?.reduce((sum, req) => {
+                if (req.status === 'rejected') return sum
+                return sum + req.requested_amount
+              }, 0) || 0
+              const available = Math.max(0, subsidizedBudget - totalRequested)
+              
+              console.log('💰 [AvailableBudget Calculation]:', {
+                totalBudget,
+                subsidizedBudget,
+                totalRequested,
+                available,
+                subsidyRequestsCount: props.subsidyRequests?.length || 0
+              })
+              
+              return available
             })()}
           />
         </Suspense>

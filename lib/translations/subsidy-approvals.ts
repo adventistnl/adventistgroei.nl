@@ -63,6 +63,7 @@ export const subsidyApprovalsTranslations = {
     
     // Status labels
     status: {
+      changeStatus: "Change Status",
       pending: "Pending",
       in_review: "In Review",
       approved: "Approved",
@@ -246,6 +247,7 @@ export const subsidyApprovalsTranslations = {
     
     // Status labels
     status: {
+      changeStatus: "Alterar Status",
       pending: "Pendente",
       in_review: "Em Revisão",
       approved: "Aprovado",
@@ -429,6 +431,7 @@ export const subsidyApprovalsTranslations = {
     
     // Status labels
     status: {
+      changeStatus: "Status Wijzigen",
       pending: "In Behandeling",
       in_review: "In Beoordeling",
       approved: "Goedgekeurd",

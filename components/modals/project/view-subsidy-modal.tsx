@@ -17,6 +17,7 @@ import {
   DropdownMenuLabel
 } from "@/components/ui/dropdown-menu"
 import { useCurrency } from "@/contexts/currency-context"
+import { useAuth } from "@/contexts/auth-context"
 import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -33,6 +34,8 @@ import { GET_ALL_SUBSIDY_STATUSES } from "@/graphql/queries/SUBSIDY_STATUS_QUERI
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { RejectionDialog } from "@/components/modals/project/rejection-dialog"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { projectTranslations } from "@/lib/translations/projects"
+import { SubsidyChatPanel } from "@/components/modals/project/subsidy-chat-panel"
 
 interface ActivityItem {
   id: string
@@ -60,6 +63,7 @@ interface StatusHistoryItem {
   status: "pending" | "in_review" | "approved" | "rejected"
   reason: string
   changed_by: string
+  user_id: string
   changed_at: Date
   isNew: boolean
   type?: "STATUS_CHANGE" | "PRIORITY_CHANGE" | "COMMENT" | "DOCUMENT_ACTION"
@@ -85,7 +89,15 @@ export function ViewSubsidyModal({
   }
 
   const { formatCurrency } = useCurrency()
+  const { user } = useAuth()
   const { t, i18n } = useTranslation()
+  
+  // Helper para acessar traduções do modal
+  const modalT = React.useMemo(() => {
+    const lang = i18n.language as keyof typeof projectTranslations
+    return projectTranslations[lang]?.viewSubsidyModal || projectTranslations.pt.viewSubsidyModal
+  }, [i18n.language])
+  
   const [selectedActivityIndex, setSelectedActivityIndex] = React.useState(0)
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true)
   const [newMessage, setNewMessage] = React.useState("")
@@ -142,7 +154,9 @@ export function ViewSubsidyModal({
     refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
     awaitRefetchQueries: true,
     onCompleted: () => {
-      toast.success(t('toasts.statusUpdated'))
+      const lang = i18n.language as keyof typeof projectTranslations
+      const modalT = projectTranslations[lang]?.viewSubsidyModal || projectTranslations.pt.viewSubsidyModal
+      toast.success(modalT.success.statusUpdated)
       // Trigger callback to refresh data in parent
       onSubsidyUpdated?.()
     },
@@ -151,17 +165,19 @@ export function ViewSubsidyModal({
       if (!ext && (error.networkError as any)?.result?.errors?.[0]?.extensions) {
         ext = (error.networkError as any).result.errors[0].extensions;
       }
+      const lang = i18n.language as keyof typeof projectTranslations
+      const modalT = projectTranslations[lang]?.viewSubsidyModal || projectTranslations.pt.viewSubsidyModal;
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
       if (errorCode === 'STATUS_IS_CLOSED') {
-          toast.error("O subsídio já está fechado e não pode ser alterado.");
+          toast.error(modalT.errors.statusClosed);
       } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
-          toast.error("Não é possível fechar um subsídio em revisão. É necessário aprovar ou rejeitar primeiro.");
+          toast.error(modalT.errors.cannotCloseInReview);
       } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
-          toast.error("Subsídios aprovados ou rejeitados só podem ser fechados.");
+          toast.error(modalT.errors.onlyClosedFromFinalState);
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(t('toasts.documentsPending') || "All documents must be validated first");
+          toast.error(modalT.errors.documentsPending);
       } else {
-          toast.error(t('toasts.statusUpdateError', { error: error.message }))
+          toast.error(modalT.errorMessages.statusUpdate.replace('{{error}}', error.message))
       }
       console.error("Error updating subsidy:", error)
     }
@@ -171,7 +187,9 @@ export function ViewSubsidyModal({
     refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
     awaitRefetchQueries: true,
     onCompleted: () => {
-      toast.success(t('toasts.subsidyApproved'))
+      const lang = i18n.language as keyof typeof projectTranslations
+      const modalT = projectTranslations[lang]?.viewSubsidyModal || projectTranslations.pt.viewSubsidyModal
+      toast.success(modalT.success.subsidyApproved)
       onSubsidyUpdated?.()
     },
     onError: (error) => {
@@ -179,19 +197,21 @@ export function ViewSubsidyModal({
       if (!ext && (error.networkError as any)?.result?.errors?.[0]?.extensions) {
         ext = (error.networkError as any).result.errors[0].extensions;
       }
+      const lang = i18n.language as keyof typeof projectTranslations
+      const modalT = projectTranslations[lang]?.viewSubsidyModal || projectTranslations.pt.viewSubsidyModal;
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
       if (errorCode === 'STATUS_IS_CLOSED') {
-          toast.error("O subsídio já está fechado e não pode ser alterado.");
+          toast.error(modalT.errors.statusClosed);
       } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
-          toast.error("Não é possível fechar um subsídio em revisão. É necessário aprovar ou rejeitar primeiro.");
+          toast.error(modalT.errors.cannotCloseInReview);
       } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
-          toast.error("Subsídios aprovados ou rejeitados só podem ser fechados.");
+          toast.error(modalT.errors.onlyClosedFromFinalState);
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(t('toasts.documentsPending') || "All documents must be validated first");
+          toast.error(modalT.errors.documentsPending);
       } else if (errorCode === 'DOCUMENTS_REJECTED') {
-          toast.error(t('toasts.documentsRejected') || "Cannot approve subsidy with rejected documents");
+          toast.error(modalT.errors.documentsRejected);
       } else {
-          toast.error(t('toasts.approveError', { error: error.message }))
+          toast.error(modalT.errorMessages.approve.replace('{{error}}', error.message))
       }
       console.error("Error approving subsidy:", error)
     }
@@ -201,7 +221,9 @@ export function ViewSubsidyModal({
     refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
     awaitRefetchQueries: true,
     onCompleted: () => {
-      toast.success(t('toasts.subsidyRejected'))
+      const lang = i18n.language as keyof typeof projectTranslations
+      const modalT = projectTranslations[lang]?.viewSubsidyModal || projectTranslations.pt.viewSubsidyModal
+      toast.success(modalT.success.subsidyRejected)
       onSubsidyUpdated?.()
     },
     onError: (error) => {
@@ -209,17 +231,19 @@ export function ViewSubsidyModal({
       if (!ext && (error.networkError as any)?.result?.errors?.[0]?.extensions) {
         ext = (error.networkError as any).result.errors[0].extensions;
       }
+      const lang = i18n.language as keyof typeof projectTranslations
+      const modalT = projectTranslations[lang]?.viewSubsidyModal || projectTranslations.pt.viewSubsidyModal;
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
       if (errorCode === 'STATUS_IS_CLOSED') {
-          toast.error("O subsídio já está fechado e não pode ser alterado.");
+          toast.error(modalT.errors.statusClosed);
       } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
-          toast.error("Não é possível fechar um subsídio em revisão. É necessário aprovar ou rejeitar primeiro.");
+          toast.error(modalT.errors.cannotCloseInReview);
       } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
-          toast.error("Subsídios aprovados ou rejeitados só podem ser fechados.");
+          toast.error(modalT.errors.onlyClosedFromFinalState);
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(t('toasts.documentsPending') || "All documents must be validated first");
+          toast.error(modalT.errors.documentsPending);
       } else {
-          toast.error(t('toasts.rejectError', { error: error.message }))
+          toast.error(modalT.errorMessages.reject.replace('{{error}}', error.message))
       }
       console.error("Error rejecting subsidy:", error)
     }
@@ -229,7 +253,7 @@ export function ViewSubsidyModal({
     refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
     onError: (error) => {
       console.error("Error adding message:", error)
-      toast.error(t('toasts.messageSentError'))
+      toast.error(modalT.errorMessages.messageSent)
     }
   })
 
@@ -237,7 +261,7 @@ export function ViewSubsidyModal({
     refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
     onError: (error) => {
       console.error("Error updating message:", error)
-      toast.error(t('toasts.messageUpdateError'))
+      toast.error(modalT.errorMessages.messageUpdate)
     }
   })
 
@@ -245,7 +269,7 @@ export function ViewSubsidyModal({
     refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
     onError: (error) => {
       console.error("Error deleting message:", error)
-      toast.error(t('toasts.messageDeleteError'))
+      toast.error(modalT.errorMessages.messageDelete)
     }
   })
 
@@ -309,9 +333,9 @@ export function ViewSubsidyModal({
     if (!canChangeStatus(normalizedStatus)) {
         // Specific message for rejected documents blocking approval
         if (normalizedStatus === 'approved' && hasRejectedDocuments()) {
-            toast.error(t('toasts.documentsRejected') || 'Cannot approve subsidy with rejected documents')
+            toast.error(modalT.errors.documentsRejected)
         } else {
-            toast.error(t('toasts.statusChangeNotAllowed'))
+            toast.error(modalT.errors.statusChangeNotAllowed)
         }
         return
     }
@@ -320,7 +344,7 @@ export function ViewSubsidyModal({
     if (['approved', 'closed', 'rejected'].includes(normalizedStatus)) {
         const hasPending = (receipts || []).some((r: any) => !r.is_validated && !r.is_deleted);
         if (hasPending) {
-             toast.error(t('toasts.documentsPending') || "All documents must be validated first");
+             toast.error(modalT.errors.documentsPending);
              return;
         }
     }
@@ -354,7 +378,7 @@ export function ViewSubsidyModal({
       if (status === 'approved') {
         setCurrentSubsidyStatus('approved')
         setMentionStatus('approved')
-        setNewMessage(t('subsidy.statusChangePrefix', { status: t('charts.legend.accepted') }))
+        setNewMessage(t('projects.subsidy.messageFormats.statusChangePrefix', { status: t('subsidy.status,approved') }))
         
         await approveSubsidyRequest({
           variables: {
@@ -367,7 +391,7 @@ export function ViewSubsidyModal({
         if (id) {
            setCurrentSubsidyStatus('closed')
            setMentionStatus('closed')
-           setNewMessage(t('subsidy.statusChangePrefix', { status: t('charts.legend.closed') }))
+           setNewMessage(t('projects.subsidy.messageFormats.statusChangePrefix', { status: t('subsidy.status.closed') }))
            
            await updateSubsidyRequest({
              variables: {
@@ -393,7 +417,7 @@ export function ViewSubsidyModal({
      
      setCurrentSubsidyStatus(status as any)
      setMentionStatus(status as any)
-     setNewMessage(t('subsidy.statusChangePrefix', { status: t(`filters.${status}`) || status }))
+     setNewMessage(t('projects.subsidy.messageFormats.statusChangePrefix', { status: t(`filters.${status}`) || status }))
      chatInputRef.current?.focus()
      
      try {
@@ -523,16 +547,34 @@ export function ViewSubsidyModal({
   const statusHistory = React.useMemo<StatusHistoryItem[]>(() => {
     if (!historyData?.getSubsidyStatusHistory) return []
     
-    return historyData.getSubsidyStatusHistory.map((item: any) => ({
-      id: item.id,
-      status: item.status.name.toLowerCase(),
-      type: item.type,
-      reason: item.reason || '',
-      changed_by: item.user.name,
-      changed_at: new Date(item.changed_at),
-      isNew: false
-    }))
-  }, [historyData])
+    return historyData.getSubsidyStatusHistory.map((item: any) => {
+      // Usar traduções do sistema para mensagens de status automáticas
+      let translatedReason = item.reason || ''
+      
+      // Se é uma alteração de status automática (sem mensagem customizada do usuário)
+      if (item.type === 'STATUS_CHANGE' && item.reason) {
+        const statusName = item.status.name.toLowerCase()
+        const statusKey = `projects.subsidy.${statusName}`
+        const statusLabel = t(statusKey) || statusName
+        
+        // Se a mensagem parece ser uma mensagem padrão de status, traduzir
+        if (item.reason.includes('Status changed to') || item.reason.includes('mudou para') || item.reason.includes('Status alterado para')) {
+          translatedReason = t('projects.subsidy.messageFormats.statusChangePrefix', { status: statusLabel })
+        }
+      }
+      
+      return {
+        id: item.id,
+        status: item.status.name.toLowerCase(),
+        type: item.type,
+        reason: translatedReason,
+        changed_by: item.user.name,
+        user_id: item.user.id,
+        changed_at: new Date(item.changed_at),
+        isNew: false
+      }
+    })
+  }, [historyData, t])
 
   // Initialize messages when modal opens
   React.useEffect(() => {
@@ -632,7 +674,7 @@ export function ViewSubsidyModal({
         setNewMessage("")
         setMentionStatus(null)
         setMentionPriority(null)
-        toast.success(t('subsidy.messageSent'))
+        toast.success(t('projects.subsidy.messageSent'))
       } catch (error) {
         console.error('Error sending message:', error)
         toast.error(t('toasts.messageSentError'))
@@ -653,7 +695,7 @@ export function ViewSubsidyModal({
       await deleteSubsidyRequestMessage({
         variables: { id: deleteCommentDialog.messageId }
       })
-      toast.success(t('subsidy.commentDeleted'))
+      toast.success(t('projects.subsidy.commentDeleted'))
       setDeleteCommentDialog({ isOpen: false, messageId: null })
     } catch (error) {
       // Error handled in useMutation
@@ -661,7 +703,7 @@ export function ViewSubsidyModal({
   }
 
   const confirmRejection = async (reason: string) => {
-    setNewMessage(t('subsidy.statusChangeReasonPrefix', { status: t('charts.legend.rejected'), reason: reason }))
+    setNewMessage(t('projects.subsidy.statusChangeReasonPrefix', { status: t('subsidy.rejected'), reason: reason }))
     chatInputRef.current?.focus()
     
     // Reject subsidy
@@ -701,14 +743,15 @@ export function ViewSubsidyModal({
         const approvalMessage: StatusHistoryItem = {
           id: `msg-${Date.now()}`,
           status: "in_review",
-          reason: t('subsidy.documentValidated'),
-          changed_by: "Admin User",
+          reason: t('projects.subsidy.documentValidated'),
+          changed_by: user?.name || "Admin User",
+          user_id: user?.id || "",
           changed_at: new Date(),
           isNew: false
         }
         setMessages(prev => [...prev, approvalMessage])
         
-        toast.success(t('subsidy.documentValidated'))
+        toast.success(t('projects.subsidy.documentValidated'))
         setMentionMode(null)
 
         // Refetch receipts to update the list
@@ -724,7 +767,7 @@ export function ViewSubsidyModal({
     } else {
       // Rejeição com nota obrigatória
       if (!newMessage.trim()) {
-        toast.error(t('subsidy.addRejectionReason'))
+        toast.error(t('projects.subsidy.addRejectionReason'))
         return
       }
       
@@ -736,14 +779,15 @@ export function ViewSubsidyModal({
         const rejectionMessage: StatusHistoryItem = {
           id: `msg-${Date.now()}`,
           status: "rejected",
-          reason: `${t('subsidy.documentRejected')}: ${newMessage}`,
-          changed_by: "Admin User",
+          reason: `${t('projects.subsidy.documentRejected')}: ${newMessage}`,
+          changed_by: user?.name || "Admin User",
+          user_id: user?.id || "",
           changed_at: new Date(),
           isNew: false
         }
         setMessages(prev => [...prev, rejectionMessage])
         
-        toast.success(t('subsidy.documentRejected'))
+        toast.success(t('projects.subsidy.documentRejected'))
         setMentionMode(null)
         setNewMessage("")
 
@@ -767,27 +811,27 @@ export function ViewSubsidyModal({
     { label: string; icon: React.ElementType; className: string }
   > = {
     pending: { 
-      label: t('filters.pending'),
+      label: t('subsidy.status.pending'),
       icon: Clock,
       className: "text-yellow-500"
     },
     approved: { 
-      label: t('charts.legend.accepted'),
+      label: t('subsidy.status.approved'),
       icon: CheckCircle2,
       className: "text-green-600"
     },
     rejected: { 
-      label: t('charts.legend.rejected'),
+      label: t('subsidy.status.rejected'),
       icon: XCircle,
       className: "text-red-600"
     },
     in_review: { 
-      label: t('charts.legend.inReview'),
+      label: t('subsidy.status.inReview'),
       icon: AlertCircle,
       className: "text-blue-500"
     },
     closed: {
-      label: t('subsidy.closed'),
+      label: t('subsidy.status.closed'),
       icon: Ban,
       className: "text-gray-500"
     }
@@ -865,7 +909,7 @@ export function ViewSubsidyModal({
                 </h2>
                 <div className="flex items-center gap-2 mt-1.5">
                   <span className="text-xs text-gray-600 dark:text-gray-400">
-                    {t('subsidy.requestedOn')} {format(new Date(subsidy.requested_at), "dd/MM/yyyy")}
+                    {t('projects.subsidy.requestedOn')} {format(new Date(subsidy.requested_at), "dd/MM/yyyy")}
                   </span>
                 </div>
               </div>
@@ -877,45 +921,46 @@ export function ViewSubsidyModal({
                 {/* Status Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-auto p-0 hover:bg-transparent">
-                      <div className={cn(
-                        "flex items-center gap-2 px-3 py-2 rounded-md border cursor-pointer min-w-[140px] justify-between",
+                    <button 
+                      type="button"
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2 rounded-md border cursor-pointer min-w-[140px] justify-between transition-colors hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-gray-400",
                         currentSubsidyStatus === 'approved' && "bg-green-50 dark:bg-green-950/30 border-green-500",
                         currentSubsidyStatus === 'rejected' && "bg-red-50 dark:bg-red-950/30 border-red-500",
                         currentSubsidyStatus === 'in_review' && "bg-blue-50 dark:bg-blue-950/30 border-blue-500",
                         currentSubsidyStatus === 'pending' && "bg-amber-50 dark:bg-amber-950/30 border-amber-500"
-                      )}>
-                        <div className="flex items-center gap-2">
-                          <StatusIcon className={cn(
-                            "w-4 h-4",
-                            currentSubsidyStatus === 'approved' && "text-green-600 dark:text-green-400",
-                            currentSubsidyStatus === 'rejected' && "text-red-600 dark:text-red-400",
-                            currentSubsidyStatus === 'in_review' && "text-blue-600 dark:text-blue-400",
-                            currentSubsidyStatus === 'pending' && "text-amber-600 dark:text-amber-400"
-                          )} />
-                          <span className={cn(
-                            "text-sm font-semibold",
-                            currentSubsidyStatus === 'approved' && "text-green-700 dark:text-green-400",
-                            currentSubsidyStatus === 'rejected' && "text-red-700 dark:text-red-400",
-                            currentSubsidyStatus === 'in_review' && "text-blue-700 dark:text-blue-400",
-                            currentSubsidyStatus === 'pending' && "text-amber-700 dark:text-amber-400"
-                          )}>
-                            {currentStatus.label}
-                          </span>
-                        </div>
-                        <ChevronDown className="w-3 h-3 text-gray-500" />
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <StatusIcon className={cn(
+                          "w-4 h-4",
+                          currentSubsidyStatus === 'approved' && "text-green-600 dark:text-green-400",
+                          currentSubsidyStatus === 'rejected' && "text-red-600 dark:text-red-400",
+                          currentSubsidyStatus === 'in_review' && "text-blue-600 dark:text-blue-400",
+                          currentSubsidyStatus === 'pending' && "text-amber-600 dark:text-amber-400"
+                        )} />
+                        <span className={cn(
+                          "text-sm font-semibold",
+                          currentSubsidyStatus === 'approved' && "text-green-700 dark:text-green-400",
+                          currentSubsidyStatus === 'rejected' && "text-red-700 dark:text-red-400",
+                          currentSubsidyStatus === 'in_review' && "text-blue-700 dark:text-blue-400",
+                          currentSubsidyStatus === 'pending' && "text-amber-700 dark:text-amber-400"
+                        )}>
+                          {currentStatus.label}
+                        </span>
                       </div>
-                    </Button>
+                      <ChevronDown className="w-3 h-3 text-gray-500" />
+                    </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
-                    <DropdownMenuLabel>{t('subsidy.changeStatus')}</DropdownMenuLabel>
+                  <DropdownMenuContent align="start" className="z-[100]">
+                    <DropdownMenuLabel>{t('subsidy.status.changeStatus')}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 
                         onClick={() => handleStatusChangeRequest('PENDING')}
                         disabled={!canChangeStatus('pending')}
                     >
                       <Clock className="mr-2 h-4 w-4 text-amber-500" />
-                      {t('filters.pending')}
+                      {t('subsidy.status.pending')}
                     </DropdownMenuItem>
 
                     <DropdownMenuItem 
@@ -923,7 +968,7 @@ export function ViewSubsidyModal({
                         disabled={!canChangeStatus('in_review')}
                     >
                       <AlertCircle className="mr-2 h-4 w-4 text-blue-500" />
-                      {t('charts.legend.inReview')}
+                      {t('subsidy.status.inReview')}
                     </DropdownMenuItem>
                     
                     <WithPermission requiredPermissions={[PermissionResolverName.ApproveSubsidyRequest]}>
@@ -936,7 +981,7 @@ export function ViewSubsidyModal({
                       >
                         <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
                         <div className="flex flex-col">
-                          <span>{t('charts.legend.accepted')}</span>
+                          <span>{t('subsidy.status.approved')}</span>
                           {hasRejectedDocuments() && (
                             <span className="text-xs text-red-600 dark:text-red-400">
                               {t('toasts.documentsRejected') || 'Documentos rejeitados impedem aprovação'}
@@ -952,7 +997,7 @@ export function ViewSubsidyModal({
                           disabled={!canChangeStatus('rejected')}
                       >
                         <XCircle className="mr-2 h-4 w-4 text-red-500" />
-                        {t('charts.legend.rejected')}
+                        {t('subsidy.status.rejected')}
                       </DropdownMenuItem>
                     </WithPermission>
 
@@ -961,39 +1006,46 @@ export function ViewSubsidyModal({
                         disabled={!canChangeStatus('closed')}
                     >
                       <Ban className="mr-2 h-4 w-4 text-gray-500" />
-                      {t('subsidy.closed')}
+                      {t('subsidy.status.closed')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
                 
                 {/* Priority Dropdown */}
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-auto p-0 hover:bg-transparent"
-                        disabled={currentSubsidyStatus === 'closed'}
+                  <DropdownMenuTrigger asChild disabled={currentSubsidyStatus === 'closed'}>
+                    <button 
+                      type="button"
+                      onClick={(e) => {
+                        console.log('🔍 [Priority Dropdown] Trigger clicked', e)
+                        if (currentSubsidyStatus === 'closed') {
+                          e.preventDefault()
+                          return
+                        }
+                      }}
+                      disabled={currentSubsidyStatus === 'closed'}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 min-w-[140px] justify-between transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400",
+                        currentSubsidyStatus === 'closed' ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:opacity-80"
+                      )}
                     >
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 cursor-pointer min-w-[140px] justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className={cn(
-                            "w-2 h-2 rounded-full",
-                            currentPriority === 'high' && "bg-red-500",
-                            currentPriority === 'medium' && "bg-yellow-500",
-                            currentPriority === 'low' && "bg-green-500"
-                          )} />
-                          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                            {currentPriority === 'high' && t('subsidy.priority.high')}
-                            {currentPriority === 'medium' && t('subsidy.priority.medium')}
-                            {currentPriority === 'low' && t('subsidy.priority.low')}
-                          </span>
-                        </div>
-                        <ChevronDown className="w-3 h-3 text-gray-500" />
+                      <div className="flex items-center gap-2">
+                        <div className={cn(
+                          "w-2 h-2 rounded-full",
+                          currentPriority === 'high' && "bg-red-500",
+                          currentPriority === 'medium' && "bg-yellow-500",
+                          currentPriority === 'low' && "bg-green-500"
+                        )} />
+                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                          {currentPriority === 'high' && t('subsidy.priority.high')}
+                          {currentPriority === 'medium' && t('subsidy.priority.medium')}
+                          {currentPriority === 'low' && t('subsidy.priority.low')}
+                        </span>
                       </div>
-                    </Button>
+                      <ChevronDown className="w-3 h-3 text-gray-500" />
+                    </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
+                  <DropdownMenuContent align="start" className="z-[100]">
                     <DropdownMenuLabel>{t('subsidy.priority.change')}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={async () => {
@@ -1074,7 +1126,7 @@ export function ViewSubsidyModal({
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="text-xs">Número de atividades nesta solicitação</p>
+                    <p className="text-xs">{modalT.tooltips.activitiesCount}</p>
                   </TooltipContent>
                 </Tooltip>
 
@@ -1090,7 +1142,7 @@ export function ViewSubsidyModal({
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="text-xs">Orçamento total de todas as atividades</p>
+                    <p className="text-xs">{modalT.tooltips.totalBudget}</p>
                   </TooltipContent>
                 </Tooltip>
 
@@ -1106,7 +1158,7 @@ export function ViewSubsidyModal({
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="text-xs">Valor total solicitado de subsídio</p>
+                    <p className="text-xs">{modalT.tooltips.requestedAmount}</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -1206,7 +1258,7 @@ export function ViewSubsidyModal({
                     </p>
                   </div>
                   <div className="p-3 rounded-md bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('charts.subsidyActivity.totalRequested')}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('table.totalRequested')}</p>
                     <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                       {formatCurrency(currentActivity.requested_amount)}
                     </p>
@@ -1262,17 +1314,17 @@ export function ViewSubsidyModal({
                                 {/* Status Badge Minimalista */}
                                 {doc.is_validated === true && (
                                   <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-100 dark:bg-green-950/50 border-green-400 text-green-700 dark:text-green-400">
-                                    {t('charts.legend.accepted')}
+                                    {t('subsidy.status.approved')}
                                   </Badge>
                                 )}
                                 {doc.is_validated === false && (
                                   <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-red-100 dark:bg-red-950/50 border-red-400 text-red-700 dark:text-red-400">
-                                    {t('charts.legend.rejected')}
+                                    {t('subsidy.status.rejected')}
                                   </Badge>
                                 )}
                                 {doc.is_validated === undefined && (
                                   <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-100 dark:bg-amber-950/50 border-amber-400 text-amber-700 dark:text-amber-400">
-                                    {t('filters.pending')}
+                                    {t('subsidy.status.pending')}
                                   </Badge>
                                 )}
                               </div>
@@ -1298,9 +1350,9 @@ export function ViewSubsidyModal({
                             
                             <div className="flex items-center gap-1">
                               {/* Finance Management Actions - Hidden by default, shown on hover */}
-                              <WithPermission requiredPermissions={[PermissionResolverName.Institutions]} partialPermissionCheck>
                                 {doc.is_validated === undefined && currentSubsidyStatus !== 'closed' && (
                                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <WithPermission requiredPermissions={[PermissionResolverName.ValidateSubsidyReceipt]} partialPermissionCheck> 
                                     <Tooltip>
                                       <TooltipTrigger asChild>
                                         <Button
@@ -1316,7 +1368,8 @@ export function ViewSubsidyModal({
                                         <p className="text-xs">{t('subsidy.approveDocument')}</p>
                                       </TooltipContent>
                                     </Tooltip>
-                                    
+                                    </WithPermission>
+                                    <WithPermission requiredPermissions={[PermissionResolverName.ValidateSubsidyReceipt]} partialPermissionCheck>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
                                         <Button
@@ -1335,7 +1388,7 @@ export function ViewSubsidyModal({
                                         <p className="text-xs">{t('subsidy.rejectDocument')}</p>
                                       </TooltipContent>
                                     </Tooltip>
-                                    
+                                    </WithPermission>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
                                         <Button
@@ -1356,7 +1409,6 @@ export function ViewSubsidyModal({
                                     </Tooltip>
                                   </div>
                                 )}
-                              </WithPermission>
                               
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -1405,397 +1457,34 @@ export function ViewSubsidyModal({
           </div>
 
           {/* Collapsible Sidebar - Chat & History */}
-          <div className={cn(
-            "border-l border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/30 transition-all duration-300 flex",
-            isSidebarOpen ? "w-96" : "w-0"
-          )}>
-            {isSidebarOpen && (
-              <div className="w-96 flex flex-col h-full">
-                {/* Sidebar Header */}
-                <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <MessageCircle className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                        {t('subsidy.history')}
-                      </h3>
-                      {newMessagesCount > 0 && (
-                        <Badge variant="default" className="h-5 min-w-5 flex items-center justify-center text-[10px] bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900">
-                          {newMessagesCount}
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    {/* Activity Filter */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-7 px-2">
-                          <Filter className={cn(
-                            "h-3 w-3",
-                            chatFilterActivity && "text-blue-600 dark:text-blue-400"
-                          )} />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>{t('subsidy.filterByActivity')}</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => setChatFilterActivity(null)}>
-                          <div className="flex items-center gap-2">
-                            {!chatFilterActivity && <Check className="h-3 w-3" />}
-                            <span className={!chatFilterActivity ? "font-semibold" : ""}>{t('subsidy.all')}</span>
-                          </div>
-                        </DropdownMenuItem>
-                        {activities.map(activity => (
-                          <DropdownMenuItem key={activity.id} onClick={() => setChatFilterActivity(activity.id)}>
-                            <div className="flex items-center gap-2">
-                              {chatFilterActivity === activity.id && <Check className="h-3 w-3" />}
-                              <span className={chatFilterActivity === activity.id ? "font-semibold" : ""}>
-                                {activity.name}
-                              </span>
-                            </div>
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  
-                  {/* Active Filter Badge */}
-                  {chatFilterActivity && (
-                    <div className="mt-2">
-                      <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-950/30 border-blue-300 text-blue-700 dark:text-blue-400">
-                        <Filter className="w-3 h-3 mr-1" />
-                        {activities.find(a => a.id === chatFilterActivity)?.name}
-                        <button onClick={() => setChatFilterActivity(null)} className="ml-1 hover:text-blue-900">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {filteredMessages.map((item, index) => {
-                    // Check if this message is related to an activity
-                    const relatedActivity = activities.find(act => 
-                      item.reason.toLowerCase().includes(act.name.toLowerCase())
-                    )
-                    const showActivityDivider = relatedActivity && (
-                      index === 0 || 
-                      !filteredMessages[index - 1]?.reason.toLowerCase().includes(relatedActivity.name.toLowerCase())
-                    )
-
-                    // Determinar tipo de mensagem e ícone apropriado
-                    const isDocumentValidation = item.reason.includes('validado') || item.reason.includes('aprovado')
-                    const isDocumentRejection = item.reason.includes('rejeitado')
-                    const isDocumentComment = item.reason.includes('Comentário sobre documento')
-                    const isStatusChange = !isDocumentValidation && !isDocumentRejection && !isDocumentComment
-                    
-                    let MessageIcon = MessageCircle
-                    let iconColor = "text-gray-500 dark:text-gray-400"
-                    
-                    if (isDocumentValidation) {
-                      MessageIcon = CheckCircle2
-                      iconColor = "text-gray-600 dark:text-gray-400"
-                    } else if (isDocumentRejection) {
-                      MessageIcon = XCircle
-                      iconColor = "text-gray-600 dark:text-gray-400"
-                    } else if (isDocumentComment) {
-                      MessageIcon = FileText
-                      iconColor = "text-gray-600 dark:text-gray-400"
-                    } else if (isStatusChange) {
-                      MessageIcon = AlertCircle
-                      iconColor = "text-gray-600 dark:text-gray-400"
-                    }
-                    
-                    // Check if message can be edited (user's own messages)
-                    const canEdit = item.changed_by === "Você" || item.changed_by === "Admin User"
-
-                    return (
-                      <React.Fragment key={item.id}>
-                        {/* Activity Divider */}
-                        {showActivityDivider && relatedActivity && !chatFilterActivity && (
-                          <div className="flex items-center gap-3 py-4">
-                            <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-gray-300 dark:to-gray-600" />
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700">
-                              <FileText className="w-3 h-3 text-gray-600 dark:text-gray-400" />
-                              <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                                {relatedActivity.name}
-                              </span>
-                            </div>
-                            <div className="h-[2px] flex-1 bg-gradient-to-r from-gray-300 dark:from-gray-600 via-gray-300 dark:via-gray-600 to-transparent" />
-                          </div>
-                        )}
-                        
-                      <div className="group relative">
-                        <div className={cn(
-                          "flex gap-3",
-                          canEdit && "flex-row-reverse"
-                        )}>
-                          <div className="flex-shrink-0 w-7 h-7 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center">
-                            <MessageIcon className={cn("w-3.5 h-3.5", iconColor)} />
-                          </div>
-                          
-                          <div className={cn(
-                            "flex-1 pb-3 max-w-[75%]",
-                            canEdit && "flex flex-col items-end"
-                          )}>
-                            <div className={cn(
-                              "rounded-lg p-3 mb-2",
-                              canEdit 
-                                ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900" 
-                                : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                            )}>
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className={cn(
-                                  "text-[10px] font-medium",
-                                  canEdit 
-                                    ? "text-gray-300 dark:text-gray-600" 
-                                    : "text-gray-600 dark:text-gray-400"
-                                )}>
-                                  {isDocumentValidation && t('subsidy.documentApproved')}
-                                  {isDocumentRejection && t('subsidy.documentRejected')}
-                                  {isDocumentComment && t('subsidy.documentComment')}
-                                  {isStatusChange && t('subsidy.statusUpdate')}
-                                </span>
-                                {item.isNew && (
-                                  <Badge variant="default" className="text-[9px] bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-1.5 py-0">
-                                    {t('subsidy.newBadge')}
-                                  </Badge>
-                                )}
-                              </div>
-                              
-                              <p className={cn(
-                                "text-xs mb-0 leading-relaxed",
-                                canEdit 
-                                  ? "text-white dark:text-gray-900" 
-                                  : "text-gray-700 dark:text-gray-300"
-                              )}>
-                                {item.reason}
-                              </p>
-                            </div>
-                            
-                            <div className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-gray-400">
-                              <User className="w-3 h-3" />
-                              <span>{item.changed_by}</span>
-                              <span>•</span>
-                              <span>{format(item.changed_at, "dd/MM HH:mm", { locale: ptBR })}</span>
-                            </div>
-                            
-                            {/* Edit/Delete Actions - Only for user's messages */}
-                            {canEdit && currentSubsidyStatus !== 'closed' && (
-                              <div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => handleEditMessage(item)}
-                                      className="h-6 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30"
-                                    >
-                                      <Pencil className="w-3 h-3 mr-1" />
-                                      <span className="text-[10px]">{t('actions.edit')}</span>
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top">
-                                    <p className="text-xs">{t('subsidy.editComment')}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                                
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => handleDeleteMessage(item.id)}
-                                      className="h-6 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                    >
-                                      <Trash2 className="w-3 h-3 mr-1" />
-                                      <span className="text-[10px]">{t('actions.delete')}</span>
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top">
-                                    <p className="text-xs">{t('subsidy.deleteComment')}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      </React.Fragment>
-                    )
-                  })}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                {/* Input de Mensagem */}
-                <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-                  {/* Mention Labels */}
-                  {(mentionStatus || mentionPriority) && (
-                    <div className="mb-3 flex flex-wrap gap-2">
-                      {mentionStatus && (
-                        <div className={cn(
-                          "flex items-center gap-2 px-2.5 py-1.5 rounded-md border text-xs font-medium",
-                          mentionStatus === 'approved' && "bg-green-50 dark:bg-green-950/30 border-green-400 text-green-700 dark:text-green-400",
-                          mentionStatus === 'rejected' && "bg-red-50 dark:bg-red-950/30 border-red-400 text-red-700 dark:text-red-400",
-                          mentionStatus === 'in_review' && "bg-blue-50 dark:bg-blue-950/30 border-blue-400 text-blue-700 dark:text-blue-400",
-                          mentionStatus === 'pending' && "bg-amber-50 dark:bg-amber-950/30 border-amber-400 text-amber-700 dark:text-amber-400"
-                        )}>
-                          <AtSign className="w-3 h-3" />
-                          <span>Status: {statusConfig[mentionStatus].label}</span>
-                          <button onClick={() => setMentionStatus(null)} className="hover:opacity-70">
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      )}
-                      {mentionPriority && (
-                        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-medium text-gray-900 dark:text-gray-100">
-                          <AtSign className="w-3 h-3" />
-                          <div className={cn(
-                            "w-2 h-2 rounded-full",
-                            mentionPriority === 'high' && "bg-red-500",
-                            mentionPriority === 'medium' && "bg-yellow-500",
-                            mentionPriority === 'low' && "bg-green-500"
-                          )} />
-                          <span>{t('filters.priority')}: {mentionPriority === 'high' ? t('subsidy.priority.high') : mentionPriority === 'medium' ? t('subsidy.priority.medium') : t('subsidy.priority.low')}</span>
-                          <button onClick={() => setMentionPriority(null)} className="hover:opacity-70">
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Context Banners */}
-                  {editingMessage && (
-                    <div className="mb-3 p-2.5 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <Pencil className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                          <p className="text-xs font-medium text-amber-900 dark:text-amber-200 truncate">
-                            {t('subsidy.editingComment')}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditingMessage(null)
-                            setNewMessage("")
-                          }}
-                          className="h-5 w-5 p-0 text-amber-600 hover:text-amber-700 dark:text-amber-400"
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {commentingDocument && (
-                    <div className="mb-3 p-2.5 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-300 dark:border-blue-700">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                          <p className="text-xs font-medium text-blue-900 dark:text-blue-200 truncate">
-                            {t('subsidy.commentOn')}{commentingDocument.name}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setCommentingDocument(null)
-                            setNewMessage("")
-                          }}
-                          className="h-5 w-5 p-0 text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {mentionMode && (
-                    <div className="mb-3 p-2.5 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-300 dark:border-red-700">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <Ban className="w-3.5 h-3.5 text-red-600 dark:text-red-400 flex-shrink-0" />
-                          <p className="text-xs font-medium text-red-900 dark:text-red-200 truncate">
-                            {t('subsidy.rejectingDocument')}: {activities.flatMap(a => a.documents).find(d => d.id === mentionMode)?.file_name}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setMentionMode(null)
-                            setNewMessage("")
-                          }}
-                          className="h-5 w-5 p-0 text-red-600 hover:text-red-700 dark:text-red-400"
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Single Unified Input */}
-                  <div className="flex gap-2 items-center">
-                    {/* Mention Buttons */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild disabled={currentSubsidyStatus === 'closed'}>
-                        <Button variant="outline" size="sm" className="h-9 px-2">
-                          <AtSign className="w-3.5 h-3.5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start">
-                        <DropdownMenuLabel>{t('subsidy.mention')}</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => setMentionStatus(currentSubsidyStatus)}>
-                          {t('subsidy.currentStatus')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setMentionPriority(currentPriority)}>
-                          {t('subsidy.currentPriority')}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <Input
-                      ref={chatInputRef}
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                      placeholder={
-                        editingMessage
-                          ? t('subsidy.placeholders.editComment')
-                          : commentingDocument 
-                          ? t('subsidy.placeholders.documentComment')
-                          : mentionMode 
-                          ? t('subsidy.placeholders.rejectReason')
-                          : t('subsidy.placeholders.addComment')
-                      }
-                      disabled={currentSubsidyStatus === 'closed'}
-                      className={cn(
-                        "flex-1 h-9 text-xs transition-all",
-                        editingMessage && "border-amber-500 dark:border-amber-500 ring-2 ring-amber-200 dark:ring-amber-900",
-                        commentingDocument && "border-blue-500 dark:border-blue-500 ring-2 ring-blue-200 dark:ring-blue-900",
-                        mentionMode && "border-red-500 dark:border-red-500 ring-2 ring-red-200 dark:ring-red-900",
-                        !editingMessage && !commentingDocument && !mentionMode && "border-gray-300 dark:border-gray-700"
-                      )}
-                    />
-                    <Button
-                      onClick={handleSendMessage}
-                      disabled={!newMessage.trim() || currentSubsidyStatus === 'closed'}
-                      size="sm"
-                      className="h-9 px-3 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 dark:text-gray-900 disabled:opacity-50"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          <SubsidyChatPanel
+            isSidebarOpen={isSidebarOpen}
+            t={t}
+            newMessagesCount={newMessagesCount}
+            filteredMessages={filteredMessages}
+            activities={activities}
+            chatFilterActivity={chatFilterActivity}
+            setChatFilterActivity={setChatFilterActivity}
+            messagesEndRef={messagesEndRef}
+            mentionStatus={mentionStatus}
+            setMentionStatus={setMentionStatus}
+            mentionPriority={mentionPriority}
+            setMentionPriority={setMentionPriority}
+            editingMessage={editingMessage}
+            setEditingMessage={setEditingMessage}
+            commentingDocument={commentingDocument}
+            setCommentingDocument={setCommentingDocument}
+            mentionMode={mentionMode}
+            setMentionMode={setMentionMode}
+            newMessage={newMessage}
+            setNewMessage={setNewMessage}
+            chatInputRef={chatInputRef}
+            currentSubsidyStatus={currentSubsidyStatus}
+            currentPriority={currentPriority}
+            statusConfig={statusConfig}
+            user={user}
+            handleSendMessage={handleSendMessage}
+          />
 
           {/* Toggle Sidebar Button removed (moved to activities header) */}
         </div>

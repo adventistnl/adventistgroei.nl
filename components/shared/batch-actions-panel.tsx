@@ -11,11 +11,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { InlineBatchEditor, BatchEditField } from "@/components/shared/inline-batch-editor"
 import { useTranslation } from "react-i18next"
 import { useCurrency } from "@/contexts/currency-context"
 import { WithPermission } from "@/hocs/with-permission"
+import { useHasPermission } from "@/hooks/use-has-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 
 export interface BatchAction {
@@ -68,6 +75,11 @@ export function BatchActionsPanel({
   const containerRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
+  // Check if user has permission for primary action
+  const hasPrimaryPermission = primaryAction?.requiredPermission 
+    ? useHasPermission(Array.isArray(primaryAction.requiredPermission) ? primaryAction.requiredPermission : [primaryAction.requiredPermission])
+    : true
+
   // Detect screen size and set responsive states
   useEffect(() => {
     const checkScreenSize = () => {
@@ -119,6 +131,17 @@ export function BatchActionsPanel({
     const translationKey = `${translationNamespace}.${key}`
     const translated = t(translationKey)
     return translated !== translationKey ? translated : t(`shared.batchActions.${key}`, fallback)
+  }
+
+  // Get permission denied message with translations
+  const getPermissionDeniedMessage = () => {
+    if (i18n.language === 'pt') {
+      return 'Você não tem permissão para solicitar subsídios. Entre em contato com o administrador para solicitar acesso.'
+    } else if (i18n.language === 'nl') {
+      return 'U heeft geen toestemming om subsidies aan te vragen. Neem contact op met de beheerder om toegang aan te vragen.'
+    } else {
+      return 'You do not have permission to request subsidies. Contact the administrator to request access.'
+    }
   }
 
   if (selectedCount === 0) return null
@@ -240,20 +263,35 @@ export function BatchActionsPanel({
               <div className="flex flex-col gap-2">
                 {/* Primary Action - Full Width */}
                 {primaryAction && (
-                  <WithPermission
-                    requiredPermissions={primaryAction.requiredPermission ? (Array.isArray(primaryAction.requiredPermission) ? primaryAction.requiredPermission : [primaryAction.requiredPermission]) : []}
-                  >
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={primaryAction.onClick}
-                      disabled={primaryAction.disabled}
-                      className="w-full h-10 gap-2 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 text-white dark:text-gray-900 font-medium text-sm"
-                    >
-                      {primaryAction.icon && <span className="w-4 h-4">{primaryAction.icon}</span>}
-                      <span className="truncate">{primaryAction.label}</span>
-                    </Button>
-                  </WithPermission>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <WithPermission
+                            requiredPermissions={primaryAction.requiredPermission ? (Array.isArray(primaryAction.requiredPermission) ? primaryAction.requiredPermission : [primaryAction.requiredPermission]) : []}
+                          >
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={primaryAction.onClick}
+                              disabled={primaryAction.disabled || !hasPrimaryPermission}
+                              className="w-full h-10 gap-2 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 text-white dark:text-gray-900 font-medium text-sm"
+                            >
+                              {primaryAction.icon && <span className="w-4 h-4">{primaryAction.icon}</span>}
+                              <span className="truncate">{primaryAction.label}</span>
+                            </Button>
+                          </WithPermission>
+                        </div>
+                      </TooltipTrigger>
+                      {!hasPrimaryPermission && (
+                        <TooltipContent>
+                          <p className="text-xs max-w-[200px]">
+                            {getPermissionDeniedMessage()}
+                          </p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
 
                 {/* Secondary Actions - Overflow Menu */}
@@ -419,25 +457,40 @@ export function BatchActionsPanel({
 
                   {/* Primary Action */}
                   {primaryAction && (
-                    <WithPermission
-                      requiredPermissions={primaryAction.requiredPermission ? (Array.isArray(primaryAction.requiredPermission) ? primaryAction.requiredPermission : [primaryAction.requiredPermission]) : []}
-                    >
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={primaryAction.onClick}
-                        disabled={primaryAction.disabled}
-                        className={cn(
-                          "h-8 gap-1.5 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 text-white dark:text-gray-900 font-medium text-sm",
-                          isTabletView ? "px-3" : "px-4"
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <WithPermission
+                              requiredPermissions={primaryAction.requiredPermission ? (Array.isArray(primaryAction.requiredPermission) ? primaryAction.requiredPermission : [primaryAction.requiredPermission]) : []}
+                            >
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={primaryAction.onClick}
+                                disabled={primaryAction.disabled || !hasPrimaryPermission}
+                                className={cn(
+                                  "h-8 gap-1.5 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 text-white dark:text-gray-900 font-medium text-sm",
+                                  isTabletView ? "px-3" : "px-4"
+                                )}
+                              >
+                                {primaryAction.icon && <span className="w-4 h-4 flex-shrink-0">{primaryAction.icon}</span>}
+                                <span className={cn("truncate", isTabletView ? "max-w-20" : "")}>
+                                  {primaryAction.label}
+                                </span>
+                              </Button>
+                            </WithPermission>
+                          </div>
+                        </TooltipTrigger>
+                        {!hasPrimaryPermission && (
+                          <TooltipContent>
+                            <p className="text-xs max-w-[200px]">
+                              {getPermissionDeniedMessage()}
+                            </p>
+                          </TooltipContent>
                         )}
-                      >
-                        {primaryAction.icon && <span className="w-4 h-4 flex-shrink-0">{primaryAction.icon}</span>}
-                        <span className={cn("truncate", isTabletView ? "max-w-20" : "")}>
-                          {primaryAction.label}
-                        </span>
-                      </Button>
-                    </WithPermission>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </div>
               </div>

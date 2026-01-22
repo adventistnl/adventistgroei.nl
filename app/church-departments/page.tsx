@@ -46,7 +46,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal } from "@/components/modals/department"
 import { useInstitution } from "@/contexts/institution-context"
 import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
-import { DepartmentsKPICards, KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
+import { ProtectedKPICarousel, type ProtectedKPICardData } from "@/components/shared/protected-kpi-carousel"
 import { DepartmentProjectOverTimeChart } from "@/components/institutions/charts/department-project-over-time-chart"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { UseTable } from "@/components/ui/use-table"
@@ -424,8 +424,8 @@ export default function ChurchDepartmentsPage() {
     })
   }, [selectedDepartmentDetail?.users, selectedYear])
 
-  // Dados para KPI Cards Carrossel
-  const kpiCardsData: KPICardData[] = useMemo(() => {
+  // Dados para KPI Cards Carrossel com Proteção de Privacidade
+  const kpiCardsData: ProtectedKPICardData[] = useMemo(() => {
     if (!kpis) return []
 
     const kpiCardsTranslations = (t.church_page as any)?.kpi_cards || {}
@@ -460,28 +460,32 @@ export default function ChurchDepartmentsPage() {
         title: kpiCardsTranslations.total_departments || "Church Departments",
         value: filteredDepartments.length,
         icon: Layers,
-        subtitle: kpiCardsTranslations.total_departments_subtitle || "Total church departments"
+        subtitle: kpiCardsTranslations.total_departments_subtitle || "Total church departments",
+        requiredPermission: PermissionResolverName.Departments
       },
       {
         id: "total_members",
         title: kpiCardsTranslations.total_members || "Total Members",
         value: totalMembers,
         icon: Users,
-        subtitle: kpiCardsTranslations.total_members_subtitle || "Active department members"
+        subtitle: kpiCardsTranslations.total_members_subtitle || "Active department members",
+        requiredPermission: PermissionResolverName.Users
       },
       {
         id: "total_projects",
         title: kpiCardsTranslations.total_projects || "Total Projects",
         value: totalProjects,
         icon: TrendingUp,
-        subtitle: kpiCardsTranslations.total_projects_subtitle || "All registered projects"
+        subtitle: kpiCardsTranslations.total_projects_subtitle || "All registered projects",
+        requiredPermission: [PermissionResolverName.Projects, PermissionResolverName.Departments]
       },
       {
         id: "completed_projects",
         title: kpiCardsTranslations.completed_projects || "Completed Projects",
         value: completedProjects,
         icon: CheckCircle2,
-        subtitle: kpiCardsTranslations.completed_projects_subtitle || "Successfully completed"
+        subtitle: kpiCardsTranslations.completed_projects_subtitle || "Successfully completed",
+        requiredPermission: [PermissionResolverName.Projects, PermissionResolverName.Departments]
       }
     ]
   }, [filteredDepartments, projectsByYear, t]);
@@ -890,35 +894,42 @@ export default function ChurchDepartmentsPage() {
         const isActive = !row.original.is_deleted
         
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => handleViewDetails(row.original.id)}>
-                <Eye className="w-4 h-4 mr-2" />
-                {t.actions?.view_details || "View Details"}
-              </DropdownMenuItem>
-              {isActive && (
-                <>
-                  <WithPermission requiredPermissions={[PermissionResolverName.UpdateDepartment]}>
-                    <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
-                      <Edit className="w-4 h-4 mr-2" />
-                      {t.actions?.edit_department || "Edit Department"}
-                    </DropdownMenuItem>
-                  </WithPermission>
-                  <WithPermission requiredPermissions={[PermissionResolverName.DeleteDepartment]}>
-                    <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      {t.modals?.delete?.deactivate_department || "Deactivate Department"}
-                    </DropdownMenuItem>
-                  </WithPermission>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex justify-center">
+            <WithPermission 
+              requiredPermissions={[PermissionResolverName.UpdateDepartment, PermissionResolverName.DeleteDepartment]}
+              requireAll={false}
+            >
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <MoreHorizontal className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => handleViewDetails(row.original.id)}>
+                    <Eye className="w-4 h-4 mr-2" />
+                    {t.actions?.view_details || "View Details"}
+                  </DropdownMenuItem>
+                  {isActive && (
+                    <>
+                      <WithPermission requiredPermissions={[PermissionResolverName.UpdateDepartment]}>
+                        <DropdownMenuItem onClick={() => handleEdit(row.original.id)}>
+                          <Edit className="w-4 h-4 mr-2" />
+                          {t.actions?.edit_department || "Edit Department"}
+                        </DropdownMenuItem>
+                      </WithPermission>
+                      <WithPermission requiredPermissions={[PermissionResolverName.DeleteDepartment]}>
+                        <DropdownMenuItem onClick={() => handleDelete(row.original.id, row.original.name)}>
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          {t.modals?.delete?.deactivate_department || "Deactivate Department"}
+                        </DropdownMenuItem>
+                      </WithPermission>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </WithPermission>
+          </div>
         )
       },
     },
@@ -1088,7 +1099,7 @@ export default function ChurchDepartmentsPage() {
                     e.preventDefault();
                     handleBackToList();
                   }}
-                  className="cursor-pointer hover:text-foreground"
+                  className="cursor-pointer hover:text-foreground transition-colors"
                 >
                   {t.breadcrumb?.all_departments || "See All Church Departments"}
                 </BreadcrumbLink>
@@ -1103,13 +1114,50 @@ export default function ChurchDepartmentsPage() {
           </Breadcrumb>
         )}
 
-        {/* Header - Only show in List View */}
-        {viewMode === 'list' && (
+        {/* Header - Show appropriate content for each view */}
+        {viewMode === 'detail' && selectedDepartmentDetail ? (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
-                  {t.page?.title || "Church Departments"}
+                  {selectedDepartmentDetail.name}
+                </h2>
+                <p className="text-muted-foreground text-0.875rem sm:text-1rem">
+                  {selectedDepartmentDetail.description || t.detail?.info_card?.no_description || "Department details and member management"}
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <Button 
+                  variant="outline"
+                  onClick={handleBackToList}
+                >
+                  <Layers className="w-4 h-4 mr-2" />
+                  {t.breadcrumb?.all_departments || "See All Departments"}
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                >
+                  <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
+            </div>
+            
+            {/* Year Filter for Detail View */}
+            <div className="flex items-center gap-3">
+              <YearFilter showAddButton={false} />
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
+                  {t.church_page?.title  || "Church Departments"}
                 </h2>
                 <p className="text-muted-foreground text-0.875rem sm:text-1rem">
                   {t.page?.description || "Manage church-level departments and ministries"}
@@ -1170,13 +1218,14 @@ export default function ChurchDepartmentsPage() {
               ).length;
               
               const kpiCardsTranslations = ((t as any).church_page?.kpi_cards) || {}
-              const detailKPIData: KPICardData[] = [
+              const detailKPIData: ProtectedKPICardData[] = [
                 {
                   id: "members",
                   title: kpiCardsTranslations.members || "Members",
                   value: selectedDepartmentDetail.users?.length || 0,
                   icon: Users,
                   subtitle: kpiCardsTranslations.members_subtitle || "Department members",
+                  requiredPermission: PermissionResolverName.Users
                 },
                 {
                   id: "total_projects",
@@ -1184,6 +1233,7 @@ export default function ChurchDepartmentsPage() {
                   value: departmentProjects.length,
                   icon: TrendingUp,
                   subtitle: kpiCardsTranslations.total_projects_subtitle || "All registered projects",
+                  requiredPermission: [PermissionResolverName.Projects, PermissionResolverName.Departments]
                 },
                 {
                   id: "completed_projects",
@@ -1191,55 +1241,55 @@ export default function ChurchDepartmentsPage() {
                   value: completedProjectsCount,
                   icon: Shield,
                   subtitle: kpiCardsTranslations.completed_projects_subtitle || "Successfully completed",
+                  requiredPermission: [PermissionResolverName.Projects, PermissionResolverName.Departments]
                 }
               ];
               
-              const customFirstCard = (
-                <EntityInfoCard
-                  headerTitle={t.detail?.info_card?.header_title || "Department Info"}
-                  name={selectedDepartmentDetail.name}
-                  description={selectedDepartmentDetail.description || t.detail?.info_card?.no_description || "No description available"}
-                  icon={Layers}
-                  invertTheme={true}
-                  badges={[
-                    {
-                      label: churches.find(c => c.id === selectedDepartmentDetail.church_id)?.name || t.labels?.institutional || "Institutional",
-                      variant: "default",
-                      className: "text-xs"
-                    },
-                    {
-                      label: !selectedDepartmentDetail.is_deleted ? t.common?.active || "Active" : t.common?.inactive || "Inactive",
-                      variant: !selectedDepartmentDetail.is_deleted ? "default" : "secondary",
-                      className: !selectedDepartmentDetail.is_deleted 
-                        ? "text-xs bg-green-100 text-green-700" 
-                        : "text-xs bg-gray-100 text-gray-700"
-                    }
-                  ]}
-                  actions={[
-                    {
-                      label: t.actions?.edit_department || "Edit Department",
-                      icon: Edit,
-                      onClick: () => handleEdit(selectedDepartmentDetail.id),
-                      variant: "default"
-                    },
-                    {
-                      label: t.actions?.delete_department || "Delete Department",
-                      icon: Trash2,
-                      onClick: () => handleDelete(selectedDepartmentDetail.id, selectedDepartmentDetail.name),
-                      variant: "destructive",
-                      showSeparatorAfter: false
-                    }
-                  ]}
-                />
-              );
-              
               return (
-                <KPICards
+                <ProtectedKPICarousel
                   data={detailKPIData}
                   isLoading={false}
-                  minCardsForCarousel={3}
+                  minCardsForCarousel={2}
                   showCarousel={true}
-                  customFirstCard={customFirstCard}
+                  skeletonCount={4}
+                  customFirstItem={
+                    <EntityInfoCard
+                      headerTitle={t.detail?.info_card?.header_title || "Department Info"}
+                      name={selectedDepartmentDetail.name}
+                      description={selectedDepartmentDetail.description || t.detail?.info_card?.no_description || "No description available"}
+                      icon={Layers}
+                      invertTheme={true}
+                      badges={[
+                        {
+                          label: churches.find(c => c.id === selectedDepartmentDetail.church_id)?.name || t.labels?.institutional || "Institutional",
+                          variant: "default",
+                          className: "text-xs"
+                        },
+                        {
+                          label: !selectedDepartmentDetail.is_deleted ? t.common?.active || "Active" : t.common?.inactive || "Inactive",
+                          variant: !selectedDepartmentDetail.is_deleted ? "default" : "secondary",
+                          className: !selectedDepartmentDetail.is_deleted 
+                            ? "text-xs bg-green-100 text-green-700" 
+                            : "text-xs bg-gray-100 text-gray-700"
+                        }
+                      ]}
+                      actions={[
+                        {
+                          label: t.actions?.edit_department || "Edit Department",
+                          icon: Edit,
+                          onClick: () => handleEdit(selectedDepartmentDetail.id),
+                          variant: "default"
+                        },
+                        {
+                          label: t.actions?.delete_department || "Delete Department",
+                          icon: Trash2,
+                          onClick: () => handleDelete(selectedDepartmentDetail.id, selectedDepartmentDetail.name),
+                          variant: "destructive",
+                          showSeparatorAfter: false
+                        }
+                      ]}
+                    />
+                  }
                 />
               );
             })()}
@@ -1251,6 +1301,14 @@ export default function ChurchDepartmentsPage() {
               const totalDays = 365 + (now.getFullYear() % 4 === 0 ? 1 : 0)
               const daysPassed = Math.floor((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24)) + 1
               const percentage = Math.round((daysPassed / totalDays) * 100)
+              
+              console.log('📅 [Year Progress Card] Creating Year Progress Card:', {
+                year: now.getFullYear(),
+                daysPassed,
+                totalDays,
+                percentage,
+                quarter: Math.ceil((now.getMonth() + 1) / 3)
+              })
               
               const YearProgressCard = (
                 <EntityInfoCard
@@ -1274,13 +1332,38 @@ export default function ChurchDepartmentsPage() {
                 />
               )
               
+              console.log('🎠 [KPI Carousel - General View] Rendering carousel with:', {
+                kpiCardsCount: kpiCardsData.length,
+                hasCustomFirstItem: !!YearProgressCard,
+                isLoading,
+                minCardsForCarousel: 2
+              })
+              
+              /* 
+                Carrossel de KPIs Protegidos com Privacy Protection + Year Progress Card
+                
+                Cada KPI é protegido individualmente por permissões específicas:
+                - ✅ Com permissão: Exibe dados reais
+                - 🔒 Sem permissão: Exibe skeleton com overlay "Acesso Negado"
+                - 📊 Sempre renderiza: Mantém layout consistente
+                
+                Custom First Item:
+                - 📅 Year Progress Card: Progresso do ano atual como primeiro card
+                
+                Permissões por KPI:
+                - Total Departments: DepartmentKpIs
+                - Total Members: Users
+                - Total Projects: [Projects, Departments]
+                - Completed Projects: [Projects, Departments]
+              */
               return (
-                <KPICards
+                <ProtectedKPICarousel
                   data={kpiCardsData}
                   isLoading={isLoading}
                   minCardsForCarousel={2}
                   showCarousel={true}
-                  customFirstCard={YearProgressCard}
+                  skeletonCount={4}
+                  customFirstItem={YearProgressCard}
                 />
               )
             })()

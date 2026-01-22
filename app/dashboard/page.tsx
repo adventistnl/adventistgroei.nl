@@ -1116,7 +1116,22 @@ export default function DashboardPage() {
             description={dt.systemOverviewDescription}
           />
 
-          {/* Carrossel de KPIs protegidos com permissões individuais */}
+          {/* 
+            Carrossel de KPIs Protegidos com Privacy Protection
+            
+            Cada KPI é protegido individualmente por permissões específicas:
+            - ✅ Com permissão: Exibe dados reais
+            - 🔒 Sem permissão: Exibe skeleton com overlay "Acesso Negado"
+            - 📊 Sempre renderiza: Mantém layout consistente
+            
+            Permissões por KPI:
+            - Total Projects: [Projects, Departments]
+            - Total Users: Users
+            - Institution Departments: InstitutionalDepartmentsKpIs
+            - Church Departments: DepartmentKpIs
+            - Total Churches: Churches
+            - Total Regions: Regions
+          */}
           <ProtectedKPICarousel
             data={[
               {
