@@ -1,7 +1,7 @@
 "use client"
 
 import { ReactNode } from "react"
-import { LucideIcon } from "lucide-react"
+import { LucideIcon, Loader2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -11,6 +11,7 @@ interface ProfileSectionProps {
   icon: LucideIcon
   title: string
   isEditing: boolean
+  isSaving?: boolean
   onEdit: () => void
   onSave: () => void
   onCancel: () => void
@@ -22,6 +23,7 @@ export function ProfileSection({
   icon: Icon,
   title,
   isEditing,
+  isSaving = false,
   onEdit,
   onSave,
   onCancel,
@@ -45,6 +47,7 @@ export function ProfileSection({
                   variant="ghost"
                   size="sm"
                   onClick={onCancel}
+                  disabled={isSaving}
                   className="h-8 text-muted-foreground hover:text-foreground"
                 >
                   <X className="w-4 h-4 mr-1" />
@@ -54,10 +57,15 @@ export function ProfileSection({
                   variant="default"
                   size="sm"
                   onClick={onSave}
+                  disabled={isSaving}
                   className="h-8"
                 >
-                  <Check className="w-4 h-4 mr-1" />
-                  {t('profile.actions.save')}
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                  ) : (
+                    <Check className="w-4 h-4 mr-1" />
+                  )}
+                  {isSaving ? t('profile.actions.saving') || 'Saving...' : t('profile.actions.save')}
                 </Button>
               </>
             ) : (

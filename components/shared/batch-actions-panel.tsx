@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils"
 import { InlineBatchEditor, BatchEditField } from "@/components/shared/inline-batch-editor"
 import { useTranslation } from "react-i18next"
 import { useCurrency } from "@/contexts/currency-context"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 export interface BatchAction {
   id: string
@@ -23,6 +25,7 @@ export interface BatchAction {
   onClick: () => void
   variant?: "default" | "outline" | "secondary" | "ghost" | "destructive"
   disabled?: boolean
+  requiredPermission?: PermissionResolverName | PermissionResolverName[]
 }
 
 interface BatchActionsPanelProps {
@@ -237,16 +240,20 @@ export function BatchActionsPanel({
               <div className="flex flex-col gap-2">
                 {/* Primary Action - Full Width */}
                 {primaryAction && (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={primaryAction.onClick}
-                    disabled={primaryAction.disabled}
-                    className="w-full h-10 gap-2 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 text-white dark:text-gray-900 font-medium text-sm"
+                  <WithPermission
+                    requiredPermissions={primaryAction.requiredPermission ? (Array.isArray(primaryAction.requiredPermission) ? primaryAction.requiredPermission : [primaryAction.requiredPermission]) : []}
                   >
-                    {primaryAction.icon && <span className="w-4 h-4">{primaryAction.icon}</span>}
-                    <span className="truncate">{primaryAction.label}</span>
-                  </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={primaryAction.onClick}
+                      disabled={primaryAction.disabled}
+                      className="w-full h-10 gap-2 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 text-white dark:text-gray-900 font-medium text-sm"
+                    >
+                      {primaryAction.icon && <span className="w-4 h-4">{primaryAction.icon}</span>}
+                      <span className="truncate">{primaryAction.label}</span>
+                    </Button>
+                  </WithPermission>
                 )}
 
                 {/* Secondary Actions - Overflow Menu */}
@@ -412,21 +419,25 @@ export function BatchActionsPanel({
 
                   {/* Primary Action */}
                   {primaryAction && (
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={primaryAction.onClick}
-                      disabled={primaryAction.disabled}
-                      className={cn(
-                        "h-8 gap-1.5 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 text-white dark:text-gray-900 font-medium text-sm",
-                        isTabletView ? "px-3" : "px-4"
-                      )}
+                    <WithPermission
+                      requiredPermissions={primaryAction.requiredPermission ? (Array.isArray(primaryAction.requiredPermission) ? primaryAction.requiredPermission : [primaryAction.requiredPermission]) : []}
                     >
-                      {primaryAction.icon && <span className="w-4 h-4 flex-shrink-0">{primaryAction.icon}</span>}
-                      <span className={cn("truncate", isTabletView ? "max-w-20" : "")}>
-                        {primaryAction.label}
-                      </span>
-                    </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={primaryAction.onClick}
+                        disabled={primaryAction.disabled}
+                        className={cn(
+                          "h-8 gap-1.5 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 text-white dark:text-gray-900 font-medium text-sm",
+                          isTabletView ? "px-3" : "px-4"
+                        )}
+                      >
+                        {primaryAction.icon && <span className="w-4 h-4 flex-shrink-0">{primaryAction.icon}</span>}
+                        <span className={cn("truncate", isTabletView ? "max-w-20" : "")}>
+                          {primaryAction.label}
+                        </span>
+                      </Button>
+                    </WithPermission>
                   )}
                 </div>
               </div>

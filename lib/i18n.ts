@@ -6,6 +6,7 @@ import { subsidyManagementTranslations } from './translations/subsidy-management
 import { dynamicFieldsTranslations } from './translations/dynamic-fields'
 import { projectDetailsTranslations } from './translations/project-details'
 import { institutionTranslations } from './translations/institutions'
+import { permissionsTranslations } from './translations/permissions'
 
 // Recursos de tradução
 const resources = {
@@ -13,6 +14,7 @@ const resources = {
     translation: {
       ...projectTranslations.en,
       ...projectDetailsTranslations.en,
+      ...permissionsTranslations.en,
       dynamicFields: dynamicFieldsTranslations.en,
       dashboard: {
         title: "General Dashboard",
@@ -2015,6 +2017,7 @@ const resources = {
     translation: {
       ...projectTranslations.nl,
       ...projectDetailsTranslations.nl,
+      ...permissionsTranslations.nl,
       dynamicFields: dynamicFieldsTranslations.nl,
       dashboard: {
         title: "Algemeen Dashboard",
@@ -3834,6 +3837,7 @@ const resources = {
     translation: {
       ...projectTranslations.pt,
       ...projectDetailsTranslations.pt,
+      ...permissionsTranslations.pt,
       dynamicFields: dynamicFieldsTranslations.pt,
       institutions: institutionTranslations.pt,
       common: {

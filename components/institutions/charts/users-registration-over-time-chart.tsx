@@ -34,16 +34,18 @@ interface UsersRegistrationOverTimeChartProps {
   institutions: any[] // Accept any[] to handle different institution types
   loading?: boolean
   selectedYear?: number
+  defaultChartType?: "area" | "bar"
 }
 
 export function UsersRegistrationOverTimeChart({ 
   institutions,
   loading,
-  selectedYear
+  selectedYear,
+  defaultChartType = "bar"
 }: UsersRegistrationOverTimeChartProps) {
   const { t, i18n } = useTranslation()
   const [timeRange, setTimeRange] = React.useState("90d")
-  const [chartType, setChartType] = React.useState<"area" | "bar">("area")
+  const [chartType, setChartType] = React.useState<"area" | "bar">(defaultChartType)
   
   // DEBUG: Log raw institutions data received
   React.useEffect(() => {

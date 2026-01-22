@@ -72,9 +72,10 @@ import { CREATE_SUBSIDY_REQUEST, UPDATE_SUBSIDY_REQUEST, APPROVE_SUBSIDY_REQUEST
 import { useAuth } from "@/contexts/auth-context"
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
-import { ActivityTags, EntityType, ActivityPriority, ActivityStatus } from "@/types/graphql-global-types"
+import { ActivityTags, EntityType, ActivityPriority, ActivityStatus, PermissionResolverName } from "@/types/graphql-global-types"
 import { LoadingSpinner } from "@/components/shared/loading-spinner"
 import { CardDescription, CardTitle } from "@/components/ui/card"
+import { WithPermission } from "@/hocs/with-permission"
 
 // Helper functions for ActivityTags
 const getActivityTagLabel = (tag: ActivityTags): string => {
@@ -1811,7 +1812,8 @@ export default function ProjectDetailsPage() {
                 icon: <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
                 onClick: handleBatchSubsidyRequest,
                 variant: 'default',
-                disabled: !canRequestSubsidy
+                disabled: !canRequestSubsidy,
+                requiredPermission: PermissionResolverName.CreateSubsidyRequest
               }}
               batchSummary={
                 <div className="flex items-center gap-3 text-xs">

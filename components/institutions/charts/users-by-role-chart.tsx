@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { TrendingUp, ChevronLeft, ChevronRight } from "lucide-react"
+import { TrendingUp, ChevronLeft, ChevronRight, ChartBarDecreasing, ChartPie } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis, Pie, PieChart, Label, Sector, Cell } from "recharts"
 import { PieSectorDataItem } from "recharts/types/polar/Pie"
 import { useTranslation } from "react-i18next"
@@ -27,11 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { getProjectColor } from "@/lib/chart-colors"
 import { InstitutionById_institution_institutionChartsData_usersByRole } from "@/types/InstitutionById"
@@ -42,12 +37,28 @@ interface UsersByRoleChartProps {
   monthlyUserGrowth?: number | null
   loading?: boolean
   selectedYear?: number
+  showTopNFilter?: boolean
+  showSortFilter?: boolean
+  showRoleSelector?: boolean
+  showViewToggle?: boolean
+  defaultView?: 'bar' | 'pie'
 }
 
-export function UsersByRoleChart({ users, data, monthlyUserGrowth, loading, selectedYear }: UsersByRoleChartProps) {
+export function UsersByRoleChart({ 
+  users, 
+  data, 
+  monthlyUserGrowth, 
+  loading, 
+  selectedYear,
+  showTopNFilter = true,
+  showSortFilter = true,
+  showRoleSelector = true,
+  showViewToggle = true,
+  defaultView = 'bar'
+}: UsersByRoleChartProps) {
   const { t } = useTranslation()
   const id = "users-by-role"
-  const [activeView, setActiveView] = React.useState<'bar' | 'pie'>('bar')
+  const [activeView, setActiveView] = React.useState<'bar' | 'pie'>(defaultView)
   const [activeRole, setActiveRole] = React.useState("All")
   const [topN, setTopN] = React.useState<number | 'all'>('all')
   const [sortOrder, setSortOrder] = React.useState<'desc' | 'asc'>('desc')
@@ -310,37 +321,41 @@ export function UsersByRoleChart({ users, data, monthlyUserGrowth, loading, sele
           </div>
               <div className="flex items-center gap-2">
                 {/* Top N Selector */}
-                <Select value={topN.toString()} onValueChange={(v) => setTopN(v === 'all' ? 'all' : parseInt(v))}>
-                  <SelectTrigger
-                    className="h-7 w-[100px] rounded-lg pl-2.5"
-                    aria-label="Select top N"
-                  >
-                    <SelectValue placeholder="Top" />
-                  </SelectTrigger>
-                  <SelectContent align="end" className="rounded-xl">
-                    <SelectItem value="all" className="rounded-lg">{t('institutions.analytics.usersByRole.topN.all')}</SelectItem>
-                    <SelectItem value="3" className="rounded-lg">{t('institutions.analytics.usersByRole.topN.top3')}</SelectItem>
-                    <SelectItem value="5" className="rounded-lg">{t('institutions.analytics.usersByRole.topN.top5')}</SelectItem>
-                    <SelectItem value="10" className="rounded-lg">{t('institutions.analytics.usersByRole.topN.top10')}</SelectItem>
-                  </SelectContent>
-                </Select>
+                {showTopNFilter && (
+                  <Select value={topN.toString()} onValueChange={(v) => setTopN(v === 'all' ? 'all' : parseInt(v))}>
+                    <SelectTrigger
+                      className="h-7 w-[100px] rounded-lg pl-2.5"
+                      aria-label="Select top N"
+                    >
+                      <SelectValue placeholder="Top" />
+                    </SelectTrigger>
+                    <SelectContent align="end" className="rounded-xl">
+                      <SelectItem value="all" className="rounded-lg">{t('institutions.analytics.usersByRole.topN.all')}</SelectItem>
+                      <SelectItem value="3" className="rounded-lg">{t('institutions.analytics.usersByRole.topN.top3')}</SelectItem>
+                      <SelectItem value="5" className="rounded-lg">{t('institutions.analytics.usersByRole.topN.top5')}</SelectItem>
+                      <SelectItem value="10" className="rounded-lg">{t('institutions.analytics.usersByRole.topN.top10')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
                 
                 {/* Sort Order Selector */}
-                <Select value={sortOrder} onValueChange={(v: any) => setSortOrder(v)}>
-                  <SelectTrigger
-                    className="h-7 w-[120px] rounded-lg pl-2.5"
-                    aria-label="Sort order"
-                  >
-                    <SelectValue placeholder="Sort" />
-                  </SelectTrigger>
-                  <SelectContent align="end" className="rounded-xl">
-                    <SelectItem value="desc" className="rounded-lg">{t('institutions.analytics.usersByRole.sortOrder.mostUsers')}</SelectItem>
-                    <SelectItem value="asc" className="rounded-lg">{t('institutions.analytics.usersByRole.sortOrder.leastUsers')}</SelectItem>
-                  </SelectContent>
-                </Select>
+                {showSortFilter && (
+                  <Select value={sortOrder} onValueChange={(v: any) => setSortOrder(v)}>
+                    <SelectTrigger
+                      className="h-7 w-[120px] rounded-lg pl-2.5"
+                      aria-label="Sort order"
+                    >
+                      <SelectValue placeholder="Sort" />
+                    </SelectTrigger>
+                    <SelectContent align="end" className="rounded-xl">
+                      <SelectItem value="desc" className="rounded-lg">{t('institutions.analytics.usersByRole.sortOrder.mostUsers')}</SelectItem>
+                      <SelectItem value="asc" className="rounded-lg">{t('institutions.analytics.usersByRole.sortOrder.leastUsers')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
                 
                 {/* Role Selector - Only show in Pie view */}
-                {activeView === 'pie' && (
+                {showRoleSelector && activeView === 'pie' && (
                   <Select value={activeRole} onValueChange={setActiveRole}>
                     <SelectTrigger
                       className="h-7 w-[160px] rounded-lg pl-2.5"
@@ -377,23 +392,27 @@ export function UsersByRoleChart({ users, data, monthlyUserGrowth, loading, sele
                   </Select>
                 )}
                 
-                {/* View Switcher Tabs - Right aligned */}
-                <Tabs value={activeView} onValueChange={(v: any) => setActiveView(v as 'bar' | 'pie')}>
-                  <TabsList className="grid w-full grid-cols-2 h-7 bg-black/5 dark:bg-white/5">
-                    <TabsTrigger 
-                      value="bar" 
-                      className="text-xs data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black"
+                {/* View Toggle - Padronizado com UsersRegistrationOverTimeChart */}
+                {showViewToggle && (
+                  <div className="flex items-center gap-1 border rounded-lg p-1">
+                    <Button
+                      variant={activeView === "bar" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setActiveView("bar")}
+                      className="h-7 px-2"
                     >
-                      {t('institutions.analytics.usersByRole.viewBar')}
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="pie" 
-                      className="text-xs data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black"
+                      <ChartBarDecreasing className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      variant={activeView === "pie" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setActiveView("pie")}
+                      className="h-7 px-2"
                     >
-                      {t('institutions.analytics.usersByRole.viewPie')}
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
+                      <ChartPie className="w-3 h-3" />
+                    </Button>
+                  </div>
+                )}
           </div>
           
     

@@ -1,19 +1,27 @@
 "use client"
 
 import { useState, useCallback, useEffect } from "react"
-import { useUser } from "./use-user"
 import { useAuth } from "@/contexts/auth-context"
-import { UpdateUserVariables } from "@/types/UpdateUser"
+import { useUpdateOwnUser } from "./graphql/use-update-own-user"
+import toast from "react-hot-toast"
 
 // Extended profile type for display purposes
-export interface ExtendedProfile extends UpdateUserVariables {
+export interface ExtendedProfile {
+  id: string
+  name?: string
+  email?: string
+  phone?: string
+  address?: string
+  language_preference?: string
+  institution_id?: string
+  church_id?: string
   institution_name?: string
   church_name?: string
   role?: string
 }
 
 export function useProfileEditor(initialProfile: ExtendedProfile, refetchUser?: () => void) {
-  const { updateUser , user} = useUser({id: initialProfile.id})
+  const [updateOwnUser, { loading: updateLoading }] = useUpdateOwnUser()
   const { updateAuthUser, user: authUser } = useAuth()
   const [editingSection, setEditingSection] = useState<string | null>(null)
   const [profile, setProfile] = useState<ExtendedProfile>(initialProfile)
@@ -33,26 +41,69 @@ export function useProfileEditor(initialProfile: ExtendedProfile, refetchUser?: 
 
   const handleSave = useCallback(async (section: string) => {
     try {
-      // Prepare the update data
-      const updateData = {
-        id: profile.id,
-        name: editData.name,
-        email: editData.email,
-        phone: editData.phone,
-        address: editData.address,
-        language_preference: editData.language_preference,
-        institution_id: editData.institution_id,
-        church_id: editData.church_id,
+      // Prepare the update data - only send fields that were actually changed
+      const updateData: any = {}
+      
+      if (editData.name && editData.name !== profile.name) {
+        updateData.name = editData.name
+      }
+      if (editData.email && editData.email !== profile.email) {
+        updateData.email = editData.email
+      }
+      if (editData.phone !== undefined && editData.phone !== profile.phone) {
+        updateData.phone = editData.phone
+      }
+      if (editData.address !== undefined && editData.address !== profile.address) {
+        updateData.address = editData.address
+      }
+      if (editData.language_preference && editData.language_preference !== profile.language_preference) {
+        updateData.language_preference = editData.language_preference
+      }
+      if (editData.institution_id && editData.institution_id !== profile.institution_id) {
+        updateData.institution_id = editData.institution_id
+      }
+      if (editData.church_id && editData.church_id !== profile.church_id) {
+        updateData.church_id = editData.church_id
       }
 
-      console.log("🚀 Updating user with data:", updateData)
+      // Only proceed if there are changes
+      if (Object.keys(updateData).length === 0) {
+        toast('No changes to save', { 
+          icon: 'ℹ️',
+          duration: 2000 
+        })
+        setEditingSection(null)
+        return
+      }
+
+      console.log("🚀 Updating own user profile with data:", updateData)
       
-      // Call the mutation
-      const result = await updateUser({ variables: updateData })
+      // Call the updateOwnUser mutation
+      const result = await updateOwnUser({
+        variables: {
+          data: updateData
+        }
+      })
       
       if (result.data) {
+        const updatedUser = result.data.updateOwnUser
+        
         // Update local profile state with the saved data
-        setProfile({ ...profile, ...editData })
+        const newProfile = {
+          ...profile,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          phone: updatedUser.contact?.phone || '',
+          address: updatedUser.contact?.address || '',
+          language_preference: updatedUser.language_preference || 'en',
+          institution_id: updatedUser.institution_id || '',
+          church_id: updatedUser.church_id || '',
+          institution_name: updatedUser.institution?.name || '',
+          church_name: updatedUser.church?.name || '',
+        }
+        
+        setProfile(newProfile)
+        setEditData(newProfile)
         setEditingSection(null)
         
         // Refetch user data to get updated information
@@ -61,31 +112,38 @@ export function useProfileEditor(initialProfile: ExtendedProfile, refetchUser?: 
           await refetchUser()
         }
         
-        // Update auth context if this is the logged user
-        if (authUser && authUser.id === profile.id) {
+        // Update auth context
+        if (authUser) {
           const updatedAuthUser = {
             ...authUser,
-            name: editData.name || authUser.name,
-            email: editData.email || authUser.email,
-            language_preference: editData.language_preference || authUser.language_preference,
-            // Update contact if exists
-            contact: authUser.contact ? {
-              ...authUser.contact,
-              phone: editData.phone || authUser.contact.phone,
-              address: editData.address || authUser.contact.address,
-            } : null
+            name: updatedUser.name,
+            email: updatedUser.email,
+            language_preference: updatedUser.language_preference || authUser.language_preference,
+            contact: {
+              phone: updatedUser.contact?.phone || '',
+              address: updatedUser.contact?.address || '',
+            }
           }
           console.log("🔄 Updating auth context with new user data...")
           updateAuthUser(updatedAuthUser)
         }
         
-        console.log("✅ User updated successfully")
+        toast.success('Profile updated successfully!')
+        console.log("✅ User profile updated successfully")
       }
-    } catch (error) {
-      console.error("❌ Error updating user:", error)
-      // You might want to show a toast or error message here
+    } catch (error: any) {
+      console.error("❌ Error updating user profile:", error)
+      
+      // Show user-friendly error message
+      if (error.message?.includes('permission')) {
+        toast.error('You do not have permission to update your profile')
+      } else if (error.message?.includes('email')) {
+        toast.error('Invalid email address')
+      } else {
+        toast.error('Failed to update profile. Please try again.')
+      }
     }
-  }, [profile, editData, updateUser, refetchUser])
+  }, [profile, editData, updateOwnUser, refetchUser, authUser, updateAuthUser])
 
   const handleCancel = useCallback(() => {
     setEditData(profile)
@@ -104,5 +162,6 @@ export function useProfileEditor(initialProfile: ExtendedProfile, refetchUser?: 
     handleSave,
     handleCancel,
     handleFieldChange,
+    updateLoading,
   }
 }

@@ -7,6 +7,10 @@ import { TrendingUp, Building2, Activity, BarChart3 } from "lucide-react"
 import { getProjectColor } from "@/lib/chart-colors"
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { Button } from "@/components/ui/button"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionDeniedOverlay } from "@/components/shared/permission-denied-overlay"
+import { PermissionResolverName } from "@/types/graphql-global-types"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Card,
   CardContent,
@@ -483,41 +487,96 @@ export function ProjectsOverTimeChart({
 
   if (loading) {
     return (
-      <Card className="h-full flex flex-col">
-        <CardHeader>
-          <div className="h-6 bg-muted rounded w-48 animate-pulse" />
-          <div className="h-4 bg-muted rounded w-32 animate-pulse mt-2" />
-        </CardHeader>
-        <CardContent className="flex-1">
-          <div className="h-[250px] bg-muted rounded animate-pulse" />
-        </CardContent>
-      </Card>
+      <WithPermission
+        requiredPermissions={[PermissionResolverName.Projects]}
+        fallback={<PermissionDeniedOverlay height="450px" blurIntensity="medium">
+          <Card className="h-full flex flex-col">
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-32 mt-2" />
+            </CardHeader>
+            <CardContent className="flex-1">
+              <Skeleton className="h-[250px] w-full" />
+            </CardContent>
+          </Card>
+        </PermissionDeniedOverlay>}
+      >
+        <Card className="h-full flex flex-col">
+          <CardHeader>
+            <div className="h-6 bg-muted rounded w-48 animate-pulse" />
+            <div className="h-4 bg-muted rounded w-32 animate-pulse mt-2" />
+          </CardHeader>
+          <CardContent className="flex-1">
+            <div className="h-[250px] bg-muted rounded animate-pulse" />
+          </CardContent>
+        </Card>
+      </WithPermission>
     )
   }
 
   if (activeGroups.length === 0 || filteredData.length === 0) {
     return (
-      <Card className="h-full flex flex-col">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm">
-            <Building2 className="w-4 h-4" />
-            {t.charts.projectsCreatedOverTime}
-          </CardTitle>
-          <CardDescription className="text-xs">
-            {t.charts.monthlyProjectCreation}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center">
-          <div className="text-center text-muted-foreground">
-            <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">{t.charts.noProjectData}</p>
-          </div>
-        </CardContent>
-      </Card>
+      <WithPermission
+        requiredPermissions={[PermissionResolverName.Projects, PermissionResolverName.Departments]}
+        fallback={<PermissionDeniedOverlay height="450px" blurIntensity="medium">
+          <Card className="h-full flex flex-col">
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-32 mt-2" />
+            </CardHeader>
+            <CardContent className="flex-1 flex items-center justify-center">
+              <Skeleton className="h-[200px] w-full" />
+            </CardContent>
+          </Card>
+        </PermissionDeniedOverlay>}
+      >
+        <Card className="h-full flex flex-col">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Building2 className="w-4 h-4" />
+              {t.charts.projectsCreatedOverTime}
+            </CardTitle>
+            <CardDescription className="text-xs">
+              {t.charts.monthlyProjectCreation}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 flex items-center justify-center">
+            <div className="text-center text-muted-foreground">
+              <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">{t.charts.noProjectData}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </WithPermission>
     )
   }
 
   return (
+    <WithPermission
+      requiredPermissions={[PermissionResolverName.Projects]}
+      fallback={<PermissionDeniedOverlay height="450px" blurIntensity="medium">
+        {/* Skeleton do Projects Over Time Chart */}
+        <Card className="h-full flex flex-col">
+          <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+            <div className="grid flex-1 gap-1">
+              <Skeleton className="h-5 w-48" />
+              <Skeleton className="h-4 w-32 mt-1" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-9 w-20" />
+              <Skeleton className="h-9 w-[160px]" />
+            </div>
+          </CardHeader>
+          <CardContent className="pr-2 pt-4 sm:pr-6 sm:pt-6">
+            <Skeleton className="h-[250px] w-full" />
+          </CardContent>
+          <div className="flex-col items-start gap-1 text-xs pt-3 border-t px-6 pb-4">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-3 w-56 mt-1" />
+          </div>
+        </Card>
+      </PermissionDeniedOverlay>}
+    >
     <Card className="h-full flex flex-col">
       <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
         <div className="grid flex-1 gap-1">
@@ -743,5 +802,6 @@ export function ProjectsOverTimeChart({
         </div>
       </CardFooter>
     </Card>
+    </WithPermission>
   )
 }

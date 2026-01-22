@@ -10,6 +10,8 @@ import { useSubsidyReceipts, SubsidyReceipt } from "@/hooks/use-subsidy-receipts
 import { useCurrency } from "@/contexts/currency-context"
 import { cn } from "@/lib/utils"
 import type { ProjectActivityData } from "@/components/projects/project-activities-table"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 interface SubsidyRequestsContainerProps {
   /** Array of subsidy request data */
@@ -256,14 +258,16 @@ export function SubsidyRequestsContainer({
 
           {/* Add Button */}
           {onAddSubsidy && (
-            <Button
-              onClick={onAddSubsidy}
-              size="sm"
-              className="gap-2 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 dark:text-gray-900"
-            >
-              <Plus className="h-4 w-4" />
-              {t("common.add")}
-            </Button>
+            <WithPermission requiredPermissions={[PermissionResolverName.CreateSubsidyRequest]}>
+              <Button
+                onClick={onAddSubsidy}
+                size="sm"
+                className="gap-2 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 dark:text-gray-900"
+              >
+                <Plus className="h-4 w-4" />
+                {t("common.add")}
+              </Button>
+            </WithPermission>
           )}
         </div>
 

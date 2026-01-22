@@ -12,6 +12,7 @@ interface PersonalInfoSectionProps {
   address: string
   language: string
   isEditing: boolean
+  isSaving?: boolean
   onEdit: () => void
   onSave: () => void
   onCancel: () => void
@@ -29,6 +30,7 @@ export function PersonalInfoSection({
   address,
   language,
   isEditing,
+  isSaving = false,
   onEdit,
   onSave,
   onCancel,
@@ -45,6 +47,7 @@ export function PersonalInfoSection({
       icon={User}
       title={t('profile.sections.personal_data')}
       isEditing={isEditing}
+      isSaving={isSaving}
       onEdit={onEdit}
       onSave={onSave}
       onCancel={onCancel}

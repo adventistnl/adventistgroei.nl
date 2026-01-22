@@ -92,7 +92,7 @@ const navSections: NavSection[] = [
         title: "Inst. Departments",
         url: "/institutional-departments",
         icon: Briefcase,
-        permissions: [PermissionResolverName.Departments],
+        permissions: [PermissionResolverName.Departments, PermissionResolverName.Institutions],
         translationKey: "sidebar.instDepartments"
       },
       {
@@ -128,7 +128,7 @@ const navSections: NavSection[] = [
         icon: DollarSign,
         items: [
           { title: "Annual Budget", url: "/finance/annual-budget", permissions: [PermissionResolverName.Settings], translationKey: "sidebar.annualBudget" },
-          { title: "Subsidy Approvals", url: "/finance/subsidy-approvals", permissions: [PermissionResolverName.Institutions], translationKey: "sidebar.subsidyApprovals" },
+          { title: "Subsidy Approvals", url: "/finance/subsidy-approvals", permissions: [PermissionResolverName.SubsidyStatus], translationKey: "sidebar.subsidyApprovals" },
         ],
         permissions: [],
         translationKey: "sidebar.financeManagement"

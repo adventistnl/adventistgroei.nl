@@ -153,7 +153,7 @@ export function ChurchesByRegionChart({ churches, regions, data, loading }: Chur
         region: 'no_region',
         name: t('institutions.analytics.churchesByRegion.noRegion') || 'No Region',
         churches: churchesWithoutRegion,
-        fill: 'hsl(var(--muted-foreground))' // Grey color for No Region
+        fill: "#e5e7eb" // Grey color for No Region
       })
     }
     

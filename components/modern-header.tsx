@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useTranslation } from "react-i18next"
-import { GlobalSearch, useGlobalSearch } from "@/components/global-search"
+import { GlobalSearch, SearchTrigger, useGlobalSearch } from "@/components/global-search"
 import { LanguageSelector } from "@/components/shared/language-selector"
 import { CurrencySelector } from "@/components/shared/currency-selector"
 import { ThemeSwitcher } from "@/components/theme-switcher"
@@ -102,13 +102,12 @@ export function ModernHeader() {
             </div>
           </div>
 
-          {/* Center Section - Search Bar */}
-          <div className="flex-1 max-w-md mx-auto">
-            <GlobalSearch />
-          </div>
 
           {/* Right Section - Action Buttons */}
           <div className="flex items-center gap-3 flex-1 justify-end">
+            
+            {/* Search Button */}
+            <SearchTrigger />
             
             {/* TODO: Implementar Chat no final */}
             {/* <Button 
