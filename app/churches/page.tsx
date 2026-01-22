@@ -75,6 +75,8 @@ import { ChurchType as ChurchTypeEnum } from "@/types/graphql-global-types"
 import { useChurchActivityTimeline } from "@/hooks/use-church-activity-timeline"
 import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { GridContainer } from "@/components/shared/grid-container"
+import { useHasPermission } from "@/hooks/use-has-permission"
+import { useRouter } from "next/navigation"
 // Dados reais de igrejas virão do contexto da instituição
 
 // Timeline de solicitações de subsídio por igreja
@@ -86,11 +88,18 @@ import { GridContainer } from "@/components/shared/grid-container"
  */
 export default function ChurchesPage() {
   const { t, i18n } = useTranslation()
+  const router = useRouter()
   const { currentInstitutionData, refetchInstitutionById } = useInstitution();
   const churches = React.useMemo(() => currentInstitutionData?.churches || [], [currentInstitutionData]);
   const activeChurches = React.useMemo(() => churches.filter((church: any) => !church.is_deleted), [churches]);
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+
+  // Permission checks for department actions
+  const hasViewDepartmentPermission = useHasPermission([PermissionResolverName.Departments])
+  const hasUpdateDepartmentPermission = useHasPermission([PermissionResolverName.UpdateDepartment])
+  const hasDeleteDepartmentPermission = useHasPermission([PermissionResolverName.DeleteDepartment])
+  const hasAnyDepartmentActionPermission = hasViewDepartmentPermission || hasUpdateDepartmentPermission || hasDeleteDepartmentPermission
 
   // Fetch church activity timeline from backend
   const {
@@ -1100,8 +1109,23 @@ export default function ChurchesPage() {
     },
   ]
 
-  // Colunas da tabela de departamentos (para detail view)
-  const departmentColumns: ColumnDef<any>[] = [
+  // Handlers para ações de departamentos
+  const handleViewDepartmentDetails = (departmentId: string) => {
+    // Redireciona para a página de detalhes do departamento institucional
+    router.push(`/institutional-departments/${departmentId}`)
+  }
+
+  const handleEditDepartment = (departmentId: string) => {
+    // Redireciona para a página de edição do departamento
+    router.push(`/institutional-departments/${departmentId}?edit=true`)
+  }
+
+  const handleDeleteDepartment = (departmentId: string, departmentName: string) => {
+    toast.error(`Delete department functionality - Coming soon!`)
+  }
+
+  // Colunas da tabela de departamentos (para detail view) - Base columns
+  const baseDepartmentColumns: ColumnDef<any>[] = [
     {
       id: "name",
       accessorKey: "name",
@@ -1158,55 +1182,65 @@ export default function ChurchesPage() {
         />
       ),
     },
-    // TODO: Implementar action buttons para departments
-    // {
-    //   id: "actions",
-    //   header: "Actions",
-    //   cell: ({ row }) => (
-    //     <DropdownMenu>
-    //       <DropdownMenuTrigger asChild>
-    //         <Button variant="ghost" size="sm" data-action-button>
-    //           <MoreHorizontal className="w-4 h-4" />
-    //         </Button>
-    //       </DropdownMenuTrigger>
-    //       <DropdownMenuContent>
-    //         <DropdownMenuItem onClick={() => {
-    //           // Navigate to department details page
-    //           console.log('View department details:', row.original.id);
-    //           toast('Department details - Coming soon!');
-    //         }}>
-    //           <Eye className="w-4 h-4 mr-2" />
-    //           View Details
-    //         </DropdownMenuItem>
-    //         <DropdownMenuItem onClick={() => {
-    //           // Edit department functionality
-    //           console.log('Edit department:', row.original.id);
-    //           toast('Edit department - Coming soon!');
-    //         }}>
-    //           <Edit className="w-4 h-4 mr-2" />
-    //           Edit Department
-    //         </DropdownMenuItem>
-    //         <DropdownMenuItem onClick={() => {
-    //           // View/manage department budget
-    //           console.log('Manage department budget:', row.original.id);
-    //           toast('Manage budget - Coming soon!');
-    //         }}>
-    //           <DollarSign className="w-4 h-4 mr-2" />
-    //           Manage Budget
-    //         </DropdownMenuItem>
-    //         <DropdownMenuItem onClick={() => {
-    //           // Delete department
-    //           console.log('Delete department:', row.original.id);
-    //           toast('Delete department - Coming soon!');
-    //         }}>
-    //           <Trash2 className="w-4 h-4 mr-2" />
-    //           Delete Department
-    //         </DropdownMenuItem>
-    //       </DropdownMenuContent>
-    //     </DropdownMenu>
-    //   ),
-    // },
   ];
+
+  // Actions column for departments - only included if user has permissions
+  const departmentActionsColumn: ColumnDef<any> = {
+    id: "actions",
+    header: "Actions",
+    cell: ({ row }) => {
+      const department = row.original
+      const isInactive = department.is_deleted === true
+      
+      // Determine which actions are available
+      const canView = hasViewDepartmentPermission
+      const canEdit = hasUpdateDepartmentPermission && !isInactive
+      const canDelete = hasDeleteDepartmentPermission && !isInactive
+      
+      // If no actions available, don't render dropdown
+      if (!canView && !canEdit && !canDelete) {
+        return null
+      }
+      
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" data-action-button>
+              <MoreHorizontal className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {canView && (
+              <DropdownMenuItem onClick={() => handleViewDepartmentDetails(department.id)}>
+                <Eye className="w-4 h-4 mr-2" />
+                View Details
+              </DropdownMenuItem>
+            )}
+            {canEdit && (
+              <DropdownMenuItem onClick={() => handleEditDepartment(department.id)}>
+                <Edit className="w-4 h-4 mr-2" />
+                Edit Department
+              </DropdownMenuItem>
+            )}
+            {canDelete && (
+              <DropdownMenuItem 
+                onClick={() => handleDeleteDepartment(department.id, department.name)}
+                className="text-red-600"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Department
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    },
+  };
+
+  // Combine columns conditionally for departments
+  const departmentColumns = hasAnyDepartmentActionPermission 
+    ? [...baseDepartmentColumns, departmentActionsColumn]
+    : baseDepartmentColumns
 
   // Colunas da tabela de membros (para detail view)
   const memberColumns: ColumnDef<any>[] = [

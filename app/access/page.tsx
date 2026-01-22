@@ -38,6 +38,7 @@ import { UseTable } from "@/components/ui/use-table"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { RoleDistributionChart } from "@/components/charts/role-distribution-chart"
 import { RolePermissionsChart } from "@/components/charts/role-permissions-chart"
+import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
 
 // Role Modals
 import { CreateRoleModal, EditRoleModal, DeleteRoleModal } from "@/components/modals/role"
@@ -53,6 +54,7 @@ import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
 import { useInstitution } from "@/contexts/institution-context"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
+import { useHasPermission } from "@/hooks/use-has-permission"
 
 export default function AccessManagementPage() {
   const { t } = useTranslation()
@@ -66,6 +68,19 @@ export default function AccessManagementPage() {
   const [isDeleteRoleOpen, setIsDeleteRoleOpen] = useState(false)
   const [selectedRoleForEdit, setSelectedRoleForEdit] = useState<Role | null>(null)
   const [selectedRoleForDelete, setSelectedRoleForDelete] = useState<Role | null>(null)
+
+  // Permission checks for actions column
+  const hasUpdateRolePermission = useHasPermission([PermissionResolverName.UpdateRole])
+  const hasDeleteRolePermission = useHasPermission([PermissionResolverName.DeleteRole])
+  const hasAnyRoleActionPermission = hasUpdateRolePermission || hasDeleteRolePermission
+
+  // Filter states
+  const [roleFilterValues, setRoleFilterValues] = useState<Record<string, any>>({
+    key_code: 'all'
+  })
+  const [permissionFilterValues, setPermissionFilterValues] = useState<Record<string, any>>({
+    group: 'all'
+  })
 
   // KPIs essenciais para overview de roles e permissões
   const kpiCardsData: KPICardData[] = useMemo(() => [
@@ -152,9 +167,85 @@ export default function AccessManagementPage() {
     })
   }, [roles])
 
+  // Filter roles based on selected filters
+  const filteredRoles = useMemo(() => {
+    let filtered = roles
+
+    // Apply role type filter
+    if (roleFilterValues.key_code && roleFilterValues.key_code !== 'all') {
+      filtered = filtered.filter(role => role.key_code === roleFilterValues.key_code)
+    }
+
+    return filtered
+  }, [roles, roleFilterValues])
+
+  // Filter permissions based on selected filters
+  const filteredPermissions = useMemo(() => {
+    let allPermissions = permissions.flatMap(p => p.data.flatMap(perm => perm))
+
+    // Apply group filter
+    if (permissionFilterValues.group && permissionFilterValues.group !== 'all') {
+      allPermissions = allPermissions.filter(perm => perm.group === permissionFilterValues.group)
+    }
+
+    return allPermissions
+  }, [permissions, permissionFilterValues])
+
   usePageTitle({
     title: t('access.title')
   })
+
+  // Configure PageFilters for Roles
+  const rolePageFilters: FilterConfig[] = useMemo(() => {
+    // Get unique role types
+    const uniqueRoleTypes = Array.from(
+      new Set(roles.map(role => role.key_code))
+    ).sort()
+
+    return [
+      {
+        id: 'key_code',
+        label: 'Role Type',
+        type: 'select',
+        placeholder: 'All Role Types',
+        icon: Shield,
+        options: [
+          { label: 'All Role Types', value: 'all' },
+          ...uniqueRoleTypes.map(type => ({
+            label: type,
+            value: type
+          }))
+        ],
+        defaultValue: 'all'
+      }
+    ]
+  }, [roles])
+
+  // Configure PageFilters for Permissions
+  const permissionPageFilters: FilterConfig[] = useMemo(() => {
+    // Get unique permission groups
+    const uniqueGroups = Array.from(
+      new Set(permissions.map(p => p.group))
+    ).sort()
+
+    return [
+      {
+        id: 'group',
+        label: 'Permission Group',
+        type: 'select',
+        placeholder: 'All Groups',
+        icon: Lock,
+        options: [
+          { label: 'All Groups', value: 'all' },
+          ...uniqueGroups.map(group => ({
+            label: group,
+            value: group
+          }))
+        ],
+        defaultValue: 'all'
+      }
+    ]
+  }, [permissions])
 
   // Load data
   useEffect(() => {
@@ -183,8 +274,8 @@ export default function AccessManagementPage() {
   }, [])
 
 
-  // Role table columns
-  const roleColumns: ColumnDef<Role>[] = [
+  // Role table base columns
+  const baseRoleColumns: ColumnDef<Role>[] = [
     {
       id: "name",
       accessorKey: "name",
@@ -274,58 +365,74 @@ export default function AccessManagementPage() {
         )
       },
     },
-    {
-      id: "actions",
-      header: () => <div className="text-right">{t('access.roles.table.actions')}</div>,
-      cell: ({ row }) => {
-        const role = row.original
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {!role.is_fixed && (
-                <DropdownMenuItem
-                  onClick={() => {
+  ]
+
+  // Actions column - only included if user has permissions
+  const actionsColumn: ColumnDef<Role> = {
+    id: "actions",
+    header: () => <div className="text-right">{t('access.roles.table.actions')}</div>,
+    cell: ({ row }) => {
+      const role = row.original
+      
+      // Determine which actions are available
+      const canEditRole = !role.is_fixed
+      const canEditPermissions = hasUpdateRolePermission
+      const canDeleteRole = !role.is_fixed && hasDeleteRolePermission
+      
+      // If no actions available, don't render dropdown
+      if (!canEditRole && !canEditPermissions && !canDeleteRole) {
+        return null
+      }
+      
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {canEditRole && (
+              <DropdownMenuItem
+                onClick={() => {
                   setSelectedRoleForEdit(role)
                   setIsEditRoleOpen(true)
                 }}
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  {t('access.roles.actions.edit_role')}
-                </DropdownMenuItem>
-              )}
-              <WithPermission requiredPermissions={[PermissionResolverName.UpdateRole]}>
-                <DropdownMenuItem
-                  onClick={() => handleEditPermissions(role)}
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  {t('access.roles.actions.edit_permissions')}
-                </DropdownMenuItem>
-              </WithPermission>
-              {!role.is_fixed && (
-                <WithPermission requiredPermissions={[PermissionResolverName.DeleteRole]}>
-                  <DropdownMenuItem
-                      className="text-red-600"
-                      onClick={() => {
-                        setSelectedRoleForDelete(role)
-                        setIsDeleteRoleOpen(true)
-                      }}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      {t('access.roles.actions.delete_role')}
-                    </DropdownMenuItem>
-                </WithPermission>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )
-      },
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                {t('access.roles.actions.edit_role')}
+              </DropdownMenuItem>
+            )}
+            {canEditPermissions && (
+              <DropdownMenuItem
+                onClick={() => handleEditPermissions(role)}
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                {t('access.roles.actions.edit_permissions')}
+              </DropdownMenuItem>
+            )}
+            {canDeleteRole && (
+              <DropdownMenuItem
+                className="text-red-600"
+                onClick={() => {
+                  setSelectedRoleForDelete(role)
+                  setIsDeleteRoleOpen(true)
+                }}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {t('access.roles.actions.delete_role')}
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
     },
-  ]
+  }
+
+  // Combine columns conditionally
+  const roleColumns = hasAnyRoleActionPermission 
+    ? [...baseRoleColumns, actionsColumn]
+    : baseRoleColumns
 
   // Permission table columns
   const permissionColumns: ColumnDef<Permission>[] = [
@@ -412,6 +519,30 @@ export default function AccessManagementPage() {
   const handleEditPermissions = (role: Role) => {
     toast.success(`Opening detailed permissions for ${role.name}`)
     window.location.href = `/access/roles/${role.id}`
+  }
+
+  const handleRoleFilterChange = (filterId: string, value: any) => {
+    setRoleFilterValues(prev => ({
+      ...prev,
+      [filterId]: value
+    }))
+  }
+
+  const handleClearRoleFilters = () => {
+    setRoleFilterValues({ key_code: 'all' })
+    toast.success('Filters cleared', { duration: 1500 })
+  }
+
+  const handlePermissionFilterChange = (filterId: string, value: any) => {
+    setPermissionFilterValues(prev => ({
+      ...prev,
+      [filterId]: value
+    }))
+  }
+
+  const handleClearPermissionFilters = () => {
+    setPermissionFilterValues({ group: 'all' })
+    toast.success('Filters cleared', { duration: 1500 })
   }
 
   if (isLoading) {
@@ -523,34 +654,36 @@ export default function AccessManagementPage() {
                         {t('access.roles.subtitle')}
                       </CardDescription>
                     </div>
-                    <WithPermission requiredPermissions={[PermissionResolverName.CreateRole]}>
-                      <Button 
-                        onClick={() => setIsCreateRoleOpen(true)}
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        {t('access.roles.actions.create_role')}
-                      </Button>
-                    </WithPermission>
+                    <div className="flex items-center gap-3">
+                      {rolePageFilters.length > 0 && (
+                        <PageFilters
+                          filters={rolePageFilters}
+                          values={roleFilterValues}
+                          onChange={handleRoleFilterChange}
+                          onClear={handleClearRoleFilters}
+                          triggerLabel="Filters"
+                          align="end"
+                          width={320}
+                          showClearButton={true}
+                        />
+                      )}
+                      <WithPermission requiredPermissions={[PermissionResolverName.CreateRole]}>
+                        <Button 
+                          onClick={() => setIsCreateRoleOpen(true)}
+                          className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          {t('access.roles.actions.create_role')}
+                        </Button>
+                      </WithPermission>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="overflow-hidden p-0">
                   <UseTable
                     columns={roleColumns}
-                    data={roles}
+                    data={filteredRoles}
                     searchKey="name"
-                    filters={[
-                      {
-                        id: "key_code",
-                        title: "Role Type",
-                        options: roles.reduce((acc, role) => {
-                          if (!acc.find(item => item.value === role.key_code)) {
-                            acc.push({ label: role.key_code, value: role.key_code })
-                          }
-                          return acc
-                        }, [] as { label: string, value: string }[])
-                      }
-                    ]}
                     emptyMessage={t('access.roles.table.no_results') || "No roles found"}
                     emptyEntityName="role"
                   />
@@ -562,31 +695,35 @@ export default function AccessManagementPage() {
             <TabsContent value="permissions" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Lock className="w-5 h-5" />
-                    {t('access.permissions.title')}
-                  </CardTitle>
-                  <CardDescription>
-                    {t('access.permissions.subtitle')}
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Lock className="w-5 h-5" />
+                        {t('access.permissions.title')}
+                      </CardTitle>
+                      <CardDescription>
+                        {t('access.permissions.subtitle')}
+                      </CardDescription>
+                    </div>
+                    {permissionPageFilters.length > 0 && (
+                      <PageFilters
+                        filters={permissionPageFilters}
+                        values={permissionFilterValues}
+                        onChange={handlePermissionFilterChange}
+                        onClear={handleClearPermissionFilters}
+                        triggerLabel="Filters"
+                        align="end"
+                        width={320}
+                        showClearButton={true}
+                      />
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent className="overflow-hidden p-0">
                   <UseTable
                     columns={permissionColumns}
-                    data={permissions.flatMap(p => p.data.flatMap(perm => perm))}
+                    data={filteredPermissions}
                     searchKey="name"
-                    filters={[
-                      {
-                        id: "group",
-                        title: "Group",
-                        options: permissions.reduce((acc, p) => {
-                          if (!acc.find(item => item.value === p.group)) {
-                            acc.push({ label: p.group, value: p.group })
-                          }
-                          return acc
-                        }, [] as { label: string, value: string }[])
-                      }
-                    ]}
                     emptyMessage={t('access.permissions.table.no_results') || "No permissions found"}
                     emptyEntityName="permission"
                   />
