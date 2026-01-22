@@ -7,6 +7,7 @@ export const subsidyManagementTranslations = {
       closed: "Closed",
       inReview: "In review"
     },
+    requestSubsidy: "Request Subsidy",
     requestedOn: "Requested on",
     history: "History",
     requestsTitle: "Subsidy Requests",
@@ -78,6 +79,7 @@ export const subsidyManagementTranslations = {
       closed: "Gesloten",
       inReview: "In beoordeling"
     },
+    requestSubsidy: "Subsidie aanvragen",
     requestedOn: "Aangevraagd op",
     history: "Geschiedenis",
     requestsTitle: "Subsidieaanvragen",
