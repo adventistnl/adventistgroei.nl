@@ -149,9 +149,6 @@ export default function DashboardPage() {
   const { data: departmentsData, loading: departmentsLoading, refetch: refetchDepartments } = useQuery(GET_DEPARTMENTS_QUERY, {
     variables: { institution_id: currentInstitutionData?.id }
   })
-  const { data: usersData, loading: usersLoading, refetch: refetchUsers } = useQuery(GET_ALL_USERS_QUERY, {
-    variables: { institution_id: currentInstitutionData?.id }
-  })
   const { data: rolesData, loading: rolesLoading, refetch: refetchRoles } = useQuery(GET_ALL_ROLES_QUERY)
   const { data: subsidyData, loading: subsidyLoading } = useQuery(GET_ALL_SUBSIDY_REQUESTS)
   const { data: subsidyStatusHistoryData, loading: subsidyStatusLoading } = useQuery(GET_SUBSIDY_STATUS_HISTORY, {
@@ -167,7 +164,7 @@ export default function DashboardPage() {
     fetchPolicy: 'cache-and-network'
   })
 
-  const isLoading = institutionsLoading || regionsLoading || churchesLoading || departmentsLoading || usersLoading || rolesLoading
+  const isLoading = institutionsLoading || regionsLoading || churchesLoading || departmentsLoading || rolesLoading
 
   const breadcrumbs = useMemo(() => [
     { name: t('dashboard.title') }
@@ -183,7 +180,7 @@ export default function DashboardPage() {
   const allRegions = regionsData?.regions || []
   const allChurches = churchesData?.churches || []
   const allDepartments = departmentsData?.departments || []
-  const allUsers = usersData?.users || []
+  const allUsers = currentInstitutionData?.users || []
   const allRoles = rolesData?.roles || []
 
   // Process institutions data with complete information (from GET_INSTITUTIONS_QUERY with full data)
@@ -772,7 +769,6 @@ export default function DashboardPage() {
         refetchRegions(),
         refetchChurches(),
         refetchDepartments(),
-        refetchUsers(),
         refetchRoles()
       ])
       

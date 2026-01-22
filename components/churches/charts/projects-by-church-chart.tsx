@@ -313,6 +313,7 @@ export function ProjectsByChurchChart({
                 content={({ viewBox }) => {
                   if (viewBox && "cx" in viewBox && "cy" in viewBox) {
                     const activeData = chartData[activeIndex]
+                    if (!activeData) return null
                     return (
                       <text
                         x={viewBox.cx}

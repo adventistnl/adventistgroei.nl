@@ -962,7 +962,8 @@ export function ViewSubsidyModal({
                       <ChevronDown className="w-3 h-3 text-gray-500" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="z-[100]">
+                  <WithPermission requiredPermissions={[PermissionResolverName.ApproveSubsidyRequest, PermissionResolverName.RejectSubsidyRequest, PermissionResolverName.ValidateSubsidyReceipt]}>
+                    <DropdownMenuContent align="start" className="z-[100]">
                     <DropdownMenuLabel>{t('subsidy.status.changeStatus')}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 
@@ -981,7 +982,6 @@ export function ViewSubsidyModal({
                       {t('subsidy.status.inReview')}
                     </DropdownMenuItem>
                     
-                    <WithPermission requiredPermissions={[PermissionResolverName.ApproveSubsidyRequest]}>
                       <DropdownMenuItem 
                           onClick={() => handleStatusChangeRequest('APPROVED')}
                           disabled={!canChangeStatus('approved')}
@@ -999,9 +999,7 @@ export function ViewSubsidyModal({
                           )}
                         </div>
                       </DropdownMenuItem>
-                    </WithPermission>
                     
-                    <WithPermission requiredPermissions={[PermissionResolverName.RejectSubsidyRequest]}>
                       <DropdownMenuItem 
                           onClick={() => handleStatusChangeRequest('REJECTED')}
                           disabled={!canChangeStatus('rejected')}
@@ -1009,7 +1007,6 @@ export function ViewSubsidyModal({
                         <XCircle className="mr-2 h-4 w-4 text-red-500" />
                         {t('subsidy.status.rejected')}
                       </DropdownMenuItem>
-                    </WithPermission>
 
                      <DropdownMenuItem 
                         onClick={() => handleStatusChangeRequest('CLOSED')}
@@ -1019,6 +1016,7 @@ export function ViewSubsidyModal({
                       {t('subsidy.status.closed')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
+                </WithPermission>
                 </DropdownMenu>
                 
                 {/* Priority Dropdown */}
