@@ -299,7 +299,7 @@ export function BudgetOverviewCard({
     <WithPermission
       requiredPermissions={[PermissionResolverName.AnnualBudgets]}
       fallback={
-        <PermissionDeniedOverlay height="450px" blurIntensity="medium">
+        <PermissionDeniedOverlay height="500px" blurIntensity="medium">
           {/* Skeleton do Budget Overview Card */}
           <Card data-chart={id} className={`bg-card text-card-foreground flex gap-6 rounded-xl border p-3 shadow-sm h-full flex flex-col min-h-[300px] ${className}`}>
             <CardHeader className="flex-row items-start space-y-0 pb-0">

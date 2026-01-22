@@ -458,7 +458,7 @@ export function ProjectsOverTimeChart({
     return (
       <WithPermission
         requiredPermissions={[PermissionResolverName.Projects]}
-        fallback={<PermissionDeniedOverlay height="450px" blurIntensity="medium">
+        fallback={<PermissionDeniedOverlay height="500px" blurIntensity="medium">
           <Card className="h-full flex flex-col">
             <CardHeader>
               <Skeleton className="h-6 w-48" />
@@ -487,7 +487,7 @@ export function ProjectsOverTimeChart({
     return (
       <WithPermission
         requiredPermissions={[PermissionResolverName.Projects, PermissionResolverName.Departments]}
-        fallback={<PermissionDeniedOverlay height="450px" blurIntensity="medium">
+        fallback={<PermissionDeniedOverlay height="500px" blurIntensity="medium">
           <Card className="h-full flex flex-col">
             <CardHeader>
               <Skeleton className="h-6 w-48" />
@@ -523,7 +523,7 @@ export function ProjectsOverTimeChart({
   return (
     <WithPermission
       requiredPermissions={[PermissionResolverName.Projects]}
-      fallback={<PermissionDeniedOverlay height="450px" blurIntensity="medium">
+      fallback={<PermissionDeniedOverlay height="500px" blurIntensity="medium">
         {/* Skeleton do Projects Over Time Chart */}
         <Card className="h-full flex flex-col">
           <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
