@@ -129,7 +129,10 @@ export function ModernHeader() {
             <LanguageSelector />
 
             {/* Currency Selector */}
-            <CurrencySelector />
+            <WithPermission requiredPermissions={[PermissionResolverName.CreateInstitution]}>
+              <CurrencySelector />
+            </WithPermission>
+          
 
             {/* Invite Button - Far Right */}
             <WithPermission requiredPermissions={[PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail]} partialPermissionCheck >

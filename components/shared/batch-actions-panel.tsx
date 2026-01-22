@@ -248,16 +248,19 @@ export function BatchActionsPanel({
                 </div>
               </div>
 
-              {/* Inline Batch Editor - Mobile */}
-              {editFields && editFields.length > 0 && (
-                <div className="border-t pt-3">
-                  <InlineBatchEditor 
-                    fields={editFields} 
-                    maxVisibleFields={2} 
-                    translationNamespace={translationNamespace || "dynamicFields"}
-                  />
-                </div>
-              )}
+              <WithPermission requiredPermissions={[PermissionResolverName.UpdateProjectActivity]}>
+                {/* Inline Batch Editor - Mobile */}
+                {editFields && editFields.length > 0 && (
+                  <div className="border-t pt-3">
+                    <InlineBatchEditor 
+                      fields={editFields} 
+                      maxVisibleFields={2} 
+                      translationNamespace={translationNamespace || "dynamicFields"}
+                    />
+                  </div>
+                )}
+              </WithPermission>
+
 
               {/* Actions Row - Mobile */}
               <div className="flex flex-col gap-2">
@@ -293,6 +296,7 @@ export function BatchActionsPanel({
                     </Tooltip>
                   </TooltipProvider>
                 )}
+
 
                 {/* Secondary Actions - Overflow Menu */}
                 {(actions.length > 0) && (

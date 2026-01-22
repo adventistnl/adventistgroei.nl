@@ -50,8 +50,10 @@ import { ProjectTableData } from "@/components/projects/projects-table"
 import { mockProjectActivities, getActivitiesByProjectId } from "@/data/mockData"
 import { ActivityDetailsModal } from "@/components/modals/project/activity-details-modal"
 import { DeleteActivityModal } from "@/components/modals/project/delete-activity-modal"
-import { ActivityTags } from "@/types/graphql-global-types"
+import { ActivityTags, PermissionResolverName } from "@/types/graphql-global-types"
 import { projectTranslations } from "@/lib/translations/projects"
+import { WithPermission } from "@/hocs/with-permission"
+import { useHasPermission } from "@/hooks/use-has-permission"
 
 // Schema-based interfaces
 export interface ProjectActivityData {
@@ -236,6 +238,11 @@ export function ProjectActivitiesTable({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedActivityForDelete, setSelectedActivityForDelete] = useState<ProjectActivityData | null>(null)
 
+  // Verificar permissões para exibir coluna de ações
+  const hasUpdatePermission = useHasPermission([PermissionResolverName.UpdateProjectActivity])
+  const hasDeletePermission = useHasPermission([PermissionResolverName.DeleteProjectActivity])
+  const hasActionsPermission = hasUpdatePermission || hasDeletePermission
+
   // Get project activities - use provided activities or fallback to mock data
   const projectActivities = activities || (getActivitiesByProjectId(project.id) as ProjectActivityData[])
 
@@ -367,8 +374,8 @@ export function ProjectActivitiesTable({
 
 
 
-  // Table columns
-  const columns: ColumnDef<ProjectActivityData>[] = [
+  // Table columns - Base columns sem actions
+  const baseColumns: ColumnDef<ProjectActivityData>[] = [
     {
       id: "name",
       accessorKey: "name",
@@ -561,26 +568,34 @@ export function ProjectActivitiesTable({
         )
       },
     },
-    {
-      id: "actions",
-      header: pt.activitiesTable.actions,
-      meta: {
-        responsive: "always", // Always show this column
-      },
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <MoreHorizontal className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
+  ]
+
+  // Coluna de ações - apenas se tiver permissões
+  const actionsColumn: ColumnDef<ProjectActivityData> = {
+    id: "actions",
+    header: pt.activitiesTable.actions,
+    meta: {
+      responsive: "always",
+    },
+    cell: ({ row }) => (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm">
+            <MoreHorizontal className="w-4 h-4" />
+          </Button>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent align="end" className="w-48">
+          {hasUpdatePermission && (
             <DropdownMenuItem onClick={() => handleManageActivity(row.original)}>
               <Settings className="w-4 h-4 mr-2" />
               {pt.activitiesTable.manage_activity}
             </DropdownMenuItem>
-            
-            <DropdownMenuSeparator />
+          )}
+          
+          {hasUpdatePermission && hasDeletePermission && <DropdownMenuSeparator />}
+
+          {hasDeletePermission && (
             <DropdownMenuItem 
               onClick={() => handleDeleteActivity(row.original)}
               className="text-red-600 focus:text-red-600"
@@ -588,11 +603,16 @@ export function ProjectActivitiesTable({
               <Trash2 className="w-4 h-4 mr-2" />
               {pt.activitiesTable.remove}
             </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
-  ]
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    ),
+  }
+
+  // Combinar colunas condicionalmente
+  const columns = hasActionsPermission 
+    ? [...baseColumns, actionsColumn]
+    : baseColumns
 
   return (
     <>

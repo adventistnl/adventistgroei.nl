@@ -3,6 +3,10 @@
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Bar, BarChart } from "recharts"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionDeniedOverlay } from "@/components/shared/permission-denied-overlay"
+import { PermissionResolverName } from "@/types/graphql-global-types"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Card,
   CardContent,
@@ -286,115 +290,170 @@ export function DepartmentProjectOverTimeChart({
 
   // Helper para obter label do intervalo de tempo
   const getTimeRangeLabel = (range: string) => {
+    const timeRanges = t.charts?.time_ranges || {}
     switch (range) {
-      case "7d": return "last 7 days"
-      case "30d": return "last 30 days"
-      case "90d": return "last 3 months"
-      case "180d": return "last 6 months"
-      case "365d": return "last 12 months"
-      default: return "last 3 months"
+      case "7d": return (timeRanges.last_7_days || "last 7 days").toLowerCase()
+      case "30d": return (timeRanges.last_30_days || "last 30 days").toLowerCase()
+      case "90d": return (timeRanges.last_3_months || "last 3 months").toLowerCase()
+      case "180d": return (timeRanges.last_6_months || "last 6 months").toLowerCase()
+      case "365d": return (timeRanges.last_12_months || "last 12 months").toLowerCase()
+      default: return (timeRanges.last_3_months || "last 3 months").toLowerCase()
     }
   }
 
   if (loading) {
     return (
-      <Card className="h-full flex flex-col min-h-[500px]">
-        <CardHeader className="border-b py-5">
-          <div className="h-6 bg-muted rounded w-48 animate-pulse" />
-          <div className="h-4 bg-muted rounded w-64 animate-pulse mt-2" />
-        </CardHeader>
-        <CardContent className="flex-1 px-2 pt-4 sm:px-6 sm:pt-6">
-          <div className="space-y-4">
-            {/* Chart skeleton */}
-            <div className="h-[300px] bg-muted/30 rounded-lg animate-pulse relative overflow-hidden">
-              <div className="absolute inset-0 flex items-end justify-around p-4 gap-2">
-                {[...Array(12)].map((_, i) => (
-                  <div 
-                    key={i} 
-                    className="bg-muted/60 rounded-t animate-pulse w-full"
-                    style={{ 
-                      height: `${Math.random() * 60 + 30}%`,
-                      animationDelay: `${i * 0.1}s`
-                    }}
-                  />
+      <WithPermission
+        requiredPermissions={[PermissionResolverName.Departments, PermissionResolverName.Projects]}
+        fallback={<PermissionDeniedOverlay height="600px" blurIntensity="medium">
+          <Card className="text-card-foregroundflex gap-6 rounded-xl border p-3 shadow-sm h-full flex flex-col]">
+            <CardHeader className="border-b py-5">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-64 mt-2" />
+            </CardHeader>
+            <CardContent className="flex-1 px-2 pt-4 sm:px-6 sm:pt-6">
+              <Skeleton className="h-[300px] w-full" />
+            </CardContent>
+          </Card>
+        </PermissionDeniedOverlay>}
+      >
+        <Card className="text-card-foregroundflex gap-6 rounded-xl border p-3 shadow-sm h-full flex flex-col]">
+          <CardHeader className="border-b py-5">
+            <div className="h-6 bg-muted rounded w-48 animate-pulse" />
+            <div className="h-4 bg-muted rounded w-64 animate-pulse mt-2" />
+          </CardHeader>
+          <CardContent className="flex-1 px-2 pt-4 sm:px-6 sm:pt-6">
+            <div className="space-y-4">
+              {/* Chart skeleton */}
+              <div className="h-[300px] bg-muted/30 rounded-lg animate-pulse relative overflow-hidden">
+                <div className="absolute inset-0 flex items-end justify-around p-4 gap-2">
+                  {[...Array(12)].map((_, i) => (
+                    <div 
+                      key={i} 
+                      className="bg-muted/60 rounded-t animate-pulse w-full"
+                      style={{ 
+                        height: `${Math.random() * 60 + 30}%`,
+                        animationDelay: `${i * 0.1}s`
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+              {/* Legend skeleton */}
+              <div className="flex items-center justify-center gap-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <div className="h-3 w-3 bg-muted rounded-full animate-pulse" />
+                    <div className="h-4 w-20 bg-muted rounded animate-pulse" />
+                  </div>
                 ))}
               </div>
             </div>
-            {/* Legend skeleton */}
-            <div className="flex items-center justify-center gap-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <div className="h-3 w-3 bg-muted rounded-full animate-pulse" />
-                  <div className="h-4 w-20 bg-muted rounded animate-pulse" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex-col items-start gap-1 text-xs pt-3 border-t">
-          <div className="h-4 bg-muted rounded w-40 animate-pulse" />
-          <div className="h-3 bg-muted rounded w-32 animate-pulse mt-1" />
-        </CardFooter>
-      </Card>
+          </CardContent>
+          <CardFooter className="flex-col items-start gap-1 text-xs pt-3 border-t">
+            <div className="h-4 bg-muted rounded w-40 animate-pulse" />
+            <div className="h-3 bg-muted rounded w-32 animate-pulse mt-1" />
+          </CardFooter>
+        </Card>
+      </WithPermission>
     )
   }
 
   if (churchDepartments.length === 0 || filteredData.length === 0) {
     return (
-      <Card className="h-full flex flex-col min-h-[500px]">
-        <CardHeader className="border-b py-5">
-          <CardTitle>{t.charts?.projects_over_time?.title || "Projects Created Over Time"}</CardTitle>
-          <CardDescription>
-            {t.charts?.projects_over_time?.description || "Project creation timeline by church departments"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center px-2 pt-4 sm:px-6 sm:pt-6">
-          <div className="text-center space-y-6 max-w-md">
-            {/* Empty state illustration */}
-            <div className="relative h-[240px] w-full bg-muted/20 rounded-lg flex items-center justify-center">
-              <div className="space-y-2 w-full px-8">
-                {/* Empty chart bars */}
-                <div className="flex items-end justify-around gap-2 h-32">
-                  {[...Array(8)].map((_, i) => (
-                    <div 
-                      key={i}
-                      className="bg-muted/40 rounded-t w-full"
-                      style={{ height: `${20 + (i % 3) * 15}%` }}
-                    />
-                  ))}
+      <WithPermission
+        requiredPermissions={[PermissionResolverName.Departments, PermissionResolverName.Projects]}
+        fallback={<PermissionDeniedOverlay height="600px" blurIntensity="medium">
+          <Card className="h-full flex flex-col min-h-[500px]">
+            <CardHeader className="border-b py-5">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-64 mt-2" />
+            </CardHeader>
+            <CardContent className="flex-1 flex items-center justify-center px-2 pt-4 sm:px-6 sm:pt-6">
+              <Skeleton className="h-[240px] w-full" />
+            </CardContent>
+          </Card>
+        </PermissionDeniedOverlay>}
+      >
+        <Card className="h-full flex flex-col min-h-[500px]">
+          <CardHeader className="border-b py-5">
+            <CardTitle>{t.charts?.projects_over_time?.title || "Projects Created Over Time"}</CardTitle>
+            <CardDescription>
+              {t.charts?.projects_over_time?.description || "Project creation timeline by church departments"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 flex items-center justify-center px-2 pt-4 sm:px-6 sm:pt-6">
+            <div className="text-center space-y-6 max-w-md">
+              {/* Empty state illustration */}
+              <div className="relative h-[240px] w-full bg-muted/20 rounded-lg flex items-center justify-center">
+                <div className="space-y-2 w-full px-8">
+                  {/* Empty chart bars */}
+                  <div className="flex items-end justify-around gap-2 h-32">
+                    {[...Array(8)].map((_, i) => (
+                      <div 
+                        key={i}
+                        className="bg-muted/40 rounded-t w-full"
+                        style={{ height: `${20 + (i % 3) * 15}%` }}
+                      />
+                    ))}
+                  </div>
+                  {/* X-axis line */}
+                  <div className="h-px bg-muted" />
                 </div>
-                {/* X-axis line */}
-                <div className="h-px bg-muted" />
+              </div>
+              
+              {/* Message */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-center gap-2">
+                  <Activity className="h-5 w-5 text-muted-foreground" />
+                  <h3 className="font-semibold text-foreground">
+                    {t.charts?.no_data?.title || "No Project Data Available"}
+                  </h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {t.charts?.no_data?.description || "Projects will appear here once they are created in the selected time period."}
+                </p>
               </div>
             </div>
-            
-            {/* Message */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-center gap-2">
-                <Activity className="h-5 w-5 text-muted-foreground" />
-                <h3 className="font-semibold text-foreground">
-                  {t.charts?.no_data?.title || "No Project Data Available"}
-                </h3>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {t.charts?.no_data?.description || "Projects will appear here once they are created in the selected time period."}
-              </p>
+          </CardContent>
+          <CardFooter className="flex-col items-start gap-1 text-xs pt-3 border-t">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <TrendingUp className="h-3 w-3" />
+              0 {t.stats?.projects || "projects"} {getTimeRangeLabel(timeRange)}
             </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex-col items-start gap-1 text-xs pt-3 border-t">
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <TrendingUp className="h-3 w-3" />
-            0 {t.stats?.projects || "projects"} {getTimeRangeLabel(timeRange)}
-          </div>
-        </CardFooter>
-      </Card>
+          </CardFooter>
+        </Card>
+      </WithPermission>
     )
   }
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+    <WithPermission
+      requiredPermissions={[PermissionResolverName.Departments, PermissionResolverName.Projects]}
+      fallback={<PermissionDeniedOverlay height="500px" blurIntensity="medium">
+        <Card className="h-full flex flex-col">
+          <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+            <div className="grid flex-1 gap-1">
+              <Skeleton className="h-5 w-64" />
+              <Skeleton className="h-4 w-48 mt-1" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-9 w-20" />
+              <Skeleton className="h-9 w-[160px]" />
+            </div>
+          </CardHeader>
+          <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6 flex-1">
+            <Skeleton className="h-[300px] w-full" />
+          </CardContent>
+          <CardFooter className="flex-col items-start gap-1 text-xs pt-3 border-t">
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-3 w-56 mt-1" />
+          </CardFooter>
+        </Card>
+      </PermissionDeniedOverlay>}
+    >
+      <Card className="h-full flex flex-col">
+        <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
         <div className="grid flex-1 gap-1">
           <CardTitle>{t.charts?.projects_over_time?.title || "Projects Created Over Time"}</CardTitle>
           <CardDescription>
@@ -425,16 +484,16 @@ export function DepartmentProjectOverTimeChart({
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger
               className="w-[160px] rounded-lg sm:ml-auto"
-              aria-label="Select time range"
+              aria-label={t.charts?.time_ranges?.select_time_range || "Select time range"}
             >
-              <SelectValue placeholder="Last 3 months" />
+              <SelectValue placeholder={t.charts?.time_ranges?.last_3_months || "Last 3 months"} />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
-              <SelectItem value="7d" className="rounded-lg">Last 7 days</SelectItem>
-              <SelectItem value="30d" className="rounded-lg">Last 30 days</SelectItem>
-              <SelectItem value="90d" className="rounded-lg">Last 3 months</SelectItem>
-              <SelectItem value="180d" className="rounded-lg">Last 6 months</SelectItem>
-              <SelectItem value="365d" className="rounded-lg">Last 12 months</SelectItem>
+              <SelectItem value="7d" className="rounded-lg">{t.charts?.time_ranges?.last_7_days || "Last 7 days"}</SelectItem>
+              <SelectItem value="30d" className="rounded-lg">{t.charts?.time_ranges?.last_30_days || "Last 30 days"}</SelectItem>
+              <SelectItem value="90d" className="rounded-lg">{t.charts?.time_ranges?.last_3_months || "Last 3 months"}</SelectItem>
+              <SelectItem value="180d" className="rounded-lg">{t.charts?.time_ranges?.last_6_months || "Last 6 months"}</SelectItem>
+              <SelectItem value="365d" className="rounded-lg">{t.charts?.time_ranges?.last_12_months || "Last 12 months"}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -592,9 +651,10 @@ export function DepartmentProjectOverTimeChart({
           {totalProjects} {t.stats?.projects || "projects"} {getTimeRangeLabel(timeRange)}
         </div>
         <div className="text-muted-foreground">
-          Top: <span className="font-medium text-foreground">{topDepartment.name}</span> ({topDepartment.total} {t.stats?.projects || "projects"})
+          {t.charts?.projects_over_time?.footer?.top_department || "Top"}: <span className="font-medium text-foreground">{topDepartment.name}</span> ({topDepartment.total} {t.stats?.projects || "projects"})
         </div>
       </CardFooter>
     </Card>
+    </WithPermission>
   )
 }

@@ -22,7 +22,11 @@ import { departmentTranslations } from "@/lib/translations/departments"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useRouter } from "next/navigation"
+import { PermissionResolverName } from "@/types/graphql-global-types"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionDeniedOverlay } from "@/components/shared/permission-denied-overlay"
 
 interface Project {
   id: string
@@ -315,8 +319,43 @@ export function DepartmentProjectsCard({
 
   if (loading) {
     return (
-      <Card className="h-full flex flex-col">
-        <CardHeader className="pb-3 flex-shrink-0">
+      <WithPermission
+        requiredPermissions={[PermissionResolverName.Projects]}
+        fallback={<PermissionDeniedOverlay height="600px" blurIntensity="medium">
+          <Card className="h-full flex flex-col">
+            <CardHeader className="pb-3 flex-shrink-0">
+              <div className="flex items-start justify-between">
+                <div className="space-y-2 flex-1">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-muted-foreground" />
+                    <Skeleton className="h-5 w-40" />
+                  </div>
+                  <Skeleton className="h-3 w-56" />
+                </div>
+                <Skeleton className="h-8 w-32" />
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-hidden flex flex-col pb-0">
+              <div className="grid grid-cols-3 gap-2 mb-3 flex-shrink-0">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="p-2.5 rounded-md border bg-card">
+                    <Skeleton className="h-6 w-full mb-1" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                ))}
+              </div>
+              <Separator className="flex-shrink-0" />
+              <div className="flex-1 overflow-y-auto space-y-3 mt-3">
+                {[...Array(2)].map((_, i) => (
+                  <Skeleton key={i} className="h-24 w-full" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </PermissionDeniedOverlay>}
+      >
+        <Card className="h-full flex flex-col">
+          <CardHeader className="pb-3 flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="space-y-2 flex-1">
               <div className="flex items-center gap-2">
@@ -375,10 +414,46 @@ export function DepartmentProjectsCard({
           </div>
         </div>
       </Card>
+      </WithPermission>
     )
   }
 
   return (
+    <WithPermission
+      requiredPermissions={[PermissionResolverName.Projects]}
+      fallback={<PermissionDeniedOverlay height="600px" blurIntensity="medium">
+        <Card className="h-full flex flex-col">
+          <CardHeader className="pb-3 flex-shrink-0">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2 flex-1">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                  <Skeleton className="h-5 w-40" />
+                </div>
+                <Skeleton className="h-3 w-56" />
+              </div>
+              <Skeleton className="h-8 w-32" />
+            </div>
+          </CardHeader>
+          <CardContent className="flex-1 overflow-hidden flex flex-col pb-0">
+            <div className="grid grid-cols-3 gap-2 mb-3 flex-shrink-0">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="p-2.5 rounded-md border bg-card">
+                  <Skeleton className="h-6 w-full mb-1" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              ))}
+            </div>
+            <Separator className="flex-shrink-0" />
+            <div className="flex-1 overflow-y-auto space-y-3 mt-3">
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </PermissionDeniedOverlay>}
+    >
     <Card className="h-full flex flex-col">
       {/* Fixed Header */}
       <CardHeader className="pb-3 flex-shrink-0">
@@ -392,14 +467,17 @@ export function DepartmentProjectsCard({
               {t.projects?.description?.replace('{{departmentName}}', departmentName) || `All projects linked to ${departmentName}`}
             </CardDescription>
           </div>
-          <Button
-            onClick={handleCreateProject}
-            size="sm"
-            className="h-8 gap-1.5"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            {t.projects?.create_button || "Create Project"}
-          </Button>
+          <WithPermission requiredPermissions={[PermissionResolverName.CreateProject]}>
+            <Button
+              onClick={handleCreateProject}
+              size="sm"
+              className="h-8 gap-1.5"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {t.projects?.create_button || "Create Project"}
+            </Button>
+          </WithPermission>
+
         </div>
       </CardHeader>
       
@@ -717,5 +795,6 @@ export function DepartmentProjectsCard({
         </div>
       )}
     </Card>
+    </WithPermission>
   )
 }

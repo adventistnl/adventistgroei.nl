@@ -1180,7 +1180,7 @@ export default function DepartmentsPage() {
         </div>
 
         {/* Year Filter */}
-        <YearFilter showAddButton={true} />
+        <YearFilter showAddButton={false} />
 
         {/* KPI Cards - Conditional Rendering */}
         {viewMode === 'detail' && selectedDepartmentDetail ? (
@@ -1248,14 +1248,16 @@ export default function DepartmentsPage() {
                       label: tDept.actions?.edit_department || "Edit Department",
                       icon: Edit,
                       onClick: () => handleEdit(selectedDepartmentDetail.id),
-                      variant: "default"
+                      variant: "default",
+                      requiredPermissions: [PermissionResolverName.UpdateDepartment]
                     },
                     {
                       label: tDept.actions?.delete_department || "Delete Department",
                       icon: Trash2,
                       onClick: () => handleDelete(selectedDepartmentDetail.id, selectedDepartmentDetail.name),
                       variant: "destructive",
-                      showSeparatorAfter: false
+                      showSeparatorAfter: false,
+                      requiredPermissions: [PermissionResolverName.DeleteDepartment]
                     }
                   ]}
                 />

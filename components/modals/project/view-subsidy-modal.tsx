@@ -383,7 +383,8 @@ export function ViewSubsidyModal({
         await approveSubsidyRequest({
           variables: {
             id: subsidy.id,
-            approved_amount: subsidy.requested_amount
+            approved_amount: subsidy.requested_amount,
+            language: i18n.language as any
           }
         })
       } else if (status === 'closed') {
@@ -396,7 +397,8 @@ export function ViewSubsidyModal({
            await updateSubsidyRequest({
              variables: {
                id: subsidy.id,
-               data: { subsidy_status_id: id }
+               data: { subsidy_status_id: id },
+               language: i18n.language as any
              }
            })
         }
@@ -424,7 +426,8 @@ export function ViewSubsidyModal({
        await updateSubsidyRequest({
          variables: {
            id: subsidy.id,
-           data: { subsidy_status_id: statusId }
+           data: { subsidy_status_id: statusId },
+           language: i18n.language as any
          }
        })
      } catch (error) {
@@ -609,7 +612,8 @@ export function ViewSubsidyModal({
         await updateSubsidyRequestMessage({
           variables: {
             id: editingMessage,
-            message: newMessage
+            message: newMessage,
+            language: i18n.language as any
           }
         })
         toast.success(t('toasts.commentUpdated'))
@@ -628,7 +632,8 @@ export function ViewSubsidyModal({
         await addSubsidyRequestMessage({
           variables: {
             id: subsidy?.id,
-            message: messageText
+            message: messageText,
+            language: i18n.language as any
           }
         })
         toast.success(t('toasts.commentAdded'))
@@ -666,7 +671,8 @@ export function ViewSubsidyModal({
         await addSubsidyRequestMessage({
           variables: {
             id: subsidy?.id,
-            message: messageText
+            message: messageText,
+            language: i18n.language as any
           }
         })
         
@@ -693,7 +699,10 @@ export function ViewSubsidyModal({
 
     try {
       await deleteSubsidyRequestMessage({
-        variables: { id: deleteCommentDialog.messageId }
+        variables: { 
+          id: deleteCommentDialog.messageId,
+          language: i18n.language as any
+        }
       })
       toast.success(t('projects.subsidy.commentDeleted'))
       setDeleteCommentDialog({ isOpen: false, messageId: null })
@@ -710,7 +719,8 @@ export function ViewSubsidyModal({
     await rejectSubsidyRequest({
       variables: {
         id: subsidy.id,
-        rejection_reason: reason
+        rejection_reason: reason,
+        language: i18n.language as any
       }
     })
   }
@@ -1057,7 +1067,8 @@ export function ViewSubsidyModal({
                         await updateSubsidyRequest({
                           variables: {
                             id: subsidy.id,
-                            data: { priority: 'HIGH' }
+                            data: { priority: 'HIGH' },
+                            language: i18n.language as any
                           }
                         })
                         toast.success(t('subsidy.priority.changedTo', { priority: t('subsidy.priority.high') }))
@@ -1078,7 +1089,8 @@ export function ViewSubsidyModal({
                         await updateSubsidyRequest({
                           variables: {
                             id: subsidy.id,
-                            data: { priority: 'MEDIUM' }
+                            data: { priority: 'MEDIUM' },
+                            language: i18n.language as any
                           }
                         })
                         toast.success(t('subsidy.priority.changedTo', { priority: t('subsidy.priority.medium') }))
@@ -1099,7 +1111,8 @@ export function ViewSubsidyModal({
                         await updateSubsidyRequest({
                           variables: {
                             id: subsidy.id,
-                            data: { priority: 'LOW' }
+                            data: { priority: 'LOW' },
+                            language: i18n.language as any
                           }
                         })
                         toast.success(t('subsidy.priority.changedTo', { priority: t('subsidy.priority.low') }))

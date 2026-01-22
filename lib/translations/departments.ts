@@ -173,18 +173,6 @@ export const departmentTranslations = {
       delete_failed: "Failed to deactivate department"
     },
     
-    // Stats
-    stats: {
-      church: "Church",
-      volunteers: "Volunteers",
-      budgets: "Budgets",
-      projects: "Projects",
-      documents: "Documents",
-      members: "Members",
-      total_projects: "Total Projects",
-      top_department: "Top Department"
-    },
-    
     // KPI Cards
     kpi: {
       budget_total: {
@@ -209,6 +197,7 @@ export const departmentTranslations = {
         no_data: "No project data available"
       },
       time_ranges: {
+        select_time_range: "Select time range",
         last_7_days: "Last 7 days",
         last_30_days: "Last 30 days",
         last_3_months: "Last 3 months",
@@ -386,6 +375,18 @@ export const departmentTranslations = {
     },
     filters: {
       institutional: "Institutional"
+    },
+
+    // Stats
+    stats: {
+      church: "Church",
+      volunteers: "Volunteers",
+      budgets: "Budgets",
+      projects: "projects",
+      documents: "Documents",
+      members: "Members",
+      total_projects: "Total Projects",
+      top_department: "Top Department"
     },
 
     // Leaders Section
@@ -681,6 +682,7 @@ export const departmentTranslations = {
         no_data: "Geen projectgegevens beschikbaar"
       },
       time_ranges: {
+        select_time_range: "Selecteer tijdsbereik",
         last_7_days: "Laatste 7 dagen",
         last_30_days: "Laatste 30 dagen",
         last_3_months: "Laatste 3 maanden",
@@ -1133,11 +1135,12 @@ export const departmentTranslations = {
     },
     
     // Stats
+    // Stats
     stats: {
       church: "Igreja",
       volunteers: "Voluntários",
       budgets: "Orçamentos",
-      projects: "Projetos",
+      projects: "projetos",
       documents: "Documentos",
       members: "Membros",
       total_projects: "Total de Projetos",
@@ -1168,6 +1171,7 @@ export const departmentTranslations = {
         no_data: "Nenhum dado de projeto disponível"
       },
       time_ranges: {
+        select_time_range: "Selecionar período de tempo",
         last_7_days: "Últimos 7 dias",
         last_30_days: "Últimos 30 dias",
         last_3_months: "Últimos 3 meses",

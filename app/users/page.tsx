@@ -170,6 +170,28 @@ export default function UsersPage() {
     title: t('users.title')
   })
   
+  // DEBUG: Validação dos dados que entram na tabela de Users
+  React.useEffect(() => {
+    console.log('🔍 [USERS PAGE TABLE DEBUG] ===================================')
+    console.log('👥 Total filteredUsers:', filteredUsers.length)
+    console.log('👥 First 3 users data:', filteredUsers.slice(0, 3).map(u => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      church: u.church ? { id: u.church.id, name: u.church.name } : null,
+      user_roles: u.user_roles?.map((ur: any) => ({
+        id: ur.id,
+        role: { id: ur.role?.id, name: ur.role?.name, key_code: ur.role?.key_code }
+      })),
+      is_deleted: u.is_deleted,
+      created_at: u.created_at
+    })))
+    console.log('👥 Sample user_roles structure:', filteredUsers[0]?.user_roles)
+    console.log('👥 Does first user have user_roles?', !!filteredUsers[0]?.user_roles)
+    console.log('👥 User_roles length:', filteredUsers[0]?.user_roles?.length)
+    console.log('🔍 [END USERS PAGE TABLE DEBUG] ===================================')
+  }, [filteredUsers])
+  
   // Load data
   useEffect(() => {
     const loadData = async () => {

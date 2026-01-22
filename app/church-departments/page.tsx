@@ -426,8 +426,18 @@ export default function ChurchDepartmentsPage() {
 
   // Dados para KPI Cards Carrossel com Proteção de Privacidade
   const kpiCardsData: ProtectedKPICardData[] = useMemo(() => {
-    if (!kpis) return []
-
+    console.log('📊 [KPI Cards Data] Building KPI Cards:', {
+      hasKpis: !!kpis,
+      kpisValue: kpis,
+      filteredDepartmentsCount: filteredDepartments.length,
+      projectsByYearCount: projectsByYear.length,
+      hasTranslations: !!(t.church_page as any)?.kpi_cards
+    })
+    
+    // ⚠️ CRITICAL: Não retornar array vazio se kpis for undefined
+    // Os cards devem SEMPRE renderizar, mesmo sem dados do hook
+    // Se não houver permissão, o ProtectedKPICard mostrará skeleton com overlay
+    
     const kpiCardsTranslations = (t.church_page as any)?.kpi_cards || {}
 
     // Total de membros únicos em todos os departamentos de igreja (filtered)
@@ -454,7 +464,7 @@ export default function ChurchDepartmentsPage() {
       p.status === 'CONCLUDED'
     ).length
 
-    return [
+    const cards = [
       {
         id: "total_departments",
         title: kpiCardsTranslations.total_departments || "Church Departments",
@@ -488,7 +498,16 @@ export default function ChurchDepartmentsPage() {
         requiredPermission: [PermissionResolverName.Projects, PermissionResolverName.Departments]
       }
     ]
-  }, [filteredDepartments, projectsByYear, t]);
+    
+    console.log('✅ [KPI Cards Data] Cards Created:', {
+      totalCards: cards.length,
+      cardIds: cards.map(c => c.id),
+      cardValues: cards.map(c => ({ id: c.id, value: c.value })),
+      willRenderWithCustom: cards.length + 1
+    })
+    
+    return cards
+  }, [filteredDepartments, projectsByYear, t, kpis]);
 
   // Dados para gráficos (apenas nome e orçamento)
   const chartData = useMemo(() => {
@@ -895,10 +914,6 @@ export default function ChurchDepartmentsPage() {
         
         return (
           <div className="flex justify-center">
-            <WithPermission 
-              requiredPermissions={[PermissionResolverName.UpdateDepartment, PermissionResolverName.DeleteDepartment]}
-              requireAll={false}
-            >
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm">
@@ -906,10 +921,12 @@ export default function ChurchDepartmentsPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => handleViewDetails(row.original.id)}>
-                    <Eye className="w-4 h-4 mr-2" />
-                    {t.actions?.view_details || "View Details"}
-                  </DropdownMenuItem>
+                  <WithPermission requiredPermissions={[PermissionResolverName.Department]}>
+                    <DropdownMenuItem onClick={() => handleViewDetails(row.original.id)}>
+                      <Eye className="w-4 h-4 mr-2" />
+                      {t.actions?.view_details || "View Details"}
+                    </DropdownMenuItem>
+                  </WithPermission>
                   {isActive && (
                     <>
                       <WithPermission requiredPermissions={[PermissionResolverName.UpdateDepartment]}>
@@ -928,7 +945,6 @@ export default function ChurchDepartmentsPage() {
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
-            </WithPermission>
           </div>
         )
       },
@@ -1128,13 +1144,6 @@ export default function ChurchDepartmentsPage() {
               </div>
               
               <div className="flex items-center gap-3">
-                <Button 
-                  variant="outline"
-                  onClick={handleBackToList}
-                >
-                  <Layers className="w-4 h-4 mr-2" />
-                  {t.breadcrumb?.all_departments || "See All Departments"}
-                </Button>
                 
                 <Button 
                   variant="outline" 
@@ -1263,7 +1272,7 @@ export default function ChurchDepartmentsPage() {
                         {
                           label: churches.find(c => c.id === selectedDepartmentDetail.church_id)?.name || t.labels?.institutional || "Institutional",
                           variant: "default",
-                          className: "text-xs"
+                          className: "text-xs",
                         },
                         {
                           label: !selectedDepartmentDetail.is_deleted ? t.common?.active || "Active" : t.common?.inactive || "Inactive",
@@ -1278,14 +1287,16 @@ export default function ChurchDepartmentsPage() {
                           label: t.actions?.edit_department || "Edit Department",
                           icon: Edit,
                           onClick: () => handleEdit(selectedDepartmentDetail.id),
-                          variant: "default"
+                          variant: "default",
+                          requiredPermissions: [PermissionResolverName.UpdateDepartment]
                         },
                         {
                           label: t.actions?.delete_department || "Delete Department",
                           icon: Trash2,
                           onClick: () => handleDelete(selectedDepartmentDetail.id, selectedDepartmentDetail.name),
                           variant: "destructive",
-                          showSeparatorAfter: false
+                          showSeparatorAfter: false,
+                          requiredPermissions: [PermissionResolverName.DeleteDepartment]
                         }
                       ]}
                     />
@@ -1338,24 +1349,6 @@ export default function ChurchDepartmentsPage() {
                 isLoading,
                 minCardsForCarousel: 2
               })
-              
-              /* 
-                Carrossel de KPIs Protegidos com Privacy Protection + Year Progress Card
-                
-                Cada KPI é protegido individualmente por permissões específicas:
-                - ✅ Com permissão: Exibe dados reais
-                - 🔒 Sem permissão: Exibe skeleton com overlay "Acesso Negado"
-                - 📊 Sempre renderiza: Mantém layout consistente
-                
-                Custom First Item:
-                - 📅 Year Progress Card: Progresso do ano atual como primeiro card
-                
-                Permissões por KPI:
-                - Total Departments: DepartmentKpIs
-                - Total Members: Users
-                - Total Projects: [Projects, Departments]
-                - Completed Projects: [Projects, Departments]
-              */
               return (
                 <ProtectedKPICarousel
                   data={kpiCardsData}

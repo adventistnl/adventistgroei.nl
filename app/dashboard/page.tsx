@@ -109,7 +109,7 @@ import { ptBR, nl, enUS } from "date-fns/locale"
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
-  const { currentInstitutionData, institutions } = useInstitution()  
+  const { currentInstitutionData, institutions, refetchInstitutionById } = useInstitution()  
   const { formatCurrency, selectedCurrency } = useCurrency()
   const currentLanguage = i18n?.language || 'en'
   const ts = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
@@ -273,7 +273,7 @@ export default function DashboardPage() {
   // Filter users by selected year and month
   const filteredUsers = useMemo(() => {
     const monthFilter = filterValues.month || selectedMonth
-    return allUsersFromInstitutions.filter((user: any) => {
+    const filtered = allUsersFromInstitutions.filter((user: any) => {
       if (!user.created_at) return true
       const createdDate = new Date(user.created_at)
       const yearMatch = createdDate.getFullYear() === selectedYear
@@ -283,7 +283,53 @@ export default function DashboardPage() {
       const monthMatch = createdDate.getMonth() === parseInt(monthFilter)
       return yearMatch && monthMatch
     })
-  }, [allUsersFromInstitutions, selectedYear, selectedMonth, filterValues.month])
+    
+    // DEBUG: Validação dos dados que entram na tabela
+    console.log('🔍 [DASHBOARD DATA FLOW] ===================================')
+    console.log('📊 allUsers (from query):', allUsers.length)
+    console.log('📊 allUsersFromInstitutions:', allUsersFromInstitutions.length)
+    console.log('📊 filteredUsers (final):', filtered.length)
+    console.log('📊 First user from allUsers:', allUsers[0] ? {
+      id: allUsers[0].id,
+      name: allUsers[0].name,
+      user_roles: allUsers[0].user_roles
+    } : 'No users')
+    console.log('📊 First user from allUsersFromInstitutions:', allUsersFromInstitutions[0] ? {
+      id: allUsersFromInstitutions[0].id,
+      name: allUsersFromInstitutions[0].name,
+      user_roles: allUsersFromInstitutions[0].user_roles
+    } : 'No users')
+    console.log('📊 First user from filteredUsers:', filtered[0] ? {
+      id: filtered[0].id,
+      name: filtered[0].name,
+      user_roles: filtered[0].user_roles
+    } : 'No users')
+    console.log('🔍 [END DASHBOARD DATA FLOW] ===================================')
+    
+    return filtered
+  }, [allUsersFromInstitutions, allUsers, selectedYear, selectedMonth, filterValues.month])
+
+  // DEBUG: Validação dos dados que entram na tabela do Dashboard
+  React.useEffect(() => {
+    console.log('🔍 [DASHBOARD TABLE DEBUG] ===================================')
+    console.log('📊 Total filteredUsers:', filteredUsers.length)
+    console.log('📊 First 3 users data:', filteredUsers.slice(0, 3).map((u: any) => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      church: u.church ? { id: u.church.id, name: u.church.name } : null,
+      user_roles: u.user_roles?.map((ur: any) => ({
+        id: ur.id,
+        role: { id: ur.role?.id, name: ur.role?.name, key_code: ur.role?.key_code }
+      })),
+      is_deleted: u.is_deleted,
+      created_at: u.created_at
+    })))
+    console.log('📊 Sample user_roles structure:', filteredUsers[0]?.user_roles)
+    console.log('📊 Does first user have user_roles?', !!filteredUsers[0]?.user_roles)
+    console.log('📊 User_roles length:', filteredUsers[0]?.user_roles?.length)
+    console.log('🔍 [END DASHBOARD TABLE DEBUG] ===================================')
+  }, [filteredUsers])
 
   // Extract ALL churches from filtered institutions
   const allChurchesFromInstitutions = React.useMemo(() => {
@@ -730,9 +776,13 @@ export default function DashboardPage() {
         refetchRoles()
       ])
       
+      // Refetch institution context data
+      await refetchInstitutionById()
+      
       toast.dismiss(refreshToast)
       toast.success(dt.dataRefreshed)
     } catch (error) {
+      console.error('Error refreshing data:', error)
       toast.dismiss(refreshToast)
       toast.error(dt.refreshFailed)
     }
@@ -1383,7 +1433,7 @@ export default function DashboardPage() {
               <CardContent className="overflow-hidden p-0">
                 <UseTable
                   columns={userColumns}
-                  data={allUsersFromInstitutions}
+                  data={filteredUsers}
                   searchKey="name"
                   emptyMessage={dt.noUsersFound}
                   emptyEntityName={dt.emptyUser}

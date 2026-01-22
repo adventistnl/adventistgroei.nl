@@ -4,8 +4,8 @@ import { gql } from "@apollo/client";
  * Create a new subsidy request with items
  */
 export const CREATE_SUBSIDY_REQUEST = gql`
-  mutation CreateSubsidyRequest($data: SubsidyRequestCreateDto!) {
-    createSubsidyRequest(data: $data) {
+  mutation CreateSubsidyRequest($data: SubsidyRequestCreateDto!, $language: LanguagePreference) {
+    createSubsidyRequest(data: $data, language: $language) {
       id
       description
       total_budget
@@ -65,8 +65,8 @@ export const CREATE_SUBSIDY_REQUEST = gql`
  * Update an existing subsidy request
  */
 export const UPDATE_SUBSIDY_REQUEST = gql`
-  mutation UpdateSubsidyRequest($id: String!, $data: SubsidyRequestUpdateDto!) {
-    updateSubsidyRequest(id: $id, data: $data) {
+  mutation UpdateSubsidyRequest($id: String!, $data: SubsidyRequestUpdateDto!, $language: LanguagePreference) {
+    updateSubsidyRequest(id: $id, data: $data, language: $language) {
       id
       description
       total_budget
@@ -126,8 +126,8 @@ export const UPDATE_SUBSIDY_REQUEST = gql`
  * Approve a subsidy request
  */
 export const APPROVE_SUBSIDY_REQUEST = gql`
-  mutation ApproveSubsidyRequest($id: String!, $approved_amount: Float!) {
-    approveSubsidyRequest(id: $id, approved_amount: $approved_amount) {
+  mutation ApproveSubsidyRequest($id: String!, $approved_amount: Float!, $language: LanguagePreference) {
+    approveSubsidyRequest(id: $id, approved_amount: $approved_amount, language: $language) {
       id
       description
       total_budget
@@ -187,8 +187,8 @@ export const APPROVE_SUBSIDY_REQUEST = gql`
  * Reject a subsidy request
  */
 export const REJECT_SUBSIDY_REQUEST = gql`
-  mutation RejectSubsidyRequest($id: String!, $rejection_reason: String!) {
-    rejectSubsidyRequest(id: $id, rejection_reason: $rejection_reason) {
+  mutation RejectSubsidyRequest($id: String!, $rejection_reason: String!, $language: LanguagePreference) {
+    rejectSubsidyRequest(id: $id, rejection_reason: $rejection_reason, language: $language) {
       id
       description
       total_budget
@@ -248,8 +248,8 @@ export const REJECT_SUBSIDY_REQUEST = gql`
  * Delete a subsidy request (soft delete)
  */
 export const DELETE_SUBSIDY_REQUEST = gql`
-  mutation DeleteSubsidyRequest($id: String!) {
-    deleteSubsidyRequest(id: $id) {
+  mutation DeleteSubsidyRequest($id: String!, $language: LanguagePreference) {
+    deleteSubsidyRequest(id: $id, language: $language) {
       id
       description
       total_budget
@@ -401,8 +401,8 @@ export const GET_SUBSIDY_REQUEST_BY_ID = gql`
  * Add a message to subsidy request history
  */
 export const ADD_SUBSIDY_REQUEST_MESSAGE = gql`
-  mutation AddSubsidyRequestMessage($id: String!, $message: String!) {
-    addSubsidyRequestMessage(id: $id, message: $message) {
+  mutation AddSubsidyRequestMessage($id: String!, $message: String!, $language: LanguagePreference) {
+    addSubsidyRequestMessage(id: $id, message: $message, language: $language) {
       id
       subsidy_request_id
       status_id
@@ -426,8 +426,8 @@ export const ADD_SUBSIDY_REQUEST_MESSAGE = gql`
  * Update a subsidy request message
  */
 export const UPDATE_SUBSIDY_REQUEST_MESSAGE = gql`
-  mutation UpdateSubsidyRequestMessage($id: String!, $message: String!) {
-    updateSubsidyRequestMessage(id: $id, message: $message) {
+  mutation UpdateSubsidyRequestMessage($id: String!, $message: String!, $language: LanguagePreference) {
+    updateSubsidyRequestMessage(id: $id, message: $message, language: $language) {
       id
       reason
       changed_at
@@ -439,8 +439,8 @@ export const UPDATE_SUBSIDY_REQUEST_MESSAGE = gql`
  * Delete a subsidy request message
  */
 export const DELETE_SUBSIDY_REQUEST_MESSAGE = gql`
-  mutation DeleteSubsidyRequestMessage($id: String!) {
-    deleteSubsidyRequestMessage(id: $id) {
+  mutation DeleteSubsidyRequestMessage($id: String!, $language: LanguagePreference) {
+    deleteSubsidyRequestMessage(id: $id, language: $language) {
       id
     }
   }

@@ -17,6 +17,7 @@ import {
   MoreHorizontal, 
   LucideIcon 
 } from "lucide-react"
+import { WithPermission } from "@/hocs/with-permission"
 
 export interface EntityInfoCardAction {
   label: string
@@ -24,6 +25,8 @@ export interface EntityInfoCardAction {
   onClick: () => void
   variant?: "default" | "destructive"
   showSeparatorAfter?: boolean
+  /** Permissões necessárias para exibir esta ação */
+  requiredPermissions?: import('@/types/graphql-global-types').PermissionResolverName[]
 }
 
 export interface EntityInfoCardProps {
@@ -226,17 +229,38 @@ export function EntityInfoCard(props: EntityInfoCardProps) {
                 <DropdownMenuContent align="end" className="w-56">
                   {actions.map((action, index) => (
                     <React.Fragment key={index}>
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          action.onClick()
-                        }}
-                        className={action.variant === "destructive" ? "text-red-600" : ""}
-                      >
-                        <action.icon className="mr-2 h-4 w-4" />
-                        {action.label}
-                      </DropdownMenuItem>
-                      {action.showSeparatorAfter && <DropdownMenuSeparator />}
+                      {action.requiredPermissions && action.requiredPermissions.length > 0 ? (
+                        <WithPermission 
+                          requiredPermissions={action.requiredPermissions}
+                          fallback={null}
+                        >
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              action.onClick()
+                            }}
+                            className={action.variant === "destructive" ? "text-red-600" : ""}
+                          >
+                            <action.icon className="mr-2 h-4 w-4" />
+                            {action.label}
+                          </DropdownMenuItem>
+                          {action.showSeparatorAfter && <DropdownMenuSeparator />}
+                        </WithPermission>
+                      ) : (
+                        <>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              action.onClick()
+                            }}
+                            className={action.variant === "destructive" ? "text-red-600" : ""}
+                          >
+                            <action.icon className="mr-2 h-4 w-4" />
+                            {action.label}
+                          </DropdownMenuItem>
+                          {action.showSeparatorAfter && <DropdownMenuSeparator />}
+                        </>
+                      )}
                     </React.Fragment>
                   ))}
                 </DropdownMenuContent>

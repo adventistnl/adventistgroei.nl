@@ -15,6 +15,9 @@ import { cn } from "@/lib/utils"
 import { InlineBatchEditor, BatchEditField } from "@/components/shared/inline-batch-editor"
 import { useTranslation } from "react-i18next"
 import { useCurrency } from "@/contexts/currency-context"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
+import { useHasPermission } from "@/hooks/use-has-permission"
 
 export interface BatchAction {
   id: string
@@ -57,6 +60,10 @@ export function BatchActionsPanelResponsive({
 }: BatchActionsPanelProps) {
   const { t, i18n } = useTranslation()
   const { formatCurrency, selectedCurrency } = useCurrency()
+  
+  // Verificar permissão para batch editing
+  const hasUpdatePermission = useHasPermission([PermissionResolverName.UpdateProjectActivity])
+  
   const [isMinimized, setIsMinimized] = useState(false)
   const [visibleActions, setVisibleActions] = useState<BatchAction[]>([])
   const [overflowActions, setOverflowActions] = useState<BatchAction[]>([])
@@ -233,7 +240,7 @@ export function BatchActionsPanelResponsive({
               </div>
 
               {/* Inline Batch Editor - Mobile */}
-              {editFields && editFields.length > 0 && (
+              {hasUpdatePermission && editFields && editFields.length > 0 && (
                 <div className="border-t pt-4 flex-shrink-0">
                   <InlineBatchEditor fields={editFields} maxVisibleFields={2} />
                 </div>
@@ -270,7 +277,7 @@ export function BatchActionsPanelResponsive({
                       <span className="truncate">{action.label}</span>
                     </Button>
                   ))}
-
+                  
                   {/* More Actions - Overflow Menu */}
                   {actions.length > 3 && (
                     <DropdownMenu>
@@ -347,7 +354,7 @@ export function BatchActionsPanelResponsive({
                 <div className="h-6 w-px bg-gray-200 dark:bg-gray-800" />
 
                 {/* Inline Batch Editor */}
-                {editFields && editFields.length > 0 && (
+                {hasUpdatePermission && editFields && editFields.length > 0 && (
                   <>
                     <div className="flex items-center gap-2">
                       <InlineBatchEditor 
