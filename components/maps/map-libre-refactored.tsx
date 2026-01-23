@@ -111,20 +111,13 @@ function generateColorExpression(regions: RegionConfig[], propertyName: string =
   const matches: any[] = [];
   const assignedProvinces = new Set<string>();
   
-  console.log('🎨 Gerando expressão de cores MapLibre...');
-  console.log(`📋 Propriedade GeoJSON: ${propertyName}`);
-  
   // Adicionar províncias que têm região atribuída
   regions.forEach(region => {
-    console.log(`  📍 Região: ${region.name} (${region.color})`);
     region.provinces.forEach(provinceCode => {
       const isoCode = PROVINCE_CODES[provinceCode];
       if (isoCode) {
         matches.push(isoCode, region.color);
         assignedProvinces.add(isoCode);
-        console.log(`     ✓ ${provinceCode} → ${isoCode} → ${region.color}`);
-      } else {
-        console.warn(`     ⚠️ Código de província inválido: ${provinceCode}`);
       }
     });
   });
@@ -133,11 +126,8 @@ function generateColorExpression(regions: RegionConfig[], propertyName: string =
   Object.entries(PROVINCE_CODES).forEach(([code, isoCode]) => {
     if (!assignedProvinces.has(isoCode)) {
       matches.push(isoCode, '#d1d5db'); // Cor cinza monocromática
-      console.log(`     ○ ${code} → ${isoCode} → #d1d5db (sem região)`);
     }
   });
-  
-  console.log(`📊 Total: ${assignedProvinces.size} com região, ${Object.keys(PROVINCE_CODES).length - assignedProvinces.size} sem região`);
   
   // Cor padrão para qualquer coisa não mapeada
   return ['match', ['get', propertyName], ...matches, '#e5e7eb'];
@@ -177,8 +167,6 @@ export default function MapLibre({
   const [provincesData, setProvincesData] = useState<any>(null);
   const [hoveredProvince, setHoveredProvince] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<any>(null);
-  const [isChangingTheme, setIsChangingTheme] = useState(false);
-  const [themeLoadProgress, setThemeLoadProgress] = useState(0);
   
   // Detectar tema do sistema
   const { theme: systemTheme, resolvedTheme } = useTheme();
@@ -201,9 +189,6 @@ export default function MapLibre({
 
     const loadProvincesData = async () => {
       try {
-        console.log('🔄 Carregando GeoJSON das províncias...');
-        console.log('📍 URL:', provincesGeoJsonUrl);
-        
         const response = await fetch(provincesGeoJsonUrl);
         
         if (!response.ok) {
@@ -212,17 +197,8 @@ export default function MapLibre({
         
         const data = await response.json();
         
-        console.log('✅ GeoJSON carregado com sucesso!');
-        console.log('📊 Features encontradas:', data.features?.length || 0);
-        
         if (!data.features || !Array.isArray(data.features)) {
           throw new Error('GeoJSON inválido: não contém array de features');
-        }
-
-        // Debug: mostrar propriedades da primeira feature
-        if (data.features.length > 0) {
-          console.log('🔍 Propriedades disponíveis:', Object.keys(data.features[0].properties || {}));
-          console.log('🔍 Exemplo de propriedades:', data.features[0].properties);
         }
         
         setProvincesData(data);
@@ -235,13 +211,11 @@ export default function MapLibre({
         
         // Tentar URL alternativa
         if (provincesGeoJsonUrl.includes('cartomap')) {
-          console.log('⚠️ Tentando URL alternativa...');
           try {
             const altUrl = 'https://raw.githubusercontent.com/benassa-de-glassa/netherlands_地域_geography/master/provinces.geojson';
             const altResponse = await fetch(altUrl);
             if (altResponse.ok) {
               const altData = await altResponse.json();
-              console.log('✅ URL alternativa funcionou!');
               setProvincesData(altData);
               setMapError(null);
               return;
@@ -264,8 +238,6 @@ export default function MapLibre({
     if (map.current || !mapContainer.current) return;
 
     try {
-      console.log('🗺️ Inicializando MapLibre GL...');
-      
       map.current = new maplibregl.Map({
         container: mapContainer.current,
         style: MAP_STYLES[currentTheme as keyof typeof MAP_STYLES] || MAP_STYLES.light,
@@ -305,7 +277,6 @@ export default function MapLibre({
 
       // Eventos
       map.current.on('load', () => {
-        console.log('✅ Mapa carregado!');
         setMapLoaded(true);
         if (onLoad && map.current) {
           onLoad(map.current);
@@ -343,10 +314,6 @@ export default function MapLibre({
   useEffect(() => {
     if (!map.current || !mapLoaded || !mounted) return;
 
-    setIsChangingTheme(true);
-    setThemeLoadProgress(0);
-    
-    let progressInterval: NodeJS.Timeout;
     
     try {
       // Atualizar estilo do mapa baseado no tema
@@ -357,21 +324,11 @@ export default function MapLibre({
       const currentZoom = map.current.getZoom();
       const currentPitch = map.current.getPitch();
       
-      // Simular progresso de carregamento
-      progressInterval = setInterval(() => {
-        setThemeLoadProgress(prev => {
-          if (prev >= 90) return 90; // Para em 90% até carregar de verdade
-          return prev + 10;
-        });
-      }, 100);
-      
       // Mudar estilo do mapa
       map.current.setStyle(newStyle);
       
       // Aguardar carregamento do novo estilo
       map.current.once('style.load', () => {
-        clearInterval(progressInterval);
-        setThemeLoadProgress(100);
         
         // Restaurar posição do mapa
         if (map.current) {
@@ -381,24 +338,11 @@ export default function MapLibre({
           
           // Re-trigger de configuração de províncias será feito pelo useEffect de provincesData
           setMapLoaded(true);
-          
-          // Remover barra de carregamento após pequeno delay
-          setTimeout(() => {
-            setIsChangingTheme(false);
-            setThemeLoadProgress(0);
-          }, 300);
         }
       });
     } catch (error) {
       console.error('❌ Erro ao atualizar tema do mapa:', error);
-      clearInterval(progressInterval!);
-      setIsChangingTheme(false);
-      setThemeLoadProgress(0);
     }
-    
-    return () => {
-      if (progressInterval) clearInterval(progressInterval);
-    };
   }, [currentTheme, mounted]);
 
   // ============================================================================
@@ -407,16 +351,8 @@ export default function MapLibre({
 
   useEffect(() => {
     if (!map.current || !mapLoaded || !provincesData || regions.length === 0) {
-      console.log('⏳ Aguardando condições:', {
-        mapExists: !!map.current,
-        mapLoaded,
-        provincesLoaded: !!provincesData,
-        regionsCount: regions.length
-      });
       return;
     }
-
-    console.log('🎨 Configurando províncias e regiões...');
 
     const SOURCE_ID = 'netherlands-provinces';
     const FILL_LAYER = 'provinces-fill';
@@ -448,7 +384,6 @@ export default function MapLibre({
         type: 'geojson',
         data: provincesData,
       });
-      console.log('✅ Source adicionado');
 
       // Detectar propriedade correta do GeoJSON
       let propertyName = 'iso_3166_2';
@@ -460,8 +395,6 @@ export default function MapLibre({
         else if (props.NAME) propertyName = 'NAME';
         else if (props.code) propertyName = 'code';
         else if (props.CODE) propertyName = 'CODE';
-        
-        console.log(`🔍 Usando propriedade: ${propertyName}`);
       }
 
       // Gerar expressão de cores
@@ -482,7 +415,6 @@ export default function MapLibre({
           ],
         },
       });
-      console.log('✅ Layer de preenchimento adicionado');
 
       // Adicionar layer de contorno das províncias (demarcação principal)
       map.current.addLayer({
@@ -495,7 +427,6 @@ export default function MapLibre({
           'line-opacity': 0.8,
         },
       });
-      console.log('✅ Layer de contorno adicionado');
 
       // Adicionar layer de hover (destaque na província)
       map.current.addLayer({
@@ -508,7 +439,6 @@ export default function MapLibre({
           'line-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 1, 0],
         },
       });
-      console.log('✅ Layer de hover adicionado');
 
       // Criar GeoJSON com pontos centrais das regiões para labels
       const regionLabels = {
@@ -602,8 +532,6 @@ export default function MapLibre({
           'text-halo-width': 1.5,
         },
       });
-      
-      console.log('✅ Labels das regiões adicionados');
 
       // Mapa província → região para interatividade
       const provinceRegionMap: Record<string, string> = {};
@@ -651,16 +579,6 @@ export default function MapLibre({
           map.current.setFeatureState({ source: SOURCE_ID, id: hoveredId }, { hover: true });
         }
 
-        // LOG DETALHADO DO HOVER
-        console.group('🖱️ HOVER NA PROVÍNCIA');
-        console.log('📍 Código ISO:', isoCode);
-        console.log('🏷️ Nome:', provinceName);
-        console.log('🌍 Região:', regionName || '⚠️ Sem região atribuída');
-        console.log('🎨 Cor:', regionName ? regions.find(r => r.name === regionName)?.color : '#d1d5db (padrão)');
-        console.log('📊 Feature ID:', feature.id);
-        console.log('� Propriedades completas:', feature.properties);
-        console.groupEnd();
-
         // Atualiza estado e callback
         setHoveredProvince(isoCode);
         if (onProvinceHover) {
@@ -671,11 +589,6 @@ export default function MapLibre({
       // Evento de mouse saindo da província
       map.current.on('mouseleave', FILL_LAYER, () => {
         if (!map.current) return;
-        
-        // Log de saída do hover
-        if (hoveredId !== null) {
-          console.log('👋 Mouse saiu da província');
-        }
         
         // Remove cursor pointer
         map.current.getCanvas().style.cursor = '';
@@ -703,23 +616,6 @@ export default function MapLibre({
           const regionName = provinceRegionMap[isoCode];
           const regionData = regions.find(r => r.name === regionName);
 
-          // LOG DETALHADO DO CLICK
-          console.group('🖱️ CLICK NA PROVÍNCIA');
-          console.log('� Código ISO:', isoCode);
-          console.log('🏷️ Nome:', provinceName);
-          console.log('🌍 Região:', regionName || '⚠️ Sem região atribuída');
-          console.log('🎨 Cor:', regionData?.color || '#d1d5db (padrão)');
-          console.log('⛪ Igrejas na região:', regionData?.churches_count || 'N/A');
-          console.log('👥 Membros na região:', regionData?.members_count || 'N/A');
-          console.log('📊 Feature ID:', feature.id);
-          console.log('📐 Coordenadas do click:', {
-            lng: e.lngLat.lng.toFixed(4),
-            lat: e.lngLat.lat.toFixed(4)
-          });
-          console.log('📝 Propriedades completas:', feature.properties);
-          console.log('🗺️ Geometria:', feature.geometry?.type);
-          console.groupEnd();
-
           // Zoom para província
           if (feature.geometry) {
             try {
@@ -742,8 +638,6 @@ export default function MapLibre({
                 maxZoom: 10,
                 duration: 1500,
               });
-              
-              console.log('🔍 Zoom aplicado para:', provinceName);
             } catch (error) {
               console.error('❌ Erro ao calcular bounds:', error);
             }
@@ -764,16 +658,6 @@ export default function MapLibre({
         unassignedProvinces,
         geoJsonFeatures: provincesData.features?.length || 0,
       });
-
-      console.log('✅ Configuração concluída!', {
-        mapped: mappedCount,
-        total: Object.keys(PROVINCE_CODES).length,
-        unassigned: unassignedProvinces.length,
-      });
-      
-      if (unassignedProvinces.length > 0) {
-        console.log('⚠️ Províncias sem região (cor padrão #d1d5db):', unassignedProvinces);
-      }
 
     } catch (error) {
       console.error('❌ Erro ao configurar províncias:', error);
@@ -846,80 +730,8 @@ export default function MapLibre({
           <div style={{ textAlign: 'center', padding: '20px' }}>
             <p style={{ color: '#dc2626', fontWeight: 600 }}>{mapError}</p>
             <p style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
-              Verifique o console para mais detalhes
+              See more details in the console log.
             </p>
-          </div>
-        </div>
-      )}
-
-      {/* Theme Change Loading Bar - Footer */}
-      {isChangingTheme && (
-        <div style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '40px',
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          backdropFilter: 'blur(8px)',
-          borderBottomLeftRadius: '8px',
-          borderBottomRightRadius: '8px',
-          zIndex: 1000,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          padding: '0 16px',
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '6px',
-          }}>
-            <span style={{
-              fontSize: '12px',
-              fontWeight: 600,
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}>
-              <svg 
-                style={{ animation: 'spin 1s linear infinite' }} 
-                width="14" 
-                height="14" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2"
-              >
-                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-              </svg>
-              {currentTheme === 'dark' ? 'Ativando modo escuro...' : 'Ativando modo claro...'}
-            </span>
-            <span style={{
-              fontSize: '11px',
-              color: '#a0aec0',
-              fontFamily: 'monospace',
-            }}>
-              {themeLoadProgress}%
-            </span>
-          </div>
-          <div style={{
-            width: '100%',
-            height: '3px',
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            borderRadius: '2px',
-            overflow: 'hidden',
-          }}>
-            <div style={{
-              height: '100%',
-              width: `${themeLoadProgress}%`,
-              backgroundColor: currentTheme === 'dark' ? '#60a5fa' : '#f59e0b',
-              transition: 'width 0.3s ease',
-              borderRadius: '2px',
-              boxShadow: `0 0 10px ${currentTheme === 'dark' ? 'rgba(96, 165, 250, 0.5)' : 'rgba(245, 158, 11, 0.5)'}`,
-            }} />
           </div>
         </div>
       )}
@@ -1190,9 +1002,6 @@ export function generateCityMarkers(
   regions: RegionConfig[],
   citiesCoords: Record<string, Record<string, [number, number]>> = NETHERLANDS_CITIES_COORDS
 ): MarkerConfig[] {
-  console.group('🗺️ GENERATE CITY MARKERS - DEBUG');
-  console.log('📥 Regiões recebidas:', regions.length);
-  
   const markers: MarkerConfig[] = [];
   const debugInfo = {
     totalRegions: regions.length,
@@ -1203,12 +1012,6 @@ export function generateCityMarkers(
   };
   
   regions.forEach((region, index) => {
-    console.group(`📍 Região ${index + 1}: ${region.name}`);
-    console.log('🎨 Cor:', region.color);
-    console.log('📋 Territory bruto:', region.territory);
-    console.log('🏛️ Provinces (legacy):', region.provinces);
-    console.log('⛪ Churches:', region.churches?.length || 0);
-    
     let territoryCities: { province: string; city: string }[] = [];
     
     // Parse territory JSON
@@ -1217,8 +1020,6 @@ export function generateCityMarkers(
         const parsedTerritory = typeof region.territory === 'string' 
           ? JSON.parse(region.territory) 
           : region.territory;
-        
-        console.log('✅ Territory parseado:', parsedTerritory);
         
         // Territory format: { NL: { DR: ['ASS', 'EMM'], FL: ['LEL'], ... } }
         if (parsedTerritory && parsedTerritory.NL) {
@@ -1231,10 +1032,6 @@ export function generateCityMarkers(
           });
           debugInfo.regionsWithTerritory++;
         }
-        
-        console.log(`📊 Cidades no territory: ${territoryCities.length}`);
-        console.table(territoryCities);
-        
       } catch (error) {
         console.error('❌ Erro ao parsear territory:', error);
       }
@@ -1282,9 +1079,6 @@ export function generateCityMarkers(
         });
         
         debugInfo.markersCreated++;
-        console.log(`  ✅ Marker criado: ${cityName} (${coords.join(', ')})`);
-      } else {
-        console.warn(`  ⚠️ Coordenadas não encontradas: ${province}/${city}`);
       }
     });
     
@@ -1296,19 +1090,7 @@ export function generateCityMarkers(
       markersCreated: territoryCities.filter(tc => citiesCoords[tc.province]?.[tc.city]).length,
       churches: region.churches?.length || 0
     });
-    
-    console.groupEnd();
   });
-  
-  console.log('\n📊 RESUMO FINAL:');
-  console.table(debugInfo.regionDetails);
-  console.log('\n🎯 Estatísticas:');
-  console.log(`  • Total de regiões: ${debugInfo.totalRegions}`);
-  console.log(`  • Regiões com territory: ${debugInfo.regionsWithTerritory}`);
-  console.log(`  • Total de cidades nos territories: ${debugInfo.totalCitiesInTerritories}`);
-  console.log(`  • Markers criados: ${debugInfo.markersCreated}`);
-  console.log(`  • Taxa de sucesso: ${((debugInfo.markersCreated / debugInfo.totalCitiesInTerritories) * 100).toFixed(1)}%`);
-  console.groupEnd();
   
   return markers;
 }
