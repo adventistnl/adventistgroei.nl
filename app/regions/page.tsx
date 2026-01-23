@@ -33,7 +33,9 @@ import { regionsPageTranslations } from "@/lib/translations/regions-page"
 import { DataTable } from "@/components/ui/data-table"
 import { AddRegionModal, EditRegionModal, DeleteRegionModal } from "@/components/modals/region"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
+import { ChartHeader } from "@/components/shared/chart-header"
 import MapLibre, { NETHERLANDS_CENTER, generateCityMarkers, RegionConfig as MapRegionConfig } from "@/components/maps/map-libre-refactored"
+import { useTheme } from "next-themes"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useQuery } from "@apollo/client"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
@@ -50,6 +52,7 @@ import { Regions_regions } from "@/types/Regions"
  */
 export default function RegionsPage() {
   const { t, i18n } = useTranslation()
+  const { theme, resolvedTheme } = useTheme()
   const { regions, refetchRegions } = useRegions();
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -678,23 +681,14 @@ export default function RegionsPage() {
 
         {/* MapLibre - Netherlands Overview with Tabs */}
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
-                  {activeTab === 'regions' 
-                    ? (tRegion.map?.title || 'Netherlands Regions Map')
-                    : tPage.map.churches_title
-                  }
-                </CardTitle>
-                <CardDescription>
-                  {activeTab === 'regions'
-                    ? (tRegion.map?.description || 'Interactive geographic visualization')
-                    : tPage.map.churches_description
-                  }
-                </CardDescription>
-              </div>
+          <ChartHeader
+            title={activeTab === 'regions' 
+              ? (tRegion.map?.title || 'Netherlands Regions Map')
+              : tPage.map.churches_title || ''}
+            description={activeTab === 'regions'
+              ? (tRegion.map?.description || 'Interactive geographic visualization')
+              : tPage.map.churches_description || ''}
+            actions={
               <Button
                 variant="outline"
                 size="sm"
@@ -704,20 +698,18 @@ export default function RegionsPage() {
                 <Navigation className="w-4 h-4 mr-2" />
                 {tRegion.map?.refocus_button || 'Refocus'}
               </Button>
-            </div>
-          </CardHeader>
+            }
+          />
           <CardContent>
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'regions' | 'churches')} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="regions" className="flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
                   {tPage.tabs.regions_cities}
-                  <span className="ml-1 text-xs text-muted-foreground">({cityMarkers.length})</span>
                 </TabsTrigger>
                 <TabsTrigger value="churches" className="flex items-center gap-2">
                   <Home className="w-4 h-4" />
                   {tPage.tabs.churches_registered}
-                  <span className="ml-1 text-xs text-muted-foreground">({churchMarkers.length})</span>
                 </TabsTrigger>
               </TabsList>
               
@@ -726,6 +718,7 @@ export default function RegionsPage() {
                   center={NETHERLANDS_CENTER}
                   zoom={7}
                   height="500px"
+                  theme={(resolvedTheme === 'dark' ? 'dark' : 'light') as 'dark' | 'light' | 'voyager'}
                   showControls={true}
                   showGeolocation={true}
                   showFullscreen={true}
@@ -733,11 +726,6 @@ export default function RegionsPage() {
                   markers={cityMarkers}
                   onLoad={(map) => {
                     setMapInstance(map)
-                    console.log(tPage.console.map_loaded)
-                    console.log(`📍 ${cityMarkers.length} ${tPage.console.city_markers_added}`)
-                  }}
-                  onClick={(e) => {
-                    console.log(`${tPage.console.map_clicked}`, e.lngLat)
                   }}
                 />
               </TabsContent>
@@ -747,6 +735,7 @@ export default function RegionsPage() {
                   center={NETHERLANDS_CENTER}
                   zoom={7}
                   height="500px"
+                  theme={(resolvedTheme === 'dark' ? 'dark' : 'light') as 'dark' | 'light' | 'voyager'}
                   showControls={true}
                   showGeolocation={true}
                   showFullscreen={true}
@@ -754,11 +743,6 @@ export default function RegionsPage() {
                   markers={churchMarkers}
                   onLoad={(map) => {
                     setMapInstance(map)
-                    console.log(tPage.console.map_loaded)
-                    console.log(`⛪ ${churchMarkers.length} ${tPage.console.church_markers_added}`)
-                  }}
-                  onClick={(e) => {
-                    console.log(`${tPage.console.map_clicked}`, e.lngLat)
                   }}
                 />
               </TabsContent>

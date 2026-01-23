@@ -8,8 +8,8 @@ export const regionsPageTranslations = {
   pt: {
     // Map Tabs
     tabs: {
-      regions_cities: "Regiões & Cidades",
-      churches_registered: "Igrejas Registradas",
+      regions_cities: "Regiões",
+      churches_registered: "Igrejas",
     },
     
     // Map Titles
@@ -46,8 +46,8 @@ export const regionsPageTranslations = {
   en: {
     // Map Tabs
     tabs: {
-      regions_cities: "Regions & Cities",
-      churches_registered: "Registered Churches",
+      regions_cities: "Regions",
+      churches_registered: "Churches",
     },
     
     // Map Titles
@@ -84,8 +84,8 @@ export const regionsPageTranslations = {
   nl: {
     // Map Tabs
     tabs: {
-      regions_cities: "Regio's & Steden",
-      churches_registered: "Geregistreerde Kerken",
+      regions_cities: "Regio's",
+      churches_registered: "Kerken",
     },
     
     // Map Titles

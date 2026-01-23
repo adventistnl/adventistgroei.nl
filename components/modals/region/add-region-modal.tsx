@@ -534,26 +534,26 @@ export function AddRegionModal({
             <div className="max-w-2xl mx-auto space-y-4">
               {/* Search Bar - Minimalista */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder={tRegion.messages.search_province_city}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 h-10 border-slate-200 focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
+                  className="pl-10 h-10"
                 />
               </div>
 
               {/* Selected Provinces - Summary */}
               {selectedProvinces.size > 0 && (
-                <div className="border border-slate-200 rounded-lg p-3 bg-slate-50/50">
+                <div className="border rounded-lg p-3 bg-muted/50">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs font-medium text-slate-600">
+                    <span className="text-xs font-medium text-muted-foreground">
                       {selectedProvinces.size} {tRegion.messages.selected}{selectedProvinces.size !== 1 ? 's' : ''} ({Array.from(selectedProvinces).reduce((sum, pc) => sum + (selectedCities[pc]?.size || 0), 0)} {tRegion.messages.cities})
                     </span>
                   </div>
                   
                   {/* Provinces Horizontal Scroll */}
-                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
+                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent">
                     {Array.from(selectedProvinces).map(provinceCode => {
                       const province = provincesForSelectedCountry.find(p => p.code === provinceCode)
                       if (!province) return null
@@ -563,20 +563,20 @@ export function AddRegionModal({
                       return (
                         <div
                           key={provinceCode}
-                          className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-300 rounded-md hover:border-slate-400 transition-colors group"
+                          className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 bg-background border rounded-md hover:border-primary transition-colors group"
                         >
-                          <div className="w-1.5 h-1.5 rounded-full bg-slate-800" />
-                          <span className="text-sm font-medium text-slate-900 whitespace-nowrap">
+                          <div className="w-1.5 h-1.5 rounded-full bg-foreground" />
+                          <span className="text-sm font-medium text-foreground whitespace-nowrap">
                             {province.name}
                           </span>
-                          <span className="text-xs text-slate-500">
+                          <span className="text-xs text-muted-foreground">
                             ({cityCount})
                           </span>
                           <button
                             onClick={() => toggleProvinceSimple(provinceCode)}
-                            className="ml-1 opacity-0 group-hover:opacity-100 hover:bg-slate-100 rounded-full p-0.5 transition-all"
+                            className="ml-1 opacity-0 group-hover:opacity-100 hover:bg-muted rounded-full p-0.5 transition-all"
                           >
-                            <X className="w-3 h-3 text-slate-600" />
+                            <X className="w-3 h-3 text-muted-foreground" />
                           </button>
                         </div>
                       )
@@ -586,16 +586,16 @@ export function AddRegionModal({
               )}
 
               {/* Province Selection List */}
-              <div className="border border-slate-200 rounded-lg max-h-[400px] overflow-y-auto">
+              <div className="border rounded-lg max-h-[400px] overflow-y-auto">
                 {filteredProvinces.length === 0 ? (
                   <div className="text-center py-12">
-                    <Search className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                    <p className="text-sm text-slate-500">
+                    <Search className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">
                       No province found
                     </p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-slate-100">
+                  <div className="divide-y divide-border">
                     {filteredProvinces.map((province) => {
                       const isSelected = selectedProvinces.has(province.code)
                       const citiesInProvince = selectedCities[province.code] || new Set()
@@ -611,7 +611,7 @@ export function AddRegionModal({
                             disabled={isLoading || provinceOccupied}
                             title={provinceOccupied ? (tRegion.messages?.province_all_cities_occupied?.replace?.('{{province}}', province.name) || 'All cities in this province are already registered') : undefined}
                             className={`w-full flex items-center justify-between px-4 py-3 transition-colors ${
-                              isSelected ? 'bg-slate-50' : 'hover:bg-slate-50'
+                              isSelected ? 'bg-muted/50' : 'hover:bg-muted/30'
                             } ${provinceOccupied ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
                             <div className="flex items-center gap-3 flex-1">
@@ -625,37 +625,37 @@ export function AddRegionModal({
                                     return next
                                   })
                                 } }}
-                                className={`mr-2 p-1 rounded transition-colors ${provinceOccupied ? 'opacity-50' : 'hover:bg-slate-100'}`}
+                                className={`mr-2 p-1 rounded transition-colors ${provinceOccupied ? 'opacity-50' : 'hover:bg-muted'}`}
                                 title={provinceOccupied ? undefined : (expandedProvinces.has(province.code) ? 'Collapse' : 'Expand')}
                               >
                                 <ChevronRight className={`w-4 h-4 transition-transform ${expandedProvinces.has(province.code) ? 'rotate-90' : ''}`} />
                               </span>
 
                               <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-colors ${
-                                isSelected ? 'bg-slate-900' : 'bg-slate-300'
+                                isSelected ? 'bg-primary' : 'bg-muted-foreground/30'
                               }`} />
                               
                               <div className="text-left">
-                                <p className="font-medium text-sm text-slate-900">{province.name}</p>
-                                <p className="text-xs text-slate-500">{province.cities.length} cities</p>
+                                <p className="font-medium text-sm text-foreground">{province.name}</p>
+                                <p className="text-xs text-muted-foreground">{province.cities.length} cities</p>
                               </div>
                             </div>
 
                             <div className={`w-4 h-4 rounded border transition-all ${
                               isSelected 
-                                ? 'bg-slate-900 border-slate-900' 
-                                : 'border-slate-300'
+                                ? 'bg-primary border-primary' 
+                                : 'border-input'
                             } flex items-center justify-center`}>
                               {isSelected && (
-                                <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                                <Check className="w-3 h-3 text-primary-foreground" strokeWidth={3} />
                               )}
                             </div>
                           </button>
 
                           {/* Cities List - Expandable when province is selected or expanded */}
                           {(isSelected || expandedProvinces.has(province.code)) && (
-                            <div className="bg-slate-50/50 px-4 py-3 border-t border-slate-100">
-                              <p className="text-xs font-medium text-slate-600 mb-2">Cities:</p>
+                            <div className="bg-muted/30 px-4 py-3 border-t">
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Cities:</p>
                               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                                 {province.cities.map((city) => {
                                   const isCitySelected = citiesInProvince.has(city.code)
@@ -671,8 +671,8 @@ export function AddRegionModal({
                                       className={cn(
                                         "text-left px-2 py-1.5 rounded text-xs font-medium transition-colors",
                                         isCitySelected
-                                          ? "bg-slate-900 text-white"
-                                          : "bg-white border border-slate-200 text-slate-700 hover:border-slate-300",
+                                          ? "bg-primary text-primary-foreground"
+                                          : "bg-background border text-foreground hover:border-primary/50",
                                         isCityOccupied ? 'opacity-50 cursor-not-allowed' : ''
                                       )}
                                     >
