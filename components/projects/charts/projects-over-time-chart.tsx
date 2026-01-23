@@ -19,6 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { ChartHeader } from "@/components/charts/chart-header"
 import {
   ChartConfig,
   ChartContainer,
@@ -547,64 +548,64 @@ export function ProjectsOverTimeChart({
       </PermissionDeniedOverlay>}
     >
     <Card className="h-full flex flex-col">
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
-        <div className="grid flex-1 gap-1">
-          <CardTitle className="flex items-center gap-2 text-sm">
+      <ChartHeader
+        title={
+          <div className="flex items-center gap-2 text-sm">
             <Building2 className="w-4 h-4" />
             {t.charts.projectsCreatedOverTime}
-          </CardTitle>
-          <CardDescription className="text-xs">
-            {t.charts.showingTotal} {getTimeRangeLabel(timeRange)}
-          </CardDescription>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Chart Type Toggle */}
-          <div className="flex items-center gap-1 border rounded-lg p-1">
-            <Button
-              variant={chartType === "area" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setChartType("area")}
-              className="h-7 px-2"
-            >
-              <Activity className="w-3 h-3" />
-            </Button>
-            <Button
-              variant={chartType === "bar" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setChartType("bar")}
-              className="h-7 px-2"
-            >
-              <BarChart3 className="w-3 h-3" />
-            </Button>
           </div>
-          {/* Time Range Select */}
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger
-              className="w-[160px] rounded-lg"
-              aria-label={t.charts.selectTimeRange}
-            >
-              <SelectValue placeholder={t.charts.last3Months} />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="7d" className="rounded-lg">
-                {(t.charts as any).last7Days || "Last 7 days"}
-              </SelectItem>
-              <SelectItem value="30d" className="rounded-lg">
-                {(t.charts as any).last30Days || "Last 30 days"}
-              </SelectItem>
-              <SelectItem value="90d" className="rounded-lg">
-                {(t.charts as any).last3Months || "Last 3 months"}
-              </SelectItem>
-              <SelectItem value="180d" className="rounded-lg">
-                {(t.charts as any).last6Months || "Last 6 months"}
-              </SelectItem>
-              <SelectItem value="365d" className="rounded-lg">
-                {(t.charts as any).last12Months || "Last 12 months"}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </CardHeader>
+        }
+        description={`${t.charts.showingTotal} ${getTimeRangeLabel(timeRange)}`}
+        actions={
+          <>
+            {/* Chart Type Toggle */}
+            <div className="flex max-w-[80px] items-center gap-1 border rounded-lg p-1">
+              <Button
+                variant={chartType === "area" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setChartType("area")}
+                className="h-7 px-2"
+              >
+                <Activity className="w-3 h-3" />
+              </Button>
+              <Button
+                variant={chartType === "bar" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setChartType("bar")}
+                className="h-7 px-2"
+              >
+                <BarChart3 className="w-3 h-3" />
+              </Button>
+            </div>
+            {/* Time Range Select */}
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger
+                className="w-full sm:w-[160px] rounded-lg"
+                aria-label={t.charts.selectTimeRange}
+              >
+                <SelectValue placeholder={t.charts.last3Months} />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="7d" className="rounded-lg">
+                  {(t.charts as any).last7Days || "Last 7 days"}
+                </SelectItem>
+                <SelectItem value="30d" className="rounded-lg">
+                  {(t.charts as any).last30Days || "Last 30 days"}
+                </SelectItem>
+                <SelectItem value="90d" className="rounded-lg">
+                  {(t.charts as any).last3Months || "Last 3 months"}
+                </SelectItem>
+                <SelectItem value="180d" className="rounded-lg">
+                  {(t.charts as any).last6Months || "Last 6 months"}
+                </SelectItem>
+                <SelectItem value="365d" className="rounded-lg">
+                  {(t.charts as any).last12Months || "Last 12 months"}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </>
+        }
+      />
       <CardContent className="pr-2 pt-4 sm:pr-6 sm:pt-6">
         <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
           {chartType === "area" ? (

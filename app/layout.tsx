@@ -12,13 +12,19 @@ import { I18nProvider } from "@/lib/i18n/i18n-provider"
 import { PrivacyProviderWithAuth } from "@/components/shared/privacy-provider-with-auth"
 import { PrivacyDebugPanel } from "@/components/shared/privacy-debug-panel"
 import { PrivacyButtonDebugPanel } from "@/components/shared/privacy-button-debug"
+import { DynamicFavicon } from "@/components/shared/dynamic-favicon"
 import { ToastProvider } from "@/components/ui/toast-provider"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "SDA Church Management System",
+  title: "CGMS",
   description: "Comprehensive church management platform for Seventh-day Adventist churches",
-  generator: "v0.app",
+  generator: "v1.app",
+  // Favicons serão gerenciados dinamicamente pelo componente DynamicFavicon
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+  ],
 }
 
 export default function RootLayout({
@@ -29,6 +35,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} h-full`}>
       <body className="antialiased font-sans h-full overflow-hidden">
+        <DynamicFavicon />
         <I18nProvider>
           <GraphQLProvider>
             <AuthProvider>

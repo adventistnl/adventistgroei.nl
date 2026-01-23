@@ -109,7 +109,7 @@ export const structureTranslations = {
       platform: "Platform",
       structure: "Structure",
       management: "Management",
-      structureOrganization: "Structure & Organization",
+      structureOrganization: "Structure",
       institutions: "Institutions",
       instDepartments: "Inst. Departments",
       regions: "Regions",

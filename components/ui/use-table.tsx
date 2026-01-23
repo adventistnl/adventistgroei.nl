@@ -55,6 +55,13 @@ import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible"
 import { BatchActionsPanel, BatchAction } from "@/components/shared/batch-actions-panel"
 import { InlineBatchEditor, BatchEditField } from "@/components/shared/inline-batch-editor"
 
+// Extend ColumnMeta to include responsive property
+declare module '@tanstack/react-table' {
+  interface ColumnMeta<TData, TValue> {
+    responsive?: 'always' | 'desktop' | 'tablet'
+  }
+}
+
 interface FilterConfig {
   id: string
   title: string
@@ -181,7 +188,6 @@ export function UseTable<TData, TValue>({
           checked={table.getIsAllPageRowsSelected()}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Select all"
-          className="border-gray-300 dark:border-gray-600 data-[state=checked]:bg-gray-700 data-[state=checked]:border-gray-700 dark:data-[state=checked]:bg-gray-500 dark:data-[state=checked]:border-gray-500"
         />
       ),
       cell: ({ row }) => (
@@ -190,7 +196,6 @@ export function UseTable<TData, TValue>({
           onCheckedChange={(value) => row.toggleSelected(!!value)}
           aria-label="Select row"
           onClick={(e) => e.stopPropagation()}
-          className="border-gray-300 dark:border-gray-600 data-[state=checked]:bg-gray-700 data-[state=checked]:border-gray-700 dark:data-[state=checked]:bg-gray-500 dark:data-[state=checked]:border-gray-500"
         />
       ),
       enableSorting: false,
@@ -278,10 +283,20 @@ export function UseTable<TData, TValue>({
     const updateColumnVisibility = () => {
       const newVisibility = { ...columnVisibility }
       
+      // Filtrar apenas colunas de dados (excluir select e actions)
+      const dataColumns = columns.filter(c => c.id && c.id !== 'select' && c.id !== 'actions')
+      
       columns.forEach((col) => {
         if (!col.id || col.id === 'select' || col.id === 'actions') return
         
         const responsive = col.meta?.responsive
+        const index = dataColumns.findIndex(c => c.id === col.id)
+        
+        // Primeira coluna (name) sempre visível em todas as resoluções
+        if (index === 0) {
+          newVisibility[col.id] = true
+          return
+        }
         
         if (responsive === 'always') {
           newVisibility[col.id] = true
@@ -290,13 +305,13 @@ export function UseTable<TData, TValue>({
         } else if (responsive === 'tablet') {
           newVisibility[col.id] = window.innerWidth >= 640
         } else {
-          // Fallback para lógica antiga baseada em índices se não houver meta.responsive
-          const dataColumns = columns.filter(c => c.id && c.id !== 'select' && c.id !== 'actions')
-          const index = dataColumns.findIndex(c => c.id === col.id)
-          
-          if (window.innerWidth < 480) {
-            newVisibility[col.id] = false
-          } else if (window.innerWidth < 640) {
+          // Lógica responsiva baseada em índices
+          // Mobile (<640px): apenas primeira coluna (name)
+          // Tablet (640-768px): primeira + segunda coluna
+          // Desktop pequeno (768-1024px): até 3 colunas
+          // Desktop médio (1024-1280px): até 4 colunas
+          // Desktop grande (>1280px): todas as colunas
+          if (window.innerWidth < 640) {
             newVisibility[col.id] = index === 0
           } else if (window.innerWidth < 768) {
             newVisibility[col.id] = index <= 1
@@ -493,7 +508,7 @@ export function UseTable<TData, TValue>({
                       } ${
                         expandedRows[row.id] ? "bg-muted/30" : ""
                       } ${
-                        row.getIsSelected() ? "bg-muted dark:bg-muted/50 border-l-4 border-gray-700 dark:border-gray-400" : ""
+                        row.getIsSelected() ? "bg-muted/70 border-l-4 border-primary" : ""
                       } transition-all duration-150 group relative`}
                       onClick={(e) => {
                         // Don't do anything if clicking on action buttons or checkbox
@@ -513,29 +528,11 @@ export function UseTable<TData, TValue>({
                       onMouseEnter={() => enableRowSelection && setHoveredRowId(row.id)}
                       onMouseLeave={() => enableRowSelection && setHoveredRowId(null)}
                     >
-                      {/* Mobile Expand Button */}
-                      <TableCell className="md:hidden w-6 p-0">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            toggleRowExpansion(row.id)
-                          }}
-                          className="h-5 w-5 p-0 shrink-0"
-                        >
-                          {expandedRows[row.id] ? (
-                            <ChevronDown className="h-3 w-3" />
-                          ) : (
-                            <ChevronRight className="h-3 w-3" />
-                          )}
-                        </Button>
-                      </TableCell>
-                      
                       {/* Regular Cells */}
-                      {row.getVisibleCells().map((cell) => {
+                      {row.getVisibleCells().map((cell, cellIndex) => {
                         const isActionCell = cell.column.id === 'actions'
                         const isSelectCell = cell.column.id === 'select'
+                        const isFirstDataColumn = cellIndex === (enableRowSelection ? 1 : 0) && !isActionCell
                         
                         return (
                           <TableCell 
@@ -550,6 +547,28 @@ export function UseTable<TData, TValue>({
                               }`}>
                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
                               </div>
+                            ) : isFirstDataColumn ? (
+                              <div className="flex items-center gap-2">
+                                {/* Mobile Expand Button - integrado na primeira coluna */}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    toggleRowExpansion(row.id)
+                                  }}
+                                  className="h-6 w-6 p-0 shrink-0 md:hidden hover:bg-muted"
+                                >
+                                  {expandedRows[row.id] ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                  )}
+                                </Button>
+                                <div className="flex-1 min-w-0">
+                                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </div>
+                              </div>
                             ) : (
                               flexRender(cell.column.columnDef.cell, cell.getContext())
                             )}
@@ -560,15 +579,21 @@ export function UseTable<TData, TValue>({
                     
                     {/* Mobile Expanded Row */}
                     <TableRow className="md:hidden">
-                      <TableCell colSpan={columns.length + 1} className="p-0">
+                      <TableCell colSpan={columns.length + (enableRowSelection ? 1 : 0)} className="p-0">
                         <Collapsible open={expandedRows[row.id]}>
                           <CollapsibleContent className="space-y-0">
                             <div className="border-t bg-muted/20 p-4">
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {/* Mostrar TODAS as colunas na expansão, exceto select, mobile expand e actions */}
+                                {/* Mostrar TODAS as colunas na expansão, exceto select e actions */}
                                 {row.getAllCells().map((cell, index) => {
-                                  // Pular colunas select, mobile expand button e actions
-                                  if (cell.column.id === 'select' || cell.column.id === 'mobile-expand' || cell.column.id === 'actions') {
+                                  // Pular colunas select e actions
+                                  if (cell.column.id === 'select' || cell.column.id === 'actions') {
+                                    return null
+                                  }
+                                  
+                                  // Pular a primeira coluna de dados pois já está visível na linha principal
+                                  const isFirstDataColumn = index === (enableRowSelection ? 1 : 0)
+                                  if (isFirstDataColumn) {
                                     return null
                                   }
                                   

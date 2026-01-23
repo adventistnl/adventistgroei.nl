@@ -12,6 +12,8 @@ export const CREATE_CHURCH_MUTATION = gql`
     $country: String!
     $state: String!
     $type: ChurchType
+    $zip_code: String
+    $house_number: Int
   ) {
     createChurch(
       data: {
@@ -19,6 +21,8 @@ export const CREATE_CHURCH_MUTATION = gql`
         name: $name
         leader_id: $leader_id
         type: $type
+        zip_code: $zip_code
+        house_number: $house_number
         contact: {
           email: $email
           phone: $phone
@@ -34,6 +38,8 @@ export const CREATE_CHURCH_MUTATION = gql`
       institution_id
       region_id
       type
+      zip_code
+      house_number
       created_at
       leader {
         id
@@ -56,6 +62,8 @@ export const UPDATE_CHURCH_MUTATION = gql`
     $country: String
     $state: String
     $type: ChurchType
+    $zip_code: String
+    $house_number: Int
   ) {
     updateChurch(
       id: $id
@@ -63,6 +71,8 @@ export const UPDATE_CHURCH_MUTATION = gql`
         name: $name
         leader_id: $leader_id
         type: $type
+        zip_code: $zip_code
+        house_number: $house_number
         contact: {
           email: $email
           phone: $phone
@@ -78,6 +88,8 @@ export const UPDATE_CHURCH_MUTATION = gql`
       institution_id
       region_id
       type
+      zip_code
+      house_number
       updated_at
       leader {
         id

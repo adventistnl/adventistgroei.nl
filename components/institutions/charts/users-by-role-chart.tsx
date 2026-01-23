@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { ChartHeader } from "@/components/charts/chart-header"
 import {
   ChartConfig,
   ChartContainer,
@@ -313,111 +314,107 @@ export function UsersByRoleChart({
   return (
     <Card data-chart={id} className="h-full flex flex-col">
       <ChartStyle id={id} config={chartConfig} />
-      <CardHeader className="flex-row items-start space-y-0 pb-0">
-        <div className="auto-rows-min grid-rows-[auto_auto] flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row justify-between ">
-          <div>    
-            <CardTitle>{t('institutions.analytics.usersByRole.title')}</CardTitle>
-            <CardDescription>{t('institutions.analytics.usersByRole.description')}</CardDescription>
-          </div>
-              <div className="flex items-center gap-2">
-                {/* Top N Selector */}
-                {showTopNFilter && (
-                  <Select value={topN.toString()} onValueChange={(v) => setTopN(v === 'all' ? 'all' : parseInt(v))}>
-                    <SelectTrigger
-                      className="h-7 w-[100px] rounded-lg pl-2.5"
-                      aria-label="Select top N"
-                    >
-                      <SelectValue placeholder="Top" />
-                    </SelectTrigger>
-                    <SelectContent align="end" className="rounded-xl">
-                      <SelectItem value="all" className="rounded-lg">{t('institutions.analytics.usersByRole.topN.all')}</SelectItem>
-                      <SelectItem value="3" className="rounded-lg">{t('institutions.analytics.usersByRole.topN.top3')}</SelectItem>
-                      <SelectItem value="5" className="rounded-lg">{t('institutions.analytics.usersByRole.topN.top5')}</SelectItem>
-                      <SelectItem value="10" className="rounded-lg">{t('institutions.analytics.usersByRole.topN.top10')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-                
-                {/* Sort Order Selector */}
-                {showSortFilter && (
-                  <Select value={sortOrder} onValueChange={(v: any) => setSortOrder(v)}>
-                    <SelectTrigger
-                      className="h-7 w-[120px] rounded-lg pl-2.5"
-                      aria-label="Sort order"
-                    >
-                      <SelectValue placeholder="Sort" />
-                    </SelectTrigger>
-                    <SelectContent align="end" className="rounded-xl">
-                      <SelectItem value="desc" className="rounded-lg">{t('institutions.analytics.usersByRole.sortOrder.mostUsers')}</SelectItem>
-                      <SelectItem value="asc" className="rounded-lg">{t('institutions.analytics.usersByRole.sortOrder.leastUsers')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-                
-                {/* Role Selector - Only show in Pie view */}
-                {showRoleSelector && activeView === 'pie' && (
-                  <Select value={activeRole} onValueChange={setActiveRole}>
-                    <SelectTrigger
-                      className="h-7 w-[160px] rounded-lg pl-2.5"
-                      aria-label="Select a role"
-                    >
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent align="end" className="rounded-xl">
-                      <SelectItem value="All" className="rounded-lg [&_span]:flex">
+      <ChartHeader
+        title={t('institutions.analytics.usersByRole.title')}
+        description={t('institutions.analytics.usersByRole.description')}
+        actions={
+          <>
+            {/* Top N Selector */}
+            {showTopNFilter && (
+              <Select value={topN.toString()} onValueChange={(v) => setTopN(v === 'all' ? 'all' : parseInt(v))}>
+                <SelectTrigger
+                  className="w-full sm:w-[100px] rounded-lg pl-2.5"
+                  aria-label="Select top N"
+                >
+                  <SelectValue placeholder="Top" />
+                </SelectTrigger>
+                <SelectContent align="end" className="rounded-xl">
+                  <SelectItem value="all" className="rounded-lg">{t('institutions.analytics.usersByRole.topN.all')}</SelectItem>
+                  <SelectItem value="3" className="rounded-lg">{t('institutions.analytics.usersByRole.topN.top3')}</SelectItem>
+                  <SelectItem value="5" className="rounded-lg">{t('institutions.analytics.usersByRole.topN.top5')}</SelectItem>
+                  <SelectItem value="10" className="rounded-lg">{t('institutions.analytics.usersByRole.topN.top10')}</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+            
+            {/* Sort Order Selector */}
+            {showSortFilter && (
+              <Select value={sortOrder} onValueChange={(v: any) => setSortOrder(v)}>
+                <SelectTrigger
+                  className="w-full sm:w-[120px] rounded-lg pl-2.5"
+                  aria-label="Sort order"
+                >
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent align="end" className="rounded-xl">
+                  <SelectItem value="desc" className="rounded-lg">{t('institutions.analytics.usersByRole.sortOrder.mostUsers')}</SelectItem>
+                  <SelectItem value="asc" className="rounded-lg">{t('institutions.analytics.usersByRole.sortOrder.leastUsers')}</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+            
+            {/* Role Selector - Only show in Pie view */}
+            {showRoleSelector && activeView === 'pie' && (
+              <Select value={activeRole} onValueChange={setActiveRole}>
+                <SelectTrigger
+                  className="w-full sm:w-[160px] rounded-lg pl-2.5"
+                  aria-label="Select a role"
+                >
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent align="end" className="rounded-xl">
+                  <SelectItem value="All" className="rounded-lg [&_span]:flex">
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="flex h-3 w-3 shrink-0 rounded-xs bg-gradient-to-r from-red-500 via-amber-500 via-blue-500 via-green-500 to-violet-500" />
+                      {t('institutions.analytics.usersByRole.allRoles')}
+                    </div>
+                  </SelectItem>
+                  {roleKeys.map((key: any) => {
+                    const config = chartConfig[key as keyof typeof chartConfig]
+                    if (!config) return null
+
+                    return (
+                      <SelectItem key={key} value={key} className="rounded-lg [&_span]:flex">
                         <div className="flex items-center gap-2 text-xs">
-                          <span className="flex h-3 w-3 shrink-0 rounded-xs bg-gradient-to-r from-red-500 via-amber-500 via-blue-500 via-green-500 to-violet-500" />
-                          {t('institutions.analytics.usersByRole.allRoles')}
+                          <span
+                            className="flex h-3 w-3 shrink-0 rounded-xs"
+                            style={{
+                              backgroundColor: `var(--color-${key})`,
+                            }}
+                          />
+                          {config?.label}
                         </div>
                       </SelectItem>
-                      {roleKeys.map((key: any) => {
-                        const config = chartConfig[key as keyof typeof chartConfig]
-                        if (!config) return null
-
-                        return (
-                          <SelectItem key={key} value={key} className="rounded-lg [&_span]:flex">
-                            <div className="flex items-center gap-2 text-xs">
-                              <span
-                                className="flex h-3 w-3 shrink-0 rounded-xs"
-                                style={{
-                                  backgroundColor: `var(--color-${key})`,
-                                }}
-                              />
-                              {config?.label}
-                            </div>
-                          </SelectItem>
-                        )
-                      })}
-                    </SelectContent>
-                  </Select>
-                )}
-                
-                {/* View Toggle - Padronizado com UsersRegistrationOverTimeChart */}
-                {showViewToggle && (
-                  <div className="flex items-center gap-1 border rounded-lg p-1">
-                    <Button
-                      variant={activeView === "bar" ? "default" : "ghost"}
-                      size="sm"
-                      onClick={() => setActiveView("bar")}
-                      className="h-7 px-2"
-                    >
-                      <ChartBarDecreasing className="w-3 h-3" />
-                    </Button>
-                    <Button
-                      variant={activeView === "pie" ? "default" : "ghost"}
-                      size="sm"
-                      onClick={() => setActiveView("pie")}
-                      className="h-7 px-2"
-                    >
-                      <ChartPie className="w-3 h-3" />
-                    </Button>
-                  </div>
-                )}
-          </div>
-          
-    
-        </div>
-      </CardHeader>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
+            )}
+            
+            {/* View Toggle - Padronizado com UsersRegistrationOverTimeChart */}
+            {showViewToggle && (
+              <div className="flex items-center gap-1 border rounded-lg p-1">
+                <Button
+                  variant={activeView === "bar" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setActiveView("bar")}
+                  className="h-7 px-2"
+                >
+                  <ChartBarDecreasing className="w-3 h-3" />
+                </Button>
+                <Button
+                  variant={activeView === "pie" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setActiveView("pie")}
+                  className="h-7 px-2"
+                >
+                  <ChartPie className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
+          </>
+        }
+      />
       
       <CardContent className="flex-1">
         {activeView === 'bar' ? (

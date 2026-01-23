@@ -58,6 +58,7 @@ import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-caro
 import { UseTable } from "@/components/ui/use-table"
 import { EntityInfoCard } from "@/components/shared/entity-info-card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ChartHeader } from "@/components/charts/chart-header"
 import { Crown } from "lucide-react"
 import {
   Breadcrumb,
@@ -88,6 +89,7 @@ import { PrivacyWrapper, InlinePrivacyToggle } from "@/components/shared/privacy
 import { createPrivacyConfig } from "@/config/privacy-roles.config"
 import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
 import { GlobalPrivacyToggle } from "@/components/shared/global-privacy-toggle"
+import { YearFilter } from "@/components/shared/year-filter"
 
 
 /**
@@ -150,14 +152,6 @@ export default function DepartmentsPage() {
     });
   }, [unfilteredDepartments, pageFilters, selectedYear]);
   const churches: ChurchData[] = currentInstitutionData?.churches || [];
-
-  // Debug: verificar se annual_budgets está chegando
-  useEffect(() => {
-    if (departments.length > 0) {
-      console.log('🔍 Institutional Departments:', departments);
-      console.log('🔍 First department annual_budgets:', departments[0]?.annual_budgets);
-    }
-  }, [departments]);
 
   // Obter traduções para o idioma atual - EXATAMENTE COMO EM CHURCHES
   const currentLanguage = i18n?.language || 'en'
@@ -629,59 +623,6 @@ export default function DepartmentsPage() {
   }
 
   if (!currentInstitutionData) return <NotFound />
-  
-  // Year Filter Component
-  const YearFilter = ({ showAddButton = true }: { showAddButton?: boolean }) => {
-    const currentYear = new Date().getFullYear()
-    const maxAllowedYear = currentYear + 2
-    const canAddMore = Math.max(...availableYears) < maxAllowedYear
-
-    return (
-      <div className="mb-6">
-        <div className="flex items-center gap-3 overflow-x-auto pb-2 scroll-smooth" style={{ scrollbarWidth: 'thin' }}>
-          {availableYears.map((year) => (
-            <Button
-              key={year}
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedYear(year)}
-              className={`
-                flex-shrink-0 min-w-[80px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
-                ${
-                  selectedYear === year 
-                    ? 'bg-primary text-primary-foreground border-primary shadow-md hover:bg-primary/90' 
-                    : 'bg-muted text-muted-foreground border-muted hover:bg-muted/80 hover:text-foreground hover:border-muted-foreground/50'
-                }
-              `}
-            >
-              {year}
-            </Button>
-          ))}
-          
-          {/* Add New Year Button */}
-          {showAddButton && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAddYear}
-              disabled={!canAddMore}
-              className={`
-                flex-shrink-0 min-w-[100px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
-                ${
-                  canAddMore 
-                    ? 'border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground hover:border-muted-foreground/60 hover:bg-muted/50' 
-                    : 'opacity-40 cursor-not-allowed border-dashed border-muted-foreground/20 text-muted-foreground/50'
-                }
-              `}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {tDept.common?.year_filter?.add_year || "Add Year"}
-            </Button>
-          )}
-        </div>
-      </div>
-    )
-  }
   
   // Colunas da tabela de departamentos
   const departmentColumns: ColumnDef<any>[] = [
@@ -1180,7 +1121,14 @@ export default function DepartmentsPage() {
         </div>
 
         {/* Year Filter */}
-        <YearFilter showAddButton={false} />
+        <YearFilter 
+          availableYears={availableYears}
+          selectedYear={selectedYear}
+          onYearChange={setSelectedYear}
+          onAddYear={handleAddYear}
+          showAddButton={false}
+          className="mb-6"
+        />
 
         {/* KPI Cards - Conditional Rendering */}
         {viewMode === 'detail' && selectedDepartmentDetail ? (
@@ -1414,15 +1362,11 @@ export default function DepartmentsPage() {
           <>
             {/* Users Table */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  {tDept.detail?.members_table?.title || "Department Members"}
-                </CardTitle>
-                <CardDescription>
-                  {tDept.detail?.members_table?.description || `List of all members in ${selectedDepartmentDetail.name}`}
-                </CardDescription>
-              </CardHeader>
+              <ChartHeader
+                title={tDept.detail?.members_table?.title || "Department Members"}
+                description={tDept.detail?.members_table?.description || `List of all members in ${selectedDepartmentDetail.name}`}
+                actionsOrientation="responsive"
+              />
               <CardContent className="overflow-hidden p-0">
                 <UseTable
                   columns={userColumns}
@@ -1463,20 +1407,16 @@ export default function DepartmentsPage() {
           <>
             {/* Departments Table */}
             <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Layers className="w-5 h-5" />
-                      {tDept.table_title || "Departments"}
-                    </CardTitle>
-                    <CardDescription>{tDept.table_description || "Complete list of departments with management actions"}</CardDescription>
-                  </div>
+              <ChartHeader
+                title={tDept.table_title || "Departments"}
+                description={tDept.table_description || "Complete list of departments with management actions"}
+                actionsOrientation="responsive"
+                actions={
                   <InlinePrivacyToggle
                     config={PRIVACY_CONFIGS.financial}
                   />
-                </div>
-              </CardHeader>
+                }
+              />
               <CardContent className="overflow-hidden p-0">
                 <UseTable
                   columns={departmentColumns}

@@ -43,6 +43,7 @@ import { InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
 import { PrivacyOverlay } from "@/components/shared/privacy-overlay"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCurrency } from "@/contexts/currency-context"
+import { ChartHeader } from "@/components/charts/chart-header"
 
 interface DepartmentSpending {
   departmentId: string
@@ -230,142 +231,128 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
     setSelectedDepartments([])
   }
 
+  const description = monthsWithActivity > 0
+    ? `${t("annual_budget.charts.spending_over_time.subtitle", { year })} • ${monthsWithActivity} ${monthsWithActivity === 1 ? t("common.month") : t("common.months")} ${t("annual_budget.charts.spending_over_time.with_approvals")} • ${t("common.total")}: ${formatCurrency(totalSpending)}${averageMonthlySpending > 0 ? ` • ${t("annual_budget.charts.spending_over_time.monthly_average")}: ${formatCurrency(averageMonthlySpending)}` : ''}`
+    : `${t("annual_budget.charts.spending_over_time.subtitle", { year })} • ${t("annual_budget.charts.spending_over_time.no_approvals")}`
+
   return (
     <Card className="h-full">
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
-        <div className="grid flex-1 gap-1">
-          <div className="flex items-center gap-2">
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              {t("annual_budget.charts.spending_over_time.title")}
-            </CardTitle>
-          </div>
-          <CardDescription>
-            {monthsWithActivity > 0 ? (
-              <>
-                {t("annual_budget.charts.spending_over_time.subtitle", { year })} • {" "}
-                {monthsWithActivity} {monthsWithActivity === 1 ? t("common.month") : t("common.months")} {t("annual_budget.charts.spending_over_time.with_approvals")} • {" "}
-                {t("common.total")}: {formatCurrency(totalSpending)}
-                {averageMonthlySpending > 0 && (
-                  <> • {t("annual_budget.charts.spending_over_time.monthly_average")}: {formatCurrency(averageMonthlySpending)}</>
-                )}
-              </>
-            ) : (
-              `${t("annual_budget.charts.spending_over_time.subtitle", { year })} • ${t("annual_budget.charts.spending_over_time.no_approvals")}`
-            )}
-          </CardDescription>
-        </div>
-        <div className="flex items-center gap-2">
+      <ChartHeader
+        title={t("annual_budget.charts.spending_over_time.title")}
+        description={description}
+        actionsOrientation="responsive"
+        actions={
+          <>
+            {/* Time Range Selector */}
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger
+                className="w-[160px] rounded-lg sm:ml-auto"
+                aria-label="Select time range"
+              >
+                <SelectValue placeholder={t("annual_budget.charts.spending_over_time.time_ranges.12m")} />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="12m" className="rounded-lg">
+                  {t("annual_budget.charts.spending_over_time.time_ranges.12m")}
+                </SelectItem>
+                <SelectItem value="6m" className="rounded-lg">
+                  {t("annual_budget.charts.spending_over_time.time_ranges.6m")}
+                </SelectItem>
+                <SelectItem value="3m" className="rounded-lg">
+                  {t("annual_budget.charts.spending_over_time.time_ranges.3m")}
+                </SelectItem>
+              </SelectContent>
+            </Select>
 
-          {/* Time Range Selector */}
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger
-              className="w-[160px] rounded-lg sm:ml-auto"
-              aria-label="Select time range"
-            >
-              <SelectValue placeholder={t("annual_budget.charts.spending_over_time.time_ranges.12m")} />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="12m" className="rounded-lg">
-                {t("annual_budget.charts.spending_over_time.time_ranges.12m")}
-              </SelectItem>
-              <SelectItem value="6m" className="rounded-lg">
-                {t("annual_budget.charts.spending_over_time.time_ranges.6m")}
-              </SelectItem>
-              <SelectItem value="3m" className="rounded-lg">
-                {t("annual_budget.charts.spending_over_time.time_ranges.3m")}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Department Filter */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9">
-                <Filter className="w-4 h-4 mr-2" />
-                {t("common.filter")}
-                {selectedDepartments.length > 0 && selectedDepartments.length < allDepartments.length && (
-                  <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 flex items-center justify-center">
-                    {selectedDepartments.length}
-                  </Badge>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel className="flex items-center justify-between">
-                {t("annual_budget.table.headers.department_name")}
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-xs"
-                    onClick={handleSelectAll}
-                  >
-                    {t("common.all")}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-xs"
-                    onClick={handleClearAll}
-                  >
-                    {t("common.none")}
-                  </Button>
+            {/* Department Filter */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9">
+                  <Filter className="w-4 h-4 mr-2" />
+                  {t("common.filter")}
+                  {selectedDepartments.length > 0 && selectedDepartments.length < allDepartments.length && (
+                    <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 flex items-center justify-center">
+                      {selectedDepartments.length}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="flex items-center justify-between">
+                  {t("annual_budget.table.headers.department_name")}
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={handleSelectAll}
+                    >
+                      {t("common.all")}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={handleClearAll}
+                    >
+                      {t("common.none")}
+                    </Button>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="max-h-[300px] overflow-y-auto">
+                  {allDepartments.map(dept => (
+                    <DropdownMenuCheckboxItem
+                      key={dept.id}
+                      checked={selectedDepartments.includes(dept.id)}
+                      onCheckedChange={() => handleToggleDepartment(dept.id)}
+                    >
+                      {dept.name}
+                    </DropdownMenuCheckboxItem>
+                  ))}
                 </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <div className="max-h-[300px] overflow-y-auto">
-                {allDepartments.map(dept => (
-                  <DropdownMenuCheckboxItem
-                    key={dept.id}
-                    checked={selectedDepartments.includes(dept.id)}
-                    onCheckedChange={() => handleToggleDepartment(dept.id)}
-                  >
-                    {dept.name}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-          {/* Chart Type Toggle */}
-          <div className="flex items-center border border-border rounded-lg p-1 bg-muted">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setChartType("area")}
-              className={cn(
-                "h-8 px-3 rounded-md transition-all",
-                chartType === "area"
-                  ? "bg-background shadow-sm text-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
-              )}
-            >
-              <Activity className="w-4 h-4 mr-1" />
-              {t("annual_budget.charts.spending_over_time.chart_types.area")}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setChartType("bar")}
-              className={cn(
-                "h-8 px-3 rounded-md transition-all",
-                chartType === "bar"
-                  ? "bg-background shadow-sm text-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
-              )}
-            >
-              <BarChart3 className="w-4 h-4 mr-1" />
-              {t("annual_budget.charts.spending_over_time.chart_types.bar")}
-            </Button>
-          </div>
+            {/* Chart Type Toggle */}
+            <div className="flex items-center border border-border rounded-lg p-1 bg-muted">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setChartType("area")}
+                className={cn(
+                  "h-8 px-3 rounded-md transition-all",
+                  chartType === "area"
+                    ? "bg-background shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                )}
+              >
+                <Activity className="w-4 h-4 mr-1" />
+                {t("annual_budget.charts.spending_over_time.chart_types.area")}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setChartType("bar")}
+                className={cn(
+                  "h-8 px-3 rounded-md transition-all",
+                  chartType === "bar"
+                    ? "bg-background shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                )}
+              >
+                <BarChart3 className="w-4 h-4 mr-1" />
+                {t("annual_budget.charts.spending_over_time.chart_types.bar")}
+              </Button>
+            </div>
 
-          <InlinePrivacyToggle 
-            config={PRIVACY_CONFIG} 
-            className="privacy-toggle-button-header flex-shrink-0" 
-          />
-        </div>
-      </CardHeader>
+            <InlinePrivacyToggle 
+              config={PRIVACY_CONFIG} 
+              className="privacy-toggle-button-header flex-shrink-0" 
+            />
+          </>
+        }
+      />
       { isHidden ? (
         <PrivacyOverlay height="300px" blurIntensity="medium">
           {/* Skeleton Customizado */}

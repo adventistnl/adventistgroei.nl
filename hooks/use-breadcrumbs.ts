@@ -70,7 +70,7 @@ export function useBreadcrumbs() {
           label = "Communications"
           break
         case "structure":
-          label = "Structure & Organization"
+          label = "Structure"
           break
         case "regions":
           label = "Regions"

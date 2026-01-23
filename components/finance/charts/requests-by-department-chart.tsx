@@ -4,7 +4,10 @@ import * as React from "react"
 import { TrendingUp, BarChart3, Activity } from "lucide-react"
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { PrivacyWrapper, InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
+import { ChartHeader } from "@/components/charts/chart-header"
 import { PrivacyConfig } from "@/contexts/privacy-context"
+import { useTranslation } from "react-i18next"
+import { subsidyManagementTranslations } from "@/lib/translations/subsidy-management"
 import {
   Card,
   CardContent,
@@ -16,11 +19,10 @@ import {
 import {
   ChartConfig,
   ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { ChartLegendContainer, ChartLegendItem } from "@/components/charts/chart-legend-item"
 import {
   Select,
   SelectContent,
@@ -60,6 +62,10 @@ export function RequestsByDepartmentChart({
   translations
 }: RequestsByDepartmentChartProps) {
   const { formatCurrency } = useCurrency()
+  const { i18n } = useTranslation()
+  const currentLanguage = i18n?.language || 'en'
+  const t = subsidyManagementTranslations[currentLanguage as keyof typeof subsidyManagementTranslations] || subsidyManagementTranslations.en
+  
   const [chartType, setChartType] = React.useState<"area" | "bar">("area")
   const [timeRange, setTimeRange] = React.useState("12m")
 
@@ -82,26 +88,17 @@ export function RequestsByDepartmentChart({
     const config: any = {}
     Array.from(departments).forEach((dept, index) => {
       const color = getProjectColor(index)
-      console.log(`🎨 [RequestsByDepartmentChart] Departamento #${index}:`, {
-        dept,
-        index,
-        color,
-        colorType: typeof color
-      })
       config[dept] = {
         label: dept,
         color: color
       }
     })
     
-    console.log('✅ [RequestsByDepartmentChart] chartConfig gerado:', config)
     return config as ChartConfig
   }, [data])
 
   // Transform data to ensure date field exists
   const chartData = React.useMemo(() => {
-    console.log('� [RequestsByDepartmentChart] Dados originais recebidos:', data)
-    
     if (!data || data.length === 0) {
       return []
     }
@@ -123,15 +120,6 @@ export function RequestsByDepartmentChart({
         const month = monthIndex >= 0 ? monthIndex + 1 : index + 1
         const dateString = `${year}-${String(month).padStart(2, '0')}-01`
         
-        console.log(`🗓️ [RequestsByDepartmentChart] Convertendo mês para data:`, {
-          monthName: item.month,
-          monthIndex,
-          year,
-          generatedDate: dateString,
-          departments: Object.keys(item).filter(k => k !== 'month'),
-          values: item
-        })
-        
         return {
           ...item,
           date: dateString
@@ -141,7 +129,6 @@ export function RequestsByDepartmentChart({
       // Fallback: use index as month
       const month = index + 1
       const dateString = `${selectedYear}-${String(month).padStart(2, '0')}-01`
-
       
       return {
         ...item,
@@ -169,7 +156,6 @@ export function RequestsByDepartmentChart({
     const startDate = new Date(today)
     startDate.setMonth(startDate.getMonth() - monthsToShow)
     startDate.setDate(1) // Primeiro dia do mês
-    
     
     // Criar array de todos os meses no intervalo
     const allMonths: any[] = []
@@ -202,7 +188,6 @@ export function RequestsByDepartmentChart({
     
     // Retornar apenas os últimos N meses
     const filtered = allMonths.slice(-monthsToShow)
-
     
     return filtered
   }, [timeRange, chartData, chartConfig])
@@ -269,16 +254,16 @@ export function RequestsByDepartmentChart({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building2 className="w-5 h-5" />
-            {translations?.title || "Requests Over Time by Department"}
+            {translations?.title || t.charts.requestsByDepartment.title}
           </CardTitle>
           <CardDescription>
-            {translations?.description || "Monthly subsidy requests by all departments"}
+            {translations?.description || t.charts.requestsByDepartment.description}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex items-center justify-center">
           <div className="text-center text-muted-foreground">
             <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p>{translations?.noData || "No department data available"}</p>
+            <p>{translations?.noData || t.charts.requestsByDepartment.noData}</p>
           </div>
         </CardContent>
       </Card>
@@ -287,18 +272,12 @@ export function RequestsByDepartmentChart({
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <Building2 className="w-4 h-4" />
-              {translations?.title || "Requests Over Time by Department"}
-            </CardTitle>
-            <CardDescription className="text-xs mt-1">
-              {translations?.descriptionWithYear.replace('{{year}}', selectedYear.toString()) || `Monthly subsidy requests by all departments - ${selectedYear}`}
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-1 border rounded-md p-1">
+      <ChartHeader
+        title={translations?.title || t.charts.requestsByDepartment.title}
+        description={translations?.descriptionWithYear?.replace('{{year}}', selectedYear.toString()) || t.charts.requestsByDepartment.descriptionWithYear.replace('{{year}}', selectedYear.toString())}
+        actionsOrientation="responsive"
+        actions={
+          <>
             {privacyConfig && (
               <InlinePrivacyToggle 
                 config={privacyConfig}
@@ -307,58 +286,58 @@ export function RequestsByDepartmentChart({
             )}
             <Select value={timeRange} onValueChange={setTimeRange}>
               <SelectTrigger
-                className="w-[160px] rounded-lg"
+                className="w-full w-[160px] rounded-lg"
                 aria-label="Select time range"
               >
-                <SelectValue placeholder="Last 12 months" />
+                <SelectValue placeholder={t.charts.requestsByDepartment.timeRanges.last12Months} />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 <SelectItem value="12m" className="rounded-lg">
-                  Last 12 months
+                  {t.charts.requestsByDepartment.timeRanges.last12Months}
                 </SelectItem>
                 <SelectItem value="6m" className="rounded-lg">
-                  Last 6 months
+                  {t.charts.requestsByDepartment.timeRanges.last6Months}
                 </SelectItem>
                 <SelectItem value="3m" className="rounded-lg">
-                  Last 3 months
+                  {t.charts.requestsByDepartment.timeRanges.last3Months}
                 </SelectItem>
               </SelectContent>
             </Select>
-            <Button
-              variant={chartType === "area" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setChartType("area")}
-              className="h-7 px-3 text-xs"
-            >
-              <Activity className="w-3 h-3 mr-1" />
-              {translations?.chartTypes.area || "Area"}
-            </Button>
-            <Button
-              variant={chartType === "bar" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setChartType("bar")}
-              className="h-7 px-3 text-xs"
-            >
-              <BarChart3 className="w-3 h-3 mr-1" />
-              {translations?.chartTypes.bar || "Bar"}
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
+            <div className="flex max-w-[80px] items-center gap-1 border rounded-lg p-1">
+              <Button
+                variant={chartType === "area" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setChartType("area")}
+                className="h-7 px-2"
+              >
+                <Activity className="w-3 h-3" />
+              </Button>
+              <Button
+                variant={chartType === "bar" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setChartType("bar")}
+                className="h-7 px-2"
+              >
+                <BarChart3 className="w-3 h-3" />
+              </Button>
+            </div>
+          </>
+        }
+      />
       <CardContent className="flex-1 px-2 pt-4 sm:px-6 sm:pt-6">
         {privacyConfig ? (
           <PrivacyWrapper
             config={privacyConfig}
             showToggle={false}
           >
-            <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
+            <>
+              <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
           {chartType === "area" ? (
             <AreaChart accessibilityLayer data={filteredData}>
               <defs>
                 {Object.keys(chartConfig).map((dept, index) => {
                   const color = getProjectColor(index)
                   const gradientId = `fill-${sanitizeId(dept)}`
-                  console.log(`🌈 [AreaChart Gradient] ${dept}:`, { index, color, gradientId })
                   return (
                     <linearGradient key={dept} id={gradientId} x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor={color} stopOpacity={0.8} />
@@ -401,11 +380,9 @@ export function RequestsByDepartmentChart({
                   formatter={(value: any) => formatCurrency(typeof value === 'number' ? value : 0)}
                 />} 
               />
-              <ChartLegend content={<ChartLegendContent />} />
               {Object.keys(chartConfig).map((dept, index) => {
                 const strokeColor = getProjectColor(index)
                 const gradientId = `fill-${sanitizeId(dept)}`
-                console.log(`📊 [Area] ${dept}:`, { index, strokeColor, fill: `url(#${gradientId})` })
                 return (
                   <Area
                     key={dept}
@@ -454,10 +431,8 @@ export function RequestsByDepartmentChart({
                   formatter={(value: any) => formatCurrency(typeof value === 'number' ? value : 0)}
                 />} 
               />
-              <ChartLegend content={<ChartLegendContent />} />
               {Object.keys(chartConfig).map((dept, index) => {
                 const barColor = getProjectColor(index)
-                console.log(`📊 [Bar] ${dept}:`, { index, barColor })
                 return (
                   <Bar
                     key={dept}
@@ -471,16 +446,40 @@ export function RequestsByDepartmentChart({
             </BarChart>
           )}
             </ChartContainer>
+            
+            {/* Custom Legend with tooltips */}
+            <ChartLegendContainer layout="horizontal" className="mt-4">
+              {Object.keys(chartConfig).map((dept, index) => {
+                const deptTotal = filteredData.reduce((sum, item) => sum + (item[dept] || 0), 0)
+                const overallTotal = Object.keys(chartConfig).reduce((sum, d) => {
+                  return sum + filteredData.reduce((s, item) => s + (item[d] || 0), 0)
+                }, 0)
+                const percentage = overallTotal > 0 ? Math.round((deptTotal / overallTotal) * 100) : 0
+                
+                return (
+                  <ChartLegendItem
+                    key={dept}
+                    label={dept}
+                    description={`${dept} • ${formatCurrency(deptTotal)} • ${percentage}%`}
+                    color={getProjectColor(index)}
+                    value={deptTotal}
+                    valueFormatter={(val) => formatCurrency(Number(val))}
+                    variant="compact"
+                  />
+                )
+              })}
+            </ChartLegendContainer>
+            </>
           </PrivacyWrapper>
         ) : (
-          <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
+          <>
+            <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
           {chartType === "area" ? (
             <AreaChart accessibilityLayer data={filteredData}>
               <defs>
                 {Object.keys(chartConfig).map((dept, index) => {
                   const color = getProjectColor(index)
                   const gradientId = `fill-${sanitizeId(dept)}`
-                  console.log(`🌈 [AreaChart Gradient] ${dept}:`, { index, color, gradientId })
                   return (
                     <linearGradient key={dept} id={gradientId} x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor={color} stopOpacity={0.8} />
@@ -523,11 +522,9 @@ export function RequestsByDepartmentChart({
                   formatter={(value: any) => formatCurrency(typeof value === 'number' ? value : 0)}
                 />} 
               />
-              <ChartLegend content={<ChartLegendContent />} />
               {Object.keys(chartConfig).map((dept, index) => {
                 const strokeColor = getProjectColor(index)
                 const gradientId = `fill-${sanitizeId(dept)}`
-                console.log(`📊 [Area] ${dept}:`, { index, strokeColor, fill: `url(#${gradientId})` })
                 return (
                   <Area
                     key={dept}
@@ -576,10 +573,8 @@ export function RequestsByDepartmentChart({
                   formatter={(value: any) => formatCurrency(typeof value === 'number' ? value : 0)}
                 />} 
               />
-              <ChartLegend content={<ChartLegendContent />} />
               {Object.keys(chartConfig).map((dept, index) => {
                 const barColor = getProjectColor(index)
-                console.log(`📊 [Bar] ${dept}:`, { index, barColor })
                 return (
                   <Bar
                     key={dept}
@@ -592,16 +587,40 @@ export function RequestsByDepartmentChart({
               })}
             </BarChart>
           )}
-          </ChartContainer>
+            </ChartContainer>
+          
+            {/* Custom Legend with tooltips */}
+            <ChartLegendContainer layout="horizontal" className="mt-4">
+            {Object.keys(chartConfig).map((dept, index) => {
+              const deptTotal = filteredData.reduce((sum, item) => sum + (item[dept] || 0), 0)
+              const overallTotal = Object.keys(chartConfig).reduce((sum, d) => {
+                return sum + filteredData.reduce((s, item) => s + (item[d] || 0), 0)
+              }, 0)
+              const percentage = overallTotal > 0 ? Math.round((deptTotal / overallTotal) * 100) : 0
+              
+              return (
+                <ChartLegendItem
+                  key={dept}
+                  label={dept}
+                  description={`${dept} • ${formatCurrency(deptTotal)} • ${percentage}%`}
+                  color={getProjectColor(index)}
+                  value={deptTotal}
+                  valueFormatter={(val) => formatCurrency(Number(val))}
+                  variant="compact"
+                />
+              )
+            })}
+            </ChartLegendContainer>
+          </>
         )}
       </CardContent>
       <CardFooter className="flex-col items-start gap-1 text-xs pt-3 border-t">
         <div className="flex items-center gap-1.5 font-medium">
           <TrendingUp className="h-3 w-3" />
-          {translations?.departmentsTracked.replace('{{count}}', Object.keys(chartConfig).length.toString()) || `${Object.keys(chartConfig).length} departments tracked`}
+          {translations?.departmentsTracked?.replace('{{count}}', Object.keys(chartConfig).length.toString()) || t.charts.requestsByDepartment.departmentsTracked.replace('{{count}}', Object.keys(chartConfig).length.toString())}
         </div>
         <div className="text-muted-foreground">
-          {translations?.top || "Top"}: <span className="font-medium text-foreground">{topDepartment.name}</span>
+          {translations?.top || t.charts.requestsByDepartment.top}: <span className="font-medium text-foreground">{topDepartment.name}</span>
           {privacyConfig ? (
             <PrivacyWrapper
               config={privacyConfig}

@@ -62,6 +62,7 @@ import { UsageIndicator } from "@/components/ui/usage-indicator"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { GlobalPrivacyToggle } from "@/components/shared/global-privacy-toggle"
+import { YearFilter } from "@/components/shared/year-filter"
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
 import { PermissionResolverName } from "@/types/graphql-global-types"
@@ -1545,61 +1546,6 @@ export default function AnnualBudgetPage() {
     },
   ], [departmentBudgetData, t, currentInstitutionData])
 
-
-
-  // Year Filter Component
-  const YearFilter = ({ showAddButton = true }: { showAddButton?: boolean }) => {
-    const currentYear = new Date().getFullYear()
-    const maxAllowedYear = currentYear + 2
-    const canAddMore = Math.max(...availableYears) < maxAllowedYear
-
-    return (
-      <div className="mb-6">
-        <div className="flex items-center gap-3 overflow-x-auto pb-2 scroll-smooth" style={{ scrollbarWidth: 'thin' }}>
-          {availableYears.map((year) => (
-            <Button
-              key={year}
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedYear(year)}
-              className={`
-                flex-shrink-0 min-w-[80px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
-                ${selectedYear === year 
-                  ? 'bg-primary text-primary-foreground border-primary shadow-md hover:bg-primary/90' 
-                  : 'bg-muted text-muted-foreground border-muted hover:bg-muted/80 hover:text-foreground hover:border-muted-foreground/50'
-                }
-              `}
-            >
-              {year}
-            </Button>
-          ))}
-          
-          {/* Add New Year Button - Only show if showAddButton is true */}
-          {showAddButton && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAddYear}
-              disabled={!canAddMore}
-              className={`
-                flex-shrink-0 min-w-[100px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
-                ${canAddMore 
-                  ? 'border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground hover:border-muted-foreground/60 hover:bg-muted/50' 
-                  : 'opacity-40 cursor-not-allowed border-dashed border-muted-foreground/20 text-muted-foreground/50'
-                }
-              `}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {t('annual_budget.buttons.add_year')}
-            </Button>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-
-
   if (isLoading) {
     return (
       <AppLayout>
@@ -1670,7 +1616,14 @@ export default function AnnualBudgetPage() {
           </div>
 
           {/* Year Filter */}
-          <YearFilter />
+          <YearFilter 
+            availableYears={availableYears}
+            selectedYear={selectedYear}
+            onYearChange={setSelectedYear}
+            onAddYear={handleAddYear}
+            showAddButton={true}
+            className="mb-6"
+          />
 
           {/* KPI Cards */}
           <KPICards 

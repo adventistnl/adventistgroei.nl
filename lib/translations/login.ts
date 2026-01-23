@@ -1,7 +1,7 @@
 export const loginTranslations = {
   en: {
     title: "Seventh-day Adventist Church",
-    subtitle: "Church Management System",
+    subtitle: "Church Growth Management System",
     loading: "Loading...",
     validatingAccount: "Validating account...",
     
@@ -31,7 +31,7 @@ export const loginTranslations = {
     // Splash screen
     splash: {
       title: "Seventh-day Adventist Church",
-      subtitle: "Church Management System",
+      subtitle: "Church Growth Management System",
       loading: "Initializing system..."
     },
     

@@ -9,10 +9,17 @@ export const GET_CHURCHES_QUERY = gql`
       region_id
       contact_id
       leader_id
+      zip_code
+      house_number
       leader {
         id
         name
         email
+      }
+      region {
+        id
+        name
+        color
       }
       type
       created_at

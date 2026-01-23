@@ -267,6 +267,25 @@ function ChartLegendContent({
     return null
   }
 
+  // Helper function to get initials from a label
+  const getInitials = (label: string | React.ReactNode): string => {
+    if (typeof label !== 'string') {
+      return String(label).substring(0, 2).toUpperCase()
+    }
+    
+    const words = label.trim().split(/\s+/)
+    if (words.length === 1) {
+      // Single word: take first 2 characters
+      return label.substring(0, 2).toUpperCase()
+    }
+    // Multiple words: take first letter of each word (max 3)
+    return words
+      .slice(0, 3)
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+  }
+
   return (
     <div
       className={cn(
@@ -278,6 +297,8 @@ function ChartLegendContent({
       {payload.map((item) => {
         const key = `${nameKey || item.dataKey || "value"}`
         const itemConfig = getPayloadConfigFromPayload(config, item, key)
+        const labelText = itemConfig?.label || item.value || key
+        const initials = getInitials(labelText)
 
         return (
           <div
@@ -285,6 +306,7 @@ function ChartLegendContent({
             className={cn(
               "[&>svg]:text-muted-foreground flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3"
             )}
+            title={typeof labelText === 'string' ? labelText : String(labelText)}
           >
             {itemConfig?.icon && !hideIcon ? (
               <itemConfig.icon />
@@ -296,7 +318,7 @@ function ChartLegendContent({
                 }}
               />
             )}
-            {itemConfig?.label}
+            <span className="text-xs font-medium">{initials}</span>
           </div>
         )
       })}

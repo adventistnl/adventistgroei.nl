@@ -90,7 +90,7 @@ export default function RegionsPage() {
   const t = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
 
   const breadcrumbs = useMemo(() => [
-    { name: "Structure & Organization" },
+    { name: "Structure" },
     { name: "Regions" }
   ], [t])
 

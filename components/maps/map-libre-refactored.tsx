@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { useTheme } from 'next-themes';
 
 /**
  * MAPLIBRE GL MAP COMPONENT - REFATORADO
@@ -29,7 +30,14 @@ export interface RegionConfig {
   id: string;
   name: string;
   color: string;
-  provinces: string[];
+  provinces: string[]; // Mantido para compatibilidade com código existente
+  territory?: any; // JSON territory real da API: { NL: { DR: ['ASS', 'EMM'], ... } }
+  churches?: Array<{
+    id: string;
+    name: string;
+    city?: string;
+    province?: string;
+  }>;
   churches_count?: number;
   members_count?: number;
 }
@@ -40,7 +48,7 @@ export interface MapLibreProps {
   center?: [number, number];
   zoom?: number;
   pitch?: number;
-  theme?: 'dark' | 'light' | 'voyager';
+  theme?: 'dark' | 'light' | 'voyager'; // DEPRECATED: Tema agora é detectado automaticamente do sistema via next-themes
   showControls?: boolean;
   showGeolocation?: boolean;
   showFullscreen?: boolean;
@@ -145,7 +153,7 @@ export default function MapLibre({
   center = [5.2913, 52.1326],
   zoom = 7,
   pitch = 0,
-  theme = 'light',
+  theme = 'light', // Mantido para compatibilidade, mas será sobrescrito pelo tema do sistema
   showControls = true,
   showGeolocation = true,
   showFullscreen = true,
@@ -169,6 +177,20 @@ export default function MapLibre({
   const [provincesData, setProvincesData] = useState<any>(null);
   const [hoveredProvince, setHoveredProvince] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [isChangingTheme, setIsChangingTheme] = useState(false);
+  const [themeLoadProgress, setThemeLoadProgress] = useState(0);
+  
+  // Detectar tema do sistema
+  const { theme: systemTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  
+  // Aguardar montagem para evitar hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  // Determinar tema atual (light ou dark)
+  const currentTheme = mounted ? (resolvedTheme === 'dark' ? 'dark' : 'light') : theme;
 
   // ============================================================================
   // CARREGAR GEOJSON DAS PROVÍNCIAS
@@ -246,7 +268,7 @@ export default function MapLibre({
       
       map.current = new maplibregl.Map({
         container: mapContainer.current,
-        style: MAP_STYLES[theme],
+        style: MAP_STYLES[currentTheme as keyof typeof MAP_STYLES] || MAP_STYLES.light,
         center,
         zoom,
         pitch,
@@ -313,6 +335,71 @@ export default function MapLibre({
       }
     };
   }, []);
+
+  // ============================================================================
+  // ATUALIZAR TEMA DO MAPA DINAMICAMENTE
+  // ============================================================================
+
+  useEffect(() => {
+    if (!map.current || !mapLoaded || !mounted) return;
+
+    setIsChangingTheme(true);
+    setThemeLoadProgress(0);
+    
+    let progressInterval: NodeJS.Timeout;
+    
+    try {
+      // Atualizar estilo do mapa baseado no tema
+      const newStyle = MAP_STYLES[currentTheme as keyof typeof MAP_STYLES];
+      
+      // Salvar estado atual antes de mudar o estilo
+      const currentCenter = map.current.getCenter();
+      const currentZoom = map.current.getZoom();
+      const currentPitch = map.current.getPitch();
+      
+      // Simular progresso de carregamento
+      progressInterval = setInterval(() => {
+        setThemeLoadProgress(prev => {
+          if (prev >= 90) return 90; // Para em 90% até carregar de verdade
+          return prev + 10;
+        });
+      }, 100);
+      
+      // Mudar estilo do mapa
+      map.current.setStyle(newStyle);
+      
+      // Aguardar carregamento do novo estilo
+      map.current.once('style.load', () => {
+        clearInterval(progressInterval);
+        setThemeLoadProgress(100);
+        
+        // Restaurar posição do mapa
+        if (map.current) {
+          map.current.setCenter(currentCenter);
+          map.current.setZoom(currentZoom);
+          map.current.setPitch(currentPitch);
+          
+          // Re-trigger de configuração de províncias será feito pelo useEffect de provincesData
+          setMapLoaded(true);
+          
+          // Remover barra de carregamento após pequeno delay
+          setTimeout(() => {
+            setIsChangingTheme(false);
+            setThemeLoadProgress(0);
+          }, 300);
+        }
+      });
+    } catch (error) {
+      console.error('❌ Erro ao atualizar tema do mapa:', error);
+      clearInterval(progressInterval!);
+      setIsChangingTheme(false);
+      setThemeLoadProgress(0);
+    }
+    
+    return () => {
+      if (progressInterval) clearInterval(progressInterval);
+    };
+  }, [currentTheme, mounted]);
 
   // ============================================================================
   // CONFIGURAR PROVÍNCIAS E REGIÕES
@@ -765,6 +852,78 @@ export default function MapLibre({
         </div>
       )}
 
+      {/* Theme Change Loading Bar - Footer */}
+      {isChangingTheme && (
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '40px',
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(8px)',
+          borderBottomLeftRadius: '8px',
+          borderBottomRightRadius: '8px',
+          zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          padding: '0 16px',
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '6px',
+          }}>
+            <span style={{
+              fontSize: '12px',
+              fontWeight: 600,
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}>
+              <svg 
+                style={{ animation: 'spin 1s linear infinite' }} 
+                width="14" 
+                height="14" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2"
+              >
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+              </svg>
+              {currentTheme === 'dark' ? 'Ativando modo escuro...' : 'Ativando modo claro...'}
+            </span>
+            <span style={{
+              fontSize: '11px',
+              color: '#a0aec0',
+              fontFamily: 'monospace',
+            }}>
+              {themeLoadProgress}%
+            </span>
+          </div>
+          <div style={{
+            width: '100%',
+            height: '3px',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '2px',
+            overflow: 'hidden',
+          }}>
+            <div style={{
+              height: '100%',
+              width: `${themeLoadProgress}%`,
+              backgroundColor: currentTheme === 'dark' ? '#60a5fa' : '#f59e0b',
+              transition: 'width 0.3s ease',
+              borderRadius: '2px',
+              boxShadow: `0 0 10px ${currentTheme === 'dark' ? 'rgba(96, 165, 250, 0.5)' : 'rgba(245, 158, 11, 0.5)'}`,
+            }} />
+          </div>
+        </div>
+      )}
+
       {/* Debug Panel */}
       {showDebugPanel && debugInfo && (
         <div style={{
@@ -835,6 +994,158 @@ export const createRegion = (
   ...options,
 });
 
+/**
+ * COORDENADAS GEOGRÁFICAS DAS CIDADES HOLANDESAS
+ * Organizadas por província para facilitar mapeamento de regiões
+ */
+export const NETHERLANDS_CITIES_COORDS: Record<string, Record<string, [number, number]>> = {
+  // Drenthe (DR)
+  DR: {
+    ASS: [6.5615, 52.9959],  // Assen
+    EMM: [6.9015, 52.7793],  // Emmen
+    HOV: [6.4764, 52.7268],  // Hoogeveen
+    MED: [6.1944, 52.6964],  // Meppel
+    COE: [6.7407, 52.6609],  // Coevorden
+  },
+  // Flevoland (FL)
+  FL: {
+    LEL: [5.4750, 52.5084],  // Lelystad
+    ALM: [5.2647, 52.3508],  // Almere
+    EMM: [5.7500, 52.7108],  // Emmeloord
+    DRO: [5.7208, 52.5260],  // Dronten
+    URK: [5.6014, 52.6633],  // Urk
+    ZWO: [5.6333, 52.5667],  // Swifterbant
+  },
+  // Friesland (FR)
+  FR: {
+    LWD: [5.7985, 53.2012],  // Leeuwarden
+    SNK: [5.6584, 53.0333],  // Sneek
+    HRL: [5.9397, 52.9597],  // Heerenveen
+    FRA: [5.5414, 53.1875],  // Franeker
+    DOK: [5.9939, 53.3243],  // Dokkum
+    HAR: [5.4167, 53.1747],  // Harlingen
+    IJL: [5.6167, 53.0167],  // IJlst
+  },
+  // Gelderland (GE)
+  GE: {
+    ARN: [5.8987, 51.9851],  // Arnhem
+    NIM: [5.8520, 51.8126],  // Nijmegen
+    APE: [5.9699, 52.2112],  // Apeldoorn
+    EDE: [5.6608, 52.0408],  // Ede
+    DOE: [6.2886, 51.9653],  // Doetinchem
+    WGN: [5.6653, 51.9692],  // Wageningen
+    HAR: [5.6215, 52.3508],  // Harderwijk
+    WIN: [6.7194, 51.9697],  // Winterswijk
+    ZUT: [6.2014, 52.1387],  // Zutphen
+    TEL: [5.4292, 51.8858],  // Tiel
+  },
+  // Groningen (GR)
+  GR: {
+    GRO: [6.5665, 53.2194],  // Groningen
+    WIN: [7.0378, 53.1425],  // Winschoten
+    STA: [6.9644, 52.9906],  // Stadskanaal
+    VEE: [6.8783, 53.1064],  // Veendam
+    DLF: [6.9250, 53.3308],  // Delfzijl
+    APP: [6.8578, 53.3217],  // Appingedam
+  },
+  // Limburg (LI)
+  LI: {
+    MAA: [5.6913, 50.8514],  // Maastricht
+    HRL: [5.9825, 50.8872],  // Heerlen
+    SIT: [5.8694, 51.0000],  // Sittard
+    GEL: [5.8278, 50.9667],  // Geleen
+    KER: [6.0664, 50.8667],  // Kerkrade
+    BRU: [5.9708, 50.9453],  // Brunssum
+    ROE: [5.9878, 51.1942],  // Roermond
+    VEN: [6.1686, 51.3703],  // Venlo
+    VEL: [5.9747, 51.5258],  // Venray
+    WEE: [5.7053, 51.2517],  // Weert
+  },
+  // Noord-Brabant (NB)
+  NB: {
+    EIN: [5.4697, 51.4416],  // Eindhoven
+    TIL: [5.0914, 51.5556],  // Tilburg
+    BRE: [4.7758, 51.5719],  // Breda
+    HER: [5.3048, 51.6853],  // Den Bosch
+    HEL: [5.6558, 51.4817],  // Helmond
+    OSS: [5.5181, 51.7650],  // Oss
+    ROO: [4.4653, 51.5308],  // Roosendaal
+    BER: [4.2917, 51.4950],  // Bergen op Zoom
+    VEG: [5.5458, 51.6161],  // Veghel
+    WAA: [5.0683, 51.6819],  // Waalwijk
+  },
+  // Noord-Holland (NH)
+  NH: {
+    AMS: [4.9041, 52.3676],  // Amsterdam
+    HAA: [4.6368, 52.3873],  // Haarlem
+    ZAN: [4.8267, 52.4389],  // Zaandam
+    ALK: [4.7489, 52.6317],  // Alkmaar
+    HIL: [5.1719, 52.2233],  // Hilversum
+    HOR: [5.0597, 52.6431],  // Hoorn
+    PUR: [4.9597, 52.5050],  // Purmerend
+    ENK: [5.2944, 52.7028],  // Enkhuizen
+    HEE: [4.8500, 52.6708],  // Heerhugowaard
+    CAT: [4.6578, 52.5472],  // Castricum
+  },
+  // Overijssel (OV)
+  OV: {
+    ZWO: [6.0944, 52.5125],  // Zwolle
+    ENS: [6.8958, 52.2183],  // Enschede
+    HEN: [6.7936, 52.2650],  // Hengelo
+    ALM: [6.6622, 52.3567],  // Almelo
+    DEV: [6.1639, 52.2550],  // Deventer
+    KAM: [5.9117, 52.5550],  // Kampen
+    HAR: [6.6192, 52.5756],  // Hardenberg
+    OLD: [6.9292, 52.3128],  // Oldenzaal
+    STE: [6.1167, 52.7864],  // Steenwijk
+    RIJ: [6.5189, 52.3081],  // Rijssen
+  },
+  // Utrecht (UT)
+  UT: {
+    UTR: [5.1214, 52.0907],  // Utrecht
+    AME: [5.3878, 52.1561],  // Amersfoort
+    NIE: [5.0806, 52.0292],  // Nieuwegein
+    VEE: [5.5575, 52.0283],  // Veenendaal
+    ZEI: [5.2378, 52.0894],  // Zeist
+    WOU: [4.8839, 52.0850],  // Woerden
+    IJM: [5.0428, 52.0208],  // IJsselstein
+    HOE: [5.1681, 52.0281],  // Houten
+    VIA: [5.0931, 51.9922],  // Vianen
+    BUN: [5.2050, 52.0683],  // Bunnik
+  },
+  // Zeeland (ZE)
+  ZE: {
+    MID: [3.6103, 51.4988],  // Middelburg
+    VLI: [3.5736, 51.4425],  // Vlissingen
+    TER: [3.8292, 51.3347],  // Terneuzen
+    GOE: [3.8883, 51.5028],  // Goes
+    ZIE: [3.9178, 51.6500],  // Zierikzee
+    HUL: [4.0528, 51.2822],  // Hulst
+    AXE: [3.9061, 51.2675],  // Axel
+    VEE: [3.5664, 51.5447],  // Veere
+  },
+  // Zuid-Holland (ZH)
+  ZH: {
+    DHA: [4.3007, 52.0705],  // The Hague
+    ROT: [4.4777, 51.9244],  // Rotterdam
+    LEI: [4.4794, 52.1601],  // Leiden
+    DOR: [4.6900, 51.8133],  // Dordrecht
+    ZOE: [4.4928, 52.0575],  // Zoetermeer
+    DEL: [4.3571, 52.0116],  // Delft
+    ALB: [4.6572, 52.1283],  // Alphen aan den Rijn
+    WES: [4.2500, 52.0167],  // Westland
+    GOU: [4.7103, 52.0175],  // Gouda
+    SPE: [4.3292, 51.8447],  // Spijkenisse
+    RID: [4.6025, 51.8700],  // Ridderkerk
+    KAT: [4.3983, 52.2044],  // Katwijk
+    NOO: [4.4419, 52.2364],  // Noordwijk
+    WAS: [4.4028, 52.1456],  // Wassenaar
+  },
+};
+
+/**
+ * Coordenadas simplificadas para compatibilidade com código existente
+ */
 export const NETHERLANDS_CITIES = {
   amsterdam: [4.9041, 52.3676] as [number, number],
   rotterdam: [4.4777, 51.9244] as [number, number],
@@ -861,6 +1172,169 @@ export const NETHERLANDS_PROVINCES = {
   NLZL: 'Zeeland',
   NLZH: 'Zuid-Holland',
 } as const;
+
+/**
+ * FUNÇÃO HELPER: Gera markers de cidades com cores das regiões
+ * 
+ * NOVA IMPLEMENTAÇÃO - Trabalha com territory real da API
+ * - Parse do JSON territory de cada região
+ * - Filtra APENAS cidades registradas no territory
+ * - Adiciona debug detalhado
+ * - Suporte para churches
+ * 
+ * @param regions - Array de regiões da API (com territory JSON)
+ * @param citiesCoords - Coordenadas de todas as cidades disponíveis
+ * @returns Array de MarkerConfig com cores das regiões
+ */
+export function generateCityMarkers(
+  regions: RegionConfig[],
+  citiesCoords: Record<string, Record<string, [number, number]>> = NETHERLANDS_CITIES_COORDS
+): MarkerConfig[] {
+  console.group('🗺️ GENERATE CITY MARKERS - DEBUG');
+  console.log('📥 Regiões recebidas:', regions.length);
+  
+  const markers: MarkerConfig[] = [];
+  const debugInfo = {
+    totalRegions: regions.length,
+    regionsWithTerritory: 0,
+    totalCitiesInTerritories: 0,
+    markersCreated: 0,
+    regionDetails: [] as any[]
+  };
+  
+  regions.forEach((region, index) => {
+    console.group(`📍 Região ${index + 1}: ${region.name}`);
+    console.log('🎨 Cor:', region.color);
+    console.log('📋 Territory bruto:', region.territory);
+    console.log('🏛️ Provinces (legacy):', region.provinces);
+    console.log('⛪ Churches:', region.churches?.length || 0);
+    
+    let territoryCities: { province: string; city: string }[] = [];
+    
+    // Parse territory JSON
+    if (region.territory) {
+      try {
+        const parsedTerritory = typeof region.territory === 'string' 
+          ? JSON.parse(region.territory) 
+          : region.territory;
+        
+        console.log('✅ Territory parseado:', parsedTerritory);
+        
+        // Territory format: { NL: { DR: ['ASS', 'EMM'], FL: ['LEL'], ... } }
+        if (parsedTerritory && parsedTerritory.NL) {
+          Object.entries(parsedTerritory.NL).forEach(([provinceCode, cityCodes]) => {
+            if (Array.isArray(cityCodes)) {
+              cityCodes.forEach(cityCode => {
+                territoryCities.push({ province: provinceCode, city: cityCode });
+              });
+            }
+          });
+          debugInfo.regionsWithTerritory++;
+        }
+        
+        console.log(`📊 Cidades no territory: ${territoryCities.length}`);
+        console.table(territoryCities);
+        
+      } catch (error) {
+        console.error('❌ Erro ao parsear territory:', error);
+      }
+    }
+    
+    // Criar markers apenas para cidades no territory
+    territoryCities.forEach(({ province, city }) => {
+      const coords = citiesCoords[province]?.[city];
+      
+      if (coords) {
+        const cityName = getCityNameFromCoords(province, city);
+        const provinceName = NETHERLANDS_PROVINCES[`NL${province}` as keyof typeof NETHERLANDS_PROVINCES] || province;
+        
+        // Verificar se há church nesta cidade
+        const churchesInCity = region.churches?.filter(church => 
+          church.city === city || church.city === cityName
+        ) || [];
+        
+        markers.push({
+          lngLat: coords,
+          title: cityName,
+          description: `Região: ${region.name}`,
+          color: region.color || '#10b981',
+          popupHTML: `
+            <div style="padding: 10px; min-width: 220px;">
+              <h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: 700; color: #111;">
+                📍 ${cityName}
+              </h3>
+              <div style="font-size: 13px; color: #666; margin-bottom: 8px;">
+                <strong>Província:</strong> ${provinceName}
+              </div>
+              <div style="font-size: 13px; margin-bottom: 8px; padding: 8px 12px; background: ${region.color}15; border-left: 3px solid ${region.color}; border-radius: 4px;">
+                <strong style="color: ${region.color};">🌍 ${region.name}</strong>
+              </div>
+              ${churchesInCity.length > 0 ? `
+                <div style="font-size: 12px; margin-top: 10px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px;">
+                  <strong style="color: #10b981;">⛪ ${churchesInCity.length} ${churchesInCity.length === 1 ? 'Igreja' : 'Igrejas'}</strong>
+                  <div style="margin-top: 4px; color: #666;">
+                    ${churchesInCity.map(ch => `• ${ch.name}`).join('<br/>')}
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          `,
+        });
+        
+        debugInfo.markersCreated++;
+        console.log(`  ✅ Marker criado: ${cityName} (${coords.join(', ')})`);
+      } else {
+        console.warn(`  ⚠️ Coordenadas não encontradas: ${province}/${city}`);
+      }
+    });
+    
+    debugInfo.totalCitiesInTerritories += territoryCities.length;
+    debugInfo.regionDetails.push({
+      name: region.name,
+      color: region.color,
+      citiesCount: territoryCities.length,
+      markersCreated: territoryCities.filter(tc => citiesCoords[tc.province]?.[tc.city]).length,
+      churches: region.churches?.length || 0
+    });
+    
+    console.groupEnd();
+  });
+  
+  console.log('\n📊 RESUMO FINAL:');
+  console.table(debugInfo.regionDetails);
+  console.log('\n🎯 Estatísticas:');
+  console.log(`  • Total de regiões: ${debugInfo.totalRegions}`);
+  console.log(`  • Regiões com territory: ${debugInfo.regionsWithTerritory}`);
+  console.log(`  • Total de cidades nos territories: ${debugInfo.totalCitiesInTerritories}`);
+  console.log(`  • Markers criados: ${debugInfo.markersCreated}`);
+  console.log(`  • Taxa de sucesso: ${((debugInfo.markersCreated / debugInfo.totalCitiesInTerritories) * 100).toFixed(1)}%`);
+  console.groupEnd();
+  
+  return markers;
+}
+
+/**
+ * FUNÇÃO HELPER: Obtém nome da cidade a partir dos códigos
+ */
+function getCityNameFromCoords(provinceCode: string, cityCode: string): string {
+  // Mapeamento manual de códigos para nomes (baseado em geographicData.ts)
+  const cityNames: Record<string, Record<string, string>> = {
+    DR: { ASS: 'Assen', EMM: 'Emmen', HOV: 'Hoogeveen', MED: 'Meppel', COE: 'Coevorden' },
+    FL: { LEL: 'Lelystad', ALM: 'Almere', EMM: 'Emmeloord', DRO: 'Dronten', URK: 'Urk', ZWO: 'Swifterbant' },
+    FR: { LWD: 'Leeuwarden', SNK: 'Sneek', HRL: 'Heerenveen', FRA: 'Franeker', DOK: 'Dokkum', HAR: 'Harlingen', IJL: 'IJlst' },
+    GE: { ARN: 'Arnhem', NIM: 'Nijmegen', APE: 'Apeldoorn', EDE: 'Ede', DOE: 'Doetinchem', WGN: 'Wageningen', HAR: 'Harderwijk', WIN: 'Winterswijk', ZUT: 'Zutphen', TEL: 'Tiel' },
+    GR: { GRO: 'Groningen', WIN: 'Winschoten', STA: 'Stadskanaal', VEE: 'Veendam', DLF: 'Delfzijl', APP: 'Appingedam' },
+    LI: { MAA: 'Maastricht', HRL: 'Heerlen', SIT: 'Sittard', GEL: 'Geleen', KER: 'Kerkrade', BRU: 'Brunssum', ROE: 'Roermond', VEN: 'Venlo', VEL: 'Venray', WEE: 'Weert' },
+    NB: { EIN: 'Eindhoven', TIL: 'Tilburg', BRE: 'Breda', HER: 'Den Bosch', HEL: 'Helmond', OSS: 'Oss', ROO: 'Roosendaal', BER: 'Bergen op Zoom', VEG: 'Veghel', WAA: 'Waalwijk' },
+    NH: { AMS: 'Amsterdam', HAA: 'Haarlem', ZAN: 'Zaandam', ALK: 'Alkmaar', HIL: 'Hilversum', HOR: 'Hoorn', PUR: 'Purmerend', ENK: 'Enkhuizen', HEE: 'Heerhugowaard', CAT: 'Castricum' },
+    OV: { ZWO: 'Zwolle', ENS: 'Enschede', HEN: 'Hengelo', ALM: 'Almelo', DEV: 'Deventer', KAM: 'Kampen', HAR: 'Hardenberg', OLD: 'Oldenzaal', STE: 'Steenwijk', RIJ: 'Rijssen' },
+    UT: { UTR: 'Utrecht', AME: 'Amersfoort', NIE: 'Nieuwegein', VEE: 'Veenendaal', ZEI: 'Zeist', WOU: 'Woerden', IJM: 'IJsselstein', HOE: 'Houten', VIA: 'Vianen', BUN: 'Bunnik' },
+    ZE: { MID: 'Middelburg', VLI: 'Vlissingen', TER: 'Terneuzen', GOE: 'Goes', ZIE: 'Zierikzee', HUL: 'Hulst', AXE: 'Axel', VEE: 'Veere' },
+    ZH: { DHA: 'The Hague', ROT: 'Rotterdam', LEI: 'Leiden', DOR: 'Dordrecht', ZOE: 'Zoetermeer', DEL: 'Delft', ALB: 'Alphen aan den Rijn', WES: 'Westland', GOU: 'Gouda', SPE: 'Spijkenisse', RID: 'Ridderkerk', KAT: 'Katwijk', NOO: 'Noordwijk', WAS: 'Wassenaar' },
+  };
+  
+  return cityNames[provinceCode]?.[cityCode] || cityCode;
+}
 
 export const EXAMPLE_REGIONS: RegionConfig[] = [
   {

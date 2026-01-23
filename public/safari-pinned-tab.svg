@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Safari pinned tab - sempre monocromático -->
+  <path fill="#000000" d="M16 2L4 28h24L16 2zm0 4.5L24.5 26h-17L16 6.5z"/>
+  <circle fill="#000000" cx="16" cy="20" r="2"/>
+</svg>

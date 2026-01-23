@@ -3,7 +3,7 @@ export const searchTranslations = {
     placeholder: "Type a command or search...",
     noResults: "No results found.",
     suggestions: "Suggestions",
-    structure: "Structure & Organization",
+    structure: "Structure",
     usersAccess: "Users & Access", 
     reportsProjects: "Reports & Projects",
     administration: "Administration",

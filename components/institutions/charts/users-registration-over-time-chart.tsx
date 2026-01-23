@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button"
 import { Activity, BarChart3, TrendingUp, Users as UsersIcon } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { getProjectColor } from "@/lib/chart-colors"
+import { ChartHeader } from "@/components/charts/chart-header"
 
 interface UsersRegistrationOverTimeChartProps {
   institutions: any[] // Accept any[] to handle different institution types
@@ -47,40 +48,9 @@ export function UsersRegistrationOverTimeChart({
   const [timeRange, setTimeRange] = React.useState("90d")
   const [chartType, setChartType] = React.useState<"area" | "bar">(defaultChartType)
   
-  // DEBUG: Log raw institutions data received
-  React.useEffect(() => {
-    console.log('🔍 [UsersRegistrationOverTimeChart] RAW DATA RECEIVED:', {
-      totalInstitutions: institutions?.length || 0,
-      institutions: institutions?.map((inst: any) => ({
-        id: inst.id,
-        name: inst.name,
-        hasUsers: !!inst.users,
-        usersCount: inst.users?.length || 0,
-        usersSample: inst.users?.slice(0, 2).map((u: any) => ({
-          id: u.id,
-          name: u.name,
-          created_at: u.created_at,
-          is_deleted: u.is_deleted
-        }))
-      }))
-    })
-  }, [institutions])
-  
   // Filter active institutions
   const activeInstitutions = React.useMemo(() => {
-    const filtered = institutions.filter(inst => inst && inst.id && inst.name)
-    
-    console.log('🔍 [UsersRegistrationOverTimeChart] FILTERED INSTITUTIONS:', {
-      original: institutions?.length || 0,
-      filtered: filtered.length,
-      filteredData: filtered.map((inst: any) => ({
-        id: inst.id,
-        name: inst.name,
-        usersCount: inst.users?.length || 0
-      }))
-    })
-    
-    return filtered
+    return institutions.filter(inst => inst && inst.id && inst.name)
   }, [institutions])
   
   // Use selectedYear if provided, otherwise use current year
@@ -107,29 +77,9 @@ export function UsersRegistrationOverTimeChart({
 
   // Transform data to show dates on X-axis and institutions as separate areas
   const chartData = React.useMemo(() => {
-    console.log('📊 [UsersRegistrationOverTimeChart] CHART DATA PROCESSING START:', {
-      totalInstitutions: institutions.length,
-      activeInstitutions: activeInstitutions.length,
-      selectedYear,
-      institutionsDetail: activeInstitutions.map((i: any) => ({
-        id: i.id,
-        name: i.name,
-        usersCount: i.users?.length || 0,
-        hasUsersArray: Array.isArray(i.users),
-        usersIsNull: i.users === null,
-        usersIsUndefined: i.users === undefined
-      }))
-    })
-    
     // Get all users from all institutions and filter by selected year
     const allUsers = activeInstitutions.flatMap((inst: any) => {
       const users = inst.users || []
-      console.log(`🔍 Processing institution: ${inst.name}`, {
-        totalUsers: users.length,
-        activeUsers: users.filter((u: any) => !u.is_deleted).length,
-        deletedUsers: users.filter((u: any) => u.is_deleted).length,
-        selectedYear
-      })
       
       return users
         .filter((user: any) => {
@@ -149,24 +99,6 @@ export function UsersRegistrationOverTimeChart({
           institution_id: inst.id,
           institution_name: inst.name
         }))
-    })
-    
-    console.log('📊 [UsersRegistrationOverTimeChart] ALL USERS AGGREGATED:', {
-      totalUsers: allUsers.length,
-      selectedYear,
-      byInstitution: activeInstitutions.reduce((acc: any, inst: any) => {
-        acc[inst.name] = allUsers.filter(u => u.institution_id === inst.id).length
-        return acc
-      }, {}),
-      dateRange: allUsers.length > 0 ? {
-        oldest: allUsers.reduce((min, u) => u.created_at < min ? u.created_at : min, allUsers[0].created_at),
-        newest: allUsers.reduce((max, u) => u.created_at > max ? u.created_at : max, allUsers[0].created_at)
-      } : null,
-      sampleUsers: allUsers.slice(0, 5).map(u => ({
-        id: u.id,
-        institution: u.institution_name,
-        created_at: u.created_at
-      }))
     })
 
     // Create a map to store daily counts
@@ -195,15 +127,6 @@ export function UsersRegistrationOverTimeChart({
     const sortedData = Array.from(dailyCounts.values()).sort((a, b) => 
       new Date(a.date).getTime() - new Date(b.date).getTime()
     )
-    
-    console.log('📊 [UsersRegistrationOverTimeChart] Chart data transformed:', {
-      totalDays: sortedData.length,
-      dateRange: sortedData.length > 0 ? {
-        start: sortedData[0]?.date,
-        end: sortedData[sortedData.length - 1]?.date
-      } : null,
-      sampleData: sortedData.slice(0, 3)
-    })
     
     return sortedData
   }, [institutions, activeInstitutions, selectedYear])
@@ -298,28 +221,6 @@ export function UsersRegistrationOverTimeChart({
       
       currentDate.setDate(currentDate.getDate() + 1)
     }
-    
-    console.log('📊 [UsersRegistrationOverTimeChart] Final filtered data:', {
-      selectedYear,
-      timeRange,
-      dateRange: {
-        start: startDateStr,
-        end: endDateStr
-      },
-      totalDays: allDays.length,
-      daysWithData: allDays.filter(d => {
-        return activeInstitutions.some(inst => {
-          const key = inst.name.toLowerCase().replace(/\s+/g, '_')
-          return d[key] > 0
-        })
-      }).length,
-      daysWithZeros: allDays.filter(d => {
-        return activeInstitutions.every(inst => {
-          const key = inst.name.toLowerCase().replace(/\s+/g, '_')
-          return d[key] === 0
-        })
-      }).length
-    })
     
     return allDays
   }, [chartData, timeRange, activeInstitutions, selectedYear])
@@ -418,64 +319,60 @@ export function UsersRegistrationOverTimeChart({
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
-        <div className="grid flex-1 gap-1">
-          <CardTitle className="flex items-center gap-2 text-sm">
-            <UsersIcon className="w-4 h-4" />
-            {t('users.charts.usersRegisteredOverTime') || "Users Registered Over Time"}
-          </CardTitle>
-          <CardDescription className="text-xs">
-            {t('users.charts.showing') || "Showing"} {getTimeRangeLabel(timeRange)}
-          </CardDescription>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Chart Type Toggle */}
-          <div className="flex items-center gap-1 border rounded-lg p-1">
-            <Button
-              variant={chartType === "area" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setChartType("area")}
-              className="h-7 px-2"
-            >
-              <Activity className="w-3 h-3" />
-            </Button>
-            <Button
-              variant={chartType === "bar" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setChartType("bar")}
-              className="h-7 px-2"
-            >
-              <BarChart3 className="w-3 h-3" />
-            </Button>
-          </div>
-          {/* Time Range Select */}
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger
-              className="w-[160px] rounded-lg"
-              aria-label={t('charts.selectTimeRange') || "Select time range"}
-            >
-              <SelectValue placeholder={t('charts.last3Months') || "Last 3 months"} />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="7d" className="rounded-lg">
-                {t('charts.last7Days') || "Last 7 days"}
-              </SelectItem>
-              <SelectItem value="30d" className="rounded-lg">
-                {t('charts.last30Days') || "Last 30 days"}
-              </SelectItem>
-              <SelectItem value="90d" className="rounded-lg">
-                {t('charts.last3Months') || "Last 3 months"}
-              </SelectItem>
-              <SelectItem value="180d" className="rounded-lg">
-                {t('charts.last6Months') || "Last 6 months"}
-              </SelectItem>
-              <SelectItem value="365d" className="rounded-lg">
-                {t('charts.last12Months') || "Last 12 months"}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </CardHeader>
+      <ChartHeader
+        title={t('users.charts.usersRegisteredOverTime') || "Users Registered Over Time"}
+        description={`${t('users.charts.showing') || "Showing"} ${getTimeRangeLabel(timeRange)}`}
+        actionsOrientation="responsive"
+        actions={
+          <>
+            {/* Chart Type Toggle */}
+            <div className="flex items-center gap-1 border rounded-lg p-1">
+              <Button
+                variant={chartType === "area" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setChartType("area")}
+                className="h-7 px-2"
+              >
+                <Activity className="w-3 h-3" />
+              </Button>
+              <Button
+                variant={chartType === "bar" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setChartType("bar")}
+                className="h-7 px-2"
+              >
+                <BarChart3 className="w-3 h-3" />
+              </Button>
+            </div>
+            {/* Time Range Select */}
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger
+                className="w-[160px] rounded-lg"
+                aria-label={t('charts.selectTimeRange') || "Select time range"}
+              >
+                <SelectValue placeholder={t('charts.last3Months') || "Last 3 months"} />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="7d" className="rounded-lg">
+                  {t('charts.last7Days') || "Last 7 days"}
+                </SelectItem>
+                <SelectItem value="30d" className="rounded-lg">
+                  {t('charts.last30Days') || "Last 30 days"}
+                </SelectItem>
+                <SelectItem value="90d" className="rounded-lg">
+                  {t('charts.last3Months') || "Last 3 months"}
+                </SelectItem>
+                <SelectItem value="180d" className="rounded-lg">
+                  {t('charts.last6Months') || "Last 6 months"}
+                </SelectItem>
+                <SelectItem value="365d" className="rounded-lg">
+                  {t('charts.last12Months') || "Last 12 months"}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </>
+        }
+      />
       <CardContent className="pr-2 pt-4 sm:pr-6 sm:pt-6">
         <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
           {chartType === "area" ? (

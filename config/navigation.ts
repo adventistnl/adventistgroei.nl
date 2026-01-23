@@ -207,7 +207,7 @@ const _legacyNavMainBase: NavItem[] = [
     translationKey: "sidebar.dashboard"
   },
   {
-    title: "Structure & Organization",
+    title: "Structure",
     url: "#",
     icon: Building2,
     items: [
@@ -401,7 +401,7 @@ export const appData = {
 export const navigation: NavigationItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
   {
-    name: "Structure & Organization",
+    name: "Structure",
     icon: Building,
     items: [
       { name: "Institutions", href: "/institutions", icon: Building },

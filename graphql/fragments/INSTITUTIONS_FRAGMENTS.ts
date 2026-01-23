@@ -265,6 +265,8 @@ export const CHURCH_FRAGMENT = gql`
     region_id
     contact_id
     leader_id
+    zip_code
+    house_number
     created_at
     updated_at
     created_by

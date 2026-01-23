@@ -29,6 +29,7 @@ import {
 import { Layers, TrendingUp } from "lucide-react"
 import { getProjectColor } from "@/lib/chart-colors"
 import { churchTranslations } from "@/lib/translations/churches"
+import { ChartHeader } from "@/components/charts/chart-header"
 
 interface ProjectsByChurchChartProps {
   data?: any[]
@@ -54,15 +55,51 @@ export function ProjectsByChurchChart({
   const currentLanguage = i18n?.language || 'en'
   const tChurch = churchTranslations[currentLanguage as keyof typeof churchTranslations] || churchTranslations.en
   
+  // 🔍 DEBUG: Validar dados recebidos pelo componente
+  React.useEffect(() => {
+    console.log('🎯 [ProjectsByChurchChart] DEBUG - Dados recebidos:', {
+      data_exists: !!data,
+      data_length: data?.length || 0,
+      data_sample: data?.[0],
+      mode: mode,
+      loading: loading
+    })
+    
+    if (data && data.length > 0) {
+      console.log('📊 [ProjectsByChurchChart] DEBUG - Estrutura de cada item:', data.map((item: any) => ({
+        church: item.church || item.department,
+        fullName: item.fullName,
+        projects: item.projects,
+        activeProjects: item.activeProjects,
+        completedProjects: item.completedProjects,
+        fill: item.fill
+      })))
+    }
+  }, [data, mode, loading])
+  
   // Process data and apply getProjectColor for consistency
   const chartData = React.useMemo(() => {
     if (!data || data.length === 0) return []
     
     // Apply getProjectColor to each item
-    return data.map((item: any, index: number) => ({
+    const processedData = data.map((item: any, index: number) => ({
       ...item,
       fill: getProjectColor(index)
     }))
+    
+    // 🔍 DEBUG: Validar dados processados para o gráfico
+    console.log('✅ [ProjectsByChurchChart] chartData processado:', {
+      total_items: processedData.length,
+      items_with_projects: processedData.filter(item => item.projects > 0).length,
+      total_projects: processedData.reduce((sum, item) => sum + item.projects, 0),
+      data_sample: processedData.map(item => ({
+        church: item.church || item.department,
+        projects: item.projects,
+        has_color: !!item.fill
+      }))
+    })
+    
+    return processedData
   }, [data])
   
   // Gera chartConfig dinamicamente baseado nos dados
@@ -86,32 +123,78 @@ export function ProjectsByChurchChart({
   
   // Define a key baseada no modo (church ou department)
   const itemKey = mode === 'departments' ? 'department' : 'church'
-  const [activeItem, setActiveItem] = React.useState(chartData[0]?.[itemKey])
+  const [activeItem, setActiveItem] = React.useState<string>('__ALL__') // Default: All Churches
 
   const activeIndex = React.useMemo(
-    () => chartData.findIndex((item) => item[itemKey] === activeItem),
+    () => {
+      // Se for 'All Churches', não tem índice ativo (mostra todas)
+      if (activeItem === '__ALL__') return -1
+      return chartData.findIndex((item) => item[itemKey] === activeItem)
+    },
     [activeItem, chartData, itemKey]
   )
   
+  // 🔍 DEBUG: Validar item ativo e índice
+  React.useEffect(() => {
+    if (chartData.length > 0) {
+      console.log('🎯 [ProjectsByChurchChart] Item ativo:', {
+        activeItem,
+        activeIndex,
+        activeData: chartData[activeIndex],
+        totalItems: chartData.length
+      })
+    }
+  }, [activeItem, activeIndex, chartData])
+  
   const itemKeys = React.useMemo(() => chartData.map((item) => item[itemKey]), [chartData, itemKey])
-  const totalProjects = React.useMemo(
-    () => chartData.reduce((sum, item) => sum + item.projects, 0),
-    [chartData]
-  )
+  const totalProjects = React.useMemo(() => {
+    const total = chartData.reduce((sum, item) => sum + item.projects, 0)
+    
+    // 🔍 DEBUG: Validar total de projetos
+    console.log('📊 [ProjectsByChurchChart] Total de projetos calculado:', {
+      total,
+      mode: activeItem === '__ALL__' ? 'All Churches' : 'Single Church',
+      breakdown: chartData.map(item => ({
+        name: item[itemKey],
+        projects: item.projects
+      }))
+    })
+    
+    return total
+  }, [chartData, itemKey, activeItem])
+  
+  // Dados ativos baseados na seleção
+  const activeData = React.useMemo(() => {
+    if (activeItem === '__ALL__') {
+      // Modo All: retorna dados agregados
+      return {
+        projects: totalProjects,
+        activeProjects: chartData.reduce((sum, item) => sum + item.activeProjects, 0),
+        completedProjects: chartData.reduce((sum, item) => sum + item.completedProjects, 0),
+        fullName: mode === 'departments' 
+          ? tChurch.charts.projectsByChurch.allDepartments
+          : tChurch.charts.projectsByChurch.allChurches
+      }
+    }
+    // Modo Single: retorna dados da igreja/departamento selecionado
+    return chartData[activeIndex] || chartData[0]
+  }, [activeItem, chartData, activeIndex, totalProjects, mode, tChurch])
 
   if (loading) {
     return (
       <Card data-chart={id} className="h-full flex flex-col min-h-[500px]">
-        <CardHeader className="flex-row items-start space-y-0 pb-0 border-b py-5">
-          <div className="grid gap-1 flex-1">
+        <ChartHeader
+          title={
             <div className="flex items-center gap-2">
               <div className="h-5 w-5 bg-muted rounded animate-pulse" />
               <div className="h-6 bg-muted rounded w-48 animate-pulse" />
             </div>
-            <div className="h-4 bg-muted rounded w-64 animate-pulse mt-2" />
-          </div>
-          <div className="h-9 w-[160px] bg-muted rounded-lg animate-pulse" />
-        </CardHeader>
+          }
+          description={<div className="h-4 bg-muted rounded w-64 animate-pulse mt-2" />}
+          actions={
+            <div className="h-9 w-full sm:w-[160px] bg-muted rounded-lg animate-pulse" />
+          }
+        />
         <CardContent className="flex flex-1 justify-center items-center pb-0 px-2 pt-4 sm:px-6 sm:pt-6">
           <div className="space-y-4 w-full max-w-[300px]">
             {/* Pie chart skeleton */}
@@ -149,28 +232,29 @@ export function ProjectsByChurchChart({
   if (!chartData || chartData.length === 0) {
     return (
       <Card data-chart={id} className="h-full flex flex-col min-h-[500px]">
-        <CardHeader className="flex-row items-start space-y-0 pb-0 border-b py-5">
-          <div className="grid gap-1 flex-1">
-            <CardTitle className="flex items-center gap-2">
+        <ChartHeader
+          title={
+            <div className="flex items-center gap-2">
               <Layers className="w-5 h-5 text-gray-600" />
               {title || (mode === 'departments' ? tChurch.charts.projectsByChurch.titleDepartments : tChurch.charts.projectsByChurch.title)}
-            </CardTitle>
-            <CardDescription>
-              {description || (mode === 'departments' 
-                ? tChurch.charts.projectsByChurch.descriptionDepartments
-                : tChurch.charts.projectsByChurch.description)}
-            </CardDescription>
-          </div>
-          {/* Select disabled in empty state */}
-          <Select disabled>
-            <SelectTrigger
-              className="ml-auto h-9 w-[160px] rounded-lg pl-2.5 opacity-50"
-              aria-label={mode === 'departments' ? tChurch.charts.projectsByChurch.selectDepartment : tChurch.charts.projectsByChurch.selectChurch}
-            >
-              <SelectValue placeholder={mode === 'departments' ? tChurch.charts.projectsByChurch.selectPlaceholderDept : tChurch.charts.projectsByChurch.selectPlaceholder} />
-            </SelectTrigger>
-          </Select>
-        </CardHeader>
+            </div>
+          }
+          description={
+            description || (mode === 'departments' 
+              ? tChurch.charts.projectsByChurch.descriptionDepartments
+              : tChurch.charts.projectsByChurch.description)
+          }
+          actions={
+            <Select disabled>
+              <SelectTrigger
+                className="h-9 w-full sm:w-[160px] rounded-lg pl-2.5 opacity-50"
+                aria-label={mode === 'departments' ? tChurch.charts.projectsByChurch.selectDepartment : tChurch.charts.projectsByChurch.selectChurch}
+              >
+                <SelectValue placeholder={mode === 'departments' ? tChurch.charts.projectsByChurch.selectPlaceholderDept : tChurch.charts.projectsByChurch.selectPlaceholder} />
+              </SelectTrigger>
+            </Select>
+          }
+        />
         <CardContent className="flex flex-1 justify-center items-center pb-0 px-2 pt-4 sm:px-6 sm:pt-6">
           <div className="text-center space-y-6 max-w-md">
             {/* Empty state illustration */}
@@ -221,51 +305,67 @@ export function ProjectsByChurchChart({
   return (
     <Card data-chart={id} className="h-full flex flex-col min-h-[500px]">
       <ChartStyle id={id} config={chartConfig} />
-      <CardHeader className="flex-row items-start space-y-0 pb-0 border-b py-5">
-        <div className="grid gap-1 flex-1">
-          <CardTitle className="flex items-center gap-2">
+      <ChartHeader
+        title={
+          <div className="flex items-center gap-2">
             <Layers className="w-5 h-5 text-gray-600" />
             {title || (mode === 'departments' ? tChurch.charts.projectsByChurch.titleDepartments : tChurch.charts.projectsByChurch.title)}
-          </CardTitle>
-          <CardDescription>
-            {description || (mode === 'departments' 
-              ? tChurch.charts.projectsByChurch.descriptionDepartments
-              : tChurch.charts.projectsByChurch.description)}
-          </CardDescription>
-        </div>
-        <Select value={activeItem} onValueChange={setActiveItem}>
-          <SelectTrigger
-            className="ml-auto h-9 w-[160px] rounded-lg pl-2.5"
-            aria-label={mode === 'departments' ? tChurch.charts.projectsByChurch.selectDepartment : tChurch.charts.projectsByChurch.selectChurch}
-          >
-            <SelectValue placeholder={mode === 'departments' ? tChurch.charts.projectsByChurch.selectPlaceholderDept : tChurch.charts.projectsByChurch.selectPlaceholder} />
-          </SelectTrigger>
-          <SelectContent align="end" className="rounded-xl">
-            {itemKeys.map((key: string) => {
-              const config = chartConfig[key as keyof typeof chartConfig]
-              if (!config) return null
+          </div>
+        }
+        description={
+          description || (mode === 'departments' 
+            ? tChurch.charts.projectsByChurch.descriptionDepartments
+            : tChurch.charts.projectsByChurch.description)
+        }
+        actions={
+          <Select value={activeItem} onValueChange={setActiveItem}>
+            <SelectTrigger
+              className="h-9 w-full sm:w-[160px] rounded-lg pl-2.5"
+              aria-label={mode === 'departments' ? tChurch.charts.projectsByChurch.selectDepartment : tChurch.charts.projectsByChurch.selectChurch}
+            >
+              <SelectValue placeholder={mode === 'departments' ? tChurch.charts.projectsByChurch.selectPlaceholderDept : tChurch.charts.projectsByChurch.selectPlaceholder} />
+            </SelectTrigger>
+            <SelectContent align="end" className="rounded-xl">
+              {/* Opção All Churches como primeira opção */}
+              <SelectItem
+                value="__ALL__"
+                className="rounded-lg [&_span]:flex font-semibold"
+              >
+                <div className="flex items-center gap-2 text-xs">
+                  <Layers className="w-3 h-3" />
+                  {mode === 'departments' 
+                    ? tChurch.charts.projectsByChurch.allDepartments
+                    : tChurch.charts.projectsByChurch.allChurches}
+                </div>
+              </SelectItem>
+              
+              {/* Igrejas/Departamentos individuais */}
+              {itemKeys.map((key: string) => {
+                const config = chartConfig[key as keyof typeof chartConfig]
+                if (!config) return null
 
-              return (
-                <SelectItem
-                  key={key}
-                  value={key}
-                  className="rounded-lg [&_span]:flex"
-                >
-                  <div className="flex items-center gap-2 text-xs">
-                    <span
-                      className="flex h-3 w-3 shrink-0 rounded-xs"
-                      style={{
-                        backgroundColor: `var(--color-${key})`,
-                      }}
-                    />
-                    {config?.label}
-                  </div>
-                </SelectItem>
-              )
-            })}
-          </SelectContent>
-        </Select>
-      </CardHeader>
+                return (
+                  <SelectItem
+                    key={key}
+                    value={key}
+                    className="rounded-lg [&_span]:flex"
+                  >
+                    <div className="flex items-center gap-2 text-xs">
+                      <span
+                        className="flex h-3 w-3 shrink-0 rounded-xs"
+                        style={{
+                          backgroundColor: `var(--color-${key})`,
+                        }}
+                      />
+                      {config?.label}
+                    </div>
+                  </SelectItem>
+                )
+              })}
+            </SelectContent>
+          </Select>
+        }
+      />
       <CardContent className="flex flex-1 justify-center items-center pb-0 px-2 pt-4 sm:px-6 sm:pt-6">
         <ChartContainer
           id={id}
@@ -283,11 +383,15 @@ export function ProjectsByChurchChart({
               nameKey={itemKey}
               innerRadius={60}
               strokeWidth={5}
-              activeIndex={activeIndex}
+              activeIndex={activeItem === '__ALL__' ? undefined : activeIndex}
               onClick={(data) => {
                 // Allow clicking on pie sectors to select them
                 const clickedItem = data?.[itemKey]
                 if (clickedItem) {
+                  console.log('🖱️ [ProjectsByChurchChart] Clique no gráfico:', {
+                    clicked: clickedItem,
+                    data: data
+                  })
                   setActiveItem(clickedItem)
                   // Chama callback se fornecido
                   if (onItemClick) {
@@ -312,7 +416,6 @@ export function ProjectsByChurchChart({
               <Label
                 content={({ viewBox }) => {
                   if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                    const activeData = chartData[activeIndex]
                     if (!activeData) return null
                     return (
                       <text
@@ -364,17 +467,22 @@ export function ProjectsByChurchChart({
         
         <div className="w-full flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
-            <div 
-              className="w-2 h-2 rounded-full" 
-              style={{ backgroundColor: chartData[activeIndex]?.fill }}
-            ></div>
-            <span className="text-muted-foreground">{tChurch.charts.projectsByChurch.footer.selected} {chartData[activeIndex]?.fullName}</span>
+            {activeItem !== '__ALL__' && (
+              <div 
+                className="w-2 h-2 rounded-full" 
+                style={{ backgroundColor: chartData[activeIndex]?.fill }}
+              ></div>
+            )}
+            {activeItem === '__ALL__' && <Layers className="w-3 h-3 text-muted-foreground" />}
+            <span className="text-muted-foreground">{tChurch.charts.projectsByChurch.footer.selected} {activeData?.fullName}</span>
           </div>
           <span className="font-medium">
-            {chartData[activeIndex]?.projects.toLocaleString()} {tChurch.charts.projectsByChurch.footer.projects}
-            <span className="text-muted-foreground ml-1">
-              ({Math.round((chartData[activeIndex]?.projects / totalProjects) * 100)}%)
-            </span>
+            {activeData?.projects.toLocaleString()} {tChurch.charts.projectsByChurch.footer.projects}
+            {activeItem !== '__ALL__' && totalProjects > 0 && (
+              <span className="text-muted-foreground ml-1">
+                ({Math.round((activeData?.projects / totalProjects) * 100)}%)
+              </span>
+            )}
           </span>
         </div>
         
@@ -382,11 +490,11 @@ export function ProjectsByChurchChart({
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">{tChurch.charts.projectsByChurch.footer.status}</span>
             <span className="font-medium text-green-600">
-              {chartData[activeIndex]?.activeProjects} {tChurch.charts.projectsByChurch.footer.active}
+              {activeData?.activeProjects} {tChurch.charts.projectsByChurch.footer.active}
             </span>
             <span className="text-muted-foreground">•</span>
             <span className="font-medium text-gray-600">
-              {chartData[activeIndex]?.completedProjects} {tChurch.charts.projectsByChurch.footer.completed}
+              {activeData?.completedProjects} {tChurch.charts.projectsByChurch.footer.completed}
             </span>
           </div>
         </div>

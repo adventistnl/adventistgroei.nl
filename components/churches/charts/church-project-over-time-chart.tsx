@@ -13,13 +13,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { ChartHeader } from "@/components/charts/chart-header"
 import {
   ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { ChartLegendContainer, ChartLegendItem } from "@/components/charts/chart-legend-item"
 import {
   Select,
   SelectContent,
@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { churchTranslations } from "@/lib/translations/churches"
-import { useChartColors } from "@/lib/chart-colors"
+import { getProjectColor } from "@/lib/chart-colors"
 
 interface ChurchProjectOverTimeChartProps {
   loading?: boolean
@@ -173,21 +173,18 @@ export function ChurchProjectOverTimeChart({
     
     return sortedData
   }, [churchProjects, activeChurches])
-  
-  const { generatePalette } = useChartColors()
 
-  // Gerar cores dinâmicas para cada igreja
+  // Gerar cores dinâmicas para cada igreja usando getProjectColor
   const churchColors = React.useMemo(() => {
-    const palette = generatePalette(activeChurches.length)
     const colorMap: { [key: string]: string } = {}
 
     activeChurches.forEach((church, index) => {
       const churchKey = church.name.toLowerCase().replace(/\s+/g, '_')
-      colorMap[churchKey] = palette[index]
+      colorMap[churchKey] = getProjectColor(index)
     })
 
     return colorMap
-  }, [activeChurches, generatePalette])
+  }, [activeChurches])
 
   // Configuração dinâmica do gráfico baseada nas igrejas reais
   const chartConfig = React.useMemo(() => {
@@ -426,61 +423,59 @@ export function ChurchProjectOverTimeChart({
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
-        <div className="grid flex-1 gap-1">
-          <CardTitle>{t.charts?.projectsOverTime?.title || "Projects Created Over Time"}</CardTitle>
-          <CardDescription>
-            {t.charts?.projectsOverTime?.description || `Project creation timeline by churches - ${getTimeRangeLabel(timeRange)}`}
-          </CardDescription>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Chart Type Toggle */}
-          <div className="flex items-center gap-1 border rounded-lg p-1">
-            <Button
-              variant={chartType === "area" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setChartType("area")}
-              className="h-7 px-2"
-            >
-              <Activity className="w-3 h-3" />
-            </Button>
-            <Button
-              variant={chartType === "bar" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setChartType("bar")}
-              className="h-7 px-2"
-            >
-              <BarChart3 className="w-3 h-3" />
-            </Button>
-          </div>
-          {/* Time Range Select */}
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger
-              className="w-[160px] rounded-lg sm:ml-auto"
-              aria-label="Select time range"
-            >
-              <SelectValue placeholder="Last 3 months" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="7d" className="rounded-lg">
-                {t.charts?.timeRanges?.last7Days || "Last 7 days"}
-              </SelectItem>
-              <SelectItem value="30d" className="rounded-lg">
-                {t.charts?.timeRanges?.last30Days || "Last 30 days"}
-              </SelectItem>
-              <SelectItem value="90d" className="rounded-lg">
-                {t.charts?.timeRanges?.last3Months || "Last 3 months"}
-              </SelectItem>
-              <SelectItem value="180d" className="rounded-lg">
-                {t.charts?.timeRanges?.last6Months || "Last 6 months"}
-              </SelectItem>
-              <SelectItem value="365d" className="rounded-lg">
-                {t.charts?.timeRanges?.last12Months || "Last 12 months"}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </CardHeader>
+      <ChartHeader
+        title={t.charts?.projectsOverTime?.title || "Projects Created Over Time"}
+        description={t.charts?.projectsOverTime?.description || `Project creation timeline by churches - ${getTimeRangeLabel(timeRange)}`}
+        actions={
+          <>
+            {/* Chart Type Toggle */}
+            <div className="flex items-center gap-1 border rounded-lg p-1">
+              <Button
+                variant={chartType === "area" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setChartType("area")}
+                className="h-7 px-2"
+              >
+                <Activity className="w-3 h-3" />
+              </Button>
+              <Button
+                variant={chartType === "bar" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setChartType("bar")}
+                className="h-7 px-2"
+              >
+                <BarChart3 className="w-3 h-3" />
+              </Button>
+            </div>
+            {/* Time Range Select */}
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger
+                className="w-full sm:w-[160px] rounded-lg"
+                aria-label="Select time range"
+              >
+                <SelectValue placeholder="Last 3 months" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="7d" className="rounded-lg">
+                  {t.charts?.timeRanges?.last7Days || "Last 7 days"}
+                </SelectItem>
+                <SelectItem value="30d" className="rounded-lg">
+                  {t.charts?.timeRanges?.last30Days || "Last 30 days"}
+                </SelectItem>
+                <SelectItem value="90d" className="rounded-lg">
+                  {t.charts?.timeRanges?.last3Months || "Last 3 months"}
+                </SelectItem>
+                <SelectItem value="180d" className="rounded-lg">
+                  {t.charts?.timeRanges?.last6Months || "Last 6 months"}
+                </SelectItem>
+                <SelectItem value="365d" className="rounded-lg">
+                  {t.charts?.timeRanges?.last12Months || "Last 12 months"}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </>
+        }
+      />
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6 flex-1">
         <ChartContainer
           config={chartConfig}
@@ -561,7 +556,6 @@ export function ChurchProjectOverTimeChart({
                   />
                 )
               })}
-              <ChartLegend content={<ChartLegendContent />} />
             </AreaChart>
           ) : (
             <BarChart data={filteredData}>
@@ -611,7 +605,6 @@ export function ChurchProjectOverTimeChart({
                   />
                 }
               />
-              <ChartLegend content={<ChartLegendContent />} />
               {activeChurches.map((church) => {
                 const churchKey = church.name.toLowerCase().replace(/\s+/g, '_')
                 return (
@@ -627,6 +620,29 @@ export function ChurchProjectOverTimeChart({
             </BarChart>
           )}
         </ChartContainer>
+        
+        {/* Custom Legend with tooltips */}
+        <ChartLegendContainer layout="horizontal" className="mt-4">
+          {activeChurches.map((church, index) => {
+            const churchKey = church.name.toLowerCase().replace(/\s+/g, '_')
+            const projectCount = totalByChurch[churchKey] || 0
+            const percentage = totalProjects > 0 
+              ? Math.round((projectCount / totalProjects) * 100) 
+              : 0
+            
+            return (
+              <ChartLegendItem
+                key={church.id}
+                label={church.name}
+                description={`${church.name} • ${projectCount} ${t.charts?.projects || 'projects'} • ${percentage}%`}
+                color={churchColors[churchKey]}
+                value={projectCount}
+                valueFormatter={(val) => `${val} ${t.charts?.projects || 'projects'}`}
+                variant="compact"
+              />
+            )
+          })}
+        </ChartLegendContainer>
       </CardContent>
       <CardFooter className="flex-col items-start gap-1 text-xs pt-3 border-t">
         <div className="flex items-center gap-1.5 font-medium">

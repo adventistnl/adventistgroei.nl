@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { ChartHeader } from "@/components/charts/chart-header"
 import {
   ChartConfig,
   ChartContainer,
@@ -23,6 +24,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { getProjectColor } from "@/lib/chart-colors"
 import { churchTranslations } from "@/lib/translations/churches"
+import { ChartLegendItem, ChartLegendContainer } from "@/components/charts/chart-legend-item"
+import { Home } from "lucide-react"
 
 interface MembersByChurchChartProps {
   churches?: any[]
@@ -169,22 +172,22 @@ export function MembersByChurchChart({
   if (loading) {
     return (
       <Card className="h-full flex flex-col min-h-[500px]">
-        <CardHeader className="flex items-center gap-2 space-y-0 border-b pb-4 sm:flex-row">
-          <div className="grid flex-1 gap-1">
+        <ChartHeader
+          title={
             <div className="flex items-center gap-2">
               <div className="h-5 w-5 bg-muted rounded animate-pulse" />
               <div className="h-6 bg-muted rounded w-48 animate-pulse" />
             </div>
-            <div className="h-4 bg-muted rounded w-64 animate-pulse mt-2" />
-          </div>
-          
-          {/* Quarter Filter Skeleton */}
-          <div className="flex items-center gap-1 border rounded-md p-1">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-7 w-12 bg-muted rounded animate-pulse" />
-            ))}
-          </div>
-        </CardHeader>
+          }
+          description={<div className="h-4 bg-muted rounded w-64 animate-pulse mt-2" />}
+          actions={
+            <div className="flex flex-wrap items-center gap-1 border rounded-md p-1 w-full sm:w-auto">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-7 w-12 bg-muted rounded animate-pulse" />
+              ))}
+            </div>
+          }
+        />
         <CardContent className="flex-1 pt-6">
           <div className="h-[300px] bg-muted rounded animate-pulse" />
         </CardContent>
@@ -200,61 +203,59 @@ export function MembersByChurchChart({
   if (activeChurches.length === 0) {
     return (
       <Card className="h-full flex flex-col min-h-[500px]">
-        <CardHeader className="flex items-center gap-2 space-y-0 border-b pb-4 sm:flex-row">
-          <div className="grid flex-1 gap-1">
-            <CardTitle className="flex items-center gap-2">
+        <ChartHeader
+          title={
+            <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-gray-600" />
               {title || tChurch.charts.membersByChurch.title}
-            </CardTitle>
-            <CardDescription>
-              {description || `${tChurch.charts.membersByChurch.description} - ${selectedYear}`}
-            </CardDescription>
-          </div>
-          
-          {/* Quarter Filter (disabled state) */}
-          <div className="flex items-center gap-1 border rounded-md p-1 opacity-50">
-            <Button
-              variant='ghost'
-              size="sm"
-              disabled
-              className="h-7 px-3 text-xs"
-            >
-              {tChurch.charts.membersByChurch.filters.all}
-            </Button>
-            <Button
-              variant='ghost'
-              size="sm"
-              disabled
-              className="h-7 px-3 text-xs"
-            >
-              {tChurch.charts.membersByChurch.filters.q1}
-            </Button>
-            <Button
-              variant='ghost'
-              size="sm"
-              disabled
-              className="h-7 px-3 text-xs"
-            >
-              {tChurch.charts.membersByChurch.filters.q2}
-            </Button>
-            <Button
-              variant='ghost'
-              size="sm"
-              disabled
-              className="h-7 px-3 text-xs"
-            >
-              {tChurch.charts.membersByChurch.filters.q3}
-            </Button>
-            <Button
-              variant='ghost'
-              size="sm"
-              disabled
-              className="h-7 px-3 text-xs"
-            >
-              {tChurch.charts.membersByChurch.filters.q4}
-            </Button>
-          </div>
-        </CardHeader>
+            </div>
+          }
+          description={description || `${tChurch.charts.membersByChurch.description} - ${selectedYear}`}
+          actions={
+            <div className="flex flex-wrap items-center gap-1 border rounded-md p-1 opacity-50 w-full sm:w-auto">
+              <Button
+                variant='ghost'
+                size="sm"
+                disabled
+                className="h-7 px-3 text-xs flex-1 sm:flex-none"
+              >
+                {tChurch.charts.membersByChurch.filters.all}
+              </Button>
+              <Button
+                variant='ghost'
+                size="sm"
+                disabled
+                className="h-7 px-3 text-xs flex-1 sm:flex-none"
+              >
+                {tChurch.charts.membersByChurch.filters.q1}
+              </Button>
+              <Button
+                variant='ghost'
+                size="sm"
+                disabled
+                className="h-7 px-3 text-xs flex-1 sm:flex-none"
+              >
+                {tChurch.charts.membersByChurch.filters.q2}
+              </Button>
+              <Button
+                variant='ghost'
+                size="sm"
+                disabled
+                className="h-7 px-3 text-xs flex-1 sm:flex-none"
+              >
+                {tChurch.charts.membersByChurch.filters.q3}
+              </Button>
+              <Button
+                variant='ghost'
+                size="sm"
+                disabled
+                className="h-7 px-3 text-xs flex-1 sm:flex-none"
+              >
+                {tChurch.charts.membersByChurch.filters.q4}
+              </Button>
+            </div>
+          }
+        />
         <CardContent className="flex-1 flex items-center justify-center py-12">
           <div className="text-center max-w-md space-y-4">
             <div className="flex justify-center">
@@ -286,61 +287,59 @@ export function MembersByChurchChart({
 
   return (
     <Card className="h-full flex flex-col min-h-[500px]">
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b pb-4 sm:flex-row">
-        <div className="grid flex-1 gap-1">
-          <CardTitle className="flex items-center gap-2">
+      <ChartHeader
+        title={
+          <div className="flex items-center gap-2">
             <Users className="w-5 h-5 text-gray-600" />
             {title || tChurch.charts.membersByChurch.title}
-          </CardTitle>
-          <CardDescription>
-            {description || `${tChurch.charts.membersByChurch.description} - ${selectedYear}`}
-          </CardDescription>
-        </div>
-        
-        {/* Quarter Filter Toggle */}
-        <div className="flex items-center gap-1 border rounded-md p-1">
-          <Button
-            variant={selectedQuarter === 'all' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setSelectedQuarter('all')}
-            className="h-7 px-3 text-xs"
-          >
-            {tChurch.charts.membersByChurch.filters.all}
-          </Button>
-          <Button
-            variant={selectedQuarter === 'q1' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setSelectedQuarter('q1')}
-            className="h-7 px-3 text-xs"
-          >
-            {tChurch.charts.membersByChurch.filters.q1}
-          </Button>
-          <Button
-            variant={selectedQuarter === 'q2' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setSelectedQuarter('q2')}
-            className="h-7 px-3 text-xs"
-          >
-            {tChurch.charts.membersByChurch.filters.q2}
-          </Button>
-          <Button
-            variant={selectedQuarter === 'q3' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setSelectedQuarter('q3')}
-            className="h-7 px-3 text-xs"
-          >
-            {tChurch.charts.membersByChurch.filters.q3}
-          </Button>
-          <Button
-            variant={selectedQuarter === 'q4' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setSelectedQuarter('q4')}
-            className="h-7 px-3 text-xs"
-          >
-            {tChurch.charts.membersByChurch.filters.q4}
-          </Button>
-        </div>
-      </CardHeader>
+          </div>
+        }
+        description={description || `${tChurch.charts.membersByChurch.description} - ${selectedYear}`}
+        actions={
+          <div className="flex flex-wrap items-center gap-1 border rounded-md p-1 w-full sm:w-auto">
+            <Button
+              variant={selectedQuarter === 'all' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setSelectedQuarter('all')}
+              className="h-7 px-3 text-xs flex-1 sm:flex-none"
+            >
+              {tChurch.charts.membersByChurch.filters.all}
+            </Button>
+            <Button
+              variant={selectedQuarter === 'q1' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setSelectedQuarter('q1')}
+              className="h-7 px-3 text-xs flex-1 sm:flex-none"
+            >
+              {tChurch.charts.membersByChurch.filters.q1}
+            </Button>
+            <Button
+              variant={selectedQuarter === 'q2' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setSelectedQuarter('q2')}
+              className="h-7 px-3 text-xs flex-1 sm:flex-none"
+            >
+              {tChurch.charts.membersByChurch.filters.q2}
+            </Button>
+            <Button
+              variant={selectedQuarter === 'q3' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setSelectedQuarter('q3')}
+              className="h-7 px-3 text-xs flex-1 sm:flex-none"
+            >
+              {tChurch.charts.membersByChurch.filters.q3}
+            </Button>
+            <Button
+              variant={selectedQuarter === 'q4' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setSelectedQuarter('q4')}
+              className="h-7 px-3 text-xs flex-1 sm:flex-none"
+            >
+              {tChurch.charts.membersByChurch.filters.q4}
+            </Button>
+          </div>
+        }
+      />
       <CardContent className="flex-1 pt-6">
         <ChartContainer config={chartConfig} className="h-[300px] w-full">
           <BarChart accessibilityLayer data={filteredData}>
@@ -353,7 +352,6 @@ export function MembersByChurchChart({
               tickFormatter={(value) => value.slice(0, 3)}
             />
             <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-            <ChartLegend content={<ChartLegendContent />} />
             {activeChurches.map((church, index) => (
               <Bar
                 key={church.id}
@@ -366,6 +364,21 @@ export function MembersByChurchChart({
           </BarChart>
         </ChartContainer>
       </CardContent>
+        
+        {/* Custom Legend with Tooltips */}
+        <ChartLegendContainer layout="horizontal" className="mt-6 px-2">
+          {activeChurches.map((church, index) => (
+            <ChartLegendItem
+              key={church.id}
+              label={church.name}
+              description={`${church.name} • ${church.users?.length || 0} ${tChurch.charts.membersByChurch.footer.members} • ${church.departments?.length || 0} ${tChurch.table.departments}`}
+              color={getProjectColor(index)}
+              // value={totals.churchTotals[church.id] || 0}
+              // valueFormatter={(val) => `${val} ${tChurch.charts.membersByChurch.footer.newMembers}`}
+              variant="compact"
+            />
+          ))}
+        </ChartLegendContainer>
       <CardFooter className="flex-col items-start gap-1 text-sm border-t pt-4">
         <div className="flex gap-2 font-medium text-foreground">
           {totals.grandTotal} {tChurch.charts.membersByChurch.footer.newMembers} <TrendingUp className="h-4 w-4" />

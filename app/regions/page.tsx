@@ -29,10 +29,14 @@ import {
 import toast from "react-hot-toast"
 import { structureTranslations } from "@/lib/translations/structure"
 import { regionTranslations } from "@/lib/translations/regions"
+import { regionsPageTranslations } from "@/lib/translations/regions-page"
 import { DataTable } from "@/components/ui/data-table"
 import { AddRegionModal, EditRegionModal, DeleteRegionModal } from "@/components/modals/region"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
-import MapLibre, { NETHERLANDS_CENTER } from "@/components/maps/map-libre-refactored"
+import MapLibre, { NETHERLANDS_CENTER, generateCityMarkers, RegionConfig as MapRegionConfig } from "@/components/maps/map-libre-refactored"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useQuery } from "@apollo/client"
+import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
 
 import { useRegions } from "@/hooks/use-regions"
 import { WithPermission } from "@/hocs/with-permission"
@@ -50,6 +54,13 @@ export default function RegionsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'regions' | 'churches'>('regions')
+  
+  // Fetch churches data
+  const { data: churchesData, loading: churchesLoading, refetch: refetchChurches } = useQuery(GET_CHURCHES_QUERY);
+  const churches = useMemo(() => churchesData?.churches?.filter((c: any) => !c.is_deleted) || [], [churchesData]);
+  
   // Modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -58,7 +69,306 @@ export default function RegionsPage() {
   // Map ref for refocus functionality
   const [mapInstance, setMapInstance] = useState<any>(null)
   
-  // Handler para refocus no mapa
+  // ============================================================================
+  // TRANSLATIONS & PAGE CONFIG
+  // ============================================================================
+  
+  const currentLanguage = i18n?.language || 'en'
+  const tStructure = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
+  const tRegion = regionTranslations[currentLanguage as keyof typeof regionTranslations] || regionTranslations.en
+  const tPage = regionsPageTranslations[currentLanguage as keyof typeof regionsPageTranslations] || regionsPageTranslations.en
+  
+  // Gerar markers de cidades com cores das regiões
+  const cityMarkers = useMemo(() => {
+    if (regions.length === 0) return [];
+    
+    // Converter regiões para formato do MapLibre com territory real
+    const mapRegions: MapRegionConfig[] = regions
+      .filter(region => !region.is_deleted)
+      .map(region => ({
+        id: region.id,
+        name: region.name,
+        color: region.color || '#10b981',
+        provinces: getProvincesFromTerritory(region.territory),
+        territory: region.territory,
+        churches: region.churches?.map(church => ({
+          id: church.id,
+          name: church.name,
+          city: undefined,
+          province: undefined,
+        })) || [],
+        churches_count: region.churches?.length || 0,
+      }));
+    
+    const generatedMarkers = generateCityMarkers(mapRegions);
+    
+    // Adicionar popupHTML customizado a cada marker
+    return generatedMarkers.map(marker => {
+      // Extrair nome da região da descrição existente (formato: "Região: Nome da Região")
+      const regionName = marker.description?.replace('Região: ', '') || '';
+      const region = regions.find(r => r.name === regionName);
+      const regionColor = region?.color || marker.color || '#10b981';
+      const churchesCount = region?.churches?.length || 0;
+      
+      return {
+        ...marker,
+        popupHTML: `
+          <div style="
+            padding: 6px; 
+            width: 100px;
+            max-height: 150px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid ${regionColor};
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            overflow: hidden;
+          ">
+            <div style="margin-bottom: 4px;">
+              <h3 style="
+                margin: 0; 
+                font-size: 10px; 
+                font-weight: 700; 
+                color: ${regionColor};
+                line-height: 1.2;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              ">
+                ${marker.title}
+              </h3>
+            </div>
+            
+            <div style="
+              font-size: 8px; 
+              color: #6b7280;
+              margin-bottom: 3px;
+              line-height: 1.2;
+            ">
+              ${tPage.cityPopup.city_label}
+            </div>
+            
+            <div style="
+              padding: 3px 4px;
+              background: ${regionColor}15;
+              border-left: 2px solid ${regionColor};
+              border-radius: 3px;
+              font-size: 8px;
+              color: ${regionColor};
+              font-weight: 600;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+              margin-bottom: 3px;
+            ">
+              ${regionName || tPage.cityPopup.region_label}
+            </div>
+            
+            ${churchesCount > 0 ? `
+              <div style="
+                padding: 3px 4px;
+                background: rgba(16, 185, 129, 0.1);
+                border-left: 2px solid #9ca3af;
+                border-radius: 3px;
+                font-size: 8px;
+                color: #6b7280;
+                font-weight: 600;
+              ">
+                ${churchesCount} ${tPage.cityPopup.churches_count}
+              </div>
+            ` : ''}
+          </div>
+        `,
+      };
+    });
+  }, [regions, tPage]);
+  
+  // Helper: Converter zip code holandês para coordenadas aproximadas
+  const getCoordinatesFromZipCode = (zipCode: string): [number, number] | null => {
+    if (!zipCode) return null;
+    
+    // Remover espaços e converter para maiúsculas
+    const cleanZip = zipCode.replace(/\s+/g, '').toUpperCase();
+    
+    // Zip code holandês: 4 dígitos + 2 letras (ex: 1012AB)
+    const match = cleanZip.match(/^(\d{4})([A-Z]{2})$/);
+    if (!match) return null;
+    
+    const digits = match[1];
+    const firstDigit = parseInt(digits[0]);
+    const secondDigit = parseInt(digits[1]);
+    
+    // Mapeamento aproximado baseado nos primeiros dígitos do zip code
+    // Referência: https://nl.wikipedia.org/wiki/Postcodes_in_Nederland
+    const zipToCoords: Record<string, [number, number]> = {
+      // Amsterdam região (1000-1099)
+      '10': [4.9041, 52.3676],
+      '11': [4.9200, 52.3700],
+      // Den Haag (2500-2599)
+      '25': [4.3007, 52.0705],
+      '26': [4.3200, 52.0800],
+      // Rotterdam (3000-3099)
+      '30': [4.4777, 51.9244],
+      '31': [4.5000, 51.9300],
+      // Utrecht (3500-3599)
+      '35': [5.1214, 52.0907],
+      '36': [5.1400, 52.1000],
+      // Eindhoven (5600-5699)
+      '56': [5.4697, 51.4416],
+      '57': [5.4800, 51.4500],
+      // Groningen (9700-9799)
+      '97': [6.5665, 53.2194],
+      '98': [6.5800, 53.2300],
+      // Maastricht (6200-6299)
+      '62': [5.6913, 50.8514],
+      '63': [5.7000, 50.8600],
+    };
+    
+    // Tentar match com primeiros 2 dígitos
+    const key = digits.substring(0, 2);
+    if (zipToCoords[key]) {
+      // Adicionar pequena variação baseada nos outros dígitos para espalhar pins
+      const base = zipToCoords[key];
+      const offset = parseInt(digits.substring(2)) * 0.0001;
+      return [base[0] + offset, base[1] + offset * 0.5];
+    }
+    
+    // Fallback: Centro da Holanda
+    return [5.2913, 52.1326];
+  };
+  
+  // Gerar markers de TODAS as churches usando zip_code
+  const churchMarkers = useMemo(() => {
+    if (churches.length === 0) return [];
+    
+    const markers: any[] = [];
+    
+    churches.forEach((church: any) => {
+      // Obter coordenadas do zip_code
+      const coords = church.zip_code ? getCoordinatesFromZipCode(church.zip_code) : null;
+      
+      if (!coords) {
+        return;
+      }
+      
+      // Determinar cor do pin
+      const hasInstitution = !!church.institution_id;
+      const churchColor = hasInstitution ? '#083e55' : '#9ca3af';
+      const bgOpacity = hasInstitution ? '0.95' : '0.5';
+      const borderColor = hasInstitution ? churchColor : '#d1d5db';
+      
+      // Buscar dados da região
+      const churchRegion = church.region || regions.find(r => r.id === church.region_id);
+      
+      // SVG do ícone Church do Lucide
+      const churchIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${churchColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 7 4 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9l4-2"/><path d="M14 22v-4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v4"/><path d="M18 22V5l-6-3-6 3v17"/><path d="M12 7v5"/><path d="M10 9h4"/></svg>`;
+      
+      markers.push({
+        lngLat: coords,
+        title: church.name,
+        description: hasInstitution 
+          ? `Região: ${churchRegion?.name || tPage.popup.zip_code_not_available}` 
+          : tPage.popup.without_region,
+        color: churchColor,
+        popupHTML: `
+          <div style="
+            padding: 6px; 
+            width: 100px;
+            max-height: 150px;
+            background: rgba(255, 255, 255, ${bgOpacity});
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid ${borderColor};
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            overflow: hidden;
+          ">
+            <div style="margin-bottom: 4px;">
+              <h3 style="
+                margin: 0; 
+                font-size: 10px; 
+                font-weight: 700; 
+                color: ${hasInstitution ? churchColor : '#6b7280'};
+                line-height: 1.2;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              ">
+                ${church.name}
+              </h3>
+            </div>
+            
+            <div style="
+              font-size: 8px; 
+              color: #6b7280;
+              margin-bottom: 3px;
+              line-height: 1.2;
+            ">
+              ${church.zip_code || '${tPage.popup.zip_code_not_available}'}
+            </div>
+            
+            ${hasInstitution && churchRegion ? `
+              <div style="
+                padding: 3px 4px;
+                background: ${churchRegion.color}15;
+                border-left: 2px solid ${churchRegion.color};
+                border-radius: 3px;
+                font-size: 8px;
+                color: ${churchRegion.color};
+                font-weight: 600;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              ">
+                ${churchRegion.name}
+              </div>
+            ` : `
+              <div style="
+                padding: 3px 4px;
+                background: rgba(156, 163, 175, 0.1);
+                border-left: 2px solid #9ca3af;
+                border-radius: 3px;
+                font-size: 8px;
+                color: #6b7280;
+                font-weight: 600;
+              ">
+                ${tPage.popup.without_region}
+              </div>
+            `}
+          </div>
+        `,
+      });
+    });
+    
+    return markers;
+  }, [churches, regions, tPage]);
+  
+  // ============================================================================
+  // HELPER FUNCTIONS
+  // ============================================================================
+  
+  // Extrair províncias do território JSON
+  function getProvincesFromTerritory(territory: any): string[] {
+    if (!territory) return [];
+    
+    try {
+      const parsed = typeof territory === 'string' ? JSON.parse(territory) : territory;
+      if (parsed?.NL) {
+        return Object.keys(parsed.NL).map(provinceCode => `NL${provinceCode}`);
+      }
+      return parsed?.provinces || [];
+    } catch {
+      return [];
+    }
+  }
+  
+  // ============================================================================
+  // EVENT HANDLERS
+  // ============================================================================
+  
   const handleRefocusMap = () => {
     if (mapInstance) {
       mapInstance.flyTo({
@@ -70,11 +380,6 @@ export default function RegionsPage() {
     }
   }
   
-  // Obter traduções para o idioma atual
-  const currentLanguage = i18n?.language || 'en'
-  const tStructure = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
-  const tRegion = regionTranslations[currentLanguage as keyof typeof regionTranslations] || regionTranslations.en
-
   const pageTitle = useMemo(() => (
     <span className="flex items-center gap-2">
       {t('common.structure_organization')}
@@ -88,7 +393,9 @@ export default function RegionsPage() {
     showBreadcrumbsInHeader: true
   })
 
-  // Dados dos KPIs em formato de array para o componente reutilizável
+  // ============================================================================
+  // KPI DATA
+  // ============================================================================
   const kpiCardsData: KPICardData[] = useMemo(() => [
     {
       id: "total-regions",
@@ -119,9 +426,10 @@ export default function RegionsPage() {
       subtitle: tRegion.page.cities_in_regions
     }
   ], [regions, tRegion])
-  /**
-   * Carregamento inicial dos dados
-   */
+  
+  // ============================================================================
+  // LIFECYCLE EFFECTS
+  // ============================================================================
   useEffect(() => {
     const loadData = async () => {
       const loadingToast = toast.loading(tRegion.messages.loading)
@@ -143,15 +451,15 @@ export default function RegionsPage() {
     loadData()
   }, [refetchRegions, tRegion])
 
-  /**
-   * Handlers para ações
-   */
+  // ============================================================================
+  // ACTION HANDLERS
+  // ============================================================================
   const handleRefresh = async () => {
     setRefreshing(true)
     const refreshToast = toast.loading(tRegion.messages.loading)
     
     try {
-      await refetchRegions()
+      await Promise.all([refetchRegions(), refetchChurches()])
       toast.dismiss(refreshToast)
       toast.success(tRegion.messages.refresh_success, { duration: 2000 })
     } catch (error) {
@@ -191,7 +499,9 @@ export default function RegionsPage() {
     handleRefresh()
   }
 
-  // Colunas da tabela
+  // ============================================================================
+  // TABLE COLUMNS DEFINITION
+  // ============================================================================
   const columns: ColumnDef<any>[] = [
     {
       id: "name",
@@ -264,7 +574,7 @@ export default function RegionsPage() {
     {
       id: "actions",
       header: () => (
-        <div className="text-right font-medium text-gray-900">
+        <div className="text-right font-medium">
           {t('common.actions')}
         </div>
       ),
@@ -366,17 +676,23 @@ export default function RegionsPage() {
 
         <Separator />
 
-        {/* MapLibre - Netherlands Overview */}
+        {/* MapLibre - Netherlands Overview with Tabs */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <MapPin className="w-5 h-5" />
-                  {tRegion.map?.title || 'Netherlands Regions Map'}
+                  {activeTab === 'regions' 
+                    ? (tRegion.map?.title || 'Netherlands Regions Map')
+                    : tPage.map.churches_title
+                  }
                 </CardTitle>
                 <CardDescription>
-                  {tRegion.map?.description || 'Interactive geographic visualization'}
+                  {activeTab === 'regions'
+                    ? (tRegion.map?.description || 'Interactive geographic visualization')
+                    : tPage.map.churches_description
+                  }
                 </CardDescription>
               </div>
               <Button
@@ -391,23 +707,62 @@ export default function RegionsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <MapLibre
-              center={NETHERLANDS_CENTER}
-              zoom={7}
-              height="500px"
-              theme="light"
-              showControls={true}
-              showGeolocation={true}
-              showFullscreen={true}
-              showScale={true}
-              onLoad={(map) => {
-                setMapInstance(map)
-                console.log('MapLibre loaded successfully')
-              }}
-              onClick={(e) => {
-                console.log('Map clicked:', e.lngLat)
-              }}
-            />
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'regions' | 'churches')} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="regions" className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  {tPage.tabs.regions_cities}
+                  <span className="ml-1 text-xs text-muted-foreground">({cityMarkers.length})</span>
+                </TabsTrigger>
+                <TabsTrigger value="churches" className="flex items-center gap-2">
+                  <Home className="w-4 h-4" />
+                  {tPage.tabs.churches_registered}
+                  <span className="ml-1 text-xs text-muted-foreground">({churchMarkers.length})</span>
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="regions" className="mt-0">
+                <MapLibre
+                  center={NETHERLANDS_CENTER}
+                  zoom={7}
+                  height="500px"
+                  showControls={true}
+                  showGeolocation={true}
+                  showFullscreen={true}
+                  showScale={true}
+                  markers={cityMarkers}
+                  onLoad={(map) => {
+                    setMapInstance(map)
+                    console.log(tPage.console.map_loaded)
+                    console.log(`📍 ${cityMarkers.length} ${tPage.console.city_markers_added}`)
+                  }}
+                  onClick={(e) => {
+                    console.log(`${tPage.console.map_clicked}`, e.lngLat)
+                  }}
+                />
+              </TabsContent>
+              
+              <TabsContent value="churches" className="mt-0">
+                <MapLibre
+                  center={NETHERLANDS_CENTER}
+                  zoom={7}
+                  height="500px"
+                  showControls={true}
+                  showGeolocation={true}
+                  showFullscreen={true}
+                  showScale={true}
+                  markers={churchMarkers}
+                  onLoad={(map) => {
+                    setMapInstance(map)
+                    console.log(tPage.console.map_loaded)
+                    console.log(`⛪ ${churchMarkers.length} ${tPage.console.church_markers_added}`)
+                  }}
+                  onClick={(e) => {
+                    console.log(`${tPage.console.map_clicked}`, e.lngLat)
+                  }}
+                />
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
@@ -427,7 +782,7 @@ export default function RegionsPage() {
               columns={columns}
               data={regions}
               searchKey="name"
-              searchPlaceholder={tStructure.searchRegions}
+              searchPlaceholder="Search regions..."
               filterableColumns={[]}
             />
           </CardContent>
