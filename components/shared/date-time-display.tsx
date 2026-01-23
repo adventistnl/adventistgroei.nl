@@ -111,14 +111,13 @@ export function DateTimeDisplay({
   const offset = circumference - (yearProgress / 100) * circumference
 
   return (
-    <Card className={cn("p-4", className)}>
-      <div className="flex items-center justify-between gap-6">
+    <Card className={cn("p-3 sm:p-4", className)}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6">
         {/* Left Side - Current Date & Time */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            {/* <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" /> */}
-            <div className="flex items-baseline gap-2 flex-wrap">
-              <span className="text-lg font-bold font-large text-foreground">
+          <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
+            <div className="flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
+              <span className="text-base sm:text-lg font-bold text-foreground">
                 {dayOfWeek}
               </span>
               <span className="text-xs text-muted-foreground">
@@ -128,34 +127,34 @@ export function DateTimeDisplay({
           </div>
           
           <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-lg font-bold font-mono tabular-nums">
+            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
+            <span className="text-base sm:text-lg font-bold font-mono tabular-nums">
               {timeString}
             </span>
           </div>
         </div>
 
         {/* Right Side - Month & Year Progress */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
           {/* Days Remaining & Year */}
-          <div className="text-right hidden sm:block">
-            <div className="flex items-center justify-end gap-2 mb-1">
+          <div className="text-left sm:text-right">
+            <div className="flex items-center sm:justify-end gap-2 mb-1">
               <Badge variant="outline" className="text-xs">
                 {daysRemainingInMonth} {daysRemainingInMonth === 1 ? 'day' : 'days'} left
               </Badge>
             </div>
-            <div className="text-sm font-semibold text-muted-foreground">
+            <div className="text-xs sm:text-sm font-semibold text-muted-foreground">
               {year}
             </div>
           </div>
 
           {/* Year Progress Pie Chart */}
-          <div className="relative flex items-center justify-center">
+          <div className="relative flex items-center justify-center flex-shrink-0">
             <svg 
-              width="50" 
-              height="50" 
+              width="45" 
+              height="45" 
               viewBox="0 0 50 50"
-              className="transform -rotate-90"
+              className="transform -rotate-90 sm:w-[50px] sm:h-[50px]"
             >
               {/* Background circle - subtle in both modes */}
               <circle
@@ -188,19 +187,11 @@ export function DateTimeDisplay({
             
             {/* Percentage text */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-[10px] font-bold text-foreground tabular-nums">
+              <span className="text-[9px] sm:text-[10px] font-bold text-foreground tabular-nums">
                 {Math.round(yearProgress)}%
               </span>
             </div>
           </div>
-        </div>
-
-        {/* Mobile: Show year and days below on small screens */}
-        <div className="sm:hidden w-full flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
-          <span>{year}</span>
-          <Badge variant="outline" className="text-xs">
-            {daysRemainingInMonth}d left
-          </Badge>
         </div>
       </div>
     </Card>
@@ -245,19 +236,19 @@ export function DateTimeDisplayCompact({
   const yearProgress = Math.min(Math.max((elapsedYearMs / totalYearMs) * 100, 0), 100)
 
   return (
-    <div className={cn("flex items-center gap-3 text-sm", className)}>
-      <div className="flex items-center gap-2">
-        <Clock className="w-4 h-4 text-muted-foreground" />
+    <div className={cn("flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm", className)}>
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
         <span className="font-mono font-semibold">{timeString}</span>
       </div>
       
-      <div className="h-4 w-px bg-border" />
+      <div className="hidden sm:block h-4 w-px bg-border" />
       
       <span className="text-muted-foreground">{formatted}</span>
       
-      <div className="h-4 w-px bg-border" />
+      <div className="hidden sm:block h-4 w-px bg-border" />
       
-      <Badge variant="outline" className="text-xs">
+      <Badge variant="outline" className="text-xs whitespace-nowrap">
         {Math.round(yearProgress)}% of {currentTime.getFullYear()}
       </Badge>
     </div>

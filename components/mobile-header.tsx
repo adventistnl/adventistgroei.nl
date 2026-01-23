@@ -2,13 +2,14 @@
 
 import * as React from "react"
 import { useState } from "react"
-import { GlobalSearch, useGlobalSearch, MobileSearchTrigger } from "@/components/global-search"
+import { GlobalSearch, useGlobalSearch, MobileSearchTrigger, SearchTrigger } from "@/components/global-search"
 import { ResponsiveBreadcrumbs } from "@/components/responsive-breadcrumbs"
 import { ChatUsersSelector } from "@/components/chat/chat-users-selector"
 import { LanguageSelector } from "@/components/shared/language-selector"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { NotificationsSidebar } from "@/components/notifications-sidebar"
 import { InviteModal } from "@/components/modals/invite-modal"
+import { MobileActionsMenu } from "@/components/shared/mobile-actions-menu"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -22,6 +23,7 @@ import {
 import toast from "react-hot-toast"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
+import { CurrencySelector } from "./shared/currency-selector"
 
 export function MobileHeader() {
   // Ativar comando de teclado global para busca
@@ -69,41 +71,36 @@ export function MobileHeader() {
             </div>
 
             {/* Right Section - Action Icons */}
-            <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0">
               
-              {/* Search Icon - Mobile */}
-              <MobileSearchTrigger />
+              {/* Search Button */}
+              <SearchTrigger />
               
-              {/* Chat Icon - Mobile */}
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className="h-9 w-9"
-                onClick={() => setIsChatSelectorOpen(true)}
-              >
-                <MessageCircle className="h-4 w-4" />
-              </Button>
-              
-              {/* Notifications - Mobile */}
-              <NotificationsSidebar />
-              
-              {/* Theme Switcher - Mobile */}
-              <ThemeSwitcher />
-              
-              {/* Language Selector - Mobile */}
-              <LanguageSelector />
-              
-              {/* Invite Button - Destaque Principal */}
-              <WithPermission requiredPermissions={[PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail]} partialPermissionCheck >
-                <InviteModal onInviteSent={handleInviteSent}>
-                  <Button 
-                    size="sm"
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg h-9 px-2"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                  </Button>
-                </InviteModal>
-              </WithPermission>
+              {/* Mobile Actions Menu - Dropdown Animado */}
+              <MobileActionsMenu>
+                {/* Theme Switcher */}
+                <div className="flex flex-col justify-between items-center gap-2 p-2 rounded-md hover:bg-accent transition-colors">
+                  <ThemeSwitcher />
+                  <LanguageSelector />
+                  <WithPermission requiredPermissions={[PermissionResolverName.CreateInstitution]}>
+                      <CurrencySelector />
+                  </WithPermission>
+                </div>
+
+                {/* Invite Button */}
+                <WithPermission requiredPermissions={[PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail]} partialPermissionCheck>
+                  <InviteModal onInviteSent={handleInviteSent}>
+                    <Button 
+                      variant="default" 
+                      size="sm"
+                      className="justify-start gap-2 h-9"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      {/* <span>{t('common.invite')}</span> */}
+                    </Button>
+                  </InviteModal>
+                </WithPermission>
+              </MobileActionsMenu>
             </div>
           </div>
         </div>
@@ -134,41 +131,50 @@ export function MobileHeader() {
             </div>
 
             {/* Right Section - Action Buttons */}
-            <div className="flex items-center gap-3 flex-1 justify-end">
-              
-              {/* Chat */}
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className="h-9 w-9"
-                onClick={() => setIsChatSelectorOpen(true)}
-              >
-                <MessageCircle className="h-4 w-4" />
-              </Button>
-              
-              {/* Notifications */}
-              <NotificationsSidebar />
+         <div className="flex items-center gap-3 flex-1 justify-end">
+            
+            {/* Search Button */}
+            <SearchTrigger />
+            
+            {/* TODO: Implementar Chat no final */}
+            {/* <Button 
+              variant="outline" 
+              size="icon" 
+              className="h-9 w-9"
+              onClick={() => setIsChatSelectorOpen(true)}
+            >
+              <MessageCircle className="h-4 w-4" />
+            </Button> */}
+            
+            {/* TODO: Implementar Notifications no final */}
+            {/* <NotificationsSidebar /> */}
 
-              {/* Theme Switcher */}
-              <ThemeSwitcher />
+            {/* Theme Switcher */}
+            <ThemeSwitcher />
 
-              {/* Language Selector */}
-              <LanguageSelector />
+            {/* Language Selector */}
+            <LanguageSelector />
 
-              {/* Invite Button - Destaque */}
-              <WithPermission requiredPermissions={[PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail]} partialPermissionCheck >
+            {/* Currency Selector */}
+            <WithPermission requiredPermissions={[PermissionResolverName.CreateInstitution]}>
+              <CurrencySelector />
+            </WithPermission>
+          
+
+            {/* Invite Button - Far Right */}
+            <WithPermission requiredPermissions={[PermissionResolverName.InviteUser, PermissionResolverName.SendInviteEmail]} partialPermissionCheck >
               <InviteModal onInviteSent={handleInviteSent}>
-                  <Button 
-                    variant="default" 
-                    size="sm"
-                    className="flex items-center gap-2 h-9 px-4 ml-2 bg-primary hover:bg-primary/90 shadow-md"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    <span>Invite</span>
-                  </Button>
-                </InviteModal>
-              </WithPermission>
-            </div>
+                <Button 
+                  variant="default" 
+                  size="sm"
+                  className="flex items-center gap-2 h-9 px-4 ml-2"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span className="hidden sm:inline">{t('common.invite')}</span>
+                </Button>
+              </InviteModal>
+            </WithPermission>
+          </div>
           </div>
         </div>
       </header>

@@ -81,12 +81,7 @@ export default function ProfilePage() {
     handleFieldChange,
     updateLoading,
   } = useProfileEditor(userProfile, refetchUser)
-  // Debug when userProfile changes
-  useEffect(() => {
-    if (userProfile) {
-      console.log("🎯 userProfile updated, passing to useProfileEditor:", userProfile)
-    }
-  }, [userProfile])
+
 
 
 
@@ -134,7 +129,7 @@ export default function ProfilePage() {
       }
       if (!userProfile.church_id) {
         incompleteFields.push({ key: "church_id", label: t('profile.church.church'), section: "church" as const })
-      }    console.log("📊 Incomplete fields detected:", incompleteFields)
+      }   
   }
 
   // Handle field click to edit section

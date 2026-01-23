@@ -120,16 +120,12 @@ export default function ChurchDepartmentsPage() {
   
   // Debug: Log dados de igrejas e departamentos
   useEffect(() => {
-    console.log('🏛️ [Church Departments Page] Total Churches:', churches.length)
-    console.log('📋 [Church Departments Page] Total Departments:', departments.length)
-    console.log('📊 [Church Departments Page] Departments by Church:', 
       churches.map(church => ({
-        church_id: church.id,
-        church_name: church.name,
-        departments_count: church.departments?.length || 0,
-        departments: church.departments?.map(d => ({ id: d.id, name: d.name, church_id: d.church_id })) || []
-      }))
-    )
+      church_id: church.id,
+      church_name: church.name,
+      departments_count: church.departments?.length || 0,
+      departments: church.departments?.map(d => ({ id: d.id, name: d.name, church_id: d.church_id })) || []
+    }))
     
     // Validar consistência: todos os departamentos devem ter church_id correspondente
     const inconsistentDepartments = departments.filter(dept => {
@@ -138,19 +134,16 @@ export default function ChurchDepartmentsPage() {
     })
     
     if (inconsistentDepartments.length > 0) {
-      console.error('❌ [Data Inconsistency] Departments without valid church reference:', inconsistentDepartments)
+      console.error('[Data Inconsistency] Departments without valid church reference:', inconsistentDepartments)
     }
   }, [churches, departments])
   
   // Debug: Log dados de projetos e sua relação com departamentos
   useEffect(() => {
     if (!projects || projects.length === 0) {
-      console.log('📦 [Projects Data] No projects found')
       return
     }
-    
-    console.log('📦 [Projects Data] Total Projects:', projects.length)
-    console.log('📦 [Projects Data] Projects Loading:', projectsLoading)
+   
     
     // Mapear todos os projetos com seus department_id e church_department_id
     const projectsMapping = projects.map((project: any) => ({
@@ -165,21 +158,17 @@ export default function ChurchDepartmentsPage() {
       church_name: project.church_department?.church?.name || project.Church?.name || null
     }))
     
-    console.log('📦 [Projects Data] All Projects with Department Links:', projectsMapping)
     
     // Filtrar projetos que têm church_department_id
     const projectsWithChurchDept = projects.filter((p: any) => p.church_department_id)
-    console.log(`📦 [Projects Data] Projects with church_department_id: ${projectsWithChurchDept.length}/${projects.length}`)
     
     if (projectsWithChurchDept.length > 0) {
-      console.log('📦 [Projects Data] Projects linked to Church Departments:', 
-        projectsWithChurchDept.map((p: any) => ({
-          project_title: p.title,
-          church_department_id: p.church_department_id,
-          church_department_name: p.church_department?.name || 'Unknown',
-          church_name: p.church_department?.church?.name || 'Unknown'
-        }))
-      )
+      projectsWithChurchDept.map((p: any) => ({
+        project_title: p.title,
+        church_department_id: p.church_department_id,
+        church_department_name: p.church_department?.name || 'Unknown',
+        church_name: p.church_department?.church?.name || 'Unknown'
+      }))
     }
     
     // Validar se os church_department_id dos projetos correspondem aos departamentos da página
@@ -195,7 +184,6 @@ export default function ChurchDepartmentsPage() {
       }
     })
     
-    console.log('🔍 [Projects-Departments Validation] Church Department Matches:', projectDepartmentMatches)
     
     // Contar projetos por departamento
     const projectsByDepartment = new Map<string, any[]>()
@@ -207,8 +195,7 @@ export default function ChurchDepartmentsPage() {
       projectsByDepartment.get(deptId)?.push(project)
     })
     
-    console.log('📊 [Projects by Department] Project Count per Church Department:', 
-      Array.from(projectsByDepartment.entries()).map(([dept_id, projs]) => {
+   Array.from(projectsByDepartment.entries()).map(([dept_id, projs]) => {
         const dept = departments.find(d => d.id === dept_id)
         return {
           department_id: dept_id,
@@ -218,27 +205,12 @@ export default function ChurchDepartmentsPage() {
           projects: projs.map((p: any) => ({ id: p.id, title: p.title, status: p.status }))
         }
       })
-    )
     
     // Identificar departamentos sem projetos
     const departmentsWithoutProjects = departments.filter(dept => 
       !projectsByDepartment.has(dept.id)
     )
-    
-    if (departmentsWithoutProjects.length > 0) {
-      console.log('⚠️ [Departments Without Projects] Departments with no linked projects:', 
-        departmentsWithoutProjects.map(d => ({
-          department_id: d.id,
-          department_name: d.name,
-          church_name: d.church_name
-        }))
-      )
-    }
-    
-    // Log erro se houver
-    if (projectsError) {
-      console.error('❌ [Projects Data] Error loading projects:', projectsError)
-    }
+  
     
   }, [projects, departments, projectsLoading, projectsError])
   
@@ -315,13 +287,11 @@ export default function ChurchDepartmentsPage() {
         map.get(deptId)?.push(project)
       })
       
-      console.log('🗺️ [Projects Map] Projects grouped by church_department_id:', 
         Array.from(map.entries()).map(([dept_id, projs]) => ({
           department_id: dept_id,
           project_count: projs.length,
           projects: projs.map((p: any) => ({ id: p.id, title: p.title, status: p.status }))
         }))
-      )
     }
     
     return map
@@ -352,37 +322,31 @@ export default function ChurchDepartmentsPage() {
       }
     })
     
-    // Debug: Log enriched departments with project counts from REAL API data
-    console.log('📊 [Church Departments] Enriched Departments with REAL Project Data:', 
-      enriched.map(d => ({
-        id: d.id,
-        name: d.name,
-        church_name: d.church_name,
-        total_projects: d.total_projects,
-        open_projects: d.open_projects,
-        completed_projects: d.completed_projects,
-        projects_from_api: d.projects?.map((p: any) => ({ id: p.id, title: p.title, status: p.status }))
-      }))
-    )
+    enriched.map(d => ({
+      id: d.id,
+      name: d.name,
+      church_name: d.church_name,
+      total_projects: d.total_projects,
+      open_projects: d.open_projects,
+      completed_projects: d.completed_projects,
+      projects_from_api: d.projects?.map((p: any) => ({ id: p.id, title: p.title, status: p.status }))
+    }))
     
-    // Comparação entre dados da API de projetos vs. KPI hook (se houver discrepância)
     const departmentsWithDiscrepancy = enriched.filter(d => {
       const kpiData = departmentActivityMap.get(d.id)
       return kpiData && kpiData.project_count !== d.total_projects
     })
     
     if (departmentsWithDiscrepancy.length > 0) {
-      console.warn('⚠️ [Data Discrepancy] Departments with different project counts between API sources:', 
-        departmentsWithDiscrepancy.map(d => {
-          const kpiData = departmentActivityMap.get(d.id)
-          return {
-            department_name: d.name,
-            real_project_count: d.total_projects,
-            kpi_project_count: kpiData?.project_count || 0,
-            difference: d.total_projects - (kpiData?.project_count || 0)
-          }
-        })
-      )
+       departmentsWithDiscrepancy.map(d => {
+        const kpiData = departmentActivityMap.get(d.id)
+        return {
+          department_name: d.name,
+          real_project_count: d.total_projects,
+          kpi_project_count: kpiData?.project_count || 0,
+          difference: d.total_projects - (kpiData?.project_count || 0)
+        }
+      })
     }
     
     return enriched
@@ -426,17 +390,8 @@ export default function ChurchDepartmentsPage() {
 
   // Dados para KPI Cards Carrossel com Proteção de Privacidade
   const kpiCardsData: ProtectedKPICardData[] = useMemo(() => {
-    console.log('📊 [KPI Cards Data] Building KPI Cards:', {
-      hasKpis: !!kpis,
-      kpisValue: kpis,
-      filteredDepartmentsCount: filteredDepartments.length,
-      projectsByYearCount: projectsByYear.length,
-      hasTranslations: !!(t.church_page as any)?.kpi_cards
-    })
     
-    // ⚠️ CRITICAL: Não retornar array vazio se kpis for undefined
-    // Os cards devem SEMPRE renderizar, mesmo sem dados do hook
-    // Se não houver permissão, o ProtectedKPICard mostrará skeleton com overlay
+  
     
     const kpiCardsTranslations = (t.church_page as any)?.kpi_cards || {}
 
@@ -498,13 +453,7 @@ export default function ChurchDepartmentsPage() {
         requiredPermission: [PermissionResolverName.Projects, PermissionResolverName.Departments]
       }
     ]
-    
-    console.log('✅ [KPI Cards Data] Cards Created:', {
-      totalCards: cards.length,
-      cardIds: cards.map(c => c.id),
-      cardValues: cards.map(c => ({ id: c.id, value: c.value })),
-      willRenderWithCustom: cards.length + 1
-    })
+  
     
     return cards
   }, [filteredDepartments, projectsByYear, t, kpis]);
@@ -1312,14 +1261,7 @@ export default function ChurchDepartmentsPage() {
               const totalDays = 365 + (now.getFullYear() % 4 === 0 ? 1 : 0)
               const daysPassed = Math.floor((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24)) + 1
               const percentage = Math.round((daysPassed / totalDays) * 100)
-              
-              console.log('📅 [Year Progress Card] Creating Year Progress Card:', {
-                year: now.getFullYear(),
-                daysPassed,
-                totalDays,
-                percentage,
-                quarter: Math.ceil((now.getMonth() + 1) / 3)
-              })
+  
               
               const YearProgressCard = (
                 <EntityInfoCard
@@ -1343,12 +1285,7 @@ export default function ChurchDepartmentsPage() {
                 />
               )
               
-              console.log('🎠 [KPI Carousel - General View] Rendering carousel with:', {
-                kpiCardsCount: kpiCardsData.length,
-                hasCustomFirstItem: !!YearProgressCard,
-                isLoading,
-                minCardsForCarousel: 2
-              })
+
               return (
                 <ProtectedKPICarousel
                   data={kpiCardsData}

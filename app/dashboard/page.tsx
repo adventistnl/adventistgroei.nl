@@ -231,7 +231,7 @@ export default function DashboardPage() {
   const allUsersFromInstitutions = React.useMemo(() => {
     // Se temos users direto da query, use-os (mais rápido e confiável)
     if (allUsers && allUsers.length > 0) {
-      console.log('📊 [Dashboard] Usando users direto da query:', allUsers.length)
+ 
       return allUsers.filter((user: any) => {
         if (user.is_deleted) return false
         
@@ -245,8 +245,7 @@ export default function DashboardPage() {
       })
     }
     
-    // Fallback: Extrair de institutions (caso allUsers não esteja disponível)
-    console.log('📊 [Dashboard] Extraindo users de institutions:', filteredInstitutionsByYear.length)
+
     const users: any[] = []
     filteredInstitutionsByYear.forEach((institution: any) => {
       if (institution.users) {
@@ -263,7 +262,6 @@ export default function DashboardPage() {
         })
       }
     })
-    console.log('📊 [Dashboard] Total users extraídos:', users.length)
     return users
   }, [allUsers, filteredInstitutionsByYear, selectedYear])
 
@@ -280,53 +278,11 @@ export default function DashboardPage() {
       const monthMatch = createdDate.getMonth() === parseInt(monthFilter)
       return yearMatch && monthMatch
     })
-    
-    // DEBUG: Validação dos dados que entram na tabela
-    console.log('🔍 [DASHBOARD DATA FLOW] ===================================')
-    console.log('📊 allUsers (from query):', allUsers.length)
-    console.log('📊 allUsersFromInstitutions:', allUsersFromInstitutions.length)
-    console.log('📊 filteredUsers (final):', filtered.length)
-    console.log('📊 First user from allUsers:', allUsers[0] ? {
-      id: allUsers[0].id,
-      name: allUsers[0].name,
-      user_roles: allUsers[0].user_roles
-    } : 'No users')
-    console.log('📊 First user from allUsersFromInstitutions:', allUsersFromInstitutions[0] ? {
-      id: allUsersFromInstitutions[0].id,
-      name: allUsersFromInstitutions[0].name,
-      user_roles: allUsersFromInstitutions[0].user_roles
-    } : 'No users')
-    console.log('📊 First user from filteredUsers:', filtered[0] ? {
-      id: filtered[0].id,
-      name: filtered[0].name,
-      user_roles: filtered[0].user_roles
-    } : 'No users')
-    console.log('🔍 [END DASHBOARD DATA FLOW] ===================================')
+
     
     return filtered
   }, [allUsersFromInstitutions, allUsers, selectedYear, selectedMonth, filterValues.month])
 
-  // DEBUG: Validação dos dados que entram na tabela do Dashboard
-  React.useEffect(() => {
-    console.log('🔍 [DASHBOARD TABLE DEBUG] ===================================')
-    console.log('📊 Total filteredUsers:', filteredUsers.length)
-    console.log('📊 First 3 users data:', filteredUsers.slice(0, 3).map((u: any) => ({
-      id: u.id,
-      name: u.name,
-      email: u.email,
-      church: u.church ? { id: u.church.id, name: u.church.name } : null,
-      user_roles: u.user_roles?.map((ur: any) => ({
-        id: ur.id,
-        role: { id: ur.role?.id, name: ur.role?.name, key_code: ur.role?.key_code }
-      })),
-      is_deleted: u.is_deleted,
-      created_at: u.created_at
-    })))
-    console.log('📊 Sample user_roles structure:', filteredUsers[0]?.user_roles)
-    console.log('📊 Does first user have user_roles?', !!filteredUsers[0]?.user_roles)
-    console.log('📊 User_roles length:', filteredUsers[0]?.user_roles?.length)
-    console.log('🔍 [END DASHBOARD TABLE DEBUG] ===================================')
-  }, [filteredUsers])
 
   // Extract ALL churches from filtered institutions
   const allChurchesFromInstitutions = React.useMemo(() => {
@@ -516,30 +472,7 @@ export default function DashboardPage() {
     const activeChurchesCount = filteredChurches.length
     const activeRegionsCount = activeRegions.length
     
-    // Debug: Log KPI data to verify correct extraction and year filtering
-    console.log('📊 [Dashboard KPIs] Data Summary:', {
-      selectedYear,
-      totalUsers: activeUsers,
-      totalRegions: activeRegionsCount,
-      departments: {
-        institutionDepartments: institutionDepartmentsCount,
-        churchDepartments: churchDepartmentsCount,
-        totalDepartments: institutionDepartmentsCount + churchDepartmentsCount,
-        institutionDeptsSample: institutionDepartmentsList.slice(0, 3).map((d: any) => ({ 
-          id: d.id, 
-          name: d.name, 
-          church_id: d.church_id,
-          institution_name: d.institution_name 
-        })),
-        churchDeptsSample: churchDepartmentsList.slice(0, 3).map((d: any) => ({ 
-          id: d.id, 
-          name: d.name, 
-          church_id: d.church_id,
-          church_name: d.church_name,
-          institution_name: d.institution_name 
-        }))
-      }
-    })
+
 
     return {
       // Projects KPIs

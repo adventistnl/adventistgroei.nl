@@ -26,6 +26,7 @@ import { ChurchTypeSelector } from "./church-type-selector"
 import { RegionSelector } from "./region-selector"
 import { ProvinceAndCitySelector } from "./province-and-city-selector"
 import { LeaderSelector } from "./leader-selector"
+import { ZipCodeInput } from "@/components/shared/zip-code-input"
 import { churchTranslations } from "@/lib/translations/churches"
 export interface AddChurchModalProps {
   isOpen: boolean
@@ -57,6 +58,8 @@ export function AddChurchModal({
     country: '',
     state: '',
     type: null,
+    zip_code: '',
+    house_number: 1,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSpecialChurch, setIsSpecialChurch] = useState(false)
@@ -84,6 +87,8 @@ export function AddChurchModal({
         country: institutionCountry,
         state: '',
         type: null,
+        zip_code: '',
+        house_number: 1,
       })
       setErrors({})
       setCurrentStep(1)
@@ -130,12 +135,15 @@ export function AddChurchModal({
     }
 
     if (step === 2) {
-      // Step 2: Geographic data - country and state are required for creation
-      if (!formData.country?.trim()) {
-        newErrors.country = tChurch.validation.country_required
+      // Step 2: Geographic data - zip_code, city, and state are required
+      if (!formData.zip_code?.trim()) {
+        newErrors.zip_code = 'ZIP code is required'
+      }
+      if (!formData.city?.trim()) {
+        newErrors.city = 'City is required (auto-filled from ZIP code)'
       }
       if (!formData.state?.trim()) {
-        newErrors.state = tChurch.validation.province_required
+        newErrors.state = 'Province is required (auto-filled from ZIP code)'
       }
     }
 
@@ -203,6 +211,8 @@ export function AddChurchModal({
         country: formData.country,
         state: formData.state,
         type: formData.type,
+        zip_code: formData.zip_code?.trim(),
+        house_number: formData.house_number,
       }
       const res = await createChurch({ variables })
       if (!res || !res.data) {
@@ -239,6 +249,8 @@ export function AddChurchModal({
       city: '',
       country: institutionCountry,
       state: '',
+      zip_code: '',
+      house_number: 1,
     })
     setErrors({})
     setCurrentStep(1)
@@ -298,27 +310,47 @@ export function AddChurchModal({
         )
 
       case 2:
-        // Step 2: Geographic Data (Province, City, Region)
+        // Step 2: Geographic Data (ZIP Code auto-fills City & Province)
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
               <h3 className="text-lg font-medium text-foreground">{tChurch.steps.step_2_title}</h3>
-              <p className="text-sm text-muted-foreground">{tChurch.steps.step_2_description}</p>
+              <p className="text-sm text-muted-foreground">Enter house number and ZIP code to automatically fill city and province</p>
             </div>
             
-            <div className="space-y-4 max-w-md mx-auto">
-              <ProvinceAndCitySelector
-                provinceValue={province}
-                onProvinceChangeAction={(value: string) => {
-                  setProvince(value)
-                  handleInputChange('state', value)
-                }}
+            <div className="max-w-md mx-auto space-y-4">
+              {/* House Number Input */}
+              <div className="space-y-2">
+                <Label htmlFor="house_number" className="flex items-center gap-2 text-sm">
+                  <Home className="w-4 h-4 text-muted-foreground" />
+                  House Number *
+                </Label>
+                <Input
+                  id="house_number"
+                  type="number"
+                  value={formData.house_number || 1}
+                  onChange={(e) => handleInputChange('house_number', parseInt(e.target.value) || 1)}
+                  placeholder="e.g., 29"
+                  disabled={isLoading}
+                  className="h-10"
+                  min={1}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Required for accurate ZIP code validation
+                </p>
+              </div>
+
+              <ZipCodeInput
+                zipValue={formData.zip_code || ''}
+                onZipChange={(value) => handleInputChange('zip_code', value)}
                 cityValue={formData.city || ''}
-                onCityChangeAction={(value: string) => handleInputChange('city', value)}
-                countryCode={institutionCountry}
-                isLoading={isLoading || regionsLoading}
-                provinceError={errors.state}
-                cityError={errors.city}
+                onCityChange={(value) => handleInputChange('city', value)}
+                provinceValue={formData.state || ''}
+                onProvinceChange={(value) => handleInputChange('state', value)}
+                houseNumber={formData.house_number || 1}
+                isLoading={isLoading}
+                zipError={errors.zip_code}
+                required
               />
             </div>
           </div>

@@ -69,6 +69,25 @@ export const subsidyManagementTranslations = {
       change: "Change Priority",
       changedTo: "Priority changed to {{priority}}",
       error: "Error changing priority"
+    },
+    charts: {
+      requestsByDepartment: {
+        title: "Requests Over Time by Department",
+        description: "Monthly subsidy requests by all departments",
+        descriptionWithYear: "Monthly subsidy requests by all departments - {{year}}",
+        noData: "No department data available",
+        departmentsTracked: "{{count}} departments tracked",
+        top: "Top",
+        timeRanges: {
+          last12Months: "Last 12 months",
+          last6Months: "Last 6 months",
+          last3Months: "Last 3 months"
+        },
+        chartTypes: {
+          area: "Area",
+          bar: "Bar"
+        }
+      }
     }
   },
   nl: {
@@ -141,6 +160,25 @@ export const subsidyManagementTranslations = {
       change: "Prioriteit Wijzigen",
       changedTo: "Prioriteit gewijzigd in {{priority}}",
       error: "Fout bij wijzigen prioriteit"
+    },
+    charts: {
+      requestsByDepartment: {
+        title: "Aanvragen per Afdeling in de Tijd",
+        description: "Maandelijkse subsidieaanvragen per alle afdelingen",
+        descriptionWithYear: "Maandelijkse subsidieaanvragen per alle afdelingen - {{year}}",
+        noData: "Geen afdelingsgegevens beschikbaar",
+        departmentsTracked: "{{count}} afdelingen gevolgd",
+        top: "Top",
+        timeRanges: {
+          last12Months: "Laatste 12 maanden",
+          last6Months: "Laatste 6 maanden",
+          last3Months: "Laatste 3 maanden"
+        },
+        chartTypes: {
+          area: "Gebied",
+          bar: "Balk"
+        }
+      }
     }
   },
   pt: {
@@ -203,6 +241,25 @@ export const subsidyManagementTranslations = {
       change: "Alterar Prioridade",
       changedTo: "Prioridade alterada para {{priority}}",
       error: "Erro ao alterar prioridade"
+    },
+    charts: {
+      requestsByDepartment: {
+        title: "Solicitações ao Longo do Tempo por Departamento",
+        description: "Solicitações de subsídio mensais por todos os departamentos",
+        descriptionWithYear: "Solicitações de subsídio mensais por todos os departamentos - {{year}}",
+        noData: "Nenhum dado de departamento disponível",
+        departmentsTracked: "{{count}} departamentos monitorados",
+        top: "Principal",
+        timeRanges: {
+          last12Months: "Últimos 12 meses",
+          last6Months: "Últimos 6 meses",
+          last3Months: "Últimos 3 meses"
+        },
+        chartTypes: {
+          area: "Área",
+          bar: "Barra"
+        }
+      }
     }
   }
 }

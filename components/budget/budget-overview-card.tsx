@@ -16,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { ChartHeader } from "@/components/charts/chart-header"
 import {
   ChartContainer,
   ChartStyle,
@@ -381,119 +382,116 @@ export function BudgetOverviewCard({
       >
         <Card data-chart={id} className={`bg-card text-card-foreground flex gap-6 rounded-xl border p-3 shadow-sm h-full flex flex-col min-h-[500px] ${className}`}>
         <ChartStyle id={id} config={chartConfig} />
-        <CardHeader className="flex-row items-start space-y-0 pb-0">
-          <div className="grid gap-1">
-            <div className="flex w-full justify-between">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <Users className="w-5 h-5" />
+        <ChartHeader
+          title={
+            <div className="flex items-center gap-2 text-lg font-semibold">
+              <Users className="w-5 h-5" />
               {currentLanguage === 'pt' ? 'Distribuição por Departamentos' : currentLanguage === 'nl' ? 'Verdeling per Afdeling' : 'Department Distribution'}
-              </CardTitle>
-              {/* <InlinePrivacyToggle config={privacyConfig} /> */}
-            {chartData.length > 0 && (
-                      <Select value={activeItem} onValueChange={setActiveItem}>
-                        <SelectTrigger
-                          className="ml-auto h-7 w-[180px] rounded-lg pl-2.5"
-                          aria-label="Select a department"
-                        >
-                          <SelectValue placeholder="Selecionar departamento" />
-                        </SelectTrigger>
-                        <SelectContent align="end" className="rounded-xl max-h-[200px] overflow-y-auto">
-                          {/* Mostrar departamentos ordenados por valor alocado (maior primeiro) */}
-                          {itemKeys
-                            .filter((key) => {
-                              const chartItem = chartData.find(item => item.name === key)
-                              return chartItem && chartItem.type === 'department' && chartItem.amount > 0
-                            })
-                            .sort((a, b) => {
-                              // Ordenar por valor decrescente
-                              const itemA = chartData.find(item => item.name === a)
-                              const itemB = chartData.find(item => item.name === b)
-                              return (itemB?.amount || 0) - (itemA?.amount || 0)
-                            })
-                            .map((key, index) => {
-                              const config = chartConfig[key as keyof typeof chartConfig]
-                              const chartItem = chartData.find(item => item.name === key)
-                              if (!config || !chartItem) return null
-
-                              return (
-                                <SelectItem
-                                  key={key}
-                                  value={key}
-                                  className="rounded-lg [&_span]:flex"
-                                >
-                                  <div className="flex items-center justify-between w-full text-xs">
-                                    <div className="flex items-center gap-2">
-                                      <span
-                                        className="flex h-3 w-3 shrink-0 rounded-xs"
-                                        style={{
-                                          backgroundColor: config.color,
-                                        }}
-                                      />
-                                      <span className="font-medium truncate max-w-[100px]">{config?.label}</span>
-                                    </div>
-                                    <span className="text-muted-foreground ml-2 font-semibold">
-                                      {chartItem.percentage}%
-                                    </span>
-                                  </div>
-                                </SelectItem>
-                              )
-                            })}
-                          
-                          {/* Separador dinâmico */}
-                          {itemKeys.some(key => chartData.find(item => item.name === key && item.type === 'department' && item.amount > 0)) &&
-                          itemKeys.some(key => chartData.find(item => item.name === key && item.type === 'available' && item.amount > 0)) && (
-                            <div className="border-t my-1" />
-                          )}
-                          
-                          {/* Valor disponível com destaque */}
-                          {itemKeys
-                            .filter((key) => {
-                              const chartItem = chartData.find(item => item.name === key)
-                              return chartItem && chartItem.type === 'available' && chartItem.amount > 0
-                            })
-                            .map((key) => {
-                              const config = chartConfig[key as keyof typeof chartConfig]
-                              const chartItem = chartData.find(item => item.name === key)
-                              if (!config || !chartItem) return null
-
-                              return (
-                                <SelectItem
-                                  key={key}
-                                  value={key}
-                                  className="rounded-lg [&_span]:flex"
-                                >
-                                  <div className="flex items-center justify-between w-full text-xs">
-                                    <div className="flex items-center gap-2">
-                                      <span
-                                        className="flex h-3 w-3 shrink-0 rounded-xs"
-                                        style={{
-                                          backgroundColor: config.color,
-                                        }}
-                                      />
-                                      <span className="font-medium" style={{ color: 'hsl(var(--budget-available))' }}>{config?.label}</span>
-                                    </div>
-                                    <span className="ml-2 font-semibold" style={{ color: 'hsl(var(--budget-available))' }}>
-                                      {chartItem.percentage}%
-                                    </span>
-                                  </div>
-                                </SelectItem>
-                              )
-                            })}
-                        </SelectContent>
-                      </Select>
-                    )}
-          </div>
-
-          <CardDescription>
-            {currentLanguage === 'pt' 
+            </div>
+          }
+          description={
+            currentLanguage === 'pt' 
               ? `${departmentStats.departmentsWithAllocation} de ${departmentStats.totalDepartments} departamentos com orçamento alocado` 
               : currentLanguage === 'nl' 
               ? `${departmentStats.departmentsWithAllocation} van ${departmentStats.totalDepartments} afdelingen met toegewezen budget` 
-              : `${departmentStats.departmentsWithAllocation} of ${departmentStats.totalDepartments} departments with allocated budget`}
-          </CardDescription>
-        </div>
-       
-      </CardHeader>
+              : `${departmentStats.departmentsWithAllocation} of ${departmentStats.totalDepartments} departments with allocated budget`
+          }
+          actions={
+            chartData.length > 0 ? (
+              <Select value={activeItem} onValueChange={setActiveItem}>
+                <SelectTrigger
+                  className="w-full sm:w-[180px] rounded-lg pl-2.5"
+                  aria-label="Select a department"
+                >
+                  <SelectValue placeholder="Selecionar departamento" />
+                </SelectTrigger>
+                <SelectContent align="end" className="rounded-xl max-h-[200px] overflow-y-auto">
+                  {/* Mostrar departamentos ordenados por valor alocado (maior primeiro) */}
+                  {itemKeys
+                    .filter((key) => {
+                      const chartItem = chartData.find(item => item.name === key)
+                      return chartItem && chartItem.type === 'department' && chartItem.amount > 0
+                    })
+                    .sort((a, b) => {
+                      // Ordenar por valor decrescente
+                      const itemA = chartData.find(item => item.name === a)
+                      const itemB = chartData.find(item => item.name === b)
+                      return (itemB?.amount || 0) - (itemA?.amount || 0)
+                    })
+                    .map((key, index) => {
+                      const config = chartConfig[key as keyof typeof chartConfig]
+                      const chartItem = chartData.find(item => item.name === key)
+                      if (!config || !chartItem) return null
+
+                      return (
+                        <SelectItem
+                          key={key}
+                          value={key}
+                          className="rounded-lg [&_span]:flex"
+                        >
+                          <div className="flex items-center justify-between w-full text-xs">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="flex h-3 w-3 shrink-0 rounded-xs"
+                                style={{
+                                  backgroundColor: config.color,
+                                }}
+                              />
+                              <span className="font-medium truncate max-w-[100px]">{config?.label}</span>
+                            </div>
+                            <span className="text-muted-foreground ml-2 font-semibold">
+                              {chartItem.percentage}%
+                            </span>
+                          </div>
+                        </SelectItem>
+                      )
+                    })}
+                  
+                  {/* Separador dinâmico */}
+                  {itemKeys.some(key => chartData.find(item => item.name === key && item.type === 'department' && item.amount > 0)) &&
+                  itemKeys.some(key => chartData.find(item => item.name === key && item.type === 'available' && item.amount > 0)) && (
+                    <div className="border-t my-1" />
+                  )}
+                  
+                  {/* Valor disponível com destaque */}
+                  {itemKeys
+                    .filter((key) => {
+                      const chartItem = chartData.find(item => item.name === key)
+                      return chartItem && chartItem.type === 'available' && chartItem.amount > 0
+                    })
+                    .map((key) => {
+                      const config = chartConfig[key as keyof typeof chartConfig]
+                      const chartItem = chartData.find(item => item.name === key)
+                      if (!config || !chartItem) return null
+
+                      return (
+                        <SelectItem
+                          key={key}
+                          value={key}
+                          className="rounded-lg [&_span]:flex"
+                        >
+                          <div className="flex items-center justify-between w-full text-xs">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="flex h-3 w-3 shrink-0 rounded-xs"
+                                style={{
+                                  backgroundColor: config.color,
+                                }}
+                              />
+                              <span className="font-medium" style={{ color: 'hsl(var(--budget-available))' }}>{config?.label}</span>
+                            </div>
+                            <span className="ml-2 font-semibold" style={{ color: 'hsl(var(--budget-available))' }}>
+                              {chartItem.percentage}%
+                            </span>
+                          </div>
+                        </SelectItem>
+                      )
+                    })}
+                </SelectContent>
+              </Select>
+            ) : undefined
+          }
+        />
       <CardContent className="flex flex-1 justify-center pb-0">
         {budgetKpisLoading ? (
           <div className="flex flex-col items-center gap-4 py-8">

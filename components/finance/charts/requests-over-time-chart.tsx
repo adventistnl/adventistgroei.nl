@@ -3,6 +3,7 @@
 import * as React from "react"
 import { TrendingUp } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
+import { ChartHeader } from "@/components/charts/chart-header"
 import {
   Card,
   CardContent,
@@ -14,11 +15,10 @@ import {
 import {
   ChartConfig,
   ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { ChartLegendContainer, ChartLegendItem } from "@/components/charts/chart-legend-item"
 import { Button } from "@/components/ui/button"
 import { DollarSign } from "lucide-react"
 import { useCurrency } from "@/contexts/currency-context"
@@ -131,61 +131,55 @@ export function RequestsOverTimeChart({
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b pb-4 sm:flex-row">
-        <div className="grid flex-1 gap-1">
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-gray-600" />
-            {translations?.title || "Requests Over Time"}
-          </CardTitle>
-          <CardDescription>
-            {translations?.description.replace('{{year}}', selectedYear.toString()) || `Monthly subsidy request status - ${selectedYear}`}
-          </CardDescription>
-        </div>
-        
-        {/* Quarter Filter Toggle */}
-        <div className="flex items-center gap-1 border rounded-md p-1">
-          <Button
-            variant={selectedQuarter === 'all' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setSelectedQuarter('all')}
-            className="h-7 px-3 text-xs"
-          >
-            {translations?.quarterFilters.all || "All"}
-          </Button>
-          <Button
-            variant={selectedQuarter === 'q1' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setSelectedQuarter('q1')}
-            className="h-7 px-3 text-xs"
-          >
-            {translations?.quarterFilters.q1 || "Q1"}
-          </Button>
-          <Button
-            variant={selectedQuarter === 'q2' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setSelectedQuarter('q2')}
-            className="h-7 px-3 text-xs"
-          >
-            {translations?.quarterFilters.q2 || "Q2"}
-          </Button>
-          <Button
-            variant={selectedQuarter === 'q3' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setSelectedQuarter('q3')}
-            className="h-7 px-3 text-xs"
-          >
-            {translations?.quarterFilters.q3 || "Q3"}
-          </Button>
-          <Button
-            variant={selectedQuarter === 'q4' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setSelectedQuarter('q4')}
-            className="h-7 px-3 text-xs"
-          >
-            {translations?.quarterFilters.q4 || "Q4"}
-          </Button>
-        </div>
-      </CardHeader>
+      <ChartHeader
+        title={translations?.title || "Requests Over Time"}
+        description={translations?.description.replace('{{year}}', selectedYear.toString()) || `Monthly subsidy request status - ${selectedYear}`}
+        actionsOrientation="responsive"
+        actions={
+          <div className="flex items-center gap-1 border rounded-lg p-1">
+            <Button
+              variant={selectedQuarter === 'all' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setSelectedQuarter('all')}
+              className="h-7 px-2"
+            >
+              {translations?.quarterFilters.all || "All"}
+            </Button>
+            <Button
+              variant={selectedQuarter === 'q1' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setSelectedQuarter('q1')}
+              className="h-7 px-2"
+            >
+              {translations?.quarterFilters.q1 || "Q1"}
+            </Button>
+            <Button
+              variant={selectedQuarter === 'q2' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setSelectedQuarter('q2')}
+              className="h-7 px-2"
+            >
+              {translations?.quarterFilters.q2 || "Q2"}
+            </Button>
+            <Button
+              variant={selectedQuarter === 'q3' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setSelectedQuarter('q3')}
+              className="h-7 px-2"
+            >
+              {translations?.quarterFilters.q3 || "Q3"}
+            </Button>
+            <Button
+              variant={selectedQuarter === 'q4' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setSelectedQuarter('q4')}
+              className="h-7 px-2"
+            >
+              {translations?.quarterFilters.q4 || "Q4"}
+            </Button>
+          </div>
+        }
+      />
       <CardContent className="flex-1 pt-6">
         <ChartContainer config={chartConfig} className="h-[300px] w-full">
           <BarChart accessibilityLayer data={filteredData}>
@@ -198,7 +192,6 @@ export function RequestsOverTimeChart({
               tickFormatter={(value) => value.slice(0, 3)}
             />
             <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-            <ChartLegend content={<ChartLegendContent />} />
             <Bar
               dataKey="pending"
               stackId="a"
@@ -231,6 +224,27 @@ export function RequestsOverTimeChart({
             />
           </BarChart>
         </ChartContainer>
+        
+        {/* Custom Legend with tooltips */}
+        <ChartLegendContainer layout="horizontal" className="mt-4">
+          {Object.keys(chartConfig).map((status) => {
+            const config = chartConfig[status as keyof typeof chartConfig]
+            const count = totals[status as keyof typeof totals] as number
+            const percentage = totals.total > 0 ? Math.round((count / totals.total) * 100) : 0
+            
+            return (
+              <ChartLegendItem
+                key={status}
+                label={config.label}
+                description={`${config.label} • ${count} requests • ${percentage}%`}
+                color={config.color}
+                value={count}
+                valueFormatter={(val) => `${val} requests`}
+                variant="compact"
+              />
+            )
+          })}
+        </ChartLegendContainer>
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 text-sm">
         <div className="flex gap-2 leading-none font-medium">

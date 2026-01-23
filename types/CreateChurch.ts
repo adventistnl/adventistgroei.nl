@@ -42,4 +42,6 @@ export interface CreateChurchVariables {
   country: string;
   state: string;
   type?: ChurchType | null;
+  zip_code?: string;
+  house_number?: number;
 }

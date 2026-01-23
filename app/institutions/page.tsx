@@ -66,6 +66,8 @@ import { InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { GridContainer } from "@/components/shared/grid-container"
 import { EntityInfoCard, EntityInfoCardAction } from "@/components/shared/entity-info-card"
+import { ChartHeader } from "@/components/charts/chart-header"
+import { YearFilter } from "@/components/shared/year-filter"
 
 // Modals - Lazy loaded
 const ContactViewEditModal = React.lazy(() => import("@/components/modals/contact").then(module => ({ default: module.ContactViewEditModal })))
@@ -941,59 +943,6 @@ export default function InstitutionsPage() {
   }
 
   // ============================================================================
-  // SUB-COMPONENTS
-  // ============================================================================
-  const YearFilter = ({ showAddButton = true }: { showAddButton?: boolean }) => {
-    const currentYear = new Date().getFullYear()
-    const maxAllowedYear = currentYear + 2
-    const canAddMore = Math.max(...availableYears) < maxAllowedYear
-
-    return (
-      <div className="flex items-center gap-3 overflow-x-auto pb-2 scroll-smooth" style={{ scrollbarWidth: 'thin' }}>
-        {availableYears.map((year) => (
-          <Button
-            key={year}
-            variant="outline"
-            size="sm"
-            onClick={() => setSelectedYear(year)}
-            className={`
-              flex-shrink-0 min-w-[80px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
-              ${
-                selectedYear === year 
-                  ? 'bg-primary text-primary-foreground border-primary shadow-md hover:bg-primary/90' 
-                  : 'bg-muted text-muted-foreground border-muted hover:bg-muted/80 hover:text-foreground hover:border-muted-foreground/50'
-              }
-            `}
-          >
-            {year}
-          </Button>
-        ))}
-        
-        {/* Add New Year Button */}
-        {showAddButton && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleAddYear}
-            disabled={!canAddMore}
-            className={`
-              flex-shrink-0 min-w-[100px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
-              ${
-                canAddMore 
-                  ? 'border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground hover:border-muted-foreground/60 hover:bg-muted/50' 
-                  : 'opacity-40 cursor-not-allowed border-dashed border-muted-foreground/20 text-muted-foreground/50'
-              }
-            `}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            {t('common.add_year') || "Add Year"}
-          </Button>
-        )}
-      </div>
-    )
-  }
-
-  // ============================================================================
   // MAIN RENDER
   // ============================================================================
   return (
@@ -1074,7 +1023,14 @@ export default function InstitutionsPage() {
           </div>
 
           {/* Year Filter */}
-          <YearFilter showAddButton={false} />
+          <YearFilter 
+            availableYears={availableYears}
+            selectedYear={selectedYear}
+            onYearChange={setSelectedYear}
+            onAddYear={handleAddYear}
+            showAddButton={false}
+            className="mb-0"
+          />
         </div>
 
         {/* KPI Cards Carousel */}
@@ -1187,21 +1143,17 @@ export default function InstitutionsPage() {
 
         {/* Institutions Table */}
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col gap-1">
-                <CardTitle className="flex items-center gap-2">
-                  <Building className="w-5 h-5" />
-                  {t('institutions.table_card.title')}
-                </CardTitle>
-                <CardDescription>{t('institutions.table_card.description')}</CardDescription>
-              </div>
+          <ChartHeader
+            title={t('institutions.table_card.title')}
+            description={t('institutions.table_card.description')}
+            actionsOrientation="responsive"
+            actions={
               <InlinePrivacyToggle 
                 config={budgetPrivacyConfig}
                 className="flex-shrink-0"
               />
-            </div>
-          </CardHeader>
+            }
+          />
           <CardContent className="overflow-hidden">
             <UseTable
               columns={columns}

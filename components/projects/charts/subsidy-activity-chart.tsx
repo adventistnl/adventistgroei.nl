@@ -7,9 +7,6 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "rec
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { projectTranslations } from "@/lib/translations/projects"
@@ -25,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-
+import { ChartHeader } from "@/components/shared/chart-header"
 import { SubsidyRequestCardData } from "../subsidy-request-card"
 import { ChartColumnBig, ChartLine } from "lucide-react"
 
@@ -90,7 +87,6 @@ export function SubsidyActivityChart({
         // Categorizar por status usando os mesmos status do container
         switch (subsidy.status) {
           case "approved":
-          case "accepted": // Fallback para compatibilidade
             monthlyData[monthIndex].approved += amount
             break
           case "pending":
@@ -147,7 +143,7 @@ export function SubsidyActivityChart({
       color: "hsl(0, 84%, 60%)", // Vermelho - rejeitado
     },
     closed: {
-      label: t.subsidy?.deleteRequest?.statusLabels?.closed || t.charts?.legend?.closed || t.subsidy?.closed || "Closed",
+      label: t.subsidy?.deleteRequest?.statusLabels?.closed || "Closed",
       color: "hsl(240, 5%, 41%)", // Cinza - fechado
     },
   }
@@ -171,10 +167,11 @@ export function SubsidyActivityChart({
   if (loading) {
     return (
       <Card className="h-full flex flex-col">
-        <CardHeader className="border-b py-5">
-          <div className="h-6 bg-muted rounded w-48 animate-pulse" />
-          <div className="h-4 bg-muted rounded w-64 animate-pulse mt-2" />
-        </CardHeader>
+        <ChartHeader
+          title=""
+          description=""
+          className="border-b py-5"
+        />
         <CardContent className="flex-1">
           <div className="h-[300px] bg-muted rounded animate-pulse" />
         </CardContent>
@@ -184,55 +181,56 @@ export function SubsidyActivityChart({
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
-        <div className="grid flex-1 gap-1">
-          <CardTitle>{t.charts?.subsidyActivity?.title || t.subsidy?.requestsTitle || "Subsidy Activity"}</CardTitle>
-          <CardDescription>
-            {(t.charts?.subsidyActivity?.description || "{{count}} requests totaling {{total}}K")
-              .replace('{{count}}', String(totals.count))
-              .replace('{{total}}', formatCurrency(totals.total * 1000, { compact: true }))}
-          </CardDescription>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center border rounded-md">
-            <Button
-              variant={chartType === "area" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setChartType("area")}
-              className="rounded-r-none border-r-0 h-8"
-            >
-              <ChartLine />
-            </Button>
-            <Button
-              variant={chartType === "bar" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setChartType("bar")}
-              className="rounded-l-none h-8"
-            >
-              <ChartColumnBig />
-            </Button>
-          </div>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger
-              className="w-[160px] rounded-lg sm:ml-auto"
-              aria-label="Selecionar período"
-            >
-              <SelectValue placeholder={t.charts.subsidyActivity.last12Months} />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="12m" className="rounded-lg">
-                {t.charts?.subsidyActivity?.last12Months || t.common?.last12Months || "Last 12 months"}
-              </SelectItem>
-              <SelectItem value="6m" className="rounded-lg">
-                {t.charts?.subsidyActivity?.last6Months || t.common?.last6Months || "Last 6 months"}
-              </SelectItem>
-              <SelectItem value="3m" className="rounded-lg">
-                {t.charts?.subsidyActivity?.last3Months || t.common?.last3Months || "Last 3 months"}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </CardHeader>
+      <ChartHeader
+        title={t.charts?.subsidyActivity?.title || t.subsidy?.requestsTitle || "Subsidy Activity"}
+        description={
+          (t.charts?.subsidyActivity?.description || "{{count}} requests totaling {{total}}K")
+            .replace('{{count}}', String(totals.count))
+            .replace('{{total}}', formatCurrency(totals.total * 1000, { compact: true }))
+        }
+        actionsOrientation="responsive"
+        actions={
+          <>
+            <div className="flex items-center border rounded-md">
+              <Button
+                variant={chartType === "area" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setChartType("area")}
+                className="rounded-r-none border-r-0 h-8"
+              >
+                <ChartLine />
+              </Button>
+              <Button
+                variant={chartType === "bar" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setChartType("bar")}
+                className="rounded-l-none h-8"
+              >
+                <ChartColumnBig />
+              </Button>
+            </div>
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger
+                className="w-[160px] rounded-lg"
+                aria-label="Selecionar período"
+              >
+                <SelectValue placeholder={t.charts.subsidyActivity.last12Months} />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="12m" className="rounded-lg">
+                  {t.charts?.subsidyActivity?.last12Months || "Last 12 months"}
+                </SelectItem>
+                <SelectItem value="6m" className="rounded-lg">
+                  {t.charts?.subsidyActivity?.last6Months || "Last 6 months"}
+                </SelectItem>
+                <SelectItem value="3m" className="rounded-lg">
+                  {t.charts?.subsidyActivity?.last3Months || "Last 3 months"}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </>
+        }
+      />
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6 flex-1">
         <ChartContainer
           config={chartConfig}
@@ -284,7 +282,7 @@ export function SubsidyActivityChart({
                     labelFormatter={(value, payload) => {
                       if (payload && payload[0]) {
                         const data = payload[0].payload
-                        return `${data.month} - ${data.count} ${t.charts?.tooltip?.requests || t.subsidy?.requests || "requests"}`
+                        return `${data.month} - ${data.count} ${t.charts?.tooltip?.requests || "requests"}`
                       }
                       return value
                     }}
@@ -292,10 +290,10 @@ export function SubsidyActivityChart({
                       const labels: Record<string, string> = {
                         total: t.charts?.subsidyActivity?.totalRequested || "Total Requested",
                         approved: t.subsidy?.deleteRequest?.statusLabels?.approved || t.subsidy?.approvedLower || "Approved",
-                        pending: t.subsidy?.deleteRequest?.statusLabels?.pending || t.charts?.legend?.pending || t.subsidy?.pending || "Pending",
-                        in_review: t.subsidy?.deleteRequest?.statusLabels?.in_review || t.charts?.legend?.inReview || "In Review",
-                        rejected: t.subsidy?.deleteRequest?.statusLabels?.rejected || t.charts?.legend?.rejected || t.subsidy?.rejected || "Rejected",
-                        closed: t.subsidy?.deleteRequest?.statusLabels?.closed || t.charts?.legend?.closed || t.subsidy?.closed || "Closed",
+                        pending: t.subsidy?.deleteRequest?.statusLabels?.pending || t.subsidy?.pending || "Pending",
+                        in_review: t.subsidy?.deleteRequest?.statusLabels?.in_review || "In Review",
+                        rejected: t.subsidy?.deleteRequest?.statusLabels?.rejected || t.subsidy?.rejected || "Rejected",
+                        closed: t.subsidy?.deleteRequest?.statusLabels?.closed || "Closed",
                       }
                       return [
                         formatCurrency(Number(value) * 1000, { compact: true }),
@@ -366,17 +364,17 @@ export function SubsidyActivityChart({
                     labelFormatter={(value, payload) => {
                       if (payload && payload[0]) {
                         const data = payload[0].payload
-                        return `${data.month} - ${data.count} ${t.charts?.tooltip?.requests || t.subsidy?.requests || "requests"}`
+                        return `${data.month} - ${data.count} ${t.charts?.tooltip?.requests || "requests"}`
                       }
                       return value
                     }}
                     formatter={(value, name) => {
                       const labels: Record<string, string> = {
                         approved: t.subsidy?.deleteRequest?.statusLabels?.approved || t.subsidy?.approvedLower || "Approved",
-                        pending: t.subsidy?.deleteRequest?.statusLabels?.pending || t.charts?.legend?.pending || t.subsidy?.pending || "Pending",
-                        in_review: t.subsidy?.deleteRequest?.statusLabels?.in_review || t.charts?.legend?.inReview || "In Review",
-                        rejected: t.subsidy?.deleteRequest?.statusLabels?.rejected || t.charts?.legend?.rejected || t.subsidy?.rejected || "Rejected",
-                        closed: t.subsidy?.deleteRequest?.statusLabels?.closed || t.charts?.legend?.closed || t.subsidy?.closed || "Closed",
+                        pending: t.subsidy?.deleteRequest?.statusLabels?.pending || t.subsidy?.pending || "Pending",
+                        in_review: t.subsidy?.deleteRequest?.statusLabels?.in_review || "In Review",
+                        rejected: t.subsidy?.deleteRequest?.statusLabels?.rejected || t.subsidy?.rejected || "Rejected",
+                        closed: t.subsidy?.deleteRequest?.statusLabels?.closed || "Closed",
                       }
                       return [
                         formatCurrency(Number(value) * 1000, { compact: true }),
@@ -424,7 +422,7 @@ export function SubsidyActivityChart({
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-gray-500 dark:bg-gray-400" />
             <span className="text-gray-600 dark:text-gray-300">
-              {t.charts?.legend?.closed || "Closed"}
+              Closed
             </span>
           </div>
         </div>

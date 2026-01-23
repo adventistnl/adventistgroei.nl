@@ -110,7 +110,7 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
-          <div className="institution-switcher flex items-center gap-2 p-2">
+          <div className="institution-switcher flex items-center gap-2 p-2 bg-sidebar">
             {/* Loading Spinner */}
             <div className="institution-logo text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg bg-muted animate-pulse shrink-0r">
               <LoadingSpinner 
@@ -140,7 +140,7 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <div className="institution-switcher flex items-center gap-2 p-2">
+        <div className="institution-switcher flex items-center gap-2 p-2 bg-sidebar">
           {/* Institution Logo */}
           <div className="institution-logo text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg shrink-0">
             {/* Use ícone Building2 como fallback/placeholder */}

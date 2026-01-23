@@ -293,6 +293,8 @@ export const churchTranslations = {
         selectDepartment: "Select a department",
         selectPlaceholder: "Select church",
         selectPlaceholderDept: "Select department",
+        allChurches: "All Churches",
+        allDepartments: "All Departments",
         loading: {
           title: "Loading...",
           description: "Fetching project distribution data"
@@ -621,6 +623,8 @@ export const churchTranslations = {
         selectDepartment: "Selecteer een departement",
         selectPlaceholder: "Selecteer kerk",
         selectPlaceholderDept: "Selecteer departement",
+        allChurches: "Alle Kerken",
+        allDepartments: "Alle Departementen",
         loading: {
           title: "Laden...",
           description: "Projectdistributiegegevens ophalen"
@@ -950,6 +954,8 @@ export const churchTranslations = {
         selectDepartment: "Selecione um departamento",
         selectPlaceholder: "Selecionar igreja",
         selectPlaceholderDept: "Selecionar departamento",
+        allChurches: "Todas as Igrejas",
+        allDepartments: "Todos os Departamentos",
         loading: {
           title: "Carregando...",
           description: "Buscando dados de distribuição de projetos"

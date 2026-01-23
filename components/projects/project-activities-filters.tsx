@@ -53,22 +53,24 @@ export function ProjectActivitiesFilters({
   const canCreateActivity = useHasPermission([PermissionResolverName.CreateProjectActivity])
   
   return (
-    <div className="flex items-center justify-between m-0">
-      {/* Search Input */}
-      <div className="relative flex-1 max-w-sm">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder={pt.filters.searchActivities}
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-9 bg-background border-2 border-border hover:border-primary/50 focus:border-primary dark:bg-background dark:border-border dark:hover:border-primary/50"
-        />
-      </div>
+    <div className="w-full space-y-3 lg:space-y-0">
+      {/* Mobile: Stack vertical | Desktop: Layout horizontal */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 w-full">
+        {/* Search Input - Ocupa largura total em mobile, flex-1 em desktop */}
+        <div className="relative w-full lg:flex-1 lg:max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={pt.filters.searchActivities}
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full pl-9 bg-background border-2 border-border hover:border-primary/50 focus:border-primary dark:bg-background dark:border-border dark:hover:border-primary/50"
+          />
+        </div>
 
-      {/* Filters and Actions */}
-      <div className="flex items-center gap-3">
+        {/* Filters and Actions - Wrap em telas menores */}
+        <div className="flex flex-wrap items-center gap-2 lg:gap-3 w-full lg:w-auto">
         <Select value={subsidyFilter} onValueChange={onSubsidyChange}>
-          <SelectTrigger className="w-40 h-9 bg-background border-2 border-border hover:border-primary/50 focus:border-primary dark:bg-background dark:border-border dark:hover:border-primary/50">
+          <SelectTrigger className="w-full sm:w-40 h-9 bg-background border-2 border-border hover:border-primary/50 focus:border-primary dark:bg-background dark:border-border dark:hover:border-primary/50">
             <SelectValue placeholder={pt.filters.type} />
           </SelectTrigger>
           <SelectContent>
@@ -79,7 +81,7 @@ export function ProjectActivitiesFilters({
         </Select>
 
         <Select value={statusFilter} onValueChange={onStatusChange}>
-          <SelectTrigger className="w-32 h-9 bg-background border-2 border-border hover:border-primary/50 focus:border-primary dark:bg-background dark:border-border dark:hover:border-primary/50">
+          <SelectTrigger className="w-full sm:w-32 h-9 bg-background border-2 border-border hover:border-primary/50 focus:border-primary dark:bg-background dark:border-border dark:hover:border-primary/50">
             <SelectValue placeholder={pt.filters.status} />
           </SelectTrigger>
           <SelectContent>
@@ -91,7 +93,7 @@ export function ProjectActivitiesFilters({
         </Select>
 
         <Select value={priorityFilter} onValueChange={onPriorityChange}>
-          <SelectTrigger className="w-32 h-9 bg-background border-2 border-border hover:border-primary/50 focus:border-primary dark:bg-background dark:border-border dark:hover:border-primary/50">
+          <SelectTrigger className="w-full sm:w-32 h-9 bg-background border-2 border-border hover:border-primary/50 focus:border-primary dark:bg-background dark:border-border dark:hover:border-primary/50">
             <SelectValue placeholder={pt.filters.priority} />
           </SelectTrigger>
           <SelectContent>
@@ -104,7 +106,7 @@ export function ProjectActivitiesFilters({
         </Select>
 
         <Select value={tagFilter} onValueChange={onTagChange}>
-          <SelectTrigger className="w-32 h-9 bg-background border-2 border-border hover:border-primary/50 focus:border-primary dark:bg-background dark:border-border dark:hover:border-primary/50">
+          <SelectTrigger className="w-full sm:w-32 h-9 bg-background border-2 border-border hover:border-primary/50 focus:border-primary dark:bg-background dark:border-border dark:hover:border-primary/50">
             <SelectValue placeholder={pt.filters.category} />
           </SelectTrigger>
           <SelectContent>
@@ -115,18 +117,18 @@ export function ProjectActivitiesFilters({
           </SelectContent>
         </Select>
 
-        <Button variant="outline" size="sm" onClick={onClearFilters} className="h-9 border-2">
+        <Button variant="outline" size="sm" onClick={onClearFilters} className="w-full sm:w-auto h-9 border-2">
           {pt.filters.clear}
         </Button>
 
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div>
+              <div className="w-full sm:w-auto">
                 <Button 
                   onClick={onAddActivity} 
                   size="sm" 
-                  className="h-9"
+                  className="w-full sm:w-auto h-9"
                   disabled={!canCreateActivity}
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -147,6 +149,7 @@ export function ProjectActivitiesFilters({
             )}
           </Tooltip>
         </TooltipProvider>
+        </div>
       </div>
     </div>
   )

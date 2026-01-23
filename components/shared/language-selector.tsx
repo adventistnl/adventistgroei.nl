@@ -80,7 +80,7 @@ export function LanguageSelector() {
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2 h-9 px-3">
           <Globe className="h-4 w-4" />
-          <span className="text-sm font-medium">{displayLanguage.initials}</span>
+          {/* <span className="text-sm font-medium">{displayLanguage.initials}</span> */}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">

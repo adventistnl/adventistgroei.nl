@@ -33,6 +33,15 @@ import { useQuery } from "@apollo/client"
 import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { useAuth } from "@/contexts/auth-context"
 import { useInstitution } from "@/contexts/institution-context"
+import { shouldShowNavItem, NavItem } from "@/config/navigation"
+import { PermissionResolverName } from "@/types/graphql-global-types"
+
+// Extended interface for search items with additional fields
+interface SearchNavItem extends NavItem {
+  description?: string
+  shortcut?: string
+  items?: SearchNavItem[]
+}
 
 /**
  * Filters projects to show only those where the user is registered in activities
@@ -66,46 +75,48 @@ function filterUserProjects(projects: any[], userId: string | undefined): any[] 
   })
 }
 
-// Navigation structure with icons
-const getNavStructure = (t: any) => [
+// Navigation structure with icons and permissions
+const getNavStructure = (t: any): SearchNavItem[] => [
   { 
     title: t.pages.dashboard, 
     url: "/dashboard", 
     icon: BarChart3,
     description: t.descriptions.dashboard,
-    shortcut: t.shortcuts.dashboard
+    shortcut: t.shortcuts.dashboard,
+    permissions: [],
+    translationKey: "sidebar.dashboard"
   },
   { 
     title: t.structure, 
     url: "#", 
     icon: Building,
+    permissions: [],
     items: [
-      { title: t.pages.institutions, url: "/institutions", icon: Building, description: t.descriptions.institutions },
-      { title: t.pages.regions, url: "/regions-example", icon: MapPin, description: t.descriptions.regions },
-      { title: t.pages.churches, url: "/churches", icon: Building, description: t.descriptions.churches },
-      { title: t.pages.departments, url: "/institutional-departments", icon: Building, description: t.descriptions.departments },
+      { title: t.pages.institutions, url: "/institutions", icon: Building, description: t.descriptions.institutions, permissions: [PermissionResolverName.Institutions] },
+      { title: t.pages.departments, url: "/institutional-departments", icon: Building, description: t.descriptions.departments, permissions: [PermissionResolverName.Departments, PermissionResolverName.Institutions] },
+      { title: t.pages.regions, url: "/regions", icon: MapPin, description: t.descriptions.regions, permissions: [PermissionResolverName.Regions] },
+      { title: t.pages.churches, url: "/churches", icon: Building, description: t.descriptions.churches, permissions: [PermissionResolverName.Churches] },
     ]
   },
   { 
     title: t.usersAccess, 
     url: "#", 
     icon: Users,
+    permissions: [],
     items: [
-      { title: t.pages.users, url: "/users", icon: User, description: t.descriptions.users },
-      { title: t.pages.access, url: "/access", icon: Settings, description: t.descriptions.access },
+      { title: t.pages.users, url: "/users", icon: User, description: t.descriptions.users, permissions: [PermissionResolverName.Users] },
+      { title: t.pages.access, url: "/access", icon: Settings, description: t.descriptions.access, permissions: [PermissionResolverName.Roles] },
     ]
   },
   { 
     title: t.reportsProjects, 
     url: "#", 
     icon: File,
+    permissions: [],
     items: [
-      { title: t.pages.projects, url: "/projects", icon: File, description: t.descriptions.projects, shortcut: t.shortcuts.projects },
-      // { title: t.pages.reports, url: "/reports", icon: BarChart3, description: t.descriptions.reports },
+      { title: t.pages.projects, url: "/projects", icon: File, description: t.descriptions.projects, shortcut: t.shortcuts.projects, permissions: [PermissionResolverName.Projects] },
     ]
   }
-  // { title: t.pages.events, url: "/events", icon: Calendar, description: t.descriptions.events, shortcut: t.shortcuts.events },
-  // { title: t.pages.communications, url: "/communications", icon: MessageSquare, description: t.descriptions.communications },
 ]
 
 // Shared state for modal - only one instance should be open
@@ -219,11 +230,14 @@ export function GlobalSearch({ isMobile = false, isOpen: externalIsOpen, onOpenC
   const [internalIsOpen, setInternalIsOpen] = useState(false)
   const router = useRouter()
   const { i18n } = useTranslation()
-  const { user } = useAuth()
+  const { user, permissions } = useAuth()
   const { currentInstitutionData } = useInstitution()
   
   // Get translations
   const t = searchTranslations[i18n.language as keyof typeof searchTranslations] || searchTranslations.en
+  
+  // Convert permissions to PermissionResolverName array
+  const userPermissions = permissions as unknown as PermissionResolverName[]
   
   // Use external state if provided, otherwise use internal state
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen
@@ -243,8 +257,22 @@ export function GlobalSearch({ isMobile = false, isOpen: externalIsOpen, onOpenC
     return filterUserProjects(allProjects, user?.id)
   }, [projectsData, user?.id])
 
-  // Get navigation structure with translations
-  const navStructure = React.useMemo(() => getNavStructure(t), [t])
+  // Get navigation structure with translations and filter by permissions
+  const navStructure = React.useMemo(() => {
+    const allItems = getNavStructure(t) as SearchNavItem[]
+    return allItems
+      .filter(item => shouldShowNavItem(item as NavItem, userPermissions))
+      .map(item => {
+        if (item.items) {
+          return {
+            ...item,
+            items: item.items.filter(subItem => shouldShowNavItem(subItem as NavItem, userPermissions))
+          }
+        }
+        return item
+      })
+      .filter(item => !item.items || item.items.length > 0) // Remove grupos vazios
+  }, [t, userPermissions])
 
   const handleNavigation = (href: string, name: string) => {
     setIsOpen(false)
@@ -274,7 +302,7 @@ export function GlobalSearch({ isMobile = false, isOpen: externalIsOpen, onOpenC
                     <Icon className="w-4 h-4" />
                     <div className="flex-1">
                       <span className="font-medium">{item.title}</span>
-                      <p className="text-xs text-muted-foreground">{item.description}</p>
+                      {item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}
                     </div>
                     {item.shortcut && <CommandShortcut>{item.shortcut}</CommandShortcut>}
                   </CommandItem>
@@ -282,7 +310,7 @@ export function GlobalSearch({ isMobile = false, isOpen: externalIsOpen, onOpenC
               })}
             </CommandGroup>
 
-            {/* Structure & Organization */}
+            {/* Structure */}
             {navStructure.filter(item => item.items).map((group) => (
               <React.Fragment key={group.title}>
                 <CommandSeparator />
@@ -298,7 +326,7 @@ export function GlobalSearch({ isMobile = false, isOpen: externalIsOpen, onOpenC
                         <Icon className="w-4 h-4" />
                         <div className="flex-1">
                           <span className="font-medium">{item.title}</span>
-                          <p className="text-xs text-muted-foreground">{item.description}</p>
+                          {item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}
                         </div>
                         {item.shortcut && <CommandShortcut>{item.shortcut}</CommandShortcut>}
                       </CommandItem>
@@ -312,7 +340,7 @@ export function GlobalSearch({ isMobile = false, isOpen: externalIsOpen, onOpenC
             {userProjects.length > 0 && (
               <>
                 <CommandSeparator />
-                <CommandGroup heading={t.projects || "My Projects"}>
+                <CommandGroup heading={t.pages.projects || "My Projects"}>
                   {projectsLoading ? (
                     <CommandItem disabled className="flex items-center gap-3 px-3 py-2">
                       <Folder className="w-4 h-4 animate-pulse text-blue-500" />

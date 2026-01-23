@@ -26,6 +26,7 @@ import { ChurchTypeSelector } from "./church-type-selector"
 import { RegionSelector } from "./region-selector"
 import { ProvinceAndCitySelector } from "./province-and-city-selector"
 import { LeaderSelector } from "./leader-selector"
+import { ZipCodeInput } from "@/components/shared/zip-code-input"
 import { Church, ChurchType } from "@/types/graphql-global-types"
 import { churchTranslations } from "@/lib/translations/churches"
 
@@ -59,6 +60,8 @@ export function EditChurchModal({
     country: '',
     state: '',
     type: undefined,
+    zip_code: '',
+    house_number: 1,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSpecialChurch, setIsSpecialChurch] = useState(false)
@@ -75,10 +78,37 @@ export function EditChurchModal({
 
   useEffect(() => {
     if (isOpen && church) {
+      console.log('🔍 [EditChurchModal] DEBUG - Church data received:', {
+        church_id: church.id,
+        church_name: church.name,
+        church_full_object: church,
+      })
+
       const hasSpecialType = church.type === ChurchType.Plant || church.type === ChurchType.Company
       const contactData = (church as any).contact || {}
       
-      setFormData({
+      console.log('📋 [EditChurchModal] DEBUG - Contact data extracted:', {
+        contactData_full: contactData,
+        contactData_exists: !!contactData,
+        contactData_keys: Object.keys(contactData),
+      })
+      
+      // Priorizar zip_code do church root, depois do contact
+      const zipCode = church.zip_code || contactData?.zip_code || ''
+      
+      // Priorizar house_number do church root, depois do contact
+      const houseNumber = (church as any).house_number || contactData?.house_number || 1
+      
+      console.log('🏠 [EditChurchModal] DEBUG - ZIP Code & House Number extraction:', {
+        zip_from_church_root: church.zip_code,
+        zip_from_contact: contactData?.zip_code,
+        zip_final: zipCode,
+        house_from_church_root: (church as any).house_number,
+        house_from_contact: contactData?.house_number,
+        house_final: houseNumber,
+      })
+      
+      const finalFormData = {
         id: church.id,
         name: church.name,
         leader_id: church.leader_id || '',
@@ -89,14 +119,28 @@ export function EditChurchModal({
         country: contactData?.country || institutionCountry,
         state: contactData?.state || '',
         type: (church.type || undefined) as any,
+        zip_code: zipCode,
+        house_number: houseNumber,
+      }
+      
+      console.log('✅ [EditChurchModal] DEBUG - Final form data to be set:', {
+        formData: finalFormData,
+        hasZipCode: !!finalFormData.zip_code,
+        hasHouseNumber: !!finalFormData.house_number,
+        hasCity: !!finalFormData.city,
+        hasState: !!finalFormData.state,
       })
+      
+      setFormData(finalFormData)
       setIsSpecialChurch(hasSpecialType)
       // Extract province from state or use empty if not available
       setProvince(contactData?.state || '')
       setErrors({})
       setCurrentStep(1)
+      
+      console.log('🎯 [EditChurchModal] DEBUG - Modal initialized successfully')
     }
-  }, [isOpen, church])
+  }, [isOpen, church, institutionCountry])
 
   const handleInputChange = (field: string, value: string | boolean | number | null | undefined) => {
     setFormData(prev => ({
@@ -131,9 +175,15 @@ export function EditChurchModal({
     }
 
     if (step === 2) {
-      // Step 2: Geographic data - cidade obrigatória
+      // Step 2: Geographic data - zip_code, city, and state are required
+      if (!formData.zip_code?.trim()) {
+        newErrors.zip_code = 'ZIP code is required'
+      }
       if (!formData.city?.trim()) {
-        newErrors.city = 'Cidade é obrigatória'
+        newErrors.city = 'City is required (auto-filled from ZIP code)'
+      }
+      if (!formData.state?.trim()) {
+        newErrors.state = 'Province is required (auto-filled from ZIP code)'
       }
     }
 
@@ -192,6 +242,8 @@ export function EditChurchModal({
         country: formData.country,
         state: formData.state,
         type: formData.type,
+        zip_code: formData.zip_code?.trim(),
+        house_number: formData.house_number,
       }
       const res = await updateChurch({ variables })
       if (!res || !res.data) {
@@ -223,6 +275,12 @@ export function EditChurchModal({
       const hasSpecialType = church.type === ChurchType.Plant || church.type === ChurchType.Company
       const contactData = (church as any).contact || {}
       
+      // Priorizar zip_code do church root, depois do contact
+      const zipCode = church.zip_code || contactData?.zip_code || ''
+      
+      // Priorizar house_number do church root, depois do contact
+      const houseNumber = (church as any).house_number || contactData?.house_number || 1
+      
       setFormData({
         id: church.id,
         name: church.name,
@@ -234,6 +292,8 @@ export function EditChurchModal({
         country: contactData?.country || institutionCountry,
         state: contactData?.state || '',
         type: (church.type || undefined) as any,
+        zip_code: zipCode,
+        house_number: houseNumber,
       })
       setIsSpecialChurch(hasSpecialType)
       setProvince(contactData?.state || '')
@@ -296,30 +356,48 @@ export function EditChurchModal({
         )
 
       case 2:
-        // Step 2: Geographic Data
+        // Step 2: Geographic Data (ZIP Code auto-fills City & Province)
         return (
           <div className="space-y-6 animate-in fade-in-0 duration-300">
             <div className="text-center space-y-2">
               <h3 className="text-lg font-medium text-foreground">{tChurch.steps.step_2_title}</h3>
-              <p className="text-sm text-muted-foreground">{tChurch.steps.step_2_description}</p>
+              <p className="text-sm text-muted-foreground">Enter house number and ZIP code to automatically fill city and province</p>
             </div>
             
-            <div className="space-y-4 max-w-md mx-auto">
-              <ProvinceAndCitySelector
-                provinceValue={province}
-                onProvinceChangeAction={(value: string) => {
-                  setProvince(value)
-                  handleInputChange('state', value)
-                }}
-                cityValue={formData.city || ''}
-                onCityChangeAction={(value: string) => handleInputChange('city', value)}
-                countryCode={institutionCountry}
-                isLoading={isLoading || regionsLoading}
-                provinceError={errors.province}
-                cityError={errors.city}
-              />
+            <div className="max-w-md mx-auto space-y-4">
+              {/* House Number Input */}
+              <div className="space-y-2">
+                <Label htmlFor="house_number" className="flex items-center gap-2 text-sm">
+                  <Home className="w-4 h-4 text-muted-foreground" />
+                  House Number *
+                </Label>
+                <Input
+                  id="house_number"
+                  type="number"
+                  value={formData.house_number || 1}
+                  onChange={(e) => handleInputChange('house_number', parseInt(e.target.value) || 1)}
+                  placeholder="e.g., 29"
+                  disabled={isLoading}
+                  className="h-10"
+                  min={1}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Required for accurate ZIP code validation
+                </p>
+              </div>
 
-              {/* Região removida do formulário. Será definida automaticamente pelo backend. */}
+              <ZipCodeInput
+                zipValue={formData.zip_code || ''}
+                onZipChange={(value) => handleInputChange('zip_code', value)}
+                cityValue={formData.city || ''}
+                onCityChange={(value) => handleInputChange('city', value)}
+                provinceValue={formData.state || ''}
+                onProvinceChange={(value) => handleInputChange('state', value)}
+                houseNumber={formData.house_number || 1}
+                isLoading={isLoading}
+                zipError={errors.zip_code}
+                required
+              />
             </div>
           </div>
         )

@@ -47,6 +47,8 @@ import { ChurchTypeBadge } from "@/components/ui/church-type-badge"
 // import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
 import { AddChurchModal, EditChurchModal, DeleteChurchModal, ChurchData, RegionData } from "@/components/modals/church"
 import { ChurchesKPICards, KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
+import { PageHeader } from "@/components/shared/page-header"
+import { YearFilter } from "@/components/shared/year-filter"
 import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { ChurchActivityChart } from "@/components/churches/charts/church-activity-chart"
@@ -57,6 +59,7 @@ import { ChurchProjectOverTimeChart } from "@/components/churches/charts/church-
 import { EntityInfoCard } from "@/components/shared/entity-info-card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { ChartHeader } from "@/components/charts/chart-header"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -116,7 +119,13 @@ export default function ChurchesPage() {
     skip: !currentInstitutionData?.id
   })
   
-  const allProjects = useMemo(() => projectsData?.projects || [], [projectsData])
+  const allProjects = useMemo(() => {
+    const projects = projectsData?.projects || [];
+    
+
+  
+    return projects;
+  }, [projectsData, projectsLoading])
   
   /**
    * Helper function to count projects for a specific church
@@ -489,11 +498,10 @@ export default function ChurchesPage() {
       return monthData;
     });
 
-    // CHART 2: Projetos por Igreja (dados REAIS usando church_id e church_department_id)
     const projectsByChurch = churchesList.map((church: any, index: number) => {
       // Get department IDs for this church
       const departmentIds = new Set(church.departments?.map((d: any) => d.id) || [])
-      
+
       // Filter all projects for this church (same logic as table and chart)
       const churchProjectsList = allProjects.filter((project: any) => {
         const directChurchId = project.church_id || project.church?.id || project.Church?.id
@@ -511,7 +519,7 @@ export default function ChurchesPage() {
       const allProjects_count = churchProjectsList.length
       const allActiveProjects = churchProjectsList.filter((p: any) => !p.is_deleted).length
 
-      return {
+      const result = {
         church: church.name.replace('Igreja ', '').replace(' de ', ' '),
         fullName: church.name,
         projects: allProjects_count,
@@ -519,7 +527,10 @@ export default function ChurchesPage() {
         completedProjects: allProjects_count - allActiveProjects,
         fill: colors[index % colors.length]
       };
+
+      return result;
     });
+    
 
     return {
       churchActivities,
@@ -616,7 +627,10 @@ export default function ChurchesPage() {
         region_id: church.region_id,
         contact_id: (church as any).contact_id || null,
         contact: (church as any).contact || null,
+        leader_id: (church as any).leader_id || null,
         type: (church as any).type || null,
+        zip_code: (church as any).zip_code || '',
+        house_number: (church as any).house_number || 1,
         created_at: church.created_at,
         updated_at: church.created_at,
         created_by: 'system',
@@ -708,77 +722,9 @@ export default function ChurchesPage() {
     toast.success(tChurch.filters?.filtersCleared || 'Filters cleared', { duration: 1500 })
   }
 
-  const handleAddYear = () => {
-    const currentYear = new Date().getFullYear()
-    const maxAllowedYear = currentYear + 2
-    const nextYear = Math.max(...availableYears) + 1
-
-    if (nextYear > maxAllowedYear) {
-      toast.error(tChurch.filters?.cannotAddBeyond?.replace('{{year}}', maxAllowedYear.toString()) || `Cannot add year beyond ${maxAllowedYear}`)
-      return
-    }
-
-    if (availableYears.includes(nextYear)) {
-      toast.error(tChurch.filters?.yearExists?.replace('{{year}}', nextYear.toString()) || `Year ${nextYear} already exists`)
-      return
-    }
-
-    setAvailableYears(prev => [...prev, nextYear].sort((a, b) => b - a))
-    setSelectedYear(nextYear)
-    toast.success(tChurch.filters?.yearAdded?.replace('{{year}}', nextYear.toString()) || `Year ${nextYear} added`)
-  }
-
-  // Year Filter Component
-  const YearFilter = ({ showAddButton = true }: { showAddButton?: boolean }) => {
-    const currentYear = new Date().getFullYear()
-    const maxAllowedYear = currentYear + 2
-    const canAddMore = Math.max(...availableYears) < maxAllowedYear
-
-    return (
-      <div className="mb-6">
-        <div className="flex items-center gap-3 overflow-x-auto pb-2 scroll-smooth" style={{ scrollbarWidth: 'thin' }}>
-          {availableYears.map((year) => (
-            <Button
-              key={year}
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedYear(year)}
-              className={`
-                flex-shrink-0 min-w-[80px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
-                ${
-                  selectedYear === year 
-                    ? 'bg-primary text-primary-foreground border-primary shadow-md hover:bg-primary/90' 
-                    : 'bg-muted text-muted-foreground border-muted hover:bg-muted/80 hover:text-foreground hover:border-muted-foreground/50'
-                }
-              `}
-            >
-              {year}
-            </Button>
-          ))}
-          
-          {/* Add New Year Button */}
-          {showAddButton && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAddYear}
-              disabled={!canAddMore}
-              className={`
-                flex-shrink-0 min-w-[100px] h-10 text-sm font-medium transition-all duration-200 rounded-lg border-2
-                ${
-                  canAddMore 
-                    ? 'border-dashed border-muted-foreground/40 text-muted-foreground hover:text-foreground hover:border-muted-foreground/60 hover:bg-muted/50' 
-                    : 'opacity-40 cursor-not-allowed border-dashed border-muted-foreground/20 text-muted-foreground/50'
-                }
-              `}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {tChurch.filters?.addYear || 'Add Year'}
-            </Button>
-          )}
-        </div>
-      </div>
-    )
+  const handleAddYear = (newYear: number) => {
+    setAvailableYears(prev => [...prev, newYear].sort((a, b) => b - a))
+    setSelectedYear(newYear)
   }
 
   /**
@@ -1341,7 +1287,6 @@ export default function ChurchesPage() {
     //           <DropdownMenuContent align="end">
     //             <DropdownMenuItem onClick={() => {
     //               // Navigate to user details page
-    //               console.log('View user details:', user.id);
     //               toast('Navigating to user details - Coming soon!');
     //             }}>
     //               <Eye className="mr-2 h-4 w-4" />
@@ -1349,7 +1294,6 @@ export default function ChurchesPage() {
     //             </DropdownMenuItem>
     //             <DropdownMenuItem onClick={() => {
     //               // Edit user functionality
-    //               console.log('Edit user:', user.id);
     //               toast('Edit user - Coming soon!');
     //             }}>
     //               <Edit className="mr-2 h-4 w-4" />
@@ -1358,7 +1302,6 @@ export default function ChurchesPage() {
     //             <DropdownMenuItem 
     //               onClick={() => {
     //                 // Delete/remove user from church
-    //                 console.log('Remove user from church:', user.id);
     //                 toast('Remove user - Coming soon!');
     //               }}
     //               className="text-red-600"
@@ -1430,50 +1373,51 @@ export default function ChurchesPage() {
 
         {/* Header - Only show in List View */}
         {viewMode === 'list' && (
-          <div className="flex flex-col justify-between items-start gap-4">
-                <div className="flex justify-between items-center gap-4 w-full">
-                  <div>
-                    <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold mb-2">
-                      {tStructure.churchesTitle}
-                    </h2>
-                    <p className="text-muted-foreground text-0.875rem sm:text-1rem">
-                      {tStructure.churchesSubtitle}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                  {/* Page Filters */}
-                    <PageFilters
-                      filters={pageFilters}
-                      values={filterValues}
-                      onChange={handleFilterChange}
-                      onClear={handleClearFilters}
-                      triggerLabel={tChurch.filters?.filters || 'Filters'}
-                      triggerIcon={Filter}
-                      align="start"
-                      width={320}
-                    />
+          <PageHeader
+            title={tStructure.churchesTitle}
+            subtitle={tStructure.churchesSubtitle}
+            actions={
+              <>
+                {/* Page Filters */}
+                <PageFilters
+                  filters={pageFilters}
+                  values={filterValues}
+                  onChange={handleFilterChange}
+                  onClear={handleClearFilters}
+                  triggerLabel={tChurch.filters?.filters || 'Filters'}
+                  triggerIcon={Filter}
+                  align="start"
+                  width={320}
+                />
 
-                    <WithPermission requiredPermissions={[PermissionResolverName.CreateChurch]}>
-                      <Button onClick={handleCreate}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        {tStructure.createChurch}
-                      </Button>
-                    </WithPermission>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      onClick={handleRefresh}
-                      disabled={refreshing}
-                    >
-                      <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                    </Button>
-                  </div>
-                </div>
-                {/* Year Filter */}
-                <YearFilter showAddButton={false} />
-
-          </div>
+                <WithPermission requiredPermissions={[PermissionResolverName.CreateChurch]}>
+                  <Button onClick={handleCreate}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    {tStructure.createChurch}
+                  </Button>
+                </WithPermission>
+                
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                >
+                  <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                </Button>
+              </>
+            }
+          >
+            {/* Year Filter */}
+            <YearFilter
+              availableYears={availableYears}
+              selectedYear={selectedYear}
+              onYearChange={setSelectedYear}
+              onAddYear={handleAddYear}
+              showAddButton={false}
+              className="mb-6"
+            />
+          </PageHeader>
         )}
 
         {/* Conditional View: List or Detail */}
@@ -1508,13 +1452,12 @@ export default function ChurchesPage() {
 
         {/* Churches Table */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Home className="w-5 h-5" />
-              {tChurch.page.title}
-            </CardTitle>
-            <CardDescription>Lista completa de igrejas com ações de gerenciamento</CardDescription>
-          </CardHeader>
+          <ChartHeader
+            title={tChurch.page.title}
+            description="Lista completa de igrejas com ações de gerenciamento"
+            actionsOrientation="responsive"
+            actions={null}
+          />
           <CardContent className="p-0">
             <UseTable
               columns={columns}
@@ -1700,15 +1643,12 @@ export default function ChurchesPage() {
               {/* Members Tab */}
               <TabsContent value="members" className="mt-6">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="w-5 h-5" />
-                      {tChurch.table.church_members}
-                    </CardTitle>
-                    <CardDescription>
-                      {t('common.all_members_associated_with')} {selectedChurchDetail?.name}
-                    </CardDescription>
-                  </CardHeader>
+                  <ChartHeader
+                    title={tChurch.table.church_members}
+                    description={`${t('common.all_members_associated_with')} ${selectedChurchDetail?.name}`}
+                    actionsOrientation="responsive"
+                    actions={null}
+                  />
                   <CardContent className="p-0">
                     <UseTable
                       columns={memberColumns}
@@ -1733,15 +1673,12 @@ export default function ChurchesPage() {
               {/* Departments Tab */}
               <TabsContent value="departments" className="mt-6">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Layers className="w-5 h-5" />
-                      {tChurch.table.church_departments}
-                    </CardTitle>
-                    <CardDescription>
-                      {t('common.all_departments_within')} {selectedChurchDetail?.name}
-                    </CardDescription>
-                  </CardHeader>
+                  <ChartHeader
+                    title={tChurch.table.church_departments}
+                    description={`${t('common.all_departments_within')} ${selectedChurchDetail?.name}`}
+                    actionsOrientation="responsive"
+                    actions={null}
+                  />
                   <CardContent className="p-0">
                     <UseTable
                       columns={departmentColumns}

@@ -308,7 +308,7 @@ const resources = {
         active: "Active",
         inactive: "Inactive",
         status: "Status",
-        structure_organization: "Structure & Organization",
+        structure_organization: "Structure",
         members: "Members",
         budget: "Budget",
         actions: "Actions",

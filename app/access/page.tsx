@@ -11,6 +11,7 @@ import { StatusBadge } from "@/components/ui/status-badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ChartHeader } from "@/components/charts/chart-header"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -643,18 +644,12 @@ export default function AccessManagementPage() {
             {/* Roles Tab */}
             <TabsContent value="roles" className="space-y-6">
               <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <Shield className="w-5 h-5" />
-                        {t('access.roles.title')}
-                      </CardTitle>
-                      <CardDescription>
-                        {t('access.roles.subtitle')}
-                      </CardDescription>
-                    </div>
-                    <div className="flex items-center gap-3">
+                <ChartHeader
+                  title={t('access.roles.title')}
+                  description={t('access.roles.subtitle')}
+                  actionsOrientation="responsive"
+                  actions={
+                    <>
                       {rolePageFilters.length > 0 && (
                         <PageFilters
                           filters={rolePageFilters}
@@ -676,9 +671,9 @@ export default function AccessManagementPage() {
                           {t('access.roles.actions.create_role')}
                         </Button>
                       </WithPermission>
-                    </div>
-                  </div>
-                </CardHeader>
+                    </>
+                  }
+                />
                 <CardContent className="overflow-hidden p-0">
                   <UseTable
                     columns={roleColumns}
@@ -694,18 +689,12 @@ export default function AccessManagementPage() {
             {/* Permissions Tab */}
             <TabsContent value="permissions" className="space-y-6">
               <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <Lock className="w-5 h-5" />
-                        {t('access.permissions.title')}
-                      </CardTitle>
-                      <CardDescription>
-                        {t('access.permissions.subtitle')}
-                      </CardDescription>
-                    </div>
-                    {permissionPageFilters.length > 0 && (
+                <ChartHeader
+                  title={t('access.permissions.title')}
+                  description={t('access.permissions.subtitle')}
+                  actionsOrientation="responsive"
+                  actions={
+                    permissionPageFilters.length > 0 ? (
                       <PageFilters
                         filters={permissionPageFilters}
                         values={permissionFilterValues}
@@ -716,9 +705,9 @@ export default function AccessManagementPage() {
                         width={320}
                         showClearButton={true}
                       />
-                    )}
-                  </div>
-                </CardHeader>
+                    ) : null
+                  }
+                />
                 <CardContent className="overflow-hidden p-0">
                   <UseTable
                     columns={permissionColumns}

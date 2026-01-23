@@ -56,6 +56,7 @@ import { useCurrency } from "@/contexts/currency-context"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { subsidyApprovalsTranslations } from "@/lib/translations/subsidy-approvals"
+import { ChartHeader } from "@/components/charts/chart-header"
 
 // Import Charts
 import { 
@@ -554,8 +555,6 @@ export function SubsidyApprovalsManager({
 
     // 3. By Department (RequestsByDepartmentChart)
     // Group by department with EXACT created_at date
-    console.log('📅 [Manager] Gerando dados com datas exatas')
-    
     const dateMap: Record<string, any> = {}
     
     subsidyRequests.forEach((request, index) => {
@@ -563,14 +562,6 @@ export function SubsidyApprovalsManager({
       const dateKey = createdDate.toISOString().split('T')[0]
       const dept = request.department_name || 'Other'
       const monthAbbr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][createdDate.getMonth()]
-      
-      console.log(`📊 [Manager] #${index + 1}:`, {
-        created_at: request.requested_at,
-        date: dateKey,
-        month: monthAbbr,
-        dept,
-        amount: request.requested_amount
-      })
       
       if (!dateMap[dateKey]) {
         dateMap[dateKey] = { date: dateKey, month: monthAbbr }
@@ -583,8 +574,6 @@ export function SubsidyApprovalsManager({
     })
     
     const byDepartmentData = Object.values(dateMap)
-    
-    console.log('✅ [Manager] Enviando para gráfico:', byDepartmentData[0])
 
     return {
       byStatus: byStatusData,
@@ -1144,15 +1133,12 @@ export function SubsidyApprovalsManager({
 
       {/* Subsidy Requests Table/Kanban */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>{translations.card.title}</CardTitle>
-              <CardDescription>
-                {translations.card.description}
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
+        <ChartHeader
+          title={translations.card.title}
+          description={translations.card.description}
+          actionsOrientation="responsive"
+          actions={
+            <>
               {viewMode === 'table' && privacyConfigs?.tableMonetaryValues && (
                 <InlinePrivacyToggle 
                   config={privacyConfigs.tableMonetaryValues}
@@ -1166,9 +1152,9 @@ export function SubsidyApprovalsManager({
                 />
               )}
               <ViewToggle />
-            </div>
-          </div>
-        </CardHeader>
+            </>
+          }
+        />
         <CardContent>
           {viewMode === 'table' ? (
             <UseTable
