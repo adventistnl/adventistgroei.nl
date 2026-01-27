@@ -16,14 +16,49 @@ import { useUser } from "@/hooks/use-user"
 import { UpdateUserVariables } from "@/types/UpdateUser"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { LoadingSpinner } from "@/components/shared/loading-spinner"
+import { useInstitution } from "@/contexts/institution-context"
+import { useQuery } from "@apollo/client"
+import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
 import "@/lib/i18n"
 import { ChevronRight, Building2 } from "lucide-react"
+
+// Função para formatar telefone brasileiro: (DD) XXXXX-XXXX
+function formatPhoneDisplay(phone: string): string {
+  if (!phone) return ''
+  
+  // Remove tudo que não é número
+  const numbers = phone.replace(/\D/g, '')
+  
+  // Aplica a máscara
+  if (numbers.length <= 2) {
+    return numbers
+  } else if (numbers.length <= 7) {
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`
+  } else if (numbers.length <= 11) {
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`
+  }
+  
+  return phone
+}
 
 export default function ProfilePage() {
   const { t, i18n } = useTranslation()
   const { user: authUser, isAuthenticated, isLoading } = useAuth()
-  const { user, loading: userLoading, refetch: refetchUser } = useUser({id: authUser?.id})
+  const { currentInstitutionData } = useInstitution()
   const router = useRouter()
+
+  // Buscar o user completo do contexto de instituição (que tem user_roles)
+  const user = useMemo(() => {
+    if (!currentInstitutionData?.users || !authUser?.id) return null
+    return currentInstitutionData.users.find((u: any) => u.id === authUser.id) || null
+  }, [currentInstitutionData?.users, authUser?.id])
+
+  // Buscar todas as igrejas da instituição do usuário
+  const { data: churchesData, loading: churchesLoading } = useQuery(GET_CHURCHES_QUERY, {
+    variables: { institution_id: currentInstitutionData?.id },
+    skip: !currentInstitutionData?.id,
+    fetchPolicy: 'cache-and-network'
+  })
 
   // Set page title (must be before any conditional returns)
   usePageTitle({
@@ -47,29 +82,47 @@ export default function ProfilePage() {
     }
   }, [isAuthenticated, isLoading, router])
 
+  // Processar igrejas disponíveis
+  const availableChurches = useMemo(() => {
+    if (!churchesData?.churches) return []
+    return churchesData.churches
+      .filter((church: any) => !church.is_deleted)
+      .map((church: any) => ({
+        id: church.id,
+        name: church.name
+      }))
+  }, [churchesData])
+
   // Create profile from auth user data
   const userProfile: ExtendedProfile = useMemo(() => {
-    
-    // For now, we'll use a mock role until the backend user_roles is properly configured
-    const mockRoles = "Administrador, Pastor"; // This should come from user.user_roles when available
+    // Get roles from user_roles - agora funciona porque user vem do InstitutionContext (tipo User)
+    const userRoles = (user as any)?.user_roles?.map((ur: any) => {
+      return ur.role?.name
+    }).filter(Boolean).join(", ") || t('profile.church.no_role')
     
     const profile = {
       id: user?.id || "",
       name: user?.name || "",
       email: user?.email || "",
-      phone: user?.contact?.phone || "",
-      address: user?.contact?.address || "",
-      institution_id: user?.institution_id || "",
-      church_id: user?.church_id || "",
+      phone: formatPhoneDisplay(user?.contact?.phone || ""),
+      address: "", // Contact em users não tem address, precisará ser carregado separadamente
+      institution_id: currentInstitutionData?.id || user?.institution?.id || "",
+      church_id: user?.church?.id || "",
       language_preference: user?.language_preference || "PT",
       // Additional fields for display
-      institution_name: user?.institution?.name || "",
+      institution_name: currentInstitutionData?.name || user?.institution?.name || "",
       church_name: user?.church?.name || "",
-      role: mockRoles, // Lista de roles do usuário (mockado por enquanto)
+      role: userRoles,
     }
 
     return profile
-  }, [user])
+  }, [user, currentInstitutionData, t])
+
+  // Função para refetch - agora usa o contexto de instituição
+  const refetchUser = async () => {
+    // O refetch será automático quando o InstitutionContext atualizar
+    console.log("♻️ User data will be refreshed via InstitutionContext")
+  }
 
   const {
     editingSection,
@@ -119,9 +172,10 @@ export default function ProfilePage() {
       if (!userProfile.phone) {
         incompleteFields.push({ key: "phone", label: t('profile.personal.phone'), section: "personal" as const })
       }
-      if (!userProfile.address) {
-        incompleteFields.push({ key: "address", label: t('profile.personal.address'), section: "personal" as const })
-      }
+      // TODO: Reativar quando address estiver disponível no InstitutionById query
+      // if (!userProfile.address) {
+      //   incompleteFields.push({ key: "address", label: t('profile.personal.address'), section: "personal" as const })
+      // }
       
       // Church fields
       if (!userProfile.institution_id) {
@@ -166,7 +220,7 @@ export default function ProfilePage() {
               name={editData.name || profile.name || ""}
               email={editData.email || profile.email || ""}
               phone={editData.phone || profile.phone || ""}
-              address={editData.address || profile.address || ""}
+              // address={editData.address || profile.address || ""}
               language={editData.language_preference || profile.language_preference || "en"}
               isEditing={editingSection === "personal"}
               isSaving={updateLoading}
@@ -176,7 +230,7 @@ export default function ProfilePage() {
               onNameChange={(value) => handleFieldChange("name", value)}
               onEmailChange={(value) => handleFieldChange("email", value)}
               onPhoneChange={(value) => handleFieldChange("phone", value)}
-              onAddressChange={(value) => handleFieldChange("address", value)}
+              // onAddressChange={(value) => handleFieldChange("address", value)}
               onLanguageChange={(value) => handleFieldChange("language_preference", value)}
             />
 
@@ -184,14 +238,15 @@ export default function ProfilePage() {
             <ChurchInfoSection
               role={profile.role || ""}
               institution={profile.institution_name || ""}
-              church={profile.church_name || ""}
-              isEditing={false}
-              onEdit={() => {}} // Bloqueado
-              onSave={() => {}} // Bloqueado
-              onCancel={() => {}} // Bloqueado
-              onRoleChange={() => {}} // Bloqueado
-              onInstitutionChange={() => {}} // Bloqueado
-              onChurchChange={() => {}} // Bloqueado
+              church={editData.church_id || profile.church_id || ""}
+              churchName={profile.church_name || ""}
+              availableChurches={availableChurches}
+              isEditing={editingSection === "church"}
+              isSaving={updateLoading}
+              onEdit={() => handleEdit("church")}
+              onSave={() => handleSave("church")}
+              onCancel={handleCancel}
+              onChurchChange={(value) => handleFieldChange("church_id", value)}
             />
 
           </div>

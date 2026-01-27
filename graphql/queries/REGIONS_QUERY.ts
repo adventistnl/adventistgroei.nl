@@ -34,6 +34,13 @@ query Regions {
             is_deleted
             deleted_at
             deleted_by
+            contact {
+                id
+                city
+                state
+                country
+                postal_code
+            }
         }
     }
 }

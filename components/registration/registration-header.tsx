@@ -16,7 +16,6 @@ import toast from "react-hot-toast"
 interface Language {
   code: string
   name: string
-  flag: string
 }
 
 interface RegistrationHeaderProps {
@@ -47,7 +46,7 @@ export function RegistrationHeader({
     if (i18n?.changeLanguage) {
       i18n.changeLanguage(languageCode)
       const selectedLanguage = languages.find(l => l.code === languageCode)
-      toast.success(`${selectedLanguage?.flag} Language changed to ${selectedLanguage?.name}`, {
+      toast.success(`Language changed to ${selectedLanguage?.name}`, {
         duration: 3000
       })
     }
@@ -60,7 +59,7 @@ export function RegistrationHeader({
   const handleThemeToggle = () => {
     const newTheme = theme === "dark" ? "light" : "dark"
     setTheme(newTheme)
-    toast.success(`${newTheme === "dark" ? "🌙" : "☀️"} Theme changed to ${newTheme} mode`, {
+    toast.success(`Theme changed to ${newTheme} mode`, {
       duration: 2000
     })
   }
@@ -77,11 +76,11 @@ export function RegistrationHeader({
         </div>
         
         {/* Controles de idioma e tema com gap maior */}
-        <div className="flex gap-1rem">
+        <div className="flex gap-1">
           {/* Seletor de idioma */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-0.5rem h-2.75rem px-1rem">
+              <Button variant="ghost" size="sm" className="h-2.75rem">
                 <Globe className="w-1.1rem h-1.1rem" />
                 <span className="hidden sm:inline text-0.9rem font-medium">
                   {languages.find(l => l.code === currentLanguage)?.flag}

@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { SubsidyRequestUpdateDto, ActivityStatus, ActivityPriority } from "./globalTypes";
+import { SubsidyRequestUpdateDto, LanguagePreference, ActivityStatus, ActivityPriority } from "./globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: UpdateSubsidyRequest
@@ -89,4 +89,5 @@ export interface UpdateSubsidyRequest {
 export interface UpdateSubsidyRequestVariables {
   id: string;
   data: SubsidyRequestUpdateDto;
+  language?: LanguagePreference | null;
 }

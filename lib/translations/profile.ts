@@ -28,8 +28,12 @@ export const profileTranslations = {
     // Church Information
     church: {
       role: "Role/Position",
+      no_role: "No role assigned",
       institution: "Institution",
       church: "Church",
+      select_church: "Select a church",
+      search_church: "Search church...",
+      no_church_found: "No church found.",
       read_only_note: "Church information is managed by your administrator and cannot be edited."
     },
     
@@ -122,9 +126,11 @@ export const profileTranslations = {
     // Church Information
     church: {
       role: "Função/Cargo",
+      no_role: "Nenhuma função atribuída",
       institution: "Instituição",
       church: "Igreja",
-      read_only_note: "As informações da igreja são gerenciadas pelo seu administrador e não podem ser editadas."
+      select_church: "Selecione uma igreja",      search_church: "Buscar igreja...",
+      no_church_found: "Nenhuma igreja encontrada.",      read_only_note: "As informações da igreja são gerenciadas pelo seu administrador e não podem ser editadas."
     },
     
     // Account Data
@@ -216,8 +222,12 @@ export const profileTranslations = {
     // Church Information
     church: {
       role: "Función/Cargo",
-      institution: "Institución", 
+      no_role: "Sin función asignada",
+      institution: "Institución",
       church: "Iglesia",
+      select_church: "Seleccione una iglesia",
+      search_church: "Buscar iglesia...",
+      no_church_found: "No se encontró ninguna iglesia.",
       read_only_note: "La información de la iglesia es gestionada por tu administrador y no puede ser editada."
     },
     
@@ -310,8 +320,12 @@ export const profileTranslations = {
     // Church Information
     church: {
       role: "Functie/Positie",
+      no_role: "Geen functie toegewezen",
       institution: "Instelling",
       church: "Kerk",
+      select_church: "Selecteer een kerk",
+      search_church: "Zoek kerk...",
+      no_church_found: "Geen kerk gevonden.",
       read_only_note: "Kerk informatie wordt beheerd door je beheerder en kan niet bewerkt worden."
     },
     

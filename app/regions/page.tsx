@@ -45,6 +45,13 @@ import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
 import { Regions_regions } from "@/types/Regions"
+import { getCoordinatesFromZipCode } from "@/lib/geocoding"
+import { 
+  enrichChurchesWithAutoLink, 
+  calculateAutoLinkStats,
+  findMatchingRegion,
+  type EnrichedChurch 
+} from "@/lib/church-region-matcher"
 
 /**
  * PÁGINA DE GESTÃO DE REGIÕES
@@ -81,6 +88,305 @@ export default function RegionsPage() {
   const tRegion = regionTranslations[currentLanguage as keyof typeof regionTranslations] || regionTranslations.en
   const tPage = regionsPageTranslations[currentLanguage as keyof typeof regionsPageTranslations] || regionsPageTranslations.en
   
+  // ============================================================================
+  // CONSOLIDATED DEBUG: REGIONS ↔ CHURCHES RELATIONSHIP
+  // ============================================================================
+  useEffect(() => {
+    if (regions.length === 0 || churches.length === 0) return;
+    
+    console.log('\n╔════════════════════════════════════════════════════════════════════╗');
+    console.log('║          🔍 CONSOLIDATED DEBUG: REGIONS ↔ CHURCHES               ║');
+    console.log('╚════════════════════════════════════════════════════════════════════╝\n');
+    
+    // ========== PART 1: REGIONS DATA ==========
+    console.log('📍 ===== REGIONS DATA (Complete Registry) =====\n');
+    
+    regions.forEach((region, index) => {
+      console.log(`\n┌─── Region ${index + 1}: ${region.name} ───┐`);
+      console.log('│ 🆔 ID:', region.id);
+      console.log('│ 🎨 Color:', region.color);
+      console.log('│ 📝 Description:', region.description || 'N/A');
+      console.log('│ 🗺️  Territory JSON:', region.territory);
+      
+      // Parse territory
+      let territoryParsed = null;
+      let provinces: string[] = [];
+      let cities: string[] = [];
+      
+      if (region.territory) {
+        try {
+          territoryParsed = typeof region.territory === 'string' 
+            ? JSON.parse(region.territory) 
+            : region.territory;
+          
+          if (territoryParsed?.NL) {
+            provinces = Object.keys(territoryParsed.NL);
+            cities = Object.values(territoryParsed.NL).flat() as string[];
+          }
+        } catch (e) {
+          console.log('│ ⚠️  Territory parse error');
+        }
+      }
+      
+      console.log('│ 🏙️  Provinces:', provinces.join(', ') || 'None');
+      console.log('│ 📌 Cities Count:', cities.length);
+      console.log('│ 🏛️  Churches in Region:', region.churches?.length || 0);
+      console.log('│ 📊 KPI Data:', region.kpiData);
+      console.log('│');
+      console.log('│ 📦 Churches List:');
+      
+      if (region.churches && region.churches.length > 0) {
+        region.churches.forEach((church, idx) => {
+          const contactData = church.contact;
+          console.log(`│   ${idx + 1}. ${church.name}`);
+          console.log(`│      - Church ID: ${church.id}`);
+          console.log(`│      - Contact: ${contactData ? 'YES' : 'NO'}`);
+          if (contactData) {
+            console.log(`│      - City: ${contactData.city || 'N/A'}`);
+            console.log(`│      - State/Province: ${contactData.state || 'N/A'}`);
+            console.log(`│      - Country: ${contactData.country || 'N/A'}`);
+          }
+        });
+      } else {
+        console.log('│   (No churches assigned)');
+      }
+      
+      console.log('└────────────────────────────────────────┘');
+    });
+    
+    // ========== PART 2: CHURCHES DATA ==========
+    console.log('\n\n🏛️  ===== CHURCHES DATA (Complete Registry) =====\n');
+    
+    churches.forEach((church, index) => {
+      console.log(`\n┌─── Church ${index + 1}: ${church.name} ───┐`);
+      console.log('│ 🆔 ID:', church.id);
+      console.log('│ 🏢 Institution ID:', church.institution_id);
+      console.log('│ 📍 Region ID:', church.region_id || '❌ NO REGION');
+      console.log('│ 📬 Contact ID:', church.contact_id || 'N/A');
+      console.log('│ 🏷️  Type:', church.type);
+      console.log('│ 📮 Zip Code:', church.zip_code || 'N/A');
+      console.log('│ 🏠 House Number:', church.house_number || 'N/A');
+      console.log('│ 🔘 Is Deleted:', church.is_deleted);
+      console.log('│');
+      console.log('│ 👤 Leader:');
+      if (church.leader) {
+        console.log(`│   - Name: ${church.leader.name}`);
+        console.log(`│   - Email: ${church.leader.email}`);
+      } else {
+        console.log('│   (No leader assigned)');
+      }
+      console.log('│');
+      console.log('│ 📞 Contact Data:');
+      if (church.contact) {
+        console.log(`│   - City: ${church.contact.city || 'N/A'}`);
+        console.log(`│   - State/Province: ${church.contact.state || 'N/A'}`);
+        console.log(`│   - Country: ${church.contact.country || 'N/A'}`);
+        console.log(`│   - Postal Code: ${church.contact.postal_code || 'N/A'}`);
+      } else {
+        console.log('│   (No contact data)');
+      }
+      console.log('│');
+      console.log('│ 🌍 Region Link:');
+      if (church.region) {
+        console.log(`│   ✅ LINKED to: ${church.region.name}`);
+        console.log(`│   - Region Color: ${church.region.color}`);
+      } else if (church.region_id) {
+        console.log(`│   ⚠️  Has region_id but NO region object`);
+      } else {
+        console.log('│   ❌ NOT LINKED to any region');
+        
+        // VALIDAÇÃO AUTOMÁTICA: Tentar encontrar região correspondente
+        const match = findMatchingRegion(church, regions);
+        if (match.region) {
+          console.log(`│`);
+          console.log(`│ 💡 SUGGESTED MATCH (${match.confidence}% confidence):`);
+          console.log(`│   🎯 Should link to: ${match.region.name}`);
+          console.log(`│   📍 Match type: ${match.matchType === 'city' ? 'Province + City' : 'Province only'}`);
+          console.log(`│   🎨 Region color: ${match.region.color}`);
+          if (match.matchType === 'province') {
+            console.log(`│   ⚠️  City not found in region's territory, but province matches`);
+          }
+        } else {
+          console.log(`│`);
+          console.log(`│ ⚠️  No matching region found for this location`);
+        }
+      }
+      console.log('└────────────────────────────────────────┘');
+    });
+    
+    // ========== PART 3: RELATIONSHIP ANALYSIS ==========
+    console.log('\n\n🔗 ===== RELATIONSHIP ANALYSIS =====\n');
+    
+    const churchesWithRegion = churches.filter((c: any) => c.region_id);
+    const churchesWithoutRegion = churches.filter((c: any) => !c.region_id);
+    const churchesWithContact = churches.filter((c: any) => c.contact);
+    const churchesWithZipCode = churches.filter((c: any) => c.zip_code);
+    
+    console.log('📊 Overall Statistics:');
+    console.log('  ├─ Total Regions:', regions.length);
+    console.log('  ├─ Total Churches:', churches.length);
+    console.log('  ├─ Churches WITH region:', churchesWithRegion.length);
+    console.log('  ├─ Churches WITHOUT region:', churchesWithoutRegion.length);
+    console.log('  ├─ Churches with contact data:', churchesWithContact.length);
+    console.log('  └─ Churches with zip code:', churchesWithZipCode.length);
+    
+    console.log('\n🗺️  Region Distribution:');
+    regions.forEach(region => {
+      const churchCount = region.churches?.length || 0;
+      const percentage = churches.length > 0 
+        ? ((churchCount / churches.length) * 100).toFixed(1) 
+        : '0';
+      console.log(`  ├─ ${region.name}: ${churchCount} churches (${percentage}%)`);
+    });
+    console.log(`  └─ Unassigned: ${churchesWithoutRegion.length} churches (${churches.length > 0 ? ((churchesWithoutRegion.length / churches.length) * 100).toFixed(1) : '0'}%)`);
+    
+    // Match validation
+    console.log('\n✅ Church-Region Matching Validation:');
+    const matchingIssues: any[] = [];
+    
+    churchesWithRegion.forEach((church: any) => {
+      const region = regions.find(r => r.id === church.region_id);
+      const hasRegionObject = !!church.region;
+      const regionMatch = region && church.region && region.id === church.region.id;
+      
+      if (!region) {
+        matchingIssues.push({
+          church: church.name,
+          issue: 'Region ID exists but region not found in regions array',
+          region_id: church.region_id
+        });
+      } else if (!hasRegionObject) {
+        matchingIssues.push({
+          church: church.name,
+          issue: 'Has region_id but region object is null',
+          region_id: church.region_id
+        });
+      } else if (!regionMatch) {
+        matchingIssues.push({
+          church: church.name,
+          issue: 'Region object ID mismatch',
+          expected: church.region_id,
+          actual: church.region?.id
+        });
+      }
+    });
+    
+    if (matchingIssues.length > 0) {
+      console.log('  ⚠️  Issues Found:');
+      matchingIssues.forEach((issue, idx) => {
+        console.log(`  ${idx + 1}. ${issue.church}:`);
+        console.log(`     ${issue.issue}`);
+        if (issue.expected) console.log(`     Expected: ${issue.expected}, Actual: ${issue.actual}`);
+      });
+    } else {
+      console.log('  ✅ All churches have valid region relationships!');
+    }
+    
+    // Orphan churches
+    if (churchesWithoutRegion.length > 0) {
+      console.log('\n⚠️  Orphan Churches (No Region Assigned):');
+      churchesWithoutRegion.forEach((church: any, idx) => {
+        console.log(`  ${idx + 1}. ${church.name}`);
+        console.log(`     - Has contact: ${church.contact ? 'YES' : 'NO'}`);
+        console.log(`     - Has zip code: ${church.zip_code ? 'YES' : 'NO'}`);
+        if (church.contact?.city) {
+          console.log(`     - Location: ${church.contact.city}, ${church.contact.state || 'N/A'}`);
+        }
+      });
+    }
+    
+    // ========== AUTO-LINKING SUGGESTIONS ==========
+    console.log('\n\n🤖 ===== AUTO-LINKING SUGGESTIONS =====\n');
+    
+    const orphansWithSuggestions: any[] = [];
+    const orphansWithoutSuggestions: any[] = [];
+    
+    churchesWithoutRegion.forEach((church: any) => {
+      const match = enrichChurchesWithAutoLink([church], regions)[0];
+      if (match.has_auto_link && match.suggested_region) {
+        orphansWithSuggestions.push({ 
+          church, 
+          match: {
+            region: match.suggested_region,
+            confidence: match.link_confidence,
+            matchType: match.link_match_type
+          }
+        });
+      } else {
+        orphansWithoutSuggestions.push(church);
+      }
+    });
+    
+    console.log('📊 Summary:');
+    console.log(`  ├─ Orphan churches: ${churchesWithoutRegion.length}`);
+    console.log(`  ├─ With auto-match suggestions: ${orphansWithSuggestions.length}`);
+    console.log(`  └─ Without matches: ${orphansWithoutSuggestions.length}`);
+    
+    if (orphansWithSuggestions.length > 0) {
+      console.log('\n✨ Churches that CAN be auto-linked:');
+      orphansWithSuggestions.forEach(({ church, match }, idx) => {
+        console.log(`\n  ${idx + 1}. ${church.name}`);
+        console.log(`     🎯 Suggested Region: ${match.region.name}`);
+        console.log(`     📍 Match Type: ${match.matchType === 'city' ? '✅ Province + City' : '⚠️  Province only'}`);
+        console.log(`     💯 Confidence: ${match.confidence}%`);
+        console.log(`     📌 Location: ${church.contact?.city || 'N/A'}, ${church.contact?.state || 'N/A'}`);
+        console.log(`     🔗 Action: UPDATE church SET region_id = '${match.region.id}'`);
+      });
+    }
+    
+    if (orphansWithoutSuggestions.length > 0) {
+      console.log('\n❌ Churches that CANNOT be auto-linked (missing/invalid location data):');
+      orphansWithoutSuggestions.forEach((church, idx) => {
+        console.log(`  ${idx + 1}. ${church.name}`);
+        console.log(`     - Has contact: ${church.contact ? 'YES' : 'NO'}`);
+        console.log(`     - City: ${church.contact?.city || 'MISSING'}`);
+        console.log(`     - Province: ${church.contact?.state || 'MISSING'}`);
+        console.log(`     ⚠️  Action: Update contact data or assign region manually`);
+      });
+    }
+    
+    console.log('\n╔════════════════════════════════════════════════════════════════════╗');
+    console.log('║                    🏁 END OF CONSOLIDATED DEBUG                   ║');
+    console.log('╚════════════════════════════════════════════════════════════════════╝\n');
+    
+  }, [regions, churches]);
+  
+  // ============================================================================
+  // AUTO-LINKING: Apply suggestions to churches data
+  // ============================================================================
+  
+  /**
+   * Cria versão enriquecida de churches com auto-linking aplicado
+   * Usa funções do @/lib/church-region-matcher
+   */
+  const churchesWithAutoLink = useMemo<EnrichedChurch[]>(() => {
+    if (churches.length === 0 || regions.length === 0) return [];
+    
+    return enrichChurchesWithAutoLink(churches, regions);
+  }, [churches, regions]);
+  
+  /**
+   * Estatísticas de auto-linking para debug e UI
+   * Usa funções do @/lib/church-region-matcher
+   */
+  const autoLinkStats = useMemo(() => {
+    return calculateAutoLinkStats(churchesWithAutoLink);
+  }, [churchesWithAutoLink]);
+  
+  // Log auto-link stats
+  useEffect(() => {
+    if (churchesWithAutoLink.length > 0) {
+      console.log('\n🔗 ===== AUTO-LINK STATISTICS =====');
+      console.log(`  Total churches: ${autoLinkStats.total}`);
+      console.log(`  ✅ With original region link: ${autoLinkStats.withOriginalLink}`);
+      console.log(`  🤖 With auto-suggested link: ${autoLinkStats.withAutoLink}`);
+      console.log(`     ├─ High confidence (100%): ${autoLinkStats.withHighConfidence}`);
+      console.log(`     └─ Medium confidence (70%): ${autoLinkStats.withMediumConfidence}`);
+      console.log(`  ❌ Without any link: ${autoLinkStats.withoutLink}`);
+      console.log('==========================================\n');
+    }
+  }, [autoLinkStats, churchesWithAutoLink.length]);
+  
   // Gerar markers de cidades com cores das regiões
   const cityMarkers = useMemo(() => {
     if (regions.length === 0) return [];
@@ -88,20 +394,41 @@ export default function RegionsPage() {
     // Converter regiões para formato do MapLibre com territory real
     const mapRegions: MapRegionConfig[] = regions
       .filter(region => !region.is_deleted)
-      .map(region => ({
-        id: region.id,
-        name: region.name,
-        color: region.color || '#10b981',
-        provinces: getProvincesFromTerritory(region.territory),
-        territory: region.territory,
-        churches: region.churches?.map(church => ({
-          id: church.id,
-          name: church.name,
-          city: undefined,
-          province: undefined,
-        })) || [],
-        churches_count: region.churches?.length || 0,
-      }));
+      .map(region => {
+        // Debug: território da região
+        console.log(`📍 Region: ${region.name}`);
+        console.log('  Territory JSON:', region.territory);
+        
+        const churchesWithLocation = region.churches?.map(church => {
+          // Usar dados de contact diretamente da church (já vem da query de regions)
+          // Ou buscar do array churches como fallback
+          const contactData = church.contact || churches.find(c => c.id === church.id)?.contact;
+          const city = contactData?.city;
+          const province = contactData?.state; // state = província
+          
+          console.log(`    Church: ${church.name}`);
+          console.log(`      City: ${city || 'N/A'}`);
+          console.log(`      Province: ${province || 'N/A'}`);
+          console.log(`      Contact data:`, contactData);
+          
+          return {
+            id: church.id,
+            name: church.name,
+            city: city,
+            province: province,
+          };
+        }) || [];
+        
+        return {
+          id: region.id,
+          name: region.name,
+          color: region.color || '#10b981',
+          provinces: getProvincesFromTerritory(region.territory),
+          territory: region.territory,
+          churches: churchesWithLocation,
+          churches_count: region.churches?.length || 0,
+        };
+      });
     
     const generatedMarkers = generateCityMarkers(mapRegions);
     
@@ -188,166 +515,116 @@ export default function RegionsPage() {
     });
   }, [regions, tPage]);
   
-  // Helper: Converter zip code holandês para coordenadas aproximadas
-  const getCoordinatesFromZipCode = (zipCode: string): [number, number] | null => {
-    if (!zipCode) return null;
-    
-    // Remover espaços e converter para maiúsculas
-    const cleanZip = zipCode.replace(/\s+/g, '').toUpperCase();
-    
-    // Zip code holandês: 4 dígitos + 2 letras (ex: 1012AB)
-    const match = cleanZip.match(/^(\d{4})([A-Z]{2})$/);
-    if (!match) return null;
-    
-    const digits = match[1];
-    const firstDigit = parseInt(digits[0]);
-    const secondDigit = parseInt(digits[1]);
-    
-    // Mapeamento aproximado baseado nos primeiros dígitos do zip code
-    // Referência: https://nl.wikipedia.org/wiki/Postcodes_in_Nederland
-    const zipToCoords: Record<string, [number, number]> = {
-      // Amsterdam região (1000-1099)
-      '10': [4.9041, 52.3676],
-      '11': [4.9200, 52.3700],
-      // Den Haag (2500-2599)
-      '25': [4.3007, 52.0705],
-      '26': [4.3200, 52.0800],
-      // Rotterdam (3000-3099)
-      '30': [4.4777, 51.9244],
-      '31': [4.5000, 51.9300],
-      // Utrecht (3500-3599)
-      '35': [5.1214, 52.0907],
-      '36': [5.1400, 52.1000],
-      // Eindhoven (5600-5699)
-      '56': [5.4697, 51.4416],
-      '57': [5.4800, 51.4500],
-      // Groningen (9700-9799)
-      '97': [6.5665, 53.2194],
-      '98': [6.5800, 53.2300],
-      // Maastricht (6200-6299)
-      '62': [5.6913, 50.8514],
-      '63': [5.7000, 50.8600],
-    };
-    
-    // Tentar match com primeiros 2 dígitos
-    const key = digits.substring(0, 2);
-    if (zipToCoords[key]) {
-      // Adicionar pequena variação baseada nos outros dígitos para espalhar pins
-      const base = zipToCoords[key];
-      const offset = parseInt(digits.substring(2)) * 0.0001;
-      return [base[0] + offset, base[1] + offset * 0.5];
-    }
-    
-    // Fallback: Centro da Holanda
-    return [5.2913, 52.1326];
-  };
+  // Gerar markers de TODAS as churches usando zip_code + AUTO-LINKING
+  const [churchMarkersState, setChurchMarkersState] = useState<any[]>([]);
   
-  // Gerar markers de TODAS as churches usando zip_code
-  const churchMarkers = useMemo(() => {
-    if (churches.length === 0) return [];
+  // Processar churches de forma assíncrona para geocoding
+  useEffect(() => {
+    if (churchesWithAutoLink.length === 0) return;
     
-    const markers: any[] = [];
-    
-    churches.forEach((church: any) => {
-      // Obter coordenadas do zip_code
-      const coords = church.zip_code ? getCoordinatesFromZipCode(church.zip_code) : null;
+    const processChurches = async () => {
+      const markers: any[] = [];
       
-      if (!coords) {
-        return;
-      }
-      
-      // Determinar cor do pin
-      const hasInstitution = !!church.institution_id;
-      const churchColor = hasInstitution ? '#083e55' : '#9ca3af';
-      const bgOpacity = hasInstitution ? '0.95' : '0.5';
-      const borderColor = hasInstitution ? churchColor : '#d1d5db';
-      
-      // Buscar dados da região
-      const churchRegion = church.region || regions.find(r => r.id === church.region_id);
-      
-      // SVG do ícone Church do Lucide
-      const churchIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${churchColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 7 4 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9l4-2"/><path d="M14 22v-4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v4"/><path d="M18 22V5l-6-3-6 3v17"/><path d="M12 7v5"/><path d="M10 9h4"/></svg>`;
-      
-      markers.push({
-        lngLat: coords,
-        title: church.name,
-        description: hasInstitution 
-          ? `Região: ${churchRegion?.name || tPage.popup.zip_code_not_available}` 
-          : tPage.popup.without_region,
-        color: churchColor,
-        popupHTML: `
-          <div style="
-            padding: 6px; 
-            width: 100px;
-            max-height: 150px;
-            background: rgba(255, 255, 255, ${bgOpacity});
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid ${borderColor};
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            overflow: hidden;
-          ">
-            <div style="margin-bottom: 4px;">
+      for (const church of churchesWithAutoLink) {
+        // Obter coordenadas usando sistema de geocoding melhorado
+        const coords = church.zip_code 
+          ? await getCoordinatesFromZipCode(church.zip_code, church.house_number)
+          : null;
+        
+        if (!coords) continue;
+        
+        const hasRegion = !!church.region_id;
+        const churchColor = hasRegion && church.region?.color ? church.region.color : '#9ca3af';
+        const churchRegion = church.region || regions.find(r => r.id === church.region_id);
+        
+        markers.push({
+          lngLat: coords,
+          title: church.name,
+          description: hasRegion ? churchRegion?.name : tPage.popup.without_region,
+          color: churchColor,
+          popupHTML: `
+            <div style="
+              padding: 12px; 
+              min-width: 180px;
+              max-width: 220px;
+              background: white;
+              border-radius: 8px;
+              box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            ">
               <h3 style="
-                margin: 0; 
-                font-size: 10px; 
-                font-weight: 700; 
-                color: ${hasInstitution ? churchColor : '#6b7280'};
-                line-height: 1.2;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
+                margin: 0 0 8px 0; 
+                font-size: 13px; 
+                font-weight: 600; 
+                color: #1f2937;
+                line-height: 1.4;
               ">
                 ${church.name}
               </h3>
+              
+              ${church.contact?.city && church.contact?.state ? `
+                <div style="
+                  font-size: 11px; 
+                  color: #6b7280; 
+                  margin-bottom: 6px;
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                ">
+                  <span style="color: #9ca3af;">📍</span>
+                  ${church.contact.city}, ${church.contact.state}
+                </div>
+              ` : ''}
+              
+              ${church.zip_code ? `
+                <div style="
+                  font-size: 11px; 
+                  color: #6b7280; 
+                  margin-bottom: 8px;
+                  display: flex;
+                  align-items: center;
+                  gap: 4px;
+                ">
+                  <span style="color: #9ca3af;">📮</span>
+                  ${church.zip_code}${church.house_number ? ` #${church.house_number}` : ''}
+                </div>
+              ` : ''}
+              
+              ${hasRegion && churchRegion ? `
+                <div style="
+                  padding: 6px 10px;
+                  background: ${churchRegion.color}15;
+                  border-left: 3px solid ${churchRegion.color};
+                  border-radius: 4px;
+                  font-size: 11px;
+                  color: ${churchRegion.color};
+                  font-weight: 600;
+                ">
+                  ${churchRegion.name}
+                </div>
+              ` : `
+                <div style="
+                  padding: 6px 10px;
+                  background: #f3f4f6;
+                  border-left: 3px solid #d1d5db;
+                  border-radius: 4px;
+                  font-size: 11px;
+                  color: #9ca3af;
+                  font-weight: 500;
+                ">
+                  Sem região
+                </div>
+              `}
             </div>
-            
-            <div style="
-              font-size: 8px; 
-              color: #6b7280;
-              margin-bottom: 3px;
-              line-height: 1.2;
-            ">
-              ${church.zip_code || '${tPage.popup.zip_code_not_available}'}
-            </div>
-            
-            ${hasInstitution && churchRegion ? `
-              <div style="
-                padding: 3px 4px;
-                background: ${churchRegion.color}15;
-                border-left: 2px solid ${churchRegion.color};
-                border-radius: 3px;
-                font-size: 8px;
-                color: ${churchRegion.color};
-                font-weight: 600;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-              ">
-                ${churchRegion.name}
-              </div>
-            ` : `
-              <div style="
-                padding: 3px 4px;
-                background: rgba(156, 163, 175, 0.1);
-                border-left: 2px solid #9ca3af;
-                border-radius: 3px;
-                font-size: 8px;
-                color: #6b7280;
-                font-weight: 600;
-              ">
-                ${tPage.popup.without_region}
-              </div>
-            `}
-          </div>
-        `,
-      });
-    });
+          `,
+        });
+      }
+      
+      setChurchMarkersState(markers);
+    };
     
-    return markers;
-  }, [churches, regions, tPage]);
+    processChurches();
+  }, [churchesWithAutoLink, regions, tPage, autoLinkStats]);
   
   // ============================================================================
   // HELPER FUNCTIONS
@@ -399,36 +676,41 @@ export default function RegionsPage() {
   // ============================================================================
   // KPI DATA
   // ============================================================================
-  const kpiCardsData: KPICardData[] = useMemo(() => [
-    {
-      id: "total-regions",
-      title: tRegion.page.totalRegions,
-      value: regions.reduce((count, region) => count + (region.is_deleted ? 0 : 1), 0),
-      icon: MapPin,
-      subtitle: tRegion.page.active_regions
-    },
-    {
-      id: "total-churches",
-      title: tRegion.page.totalChurches,
-      value: regions.reduce((count, region) => !region.is_deleted ? count + (region.kpiData?.totalChurches || 0) : count, 0),
-      icon: Home,
-      subtitle: tRegion.page.churches_in_regions
-    },
-    {
-      id: "total-provinces",
-      title: tRegion.page.totalProvinces,
-      value: regions.reduce((count, region) => !region.is_deleted ? count + (region.kpiData?.totalProvinces || 0) : count, 0),
-      icon: MapPin,
-      subtitle: tRegion.page.provinces_in_regions
-    },
-        {
-      id: "total-cities",
-      title: tRegion.page.totalCities,
-      value: regions.reduce((count, region) => !region.is_deleted ? count + (region.kpiData?.totalCities || 0) : count, 0),
-      icon: MapPin,
-      subtitle: tRegion.page.cities_in_regions
-    }
-  ], [regions, tRegion])
+  const kpiCardsData: KPICardData[] = useMemo(() => {
+    // Use churchesWithAutoLink para contar churches com região (original + auto-linked)
+    const churchesWithRegionAssigned = churchesWithAutoLink.filter(c => c.region_id).length;
+    
+    return [
+      {
+        id: "total-regions",
+        title: tRegion.page.totalRegions,
+        value: regions.reduce((count, region) => count + (region.is_deleted ? 0 : 1), 0),
+        icon: MapPin,
+        subtitle: tRegion.page.active_regions
+      },
+      {
+        id: "total-churches",
+        title: tRegion.page.totalChurches,
+        value: churchesWithRegionAssigned,
+        icon: Home,
+        subtitle: tRegion.page.churches_in_regions
+      },
+      {
+        id: "total-provinces",
+        title: tRegion.page.totalProvinces,
+        value: regions.reduce((count, region) => !region.is_deleted ? count + (region.kpiData?.totalProvinces || 0) : count, 0),
+        icon: MapPin,
+        subtitle: tRegion.page.provinces_in_regions
+      },
+      {
+        id: "total-cities",
+        title: tRegion.page.totalCities,
+        value: regions.reduce((count, region) => !region.is_deleted ? count + (region.kpiData?.totalCities || 0) : count, 0),
+        icon: MapPin,
+        subtitle: tRegion.page.cities_in_regions
+      }
+    ]
+  }, [regions, tRegion, churchesWithAutoLink, autoLinkStats])
   
   // ============================================================================
   // LIFECYCLE EFFECTS
@@ -740,7 +1022,7 @@ export default function RegionsPage() {
                   showGeolocation={true}
                   showFullscreen={true}
                   showScale={true}
-                  markers={churchMarkers}
+                  markers={churchMarkersState}
                   onLoad={(map) => {
                     setMapInstance(map)
                   }}

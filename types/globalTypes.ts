@@ -161,6 +161,23 @@ export interface ApproveAnnualBudgetDto {
   notes?: string | null;
 }
 
+export interface ContactUpdateDto {
+  name?: string | null;
+  phone?: string | null;
+  mobile?: string | null;
+  email?: string | null;
+  country?: string | null;
+  city?: string | null;
+  state?: string | null;
+  address?: string | null;
+  full_address?: string | null;
+  postal_code?: string | null;
+  website?: string | null;
+  notes?: string | null;
+  id: string;
+  is_primary?: boolean | null;
+}
+
 export interface DepartmentBudgetCreateDto {
   department_id: string;
   year: number;
@@ -313,6 +330,21 @@ export interface UploadActivityDocumentDto {
   activity_id: string;
   project_activity_id: string;
   type: string;
+}
+
+export interface UserUpdateDto {
+  name?: string | null;
+  email?: string | null;
+  language_preference?: string | null;
+  institution_id?: string | null;
+  church_id?: string | null;
+  department_id?: string | null;
+  contact_id?: string | null;
+  is_deleted?: boolean | null;
+  contact?: ContactUpdateDto | null;
+  gender?: GenderType | null;
+  phone?: string | null;
+  address?: string | null;
 }
 
 //==============================================================

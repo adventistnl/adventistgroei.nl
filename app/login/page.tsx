@@ -19,9 +19,9 @@ import { LoadingSpinner } from '@/components/shared/loading-spinner'
 
 // Idiomas suportados pelo sistema
 const LANGUAGES = [
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'nl', name: 'Nederlands', flag: '🇳🇱' },
-  { code: 'pt', name: 'Português', flag: '🇧🇷' }
+  { code: 'en', name: 'English' },
+  { code: 'nl', name: 'Nederlands' },
+  { code: 'pt', name: 'Português' },
 ]
 
 function LoginPageContent() {

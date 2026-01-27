@@ -515,6 +515,7 @@ export type Church = {
   deleted_at?: Maybe<Scalars['DateTime']['output']>;
   deleted_by?: Maybe<Scalars['String']['output']>;
   departments?: Maybe<Array<Department>>;
+  house_number?: Maybe<Scalars['Int']['output']>;
   id: Scalars['ID']['output'];
   institution: Institution;
   institution_id: Scalars['String']['output'];
@@ -530,6 +531,7 @@ export type Church = {
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
   users?: Maybe<Array<User>>;
+  zip_code?: Maybe<Scalars['String']['output']>;
 };
 
 export type ChurchActivityData = {
@@ -571,10 +573,12 @@ export type ChurchCount = {
 
 export type ChurchCreateDto = {
   contact?: InputMaybe<ContactCreateDto>;
+  house_number?: InputMaybe<Scalars['Int']['input']>;
   institution_id: Scalars['String']['input'];
   leader_id: Scalars['String']['input'];
   name: Scalars['String']['input'];
   type?: InputMaybe<ChurchType>;
+  zip_code?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type ChurchKpiData = {
@@ -613,6 +617,7 @@ export type ChurchOrderByWithRelationInput = {
   deleted_at?: InputMaybe<SortOrderInput>;
   deleted_by?: InputMaybe<SortOrderInput>;
   departments?: InputMaybe<DepartmentOrderByRelationAggregateInput>;
+  house_number?: InputMaybe<SortOrderInput>;
   id?: InputMaybe<SortOrder>;
   institution?: InputMaybe<InstitutionOrderByWithRelationInput>;
   institution_id?: InputMaybe<SortOrder>;
@@ -628,6 +633,7 @@ export type ChurchOrderByWithRelationInput = {
   updated_at?: InputMaybe<SortOrder>;
   updated_by?: InputMaybe<SortOrder>;
   users?: InputMaybe<UserOrderByRelationAggregateInput>;
+  zip_code?: InputMaybe<SortOrderInput>;
 };
 
 export enum ChurchType {
@@ -639,12 +645,14 @@ export enum ChurchType {
 export type ChurchUpdateDto = {
   contact?: InputMaybe<ContactCreateDto>;
   departmens?: InputMaybe<Array<Scalars['String']['input']>>;
+  house_number?: InputMaybe<Scalars['Int']['input']>;
   institution_id?: InputMaybe<Scalars['String']['input']>;
   leader_id?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   subsidy_requests?: InputMaybe<Array<Scalars['String']['input']>>;
   type?: InputMaybe<ChurchType>;
   users?: InputMaybe<Array<Scalars['String']['input']>>;
+  zip_code?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type ChurchWhereInput = {
@@ -659,6 +667,7 @@ export type ChurchWhereInput = {
   deleted_at?: InputMaybe<DateTimeNullableFilter>;
   deleted_by?: InputMaybe<StringNullableFilter>;
   departments?: InputMaybe<DepartmentListRelationFilter>;
+  house_number?: InputMaybe<IntNullableFilter>;
   id?: InputMaybe<StringFilter>;
   institution?: InputMaybe<InstitutionScalarRelationFilter>;
   institution_id?: InputMaybe<StringFilter>;
@@ -674,6 +683,7 @@ export type ChurchWhereInput = {
   updated_at?: InputMaybe<DateTimeFilter>;
   updated_by?: InputMaybe<StringFilter>;
   users?: InputMaybe<UserListRelationFilter>;
+  zip_code?: InputMaybe<StringNullableFilter>;
 };
 
 export type ChurchesByRegionData = {
@@ -1981,6 +1991,17 @@ export type IntFilter = {
   notIn?: InputMaybe<Array<Scalars['Int']['input']>>;
 };
 
+export type IntNullableFilter = {
+  equals?: InputMaybe<Scalars['Int']['input']>;
+  gt?: InputMaybe<Scalars['Int']['input']>;
+  gte?: InputMaybe<Scalars['Int']['input']>;
+  in?: InputMaybe<Array<Scalars['Int']['input']>>;
+  lt?: InputMaybe<Scalars['Int']['input']>;
+  lte?: InputMaybe<Scalars['Int']['input']>;
+  not?: InputMaybe<NestedIntNullableFilter>;
+  notIn?: InputMaybe<Array<Scalars['Int']['input']>>;
+};
+
 export type InviteEmailDto = {
   inviter_id: Scalars['String']['input'];
   message?: InputMaybe<Scalars['String']['input']>;
@@ -2146,6 +2167,7 @@ export type MutationAddRoleToUserArgs = {
 
 export type MutationAddSubsidyRequestMessageArgs = {
   id: Scalars['String']['input'];
+  language?: InputMaybe<LanguagePreference>;
   message: Scalars['String']['input'];
 };
 
@@ -2159,6 +2181,7 @@ export type MutationApproveAnnualBudgetArgs = {
 export type MutationApproveSubsidyRequestArgs = {
   approved_amount: Scalars['Float']['input'];
   id: Scalars['String']['input'];
+  language?: InputMaybe<LanguagePreference>;
 };
 
 
@@ -2240,6 +2263,7 @@ export type MutationCreateSettingArgs = {
 
 export type MutationCreateSubsidyRequestArgs = {
   data: SubsidyRequestCreateDto;
+  language?: InputMaybe<LanguagePreference>;
 };
 
 
@@ -2331,6 +2355,7 @@ export type MutationDeleteSubsidyReceiptArgs = {
 
 export type MutationDeleteSubsidyRequestArgs = {
   id: Scalars['String']['input'];
+  language?: InputMaybe<LanguagePreference>;
 };
 
 
@@ -2372,6 +2397,7 @@ export type MutationRejectAnnualBudgetArgs = {
 
 export type MutationRejectSubsidyRequestArgs = {
   id: Scalars['String']['input'];
+  language?: InputMaybe<LanguagePreference>;
   rejection_reason: Scalars['String']['input'];
 };
 
@@ -2502,6 +2528,7 @@ export type MutationUpdateSettingArgs = {
 export type MutationUpdateSubsidyRequestArgs = {
   data: SubsidyRequestUpdateDto;
   id: Scalars['String']['input'];
+  language?: InputMaybe<LanguagePreference>;
 };
 
 
@@ -2767,6 +2794,17 @@ export type NestedIntFilter = {
   lt?: InputMaybe<Scalars['Int']['input']>;
   lte?: InputMaybe<Scalars['Int']['input']>;
   not?: InputMaybe<NestedIntFilter>;
+  notIn?: InputMaybe<Array<Scalars['Int']['input']>>;
+};
+
+export type NestedIntNullableFilter = {
+  equals?: InputMaybe<Scalars['Int']['input']>;
+  gt?: InputMaybe<Scalars['Int']['input']>;
+  gte?: InputMaybe<Scalars['Int']['input']>;
+  in?: InputMaybe<Array<Scalars['Int']['input']>>;
+  lt?: InputMaybe<Scalars['Int']['input']>;
+  lte?: InputMaybe<Scalars['Int']['input']>;
+  not?: InputMaybe<NestedIntNullableFilter>;
   notIn?: InputMaybe<Array<Scalars['Int']['input']>>;
 };
 
@@ -3583,6 +3621,8 @@ export type Query = {
   getSubsidyReceiptsByItemId: Array<SubsidyReceipt>;
   getSubsidyReceiptsByRequestId: Array<SubsidyReceipt>;
   getSubsidyStatusHistory: Array<SubsidyStatusHistory>;
+  /** Get city and province information for a Dutch postal code (ZIP code) and house number */
+  getZipInfo: ZipInfo;
   institution?: Maybe<Institution>;
   institutionalDepartmentsKPIs: InstitutionalDepartmentsKpIs;
   institutions: Array<Institution>;
@@ -3751,6 +3791,12 @@ export type QueryGetSubsidyReceiptsByRequestIdArgs = {
 
 export type QueryGetSubsidyStatusHistoryArgs = {
   subsidyRequestId: Scalars['String']['input'];
+};
+
+
+export type QueryGetZipInfoArgs = {
+  houseNumber: Scalars['Int']['input'];
+  zip: Scalars['String']['input'];
 };
 
 
@@ -5162,4 +5208,10 @@ export type VoluntariesOnProjectsWhereInput = {
   updated_by?: InputMaybe<StringFilter>;
   user?: InputMaybe<UserScalarRelationFilter>;
   user_id?: InputMaybe<StringFilter>;
+};
+
+export type ZipInfo = {
+  __typename?: 'ZipInfo';
+  city?: Maybe<Scalars['String']['output']>;
+  province?: Maybe<Scalars['String']['output']>;
 };

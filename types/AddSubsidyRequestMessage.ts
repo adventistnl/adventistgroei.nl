@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { SubsidyHistoryType } from "./globalTypes";
+import { LanguagePreference, SubsidyHistoryType } from "./globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: AddSubsidyRequestMessage
@@ -41,4 +41,5 @@ export interface AddSubsidyRequestMessage {
 export interface AddSubsidyRequestMessageVariables {
   id: string;
   message: string;
+  language?: LanguagePreference | null;
 }

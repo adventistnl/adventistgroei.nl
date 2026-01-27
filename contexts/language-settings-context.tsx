@@ -7,15 +7,14 @@ import toast from "react-hot-toast"
 interface Language {
   code: string
   name: string
-  flag: string
   initials: string
 }
 
 // System configured languages (base configuration)
 const SYSTEM_LANGUAGES: Language[] = [
-  { code: "pt", name: "Português", flag: "🇧🇷", initials: "PT" },
-  { code: "en", name: "English", flag: "🇺🇸", initials: "EN" },
-  { code: "nl", name: "Nederlands", flag: "🇳🇱", initials: "NL" },
+  { code: "pt", name: "Português", initials: "PT" },
+  { code: "en", name: "English",  initials: "EN" },
+  { code: "nl", name: "Nederlands", initials: "NL" },
 ]
 
 interface LanguageSettingsContextType {

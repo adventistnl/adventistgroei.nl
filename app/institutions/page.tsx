@@ -979,20 +979,21 @@ export default function InstitutionsPage() {
 
 
         {/* Header */}
-        <div className="flex flex-col justify-between items-start gap-4">
-          <div className="flex w-full justify-between">
-            <div>
-              <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold text-foreground mb-2">
+        <div className="space-y-4">
+          {/* Title and Actions Row */}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            {/* Title Section */}
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground mb-2">
                 {t('institutions.page_header.title')}
               </h2>
-              <p className="text-muted-foreground text-0.875rem sm:text-1rem">
+              <p className="text-muted-foreground text-sm sm:text-base">
                 {t('institutions.page_header.subtitle')}
               </p>
             </div>
 
-  
-
-            <div className="flex items-center gap-3">
+            {/* Action Buttons - Desktop */}
+            <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
               <PageFilters
                 filters={pageFilters}
                 values={filterValues}
@@ -1019,18 +1020,52 @@ export default function InstitutionsPage() {
                 </RegisterInstitutionModal>
               </WithPermission>
             </div>
-
           </div>
 
-          {/* Year Filter */}
-          <YearFilter 
-            availableYears={availableYears}
-            selectedYear={selectedYear}
-            onYearChange={setSelectedYear}
-            onAddYear={handleAddYear}
-            showAddButton={false}
-            className="mb-0"
-          />
+          {/* Mobile Action Buttons and Year Filter Row */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            {/* Mobile Action Buttons */}
+            <div className="flex sm:hidden items-center gap-2">
+              <PageFilters
+                filters={pageFilters}
+                values={filterValues}
+                onChange={handleFilterChange}
+                onClear={handleClearFilters}
+                triggerLabel={t('common.filters') || "Filters"}
+                align="end"
+              />
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="flex-shrink-0"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
+              
+              <WithPermission requiredPermissions={[PermissionResolverName.CreateInstitution]}>
+                <RegisterInstitutionModal onSuccess={handleInstitutionCreated}>
+                  <Button className="bg-primary hover:bg-primary/80 flex-1 sm:flex-initial">
+                    <Plus className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden xs:inline ml-2">
+                      {t('institutions.page_header.new_institution')}
+                    </span>
+                  </Button>
+                </RegisterInstitutionModal>
+              </WithPermission>
+            </div>
+
+            {/* Year Filter */}
+            <YearFilter 
+              availableYears={availableYears}
+              selectedYear={selectedYear}
+              onYearChange={setSelectedYear}
+              onAddYear={handleAddYear}
+              showAddButton={false}
+              className="w-full sm:w-auto"
+            />
+          </div>
         </div>
 
         {/* KPI Cards Carousel */}

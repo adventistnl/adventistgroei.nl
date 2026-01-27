@@ -47,7 +47,7 @@ export function LoginHeader({
     if (i18n?.changeLanguage) {
       i18n.changeLanguage(languageCode)
       const selectedLanguage = languages.find(l => l.code === languageCode)
-      toast.success(`${selectedLanguage?.flag} Language changed to ${selectedLanguage?.name}`, {
+      toast.success(`Language changed to ${selectedLanguage?.name}`, {
         duration: 3000
       })
     }
@@ -60,7 +60,7 @@ export function LoginHeader({
   const handleThemeToggle = () => {
     const newTheme = theme === "dark" ? "light" : "dark"
     setTheme(newTheme)
-    toast.success(`${newTheme === "dark" ? "🌙" : "☀️"} Theme changed to ${newTheme} mode`, {
+    toast.success(`Theme changed to ${newTheme} mode`, {
       duration: 2000
     })
   }

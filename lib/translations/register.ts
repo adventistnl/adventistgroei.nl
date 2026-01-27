@@ -82,6 +82,11 @@ export const registerTranslations = {
     registrationError: "Error processing registration. Check your connection and try again.",
     stepCompleted: "Step completed!",
     
+    // Success state
+    registrationComplete: "Registration Complete!",
+    redirectingToDashboard: "Redirecting to Dashboard...",
+    accessGranted: "Access granted. Preparing your workspace...",
+    
     // Review section
     reviewPersonalData: "Personal Data",
     reviewInstitutionData: "Institution Data",
@@ -175,8 +180,11 @@ export const registerTranslations = {
     emailAlreadyExists: "Dit e-mailadres is al in gebruik. Gebruik een ander e-mailadres.",
     registrationSuccess: "Registratie succesvol voltooid!",
     registrationError: "Fout bij het verwerken van registratie. Controleer je verbinding en probeer opnieuw.",
-    stepCompleted: "Stap voltooid!",
-    
+    stepCompleted: "Stap voltooid!",    
+    // Success state
+    registrationComplete: "Registratie Voltooid!",
+    redirectingToDashboard: "Doorverwijzen naar Dashboard...",
+    accessGranted: "Toegang verleend. Uw werkruimte wordt voorbereid...",    
     // Review section
     reviewPersonalData: "Persoonlijke Gegevens",
     reviewInstitutionData: "Instituut Gegevens",
@@ -271,6 +279,11 @@ export const registerTranslations = {
     registrationSuccess: "Registro concluído com sucesso!",
     registrationError: "Erro ao processar registro. Verifique sua conexão e tente novamente.",
     stepCompleted: "Passo concluído!",
+    
+    // Success state
+    registrationComplete: "Registro Completo!",
+    redirectingToDashboard: "Redirecionando para o Dashboard...",
+    accessGranted: "Acesso autorizado. Preparando seu espaço de trabalho...",
     
     // Review section
     reviewPersonalData: "Dados Pessoais",
