@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { PrivacyWrapper } from "@/components/shared/privacy-wrapper"
 import { 
   FileText, 
   ChevronDown, 
@@ -26,7 +25,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useRouter } from "next/navigation"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { WithPermission } from "@/hocs/with-permission"
-import { PermissionDeniedOverlay } from "@/components/shared/permission-denied-overlay"
 
 interface Project {
   id: string

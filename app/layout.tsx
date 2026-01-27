@@ -14,6 +14,7 @@ import { PrivacyDebugPanel } from "@/components/shared/privacy-debug-panel"
 import { PrivacyButtonDebugPanel } from "@/components/shared/privacy-button-debug"
 import { DynamicFavicon } from "@/components/shared/dynamic-favicon"
 import { ToastProvider } from "@/components/ui/toast-provider"
+import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -33,10 +34,16 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} h-full`}>
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} h-full`} suppressHydrationWarning>
       <body className="antialiased font-sans h-full overflow-hidden">
         <DynamicFavicon />
-        <I18nProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <I18nProvider>
           <GraphQLProvider>
             <AuthProvider>
               <PrivacyProviderWithAuth>
@@ -56,6 +63,7 @@ export default function RootLayout({
             </AuthProvider>
           </GraphQLProvider>
         </I18nProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

@@ -514,6 +514,8 @@ export interface Institutions_institutions_churches {
   region_id: string | null;
   contact_id: string | null;
   leader_id: string | null;
+  zip_code: string | null;
+  house_number: number | null;
   created_at: any;
   updated_at: any;
   created_by: string;

@@ -189,7 +189,8 @@ export const churchTranslations = {
       total_members: "Total members",
       active_departments: "Active departments",
       active_projects: "Active projects",
-      vs_last_month: "vs last month"
+      vs_last_month: "vs last month",
+      table_description: "Complete list of churches with management actions"
     },
 
     // Table columns
@@ -231,7 +232,8 @@ export const churchTranslations = {
       view_details: "View Details",
       edit_church: "Edit Church",
       delete_church: "Delete Church",
-      deactivate_church: "Deactivate Church"
+      deactivate_church: "Deactivate Church",
+      no_contact_info: "Member has no contact information"
     },
 
     // Filters
@@ -316,6 +318,126 @@ export const churchTranslations = {
           projects: "Projects",
           activeLabel: "active"
         }
+      },
+      timeRanges: {
+        last7Days: "Last 7 days",
+        last30Days: "Last 30 days",
+        last3Months: "Last 3 months",
+        last6Months: "Last 6 months",
+        last12Months: "Last 12 months"
+      },
+      noData: {
+        title: "No Project Data Available",
+        description: "Projects will appear here once they are created in the selected time period."
+      }
+    },
+
+    // Contact Information
+    contact: {
+      email: "Email",
+      phone: "Phone",
+      mobile: "Mobile",
+      address: "Address",
+      country: "Country",
+      city: "City",
+      postal_code: "Postal Code"
+    },
+
+    // Department
+    department: {
+      edit: "Edit Department",
+      delete: "Delete Department"
+    },
+
+    // Church Info
+    info: {
+      header_title: "Church Information",
+      members_label: "members",
+      departments_label: "departments",
+      total_activities_ytd: "Total activities (YTD)"
+    },
+
+    // Types
+    types: {
+      standard: "Standard"
+    },
+
+    // Tabs
+    tabs: {
+      members: "Members",
+      departments: "Departments"
+    },
+
+    // Charts Extended
+    charts: {
+      projects: "Projects",
+      projectsOverTime: {
+        title: "Projects Created Over Time",
+        description: "Project creation timeline by churches"
+      },
+      membersByChurch: {
+        title: "Members by Church Over Time",
+        description: "New members per month",
+        filters: {
+          all: "All",
+          q1: "Q1",
+          q2: "Q2",
+          q3: "Q3",
+          q4: "Q4"
+        },
+        footer: {
+          newMembers: "new members",
+          top: "Top",
+          members: "members",
+          yearView: "Year view",
+          churches: "churches"
+        },
+        loading: {
+          title: "Loading...",
+          description: "Fetching member registration data"
+        },
+        noData: {
+          title: "No Member Data Available",
+          description: "Member registration data will appear here once members join churches in the selected period.",
+          icon: "No members registered yet"
+        }
+      },
+      projectsByChurch: {
+        title: "Projects by Church",
+        titleDepartments: "Projects by Department",
+        description: "Which church has the most active projects",
+        descriptionDepartments: "Which department has the most active projects",
+        selectChurch: "Select a church",
+        selectDepartment: "Select a department",
+        selectPlaceholder: "Select church",
+        selectPlaceholderDept: "Select department",
+        allChurches: "All Churches",
+        allDepartments: "All Departments",
+        loading: {
+          title: "Loading...",
+          description: "Fetching project distribution data"
+        },
+        noData: {
+          title: "No Project Data Available",
+          description: "Projects will appear here once they are created in churches.",
+          icon: "No projects created yet"
+        },
+        footer: {
+          totalProjects: "Total Projects",
+          selected: "Selected:",
+          projects: "projects",
+          status: "Status:",
+          active: "active",
+          completed: "completed"
+        },
+        chart: {
+          projects: "Projects",
+          activeLabel: "active"
+        }
+      },
+      usersByRole: {
+        title: "Users by Role",
+        description: "Distribution of users by their roles within this church"
       },
       timeRanges: {
         last7Days: "Last 7 days",
@@ -521,7 +643,8 @@ export const churchTranslations = {
       total_members: "Totaal leden",
       active_departments: "Actieve afdelingen",
       active_projects: "Actieve projecten",
-      vs_last_month: "versus vorige maand"
+      vs_last_month: "versus vorige maand",
+      table_description: "Volledige lijst van kerken met beheeracties"
     },
 
     // Table columns
@@ -563,7 +686,8 @@ export const churchTranslations = {
       view_details: "Details Bekijken",
       edit_church: "Kerk Bewerken",
       delete_church: "Kerk Verwijderen",
-      deactivate_church: "Kerk Deactiveren"
+      deactivate_church: "Kerk Deactiveren",
+      no_contact_info: "Lid heeft geen contactinformatie"
     },
 
     // Filters
@@ -657,7 +781,126 @@ export const churchTranslations = {
       noData: {
         title: "Geen Projectgegevens Beschikbaar",
         description: "Projecten verschijnen hier zodra ze zijn aangemaakt in de geselecteerde periode."
-      }    }
+      }
+    },
+
+    // Contact Information
+    contact: {
+      email: "E-mail",
+      phone: "Telefoon",
+      mobile: "Mobiel",
+      address: "Adres",
+      country: "Land",
+      city: "Stad",
+      postal_code: "Postcode"
+    },
+
+    // Department
+    department: {
+      edit: "Afdeling Bewerken",
+      delete: "Afdeling Verwijderen"
+    },
+
+    // Church Info
+    info: {
+      header_title: "Kerk Informatie",
+      members_label: "leden",
+      departments_label: "afdelingen",
+      total_activities_ytd: "Totale activiteiten (YTD)"
+    },
+
+    // Types
+    types: {
+      standard: "Standaard"
+    },
+
+    // Tabs
+    tabs: {
+      members: "Leden",
+      departments: "Afdelingen"
+    },
+
+    // Charts Extended
+    charts: {
+      projects: "Projecten",
+      projectsOverTime: {
+        title: "Projecten Aangemaakt in de Tijd",
+        description: "Projectcreatie tijdlijn per kerken"
+      },      membersByChurch: {
+        title: "Leden per Kerk in de Loop der Tijd",
+        description: "Nieuwe leden per maand",
+        filters: {
+          all: "Alle",
+          q1: "K1",
+          q2: "K2",
+          q3: "K3",
+          q4: "K4"
+        },
+        footer: {
+          newMembers: "nieuwe leden",
+          top: "Top",
+          members: "leden",
+          yearView: "Jaarweergave",
+          churches: "kerken"
+        },
+        loading: {
+          title: "Laden...",
+          description: "Ledenregistratiegegevens ophalen"
+        },
+        noData: {
+          title: "Geen Ledengegevens Beschikbaar",
+          description: "Ledenregistratiegegevens verschijnen hier zodra leden zich aansluiten bij kerken in de geselecteerde periode.",
+          icon: "Nog geen leden geregistreerd"
+        }
+      },      projectsByChurch: {
+        title: "Projecten per Kerk",
+        titleDepartments: "Projecten per Departement",
+        description: "Welke kerk heeft de meeste actieve projecten",
+        descriptionDepartments: "Welk departement heeft de meeste actieve projecten",
+        selectChurch: "Selecteer een kerk",
+        selectDepartment: "Selecteer een departement",
+        selectPlaceholder: "Selecteer kerk",
+        selectPlaceholderDept: "Selecteer departement",
+        allChurches: "Alle Kerken",
+        allDepartments: "Alle Departementen",
+        loading: {
+          title: "Laden...",
+          description: "Projectdistributiegegevens ophalen"
+        },
+        noData: {
+          title: "Geen Projectgegevens Beschikbaar",
+          description: "Projecten verschijnen hier zodra ze zijn aangemaakt in kerken.",
+          icon: "Nog geen projecten aangemaakt"
+        },
+        footer: {
+          totalProjects: "Totaal Projecten",
+          selected: "Geselecteerd:",
+          projects: "projecten",
+          status: "Status:",
+          active: "actief",
+          completed: "voltooid"
+        },
+        chart: {
+          projects: "Projecten",
+          activeLabel: "actief"
+        }
+      },
+      usersByRole: {
+        title: "Gebruikers per Rol",
+        description: "Verdeling van gebruikers naar hun rollen binnen deze kerk"
+      },
+      timeRanges: {
+        last7Days: "Laatste 7 dagen",
+        last30Days: "Laatste 30 dagen",
+        last3Months: "Laatste 3 maanden",
+        last6Months: "Laatste 6 maanden",
+        last12Months: "Laatste 12 maanden"
+      },
+      noData: {
+        title: "Geen Projectgegevens Beschikbaar",
+        description: "Projecten verschijnen hier zodra ze zijn aangemaakt in de geselecteerde periode."
+      }
+    }
   },
   
   pt: {
@@ -850,7 +1093,8 @@ export const churchTranslations = {
       total_members: "Total de membros",
       active_departments: "Departamentos ativos",
       active_projects: "Projetos ativos",
-      vs_last_month: "vs mês anterior"
+      vs_last_month: "vs mês anterior",
+      table_description: "Lista completa de igrejas com ações de gerenciamento"
     },
 
     // Table columns
@@ -892,7 +1136,8 @@ export const churchTranslations = {
       view_details: "Ver Detalhes",
       edit_church: "Editar Igreja",
       delete_church: "Deletar Igreja",
-      deactivate_church: "Desativar Igreja"
+      deactivate_church: "Desativar Igreja",
+      no_contact_info: "Membro não possui informações de contato"
     },
 
     // Filters
@@ -977,6 +1222,126 @@ export const churchTranslations = {
           projects: "Projetos",
           activeLabel: "ativos"
         }
+      },
+      timeRanges: {
+        last7Days: "Últimos 7 dias",
+        last30Days: "Últimos 30 dias",
+        last3Months: "Últimos 3 meses",
+        last6Months: "Últimos 6 meses",
+        last12Months: "Últimos 12 meses"
+      },
+      noData: {
+        title: "Nenhum Dado de Projeto Disponível",
+        description: "Os projetos aparecerão aqui assim que forem criados no período selecionado."
+      }
+    },
+
+    // Contact Information
+    contact: {
+      email: "E-mail",
+      phone: "Telefone",
+      mobile: "Celular",
+      address: "Endereço",
+      country: "País",
+      city: "Cidade",
+      postal_code: "CEP"
+    },
+
+    // Department
+    department: {
+      edit: "Editar Departamento",
+      delete: "Deletar Departamento"
+    },
+
+    // Church Info
+    info: {
+      header_title: "Informações da Igreja",
+      members_label: "membros",
+      departments_label: "departamentos",
+      total_activities_ytd: "Total de atividades (ano atual)"
+    },
+
+    // Types
+    types: {
+      standard: "Padrão"
+    },
+
+    // Tabs
+    tabs: {
+      members: "Membros",
+      departments: "Departamentos"
+    },
+
+    // Charts Extended
+    charts: {
+      projects: "Projetos",
+      projectsOverTime: {
+        title: "Projetos Criados ao Longo do Tempo",
+        description: "Linha do tempo de criação de projetos por igrejas"
+      },
+      membersByChurch: {
+        title: "Membros por Igreja ao Longo do Tempo",
+        description: "Novos membros por mês",
+        filters: {
+          all: "Todos",
+          q1: "T1",
+          q2: "T2",
+          q3: "T3",
+          q4: "T4"
+        },
+        footer: {
+          newMembers: "novos membros",
+          top: "Top",
+          members: "membros",
+          yearView: "Visão anual",
+          churches: "igrejas"
+        },
+        loading: {
+          title: "Carregando...",
+          description: "Buscando dados de registro de membros"
+        },
+        noData: {
+          title: "Nenhum Dado de Membros Disponível",
+          description: "Os dados de registro de membros aparecerão aqui assim que os membros se juntarem às igrejas no período selecionado.",
+          icon: "Nenhum membro registrado ainda"
+        }
+      },
+      projectsByChurch: {
+        title: "Projetos por Igreja",
+        titleDepartments: "Projetos por Departamento",
+        description: "Qual igreja tem mais projetos ativos",
+        descriptionDepartments: "Qual departamento tem mais projetos ativos",
+        selectChurch: "Selecione uma igreja",
+        selectDepartment: "Selecione um departamento",
+        selectPlaceholder: "Selecionar igreja",
+        selectPlaceholderDept: "Selecionar departamento",
+        allChurches: "Todas as Igrejas",
+        allDepartments: "Todos os Departamentos",
+        loading: {
+          title: "Carregando...",
+          description: "Buscando dados de distribuição de projetos"
+        },
+        noData: {
+          title: "Nenhum Dado de Projeto Disponível",
+          description: "Os projetos aparecerão aqui assim que forem criados nas igrejas.",
+          icon: "Nenhum projeto criado ainda"
+        },
+        footer: {
+          totalProjects: "Total de Projetos",
+          selected: "Selecionado:",
+          projects: "projetos",
+          status: "Status:",
+          active: "ativos",
+          completed: "concluídos"
+        },
+        chart: {
+          projects: "Projetos",
+          activeLabel: "ativos"
+        }
+      },
+      usersByRole: {
+        title: "Usuários por Função",
+        description: "Distribuição de usuários por suas funções dentro desta igreja"
       },
       timeRanges: {
         last7Days: "Últimos 7 dias",

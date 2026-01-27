@@ -23,6 +23,8 @@ export interface CreateChurch_createChurch {
   institution_id: string;
   region_id: string | null;
   type: ChurchType;
+  zip_code: string | null;
+  house_number: number | null;
   created_at: any;
   leader: CreateChurch_createChurch_leader | null;
 }
@@ -42,6 +44,6 @@ export interface CreateChurchVariables {
   country: string;
   state: string;
   type?: ChurchType | null;
-  zip_code?: string;
-  house_number?: number;
+  zip_code?: string | null;
+  house_number?: number | null;
 }

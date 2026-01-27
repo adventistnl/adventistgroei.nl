@@ -3,6 +3,8 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { LanguagePreference } from "./globalTypes";
+
 // ====================================================
 // GraphQL mutation operation: DeleteSubsidyRequestMessage
 // ====================================================
@@ -18,4 +20,5 @@ export interface DeleteSubsidyRequestMessage {
 
 export interface DeleteSubsidyRequestMessageVariables {
   id: string;
+  language?: LanguagePreference | null;
 }

@@ -16,6 +16,13 @@ export interface UpdateChurch_updateChurch_leader {
   email: string;
 }
 
+export interface UpdateChurch_updateChurch_region {
+  __typename: "Region";
+  id: string;
+  name: string;
+  color: string | null;
+}
+
 export interface UpdateChurch_updateChurch {
   __typename: "Church";
   id: string;
@@ -23,8 +30,11 @@ export interface UpdateChurch_updateChurch {
   institution_id: string;
   region_id: string | null;
   type: ChurchType;
+  zip_code: string | null;
+  house_number: number | null;
   updated_at: any;
   leader: UpdateChurch_updateChurch_leader | null;
+  region: UpdateChurch_updateChurch_region | null;
 }
 
 export interface UpdateChurch {
@@ -44,4 +54,5 @@ export interface UpdateChurchVariables {
   type?: ChurchType | null;
   zip_code?: string | null;
   house_number?: number | null;
+  region_id?: string | null;
 }

@@ -12,7 +12,7 @@ import { Building2 } from "lucide-react"
 // Componentes organizados
 import { RegistrationLayout } from "@/components/registration/registration-layout"
 import { RegistrationHeader } from "@/components/registration/registration-header"
-import { LoadingState, ValidatingInviteState, InvalidInviteState } from "@/components/registration/registration-states"
+import { LoadingState, ValidatingInviteState, InvalidInviteState, SuccessRegistrationState } from "@/components/registration/registration-states"
 
 // Steps do formulário
 import { PersonalInfoStep } from "@/components/registration/steps/personal-info-step"
@@ -24,9 +24,9 @@ import { useInstitutions } from "@/hooks/use-institutions"
 
 // Idiomas suportados pelo sistema
 const LANGUAGES = [
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'nl', name: 'Nederlands', flag: '🇳🇱' },
-  { code: 'pt', name: 'Português', flag: '🇧🇷' }
+  { code: 'en', name: 'English' },
+  { code: 'nl', name: 'Nederlands' },
+  { code: 'pt', name: 'Português' },
 ]
 
 /**
@@ -46,6 +46,7 @@ function RegisterPageContent() {
     showConfirmPassword,
     isLoading,
     showContent,
+    isRedirecting,
     setCurrentStep,
     setShowPassword,
     setShowConfirmPassword,
@@ -152,6 +153,17 @@ function RegisterPageContent() {
         description={t.invalidInviteDesc}
         buttonText={t.goToLogin}
         onGoToLogin={goToLogin}
+      />
+    )
+  }
+
+  // Estado de redirecionamento após registro completo
+  if (isRedirecting) {
+    return (
+      <SuccessRegistrationState
+        title={t.registrationComplete}
+        message={t.redirectingToDashboard}
+        description={t.accessGranted}
       />
     )
   }

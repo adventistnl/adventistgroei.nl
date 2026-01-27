@@ -9,7 +9,7 @@ interface PersonalInfoSectionProps {
   name: string
   email: string
   phone: string
-  address: string
+  // address: string // TODO: Address não disponível no InstitutionById query
   language: string
   isEditing: boolean
   isSaving?: boolean
@@ -19,7 +19,7 @@ interface PersonalInfoSectionProps {
   onNameChange: (value: string) => void
   onEmailChange: (value: string) => void
   onPhoneChange: (value: string) => void
-  onAddressChange: (value: string) => void
+  // onAddressChange: (value: string) => void
   onLanguageChange: (value: string) => void
 }
 
@@ -27,7 +27,7 @@ export function PersonalInfoSection({
   name,
   email,
   phone,
-  address,
+  // address,
   language,
   isEditing,
   isSaving = false,
@@ -37,7 +37,7 @@ export function PersonalInfoSection({
   onNameChange,
   onEmailChange,
   onPhoneChange,
-  onAddressChange,
+  // onAddressChange,
   onLanguageChange,
 }: PersonalInfoSectionProps) {
   const { t } = useTranslation()
@@ -73,7 +73,10 @@ export function PersonalInfoSection({
           icon={Phone}
           isEditing={isEditing}
           onChange={onPhoneChange}
+          mask="phone"
+          placeholder="(00) 00000-0000"
         />
+        {/* TODO: Adicionar campo address quando disponível no InstitutionById query
         <ProfileField
           label={t('profile.personal.address')}
           value={address}
@@ -81,6 +84,7 @@ export function PersonalInfoSection({
           isEditing={isEditing}
           onChange={onAddressChange}
         />
+        */}
         {isEditing ? (
           <LanguageSelectorInput
             label={t('profile.personal.preferred_language')}

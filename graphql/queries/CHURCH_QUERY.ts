@@ -16,6 +16,13 @@ export const GET_CHURCHES_QUERY = gql`
         name
         email
       }
+      contact {
+        id
+        city
+        state
+        country
+        postal_code
+      }
       region {
         id
         name

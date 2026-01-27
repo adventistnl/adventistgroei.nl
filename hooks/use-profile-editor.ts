@@ -51,7 +51,8 @@ export function useProfileEditor(initialProfile: ExtendedProfile, refetchUser?: 
         updateData.email = editData.email
       }
       if (editData.phone !== undefined && editData.phone !== profile.phone) {
-        updateData.phone = editData.phone
+        // Remove máscara do telefone antes de salvar (apenas números)
+        updateData.phone = editData.phone.replace(/\D/g, '')
       }
       if (editData.address !== undefined && editData.address !== profile.address) {
         updateData.address = editData.address
@@ -69,14 +70,13 @@ export function useProfileEditor(initialProfile: ExtendedProfile, refetchUser?: 
       // Only proceed if there are changes
       if (Object.keys(updateData).length === 0) {
         toast('No changes to save', { 
-          icon: 'ℹ️',
           duration: 2000 
         })
         setEditingSection(null)
         return
       }
 
-      console.log("🚀 Updating own user profile with data:", updateData)
+      console.log("Updating own user profile with data:", updateData)
       
       // Call the updateOwnUser mutation
       const result = await updateOwnUser({
@@ -108,7 +108,7 @@ export function useProfileEditor(initialProfile: ExtendedProfile, refetchUser?: 
         
         // Refetch user data to get updated information
         if (refetchUser) {
-          console.log("🔄 Refetching user data...")
+          console.log("Refetching user data...")
           await refetchUser()
         }
         
@@ -119,20 +119,21 @@ export function useProfileEditor(initialProfile: ExtendedProfile, refetchUser?: 
             name: updatedUser.name,
             email: updatedUser.email,
             language_preference: updatedUser.language_preference || authUser.language_preference,
-            contact: {
-              phone: updatedUser.contact?.phone || '',
-              address: updatedUser.contact?.address || '',
-            }
+            contact: authUser.contact ? {
+              ...authUser.contact,
+              phone: updatedUser.contact?.phone || authUser.contact.phone || '',
+              address: updatedUser.contact?.address || authUser.contact.address || '',
+            } : undefined
           }
-          console.log("🔄 Updating auth context with new user data...")
+          console.log("Updating auth context with new user data...")
           updateAuthUser(updatedAuthUser)
         }
         
         toast.success('Profile updated successfully!')
-        console.log("✅ User profile updated successfully")
+        console.log("User profile updated successfully")
       }
     } catch (error: any) {
-      console.error("❌ Error updating user profile:", error)
+      console.error("Error updating user profile:", error)
       
       // Show user-friendly error message
       if (error.message?.includes('permission')) {

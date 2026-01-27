@@ -84,6 +84,7 @@ export const dashboardTranslations = {
     december: "December",
     
     // Messages
+    loadingDashboard: "Loading dashboard data...",
     refreshingData: "Refreshing dashboard data...",
     dataRefreshed: "Dashboard data refreshed successfully",
     refreshFailed: "Failed to refresh dashboard data",
@@ -191,6 +192,7 @@ export const dashboardTranslations = {
     december: "Dezembro",
     
     // Messages
+    loadingDashboard: "Carregando dados do dashboard...",
     refreshingData: "Atualizando dados do dashboard...",
     dataRefreshed: "Dados do dashboard atualizados com sucesso",
     refreshFailed: "Falha ao atualizar dados do dashboard",
@@ -298,6 +300,7 @@ export const dashboardTranslations = {
     december: "December",
     
     // Messages
+    loadingDashboard: "Dashboard gegevens laden...",
     refreshingData: "Dashboard gegevens verversen...",
     dataRefreshed: "Dashboard gegevens succesvol ververst",
     refreshFailed: "Kan dashboard gegevens niet verversen",

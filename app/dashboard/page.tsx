@@ -67,6 +67,7 @@ import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-caro
 import { DateTimeDisplay } from "@/components/shared/date-time-display"
 import { CalendarCard } from "@/components/shared/calendar-card"
 import { CalendarHeatmap } from "@/components/shared/calendar-heatmap"
+import { LoadingSpinner } from "@/components/shared/loading-spinner"
 import { RoleDistributionChart, PermissionsByGroupChart, UserActivityChart } from "@/components/access/access-charts"
 import { BudgetOverviewCard } from "@/components/budget"
 import { SpendingOverTimeChart } from "@/components/charts/annual-budget/spending-over-time-chart"
@@ -163,6 +164,23 @@ export default function DashboardPage() {
   const { data: allInstitutionsData, loading: allInstitutionsLoading } = useQuery(GET_INSTITUTIONS_QUERY, {
     fetchPolicy: 'cache-and-network'
   })
+
+  // Combine all loading states to ensure complete data before rendering
+  const isLoadingData = institutionsLoading || regionsLoading || churchesLoading || departmentsLoading || rolesLoading || subsidyLoading || subsidyStatusLoading || allProjectsLoading || allInstitutionsLoading
+  
+  // Track initial page load - only show full loading on first load
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
+  
+  // Mark initial load as complete once all data is loaded
+  React.useEffect(() => {
+    if (!isLoadingData && isInitialLoad) {
+      // Small delay to ensure smooth transition
+      const timer = setTimeout(() => {
+        setIsInitialLoad(false)
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [isLoadingData, isInitialLoad])
 
   const isLoading = institutionsLoading || regionsLoading || churchesLoading || departmentsLoading || rolesLoading
 
@@ -998,21 +1016,16 @@ export default function DashboardPage() {
     },
   ]
 
-  if (isLoading) {
+  // Show full-screen loading on initial page load
+  if (isInitialLoad || isLoadingData) {
     return (
-      <AppLayout>
-        <div className="space-y-8">
-          <div className="flex justify-between items-center">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-10 w-32" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <Skeleton key={i} className="h-32" />
-            ))}
-          </div>
-        </div>
-      </AppLayout>
+      <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
+        <LoadingSpinner 
+          text={dt.loadingDashboard || "Loading dashboard data..."}
+          icon={Building2}
+          size="lg"
+        />
+      </div>
     )
   }
 

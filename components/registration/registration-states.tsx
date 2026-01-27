@@ -61,6 +61,69 @@ export function ValidatingInviteState({ message }: LoadingStateProps) {
  * Exibe erro e botão para voltar ao login
  * Auto-redireciona após 10 segundos com barra de progresso
  */
+interface SuccessRegistrationStateProps {
+  title: string
+  message: string
+  description: string
+}
+
+/**
+ * Estado de registro completo com sucesso
+ * Exibe animação de loading durante redirecionamento para dashboard
+ */
+export function SuccessRegistrationState({ 
+  title,
+  message,
+  description 
+}: SuccessRegistrationStateProps) {
+  const [progress, setProgress] = React.useState(0)
+
+  React.useEffect(() => {
+    // Animação de progresso suave
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 95) {
+          clearInterval(progressInterval)
+          return 95
+        }
+        return prev + 2
+      })
+    }, 100)
+
+    return () => {
+      clearInterval(progressInterval)
+    }
+  }, [])
+
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md border-primary/20">
+        <CardHeader className="text-center space-y-6 pb-8">
+          <div className="mx-auto w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="relative w-full h-full flex items-center justify-center">
+              <div className="w-16 h-16 border-4 border-muted border-t-primary rounded-full animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Church className="w-8 h-8 text-primary" />
+              </div>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <CardTitle className="text-2xl text-primary">{title}</CardTitle>
+            <CardDescription className="text-base font-medium">{message}</CardDescription>
+            <p className="text-sm text-muted-foreground">{description}</p>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Progress value={progress} className="h-2" />
+            <p className="text-xs text-center text-muted-foreground">Loading your workspace...</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
 export function InvalidInviteState({ 
   title, 
   description, 

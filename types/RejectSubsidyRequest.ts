@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ActivityStatus, ActivityPriority } from "./globalTypes";
+import { LanguagePreference, ActivityStatus, ActivityPriority } from "./globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: RejectSubsidyRequest
@@ -89,4 +89,5 @@ export interface RejectSubsidyRequest {
 export interface RejectSubsidyRequestVariables {
   id: string;
   rejection_reason: string;
+  language?: LanguagePreference | null;
 }

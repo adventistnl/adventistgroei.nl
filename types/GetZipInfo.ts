@@ -9,11 +9,14 @@
 
 export interface GetZipInfo_getZipInfo {
   __typename: "ZipInfo";
-  city: string;
-  province: string;
+  city: string | null;
+  province: string | null;
 }
 
 export interface GetZipInfo {
+  /**
+   * Get city and province information for a Dutch postal code (ZIP code) and house number
+   */
   getZipInfo: GetZipInfo_getZipInfo;
 }
 

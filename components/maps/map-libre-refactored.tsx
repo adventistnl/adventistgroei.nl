@@ -745,7 +745,7 @@ export default function MapLibre({
           fontSize: '12px', fontFamily: 'monospace',
         }}>
           <div style={{ fontWeight: 'bold', marginBottom: '12px', fontSize: '14px' }}>
-            🗺️ Debug Info
+            Debug Info
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <div><strong>Total Províncias:</strong> {debugInfo.totalProvinces}</div>
@@ -756,7 +756,7 @@ export default function MapLibre({
             
             {debugInfo.unassignedProvinces && debugInfo.unassignedProvinces.length > 0 && (
               <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#fef3c7', borderRadius: '4px' }}>
-                <strong>⚠️ Sem região:</strong><br />
+                <strong>Sem região:</strong><br />
                 {debugInfo.unassignedProvinces.map((prov: string) => (
                   <div key={prov} style={{ fontSize: '11px', marginTop: '2px' }}>• {prov}</div>
                 ))}
@@ -1008,33 +1008,74 @@ export function generateCityMarkers(
     regionsWithTerritory: 0,
     totalCitiesInTerritories: 0,
     markersCreated: 0,
+    churchValidation: [] as any[],
     regionDetails: [] as any[]
   };
   
+  console.log('\n🗺️  ===== GENERATE CITY MARKERS DEBUG =====');
+  console.log(`Total Regions: ${regions.length}`);
+  
   regions.forEach((region, index) => {
+    console.log(`\n📍 Region ${index + 1}: ${region.name}`);
+    console.log('   Color:', region.color);
+    console.log('   Territory JSON:', region.territory);
+    console.log('   Churches in region:', region.churches?.length || 0);
+    
     let territoryCities: { province: string; city: string }[] = [];
+    let territoryProvinces: string[] = [];
     
     // Parse territory JSON
     if (region.territory) {
+      debugInfo.regionsWithTerritory++;
       try {
         const parsedTerritory = typeof region.territory === 'string' 
           ? JSON.parse(region.territory) 
           : region.territory;
         
+        console.log('   Parsed territory:', parsedTerritory);
+        
         // Territory format: { NL: { DR: ['ASS', 'EMM'], FL: ['LEL'], ... } }
         if (parsedTerritory && parsedTerritory.NL) {
           Object.entries(parsedTerritory.NL).forEach(([provinceCode, cityCodes]) => {
+            territoryProvinces.push(provinceCode);
             if (Array.isArray(cityCodes)) {
               cityCodes.forEach(cityCode => {
                 territoryCities.push({ province: provinceCode, city: cityCode });
               });
             }
           });
-          debugInfo.regionsWithTerritory++;
+          console.log('   Provinces in territory:', territoryProvinces);
+          console.log('   Cities in territory:', territoryCities.length);
         }
       } catch (error) {
-        console.error('❌ Erro ao parsear territory:', error);
+        console.error('   ❌ Error parsing territory JSON:', error);
       }
+    }
+    
+    // Validar churches vs. territory
+    if (region.churches && region.churches.length > 0) {
+      console.log('\n   🏛️  Church Validation:');
+      region.churches.forEach(church => {
+        const churchProvince = church.province; // state do contact
+        const churchCity = church.city;
+        const belongsToRegion = churchProvince && territoryProvinces.includes(churchProvince);
+        
+        const validation = {
+          churchName: church.name,
+          churchCity: churchCity || 'N/A',
+          churchProvince: churchProvince || 'N/A',
+          territoryProvinces: territoryProvinces.join(', '),
+          belongsToRegion: belongsToRegion,
+          status: belongsToRegion ? '✅ VÁLIDA' : '❌ INVÁLIDA'
+        };
+        
+        console.log(`     - ${church.name}`);
+        console.log(`       City: ${churchCity || 'N/A'}`);
+        console.log(`       Province: ${churchProvince || 'N/A'}`);
+        console.log(`       Belongs to region: ${belongsToRegion ? 'YES ✅' : 'NO ❌'}`);
+        
+        debugInfo.churchValidation.push(validation);
+      });
     }
     
     // Criar markers apenas para cidades no territory
@@ -1045,10 +1086,15 @@ export function generateCityMarkers(
         const cityName = getCityNameFromCoords(province, city);
         const provinceName = NETHERLANDS_PROVINCES[`NL${province}` as keyof typeof NETHERLANDS_PROVINCES] || province;
         
-        // Verificar se há church nesta cidade
-        const churchesInCity = region.churches?.filter(church => 
-          church.city === city || church.city === cityName
-        ) || [];
+        // Verificar se há church VÁLIDA nesta cidade (province match)
+        const churchesInCity = region.churches?.filter(church => {
+          // Match por province E city
+          const provinceMatch = church.province === province;
+          const cityMatch = church.city === city || church.city === cityName;
+          return provinceMatch && cityMatch;
+        }) || [];
+        
+        const hasValidChurches = churchesInCity.length > 0;
         
         markers.push({
           lngLat: coords,
@@ -1066,14 +1112,18 @@ export function generateCityMarkers(
               <div style="font-size: 13px; margin-bottom: 8px; padding: 8px 12px; background: ${region.color}15; border-left: 3px solid ${region.color}; border-radius: 4px;">
                 <strong style="color: ${region.color};">🌍 ${region.name}</strong>
               </div>
-              ${churchesInCity.length > 0 ? `
+              ${hasValidChurches ? `
                 <div style="font-size: 12px; margin-top: 10px; padding: 8px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px;">
-                  <strong style="color: #10b981;">⛪ ${churchesInCity.length} ${churchesInCity.length === 1 ? 'Igreja' : 'Igrejas'}</strong>
+                  <strong style="color: #10b981;">⛪ ${churchesInCity.length} ${churchesInCity.length === 1 ? 'Igreja' : 'Igrejas'} ✅</strong>
                   <div style="margin-top: 4px; color: #666;">
                     ${churchesInCity.map(ch => `• ${ch.name}`).join('<br/>')}
                   </div>
                 </div>
-              ` : ''}
+              ` : `
+                <div style="font-size: 11px; margin-top: 8px; padding: 6px 10px; background: #fef2f2; border-left: 3px solid #ef4444; border-radius: 4px; color: #991b1b;">
+                  ⚠️ Sem igrejas registradas nesta cidade
+                </div>
+              `}
             </div>
           `,
         });
@@ -1088,9 +1138,23 @@ export function generateCityMarkers(
       color: region.color,
       citiesCount: territoryCities.length,
       markersCreated: territoryCities.filter(tc => citiesCoords[tc.province]?.[tc.city]).length,
-      churches: region.churches?.length || 0
+      churches: region.churches?.length || 0,
+      validChurches: region.churches?.filter(c => c.province && territoryProvinces.includes(c.province)).length || 0
     });
   });
+  
+  console.log('\n📊 Summary:');
+  console.log('  Total markers created:', debugInfo.markersCreated);
+  console.log('  Regions with territory:', debugInfo.regionsWithTerritory);
+  console.log('  Total cities in territories:', debugInfo.totalCitiesInTerritories);
+  console.log('\n🏛️  Church Validation Summary:');
+  console.log('  Total churches analyzed:', debugInfo.churchValidation.length);
+  console.log('  Valid churches:', debugInfo.churchValidation.filter(v => v.belongsToRegion).length);
+  console.log('  Invalid churches:', debugInfo.churchValidation.filter(v => !v.belongsToRegion).length);
+  console.table(debugInfo.churchValidation);
+  console.log('\n📍 Region Details:');
+  console.table(debugInfo.regionDetails);
+  console.log('\n🗺️  ===== END DEBUG =====\n');
   
   return markers;
 }

@@ -67,6 +67,7 @@ export function useRegistration({ language }: UseRegistrationProps) {
   const [showContent, setShowContent] = useState(false)
   const [inviteToken, setInviteToken] = useState<string | null>(null)
   const [isTokenValidated, setIsTokenValidated] = useState(false); // New state for token validation
+  const [isRedirecting, setIsRedirecting] = useState(false); // Estado para redirecionamento
 
   // Função para carregar dados salvos do localStorage
   const loadSavedData = (): Partial<RegistrationForm> => {
@@ -318,12 +319,23 @@ export function useRegistration({ language }: UseRegistrationProps) {
       }
       
       toast.success(translations.registrationSuccess, {
-        duration: 6000,
+        duration: 3000,
         style: { minWidth: '350px' }
       })
       
-      // Redirecionar para login após sucesso
+      // Mostrar estado de redirecionamento
+      setIsRedirecting(true)
+      
+      // Aguardar para exibir loading state
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      // Fazer login automático
       await login(data.email, data.password, true);
+      
+      // Aguardar mais um pouco antes de redirecionar
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Redirecionar para dashboard
       router.push(`/dashboard`);
       clearSavedData()
       return userCreated.createUser || null;  
@@ -366,6 +378,7 @@ export function useRegistration({ language }: UseRegistrationProps) {
     showConfirmPassword,
     isLoading,
     showContent,
+    isRedirecting,
     
     // Setters
     setCurrentStep,

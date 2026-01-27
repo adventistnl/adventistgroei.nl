@@ -15,6 +15,15 @@ export interface Regions_regions_kpiData {
   totalCities: number;
 }
 
+export interface Regions_regions_churches_contact {
+  __typename: "Contact";
+  id: string;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  postal_code: string | null;
+}
+
 export interface Regions_regions_churches {
   __typename: "Church";
   id: string;
@@ -29,6 +38,7 @@ export interface Regions_regions_churches {
   is_deleted: boolean;
   deleted_at: any | null;
   deleted_by: string | null;
+  contact: Regions_regions_churches_contact | null;
 }
 
 export interface Regions_regions {

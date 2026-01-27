@@ -27,6 +27,11 @@ import {
 } from "@/components/ui/select"
 import { getProjectColor } from "@/lib/chart-colors"
 import { useTranslation } from "react-i18next"
+import {
+  enrichChurchesWithAutoLink,
+  calculateAutoLinkStats,
+  type EnrichedChurch
+} from "@/lib/church-region-matcher"
 
 import { InstitutionById_institution_institutionChartsData_churchesByRegion } from "@/types/InstitutionById"
 import { MapPin } from "lucide-react"
@@ -58,25 +63,48 @@ export function ChurchesByRegionChart({ churches, regions, data, loading }: Chur
         name: c?.name,
         region_id: c?.region_id,
         region_name: c?.region?.name,
+        contact_city: c?.contact?.city,
+        contact_state: c?.contact?.state,
         is_deleted: c?.is_deleted
       })),
       regionsSample: regions?.slice(0, 3).map(r => ({
         id: r?.id,
         name: r?.name,
+        color: r?.color,
+        territory: r?.territory,
         churches_count: r?.churches?.length || 0
       })),
       loading,
     })
   }, [churches, regions, data, loading])
 
-  // Process churches from API to count by region
-  const processedData = React.useMemo(() => {
-    console.log('📊 [ChurchesByRegionChart] Processing churches data')
+  // Apply auto-linking to churches (baseado na documentação)
+  const enrichedChurches = React.useMemo<EnrichedChurch[]>(() => {
+    if (!churches || churches.length === 0 || !regions || regions.length === 0) {
+      return churches || [];
+    }
     
-    // Use churches from API if available, otherwise fall back to legacy data
-    const sourceChurches = churches || []
+    const activeChurches = churches.filter((c: any) => !c?.is_deleted);
+    const enriched = enrichChurchesWithAutoLink(activeChurches, regions);
+    
+    console.log('🔗 [ChurchesByRegionChart] Auto-linking applied:', {
+      totalChurches: activeChurches.length,
+      enrichedChurches: enriched.length,
+      stats: calculateAutoLinkStats(enriched)
+    });
+    
+    return enriched;
+  }, [churches, regions]);
+
+  // Process enriched churches to count by region (com auto-linking aplicado)
+  const processedData = React.useMemo(() => {
+    console.log('📊 [ChurchesByRegionChart] Processing enriched churches data')
+    
+    // Use enriched churches (com auto-linking) se disponível
+    const sourceChurches = enrichedChurches.length > 0 ? enrichedChurches : churches || []
     const sourceRegions = regions || []
     
+    // Fallback para legacy data se não houver churches nem regions
     if (sourceChurches.length === 0 && data && data.length > 0) {
       console.log('📊 [ChurchesByRegionChart] Using legacy data format')
       return data.map((item, index) => ({
@@ -85,17 +113,23 @@ export function ChurchesByRegionChart({ churches, regions, data, loading }: Chur
       }))
     }
     
-    // Filter active churches only
+    // Filter active churches only (já filtrado no enrichment, mas garantir)
     const activeChurches = sourceChurches.filter((c: any) => !c?.is_deleted)
+    
+    const autoLinkStats = calculateAutoLinkStats(activeChurches as EnrichedChurch[]);
     
     console.log('📊 [ChurchesByRegionChart] Active churches:', {
       total: activeChurches.length,
       withRegion: activeChurches.filter((c: any) => c?.region_id).length,
-      withoutRegion: activeChurches.filter((c: any) => !c?.region_id).length
+      withoutRegion: activeChurches.filter((c: any) => !c?.region_id).length,
+      autoLinked: autoLinkStats.withAutoLink,
+      originalLinks: autoLinkStats.withOriginalLink,
+      highConfidence: autoLinkStats.withHighConfidence,
+      mediumConfidence: autoLinkStats.withMediumConfidence
     })
     
-    // Count churches by region_id
-    const regionCounts = new Map<string, { id: string; name: string; count: number }>()
+    // Count churches by region_id (incluindo auto-linked)
+    const regionCounts = new Map<string, { id: string; name: string; count: number; autoLinked: number; color?: string }>()
     
     // Initialize with all regions (even if they have 0 churches)
     sourceRegions.forEach((region: any) => {
@@ -103,31 +137,39 @@ export function ChurchesByRegionChart({ churches, regions, data, loading }: Chur
         regionCounts.set(region.id, {
           id: region.id,
           name: region.name,
-          count: 0
+          count: 0,
+          autoLinked: 0,
+          color: region.color
         })
       }
     })
     
-    // Count churches per region and churches without region
+    // Count churches per region (incluindo auto-linked)
     let churchesWithoutRegion = 0
     
     activeChurches.forEach((church: any) => {
       if (church?.region_id) {
-        // Church has a region
+        // Church has a region (original ou auto-linked)
         const existing = regionCounts.get(church.region_id)
         if (existing) {
           existing.count++
+          if (church.has_auto_link) {
+            existing.autoLinked++
+          }
         } else {
           // Region exists in church but not in regions array (orphaned)
           const regionName = church.region?.name || t('institutions.analytics.churchesByRegion.unknownRegion')
+          const regionColor = church.region?.color
           regionCounts.set(church.region_id, {
             id: church.region_id,
             name: regionName,
-            count: 1
+            count: 1,
+            autoLinked: church.has_auto_link ? 1 : 0,
+            color: regionColor
           })
         }
       } else {
-        // Church has NO region
+        // Church has NO region (nem original nem auto-linked)
         churchesWithoutRegion++
       }
     })
@@ -143,7 +185,8 @@ export function ChurchesByRegionChart({ churches, regions, data, loading }: Chur
           region: item.id,
           name: item.name,
           churches: item.count,
-          fill: getProjectColor(index)
+          autoLinked: item.autoLinked,
+          fill: item.color || getProjectColor(index)
         })
       })
     
@@ -153,6 +196,7 @@ export function ChurchesByRegionChart({ churches, regions, data, loading }: Chur
         region: 'no_region',
         name: t('institutions.analytics.churchesByRegion.noRegion') || 'No Region',
         churches: churchesWithoutRegion,
+        autoLinked: 0,
         fill: "#e5e7eb" // Grey color for No Region
       })
     }
@@ -161,11 +205,17 @@ export function ChurchesByRegionChart({ churches, regions, data, loading }: Chur
       totalRegions: result.length,
       regionsWithChurches: result.filter(r => r.region !== 'no_region').length,
       churchesWithoutRegion,
-      regionsList: result.map(r => ({ name: r.name, churches: r.churches }))
+      totalAutoLinked: result.reduce((sum, r) => sum + (r.autoLinked || 0), 0),
+      regionsList: result.map(r => ({ 
+        name: r.name, 
+        churches: r.churches, 
+        autoLinked: r.autoLinked || 0,
+        color: r.fill
+      }))
     })
     
     return result
-  }, [churches, regions, data, t])
+  }, [enrichedChurches, churches, regions, data, t])
 
   // Check if we have data
   const hasData = processedData && processedData.length > 0

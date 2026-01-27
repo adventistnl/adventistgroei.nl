@@ -1442,7 +1442,8 @@ const resources = {
             view_contact: "View Contact",
             edit_user: "Edit User",
             delete_user: "Delete User",
-            back_to_users: "Back to Users"
+            back_to_users: "Back to Users",
+            save: "Save Changes"
           },
           tabs: {
             subsidies: "Subsidies",
@@ -3437,7 +3438,8 @@ const resources = {
             view_contact: "Contact Bekijken",
             edit_user: "Gebruiker Bewerken",
             delete_user: "Gebruiker Verwijderen",
-            back_to_users: "Terug naar Gebruikers"
+            back_to_users: "Terug naar Gebruikers",
+            save: "Wijzigingen Opslaan"
           },
           tabs: {
             subsidies: "Subsidies",
