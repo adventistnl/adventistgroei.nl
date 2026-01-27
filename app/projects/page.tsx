@@ -71,8 +71,11 @@ function ProjectsPageContent() {
 
   const institutionId = currentInstitutionData?.id
 
-  // Fetch projects from backend
-  const { data: projectsData, loading: isLoading, error, refetch } = useQuery(GET_PROJECTS_QUERY)
+  // Fetch projects from backend - filter by institution
+  const { data: projectsData, loading: isLoading, error, refetch } = useQuery(GET_PROJECTS_QUERY, {
+    variables: { institutionId },
+    skip: !institutionId
+  })
 
   // Fetch departments
   const { data: departmentsData } = useQuery(GET_DEPARTMENTS_QUERY, {

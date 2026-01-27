@@ -81,6 +81,352 @@ export interface PageFiltersProps {
   disabled?: boolean
 }
 
+// Individual filter components to properly handle hooks
+interface FilterItemProps {
+  filter: FilterConfig
+  value: any
+  onChange: (filterId: string, value: any) => void
+}
+
+function SelectFilterItem({ filter, value, onChange }: FilterItemProps) {
+  const [open, setOpen] = React.useState(false)
+  const FilterIcon = filter.icon
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm font-medium flex items-center gap-2">
+        {FilterIcon && <FilterIcon className="w-4 h-4" />}
+        {filter.label}
+      </Label>
+      {filter.description && (
+        <p className="text-xs text-muted-foreground">{filter.description}</p>
+      )}
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className={cn(
+              "w-full justify-between font-normal h-10",
+              !value && "text-muted-foreground"
+            )}
+          >
+            {value
+              ? (() => {
+                  const selectedOption = filter.options?.find(option => option.value === value)
+                  return (
+                    <div className="flex items-center gap-2">
+                      {selectedOption?.icon && <selectedOption.icon className="w-4 h-4" />}
+                      {selectedOption?.label}
+                    </div>
+                  )
+                })()
+              : filter.placeholder || `Select ${filter.label.toLowerCase()}`}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-0" align="start">
+          <Command>
+            <CommandInput placeholder={`Search ${filter.label.toLowerCase()}...`} />
+            <CommandList>
+              <CommandEmpty>No {filter.label.toLowerCase()} found.</CommandEmpty>
+              <CommandGroup>
+                {filter.options?.map((option) => (
+                  <CommandItem
+                    key={option.value}
+                    value={option.value}
+                    onSelect={(currentValue) => {
+                      onChange(filter.id, currentValue === value ? "" : currentValue)
+                      setOpen(false)
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === option.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {option.icon && <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />}
+                    {option.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
+}
+
+function MultiSelectFilterItem({ filter, value, onChange }: FilterItemProps) {
+  const [open, setOpen] = React.useState(false)
+  const FilterIcon = filter.icon
+  const selectedValues = Array.isArray(value) ? value : []
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm font-medium flex items-center gap-2">
+        {FilterIcon && <FilterIcon className="w-4 h-4" />}
+        {filter.label}
+      </Label>
+      {filter.description && (
+        <p className="text-xs text-muted-foreground">{filter.description}</p>
+      )}
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button 
+            variant="outline" 
+            className={cn(
+              "w-full justify-between font-normal h-10",
+              selectedValues.length === 0 && "text-muted-foreground"
+            )}
+          >
+            <span className="truncate">
+              {selectedValues.length > 0
+                ? `${selectedValues.length} selected`
+                : filter.placeholder || `Select ${filter.label.toLowerCase()}`}
+            </span>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-0" align="start">
+          <Command>
+            <CommandInput placeholder={`Search ${filter.label.toLowerCase()}...`} />
+            <CommandList>
+              <CommandEmpty>No {filter.label.toLowerCase()} found.</CommandEmpty>
+              <CommandGroup>
+                {filter.options?.map((option) => (
+                  <CommandItem
+                    key={option.value}
+                    value={option.value}
+                    onSelect={() => {
+                      const newValues = selectedValues.includes(option.value)
+                        ? selectedValues.filter(v => v !== option.value)
+                        : [...selectedValues, option.value]
+                      onChange(filter.id, newValues)
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        selectedValues.includes(option.value) ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {option.icon && <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />}
+                    {option.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      {selectedValues.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {selectedValues.map(val => {
+            const option = filter.options?.find(o => o.value === val)
+            return (
+              <Badge key={val} variant="secondary" className="text-xs">
+                {option?.label || val}
+                <X 
+                  className="w-3 h-3 ml-1 cursor-pointer" 
+                  onClick={() => onChange(filter.id, selectedValues.filter(v => v !== val))}
+                />
+              </Badge>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function CheckboxGroupFilterItem({ filter, value, onChange }: FilterItemProps) {
+  const FilterIcon = filter.icon
+  const checkedValues = Array.isArray(value) ? value : []
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm font-medium flex items-center gap-2">
+        {FilterIcon && <FilterIcon className="w-4 h-4" />}
+        {filter.label}
+      </Label>
+      {filter.description && (
+        <p className="text-xs text-muted-foreground">{filter.description}</p>
+      )}
+      <div className="space-y-2 pl-1">
+        {filter.options?.map((option) => (
+          <div key={option.value} className="flex items-center space-x-2">
+            <Checkbox
+              id={`${filter.id}-${option.value}`}
+              checked={checkedValues.includes(option.value)}
+              onCheckedChange={(checked) => {
+                const newValues = checked
+                  ? [...checkedValues, option.value]
+                  : checkedValues.filter(v => v !== option.value)
+                onChange(filter.id, newValues)
+              }}
+            />
+            <label
+              htmlFor={`${filter.id}-${option.value}`}
+              className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex items-center gap-2"
+            >
+              {option.icon && <option.icon className="w-4 h-4" />}
+              {option.label}
+            </label>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function RadioFilterItem({ filter, value, onChange }: FilterItemProps) {
+  const FilterIcon = filter.icon
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm font-medium flex items-center gap-2">
+        {FilterIcon && <FilterIcon className="w-4 h-4" />}
+        {filter.label}
+      </Label>
+      {filter.description && (
+        <p className="text-xs text-muted-foreground">{filter.description}</p>
+      )}
+      <RadioGroup value={value || filter.defaultValue || ''} onValueChange={(val) => onChange(filter.id, val)}>
+        {filter.options?.map((option) => (
+          <div key={option.value} className="flex items-center space-x-2">
+            <RadioGroupItem value={option.value} id={`${filter.id}-${option.value}`} />
+            <label
+              htmlFor={`${filter.id}-${option.value}`}
+              className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex items-center gap-2"
+            >
+              {option.icon && <option.icon className="w-4 h-4" />}
+              {option.label}
+            </label>
+          </div>
+        ))}
+      </RadioGroup>
+    </div>
+  )
+}
+
+function CheckboxFilterItem({ filter, value, onChange }: FilterItemProps) {
+  const FilterIcon = filter.icon
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id={filter.id}
+          checked={value || false}
+          onCheckedChange={(checked) => onChange(filter.id, checked)}
+        />
+        <label
+          htmlFor={filter.id}
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex items-center gap-2"
+        >
+          {FilterIcon && <FilterIcon className="w-4 h-4" />}
+          {filter.label}
+        </label>
+      </div>
+      {filter.description && (
+        <p className="text-xs text-muted-foreground pl-6">{filter.description}</p>
+      )}
+    </div>
+  )
+}
+
+function DateFilterItem({ filter, value, onChange }: FilterItemProps) {
+  const FilterIcon = filter.icon
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm font-medium flex items-center gap-2">
+        {FilterIcon && <FilterIcon className="w-4 h-4" />}
+        {filter.label}
+      </Label>
+      {filter.description && (
+        <p className="text-xs text-muted-foreground">{filter.description}</p>
+      )}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className={cn(
+              "w-full justify-start text-left font-normal",
+              !value && "text-muted-foreground"
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {value ? format(value, "PPP") : <span>{filter.placeholder || "Pick a date"}</span>}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={value}
+            onSelect={(date) => onChange(filter.id, date)}
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
+}
+
+function DateRangeFilterItem({ filter, value, onChange }: FilterItemProps) {
+  const FilterIcon = filter.icon
+  const dateRange = value || { from: undefined, to: undefined }
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm font-medium flex items-center gap-2">
+        {FilterIcon && <FilterIcon className="w-4 h-4" />}
+        {filter.label}
+      </Label>
+      {filter.description && (
+        <p className="text-xs text-muted-foreground">{filter.description}</p>
+      )}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className={cn(
+              "w-full justify-start text-left font-normal",
+              !dateRange.from && "text-muted-foreground"
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {dateRange.from ? (
+              dateRange.to ? (
+                <>
+                  {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
+                </>
+              ) : (
+                format(dateRange.from, "LLL dd, y")
+              )
+            ) : (
+              <span>{filter.placeholder || "Pick a date range"}</span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="range"
+            selected={dateRange}
+            onSelect={(range) => onChange(filter.id, range)}
+            numberOfMonths={2}
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
+}
+
 export function PageFilters({
   filters,
   values,
@@ -141,331 +487,23 @@ export function PageFilters({
     }
   }
 
+  // Render individual filter by type - each filter type is its own component to follow hooks rules
   const renderFilter = (filter: FilterConfig) => {
-    const value = values[filter.id]
-    const FilterIcon = filter.icon
-
-    // Estados para popovers - definidos aqui para evitar problemas com hooks
-    const [selectOpen, setSelectOpen] = React.useState(false)
-    const [multiSelectOpen, setMultiSelectOpen] = React.useState(false)
-
     switch (filter.type) {
       case "select":
-        return (
-          <div key={filter.id} className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-2">
-              {FilterIcon && <FilterIcon className="w-4 h-4" />}
-              {filter.label}
-            </Label>
-            {filter.description && (
-              <p className="text-xs text-muted-foreground">{filter.description}</p>
-            )}
-            <Popover open={selectOpen} onOpenChange={setSelectOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={selectOpen}
-                  className={cn(
-                    "w-full justify-between font-normal h-10",
-                    !value && "text-muted-foreground"
-                  )}
-                >
-                  {value
-                    ? (() => {
-                        const selectedOption = filter.options?.find(option => option.value === value)
-                        return (
-                          <div className="flex items-center gap-2">
-                            {selectedOption?.icon && <selectedOption.icon className="w-4 h-4" />}
-                            {selectedOption?.label}
-                          </div>
-                        )
-                      })()
-                    : filter.placeholder || `Select ${filter.label.toLowerCase()}`}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0" align="start">
-                <Command>
-                  <CommandInput placeholder={`Search ${filter.label.toLowerCase()}...`} />
-                  <CommandList>
-                    <CommandEmpty>No {filter.label.toLowerCase()} found.</CommandEmpty>
-                    <CommandGroup>
-                      {filter.options?.map((option) => (
-                        <CommandItem
-                          key={option.value}
-                          value={option.value}
-                          onSelect={(currentValue) => {
-                            onChange(filter.id, currentValue === value ? "" : currentValue)
-                            setSelectOpen(false)
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              value === option.value ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {option.icon && <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />}
-                          {option.label}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
-        )
-
+        return <SelectFilterItem key={filter.id} filter={filter} value={values[filter.id]} onChange={onChange} />
       case "multi-select":
-        const selectedValues = Array.isArray(value) ? value : []
-        return (
-          <div key={filter.id} className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-2">
-              {FilterIcon && <FilterIcon className="w-4 h-4" />}
-              {filter.label}
-            </Label>
-            {filter.description && (
-              <p className="text-xs text-muted-foreground">{filter.description}</p>
-            )}
-            <Popover open={multiSelectOpen} onOpenChange={setMultiSelectOpen}>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  className={cn(
-                    "w-full justify-between font-normal h-10",
-                    selectedValues.length === 0 && "text-muted-foreground"
-                  )}
-                >
-                  <span className="truncate">
-                    {selectedValues.length > 0
-                      ? `${selectedValues.length} selected`
-                      : filter.placeholder || `Select ${filter.label.toLowerCase()}`}
-                  </span>
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0" align="start">
-                <Command>
-                  <CommandInput placeholder={`Search ${filter.label.toLowerCase()}...`} />
-                  <CommandList>
-                    <CommandEmpty>No {filter.label.toLowerCase()} found.</CommandEmpty>
-                    <CommandGroup>
-                      {filter.options?.map((option) => (
-                        <CommandItem
-                          key={option.value}
-                          value={option.value}
-                          onSelect={() => {
-                            const newValues = selectedValues.includes(option.value)
-                              ? selectedValues.filter(v => v !== option.value)
-                              : [...selectedValues, option.value]
-                            onChange(filter.id, newValues)
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              selectedValues.includes(option.value) ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {option.icon && <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />}
-                          {option.label}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-            {selectedValues.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {selectedValues.map(val => {
-                  const option = filter.options?.find(o => o.value === val)
-                  return (
-                    <Badge key={val} variant="secondary" className="text-xs">
-                      {option?.label || val}
-                      <X 
-                        className="w-3 h-3 ml-1 cursor-pointer" 
-                        onClick={() => onChange(filter.id, selectedValues.filter(v => v !== val))}
-                      />
-                    </Badge>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        )
-
+        return <MultiSelectFilterItem key={filter.id} filter={filter} value={values[filter.id]} onChange={onChange} />
       case "checkbox-group":
-        const checkedValues = Array.isArray(value) ? value : []
-        return (
-          <div key={filter.id} className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-2">
-              {FilterIcon && <FilterIcon className="w-4 h-4" />}
-              {filter.label}
-            </Label>
-            {filter.description && (
-              <p className="text-xs text-muted-foreground">{filter.description}</p>
-            )}
-            <div className="space-y-2 pl-1">
-              {filter.options?.map((option) => (
-                <div key={option.value} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`${filter.id}-${option.value}`}
-                    checked={checkedValues.includes(option.value)}
-                    onCheckedChange={(checked) => {
-                      const newValues = checked
-                        ? [...checkedValues, option.value]
-                        : checkedValues.filter(v => v !== option.value)
-                      onChange(filter.id, newValues)
-                    }}
-                  />
-                  <label
-                    htmlFor={`${filter.id}-${option.value}`}
-                    className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex items-center gap-2"
-                  >
-                    {option.icon && <option.icon className="w-4 h-4" />}
-                    {option.label}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-
+        return <CheckboxGroupFilterItem key={filter.id} filter={filter} value={values[filter.id]} onChange={onChange} />
       case "radio":
-        return (
-          <div key={filter.id} className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-2">
-              {FilterIcon && <FilterIcon className="w-4 h-4" />}
-              {filter.label}
-            </Label>
-            {filter.description && (
-              <p className="text-xs text-muted-foreground">{filter.description}</p>
-            )}
-            <RadioGroup value={value || filter.defaultValue || ''} onValueChange={(val) => onChange(filter.id, val)}>
-              {filter.options?.map((option) => (
-                <div key={option.value} className="flex items-center space-x-2">
-                  <RadioGroupItem value={option.value} id={`${filter.id}-${option.value}`} />
-                  <label
-                    htmlFor={`${filter.id}-${option.value}`}
-                    className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex items-center gap-2"
-                  >
-                    {option.icon && <option.icon className="w-4 h-4" />}
-                    {option.label}
-                  </label>
-                </div>
-              ))}
-            </RadioGroup>
-          </div>
-        )
-
+        return <RadioFilterItem key={filter.id} filter={filter} value={values[filter.id]} onChange={onChange} />
       case "checkbox":
-        return (
-          <div key={filter.id} className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id={filter.id}
-                checked={value || false}
-                onCheckedChange={(checked) => onChange(filter.id, checked)}
-              />
-              <label
-                htmlFor={filter.id}
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex items-center gap-2"
-              >
-                {FilterIcon && <FilterIcon className="w-4 h-4" />}
-                {filter.label}
-              </label>
-            </div>
-            {filter.description && (
-              <p className="text-xs text-muted-foreground pl-6">{filter.description}</p>
-            )}
-          </div>
-        )
-
+        return <CheckboxFilterItem key={filter.id} filter={filter} value={values[filter.id]} onChange={onChange} />
       case "date":
-        return (
-          <div key={filter.id} className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-2">
-              {FilterIcon && <FilterIcon className="w-4 h-4" />}
-              {filter.label}
-            </Label>
-            {filter.description && (
-              <p className="text-xs text-muted-foreground">{filter.description}</p>
-            )}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !value && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {value ? format(value, "PPP") : <span>{filter.placeholder || "Pick a date"}</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={value}
-                  onSelect={(date) => onChange(filter.id, date)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        )
-
+        return <DateFilterItem key={filter.id} filter={filter} value={values[filter.id]} onChange={onChange} />
       case "date-range":
-        const dateRange = value || { from: undefined, to: undefined }
-        return (
-          <div key={filter.id} className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-2">
-              {FilterIcon && <FilterIcon className="w-4 h-4" />}
-              {filter.label}
-            </Label>
-            {filter.description && (
-              <p className="text-xs text-muted-foreground">{filter.description}</p>
-            )}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !dateRange.from && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateRange.from ? (
-                    dateRange.to ? (
-                      <>
-                        {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
-                      </>
-                    ) : (
-                      format(dateRange.from, "LLL dd, y")
-                    )
-                  ) : (
-                    <span>{filter.placeholder || "Pick a date range"}</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="range"
-                  selected={dateRange}
-                  onSelect={(range) => onChange(filter.id, range)}
-                  numberOfMonths={2}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        )
-
+        return <DateRangeFilterItem key={filter.id} filter={filter} value={values[filter.id]} onChange={onChange} />
       default:
         return null
     }

@@ -1079,7 +1079,6 @@ export default function DashboardPage() {
             </div>
             </div>
           </div>
-          <div/>
 
           {/* Year Filter and Action Buttons Row */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
