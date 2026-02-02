@@ -188,13 +188,15 @@ export function SubsidyApprovalsManager({
       }
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
       if (errorCode === 'STATUS_IS_CLOSED') {
-          toast.error("O subsídio já está fechado e não pode ser alterado.");
+          toast.error(translations.toasts?.statusClosed || "Status Closed cannot be changed");
       } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
-          toast.error("Não é possível fechar um subsídio em revisão.");
+          toast.error(translations.toasts?.inReviewToClosed || "Cannot close In Review requests");
       } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
-          toast.error("Subsídios aprovados ou rejeitados só podem ser fechados.");
+          toast.error(translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close");
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(translations.toasts?.documentsPending || "Todos os documentos devem ser validados antes de prosseguir.");
+          toast.error(translations.toasts?.documentsPending || "All documents must be validated first");
+      } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
+          toast.error(translations.toasts?.onlyFinancialCanClose || "Only users with the Financial Manager role can close subsidy requests");
       } else {
         toast.error(translations.toasts.approveError.replace('{{message}}', err.message))
       }
@@ -215,13 +217,15 @@ export function SubsidyApprovalsManager({
       }
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
       if (errorCode === 'STATUS_IS_CLOSED') {
-          toast.error("O subsídio já está fechado e não pode ser alterado.");
+          toast.error(translations.toasts?.statusClosed || "Status Closed cannot be changed");
       } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
-          toast.error("Não é possível fechar um subsídio em revisão.");
+          toast.error(translations.toasts?.inReviewToClosed || "Cannot close In Review requests");
       } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
-          toast.error("Subsídios aprovados ou rejeitados só podem ser fechados.");
+          toast.error(translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close");
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(translations.toasts?.documentsPending || "Todos os documentos devem ser validados antes de prosseguir.");
+          toast.error(translations.toasts?.documentsPending || "All documents must be validated first");
+      } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
+          toast.error(translations.toasts?.onlyFinancialCanClose || "Only users with the Financial Manager role can close subsidy requests");
       } else {
         toast.error(translations.toasts.rejectError.replace('{{message}}', err.message))
       }
@@ -242,13 +246,15 @@ export function SubsidyApprovalsManager({
       }
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
       if (errorCode === 'STATUS_IS_CLOSED') {
-          toast.error("O subsídio já está fechado e não pode ser alterado.");
+          toast.error(translations.toasts?.statusClosed || "Status Closed cannot be changed");
       } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
-          toast.error("Não é possível fechar um subsídio em revisão.");
+          toast.error(translations.toasts?.inReviewToClosed || "Cannot close In Review requests");
       } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
-          toast.error("Subsídios aprovados ou rejeitados só podem ser fechados.");
+          toast.error(translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close");
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(translations.toasts?.documentsPending || "Todos os documentos devem ser validados antes de prosseguir.");
+          toast.error(translations.toasts?.documentsPending || "All documents must be validated first");
+      } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
+          toast.error(translations.toasts?.onlyFinancialCanClose || "Only users with the Financial Manager role can close subsidy requests");
       } else {
         toast.error(translations.toasts.statusUpdateError.replace('{{message}}', err.message))
       }

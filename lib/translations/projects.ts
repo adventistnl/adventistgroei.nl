@@ -674,7 +674,8 @@ export const projectTranslations = {
         documentsPending: "All documents must be validated first",
         documentsRejected: "Cannot approve subsidy with rejected documents",
         statusChangeNotAllowed: "This status change is not allowed",
-        rejectionReasonRequired: "Please provide a reason for rejection"
+        rejectionReasonRequired: "Please provide a reason for rejection",
+        onlyFinancialCanClose: "Only users with the Financial Manager role can close subsidy requests"
       },
       
       // Success messages
@@ -1720,7 +1721,8 @@ export const projectTranslations = {
         documentsPending: "Alle documenten moeten eerst worden gevalideerd",
         documentsRejected: "Kan subsidie niet goedkeuren met afgewezen documenten",
         statusChangeNotAllowed: "Deze statuswijziging is niet toegestaan",
-        rejectionReasonRequired: "Geef een reden op voor afwijzing"
+        rejectionReasonRequired: "Geef een reden op voor afwijzing",
+        onlyFinancialCanClose: "Alleen gebruikers met de rol Financieel Manager kunnen subsidieaanvragen sluiten"
       },
       
       // Success messages
@@ -2733,7 +2735,8 @@ export const projectTranslations = {
         documentsPending: "Todos os documentos devem ser validados primeiro",
         documentsRejected: "Não é possível aprovar subsídio com documentos rejeitados",
         statusChangeNotAllowed: "Esta mudança de status não é permitida",
-        rejectionReasonRequired: "Por favor, forneça um motivo para a rejeição"
+        rejectionReasonRequired: "Por favor, forneça um motivo para a rejeição",
+        onlyFinancialCanClose: "Apenas usuários com a função de Gerente Financeiro podem fechar solicitações de subsídio"
       },
       
       // Mensagens de sucesso

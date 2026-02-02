@@ -176,6 +176,8 @@ export function ViewSubsidyModal({
           toast.error(modalT.errors.onlyClosedFromFinalState);
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
           toast.error(modalT.errors.documentsPending);
+      } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
+          toast.error(modalT.errors.onlyFinancialCanClose);
       } else {
           toast.error(modalT.errorMessages.statusUpdate.replace('{{error}}', error.message))
       }
@@ -210,6 +212,8 @@ export function ViewSubsidyModal({
           toast.error(modalT.errors.documentsPending);
       } else if (errorCode === 'DOCUMENTS_REJECTED') {
           toast.error(modalT.errors.documentsRejected);
+      } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
+          toast.error(modalT.errors.onlyFinancialCanClose);
       } else {
           toast.error(modalT.errorMessages.approve.replace('{{error}}', error.message))
       }
@@ -242,6 +246,8 @@ export function ViewSubsidyModal({
           toast.error(modalT.errors.onlyClosedFromFinalState);
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
           toast.error(modalT.errors.documentsPending);
+      } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
+          toast.error(modalT.errors.onlyFinancialCanClose);
       } else {
           toast.error(modalT.errorMessages.reject.replace('{{error}}', error.message))
       }

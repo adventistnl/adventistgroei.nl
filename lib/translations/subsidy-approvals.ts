@@ -24,7 +24,8 @@ export const subsidyApprovalsTranslations = {
       mustBeFinal: "Must be Approved or Rejected to Close",
       finalState: "Can only change to Closed",
       documentsPending: "All documents must be validated first",
-      documentsRejected: "Cannot approve subsidy with rejected documents"
+      documentsRejected: "Cannot approve subsidy with rejected documents",
+      onlyFinancialCanClose: "Only users with the Financial Manager role can close subsidy requests"
     },
     
     // Default values
@@ -208,7 +209,8 @@ export const subsidyApprovalsTranslations = {
       mustBeFinal: "Deve estar Aprovado ou Rejeitado para Fechar",
       finalState: "Só pode mudar para Fechado",
       documentsPending: "Todos os documentos devem ser validados primeiro",
-      documentsRejected: "Não é possível aprovar subsídio com documentos rejeitados"
+      documentsRejected: "Não é possível aprovar subsídio com documentos rejeitados",
+      onlyFinancialCanClose: "Apenas usuários com a função de Gerente Financeiro podem fechar solicitações de subsídio"
     },
     
     // Default values
@@ -392,7 +394,8 @@ export const subsidyApprovalsTranslations = {
       mustBeFinal: "Moet Goedgekeurd of Afgewezen zijn om te sluiten",
       finalState: "Kan alleen wijzigen naar Gesloten",
       documentsPending: "Alle documenten moeten eerst worden gevalideerd",
-      documentsRejected: "Kan subsidie met afgewezen documenten niet goedkeuren"
+      documentsRejected: "Kan subsidie met afgewezen documenten niet goedkeuren",
+      onlyFinancialCanClose: "Alleen gebruikers met de rol Financieel Manager kunnen subsidieaanvragen sluiten"
     },
     
     // Default values
