@@ -384,7 +384,7 @@ export function ViewSubsidyModal({
       if (status === 'approved') {
         setCurrentSubsidyStatus('approved')
         setMentionStatus('approved')
-        setNewMessage(t('projects.subsidy.messageFormats.statusChangePrefix', { status: t('subsidy.status,approved') }))
+        setNewMessage(modalT.messageFormats.statusChangePrefix.replace('{{status}}', modalT.status?.approved || 'Approved'))
         
         await approveSubsidyRequest({
           variables: {
@@ -398,7 +398,7 @@ export function ViewSubsidyModal({
         if (id) {
            setCurrentSubsidyStatus('closed')
            setMentionStatus('closed')
-           setNewMessage(t('projects.subsidy.messageFormats.statusChangePrefix', { status: t('subsidy.status.closed') }))
+           setNewMessage(modalT.messageFormats.statusChangePrefix.replace('{{status}}', modalT.status?.closed || 'Closed'))
            
            await updateSubsidyRequest({
              variables: {
@@ -425,7 +425,8 @@ export function ViewSubsidyModal({
      
      setCurrentSubsidyStatus(status as any)
      setMentionStatus(status as any)
-     setNewMessage(t('projects.subsidy.messageFormats.statusChangePrefix', { status: t(`filters.${status}`) || status }))
+     const statusLabel = modalT.status?.[status as keyof typeof modalT.status] || status
+     setNewMessage(modalT.messageFormats.statusChangePrefix.replace('{{status}}', statusLabel))
      chatInputRef.current?.focus()
      
      try {
@@ -539,7 +540,7 @@ export function ViewSubsidyModal({
   }, [subsidy, receipts])
 
   // Fetch real status history from backend
-  const { data: historyData, loading: historyLoading } = useQuery(
+  const { data: historyData, loading: historyLoading, refetch: refetchHistory } = useQuery(
     GET_SUBSIDY_STATUS_HISTORY,
     {
       variables: {
@@ -568,7 +569,7 @@ export function ViewSubsidyModal({
         
         // Se a mensagem parece ser uma mensagem padrão de status, traduzir
         if (item.reason.includes('Status changed to') || item.reason.includes('mudou para') || item.reason.includes('Status alterado para')) {
-          translatedReason = t('projects.subsidy.messageFormats.statusChangePrefix', { status: statusLabel })
+          translatedReason = modalT.messageFormats.statusChangePrefix.replace('{{status}}', statusLabel)
         }
       }
       
@@ -585,12 +586,13 @@ export function ViewSubsidyModal({
     })
   }, [historyData, t])
 
-  // Initialize messages when modal opens
+  // Sync messages with statusHistory from server
+  // This ensures messages are updated after refetch from mutations
   React.useEffect(() => {
-    if (isOpen && statusHistory.length > 0) {
+    if (statusHistory.length > 0) {
       setMessages(statusHistory)
     }
-  }, [isOpen, statusHistory])
+  }, [statusHistory])
 
   // Scroll to bottom when messages change
   React.useEffect(() => {
@@ -686,7 +688,7 @@ export function ViewSubsidyModal({
         setNewMessage("")
         setMentionStatus(null)
         setMentionPriority(null)
-        toast.success(t('projects.subsidy.messageSent'))
+        toast.success(modalT.success.messageSent)
       } catch (error) {
         console.error('Error sending message:', error)
         toast.error(t('toasts.messageSentError'))
@@ -710,7 +712,7 @@ export function ViewSubsidyModal({
           language: i18n.language as any
         }
       })
-      toast.success(t('projects.subsidy.commentDeleted'))
+      toast.success(modalT.success.commentDeleted)
       setDeleteCommentDialog({ isOpen: false, messageId: null })
     } catch (error) {
       // Error handled in useMutation
@@ -718,7 +720,8 @@ export function ViewSubsidyModal({
   }
 
   const confirmRejection = async (reason: string) => {
-    setNewMessage(t('projects.subsidy.statusChangeReasonPrefix', { status: t('subsidy.rejected'), reason: reason }))
+    const rejectedLabel = modalT.status?.rejected || 'Rejected'
+    setNewMessage(modalT.messageFormats.statusChangeReasonPrefix?.replace('{{status}}', rejectedLabel).replace('{{reason}}', reason) || `Status changed to ${rejectedLabel}. Reason: ${reason}`)
     chatInputRef.current?.focus()
     
     // Reject subsidy
@@ -755,24 +758,15 @@ export function ViewSubsidyModal({
       try {
         await validateReceipt(docId)
         
-        // Adicionar mensagem ao histórico
-        const approvalMessage: StatusHistoryItem = {
-          id: `msg-${Date.now()}`,
-          status: "in_review",
-          reason: t('projects.subsidy.documentValidated'),
-          changed_by: user?.name || "Admin User",
-          user_id: user?.id || "",
-          changed_at: new Date(),
-          isNew: false
-        }
-        setMessages(prev => [...prev, approvalMessage])
-        
-        toast.success(t('projects.subsidy.documentValidated'))
+        toast.success(modalT.success.documentValidated)
         setMentionMode(null)
 
         // Refetch receipts to update the list
         const updatedReceipts = await fetchReceipts(subsidy?.id)
         setReceipts(updatedReceipts || [])
+        
+        // Refetch history from backend
+        await refetchHistory()
         
         // Notify parent to refresh subsidy data (status might have changed)
         onSubsidyUpdated?.()
@@ -783,7 +777,7 @@ export function ViewSubsidyModal({
     } else {
       // Rejeição com nota obrigatória
       if (!newMessage.trim()) {
-        toast.error(t('projects.subsidy.addRejectionReason'))
+        toast.error(modalT.documents.addRejectionReason)
         return
       }
       
@@ -791,25 +785,16 @@ export function ViewSubsidyModal({
       try {
         await rejectReceipt(docId, newMessage)
         
-        // Adicionar mensagem ao histórico com motivo da rejeição
-        const rejectionMessage: StatusHistoryItem = {
-          id: `msg-${Date.now()}`,
-          status: "rejected",
-          reason: `${t('projects.subsidy.documentRejected')}: ${newMessage}`,
-          changed_by: user?.name || "Admin User",
-          user_id: user?.id || "",
-          changed_at: new Date(),
-          isNew: false
-        }
-        setMessages(prev => [...prev, rejectionMessage])
-        
-        toast.success(t('projects.subsidy.documentRejected'))
+        toast.success(modalT.success.documentRejected)
         setMentionMode(null)
         setNewMessage("")
 
         // Refetch receipts to update the list
         const updatedReceipts = await fetchReceipts(subsidy?.id)
         setReceipts(updatedReceipts || [])
+        
+        // Refetch history from backend
+        await refetchHistory()
         
         // Notify parent to refresh subsidy data (status might have changed)
         onSubsidyUpdated?.()
@@ -925,7 +910,7 @@ export function ViewSubsidyModal({
                 </h2>
                 <div className="flex items-center gap-2 mt-1.5">
                   <span className="text-xs text-gray-600 dark:text-gray-400">
-                    {t('projects.subsidy.requestedOn')} {format(new Date(subsidy.requested_at), "dd/MM/yyyy")}
+                    {projectTranslations[i18n.language as keyof typeof projectTranslations]?.subsidy?.requestedOn || 'Requested on:'} {format(new Date(subsidy.requested_at), "dd/MM/yyyy")}
                   </span>
                 </div>
               </div>

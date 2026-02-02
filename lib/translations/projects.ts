@@ -757,6 +757,15 @@ export const projectTranslations = {
         addComment: "Add comment..."
       },
       
+      // Status labels
+      status: {
+        pending: "Pending",
+        in_review: "In Review",
+        approved: "Approved",
+        rejected: "Rejected",
+        closed: "Closed"
+      },
+      
       // Confirmation dialogs
       dialogs: {
         deleteCommentTitle: "Delete Comment",
@@ -1804,6 +1813,15 @@ export const projectTranslations = {
         addComment: "Opmerking toevoegen..."
       },
       
+      // Status labels
+      status: {
+        pending: "In afwachting",
+        in_review: "In beoordeling",
+        approved: "Goedgekeurd",
+        rejected: "Afgewezen",
+        closed: "Gesloten"
+      },
+      
       // Confirmation dialogs
       dialogs: {
         deleteCommentTitle: "Opmerking verwijderen",
@@ -2816,6 +2834,15 @@ export const projectTranslations = {
         documentComment: "Adicionar comentário sobre o documento...",
         rejectReason: "Motivo da rejeição (obrigatório)...",
         addComment: "Adicionar comentário..."
+      },
+      
+      // Rótulos de status
+      status: {
+        pending: "Pendente",
+        in_review: "Em Análise",
+        approved: "Aprovado",
+        rejected: "Rejeitado",
+        closed: "Fechado"
       },
       
       // Diálogos de confirmação
