@@ -423,8 +423,8 @@ export default function AnnualBudgetPage() {
         toast.dismiss(loadingToast)
         toast.success(
           isNowLocked 
-            ? t('annual_budget.messages.lock_success') 
-            : t('annual_budget.messages.unlock_success', `Institution and ${departmentBudgetsWithLocks.length} departments unlocked successfully`), 
+            ? t('annual_budget.modals.messages.lock_success') 
+            : t('annual_budget.modals.messages.unlock_success', `Institution and ${departmentBudgetsWithLocks.length} departments unlocked successfully`), 
           {
             id: `institution-lock-${institutionBudget.id}`,
             duration: 3000
@@ -440,7 +440,7 @@ export default function AnnualBudgetPage() {
         error?.networkError?.result?.errors?.[0]?.message ||
         error?.networkError?.message ||
         error?.message ||
-        t('annual_budget.messages.lock_error')
+        t('annual_budget.modals.messages.lock_error')
 
       toast.error(errorMessage, {
         id: `institution-lock-error-${institutionBudget.id}`,

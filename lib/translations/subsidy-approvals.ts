@@ -22,8 +22,9 @@ export const subsidyApprovalsTranslations = {
       statusClosed: "Status Closed cannot be changed",
       inReviewToClosed: "Cannot close In Review requests",
       mustBeFinal: "Must be Approved or Rejected to Close",
-      finalState: "Can only change to Closed",
-      documentsPending: "All documents must be validated first",
+      finalState: "This request is in a final state and can only be closed.",
+      documentsPending: "All documents must be validated before proceeding.",
+      mustBeAdvancedClosed: "Advance subsidies must be Advanced Closed first.",
       documentsRejected: "Cannot approve subsidy with rejected documents",
       onlyFinancialCanClose: "Only users with the Financial Manager role can close subsidy requests"
     },
@@ -69,7 +70,8 @@ export const subsidyApprovalsTranslations = {
       in_review: "In Review",
       approved: "Approved",
       closed: "Closed",
-      rejected: "Rejected"
+      rejected: "Rejected",
+      advanced_closed: "Advanced Closed"
     },
     
     // Priority labels
@@ -108,7 +110,8 @@ export const subsidyApprovalsTranslations = {
         in_review: "In Review",
         approved: "Approved",
         closed: "Closed",
-        rejected: "Rejected"
+        rejected: "Rejected",
+        advanced_closed: "Advanced Closed"
       }
     },
     
@@ -118,7 +121,8 @@ export const subsidyApprovalsTranslations = {
       in_review: "Document under review. Indicates the request is being reviewed. Can return to Pending or move to Approved or Rejected, but never directly to Closed.",
       approved: "Subsidy has been approved and is released for payment. This is an irreversible action and can only transition to Closed. Updates to the subsidy or files are still possible.",
       rejected: "Subsidy has been rejected and will not be subsidized for some reason. This is an irreversible action and can only transition to Closed. Updates to the subsidy or files are still possible.",
-      closed: "Final status, indicating that all necessary actions for the subsidy have been completed. From here, no update or deletion actions can be performed on the subsidy or files."
+      closed: "Final status, indicating that all necessary actions for the subsidy have been completed. From here, no update or deletion actions can be performed on the subsidy or files.",
+      advanced_closed: "Final status for advance subsidies. Indicates the advance has been reconciled and closed."
     },
     
     // Card Header
@@ -178,7 +182,8 @@ export const subsidyApprovalsTranslations = {
           in_review: "In Review",
           approved: "Approved",
           rejected: "Rejected",
-          closed: "Closed"
+          closed: "Closed",
+          advanced_closed: "Advanced Closed"
         }
       }
     }
@@ -209,6 +214,7 @@ export const subsidyApprovalsTranslations = {
       mustBeFinal: "Deve estar Aprovado ou Rejeitado para Fechar",
       finalState: "Só pode mudar para Fechado",
       documentsPending: "Todos os documentos devem ser validados primeiro",
+      mustBeAdvancedClosed: "Subsídios de adiantamento devem ser Adiantamento Fechado primeiro.",
       documentsRejected: "Não é possível aprovar subsídio com documentos rejeitados",
       onlyFinancialCanClose: "Apenas usuários com a função de Gerente Financeiro podem fechar solicitações de subsídio"
     },
@@ -254,7 +260,8 @@ export const subsidyApprovalsTranslations = {
       in_review: "Em Revisão",
       approved: "Aprovado",
       closed: "Fechado",
-      rejected: "Rejeitado"
+      rejected: "Rejeitado",
+      advanced_closed: "Adiantamento Fechado"
     },
     
     // Priority labels
@@ -293,7 +300,8 @@ export const subsidyApprovalsTranslations = {
         in_review: "Em Revisão",
         approved: "Aprovado",
         closed: "Fechado",
-        rejected: "Rejeitado"
+        rejected: "Rejeitado",
+        advanced_closed: "Adiantamento Fechado"
       }
     },
     
@@ -303,7 +311,8 @@ export const subsidyApprovalsTranslations = {
       in_review: "Documento em revisão. Indica que a solicitação está sendo revisada. Pode retornar para Pendente ou avançar para Aprovado ou Rejeitado, mas nunca diretamente para Fechado.",
       approved: "Subsídio foi aprovado e está liberado para pagamento. Esta é uma ação irreversível e só pode transitar para Fechado. Atualizações no subsídio ou arquivos ainda são possíveis.",
       rejected: "Subsídio foi rejeitado e não será subsidiado por algum motivo. Esta é uma ação irreversível e só pode transitar para Fechado. Atualizações no subsídio ou arquivos ainda são possíveis.",
-      closed: "Status final, indicando que todas as ações necessárias para o subsídio foram concluídas. A partir daqui, nenhuma atualização ou ação de exclusão pode ser realizada no subsídio ou arquivos."
+      closed: "Status final, indicando que todas as ações necessárias para o subsídio foram concluídas. A partir daqui, nenhuma atualização ou ação de exclusão pode ser realizada no subsídio ou arquivos.",
+      advanced_closed: "Status final para subsídios adiantados. Indica que o adiantamento foi reconciliado e fechado."
     },
     
     // Card Header
@@ -363,7 +372,8 @@ export const subsidyApprovalsTranslations = {
           in_review: "Em Revisão",
           approved: "Aprovado",
           rejected: "Rejeitado",
-          closed: "Fechado"
+          closed: "Fechado",
+          advanced_closed: "Adiantamento Fechado"
         }
       }
     }
@@ -394,6 +404,7 @@ export const subsidyApprovalsTranslations = {
       mustBeFinal: "Moet Goedgekeurd of Afgewezen zijn om te sluiten",
       finalState: "Kan alleen wijzigen naar Gesloten",
       documentsPending: "Alle documenten moeten eerst worden gevalideerd",
+      mustBeAdvancedClosed: "Voorschotsubsidies moeten eerst Geavanceerd Gesloten zijn.",
       documentsRejected: "Kan subsidie met afgewezen documenten niet goedkeuren",
       onlyFinancialCanClose: "Alleen gebruikers met de rol Financieel Manager kunnen subsidieaanvragen sluiten"
     },
@@ -439,7 +450,8 @@ export const subsidyApprovalsTranslations = {
       in_review: "In Beoordeling",
       approved: "Goedgekeurd",
       closed: "Gesloten",
-      rejected: "Afgewezen"
+      rejected: "Afgewezen",
+      advanced_closed: "Geavanceerd Gesloten"
     },
     
     // Priority labels
@@ -478,7 +490,8 @@ export const subsidyApprovalsTranslations = {
         in_review: "In Beoordeling",
         approved: "Goedgekeurd",
         closed: "Gesloten",
-        rejected: "Afgewezen"
+        rejected: "Afgewezen",
+        advanced_closed: "Geavanceerd Gesloten"
       }
     },
     
@@ -488,7 +501,8 @@ export const subsidyApprovalsTranslations = {
       in_review: "Document in beoordeling. Geeft aan dat de aanvraag wordt beoordeeld. Kan teruggaan naar In Behandeling of overgaan naar Goedgekeurd of Afgewezen, maar nooit direct naar Gesloten.",
       approved: "Subsidie is goedgekeurd en vrijgegeven voor betaling. Dit is een onomkeerbare actie en kan alleen overgaan naar Gesloten. Updates aan de subsidie of bestanden zijn nog mogelijk.",
       rejected: "Subsidie is afgewezen en zal om een bepaalde reden niet worden gesubsidieerd. Dit is een onomkeerbare actie en kan alleen overgaan naar Gesloten. Updates aan de subsidie of bestanden zijn nog mogelijk.",
-      closed: "Eindstatus, wat aangeeft dat alle noodzakelijke acties voor de subsidie zijn voltooid. Vanaf hier kunnen geen update- of verwijderacties meer worden uitgevoerd op de subsidie of bestanden."
+      closed: "Eindstatus, wat aangeeft dat alle noodzakelijke acties voor de subsidie zijn voltooid. Vanaf hier kunnen geen update- of verwijderacties meer worden uitgevoerd op de subsidie of bestanden.",
+      advanced_closed: "Eindstatus voor voorschotsubsidies. Geeft aan dat het voorschot is verrekend en afgesloten."
     },
     
     // Card Header
@@ -548,7 +562,8 @@ export const subsidyApprovalsTranslations = {
           in_review: "In Beoordeling",
           approved: "Goedgekeurd",
           rejected: "Afgewezen",
-          closed: "Gesloten"
+          closed: "Gesloten",
+          advanced_closed: "Geavanceerd Gesloten"
         }
       }
     }

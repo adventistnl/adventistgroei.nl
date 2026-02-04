@@ -7,6 +7,8 @@ import { dynamicFieldsTranslations } from './translations/dynamic-fields'
 import { projectDetailsTranslations } from './translations/project-details'
 import { institutionTranslations } from './translations/institutions'
 import { permissionsTranslations } from './translations/permissions'
+import { subsidyRequestTranslations } from './translations/subsidy-request'
+import { budgetTranslations } from './translations/budget'
 
 // Recursos de tradução
 const resources = {
@@ -1530,9 +1532,11 @@ const resources = {
         }
       },
       annual_budget: {
+        ...budgetTranslations.en,
         title: "Annual Budget Management",
         subtitle: "Manage budget requests and approvals across all organizational entities",
         messages: {
+          ...budgetTranslations.en.messages,
           refresh_success: "Budget data refreshed successfully",
           refreshing: "Refreshing budget data...",
           refresh_error: "Failed to refresh budget data"
@@ -2010,7 +2014,11 @@ const resources = {
           updated: "Contact updated successfully"
         }
       },
-      subsidy: subsidyManagementTranslations.en,
+      subsidy: {
+        ...projectTranslations.en.subsidy,
+        ...subsidyManagementTranslations.en
+      },
+      subsidyRequest: subsidyRequestTranslations.en,
       projectRegister: projectRegisterTranslations.en
     }
   },
@@ -3526,9 +3534,11 @@ const resources = {
         }
       },
       annual_budget: {
+        ...budgetTranslations.nl,
         title: "Jaarbegroting Beheer",
         subtitle: "Beheer begrotingsaanvragen en goedkeuringen voor alle organisatie-entiteiten",
         messages: {
+          ...budgetTranslations.nl.messages,
           refresh_success: "Begrotingsgegevens succesvol vernieuwd",
           refreshing: "Begrotingsgegevens vernieuwen...",
           refresh_error: "Kon begrotingsgegevens niet vernieuwen"
@@ -3831,7 +3841,11 @@ const resources = {
           updated: "Contact succesvol bijgewerkt"
         }
       },
-      subsidy: subsidyManagementTranslations.nl,
+      subsidy: {
+        ...projectTranslations.nl.subsidy,
+        ...subsidyManagementTranslations.nl
+      },
+      subsidyRequest: subsidyRequestTranslations.nl,
       projectRegister: projectRegisterTranslations.nl
     }
   },
@@ -4787,7 +4801,11 @@ const resources = {
         }
       },
 
-      subsidy: subsidyManagementTranslations.pt,
+      subsidy: {
+        ...projectTranslations.pt.subsidy,
+        ...subsidyManagementTranslations.pt
+      },
+      subsidyRequest: subsidyRequestTranslations.pt,
       projectRegister: projectRegisterTranslations.pt
     }
   }

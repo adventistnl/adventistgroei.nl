@@ -220,6 +220,19 @@ export const subsidyRequestTranslations = {
     modals: {
       addActivitiesTitle: "Add Subsidized Activities",
       addActivitiesDescription: "Select subsidized activities from the project to add to the subsidy request."
+    },
+    
+    // Advance request
+    advance: {
+      title: "Request Advance Payment",
+      description: "Request an advance payment up to 50% of the subsidized budget before full subsidy processing.",
+      amount: "Advance Amount",
+      maxAllowed: "Maximum allowed: {{amount}}",
+      exceeds50Percent: "Advance amount cannot exceed 50% of the subsidized budget",
+      button: "Request Advance",
+      submit: "Submit Advance Request",
+      success: "Advance request created successfully",
+      statusAdvancedClosed: "Advanced Closed"
     }
   },
   
@@ -442,6 +455,19 @@ export const subsidyRequestTranslations = {
     modals: {
       addActivitiesTitle: "Adicionar Atividades Subsidiadas",
       addActivitiesDescription: "Selecione atividades subsidiadas do projeto para adicionar à solicitação de subsídio."
+    },
+    
+    // Advance request
+    advance: {
+      title: "Solicitar Adiantamento",
+      description: "Solicite um adiantamento de até 50% do orçamento subsidiado antes do processamento completo do subsídio.",
+      amount: "Valor do Adiantamento",
+      maxAllowed: "Máximo permitido: {{amount}}",
+      exceeds50Percent: "O valor do adiantamento não pode exceder 50% do orçamento subsidiado",
+      button: "Solicitar Adiantamento",
+      submit: "Enviar Solicitação de Adiantamento",
+      success: "Solicitação de adiantamento criada com sucesso",
+      statusAdvancedClosed: "Adiantamento Encerrado"
     }
   },
   
@@ -665,6 +691,19 @@ export const subsidyRequestTranslations = {
     modals: {
       addActivitiesTitle: "Gesubsidieerde Activiteiten Toevoegen",
       addActivitiesDescription: "Selecteer gesubsidieerde activiteiten uit het project om toe te voegen aan de subsidieaanvraag."
+    },
+    
+    // Advance request
+    advance: {
+      title: "Voorschot Aanvragen",
+      description: "Vraag een voorschot aan tot 50% van het gesubsidieerde budget vóór volledige subsidieafhandeling.",
+      amount: "Voorschotbedrag",
+      maxAllowed: "Maximaal toegestaan: {{amount}}",
+      exceeds50Percent: "Voorschotbedrag mag niet hoger zijn dan 50% van het gesubsidieerde budget",
+      button: "Voorschot Aanvragen",
+      submit: "Voorschotaanvraag Indienen",
+      success: "Voorschotaanvraag succesvol aangemaakt",
+      statusAdvancedClosed: "Voorschot Afgesloten"
     }
   }
 }
