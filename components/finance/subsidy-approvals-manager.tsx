@@ -99,7 +99,7 @@ interface SubsidyRequest {
   church_name?: string
   requested_amount: number
   approved_amount?: number
-  status: "pending" | "in_review" | "approved" | "closed" | "rejected"
+  status: "pending" | "in_review" | "approved" | "closed" | "rejected" | "advanced_closed"
   requested_at: string
   reviewed_at?: string
   reviewed_by?: string
@@ -121,6 +121,8 @@ interface SubsidyRequest {
     id: string
     is_validated: boolean
   }>
+  is_for_advance?: boolean
+  advance_amount?: number
 }
 
 interface SubsidyApprovalsManagerProps {
@@ -188,13 +190,15 @@ export function SubsidyApprovalsManager({
       }
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
       if (errorCode === 'STATUS_IS_CLOSED') {
-          toast.error("O subsídio já está fechado e não pode ser alterado.");
+          toast.error(translations.toasts?.statusClosed || "Status Closed cannot be changed");
       } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
-          toast.error("Não é possível fechar um subsídio em revisão.");
+          toast.error(translations.toasts?.inReviewToClosed || "Cannot close In Review requests");
       } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
-          toast.error("Subsídios aprovados ou rejeitados só podem ser fechados.");
+          toast.error(translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close");
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(translations.toasts?.documentsPending || "Todos os documentos devem ser validados antes de prosseguir.");
+          toast.error(translations.toasts?.documentsPending || "All documents must be validated first");
+      } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
+          toast.error(translations.toasts?.onlyFinancialCanClose || "Only users with the Financial Manager role can close subsidy requests");
       } else {
         toast.error(translations.toasts.approveError.replace('{{message}}', err.message))
       }
@@ -215,13 +219,15 @@ export function SubsidyApprovalsManager({
       }
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
       if (errorCode === 'STATUS_IS_CLOSED') {
-          toast.error("O subsídio já está fechado e não pode ser alterado.");
+          toast.error(translations.toasts?.statusClosed || "Status Closed cannot be changed");
       } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
-          toast.error("Não é possível fechar um subsídio em revisão.");
+          toast.error(translations.toasts?.inReviewToClosed || "Cannot close In Review requests");
       } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
-          toast.error("Subsídios aprovados ou rejeitados só podem ser fechados.");
+          toast.error(translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close");
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(translations.toasts?.documentsPending || "Todos os documentos devem ser validados antes de prosseguir.");
+          toast.error(translations.toasts?.documentsPending || "All documents must be validated first");
+      } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
+          toast.error(translations.toasts?.onlyFinancialCanClose || "Only users with the Financial Manager role can close subsidy requests");
       } else {
         toast.error(translations.toasts.rejectError.replace('{{message}}', err.message))
       }
@@ -242,13 +248,15 @@ export function SubsidyApprovalsManager({
       }
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
       if (errorCode === 'STATUS_IS_CLOSED') {
-          toast.error("O subsídio já está fechado e não pode ser alterado.");
+          toast.error(translations.toasts?.statusClosed || "Status Closed cannot be changed");
       } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
-          toast.error("Não é possível fechar um subsídio em revisão.");
+          toast.error(translations.toasts?.inReviewToClosed || "Cannot close In Review requests");
       } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
-          toast.error("Subsídios aprovados ou rejeitados só podem ser fechados.");
+          toast.error(translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close");
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(translations.toasts?.documentsPending || "Todos os documentos devem ser validados antes de prosseguir.");
+          toast.error(translations.toasts?.documentsPending || "All documents must be validated first");
+      } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
+          toast.error(translations.toasts?.onlyFinancialCanClose || "Only users with the Financial Manager role can close subsidy requests");
       } else {
         toast.error(translations.toasts.statusUpdateError.replace('{{message}}', err.message))
       }
@@ -285,20 +293,39 @@ export function SubsidyApprovalsManager({
     // Rule: Closed status cannot be changed to anything else
     if (from === 'closed') return translations.toasts?.statusClosed || "Status Closed cannot be changed"
     
-    // Rule: To Closed is allowed from Approved or Rejected only (not In Review)
+    // Rule: To Closed is allowed from Approved or Rejected or Advanced Closed
     if (to === 'closed') {
       if (from === 'in_review') return translations.toasts?.inReviewToClosed || "Cannot close In Review requests"
-      // Only allowed from approved or rejected
-      if (from !== 'approved' && from !== 'rejected') return translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close"
+      // Only allowed from approved, rejected or advanced_closed
+      if (from !== 'approved' && from !== 'rejected' && from !== 'advanced_closed') return translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close"
     }
     
-    // Rule: If Approved or Rejected, can ONLY go to Closed
+    // Rule: Advance subsidies logic
+    if (subsidy.is_for_advance) {
+        if (from === 'approved') {
+            // Can go to advanced_closed
+            if (to === 'advanced_closed') return null
+            // Cannot go to closed directly (must go to advanced_closed first)
+            if (to === 'closed') return translations.toasts?.mustBeAdvancedClosed || "Adv. Subsidies must be Advanced Closed first"
+        }
+        if (from === 'advanced_closed') {
+            // Can go to closed
+            if (to === 'closed') return null
+            // Cannot go back to approved
+            return translations.toasts?.finalState || "Advanced Closed can only change to Closed"
+        }
+    }
+
+    // Rule: If Approved or Rejected, can ONLY go to Closed (for normal subsidies)
     if (from === 'approved' || from === 'rejected') {
       if (to !== 'closed') return translations.toasts?.finalState || "Can only change to Closed"
     }
 
     // Rule: Cannot change to Approved, Closed, Rejected unless all documents are validated
-    if (['approved', 'closed', 'rejected'].includes(to)) {
+    // Note: Advance subsidies don't have documents usually, but if they did, we'd check them.
+    // However, for ADVANCE request creation, no docs required.
+    // If user added docs later, we might want to validate.
+    if (['approved', 'closed', 'rejected', 'advanced_closed'].includes(to)) {
        const hasPending = (subsidy.receipts || []).some(r => !r.is_validated);
        if (hasPending) {
            return translations.toasts?.documentsPending || "All documents must be validated first"
@@ -315,7 +342,8 @@ export function SubsidyApprovalsManager({
       'IN_REVIEW': 'in_review',
       'APPROVED': 'approved',
       'REJECTED': 'rejected',
-      'CLOSED': 'closed'
+      'CLOSED': 'closed',
+      'ADVANCED_CLOSED': 'advanced_closed'
     }
     return statusMap[statusName?.toUpperCase()] || 'pending'
   }
@@ -347,7 +375,9 @@ export function SubsidyApprovalsManager({
         budget_amount: parseFloat(item.project_activity?.budget_amount) || 0,
         notes: item.notes
       })) || [],
-      department_name: request.department?.name || translations.defaults.otherDepartment
+      department_name: request.department?.name || translations.defaults.otherDepartment,
+      is_for_advance: request.is_for_advance,
+      advance_amount: request.advance_amount ? parseFloat(request.advance_amount) : undefined
     }))
   }, [subsidyData])
 
@@ -489,7 +519,8 @@ export function SubsidyApprovalsManager({
       'in_review': '#3b82f6',
       'approved': '#10b981',
       'closed': '#059669',
-      'rejected': '#ef4444'
+      'rejected': '#ef4444',
+      'advanced_closed': '#7c3aed'
     }
     
     const statusLabelMap: Record<string, string> = {
@@ -497,7 +528,8 @@ export function SubsidyApprovalsManager({
       'in_review': 'In Review',
       'approved': 'Approved',
       'closed': 'Closed',
-      'rejected': 'Rejected'
+      'rejected': 'Rejected',
+      'advanced_closed': 'Advanced Closed'
     }
     
     // Count requests by status from actual data
@@ -506,7 +538,8 @@ export function SubsidyApprovalsManager({
       'in_review': 0,
       'approved': 0,
       'closed': 0,
-      'rejected': 0
+      'rejected': 0,
+      'advanced_closed': 0
     }
     
     subsidyRequests.forEach(request => {
@@ -537,6 +570,7 @@ export function SubsidyApprovalsManager({
         approved: 0,
         closed: 0,
         rejected: 0,
+        advanced_closed: 0,
         quarter
       }
     })
@@ -546,7 +580,7 @@ export function SubsidyApprovalsManager({
       const date = new Date(request.requested_at)
       const monthName = monthNames[date.getMonth()]
       if (monthData[monthName] && request.status) {
-        const statusKey = request.status as 'pending' | 'in_review' | 'approved' | 'closed' | 'rejected'
+        const statusKey = request.status as 'pending' | 'in_review' | 'approved' | 'closed' | 'rejected' | 'advanced_closed'
         monthData[monthName][statusKey]++
       }
     })
@@ -716,10 +750,15 @@ export function SubsidyApprovalsManager({
       variant: "neutral",
       icon: FileText
     },
-    rejected: { 
+    rejected: {
       label: translations.status.rejected, 
       variant: "error",
       icon: XCircle
+    },
+    advanced_closed: { 
+      label: translations.status.advanced_closed, 
+      variant: "neutral",
+      icon: CheckCircle
     }
   }
 
@@ -824,14 +863,16 @@ export function SubsidyApprovalsManager({
           in_review: 'info',
           approved: 'success',
           closed: 'success',
-          rejected: 'error'
+          rejected: 'error',
+          advanced_closed: 'neutral'
         }
         const dotColorMap: Record<SubsidyRequest['status'], string> = {
           pending: 'bg-amber-500',
           in_review: 'bg-blue-500',
           approved: 'bg-green-500',
           closed: 'bg-emerald-600',
-          rejected: 'bg-red-500'
+          rejected: 'bg-red-500',
+          advanced_closed: 'bg-purple-600'
         }
         return (
           <StatusBadge
@@ -906,8 +947,9 @@ export function SubsidyApprovalsManager({
     { id: 'pending', name: translations.kanban.groups.pending, color: '#f59e0b', tooltip: translations.statusRules.pending },
     { id: 'in_review', name: translations.kanban.groups.in_review, color: '#3b82f6', tooltip: translations.statusRules.in_review },
     { id: 'approved', name: translations.kanban.groups.approved, color: '#10b981', tooltip: translations.statusRules.approved },
+    { id: 'advanced_closed', name: translations.kanban.groups.advanced_closed, color: '#7c3aed', tooltip: translations.statusRules.advanced_closed },
+    { id: 'closed', name: translations.kanban.groups.closed, color: '#059669', tooltip: translations.statusRules.closed },
     { id: 'rejected', name: translations.kanban.groups.rejected, color: '#ef4444', tooltip: translations.statusRules.rejected },
-    { id: 'closed', name: translations.kanban.groups.closed, color: '#059669', tooltip: translations.statusRules.closed }
   ]
 
   const kanbanItems: KanbanItem[] = subsidyRequests.map(request => ({

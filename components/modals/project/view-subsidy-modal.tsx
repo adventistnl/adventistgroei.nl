@@ -111,7 +111,7 @@ export function ViewSubsidyModal({
   const [chatFilterActivity, setChatFilterActivity] = React.useState<string | null>(null)
   const [currentSubsidyStatus, setCurrentSubsidyStatus] = React.useState(subsidy?.status || "pending")
   const [currentPriority, setCurrentPriority] = React.useState<"low" | "medium" | "high">("medium")
-  const [mentionStatus, setMentionStatus] = React.useState<"pending" | "in_review" | "approved" | "rejected" | "closed" | null>(null)
+  const [mentionStatus, setMentionStatus] = React.useState<"pending" | "in_review" | "approved" | "rejected" | "closed" | "advanced_closed" | null>(null)
   const [mentionPriority, setMentionPriority] = React.useState<"low" | "medium" | "high" | null>(null)
   const chatInputRef = React.useRef<HTMLInputElement>(null)
   const [loadingDocuments, setLoadingDocuments] = React.useState(false)
@@ -123,7 +123,7 @@ export function ViewSubsidyModal({
   const [rejectionDialog, setRejectionDialog] = React.useState<{ isOpen: boolean }>({ isOpen: false })
   const [statusConfirmationDialog, setStatusConfirmationDialog] = React.useState<{ 
     isOpen: boolean; 
-    status: "approved" | "rejected" | "closed" | null; 
+    status: "approved" | "rejected" | "closed" | "advanced_closed" | null; 
     statusId?: string 
   }>({ isOpen: false, status: null })
 
@@ -176,6 +176,8 @@ export function ViewSubsidyModal({
           toast.error(modalT.errors.onlyClosedFromFinalState);
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
           toast.error(modalT.errors.documentsPending);
+      } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
+          toast.error(modalT.errors.onlyFinancialCanClose);
       } else {
           toast.error(modalT.errorMessages.statusUpdate.replace('{{error}}', error.message))
       }
@@ -210,6 +212,8 @@ export function ViewSubsidyModal({
           toast.error(modalT.errors.documentsPending);
       } else if (errorCode === 'DOCUMENTS_REJECTED') {
           toast.error(modalT.errors.documentsRejected);
+      } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
+          toast.error(modalT.errors.onlyFinancialCanClose);
       } else {
           toast.error(modalT.errorMessages.approve.replace('{{error}}', error.message))
       }
@@ -242,6 +246,8 @@ export function ViewSubsidyModal({
           toast.error(modalT.errors.onlyClosedFromFinalState);
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
           toast.error(modalT.errors.documentsPending);
+      } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
+          toast.error(modalT.errors.onlyFinancialCanClose);
       } else {
           toast.error(modalT.errorMessages.reject.replace('{{error}}', error.message))
       }
@@ -309,6 +315,16 @@ export function ViewSubsidyModal({
     if (to === 'approved' && hasRejectedDocuments()) {
       return false
     }
+
+    // Rule: Advance subsidies logic
+    if (subsidy?.is_for_advance) {
+        if (from === 'approved') return to === 'advanced_closed'
+        if (from === 'advanced_closed') return to === 'closed'
+        // pending/in_review follow standard flow to approved/rejected
+    } else {
+        // Normal subsidies: Cannot go to advanced_closed
+        if (to === 'advanced_closed') return false
+    }
     
     // Rule: To Closed is allowed from Approved or Rejected only (not In Review)
     if (to === 'closed') {
@@ -317,7 +333,7 @@ export function ViewSubsidyModal({
       return from === 'approved' || from === 'rejected'
     }
     
-    // Rule: If Approved or Rejected, can ONLY go to Closed
+    // Rule: If Approved or Rejected, can ONLY go to Closed (for normal subsidies)
     if (from === 'approved' || from === 'rejected') {
       return to === 'closed'
     }
@@ -340,8 +356,8 @@ export function ViewSubsidyModal({
         return
     }
 
-    // Check document validation for pending documents
-    if (['approved', 'closed', 'rejected'].includes(normalizedStatus)) {
+    // Check document validation for pending documents (skip for advance subsidies which assume no docs)
+    if (['approved', 'closed', 'rejected', 'advanced_closed'].includes(normalizedStatus) && !subsidy?.is_for_advance) {
         const hasPending = (receipts || []).some((r: any) => !r.is_validated && !r.is_deleted);
         if (hasPending) {
              toast.error(modalT.errors.documentsPending);
@@ -356,7 +372,7 @@ export function ViewSubsidyModal({
     }
 
     // For Approved or Closed, we show the confirmation dialog
-    if (normalizedStatus === 'approved' || normalizedStatus === 'closed') {
+    if (normalizedStatus === 'approved' || normalizedStatus === 'closed' || normalizedStatus === 'advanced_closed') {
       setStatusConfirmationDialog({
         isOpen: true,
         status: normalizedStatus as any,
@@ -378,7 +394,7 @@ export function ViewSubsidyModal({
       if (status === 'approved') {
         setCurrentSubsidyStatus('approved')
         setMentionStatus('approved')
-        setNewMessage(t('projects.subsidy.messageFormats.statusChangePrefix', { status: t('subsidy.status,approved') }))
+        setNewMessage(modalT.messageFormats.statusChangePrefix.replace('{{status}}', modalT.status?.approved || 'Approved'))
         
         await approveSubsidyRequest({
           variables: {
@@ -387,17 +403,25 @@ export function ViewSubsidyModal({
             language: i18n.language as any
           }
         })
-      } else if (status === 'closed') {
-        const id = statusId || getStatusIdByName('CLOSED')
+      } else if (status === 'closed' || status === 'advanced_closed') {
+        const id = statusId || getStatusIdByName(status === 'closed' ? 'CLOSED' : 'ADVANCED_CLOSED')
         if (id) {
-           setCurrentSubsidyStatus('closed')
-           setMentionStatus('closed')
-           setNewMessage(t('projects.subsidy.messageFormats.statusChangePrefix', { status: t('subsidy.status.closed') }))
+           setCurrentSubsidyStatus(status === 'closed' ? 'closed' : 'advanced_closed')
+           setMentionStatus(status === 'closed' ? 'closed' : 'advanced_closed') // Note: mentionStatus type might need update if strict
+           
+           // Determine message based on status
+           const statusLabel = status === 'closed' 
+                ? (modalT.status?.closed || 'Closed')
+                : (t('subsidy.status.advancedClosed') || 'Advanced Closed');
+                
+           setNewMessage(modalT.messageFormats.statusChangePrefix.replace('{{status}}', statusLabel))
            
            await updateSubsidyRequest({
              variables: {
                id: subsidy.id,
-               data: { subsidy_status_id: id },
+               data: {
+                 subsidy_status_id: id
+               },
                language: i18n.language as any
              }
            })
@@ -419,7 +443,8 @@ export function ViewSubsidyModal({
      
      setCurrentSubsidyStatus(status as any)
      setMentionStatus(status as any)
-     setNewMessage(t('projects.subsidy.messageFormats.statusChangePrefix', { status: t(`filters.${status}`) || status }))
+     const statusLabel = modalT.status?.[status as keyof typeof modalT.status] || status
+     setNewMessage(modalT.messageFormats.statusChangePrefix.replace('{{status}}', statusLabel))
      chatInputRef.current?.focus()
      
      try {
@@ -533,7 +558,7 @@ export function ViewSubsidyModal({
   }, [subsidy, receipts])
 
   // Fetch real status history from backend
-  const { data: historyData, loading: historyLoading } = useQuery(
+  const { data: historyData, loading: historyLoading, refetch: refetchHistory } = useQuery(
     GET_SUBSIDY_STATUS_HISTORY,
     {
       variables: {
@@ -562,7 +587,7 @@ export function ViewSubsidyModal({
         
         // Se a mensagem parece ser uma mensagem padrão de status, traduzir
         if (item.reason.includes('Status changed to') || item.reason.includes('mudou para') || item.reason.includes('Status alterado para')) {
-          translatedReason = t('projects.subsidy.messageFormats.statusChangePrefix', { status: statusLabel })
+          translatedReason = modalT.messageFormats.statusChangePrefix.replace('{{status}}', statusLabel)
         }
       }
       
@@ -579,12 +604,13 @@ export function ViewSubsidyModal({
     })
   }, [historyData, t])
 
-  // Initialize messages when modal opens
+  // Sync messages with statusHistory from server
+  // This ensures messages are updated after refetch from mutations
   React.useEffect(() => {
-    if (isOpen && statusHistory.length > 0) {
+    if (statusHistory.length > 0) {
       setMessages(statusHistory)
     }
-  }, [isOpen, statusHistory])
+  }, [statusHistory])
 
   // Scroll to bottom when messages change
   React.useEffect(() => {
@@ -680,7 +706,7 @@ export function ViewSubsidyModal({
         setNewMessage("")
         setMentionStatus(null)
         setMentionPriority(null)
-        toast.success(t('projects.subsidy.messageSent'))
+        toast.success(modalT.success.messageSent)
       } catch (error) {
         console.error('Error sending message:', error)
         toast.error(t('toasts.messageSentError'))
@@ -704,7 +730,7 @@ export function ViewSubsidyModal({
           language: i18n.language as any
         }
       })
-      toast.success(t('projects.subsidy.commentDeleted'))
+      toast.success(modalT.success.commentDeleted)
       setDeleteCommentDialog({ isOpen: false, messageId: null })
     } catch (error) {
       // Error handled in useMutation
@@ -712,7 +738,8 @@ export function ViewSubsidyModal({
   }
 
   const confirmRejection = async (reason: string) => {
-    setNewMessage(t('projects.subsidy.statusChangeReasonPrefix', { status: t('subsidy.rejected'), reason: reason }))
+    const rejectedLabel = modalT.status?.rejected || 'Rejected'
+    setNewMessage(modalT.messageFormats.statusChangeReasonPrefix?.replace('{{status}}', rejectedLabel).replace('{{reason}}', reason) || `Status changed to ${rejectedLabel}. Reason: ${reason}`)
     chatInputRef.current?.focus()
     
     // Reject subsidy
@@ -749,24 +776,15 @@ export function ViewSubsidyModal({
       try {
         await validateReceipt(docId)
         
-        // Adicionar mensagem ao histórico
-        const approvalMessage: StatusHistoryItem = {
-          id: `msg-${Date.now()}`,
-          status: "in_review",
-          reason: t('projects.subsidy.documentValidated'),
-          changed_by: user?.name || "Admin User",
-          user_id: user?.id || "",
-          changed_at: new Date(),
-          isNew: false
-        }
-        setMessages(prev => [...prev, approvalMessage])
-        
-        toast.success(t('projects.subsidy.documentValidated'))
+        toast.success(modalT.success.documentValidated)
         setMentionMode(null)
 
         // Refetch receipts to update the list
         const updatedReceipts = await fetchReceipts(subsidy?.id)
         setReceipts(updatedReceipts || [])
+        
+        // Refetch history from backend
+        await refetchHistory()
         
         // Notify parent to refresh subsidy data (status might have changed)
         onSubsidyUpdated?.()
@@ -777,7 +795,7 @@ export function ViewSubsidyModal({
     } else {
       // Rejeição com nota obrigatória
       if (!newMessage.trim()) {
-        toast.error(t('projects.subsidy.addRejectionReason'))
+        toast.error(modalT.documents.addRejectionReason)
         return
       }
       
@@ -785,25 +803,16 @@ export function ViewSubsidyModal({
       try {
         await rejectReceipt(docId, newMessage)
         
-        // Adicionar mensagem ao histórico com motivo da rejeição
-        const rejectionMessage: StatusHistoryItem = {
-          id: `msg-${Date.now()}`,
-          status: "rejected",
-          reason: `${t('projects.subsidy.documentRejected')}: ${newMessage}`,
-          changed_by: user?.name || "Admin User",
-          user_id: user?.id || "",
-          changed_at: new Date(),
-          isNew: false
-        }
-        setMessages(prev => [...prev, rejectionMessage])
-        
-        toast.success(t('projects.subsidy.documentRejected'))
+        toast.success(modalT.success.documentRejected)
         setMentionMode(null)
         setNewMessage("")
 
         // Refetch receipts to update the list
         const updatedReceipts = await fetchReceipts(subsidy?.id)
         setReceipts(updatedReceipts || [])
+        
+        // Refetch history from backend
+        await refetchHistory()
         
         // Notify parent to refresh subsidy data (status might have changed)
         onSubsidyUpdated?.()
@@ -844,6 +853,11 @@ export function ViewSubsidyModal({
       label: t('subsidy.status.closed'),
       icon: Ban,
       className: "text-gray-500"
+    },
+    advanced_closed: {
+      label: t('subsidy.status.advancedClosed') || "Advanced Closed",
+      icon: CheckCircle2,
+      className: "text-purple-600"
     }
   }
 
@@ -919,7 +933,7 @@ export function ViewSubsidyModal({
                 </h2>
                 <div className="flex items-center gap-2 mt-1.5">
                   <span className="text-xs text-gray-600 dark:text-gray-400">
-                    {t('projects.subsidy.requestedOn')} {format(new Date(subsidy.requested_at), "dd/MM/yyyy")}
+                    {projectTranslations[i18n.language as keyof typeof projectTranslations]?.subsidy?.requestedOn || 'Requested on:'} {format(new Date(subsidy.requested_at), "dd/MM/yyyy")}
                   </span>
                 </div>
               </div>
@@ -1014,6 +1028,14 @@ export function ViewSubsidyModal({
                     >
                       <Ban className="mr-2 h-4 w-4 text-gray-500" />
                       {t('subsidy.status.closed')}
+                    </DropdownMenuItem>
+
+                     <DropdownMenuItem 
+                        onClick={() => handleStatusChangeRequest('ADVANCED_CLOSED')}
+                        disabled={!canChangeStatus('advanced_closed')}
+                    >
+                      <CheckCircle2 className="mr-2 h-4 w-4 text-purple-600" />
+                      {t('subsidy.status.advancedClosed')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </WithPermission>
@@ -1195,8 +1217,54 @@ export function ViewSubsidyModal({
             isSidebarOpen ? "mr-0" : "mr-0"
           )}>
             
-            {/* Activities Navigation */}
-            <div className="space-y-3">
+            {/* Activities Navigation - Only show if not an advance request OR if advance request has documents */}
+            {(subsidy.is_for_advance && (!receipts || receipts.length === 0)) ? (
+              /* Advance Request Info Panel */
+              <div className="space-y-4 border border-purple-200 dark:border-purple-800 rounded-lg p-6 bg-purple-50/50 dark:bg-purple-950/20">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                      {t('subsidyRequest.advance.title') || 'Advance Request'}
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {t('subsidyRequest.advance.description') || 'Advance payment for project subsidized budget'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      {t('subsidyRequest.advance.advanceAmount') || 'Advance Amount'}
+                    </p>
+                    <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                      {formatCurrency(subsidy.advance_amount || subsidy.requested_amount)}
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      {t('subsidyRequest.advance.status') || 'Status'}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <StatusIcon className={cn("w-4 h-4", currentStatus.className)} />
+                      <span className="text-sm font-semibold">{currentStatus.label}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-sm text-gray-600 dark:text-gray-400 p-3 bg-gray-100 dark:bg-gray-800 rounded-md">
+                  <p className="flex items-center gap-2">
+                    <Info className="w-4 h-4" />
+                    {t('subsidyRequest.advance.noActivitiesNote') || 'Advance requests are not linked to specific activities. They provide upfront funding based on the project subsidized budget.'}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              /* Regular Subsidy - Activities Navigation */
+              <div className="space-y-3">
               <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
                 {t('subsidy.activities')}
               </h3>
@@ -1247,9 +1315,10 @@ export function ViewSubsidyModal({
                 )})}
               </div>
             </div>
+            )}
 
-            {/* Current Activity Details */}
-            {currentActivity && (
+            {/* Current Activity Details - Show if not advance request OR if documents exist */}
+            {(!subsidy.is_for_advance || (receipts && receipts.length > 0)) && currentActivity && (
               <div className="space-y-4 border border-gray-200 dark:border-gray-800 rounded-md p-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">

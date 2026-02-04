@@ -107,6 +107,10 @@ interface ProjectModalsWrapperProps {
   setSelectedActivities: (activities: ProjectActivityData[]) => void
   setSelectedActivity: (activity: ActivityData | undefined) => void
 
+  // Edit Subsidy Props
+  editSubsidyInitialData: any
+  requestSubsidyMode: "create" | "edit"
+
   // Transform functions
   transformActivityToProjectActivity: (activity: ActivityData | undefined) => any
 }
@@ -123,7 +127,7 @@ export function ProjectModalsWrapper(props: ProjectModalsWrapperProps) {
             isOpen={props.isEditModalOpen}
             onClose={() => props.setIsEditModalOpen(false)}
             onSuccess={props.handleProjectUpdateSuccess}
-            project={props.project}
+            project={props.project || undefined}
           />
         </Suspense>
       )}
@@ -162,8 +166,8 @@ export function ProjectModalsWrapper(props: ProjectModalsWrapperProps) {
           <ProjectExpiredModal
             isOpen={props.isExpiredModalOpen}
             onClose={() => props.setIsExpiredModalOpen(false)}
-            projectTitle={props.project.title}
-            endDate={props.project.end_at}
+            projectTitle={props.project?.title || ""}
+            endDate={props.project?.end_at || ""}
             onExtendDate={() => {
               props.setIsExpiredModalOpen(false)
               props.setIsEditModalOpen(true)
@@ -179,7 +183,7 @@ export function ProjectModalsWrapper(props: ProjectModalsWrapperProps) {
             isOpen={props.isEventModalOpen}
             onClose={() => props.setIsEventModalOpen(false)}
             onSubmit={props.handleEventSubmit}
-            project={props.project}
+            project={props.project || undefined}
           />
         </Suspense>
       )}
@@ -191,7 +195,7 @@ export function ProjectModalsWrapper(props: ProjectModalsWrapperProps) {
             isOpen={props.isCommunicationModalOpen}
             onClose={() => props.setIsCommunicationModalOpen(false)}
             onSubmit={props.handleCommunicationSubmit}
-            project={props.project}
+            project={props.project || undefined}
           />
         </Suspense>
       )}
@@ -241,11 +245,16 @@ export function ProjectModalsWrapper(props: ProjectModalsWrapperProps) {
             onSubmit={props.handleSubsidyRequestSubmit}
             allActivities={props.allProjectActivities}
             subsidizedActivityIds={props.subsidizedActivityIds}
+            mode={props.requestSubsidyMode}
+            initialData={props.editSubsidyInitialData}
+            subsidyRequestId={props.requestSubsidyMode === "edit" ? props.selectedSubsidyCard?.id : undefined}
             availableBudget={(() => {
               const totalBudget = props.allProjectActivities.reduce((sum, act) => sum + act.budget_amount, 0)
               const subsidizedBudget = props.projectData?.project?.kpis?.subsidizedBudget || 0
               const totalRequested = props.subsidyRequests?.reduce((sum, req) => {
                 if (req.status === 'rejected') return sum
+                // Don't subtract current subsidy's amount if we are editing it
+                if (props.requestSubsidyMode === "edit" && req.id === props.selectedSubsidyCard?.id) return sum
                 return sum + req.requested_amount
               }, 0) || 0
               const available = Math.max(0, subsidizedBudget - totalRequested)
@@ -260,6 +269,18 @@ export function ProjectModalsWrapper(props: ProjectModalsWrapperProps) {
               
               return available
             })()}
+          />
+        </Suspense>
+      )}
+
+      {/* Edit Subsidy Modal */}
+      {props.isEditSubsidyModalOpen && (
+        <Suspense fallback={<ModalFallback />}>
+          <EditSubsidyModal
+            isOpen={props.isEditSubsidyModalOpen}
+            onClose={() => props.setIsEditSubsidyModalOpen(false)}
+            onSubmit={props.handleEditSubsidySubmit}
+            subsidy={props.selectedSubsidyCard as any}
           />
         </Suspense>
       )}
@@ -328,7 +349,7 @@ export function ProjectModalsWrapper(props: ProjectModalsWrapperProps) {
             isOpen={props.isCreateReportModalOpen}
             onClose={() => props.setIsCreateReportModalOpen(false)}
             onSubmit={props.handleReportSubmit}
-            project={props.project}
+            project={props.project || undefined}
           />
         </Suspense>
       )}

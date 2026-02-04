@@ -166,15 +166,26 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
     )
   }
 
-  const handlePermissionToggle = (permissionId: string, permissionName: string, isEssential: boolean, checked: boolean) => {
-    if (isEssential) {
-      toast.error(tAccess.messages.essential_cannot_remove);
+  const handlePermissionToggle = (permissionId: string, permissionName: string, isEssential: boolean, checked: boolean, isFixed?: boolean) => {
+    // 🔒 Bloquear modificação de permissões essential ou fixed
+    if (isEssential || isFixed) {
+      console.warn('🚫 [Permission Toggle BLOCKED]:', {
+        permissionId,
+        permissionName,
+        isEssential,
+        isFixed,
+        reason: isFixed ? 'Permission is FIXED (cannot be modified)' : 'Permission is ESSENTIAL (cannot be removed)'
+      });
+      toast.error(isFixed ? 'Fixed permissions cannot be modified' : tAccess.messages.essential_cannot_remove);
       return;
     }
+    
     const isCurrentlySelected = selectedPermissions.includes(permissionId)
     const newSelected = isCurrentlySelected
       ? selectedPermissions.filter(id => id !== permissionId)
       : [...selectedPermissions, permissionId]
+    
+    
     setSelectedPermissions(newSelected)
     if (checked) {
       setAddPermissions(prev => [...new Set([...prev.filter(id => id !== permissionId), permissionId])])
@@ -193,59 +204,100 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
   }
 
   const handleSelectAll = () => {
-    const allNonEssentialPermissions = permissions.filter(p => !p.is_essential);
-    if (allNonEssentialPermissions.length === 0) {
-      toast.error(tAccess.confirmation.all_essential_error, { duration: 2500 });
+    // 🔒 Filtrar permissões que NÃO são essential NEM fixed
+    const modifiablePermissions = permissions.filter(p => !p.is_essential && !p.is_fixed);
+    const fixedPermissions = permissions.filter(p => p.is_fixed);
+    const essentialPermissions = permissions.filter(p => p.is_essential);
+    const preservedPermissions = permissions.filter(p => p.is_essential || p.is_fixed);
+    
+
+    if (modifiablePermissions.length === 0) {
+      console.warn('⚠️ No modifiable permissions available');
+      toast.error('All permissions are either essential or fixed', { duration: 2500 });
       return;
     }
-    const allPermissionIds = allNonEssentialPermissions.map(p => p.id);
-    setSelectedPermissions(allPermissionIds);
-    setAddPermissions(allPermissionIds); // Atualiza o estado de permissões a serem adicionadas
-    setRemovePermissions([]); // Limpa as permissões a serem removidas
+    
+    // Selecionar TODAS as modificáveis + preservar as fixed/essential
+    const modifiableIds = modifiablePermissions.map(p => p.id);
+    const preservedIds = preservedPermissions.map(p => p.id);
+    const finalSelected = [...new Set([...modifiableIds, ...preservedIds])];
+
+    
+    setSelectedPermissions(finalSelected);
+    setAddPermissions(modifiableIds);
+    setRemovePermissions([]);
     setHasUnsavedChanges(true);
-    toast.success(tAccess.toasts.all_selected, { duration: 3000 });
+    toast.success(`${tAccess.toasts.all_selected} (${modifiableIds.length} permissions, ${preservedIds.length} preserved)`, { duration: 3000 });
   };
 
   const handleClearAll = () => {
-    const essentialIds = permissions.filter(p => p.is_essential).map(p => p.id);
-    const removableIds = permissions.filter(p => !p.is_essential).map(p => p.id);
-    
+    // 🔒 Preservar permissões essential E fixed
+    const preservedPermissions = permissions.filter(p => p.is_essential || p.is_fixed);
+    const preservedIds = preservedPermissions.map(p => p.id);
+    const removablePermissions = permissions.filter(p => !p.is_essential && !p.is_fixed);
+    const removableIds = removablePermissions.map(p => p.id);
+    const fixedPermissions = permissions.filter(p => p.is_fixed);
+    const essentialPermissions = permissions.filter(p => p.is_essential);
+
     if (removableIds.length === 0) {
-      toast.error(tAccess.confirmation.all_essential_remove_error, { duration: 2500 });
+      toast.error('All permissions are either essential or fixed', { duration: 2500 });
       return;
     }
     
-    setSelectedPermissions(essentialIds); // Mantém apenas permissões essenciais
-    setRemovePermissions(removableIds); // Atualiza permissões a serem removidas
-    setAddPermissions([]); // Limpa as permissões a serem adicionadas
+
+    
+    setSelectedPermissions(preservedIds); // Mantém FIXED + ESSENTIAL
+    setRemovePermissions(removableIds); // Remove apenas as modificáveis
+    setAddPermissions([]);
     setHasUnsavedChanges(true);
-    if (essentialIds.length > 0) {
-      toast.success(`${tAccess.toasts.all_cleared} — ${essentialIds.length} ${tAccess.confirmation.preserved_essential}`, { duration: 2500 });
+    
+    if (preservedIds.length > 0) {
+      toast.success(`${tAccess.toasts.all_cleared} — ${preservedIds.length} preserved (fixed + essential)`, { duration: 2500 });
     } else {
       toast.success(tAccess.toasts.all_cleared, { duration: 2000 });
     }
   }
 
   const handleGroupSelect = (groupPermissionIds: string[], groupName: string) => {
-    const nonEssentialGroupIds = groupPermissionIds.filter(id => !permissions.find(p => p.id === id)?.is_essential); // Ignora permissões essenciais
-    const newSelected = [...new Set([...selectedPermissions, ...nonEssentialGroupIds])];
+    // 🔒 Filtrar permissões modificáveis (não essential e não fixed)
+    const modifiableGroupIds = groupPermissionIds.filter(id => {
+      const perm = permissions.find(p => p.id === id);
+      return perm && !perm.is_essential && !perm.is_fixed;
+    });
+    const preservedGroupIds = groupPermissionIds.filter(id => {
+      const perm = permissions.find(p => p.id === id);
+      return perm && (perm.is_essential || perm.is_fixed);
+    });
+    
+
+    
+    const newSelected = [...new Set([...selectedPermissions, ...modifiableGroupIds])];
     setSelectedPermissions(newSelected);
-    setAddPermissions(prev => [...new Set([...prev, ...nonEssentialGroupIds])]); // Atualiza permissões a serem adicionadas
-    setRemovePermissions(prev => prev.filter(id => !nonEssentialGroupIds.includes(id))); // Remove do estado de remoção
+    setAddPermissions(prev => [...new Set([...prev, ...modifiableGroupIds])]);
+    setRemovePermissions(prev => prev.filter(id => !modifiableGroupIds.includes(id)));
     setHasUnsavedChanges(true);
-    toast.success(`${groupName}: ${tAccess.toasts.all_selected}`);
+    toast.success(`${groupName}: ${modifiableGroupIds.length} selected, ${preservedGroupIds.length} preserved`);
   }
 
   const handleGroupClear = (groupPermissionIds: string[], groupName: string) => {
-    const essentialIds = permissions.filter(p => p.is_essential).map(p => p.id);
-    const removable = groupPermissionIds.filter(id => !essentialIds.includes(id)); // Ignora permissões essenciais
-    const newSelected = selectedPermissions.filter(id => !removable.includes(id));
+    // 🔒 Preservar permissões fixed E essential
+    const preservedIds = permissions.filter(p => p.is_essential || p.is_fixed).map(p => p.id);
+    const removableGroupIds = groupPermissionIds.filter(id => {
+      const perm = permissions.find(p => p.id === id);
+      return perm && !perm.is_essential && !perm.is_fixed;
+    });
+    const preservedGroupIds = groupPermissionIds.filter(id => preservedIds.includes(id));
+    
+
+    
+    const newSelected = selectedPermissions.filter(id => !removableGroupIds.includes(id));
     setSelectedPermissions(newSelected);
-    setRemovePermissions(prev => [...new Set([...prev, ...removable])]); // Atualiza permissões a serem removidas
-    setAddPermissions(prev => prev.filter(id => !removable.includes(id))); // Remove do estado de adição
+    setRemovePermissions(prev => [...new Set([...prev, ...removableGroupIds])]);
+    setAddPermissions(prev => prev.filter(id => !removableGroupIds.includes(id)));
     setHasUnsavedChanges(true);
-    if (removable.length === 0) {
-      toast.success(`${groupName}: ${tAccess.toasts.all_cleared}`);
+    
+    if (preservedGroupIds.length > 0) {
+      toast.success(`${groupName}: ${removableGroupIds.length} cleared, ${preservedGroupIds.length} preserved`);
     } else {
       toast.success(`${groupName}: ${tAccess.toasts.all_cleared}`);
     }
@@ -606,6 +658,7 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
                                 .some(p => p.id === permission.id && p.is_selected) || false
                               const isModified = isChecked !== originallyChecked
                               const isEssential = !!permission.is_essential
+                              const isFixed = !!permission.is_fixed
                               
                               // Check if permission was created in the last 15 days
                               const createdAt = permission.created_at ? new Date(permission.created_at) : null
@@ -618,25 +671,25 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
                                   key={permission.id} 
                                   className={twMerge(
                                     "relative flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border transition-all",
-                                    isEssential
+                                    (isEssential || isFixed)
                                       ? "cursor-not-allowed bg-muted/30"
                                       : "cursor-pointer hover:bg-muted/50",
                                     isChecked && "bg-muted/50"
                                   )}
-                                  onClick={() => !isEssential && handlePermissionToggle(permission.id, permission.name, isEssential, !isChecked)}
+                                  onClick={() => !(isEssential || isFixed) && handlePermissionToggle(permission.id, permission.name, isEssential, !isChecked, isFixed)}
                                 >
                                   {/* Lock icon - Top Right */}
-                                  {isEssential && (
+                                  {(isEssential || isFixed) && (
                                     <div 
                                       className="absolute top-2 right-2 group z-10"
-                                      title={tAccess.messages.essential_cannot_remove}
+                                      title={isFixed ? 'Fixed permission (cannot be modified)' : tAccess.messages.essential_cannot_remove}
                                       onClick={(e) => e.stopPropagation()}
                                     >
-                                      <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-dashed rounded-full flex items-center justify-center border-foreground bg-foreground">
+                                      <div className={`w-4 h-4 sm:w-5 sm:h-5 border-2 ${isFixed ? 'border-solid' : 'border-dashed'} rounded-full flex items-center justify-center border-foreground bg-foreground`}>
                                         <Lock className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-background" />
                                       </div>
                                       <div className="absolute bottom-full right-0 mb-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                        {tAccess.messages.essential_cannot_remove}
+                                        {isFixed ? '🔒 Fixed permission (cannot be modified)' : tAccess.messages.essential_cannot_remove}
                                       </div>
                                     </div>
                                   )}
@@ -646,17 +699,17 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
                                       id={permission.id}
                                       checked={isChecked}
                                       className="w-4 h-4"
-                                      disabled={isEssential}
+                                      disabled={isEssential || isFixed}
                                       onCheckedChange={() => {}}
                                     />
-                                    {isModified && !isEssential && (
+                                    {isModified && !isEssential && !isFixed && (
                                       <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-500 rounded-full" />
                                     )}
                                   </div>
                                   
                                   <div className="flex-1 min-w-0 pr-6">
                                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                      <Label className={`text-xs sm:text-sm font-medium ${isEssential ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                                      <Label className={`text-xs sm:text-sm font-medium ${(isEssential || isFixed) ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                                         {permission.name}
                                       </Label>
                                       {isChecked && !isEssential && (
@@ -667,6 +720,11 @@ function RolePermissionsPage({ roleId }: { roleId: string }) {
                                       <Badge variant="outline" className="text-xs font-mono">
                                         {permission.key_code}
                                       </Badge>
+                                      {isFixed && (
+                                        <Badge variant="outline" className="text-xs border-gray-700 text-gray-700 bg-gray-50">
+                                          🔒 Fixed
+                                        </Badge>
+                                      )}
                                       {isNew && (
                                         <Badge variant="outline" className="text-xs border-blue-500 text-blue-600">
                                           {tAccess.status.new}

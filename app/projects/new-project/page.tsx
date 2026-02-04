@@ -88,6 +88,7 @@ import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { useInstitution } from "@/contexts/institution-context"
+import { useCurrency } from "@/contexts/currency-context"
 import { projectRegisterTranslations } from "@/lib/translations/project-register"
 import { projectTranslations } from "@/lib/translations/projects"
 import { LanguageSelector } from "@/components/shared/language-selector"
@@ -217,6 +218,7 @@ function ProjectRegisterContent() {
   const { t, i18n } = useTranslation()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { formatCurrency, selectedCurrency } = useCurrency()
 
   // Helper to render tag with icon and translation
   const renderTagWithIcon = (tagKey: string, className?: string) => {
@@ -659,7 +661,7 @@ function ProjectRegisterContent() {
         // Validate funding policies for regular projects
         if (!isSpecialProject && !isChurchPlanting) {
           if (formData.institution_contribution > FUNDING_POLICIES.max_institution_amount) {
-            newErrors.funding = translations.validation.institutionExceedsAmount.replace('{{amount}}', FUNDING_POLICIES.max_institution_amount.toLocaleString())
+            newErrors.funding = translations.validation.institutionExceedsAmount.replace('{{amount}}', formatCurrency(FUNDING_POLICIES.max_institution_amount))
           }
           const institutionPercent = (formData.institution_contribution / formData.total_budget) * 100
           if (institutionPercent > FUNDING_POLICIES.max_institution_percent) {
@@ -1296,7 +1298,7 @@ function ProjectRegisterContent() {
                           <div className="flex items-center justify-between gap-2">
                             <h5 className="font-medium text-sm truncate">{t(`projectRegister.quickActivities.${activity.key}.name`)}</h5>
                             <Badge variant="default" className="text-xs shrink-0 bg-primary/10 text-primary border-primary/20">
-                              € {activity.budget_amount.toLocaleString()}
+                              {formatCurrency(activity.budget_amount)}
                             </Badge>
                           </div>
                           <p className="text-xs text-muted-foreground line-clamp-2">
@@ -1677,21 +1679,21 @@ function ProjectRegisterContent() {
       {
         id: "available-amount",
         title: (translations as any).fundingCalculator?.availableAmount || "Valor Disponível",
-        value: `€ ${mockDepartmentBudget.total_available.toLocaleString()}`,
+        value: formatCurrency(mockDepartmentBudget.total_available),
         icon: TrendingUp,
         subtitle: mockDepartmentBudget.department_name
       },
       {
         id: "used-this-year",
         title: (translations as any).fundingCalculator?.usedThisYear || "Usado Este Ano",
-        value: `€ ${mockDepartmentBudget.used_this_year.toLocaleString()}`,
+        value: formatCurrency(mockDepartmentBudget.used_this_year),
         icon: TrendingDown,
         subtitle: `${Math.round((mockDepartmentBudget.used_this_year / mockDepartmentBudget.total_available) * 100)}% do orçamento`
       },
       {
         id: "remaining-amount",
         title: (translations as any).fundingCalculator?.remainingAmount || "Valor Restante",
-        value: `€ ${mockDepartmentBudget.remaining.toLocaleString()}`,
+        value: formatCurrency(mockDepartmentBudget.remaining),
         icon: Banknote,
         subtitle: "Disponível para novos projetos"
       }
@@ -1725,7 +1727,7 @@ function ProjectRegisterContent() {
                       <span className="text-sm font-medium text-foreground">
                         {t('projectRegister.fundingDistribution.totalProjectCost')}
                       </span>
-                      <span className="text-lg font-bold text-foreground">€ {totalBudget.toLocaleString()}</span>
+                      <span className="text-lg font-bold text-foreground">{formatCurrency(totalBudget)}</span>
                     </div>
                   </div>
                   
@@ -1736,14 +1738,14 @@ function ProjectRegisterContent() {
                         <div className="w-3 h-3 rounded bg-green-500"></div>
                         <span className="text-muted-foreground">{t('projectRegister.fundingDistribution.subsidizedActivities')}</span>
                       </div>
-                      <span className="font-medium">€ {subsidyTotal.toLocaleString()}</span>
+                      <span className="font-medium">{formatCurrency(subsidyTotal)}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded bg-blue-500"></div>
                         <span className="text-muted-foreground">{t('projectRegister.fundingDistribution.nonSubsidizedActivities')}</span>
                       </div>
-                      <span className="font-medium">€ {(totalBudget - subsidyTotal).toLocaleString()}</span>
+                      <span className="font-medium">{formatCurrency(totalBudget - subsidyTotal)}</span>
                     </div>
                   </div>
                   
@@ -1756,14 +1758,14 @@ function ProjectRegisterContent() {
                           <Home className="w-3 h-3 text-blue-600" />
                           <span className="text-muted-foreground">{t('projectRegister.fundingDistribution.self')}</span>
                         </div>
-                        <span className="font-medium text-blue-600">€ {selfContribution.toLocaleString()}</span>
+                        <span className="font-medium text-blue-600">{formatCurrency(selfContribution)}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                           <Building className="w-3 h-3 text-green-600" />
                           <span className="text-muted-foreground">{t('projectRegister.fundingDistribution.request')}</span>
                         </div>
-                        <span className="font-medium text-green-600">€ {requestContribution.toLocaleString()}</span>
+                        <span className="font-medium text-green-600">{formatCurrency(requestContribution)}</span>
                       </div>
                     </div>
                   </div>
@@ -1953,7 +1955,7 @@ function ProjectRegisterContent() {
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
                       <Badge variant="outline" className="text-xs">
-                        {(translations as any).fundingCalculator?.maxAmountRule?.replace('{{amount}}', `€ ${FUNDING_POLICIES.max_institution_amount.toLocaleString()}`) || `Máximo € ${FUNDING_POLICIES.max_institution_amount.toLocaleString()} por projeto`}
+                        {(translations as any).fundingCalculator?.maxAmountRule?.replace('{{amount}}', formatCurrency(FUNDING_POLICIES.max_institution_amount)) || `Máximo ${formatCurrency(FUNDING_POLICIES.max_institution_amount)} por projeto`}
                       </Badge>
                       <Badge variant="outline" className="text-xs">
                         {(translations as any).fundingCalculator?.maxPercentageRule?.replace('{{percent}}', FUNDING_POLICIES.max_institution_percent.toString()) || `Máximo ${FUNDING_POLICIES.max_institution_percent}% de contribuição`}
@@ -2154,7 +2156,7 @@ function ProjectRegisterContent() {
                           </Label>
                           <div className="flex gap-2">
                             <div className="relative flex-1">
-                              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">€</span>
+                              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">{selectedCurrency.symbol}</span>
                               <Input
                                 type="number"
                                 value={manualAmount || ''}
@@ -2187,7 +2189,7 @@ function ProjectRegisterContent() {
                             </Button>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Máximo: € {subsidyTotal.toLocaleString()} ({(isSpecialProject || isChurchPlanting) ? '100' : FUNDING_POLICIES.max_institution_percent}% = € {((subsidyTotal * ((isSpecialProject || isChurchPlanting) ? 100 : FUNDING_POLICIES.max_institution_percent)) / 100).toLocaleString()})
+                            Máximo: {formatCurrency(subsidyTotal)} ({(isSpecialProject || isChurchPlanting) ? '100' : FUNDING_POLICIES.max_institution_percent}% = {formatCurrency((subsidyTotal * ((isSpecialProject || isChurchPlanting) ? 100 : FUNDING_POLICIES.max_institution_percent)) / 100)})
                           </p>
                         </div>
                         
@@ -2232,7 +2234,7 @@ function ProjectRegisterContent() {
                             </Button>
                           </div>
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-xs text-muted-foreground">
-                            <div>{t('projectRegister.fundingDistribution.appliedOver')} € {subsidyTotal.toLocaleString()}</div>
+                            <div>{t('projectRegister.fundingDistribution.appliedOver')} {formatCurrency(subsidyTotal)}</div>
                             <div className="text-left sm:text-right">
                               <span>{t('projectRegister.fundingDistribution.maximum')}: </span>
                               <span className="font-medium">{(isSpecialProject || isChurchPlanting) ? '100' : FUNDING_POLICIES.max_institution_percent}%</span>
@@ -2306,7 +2308,7 @@ function ProjectRegisterContent() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-xl sm:text-2xl font-bold text-blue-600">
-                      € {selfContribution.toLocaleString()}
+                      {formatCurrency(selfContribution)}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {Math.round(totalBudget > 0 ? (selfContribution / totalBudget) * 100 : 0)}% {t('projectRegister.fundingDistribution.ofTotalBudget')}

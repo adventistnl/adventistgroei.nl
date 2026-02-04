@@ -136,7 +136,7 @@ export const projectTranslations = {
       noProjectData: "No project data available",
       projectsCreatedThisYear: "projects created this year",
       top: "Top",
-      showingTotal: "Showing total projects for the last",
+      showingTotal: "Showing total projects for the",
       last12Months: "Last 12 months",
       last6Months: "Last 6 months",
       last3Months: "Last 3 months",
@@ -674,7 +674,8 @@ export const projectTranslations = {
         documentsPending: "All documents must be validated first",
         documentsRejected: "Cannot approve subsidy with rejected documents",
         statusChangeNotAllowed: "This status change is not allowed",
-        rejectionReasonRequired: "Please provide a reason for rejection"
+        rejectionReasonRequired: "Please provide a reason for rejection",
+        onlyFinancialCanClose: "Only users with the Financial Manager role can close subsidy requests"
       },
       
       // Success messages
@@ -754,6 +755,15 @@ export const projectTranslations = {
         documentComment: "Add comment about the document...",
         rejectReason: "Rejection reason (required)...",
         addComment: "Add comment..."
+      },
+      
+      // Status labels
+      status: {
+        pending: "Pending",
+        in_review: "In Review",
+        approved: "Approved",
+        rejected: "Rejected",
+        closed: "Closed"
       },
       
       // Confirmation dialogs
@@ -1185,7 +1195,7 @@ export const projectTranslations = {
       noProjectData: "Geen projectgegevens beschikbaar",
       projectsCreatedThisYear: "projecten gemaakt dit jaar",
       top: "Top",
-      showingTotal: "Totaal projecten weergegeven voor de laatste",
+      showingTotal: "Totaal projecten weergegeven voor de ",
       last3Months: "Laatste 3 maanden",
       last30Days: "Laatste 30 dagen",
       last7Days: "Laatste 7 dagen",
@@ -1720,7 +1730,8 @@ export const projectTranslations = {
         documentsPending: "Alle documenten moeten eerst worden gevalideerd",
         documentsRejected: "Kan subsidie niet goedkeuren met afgewezen documenten",
         statusChangeNotAllowed: "Deze statuswijziging is niet toegestaan",
-        rejectionReasonRequired: "Geef een reden op voor afwijzing"
+        rejectionReasonRequired: "Geef een reden op voor afwijzing",
+        onlyFinancialCanClose: "Alleen gebruikers met de rol Financieel Manager kunnen subsidieaanvragen sluiten"
       },
       
       // Success messages
@@ -1800,6 +1811,15 @@ export const projectTranslations = {
         documentComment: "Opmerking toevoegen over het document...",
         rejectReason: "Reden voor afwijzing (verplicht)...",
         addComment: "Opmerking toevoegen..."
+      },
+      
+      // Status labels
+      status: {
+        pending: "In afwachting",
+        in_review: "In beoordeling",
+        approved: "Goedgekeurd",
+        rejected: "Afgewezen",
+        closed: "Gesloten"
       },
       
       // Confirmation dialogs
@@ -2243,7 +2263,7 @@ export const projectTranslations = {
       noProjectData: "Nenhum dado de projeto disponível",
       projectsCreatedThisYear: "projetos criados este ano",
       top: "Top",
-      showingTotal: "Mostrando total de projetos dos últimos",
+      showingTotal: "Mostrando total de projetos dos ",
       last12Months: "Últimos 12 meses",
       last6Months: "Últimos 6 meses",
       last3Months: "Últimos 3 meses",
@@ -2733,7 +2753,8 @@ export const projectTranslations = {
         documentsPending: "Todos os documentos devem ser validados primeiro",
         documentsRejected: "Não é possível aprovar subsídio com documentos rejeitados",
         statusChangeNotAllowed: "Esta mudança de status não é permitida",
-        rejectionReasonRequired: "Por favor, forneça um motivo para a rejeição"
+        rejectionReasonRequired: "Por favor, forneça um motivo para a rejeição",
+        onlyFinancialCanClose: "Apenas usuários com a função de Gerente Financeiro podem fechar solicitações de subsídio"
       },
       
       // Mensagens de sucesso
@@ -2813,6 +2834,15 @@ export const projectTranslations = {
         documentComment: "Adicionar comentário sobre o documento...",
         rejectReason: "Motivo da rejeição (obrigatório)...",
         addComment: "Adicionar comentário..."
+      },
+      
+      // Rótulos de status
+      status: {
+        pending: "Pendente",
+        in_review: "Em Análise",
+        approved: "Aprovado",
+        rejected: "Rejeitado",
+        closed: "Fechado"
       },
       
       // Diálogos de confirmação

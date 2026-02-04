@@ -18,7 +18,8 @@ import {
   Trash2,
   Home,
   ChevronRight,
-  Navigation
+  Navigation,
+  Eye
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -31,7 +32,7 @@ import { structureTranslations } from "@/lib/translations/structure"
 import { regionTranslations } from "@/lib/translations/regions"
 import { regionsPageTranslations } from "@/lib/translations/regions-page"
 import { DataTable } from "@/components/ui/data-table"
-import { AddRegionModal, EditRegionModal, DeleteRegionModal } from "@/components/modals/region"
+import { AddRegionModal, EditRegionModal, DeleteRegionModal, RegionViewEditModal } from "@/components/modals/region"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { ChartHeader } from "@/components/shared/chart-header"
 import MapLibre, { NETHERLANDS_CENTER, generateCityMarkers, RegionConfig as MapRegionConfig } from "@/components/maps/map-libre-refactored"
@@ -65,13 +66,14 @@ export default function RegionsPage() {
   const [refreshing, setRefreshing] = useState(false)
   
   // Tab state
-  const [activeTab, setActiveTab] = useState<'regions' | 'churches'>('regions')
+  const [activeTab, setActiveTab] = useState<'regions' | 'churches'>('churches')
   
   // Fetch churches data
   const { data: churchesData, loading: churchesLoading, refetch: refetchChurches } = useQuery(GET_CHURCHES_QUERY);
   const churches = useMemo(() => churchesData?.churches?.filter((c: any) => !c.is_deleted) || [], [churchesData]);
   
   // Modal states
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedRegion, setSelectedRegion] = useState<Regions_regions | null>(null)
@@ -89,267 +91,13 @@ export default function RegionsPage() {
   const tPage = regionsPageTranslations[currentLanguage as keyof typeof regionsPageTranslations] || regionsPageTranslations.en
   
   // ============================================================================
-  // CONSOLIDATED DEBUG: REGIONS ↔ CHURCHES RELATIONSHIP
+  // PRELOADING & PERFORMANCE OPTIMIZATION
   // ============================================================================
-  useEffect(() => {
-    if (regions.length === 0 || churches.length === 0) return;
-    
-    console.log('\n╔════════════════════════════════════════════════════════════════════╗');
-    console.log('║          🔍 CONSOLIDATED DEBUG: REGIONS ↔ CHURCHES               ║');
-    console.log('╚════════════════════════════════════════════════════════════════════╝\n');
-    
-    // ========== PART 1: REGIONS DATA ==========
-    console.log('📍 ===== REGIONS DATA (Complete Registry) =====\n');
-    
-    regions.forEach((region, index) => {
-      console.log(`\n┌─── Region ${index + 1}: ${region.name} ───┐`);
-      console.log('│ 🆔 ID:', region.id);
-      console.log('│ 🎨 Color:', region.color);
-      console.log('│ 📝 Description:', region.description || 'N/A');
-      console.log('│ 🗺️  Territory JSON:', region.territory);
-      
-      // Parse territory
-      let territoryParsed = null;
-      let provinces: string[] = [];
-      let cities: string[] = [];
-      
-      if (region.territory) {
-        try {
-          territoryParsed = typeof region.territory === 'string' 
-            ? JSON.parse(region.territory) 
-            : region.territory;
-          
-          if (territoryParsed?.NL) {
-            provinces = Object.keys(territoryParsed.NL);
-            cities = Object.values(territoryParsed.NL).flat() as string[];
-          }
-        } catch (e) {
-          console.log('│ ⚠️  Territory parse error');
-        }
-      }
-      
-      console.log('│ 🏙️  Provinces:', provinces.join(', ') || 'None');
-      console.log('│ 📌 Cities Count:', cities.length);
-      console.log('│ 🏛️  Churches in Region:', region.churches?.length || 0);
-      console.log('│ 📊 KPI Data:', region.kpiData);
-      console.log('│');
-      console.log('│ 📦 Churches List:');
-      
-      if (region.churches && region.churches.length > 0) {
-        region.churches.forEach((church, idx) => {
-          const contactData = church.contact;
-          console.log(`│   ${idx + 1}. ${church.name}`);
-          console.log(`│      - Church ID: ${church.id}`);
-          console.log(`│      - Contact: ${contactData ? 'YES' : 'NO'}`);
-          if (contactData) {
-            console.log(`│      - City: ${contactData.city || 'N/A'}`);
-            console.log(`│      - State/Province: ${contactData.state || 'N/A'}`);
-            console.log(`│      - Country: ${contactData.country || 'N/A'}`);
-          }
-        });
-      } else {
-        console.log('│   (No churches assigned)');
-      }
-      
-      console.log('└────────────────────────────────────────┘');
-    });
-    
-    // ========== PART 2: CHURCHES DATA ==========
-    console.log('\n\n🏛️  ===== CHURCHES DATA (Complete Registry) =====\n');
-    
-    churches.forEach((church, index) => {
-      console.log(`\n┌─── Church ${index + 1}: ${church.name} ───┐`);
-      console.log('│ 🆔 ID:', church.id);
-      console.log('│ 🏢 Institution ID:', church.institution_id);
-      console.log('│ 📍 Region ID:', church.region_id || '❌ NO REGION');
-      console.log('│ 📬 Contact ID:', church.contact_id || 'N/A');
-      console.log('│ 🏷️  Type:', church.type);
-      console.log('│ 📮 Zip Code:', church.zip_code || 'N/A');
-      console.log('│ 🏠 House Number:', church.house_number || 'N/A');
-      console.log('│ 🔘 Is Deleted:', church.is_deleted);
-      console.log('│');
-      console.log('│ 👤 Leader:');
-      if (church.leader) {
-        console.log(`│   - Name: ${church.leader.name}`);
-        console.log(`│   - Email: ${church.leader.email}`);
-      } else {
-        console.log('│   (No leader assigned)');
-      }
-      console.log('│');
-      console.log('│ 📞 Contact Data:');
-      if (church.contact) {
-        console.log(`│   - City: ${church.contact.city || 'N/A'}`);
-        console.log(`│   - State/Province: ${church.contact.state || 'N/A'}`);
-        console.log(`│   - Country: ${church.contact.country || 'N/A'}`);
-        console.log(`│   - Postal Code: ${church.contact.postal_code || 'N/A'}`);
-      } else {
-        console.log('│   (No contact data)');
-      }
-      console.log('│');
-      console.log('│ 🌍 Region Link:');
-      if (church.region) {
-        console.log(`│   ✅ LINKED to: ${church.region.name}`);
-        console.log(`│   - Region Color: ${church.region.color}`);
-      } else if (church.region_id) {
-        console.log(`│   ⚠️  Has region_id but NO region object`);
-      } else {
-        console.log('│   ❌ NOT LINKED to any region');
-        
-        // VALIDAÇÃO AUTOMÁTICA: Tentar encontrar região correspondente
-        const match = findMatchingRegion(church, regions);
-        if (match.region) {
-          console.log(`│`);
-          console.log(`│ 💡 SUGGESTED MATCH (${match.confidence}% confidence):`);
-          console.log(`│   🎯 Should link to: ${match.region.name}`);
-          console.log(`│   📍 Match type: ${match.matchType === 'city' ? 'Province + City' : 'Province only'}`);
-          console.log(`│   🎨 Region color: ${match.region.color}`);
-          if (match.matchType === 'province') {
-            console.log(`│   ⚠️  City not found in region's territory, but province matches`);
-          }
-        } else {
-          console.log(`│`);
-          console.log(`│ ⚠️  No matching region found for this location`);
-        }
-      }
-      console.log('└────────────────────────────────────────┘');
-    });
-    
-    // ========== PART 3: RELATIONSHIP ANALYSIS ==========
-    console.log('\n\n🔗 ===== RELATIONSHIP ANALYSIS =====\n');
-    
-    const churchesWithRegion = churches.filter((c: any) => c.region_id);
-    const churchesWithoutRegion = churches.filter((c: any) => !c.region_id);
-    const churchesWithContact = churches.filter((c: any) => c.contact);
-    const churchesWithZipCode = churches.filter((c: any) => c.zip_code);
-    
-    console.log('📊 Overall Statistics:');
-    console.log('  ├─ Total Regions:', regions.length);
-    console.log('  ├─ Total Churches:', churches.length);
-    console.log('  ├─ Churches WITH region:', churchesWithRegion.length);
-    console.log('  ├─ Churches WITHOUT region:', churchesWithoutRegion.length);
-    console.log('  ├─ Churches with contact data:', churchesWithContact.length);
-    console.log('  └─ Churches with zip code:', churchesWithZipCode.length);
-    
-    console.log('\n🗺️  Region Distribution:');
-    regions.forEach(region => {
-      const churchCount = region.churches?.length || 0;
-      const percentage = churches.length > 0 
-        ? ((churchCount / churches.length) * 100).toFixed(1) 
-        : '0';
-      console.log(`  ├─ ${region.name}: ${churchCount} churches (${percentage}%)`);
-    });
-    console.log(`  └─ Unassigned: ${churchesWithoutRegion.length} churches (${churches.length > 0 ? ((churchesWithoutRegion.length / churches.length) * 100).toFixed(1) : '0'}%)`);
-    
-    // Match validation
-    console.log('\n✅ Church-Region Matching Validation:');
-    const matchingIssues: any[] = [];
-    
-    churchesWithRegion.forEach((church: any) => {
-      const region = regions.find(r => r.id === church.region_id);
-      const hasRegionObject = !!church.region;
-      const regionMatch = region && church.region && region.id === church.region.id;
-      
-      if (!region) {
-        matchingIssues.push({
-          church: church.name,
-          issue: 'Region ID exists but region not found in regions array',
-          region_id: church.region_id
-        });
-      } else if (!hasRegionObject) {
-        matchingIssues.push({
-          church: church.name,
-          issue: 'Has region_id but region object is null',
-          region_id: church.region_id
-        });
-      } else if (!regionMatch) {
-        matchingIssues.push({
-          church: church.name,
-          issue: 'Region object ID mismatch',
-          expected: church.region_id,
-          actual: church.region?.id
-        });
-      }
-    });
-    
-    if (matchingIssues.length > 0) {
-      console.log('  ⚠️  Issues Found:');
-      matchingIssues.forEach((issue, idx) => {
-        console.log(`  ${idx + 1}. ${issue.church}:`);
-        console.log(`     ${issue.issue}`);
-        if (issue.expected) console.log(`     Expected: ${issue.expected}, Actual: ${issue.actual}`);
-      });
-    } else {
-      console.log('  ✅ All churches have valid region relationships!');
-    }
-    
-    // Orphan churches
-    if (churchesWithoutRegion.length > 0) {
-      console.log('\n⚠️  Orphan Churches (No Region Assigned):');
-      churchesWithoutRegion.forEach((church: any, idx) => {
-        console.log(`  ${idx + 1}. ${church.name}`);
-        console.log(`     - Has contact: ${church.contact ? 'YES' : 'NO'}`);
-        console.log(`     - Has zip code: ${church.zip_code ? 'YES' : 'NO'}`);
-        if (church.contact?.city) {
-          console.log(`     - Location: ${church.contact.city}, ${church.contact.state || 'N/A'}`);
-        }
-      });
-    }
-    
-    // ========== AUTO-LINKING SUGGESTIONS ==========
-    console.log('\n\n🤖 ===== AUTO-LINKING SUGGESTIONS =====\n');
-    
-    const orphansWithSuggestions: any[] = [];
-    const orphansWithoutSuggestions: any[] = [];
-    
-    churchesWithoutRegion.forEach((church: any) => {
-      const match = enrichChurchesWithAutoLink([church], regions)[0];
-      if (match.has_auto_link && match.suggested_region) {
-        orphansWithSuggestions.push({ 
-          church, 
-          match: {
-            region: match.suggested_region,
-            confidence: match.link_confidence,
-            matchType: match.link_match_type
-          }
-        });
-      } else {
-        orphansWithoutSuggestions.push(church);
-      }
-    });
-    
-    console.log('📊 Summary:');
-    console.log(`  ├─ Orphan churches: ${churchesWithoutRegion.length}`);
-    console.log(`  ├─ With auto-match suggestions: ${orphansWithSuggestions.length}`);
-    console.log(`  └─ Without matches: ${orphansWithoutSuggestions.length}`);
-    
-    if (orphansWithSuggestions.length > 0) {
-      console.log('\n✨ Churches that CAN be auto-linked:');
-      orphansWithSuggestions.forEach(({ church, match }, idx) => {
-        console.log(`\n  ${idx + 1}. ${church.name}`);
-        console.log(`     🎯 Suggested Region: ${match.region.name}`);
-        console.log(`     📍 Match Type: ${match.matchType === 'city' ? '✅ Province + City' : '⚠️  Province only'}`);
-        console.log(`     💯 Confidence: ${match.confidence}%`);
-        console.log(`     📌 Location: ${church.contact?.city || 'N/A'}, ${church.contact?.state || 'N/A'}`);
-        console.log(`     🔗 Action: UPDATE church SET region_id = '${match.region.id}'`);
-      });
-    }
-    
-    if (orphansWithoutSuggestions.length > 0) {
-      console.log('\n❌ Churches that CANNOT be auto-linked (missing/invalid location data):');
-      orphansWithoutSuggestions.forEach((church, idx) => {
-        console.log(`  ${idx + 1}. ${church.name}`);
-        console.log(`     - Has contact: ${church.contact ? 'YES' : 'NO'}`);
-        console.log(`     - City: ${church.contact?.city || 'MISSING'}`);
-        console.log(`     - Province: ${church.contact?.state || 'MISSING'}`);
-        console.log(`     ⚠️  Action: Update contact data or assign region manually`);
-      });
-    }
-    
-    console.log('\n╔════════════════════════════════════════════════════════════════════╗');
-    console.log('║                    🏁 END OF CONSOLIDATED DEBUG                   ║');
-    console.log('╚════════════════════════════════════════════════════════════════════╝\n');
-    
-  }, [regions, churches]);
+  const [isPreloading, setIsPreloading] = useState(false);
+  const [preloadProgress, setPreloadProgress] = useState(0);
+  
+  // Debug removido para otimização de performance
+  // Para habilitar debug em desenvolvimento: configurar variável de ambiente
   
   // ============================================================================
   // AUTO-LINKING: Apply suggestions to churches data
@@ -373,21 +121,56 @@ export default function RegionsPage() {
     return calculateAutoLinkStats(churchesWithAutoLink);
   }, [churchesWithAutoLink]);
   
-  // Log auto-link stats
-  useEffect(() => {
-    if (churchesWithAutoLink.length > 0) {
-      console.log('\n🔗 ===== AUTO-LINK STATISTICS =====');
-      console.log(`  Total churches: ${autoLinkStats.total}`);
-      console.log(`  ✅ With original region link: ${autoLinkStats.withOriginalLink}`);
-      console.log(`  🤖 With auto-suggested link: ${autoLinkStats.withAutoLink}`);
-      console.log(`     ├─ High confidence (100%): ${autoLinkStats.withHighConfidence}`);
-      console.log(`     └─ Medium confidence (70%): ${autoLinkStats.withMediumConfidence}`);
-      console.log(`  ❌ Without any link: ${autoLinkStats.withoutLink}`);
-      console.log('==========================================\n');
-    }
-  }, [autoLinkStats, churchesWithAutoLink.length]);
+  /**
+   * Contagem de igrejas por região (centralizada)
+   * Usa churchesWithAutoLink para contar apenas igrejas COM region_id
+   */
+  const churchCountByRegion = useMemo(() => {
+    const countMap: Record<string, number> = {};
+    
+    // Inicializar todas as regiões com 0
+    regions.forEach(region => {
+      if (!region.is_deleted) {
+        countMap[region.id] = 0;
+      }
+    });
+    
+    // Contar igrejas que TÊM region_id (linkadas)
+    churchesWithAutoLink.forEach(church => {
+      if (church.region_id && countMap[church.region_id] !== undefined) {
+        countMap[church.region_id]++;
+      }
+    });
+    
+    return countMap;
+  }, [churchesWithAutoLink, regions]);
   
-  // Gerar markers de cidades com cores das regiões
+  /**
+   * Enriquecer selectedRegion com churches do churchesWithAutoLink
+   * O objeto region do useRegions() não vem com churches populadas,
+   * então precisamos adicionar manualmente do churchesWithAutoLink
+   */
+  const selectedRegionEnriched = useMemo(() => {
+    if (!selectedRegion) return null;
+    
+    // Filtrar churches que pertencem a esta região
+    const regionChurches = churchesWithAutoLink.filter(
+      church => church.region_id === selectedRegion.id
+    );
+    
+    console.log('🔧 ENRICHING - Region:', selectedRegion.name);
+    console.log('🔧 ENRICHING - Churches found:', regionChurches.length);
+    console.log('🔧 ENRICHING - Churches data:', regionChurches);
+    
+    return {
+      ...selectedRegion,
+      churches: regionChurches as any // EnrichedChurch é compatível para visualização
+    };
+  }, [selectedRegion, churchesWithAutoLink]);
+  
+  // ============================================================================
+  // CITY MARKERS: Generate city markers with region colors
+  // ============================================================================
   const cityMarkers = useMemo(() => {
     if (regions.length === 0) return [];
     
@@ -395,21 +178,12 @@ export default function RegionsPage() {
     const mapRegions: MapRegionConfig[] = regions
       .filter(region => !region.is_deleted)
       .map(region => {
-        // Debug: território da região
-        console.log(`📍 Region: ${region.name}`);
-        console.log('  Territory JSON:', region.territory);
-        
         const churchesWithLocation = region.churches?.map(church => {
           // Usar dados de contact diretamente da church (já vem da query de regions)
           // Ou buscar do array churches como fallback
-          const contactData = church.contact || churches.find(c => c.id === church.id)?.contact;
+          const contactData = church.contact || churches.find((c: any) => c.id === church.id)?.contact;
           const city = contactData?.city;
           const province = contactData?.state; // state = província
-          
-          console.log(`    Church: ${church.name}`);
-          console.log(`      City: ${city || 'N/A'}`);
-          console.log(`      Province: ${province || 'N/A'}`);
-          console.log(`      Contact data:`, contactData);
           
           return {
             id: church.id,
@@ -438,7 +212,8 @@ export default function RegionsPage() {
       const regionName = marker.description?.replace('Região: ', '') || '';
       const region = regions.find(r => r.name === regionName);
       const regionColor = region?.color || marker.color || '#10b981';
-      const churchesCount = region?.churches?.length || 0;
+      // Usar contagem centralizada que considera apenas igrejas linkadas
+      const churchesCount = region ? (churchCountByRegion[region.id] || 0) : 0;
       
       return {
         ...marker,
@@ -513,22 +288,32 @@ export default function RegionsPage() {
         `,
       };
     });
-  }, [regions, tPage]);
+  }, [regions, tPage, churchCountByRegion]);
   
-  // Gerar markers de TODAS as churches usando zip_code + AUTO-LINKING
+  // ============================================================================
+  // PRELOAD: Geocoding de churches (inicia imediatamente para otimizar UX)
+  // ============================================================================
   const [churchMarkersState, setChurchMarkersState] = useState<any[]>([]);
   
-  // Processar churches de forma assíncrona para geocoding
+  // Processar churches de forma assíncrona para geocoding com PRELOAD
   useEffect(() => {
     if (churchesWithAutoLink.length === 0) return;
     
     const processChurches = async () => {
+      setIsPreloading(true);
+      setPreloadProgress(0);
       const markers: any[] = [];
+      const total = churchesWithAutoLink.length;
       
-      for (const church of churchesWithAutoLink) {
+      for (let i = 0; i < total; i++) {
+        const church = churchesWithAutoLink[i];
+        
+        // Atualizar progresso
+        setPreloadProgress(Math.round(((i + 1) / total) * 100));
+        
         // Obter coordenadas usando sistema de geocoding melhorado
         const coords = church.zip_code 
-          ? await getCoordinatesFromZipCode(church.zip_code, church.house_number)
+          ? await getCoordinatesFromZipCode(church.zip_code, church.house_number?.toString() || null)
           : null;
         
         if (!coords) continue;
@@ -571,7 +356,7 @@ export default function RegionsPage() {
                   align-items: center;
                   gap: 4px;
                 ">
-                  <span style="color: #9ca3af;">📍</span>
+                  <span style="color: #9ca3af;">${MapPin}</span>
                   ${church.contact.city}, ${church.contact.state}
                 </div>
               ` : ''}
@@ -585,7 +370,7 @@ export default function RegionsPage() {
                   align-items: center;
                   gap: 4px;
                 ">
-                  <span style="color: #9ca3af;">📮</span>
+                  <span style="color: #9ca3af;">${Navigation}</span>
                   ${church.zip_code}${church.house_number ? ` #${church.house_number}` : ''}
                 </div>
               ` : ''}
@@ -621,8 +406,11 @@ export default function RegionsPage() {
       }
       
       setChurchMarkersState(markers);
+      setIsPreloading(false);
+      setPreloadProgress(100);
     };
     
+    // Iniciar processamento imediatamente (preload)
     processChurches();
   }, [churchesWithAutoLink, regions, tPage, autoLinkStats]);
   
@@ -677,8 +465,8 @@ export default function RegionsPage() {
   // KPI DATA
   // ============================================================================
   const kpiCardsData: KPICardData[] = useMemo(() => {
-    // Use churchesWithAutoLink para contar churches com região (original + auto-linked)
-    const churchesWithRegionAssigned = churchesWithAutoLink.filter(c => c.region_id).length;
+    // Usar soma do churchCountByRegion para garantir consistência
+    const churchesWithRegionAssigned = Object.values(churchCountByRegion).reduce((sum, count) => sum + count, 0);
     
     return [
       {
@@ -710,7 +498,7 @@ export default function RegionsPage() {
         subtitle: tRegion.page.cities_in_regions
       }
     ]
-  }, [regions, tRegion, churchesWithAutoLink, autoLinkStats])
+  }, [regions, tRegion, churchCountByRegion])
   
   // ============================================================================
   // LIFECYCLE EFFECTS
@@ -755,6 +543,19 @@ export default function RegionsPage() {
     }
   }
 
+  const handleView = (region: Regions_regions) => {
+    if (region) {
+      setSelectedRegion(region);
+      setIsViewModalOpen(true);
+    }
+  };
+  
+  const handleEditFromView = (region: Regions_regions) => {
+    setSelectedRegion(region);
+    setIsViewModalOpen(false);
+    setIsEditModalOpen(true);
+  };
+  
   const handleEdit = (region: Regions_regions) => {
     if (region) {
       setSelectedRegion(region);
@@ -849,12 +650,16 @@ export default function RegionsPage() {
       id: "churches",
       accessorKey: "churches_count",
       header: tRegion.table.churches,
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Home className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.churches?.length || 0}</span>
-        </div>
-      ),
+      cell: ({ row }) => {
+        // Usar contagem centralizada que considera apenas igrejas COM region_id
+        const count = churchCountByRegion[row.original.id] || 0;
+        return (
+          <div className="flex items-center gap-2">
+            <Home className="w-4 h-4 text-muted-foreground" />
+            <span className="font-medium">{count}</span>
+          </div>
+        );
+      },
     },
     {
       id: "actions",
@@ -872,6 +677,10 @@ export default function RegionsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleView(row.original)}>
+                <Eye className="w-4 h-4 mr-2" />
+                {tRegion.messages.view_details}
+              </DropdownMenuItem>
               <WithPermission requiredPermissions={[PermissionResolverName.UpdateRegion]}>
                 <DropdownMenuItem onClick={() => handleEdit(row.original)}>
                   <Edit className="w-4 h-4 mr-2" />
@@ -983,17 +792,35 @@ export default function RegionsPage() {
             }
           />
           <CardContent>
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'regions' | 'churches')} className="w-full">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'churches' | 'regions')} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="regions" className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  {tPage.tabs.regions_cities}
-                </TabsTrigger>
+             
                 <TabsTrigger value="churches" className="flex items-center gap-2">
                   <Home className="w-4 h-4" />
                   {tPage.tabs.churches_registered}
                 </TabsTrigger>
+                <TabsTrigger value="regions" className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                {tPage.tabs.regions_cities}
+              </TabsTrigger>
               </TabsList>
+
+              <TabsContent value="churches" className="mt-0">
+                <MapLibre
+                  center={NETHERLANDS_CENTER}
+                  zoom={7}
+                  height="500px"
+                  theme={(resolvedTheme === 'dark' ? 'dark' : 'light') as 'dark' | 'light' | 'voyager'}
+                  showControls={true}
+                  showGeolocation={true}
+                  showFullscreen={true}
+                  showScale={true}
+                  markers={churchMarkersState}
+                  onLoad={(map) => {
+                    setMapInstance(map)
+                  }}
+                />
+              </TabsContent>
               
               <TabsContent value="regions" className="mt-0">
                 <MapLibre
@@ -1012,22 +839,6 @@ export default function RegionsPage() {
                 />
               </TabsContent>
               
-              <TabsContent value="churches" className="mt-0">
-                <MapLibre
-                  center={NETHERLANDS_CENTER}
-                  zoom={7}
-                  height="500px"
-                  theme={(resolvedTheme === 'dark' ? 'dark' : 'light') as 'dark' | 'light' | 'voyager'}
-                  showControls={true}
-                  showGeolocation={true}
-                  showFullscreen={true}
-                  showScale={true}
-                  markers={churchMarkersState}
-                  onLoad={(map) => {
-                    setMapInstance(map)
-                  }}
-                />
-              </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
@@ -1055,6 +866,16 @@ export default function RegionsPage() {
         </Card>
 
         {/* Modals */}
+        {selectedRegionEnriched && (
+          <RegionViewEditModal
+            isOpen={isViewModalOpen}
+            onOpenChange={setIsViewModalOpen}
+            region={selectedRegionEnriched}
+            onEdit={handleEditFromView}
+            churchCountByRegion={churchCountByRegion}
+          />
+        )}
+        
         {selectedRegion && (
           <EditRegionModal
             isOpen={isEditModalOpen}

@@ -445,3 +445,40 @@ export const DELETE_SUBSIDY_REQUEST_MESSAGE = gql`
     }
   }
 `;
+
+/**
+ * Create an advance request for a project
+ */
+export const CREATE_ADVANCE_REQUEST = gql`
+  mutation CreateAdvanceRequest($projectId: String!, $advanceAmount: Float!, $language: LanguagePreference) {
+    createAdvanceRequest(projectId: $projectId, advanceAmount: $advanceAmount, language: $language) {
+      id
+      description
+      total_budget
+      is_for_advance
+      advance_amount
+      created_at
+      subsidy_status {
+        id
+        name
+        description
+      }
+      institution {
+        id
+        name
+      }
+      department {
+        id
+        name
+      }
+      church {
+        id
+        name
+      }
+      project {
+        id
+        title
+      }
+    }
+  }
+`;

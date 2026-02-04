@@ -32,34 +32,10 @@ const nextConfig = {
     }
 
     // Optimize bundle splitting
+    // Optimize bundle splitting - REMOVED to fix date-fns not found error
+    // Next.js 15 handles this well automatically
     if (!isServer) {
-      // Ensure splitChunks is an object
-      if (!config.optimization.splitChunks || typeof config.optimization.splitChunks !== 'object') {
-        config.optimization.splitChunks = {}
-      }
-      
-      config.optimization.splitChunks.chunks = 'all'
-      config.optimization.splitChunks.cacheGroups = {
-        ...config.optimization.splitChunks.cacheGroups,
-        vendor: {
-          test: /[\\/]node_modules[\\/]/,
-          name: 'vendors',
-          chunks: 'all',
-          priority: 10,
-        },
-        radix: {
-          test: /[\\/]node_modules[\\/]@radix-ui[\\/]/,
-          name: 'radix-ui',
-          chunks: 'all',
-          priority: 20,
-        },
-        lucide: {
-          test: /[\\/]node_modules[\\/]lucide-react[\\/]/,
-          name: 'lucide-react',
-          chunks: 'all',
-          priority: 20,
-        },
-      }
+       // Automatic optimization is preferred
     }
 
     return config

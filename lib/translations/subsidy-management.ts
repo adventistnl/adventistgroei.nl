@@ -1,11 +1,14 @@
 export const subsidyManagementTranslations = {
   en: {
+    linkActivity: "Link Activity",
     status: {
       pending: "Pending",
       approved: "Approved",
       rejected: "Rejected",
       closed: "Closed",
-      inReview: "In review"
+      inReview: "In review",
+      changeStatus: "Change Status",
+      advancedClosed: "Advanced Closed",
     },
     requestSubsidy: "Request Subsidy",
     requestedOn: "Requested on",
@@ -91,12 +94,15 @@ export const subsidyManagementTranslations = {
     }
   },
   nl: {
+    linkActivity: "Activiteit Koppelen",
     status: {
       pending: "In afwachting",
       approved: "Goedgekeurd",
       rejected: "Afgewezen",
       closed: "Gesloten",
-      inReview: "In beoordeling"
+      inReview: "In beoordeling",
+      changeStatus: "Status Wijzigen",
+      advancedClosed: "Geavanceerd Gesloten"
     },
     requestSubsidy: "Subsidie aanvragen",
     requestedOn: "Aangevraagd op",
@@ -182,6 +188,7 @@ export const subsidyManagementTranslations = {
     }
   },
   pt: {
+    linkActivity: "Vincular Atividade",
     history: "Histórico",
     requestsTitle: "Solicitações de Subsídio",
     noRequests: "Nenhuma solicitação",

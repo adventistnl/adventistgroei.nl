@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { X, Plus, Settings, DollarSign, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 
 export interface ProjectActivity {
   id: string
@@ -45,6 +46,7 @@ export default function ActivityGroup({
   translations,
   renderTagWithIcon
 }: Props) {
+  const { formatCurrency } = useCurrency()
   const [draggedOver, setDraggedOver] = useState(false)
   const [draggingActivityId, setDraggingActivityId] = useState<string | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed)
@@ -120,9 +122,8 @@ export default function ActivityGroup({
           </button>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <span>{(translations as any)?.activityGroups?.totalItems?.replace?.('{{count}}', activities.length) || `${activities.length} atividades`}</span>
               <Badge variant="outline" className="font-mono">
-                {(translations as any)?.activityGroups?.budgetSummary?.replace?.('{{amount}}', totalBudget.toLocaleString()) || `€ ${totalBudget.toLocaleString()}`}
+                {formatCurrency(totalBudget)}
               </Badge>
             </div>
             {isTrash && activities.length > 0 && onClearAll && (
@@ -178,7 +179,7 @@ export default function ActivityGroup({
                       <div className="flex items-center gap-2 mb-1">
                         <h5 className="font-medium text-sm truncate">{activity.name}</h5>
                         <Badge variant="outline" className="text-xs font-mono shrink-0">
-                          € {activity.budget_amount.toLocaleString()}
+                          {formatCurrency(activity.budget_amount)}
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground line-clamp-2 mb-2">

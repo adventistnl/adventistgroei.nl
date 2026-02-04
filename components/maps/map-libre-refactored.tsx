@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useTheme } from 'next-themes';
+import { getCoordinatesFromZipCode } from '@/lib/geocoding';
 
 /**
  * MAPLIBRE GL MAP COMPONENT - REFATORADO
@@ -1180,6 +1181,196 @@ function getCityNameFromCoords(provinceCode: string, cityCode: string): string {
   };
   
   return cityNames[provinceCode]?.[cityCode] || cityCode;
+}
+
+/**
+ * FUNÇÃO HELPER: Gera markers de igrejas usando ZIP CODE REAL
+ * 
+ * Esta função usa o sistema de geocoding para obter coordenadas precisas
+ * baseadas no ZIP code + house number de cada igreja.
+ * 
+ * @param churches - Array de igrejas com dados completos (zip_code, house_number)
+ * @param regions - Array de regiões para obter cores
+ * @returns Array de MarkerConfig com posições exatas das igrejas
+ */
+export async function generateChurchMarkersFromZipCode(
+  churches: any[],
+  regions: RegionConfig[]
+): Promise<MarkerConfig[]> {
+  const markers: MarkerConfig[] = [];
+  
+  console.log('\n🏛️  ===== GENERATE CHURCH MARKERS FROM ZIP CODE =====');
+  console.log(`Total Churches to Process: ${churches.length}`);
+  console.log(`Total Regions Available: ${regions.length}`);
+  console.log('\n📍 Processing churches:\n');
+  
+  const debugSummary = {
+    total: churches.length,
+    withZipCode: 0,
+    withoutZipCode: 0,
+    geocoded: 0,
+    failed: 0,
+    details: [] as any[]
+  };
+  
+  for (const church of churches) {
+    const churchId = church.id || 'unknown';
+    const churchName = church.name || 'Unnamed Church';
+    const zipCode = church.zip_code;
+    const houseNumber = church.house_number;
+    const regionId = church.region_id;
+    const region = regions.find(r => r.id === regionId);
+    const churchColor = region?.color || '#9ca3af';
+    
+    console.log(`\n🏛️  Church: ${churchName} (${churchId})`);
+    console.log(`├─ ZIP Code: ${zipCode || 'N/A'}`);
+    console.log(`├─ House Number: ${houseNumber || 'N/A'}`);
+    console.log(`├─ Region: ${region?.name || 'N/A'} (${regionId || 'N/A'})`);
+    console.log(`├─ Color: ${churchColor}`);
+    
+    // Validar ZIP code
+    if (!zipCode) {
+      console.log(`└─ ❌ SKIPPED - No ZIP code available\n`);
+      debugSummary.withoutZipCode++;
+      debugSummary.details.push({
+        churchName,
+        zipCode: 'N/A',
+        houseNumber: 'N/A',
+        status: '❌ NO ZIP CODE',
+        coords: null,
+        region: region?.name || 'N/A'
+      });
+      continue;
+    }
+    
+    debugSummary.withZipCode++;
+    
+    try {
+      // Geocoding usando sistema de alta precisão
+      console.log(`├─ 🔍 Geocoding: ${zipCode} ${houseNumber || ''}...`);
+      const coords = await getCoordinatesFromZipCode(zipCode, houseNumber);
+      
+      if (!coords) {
+        console.log(`└─ ❌ FAILED - Could not geocode ZIP code\n`);
+        debugSummary.failed++;
+        debugSummary.details.push({
+          churchName,
+          zipCode,
+          houseNumber: houseNumber || 'N/A',
+          status: '❌ GEOCODING FAILED',
+          coords: null,
+          region: region?.name || 'N/A'
+        });
+        continue;
+      }
+      
+      console.log(`├─ ✅ Geocoded: [${coords[0].toFixed(6)}, ${coords[1].toFixed(6)}]`);
+      console.log(`└─ ✅ Marker created successfully\n`);
+      
+      debugSummary.geocoded++;
+      debugSummary.details.push({
+        churchName,
+        zipCode,
+        houseNumber: houseNumber || 'N/A',
+        status: '✅ SUCCESS',
+        coords: `[${coords[0].toFixed(6)}, ${coords[1].toFixed(6)}]`,
+        region: region?.name || 'N/A'
+      });
+      
+      // Criar marker com popup informativo
+      markers.push({
+        lngLat: coords,
+        title: churchName,
+        description: region?.name || 'Sem região',
+        color: churchColor,
+        popupHTML: `
+          <div style="padding: 12px; min-width: 280px; font-family: system-ui, -apple-system, sans-serif;">
+            <h3 style="
+              margin: 0 0 10px 0; 
+              font-size: 15px; 
+              font-weight: 700; 
+              color: #111;
+              line-height: 1.4;
+            ">
+              ⛪ ${churchName}
+            </h3>
+            
+            ${region ? `
+              <div style="
+                font-size: 12px; 
+                margin-bottom: 10px; 
+                padding: 8px 12px; 
+                background: ${churchColor}15; 
+                border-left: 3px solid ${churchColor}; 
+                border-radius: 4px;
+              ">
+                <strong style="color: ${churchColor};">🌍 ${region.name}</strong>
+              </div>
+            ` : ''}
+            
+            <div style="
+              font-size: 11px; 
+              color: #6b7280; 
+              margin-bottom: 6px;
+              display: flex;
+              align-items: center;
+              gap: 4px;
+            ">
+              <span style="color: #9ca3af;">📍</span>
+              ${church.contact?.city || 'Cidade não disponível'}, ${church.contact?.state || 'Estado não disponível'}
+            </div>
+            
+            <div style="
+              font-size: 11px; 
+              color: #6b7280; 
+              margin-bottom: 8px;
+              display: flex;
+              align-items: center;
+              gap: 4px;
+            ">
+              <span style="color: #9ca3af;">🏠</span>
+              ${zipCode}${houseNumber ? ` #${houseNumber}` : ''}
+            </div>
+            
+            <div style="
+              font-size: 10px; 
+              color: #9ca3af; 
+              margin-top: 10px;
+              padding-top: 8px;
+              border-top: 1px solid #e5e7eb;
+            ">
+              📌 Coordenadas: ${coords[0].toFixed(6)}, ${coords[1].toFixed(6)}
+            </div>
+          </div>
+        `
+      });
+      
+    } catch (error) {
+      console.log(`└─ ❌ ERROR - ${error instanceof Error ? error.message : 'Unknown error'}\n`);
+      debugSummary.failed++;
+      debugSummary.details.push({
+        churchName,
+        zipCode,
+        houseNumber: houseNumber || 'N/A',
+        status: `❌ ERROR: ${error instanceof Error ? error.message : 'Unknown'}`,
+        coords: null,
+        region: region?.name || 'N/A'
+      });
+    }
+  }
+  
+  // Resumo final
+  console.log('\n📊 ===== GEOCODING SUMMARY =====');
+  console.log(`Total Churches: ${debugSummary.total}`);
+  console.log(`├─ With ZIP Code: ${debugSummary.withZipCode} (${((debugSummary.withZipCode / debugSummary.total) * 100).toFixed(1)}%)`);
+  console.log(`├─ Without ZIP Code: ${debugSummary.withoutZipCode} (${((debugSummary.withoutZipCode / debugSummary.total) * 100).toFixed(1)}%)`);
+  console.log(`├─ Successfully Geocoded: ${debugSummary.geocoded} (${((debugSummary.geocoded / debugSummary.total) * 100).toFixed(1)}%)`);
+  console.log(`└─ Failed: ${debugSummary.failed} (${((debugSummary.failed / debugSummary.total) * 100).toFixed(1)}%)`);
+  console.log('\n📋 Detailed Results:');
+  console.table(debugSummary.details);
+  console.log('\n🏛️  ===== END =====\n');
+  
+  return markers;
 }
 
 export const EXAMPLE_REGIONS: RegionConfig[] = [
