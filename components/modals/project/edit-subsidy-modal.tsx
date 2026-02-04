@@ -65,7 +65,7 @@ export function EditSubsidyModal({ isOpen, onClose, onSubmit, subsidy }: EditSub
     subsidy_statuses_id: "",
   })
 
-  const [errors, setErrors] = useState<Partial<EditSubsidyFormData>>({})
+  const [errors, setErrors] = useState<Partial<Record<keyof EditSubsidyFormData, string>>>({})
 
   // Load subsidy data when subsidy changes
   useEffect(() => {
@@ -81,7 +81,7 @@ export function EditSubsidyModal({ isOpen, onClose, onSubmit, subsidy }: EditSub
   }, [subsidy])
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<EditSubsidyFormData> = {}
+    const newErrors: Partial<Record<keyof EditSubsidyFormData, string>> = {}
 
     if (!formData.description.trim()) {
       newErrors.description = "Description is required"
@@ -268,24 +268,37 @@ export function EditSubsidyModal({ isOpen, onClose, onSubmit, subsidy }: EditSub
           {subsidy && (
             <div className="p-4 bg-muted rounded-lg space-y-2">
               <h4 className="font-medium text-sm">Resumo Atual</h4>
-              <div className="grid grid-cols-2 gap-4 text-xs">
-                <div>
-                  <span className="text-muted-foreground">Atividades:</span>
-                  <span className="ml-1 font-medium">{subsidy.activities.length}</span>
+              {subsidy.is_for_advance ? (
+                 <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Tipo:</span>
+                    <span className="ml-1 font-medium text-purple-600">Adiantamento</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Valor Solicitado:</span>
+                    <span className="ml-1 font-medium">R$ {(subsidy.advance_amount || subsidy.total_budget || 0).toLocaleString()}</span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Taxa de conclusão:</span>
-                  <span className="ml-1 font-medium">{subsidy.completion_rate}%</span>
+              ) : (
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Atividades:</span>
+                    <span className="ml-1 font-medium">{subsidy.activities?.length || 0}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Taxa de conclusão:</span>
+                    <span className="ml-1 font-medium">{subsidy.completion_rate}%</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Valor aprovado:</span>
+                    <span className="ml-1 font-medium text-green-600">R$ {subsidy.approved_amount.toLocaleString()}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Valor pendente:</span>
+                    <span className="ml-1 font-medium text-yellow-600">R$ {subsidy.pending_amount.toLocaleString()}</span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Valor aprovado:</span>
-                  <span className="ml-1 font-medium text-green-600">R$ {subsidy.approved_amount.toLocaleString()}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Valor pendente:</span>
-                  <span className="ml-1 font-medium text-yellow-600">R$ {subsidy.pending_amount.toLocaleString()}</span>
-                </div>
-              </div>
+              )}
             </div>
           )}
 

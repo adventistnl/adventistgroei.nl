@@ -12,6 +12,7 @@ import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { useInstitution } from "@/contexts/institution-context"
 import { useInstitutionKPI } from "@/hooks/KPI/use-institution-kpi"
+import { useRegions } from "@/hooks/use-regions"
 
 // UI Components
 import { Button } from "@/components/ui/button"
@@ -94,6 +95,13 @@ import { WithPermission } from "@/hocs/with-permission"
 import { AccessDenied } from "@/components/access/access-denied"
 import InstitutionsLoading from "./loading"
 
+// Auto-linking utilities
+import { 
+  enrichChurchesWithAutoLink, 
+  calculateAutoLinkStats,
+  type EnrichedChurch 
+} from "@/lib/church-region-matcher"
+
 
 export default function InstitutionsPage() {
   // ============================================================================
@@ -101,6 +109,7 @@ export default function InstitutionsPage() {
   // ============================================================================
   const { t } = useTranslation()
   const { institutions: institutionsData, currentInstitutionData, loading: isLoading, updateInstitutionContact, refetchInstitutionById} = useInstitution();
+  const { regions } = useRegions();
   const scrollContainerRef = React.useRef<HTMLDivElement>(null)
 
   // ============================================================================
@@ -258,6 +267,27 @@ export default function InstitutionsPage() {
       }))
     )
   }, [filteredInstitutions])
+
+  // ============================================================================
+  // AUTO-LINKING: Apply suggestions to churches data (following regions page pattern)
+  // ============================================================================
+  
+  /**
+   * Cria versão enriquecida de churches com auto-linking aplicado
+   * Usa funções do @/lib/church-region-matcher (igual página regions)
+   */
+  const churchesWithAutoLink = React.useMemo<EnrichedChurch[]>(() => {
+    if (allChurches.length === 0 || regions.length === 0) return [];
+    
+    return enrichChurchesWithAutoLink(allChurches, regions);
+  }, [allChurches, regions]);
+  
+  /**
+   * Estatísticas de auto-linking para debug e UI
+   */
+  const autoLinkStats = React.useMemo(() => {
+    return calculateAutoLinkStats(churchesWithAutoLink);
+  }, [churchesWithAutoLink]);
 
   // Computed state - institution being displayed
   const displayedInstitution = useMemo(() => {
@@ -436,7 +466,7 @@ export default function InstitutionsPage() {
     const institutionDepartments = displayedInstitution.departments?.filter((d: any) => !d.church_id && !d.is_deleted).length || 0
     const churchDepartments = displayedInstitution.departments?.filter((d: any) => d.church_id && !d.is_deleted).length || 0
     const activeChurches = displayedInstitution.churches?.filter((c: any) => !c.is_deleted).length || 0
-    const activeRegions = displayedInstitution.regions?.filter((r: any) => !r.is_deleted).length || 0
+    const activeRegions = regions.filter((r: any) => !r.is_deleted).length || 0
 
     return {
       totalInstitutions: 1,
@@ -1162,8 +1192,8 @@ export default function InstitutionsPage() {
                 id: "institution-leaders-card-bottom",
                 component: (
                   <ChurchesByRegionChart
-                    churches={currentInstitutionData?.churches || []}
-                    regions={currentInstitutionData?.regions || []}
+                    churches={churchesWithAutoLink}
+                    regions={regions}
                     data={displayedInstitution?.institutionChartsData?.churchesByRegion}
                     loading={isLoading}
                   />

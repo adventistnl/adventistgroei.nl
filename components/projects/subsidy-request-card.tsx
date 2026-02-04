@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { MoreVertical, FileText, DollarSign, Archive, Info, Eye, Pencil, Trash2 } from "lucide-react"
+import { MoreVertical, FileText, DollarSign, Archive, Info, Eye, Pencil, Trash2, Plus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -24,19 +24,26 @@ export interface SubsidyRequestCardData {
   id: string
   title: string
   requested_at: string | Date
-  status: "pending" | "approved" | "rejected" | "in_review" | "closed"
+  status: "pending" | "approved" | "rejected" | "in_review" | "closed" | "advanced_closed"
   requested_amount: number
   approved_amount?: number
   rejection_reason?: string
   approved_at?: Date
   rejected_at?: Date
   archived?: boolean
+  // Advance request fields
+  is_for_advance?: boolean
+  advance_amount?: number
   // IDs for editing
   project_id?: string
   institution_id?: string
   department_id?: string
   church_id?: string
   church_department_id?: string
+  // Fields for editing
+  description?: string
+  requester_id?: string
+  subsidy_statuses_id?: string
   // Display names
   institution_name?: string
   church_name?: string
@@ -72,6 +79,7 @@ interface SubsidyRequestCardProps {
   onView?: (id: string) => void
   onDuplicate?: (id: string) => void
   onArchive?: (id: string) => void
+  onLinkActivity?: (id: string) => void
   className?: string
 }
 
@@ -82,6 +90,7 @@ export function SubsidyRequestCard({
   onView,
   onDuplicate,
   onArchive,
+  onLinkActivity,
   className,
 }: SubsidyRequestCardProps) {
   const { t, i18n } = useTranslation()
@@ -108,6 +117,7 @@ export function SubsidyRequestCard({
     rejected: { label: t('subsidy.status.rejected') || t('subsidy.deleteRequest.statusLabels.rejected') || "Rejected", className: "bg-red-50 text-red-700 border-red-200" },
     in_review: { label: t('subsidy.status.inReview') || t('subsidy.deleteRequest.statusLabels.in_review') || "In Review", className: "bg-blue-50 text-blue-700 border-blue-200" },
     closed: { label: t('subsidy.status.closed') || t('subsidy.deleteRequest.statusLabels.closed') || t('subsidy.closed') || "Closed", className: "bg-gray-50 text-gray-700 border-gray-200" },
+    advanced_closed: { label: t('subsidy.status.advancedClosed') || "Advanced Closed", className: "bg-purple-50 text-purple-700 border-purple-200" },
   }
 
   // Use fallback for unknown status
@@ -181,7 +191,7 @@ export function SubsidyRequestCard({
                   </DropdownMenuItem>
                 </WithPermission>
               )}
-              {onEdit && (
+              {onEdit && (!data.is_for_advance || (data.items && data.items.length > 0)) && (
                 <WithPermission requiredPermissions={[PermissionResolverName.UpdateSubsidyRequest]}>
                   <DropdownMenuItem onClick={() => onEdit(data.id)}>
                     <Pencil className="w-4 h-4 mr-2" />
@@ -189,7 +199,15 @@ export function SubsidyRequestCard({
                   </DropdownMenuItem>
                 </WithPermission>
               )}  
-              
+              {/* Link Activity (Advance Requests only) - hide if already linked (has items) */}
+              {data.is_for_advance && !data.archived && onLinkActivity && (!data.items || data.items.length === 0) && (
+                <DropdownMenuItem onClick={() => onLinkActivity(data.id)}>
+                  <div className="flex items-center">
+                      <Plus className="w-3 h-3 mr-2" />
+                      {t('subsidy.linkActivity') || "Link Activity"}
+                  </div>
+                </DropdownMenuItem>
+              )}
               
               {onDelete && (
                 <WithPermission requiredPermissions={[PermissionResolverName.DeleteSubsidyRequest]}>

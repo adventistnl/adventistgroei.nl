@@ -80,8 +80,8 @@ interface SubsidyChatPanelProps {
   messagesEndRef: React.RefObject<HTMLDivElement | null>
   
   // Menções
-  mentionStatus: "pending" | "in_review" | "approved" | "rejected" | "closed" | null
-  setMentionStatus: React.Dispatch<React.SetStateAction<"pending" | "in_review" | "approved" | "rejected" | "closed" | null>>
+  mentionStatus: "pending" | "in_review" | "approved" | "rejected" | "closed" | "advanced_closed" | null
+  setMentionStatus: React.Dispatch<React.SetStateAction<"pending" | "in_review" | "approved" | "rejected" | "closed" | "advanced_closed" | null>>
   mentionPriority: "low" | "medium" | "high" | null
   setMentionPriority: React.Dispatch<React.SetStateAction<"low" | "medium" | "high" | null>>
   
@@ -180,11 +180,11 @@ export function SubsidyChatPanel({
                 !filteredMessages[index - 1]?.reason.toLowerCase().includes(relatedActivity.name.toLowerCase())
               )
 
-              // Determinar tipo de mensagem e ícone apropriado
-              const isDocumentValidation = item.reason.includes('validado') || item.reason.includes('aprovado')
-              const isDocumentRejection = item.reason.includes('rejeitado')
-              const isDocumentComment = item.reason.includes('Comentário sobre documento')
-              const isStatusChange = !isDocumentValidation && !isDocumentRejection && !isDocumentComment
+              // Determinar tipo de mensagem e ícone apropriado usando o campo type
+              const isDocumentValidation = item.type === 'DOCUMENT_ACTION' && item.status !== 'rejected'
+              const isDocumentRejection = item.type === 'DOCUMENT_ACTION' && item.status === 'rejected'
+              const isDocumentComment = item.type === 'COMMENT'
+              const isStatusChange = item.type === 'STATUS_CHANGE' || item.type === 'PRIORITY_CHANGE' || (!item.type)
               
               let MessageIcon = MessageCircle
               let iconColor = "text-gray-500 dark:text-gray-400"

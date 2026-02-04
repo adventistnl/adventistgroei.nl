@@ -1,6 +1,8 @@
 export { AddRegionModal } from './add-region-modal'
 export { EditRegionModal } from './edit-region-modal'
 export { DeleteRegionModal } from './delete-region-modal'
+export { RegionViewEditModal } from './region-view-edit-modal'
 export type { AddRegionFormData, AddRegionModalProps } from './add-region-modal'
 export type { EditRegionModalProps } from './edit-region-modal'
 export type { DeleteRegionModalProps } from './delete-region-modal'
+export type { RegionViewEditModalProps } from './region-view-edit-modal'

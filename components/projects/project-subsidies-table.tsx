@@ -76,6 +76,8 @@ export interface SubsidyRequestData {
   approved_amount: number
   pending_amount: number
   activities: ActivityData[]
+  is_for_advance?: boolean
+  advance_amount?: number
 }
 
 export interface ActivityData {
@@ -173,11 +175,20 @@ export function ProjectSubsidiesTable({
 
         return {
           ...activity,
+          deadline: new Date().toISOString(),
+          owner_id: "1",
+          tags: [],
+          priority: "MEDIUM",
+          is_subsidized: true,
+          status: activity.status || "PENDING",
+          created_at: activity.created_at || new Date().toISOString(),
+          updated_at: activity.updated_at || new Date().toISOString(),
+          owner: { id: "1", name: "User", email: "user@example.com" },
           receipts,
           approvedAmount,
           receiptsCount: receipts.length,
           progressPercentage: Math.min(100, progressPercentage)
-        }
+        } as ActivityData
       })
 
       return {
@@ -611,7 +622,7 @@ export function ProjectSubsidiesTable({
                                             
                                             {/* View Receipts */}
                                             <div className="md:col-span-2 text-center">
-                                              {activity.receiptsCount > 0 ? (
+                                              {(activity.receiptsCount || 0) > 0 ? (
                                                 <Button
                                                   size="sm"
                                                   variant="ghost"
@@ -619,8 +630,8 @@ export function ProjectSubsidiesTable({
                                                   className="gap-1 text-primary hover:bg-primary/5"
                                                 >
                                                   <Eye className="w-3 h-3" />
-                                                  <span className="hidden sm:inline">Ver {activity.receiptsCount}</span>
-                                                  <span className="sm:hidden">{activity.receiptsCount}</span>
+                                                  <span className="hidden sm:inline">Ver {activity.receiptsCount || 0}</span>
+                                                  <span className="sm:hidden">{activity.receiptsCount || 0}</span>
                                                 </Button>
                                               ) : (
                                                 <span className="text-xs text-muted-foreground">Sem recibos</span>

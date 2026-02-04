@@ -10,6 +10,10 @@ export const regionTranslations = {
         title: "Edit Region",
         description: "Update region information and settings"
       },
+      details: {
+        title: "Region Details",
+        description: "View detailed information about the region"
+      },
       delete: {
         deactivate_title: "Deactivate Region",
         deactivate_description: "This action will deactivate the region and affect related data",
@@ -222,6 +226,10 @@ export const regionTranslations = {
         title: "Regio Bewerken",
         description: "Update regioinformatie en instellingen"
       },
+      details: {
+        title: "Regio Details",
+        description: "Bekijk gedetailleerde informatie over de regio"
+      },
       delete: {
         deactivate_title: "Regio Deactiveren",
         deactivate_description: "Deze actie zal de regio deactiveren en gerelateerde gegevens beïnvloeden",
@@ -433,6 +441,10 @@ export const regionTranslations = {
       edit: {
         title: "Editar Região",
         description: "Atualize as informações e configurações da região"
+      },
+      details: {
+        title: "Detalhes da Região",
+        description: "Veja informações detalhadas sobre a região"
       },
       delete: {
         deactivate_title: "Desativar Região",

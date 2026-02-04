@@ -105,10 +105,11 @@ export default function ChurchesPage() {
   const activeChurches = React.useMemo(() => churches.filter((church: any) => !church.is_deleted), [churches]);
   
   // Apply auto-linking to churches baseado na documentação
-  const enrichedChurches = useMemo<EnrichedChurch[]>(() => {
-    if (activeChurches.length === 0 || regions.length === 0) return activeChurches;
+  // O tipo EnrichedChurch preserva todas as propriedades originais via spread operator
+  const enrichedChurches = useMemo(() => {
+    if (activeChurches.length === 0 || regions.length === 0) return activeChurches as any[];
     
-    return enrichChurchesWithAutoLink(activeChurches, regions);
+    return enrichChurchesWithAutoLink(activeChurches as any[], regions) as any[];
   }, [activeChurches, regions]);
   
   const [isLoading, setIsLoading] = useState(true)
@@ -1004,7 +1005,7 @@ export default function ChurchesPage() {
     },
     {
       id: "region",
-      accessorKey: "region_name",
+      accessorFn: (row) => row.region?.name || '',
       header: tChurch.table.region,
       cell: ({ row }) => {
         const church = row.original as EnrichedChurch

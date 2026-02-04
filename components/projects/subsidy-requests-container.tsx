@@ -1,17 +1,21 @@
 import * as React from "react"
-import { Plus, Inbox } from "lucide-react"
+import { Plus, Inbox, Banknote } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { useMutation } from "@apollo/client"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/shared/empty-state"
 import { SubsidyRequestCard, SubsidyRequestCardData } from "./subsidy-request-card"
 import { ViewSubsidyModal } from "@/components/modals/project/view-subsidy-modal"
 import { RequestSubsidyModal, SubsidyRequestData as SubsidyRequestFormData } from "@/components/modals/project/request-subsidy-modal"
+import { RequestAdvanceModal } from "@/components/modals/project/request-advance-modal"
 import { useSubsidyReceipts, SubsidyReceipt } from "@/hooks/use-subsidy-receipts"
 import { useCurrency } from "@/contexts/currency-context"
 import { cn } from "@/lib/utils"
 import type { ProjectActivityData } from "@/components/projects/project-activities-table"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
+import { CREATE_ADVANCE_REQUEST } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
+import { toast } from "sonner"
 
 interface SubsidyRequestsContainerProps {
   /** Array of subsidy request data */
@@ -28,6 +32,8 @@ interface SubsidyRequestsContainerProps {
   onDuplicateSubsidy?: (id: string) => void
   /** Callback to update a subsidy request */
   onUpdateSubsidy?: (id: string, data: SubsidyRequestFormData) => Promise<void>
+  /** Callback when "Link Activity" is clicked on an advance request */
+  onLinkActivity?: (id: string) => void
   /** Optional title for the container */
   title?: string
   /** Optional description for the container */
@@ -45,6 +51,8 @@ interface SubsidyRequestsContainerProps {
   subsidizedActivityIds?: string[]
   onRefresh?: () => Promise<void>
   projectSubsidizedBudget?: number
+  projectId?: string
+  projectName?: string
 }
 
 export function SubsidyRequestsContainer({
@@ -55,6 +63,7 @@ export function SubsidyRequestsContainer({
   onViewSubsidy,
   onDuplicateSubsidy,
   onUpdateSubsidy,
+  onLinkActivity,
   title,
   description,
   gridColSpan = "col-span-12",
@@ -65,29 +74,21 @@ export function SubsidyRequestsContainer({
   subsidizedActivityIds = [],
   onRefresh,
   projectSubsidizedBudget = 0,
+  projectId,
+  projectName,
 }: SubsidyRequestsContainerProps) {
   const { t, i18n } = useTranslation()
   const { formatCurrency } = useCurrency()
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false)
   const [selectedSubsidy, setSelectedSubsidy] = React.useState<SubsidyRequestCardData | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
-  const [selectedSubsidyForEdit, setSelectedSubsidyForEdit] = React.useState<SubsidyRequestCardData | null>(null)
-  const [editReceipts, setEditReceipts] = React.useState<SubsidyReceipt[]>([])
 
-  // Hook for fetching receipts
-  const { fetchReceipts } = useSubsidyReceipts({
-    subsidyRequestId: selectedSubsidyForEdit?.id,
-  })
+  const [isAdvanceModalOpen, setIsAdvanceModalOpen] = React.useState(false)
 
-  // Sync selectedSubsidy when props.subsidies changes (e.g. after refresh)
-  React.useEffect(() => {
-    if (selectedSubsidy) {
-      const updated = subsidies.find(s => s.id === selectedSubsidy.id)
-      if (updated && updated.status !== selectedSubsidy.status) {
-        setSelectedSubsidy({...updated})
-      }
-    }
-  }, [subsidies, selectedSubsidy])
+  // Mutation for advance request
+  const [createAdvanceRequest] = useMutation(CREATE_ADVANCE_REQUEST)
+
+
 
   // Usando dados reais passados via props
   const displaySubsidies = subsidies
@@ -146,99 +147,11 @@ export function SubsidyRequestsContainer({
     console.log('Archive subsidy:', id)
   }
 
-  const handleEditSubsidy = async (id: string) => {
-    const subsidy = displaySubsidies.find(s => s.id === id)
-    if (subsidy) {
-      setSelectedSubsidyForEdit(subsidy)
-
-      // Fetch receipts for this subsidy request (pass ID directly since state hasn't updated yet)
-      try {
-        const receipts = await fetchReceipts(subsidy.id)
-        console.log('Loaded receipts for edit:', receipts)
-        setEditReceipts(receipts || [])
-      } catch (error) {
-        console.error('Error fetching receipts:', error)
-        setEditReceipts([])
-      }
-
-      setIsEditModalOpen(true)
-    }
+  const handleEditSubsidy = (id: string) => {
     if (onEditSubsidy) onEditSubsidy(id)
   }
 
-  // Helper to get file type from filename
-  const getFileType = (filename: string): "PDF" | "JPG" | "PNG" | "DOC" | "OTHER" => {
-    const ext = filename.split('.').pop()?.toUpperCase()
-    if (ext === "PDF" || ext === "JPG" || ext === "PNG" || ext === "DOC") {
-      return ext as "PDF" | "JPG" | "PNG" | "DOC"
-    }
-    return "OTHER"
-  }
 
-  // Helper to map receipt type to document type
-  const mapReceiptTypeToDocType = (type: string): "INVOICE" | "RECEIPT" | "CONTRACT" | "PROOF_OF_PAYMENT" | "OTHER" => {
-    const typeMap: Record<string, "INVOICE" | "RECEIPT" | "CONTRACT" | "PROOF_OF_PAYMENT" | "OTHER"> = {
-      'invoice': 'INVOICE',
-      'receipt': 'RECEIPT',
-      'contract': 'CONTRACT',
-      'proof_of_payment': 'PROOF_OF_PAYMENT',
-      'image': 'RECEIPT',
-      'pdf': 'INVOICE',
-    }
-    return typeMap[type?.toLowerCase()] || 'OTHER'
-  }
-
-  // Build initialData for edit modal using real subsidy items
-  const editInitialData = React.useMemo(() => {
-    if (!selectedSubsidyForEdit) return null
-
-    // Group receipts by activity_id
-    const receiptsByActivity = editReceipts.reduce((acc, receipt) => {
-      const activityId = receipt.project_activities_id
-      if (!acc[activityId]) {
-        acc[activityId] = []
-      }
-      acc[activityId].push(receipt)
-      return acc
-    }, {} as Record<string, SubsidyReceipt[]>)
-
-    // Use real items from the subsidy if available
-    const items = selectedSubsidyForEdit.items?.map(item => {
-      // Get receipts for this activity
-      const activityReceipts = receiptsByActivity[item.activity_id] || []
-
-      // Transform receipts to activity_documents format
-      const activity_documents = activityReceipts.map(receipt => ({
-        id: receipt.id,
-        file_name: receipt.filename,
-        file_type: getFileType(receipt.filename),
-        document_type: mapReceiptTypeToDocType(receipt.type),
-        amount: receipt.amount ? Number(receipt.amount) : 0, // Convert Decimal to number
-        file_url: receipt.file_url,
-        isExpanded: false,
-        origin: 'EXISTING_RECEIPT' as const // Mark as existing receipt (already saved in subsidy)
-      }))
-
-      return {
-        activity_id: item.activity_id,
-        activity_name: item.activity_name,
-        requested_amount: item.requested_amount,
-        budget_amount: item.budget_amount,
-        activity_documents,
-        notes: item.notes || ""
-      }
-    }) || []
-
-    return {
-      project_id: selectedSubsidyForEdit.project_id || "",
-      institution_id: selectedSubsidyForEdit.institution_id || "",
-      department_id: selectedSubsidyForEdit.department_id || "",
-      church_id: selectedSubsidyForEdit.church_id || "",
-      requested_amount: selectedSubsidyForEdit.requested_amount,
-      notes: selectedSubsidyForEdit.notes || "",
-      items,
-    }
-  }, [selectedSubsidyForEdit, editReceipts])
 
   const handleCloseViewModal = () => {
     setIsViewModalOpen(false)
@@ -255,6 +168,22 @@ export function SubsidyRequestsContainer({
             <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{defaultTitle}</h3>
             {description && <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>}
           </div>
+          <div className="flex gap-2">
+
+          {/* Advance Button */}
+          <WithPermission requiredPermissions={[PermissionResolverName.CreateSubsidyRequest]}>
+              <Button
+                onClick={() => setIsAdvanceModalOpen(true)}
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                disabled={displaySubsidies.some(s => s.is_for_advance && s.status !== 'rejected')}
+                title={displaySubsidies.some(s => s.is_for_advance && s.status !== 'rejected') ? t("subsidy.advanceAlreadyExists") : ""}
+              >
+                <Banknote className="h-4 w-4" />
+                {t("subsidyRequest.advance.button")}
+              </Button>
+          </WithPermission>
 
           {/* Add Button */}
           {onAddSubsidy && (
@@ -269,6 +198,7 @@ export function SubsidyRequestsContainer({
               </Button>
             </WithPermission>
           )}
+          </div>
         </div>
 
         {/* Cards Container */}
@@ -284,16 +214,19 @@ export function SubsidyRequestsContainer({
         ) : (
           <div className="relative flex-1 overflow-hidden">
             <div className="h-full max-h-[280px] flex flex-col gap-3 overflow-y-auto pr-2">
-              {displaySubsidies.map((subsidy) => (
-                <SubsidyRequestCard
+              {displaySubsidies.map((subsidy) => {
+                const isApprovedOrClosed = subsidy.status === "approved" || subsidy.status === "closed"
+
+                return <SubsidyRequestCard
                   key={subsidy.id}
                   data={subsidy}
-                  onEdit={handleEditSubsidy}
-                  onDelete={onDeleteSubsidy}
+                  onEdit={isApprovedOrClosed ? undefined : onEditSubsidy}
+                  onDelete={isApprovedOrClosed ? undefined : onDeleteSubsidy}
                   onView={handleViewSubsidy}
                   onDuplicate={onDuplicateSubsidy}
+                  onLinkActivity={onLinkActivity}
                 />
-              ))}
+              })}
             </div>
           </div>
         )}
@@ -331,57 +264,35 @@ export function SubsidyRequestsContainer({
         }}
       />
 
-      {/* Edit Subsidy (reuses RequestSubsidyModal in edit mode) */}
-      <RequestSubsidyModal
-        isOpen={isEditModalOpen}
-        onClose={() => { setIsEditModalOpen(false); setSelectedSubsidyForEdit(null); setEditReceipts([]) }}
-        selectedActivities={[]}
-        projectId={selectedSubsidyForEdit?.project_id || ""}
-        institutionId={selectedSubsidyForEdit?.institution_id || ""}
-        departmentId={selectedSubsidyForEdit?.department_id || ""}
-        churchId={selectedSubsidyForEdit?.church_id || ""}
-        churchDepartmentId={selectedSubsidyForEdit?.church_department_id || ""}
-        institutionName={selectedSubsidyForEdit?.institution_name || ""}
-        departmentName={selectedSubsidyForEdit?.department_name || ""}
-        churchName={selectedSubsidyForEdit?.church_name || ""}
-        churchDepartmentName={selectedSubsidyForEdit?.church_department_name || ""}
-        subsidyRequestId={selectedSubsidyForEdit?.id}
-        initialData={editInitialData}
-        mode="edit"
-        onSubmit={async (data) => {
-          // Call update callback if provided
-          if (onUpdateSubsidy && selectedSubsidyForEdit) {
-            try {
-              await onUpdateSubsidy(selectedSubsidyForEdit.id, data)
 
-            } catch (error) {
 
+
+      {/* Request Advance Modal */}
+      <RequestAdvanceModal
+        isOpen={isAdvanceModalOpen}
+        onClose={() => setIsAdvanceModalOpen(false)}
+        onSubmit={async (advanceAmount: number) => {
+          if (!projectId) return
+          
+          try {
+            await createAdvanceRequest({
+              variables: {
+                projectId,
+                advanceAmount,
+                language: i18n.language?.toLowerCase() || 'en'
+              }
+            })
+            toast.success(t("subsidyRequest.advance.success"))
+            if (onRefresh) {
+              await onRefresh()
             }
+          } catch (error) {
+            console.error('Error creating advance request:', error)
+            throw error
           }
-
-          setIsEditModalOpen(false)
-          setSelectedSubsidyForEdit(null)
-          setEditReceipts([])
         }}
-        allActivities={allActivities}
-        subsidizedActivityIds={subsidizedActivityIds}
-        availableBudget={(() => {
-          const used = displaySubsidies.filter(s => s.status !== 'rejected').reduce((sum, s) => sum + s.requested_amount, 0)
-          // In edit mode, add back the current subsidy's amount to available budget
-          const currentSubsidyAmount = selectedSubsidyForEdit?.requested_amount || 0
-          const available = projectSubsidizedBudget - used + currentSubsidyAmount
-
-          console.log('💰 [Container AvailableBudget]:', {
-            projectSubsidizedBudget,
-            used,
-            currentSubsidyAmount,
-            available,
-            mode: 'edit',
-            subsidyId: selectedSubsidyForEdit?.id
-          })
-
-          return available
-        })()}
+        subsidizedBudget={projectSubsidizedBudget}
+        projectName={projectName}
       />
     </>
   )

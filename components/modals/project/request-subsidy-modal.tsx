@@ -94,6 +94,7 @@ export interface SubsidyRequestData {
   church_id?: string
   project_id: string
   requested_amount: number
+  is_for_advance?: boolean
   notes: string
   items: SubsidyRequestItem[]
 }
@@ -302,6 +303,9 @@ export function RequestSubsidyModal({
         : selectedActivities.map(activity => ({
             activity_id: activity.id,
             activity_name: activity.name,
+            // If we are in a context where we know it's for advance (passed via props? no), we can't easily know here.
+            // But usually Create Mode uses standard logic.
+            // For the specific issue of "Link Activity" -> "Edit", the data comes from `initialData.items` which we fixed in page.tsx.
             requested_amount: activity.institution_requested_amount || 0,
             budget_amount: activity.budget_amount,
             activity_documents: [],
@@ -314,6 +318,7 @@ export function RequestSubsidyModal({
         church_id: initialData.church_id || churchId,
         project_id: initialData.project_id || projectId,
         requested_amount: initialData.requested_amount || 0,
+        is_for_advance: initialData.is_for_advance,
         notes: initialData.notes || "",
         items: itemsToUse
       })
@@ -644,6 +649,7 @@ export function RequestSubsidyModal({
 
         const finalData = {
           ...formData,
+          id: subsidyRequestId,
           items: formData.items.map(item => ({
              ...item,
              // Ensure we don't send existing_receipt_updates as requested
@@ -1049,6 +1055,7 @@ export function RequestSubsidyModal({
                         setTempRequestedAmount(currentItem.requested_amount)
                         setIsEditingValues(true)
                       }}
+                      disabled={formData.is_for_advance}
                       className="h-7 text-xs"
                     >
                       <Edit2 className="w-3 h-3 mr-1" />

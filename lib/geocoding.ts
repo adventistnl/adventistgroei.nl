@@ -69,7 +69,24 @@ export const DETAILED_ZIP_COORDS: Record<string, [number, number]> = {
   // Groningen (9700-9799)
   '9700': [6.5665, 53.2194],
   '9710': [6.5700, 53.2210],
+  '9711': [6.5675, 53.2205],
+  '9712': [6.5674, 53.2214], // Binnenstad-noord (FIX: API confunde com Delft)
+  '9713': [6.5680, 53.2220],
+  '9714': [6.5690, 53.2225],
+  '9715': [6.5700, 53.2230],
+  '9716': [6.5710, 53.2235],
+  '9717': [6.5720, 53.2240],
+  '9718': [6.5730, 53.2245],
   '9720': [6.5750, 53.2230],
+  '9721': [6.5760, 53.2235],
+  '9722': [6.5770, 53.2240],
+  '9723': [6.5780, 53.2245],
+  '9724': [6.5790, 53.2250],
+  '9725': [6.5800, 53.2255],
+  '9726': [6.5810, 53.2260],
+  '9727': [6.5820, 53.2265],
+  '9728': [6.5830, 53.2270],
+  '9729': [6.5840, 53.2275],
   '9730': [6.5800, 53.2250],
   '9740': [6.5850, 53.2270],
   
@@ -210,7 +227,7 @@ export async function getCoordinatesFromZipCode(
   const digits = match[1]; // 4 digits (e.g., "8242")
   const letters = match[2]; // 2 letters (e.g., "PN")
   
-  console.log(`\n🔍 Geocoding: ${zipCode} ${houseNumber || ''}`);
+
   
   // 1️⃣ PRIORITY: Exact 4-digit match
   if (DETAILED_ZIP_COORDS[digits]) {
@@ -228,18 +245,47 @@ export async function getCoordinatesFromZipCode(
       baseCoords[1] + letterOffset * 0.7 // Smaller Y offset
     ];
     
-    console.log(`  ✅ Exact match (4-digit): ${digits} -> ${coords}`);
     return coords;
   }
+
   
-  // 2️⃣ TRY: Geocoding API with house number
-  const geocoded = await geocodeWithNominatim(cleanZip, houseNumber);
+  let geocoded = await geocodeWithNominatim(cleanZip, null);
+  
   if (geocoded) {
-    console.log(`  ✅ Geocoded via API: ${cleanZip} ${houseNumber || ''} -> ${geocoded}`);
+    // Validar se a coordenada está na região correta (usando 2 primeiros dígitos)
+    const regionKey = digits.substring(0, 2);
+    const expectedRegions: Record<string, { lng: [number, number], lat: [number, number] }> = {
+      '97': { lng: [6.0, 7.5], lat: [52.8, 53.6] },  // Groningen
+      '30': { lng: [4.0, 5.0], lat: [51.5, 52.3] },  // Rotterdam
+      '10': { lng: [4.5, 5.5], lat: [52.0, 52.8] },  // Amsterdam
+      '25': { lng: [3.8, 4.8], lat: [51.8, 52.5] },  // Den Haag
+      '35': { lng: [4.8, 5.5], lat: [51.8, 52.5] },  // Utrecht
+    };
+    
+    const expectedRegion = expectedRegions[regionKey];
+    if (expectedRegion) {
+      const isInRegion = 
+        geocoded[0] >= expectedRegion.lng[0] && geocoded[0] <= expectedRegion.lng[1] &&
+        geocoded[1] >= expectedRegion.lat[0] && geocoded[1] <= expectedRegion.lat[1];
+      
+      if (!isInRegion) {
+        geocoded = null;
+      }
+    }
+  }
+  
+  // Se validação passou ou não há restrição de região
+  if (geocoded) {
     return geocoded;
   }
   
-  // 3️⃣ FALLBACK: Regional approximation (2-digit)
+  // 2.5️⃣ TRY: Geocoding API COM número (se o anterior falhou)
+  if (houseNumber) {
+    const geocodedWithHouse = await geocodeWithNominatim(cleanZip, houseNumber);
+    if (geocodedWithHouse) {
+      return geocodedWithHouse;
+    }
+  }
   const regionalCoords: Record<string, [number, number]> = {
     '10': [4.9041, 52.3676],  // Amsterdam
     '11': [4.9200, 52.3700],
@@ -277,12 +323,9 @@ export async function getCoordinatesFromZipCode(
       base[1] + digitOffset * 0.5 + letterOffset * 0.3
     ];
     
-    console.log(`  ⚠️  Approximated (2-digit): ${key} -> ${coords}`);
     return coords;
   }
   
-  // 4️⃣ LAST RESORT: Netherlands center
-  console.log(`  ❌ No match found, using Netherlands center`);
   return [5.2913, 52.1326];
 }
 
