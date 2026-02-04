@@ -158,9 +158,6 @@ export default function RegionsPage() {
       church => church.region_id === selectedRegion.id
     );
     
-    console.log('🔧 ENRICHING - Region:', selectedRegion.name);
-    console.log('🔧 ENRICHING - Churches found:', regionChurches.length);
-    console.log('🔧 ENRICHING - Churches data:', regionChurches);
     
     return {
       ...selectedRegion,

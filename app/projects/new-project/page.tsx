@@ -808,14 +808,12 @@ function ProjectRegisterContent() {
       tags: []
     }
     
-    console.log('Resetting currentActivity, assignee_ids:', resetActivity.assignee_ids)
     setCurrentActivity(resetActivity)
     setEditingActivityId(null)
   }
 
   const handleUsersChange = (selectedUsers: User[]) => {
     const assigneeIds = selectedUsers.map(user => user.id)
-    console.log('👥 Users changed:', selectedUsers.length, 'users selected, IDs:', assigneeIds)
     setCurrentActivity({ ...currentActivity, assignee_ids: assigneeIds })
   }
 
@@ -1010,19 +1008,7 @@ function ProjectRegisterContent() {
         church_department_id: formData.church_department_id,
       }
 
-      // DEBUG: Log project owner data before mutation
-      console.log('🔍 Project Creation Debug BEFORE MUTATION:', {
-        title: formData.title,
-        responsible_id: formData.responsible_id,
-        owner_id: variables.owner_id,
-        responsibleUser: users.find(u => u.id === formData.responsible_id),
-        hasOwner: !!formData.responsible_id,
-        isOwnerIdValid: typeof variables.owner_id === 'string' && variables.owner_id.length > 0,
-        totalUsers: users.length,
-        institutionId: institutionId,
-      })
-      
-      console.log('📤 FULL VARIABLES BEING SENT TO BACKEND:', JSON.stringify(variables, null, 2))
+
 
       // Add event data if registering as event
       if (formData.register_as_event && formData.event) {
@@ -1039,19 +1025,6 @@ function ProjectRegisterContent() {
 
       // Execute mutation
       const result = await createProjectMutation({ variables })
-
-      // DEBUG: Log mutation result
-      console.log('✅ Project Creation Success AFTER MUTATION:', {
-        fullResult: result,
-        projectId: result?.data?.createProject?.id,
-        projectTitle: result?.data?.createProject?.title,
-        ownerId: result?.data?.createProject?.owner_id,
-        variablesSentToBackend: {
-          owner_id: variables.owner_id,
-          title: variables.title,
-          responsible_id: formData.responsible_id
-        }
-      })
 
       toast.dismiss(loadingToast)
 

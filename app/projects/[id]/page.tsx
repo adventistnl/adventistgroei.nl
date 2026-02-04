@@ -192,15 +192,7 @@ export default function ProjectDetailsPage() {
     skip: !projectId,
     fetchPolicy: 'network-only', // Sempre buscar do servidor para garantir dados atualizados
     onCompleted: (data) => {
-      console.log('✅ [Project Query] Data loaded from API:', {
-        projectId: data?.project?.id,
-        title: data?.project?.title,
-        church_id: data?.project?.Church?.id,
-        church_department_id: data?.project?.church_department_id,
-        church_department: data?.project?.church_department,
-        hasChurchDepartment: !!data?.project?.church_department,
-        fullProject: data?.project
-      })
+
       toast.success(t('toasts.projectDetailsLoaded'), {
         duration: 3000
       })
@@ -218,9 +210,6 @@ export default function ProjectDetailsPage() {
     variables: { institution_id: institutionIdForUsers },
     skip: !institutionIdForUsers,
     onCompleted: (data) => {
-      console.log('Users loaded:', data.users)
-      console.log('Institution ID used:', institutionIdForUsers)
-      console.log('Source:', projectData?.project?.institution_id ? 'project' : currentInstitutionData?.id ? 'context' : 'user')
     },
     onError: (error) => {
       console.error('Error loading users:', error)
@@ -237,17 +226,6 @@ export default function ProjectDetailsPage() {
     role: user.role || 'Member'
   }))
 
-  // DEBUG: Monitor KPIs and Budget
-  useEffect(() => {
-    if (projectData?.project?.kpis) {
-      console.log('Project KPIs:', {
-        kpis: projectData.project.kpis,
-        subsidizedBudget: projectData.project.kpis.subsidizedBudget,
-        budget: projectData.project.budget,
-        raw: projectData.project
-      })
-    }
-  }, [projectData])
 
   // Batch update mutation
   const [batchUpdateActivities, { loading: batchUpdateLoading }] = useMutation(BATCH_UPDATE_PROJECT_ACTIVITIES, {
@@ -336,14 +314,14 @@ export default function ProjectDetailsPage() {
       refetchProject()
     },
     onError: (error) => {
-      console.log('Page Subsidy Error (Full):', JSON.stringify(error, null, 2));
+
       let ext = (error.graphQLErrors?.[0]?.extensions as any);
       if (!ext && (error.networkError as any)?.result?.errors?.[0]?.extensions) {
         ext = (error.networkError as any).result.errors[0].extensions;
       }
-      console.log('❌ Page Subsidy Error (Extensions):', ext);
+  
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
-      console.log('❌ Extracted Error Code:', errorCode);
+
       if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
           toast.error(t('toasts.documentsPending') || "All documents must be validated first", { duration: 5000 });
       } else {
@@ -390,19 +368,7 @@ export default function ProjectDetailsPage() {
 
   // Transform backend project to ProjectTableData format
   const transformProjectData = (backendProject: any): ProjectTableData => {
-    // DEBUG: Log backend project transformation
-    console.log('🔧 Transforming Project Data:', {
-      projectId: backendProject.id,
-      title: backendProject.title,
-      church_id: backendProject.Church?.id || backendProject.department?.church?.id,
-      church_department_id: backendProject.church_department_id,
-      church_department: backendProject.church_department,
-      hasChurchDepartment: !!backendProject.church_department,
-      owner: backendProject.owner,
-      owner_id: backendProject.owner_id,
-      hasOwnerObject: !!backendProject.owner,
-      hasOwnerId: !!backendProject.owner_id
-    })
+
 
     return {
       id: backendProject.id,
@@ -806,9 +772,6 @@ export default function ProjectDetailsPage() {
 
   const handleSelectionChange = useCallback((activities: ProjectActivityData[]) => {
     setSelectedActivities(activities)
-    if (activities.length > 0) {
-      console.log(`${activities.length} atividade(s) selecionada(s):`, activities)
-    }
   }, [])
 
   const handleBatchEdit = useCallback(async () => {
@@ -864,7 +827,6 @@ export default function ProjectDetailsPage() {
       variables.is_subsidized = batchEditData.is_subsidized
     }
 
-    console.log('🔄 Batch update variables:', variables)
 
     try {
       await batchUpdateActivities({ variables })
@@ -906,13 +868,11 @@ export default function ProjectDetailsPage() {
       return
     }
 
-    console.log('🔵 Abrindo modal de subsídio com', selectedActivities.length, 'atividades:', selectedActivities)
     setIsRequestSubsidyModalOpen(true)
   }, [selectedActivities, activityHasSubsidy])
 
   const handleSubsidyRequestSubmit = async (data: SubsidyRequestFormData): Promise<string | void> => {
     try {
-      console.log('📋 Submitting subsidy request:', data)
 
       // Transform items to match backend expected format
       const subsidyItems = data.items.map(item => {
@@ -949,14 +909,13 @@ export default function ProjectDetailsPage() {
       const createdSubsidyId = result.data?.createSubsidyRequest?.id
 
       if (createdSubsidyId) {
-        console.log('Subsidy request created with ID:', createdSubsidyId)
-        return createdSubsidyId // Return ID so modal can upload files
+
+        return createdSubsidyId 
       }
 
-      console.log('Subsidy request created successfully')
     } catch (error) {
-      console.error('Error creating subsidy request:', error)
-      throw error // Re-throw so modal can handle error
+ 
+      throw error 
     }
   }
 
@@ -967,7 +926,6 @@ export default function ProjectDetailsPage() {
   }, [selectedActivities])
 
   const handleBatchExport = useCallback(() => {
-    console.log('Export activities:', selectedActivities)
     toast.success(`📊 Exportando ${selectedActivities.length} atividade(s)...`)
   }, [selectedActivities])
 
@@ -976,14 +934,12 @@ export default function ProjectDetailsPage() {
   const handleEditSubsidyCard = (id: string) => {
     const subsidy = subsidyRequests.find((s: SubsidyRequestCardData) => s.id === id)
     if (subsidy) {
-      console.log('📝 Edit subsidy card:', subsidy.title)
     }
   }
 
   // Handler to update a subsidy request
   const handleUpdateSubsidyCard = async (id: string, data: SubsidyRequestFormData) => {
     try {
-      console.log('📋 Updating subsidy request:', { id, data })
 
       // Transform items to match backend expected format
       const subsidyItems = data.items.map(item => {
@@ -1015,7 +971,6 @@ export default function ProjectDetailsPage() {
         }
       })
 
-      console.log('Subsidy request updated successfully')
     } catch (error) {
       console.error('Error updating subsidy request:', error)
       throw error
@@ -1526,8 +1481,6 @@ export default function ProjectDetailsPage() {
       if (assignee_ids !== undefined) {
         input.assignee_ids = assignee_ids
       }
-
-      console.log('🚀 Sending update input:', JSON.stringify(input, null, 2))
 
       await updateProjectActivity({
         variables: { input }

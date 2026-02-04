@@ -75,15 +75,11 @@ export function InstitutionLeadersCard({
   useEffect(() => {
     console.group('🔍 [InstitutionLeadersCard] DEBUG - Input Data Validation')
     
-    // 1. Dados brutos recebidos
-    console.log('📥 [Input] Total Users Received:', users.length)
-    console.log('📥 [Input] Filtered by Year:', filteredUsersByYear.length)
-    console.log('📥 [Input] Selected Year:', selectedYear)
-    console.log('📥 [Input] Institution Name:', institutionName)
+
     
     // 2. Usuários ativos
     const activeUsers = filteredUsersByYear.filter(u => !u.is_deleted)
-    console.log('✅ [Users] Active Users:', activeUsers.length, '/', filteredUsersByYear.length)
+
     
     if (filteredUsersByYear.length > 0) {
       console.table(filteredUsersByYear.slice(0, 5).map(u => ({
@@ -124,12 +120,11 @@ export function InstitutionLeadersCard({
       'institutional_manager'
     ])
     
-    console.log('👑 [Leadership Roles] Defined:', Array.from(leadershipRoles))
+ 
     
     // 2. Filtrar usuários ativos (já filtrados por ano)
     const activeUsers = filteredUsersByYear.filter(user => !user.is_deleted)
-    console.log('📊 [Active Users] Count:', activeUsers.length)
-    console.log('📊 [Selected Year]:', selectedYear)
+
     
     // 3. Identificar líderes: usuários com pelo menos um role de liderança
     const institutionLeaders = activeUsers
@@ -140,9 +135,6 @@ export function InstitutionLeadersCard({
         )
         
         if (userLeadershipRoles.length > 0) {
-          console.log(`✅ [Leader Found] "${user.name}" with ${userLeadershipRoles.length} leadership role(s):`, 
-            userLeadershipRoles.map(r => r.role.key_code).join(', ')
-          )
           
           return {
             user,
@@ -155,7 +147,6 @@ export function InstitutionLeadersCard({
       .filter((item): item is NonNullable<typeof item> => item !== null)
       .sort((a, b) => a.user.name.localeCompare(b.user.name))
     
-    console.log('📊 [Result] Total institutional leaders found:', institutionLeaders.length)
     
     if (institutionLeaders.length > 0) {
       console.table(institutionLeaders.map(l => ({

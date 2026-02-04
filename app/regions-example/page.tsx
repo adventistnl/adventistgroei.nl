@@ -160,7 +160,6 @@ export default function RegionsPage() {
   // Handler para clique em região do mapa
   const handleMapRegionClick = (region: MapRegionData) => {
     toast.success(`Region selected: ${region.name}`)
-    console.log('Region clicked:', region)
   }
 
   // Marcadores para o mapa MapLibre
@@ -225,12 +224,10 @@ export default function RegionsPage() {
   // Handlers para interação com províncias
   const handleProvinceClick = (provinceCode: string, regionName?: string) => {
     toast.success(`Província clicada: ${provinceCode}${regionName ? ` (${regionName})` : ''}`)
-    console.log('Province clicked:', { provinceCode, regionName })
   }
 
   const handleProvinceHover = (provinceCode: string | null, regionName?: string) => {
     if (provinceCode) {
-      console.log('Province hover:', { provinceCode, regionName })
     }
   }
 
@@ -516,10 +513,10 @@ export default function RegionsPage() {
               onProvinceClick={handleProvinceClick}
               onProvinceHover={handleProvinceHover}
               onClick={(e) => {
-                console.log('Map clicked:', e.lngLat);
+
               }}
               onLoad={(map) => {
-                console.log('MapLibre with regions loaded successfully');
+
               }}
             />
           </CardContent>

@@ -118,11 +118,6 @@ export default function ProfilePage() {
     return profile
   }, [user, currentInstitutionData, t])
 
-  // Função para refetch - agora usa o contexto de instituição
-  const refetchUser = async () => {
-    // O refetch será automático quando o InstitutionContext atualizar
-    console.log("♻️ User data will be refreshed via InstitutionContext")
-  }
 
   const {
     editingSection,
@@ -133,7 +128,7 @@ export default function ProfilePage() {
     handleCancel,
     handleFieldChange,
     updateLoading,
-  } = useProfileEditor(userProfile, refetchUser)
+  } = useProfileEditor(userProfile)
 
 
 

@@ -629,28 +629,14 @@ export default function ChurchesPage() {
     
     const stats = calculateAutoLinkStats(enrichedChurches);
     
-    console.log('\n🔗 ===== CHURCH-REGION AUTO-LINKING STATS =====');
-    console.log(`Total churches: ${stats.total}`);
-    console.log(`✅ Original links: ${stats.withOriginalLink}`);
-    console.log(`🤖 Auto-linked: ${stats.withAutoLink}`);
-    console.log(`   ├─ High confidence (100%): ${stats.withHighConfidence}`);
-    console.log(`   └─ Medium confidence (70%): ${stats.withMediumConfidence}`);
-    console.log(`❌ Without region: ${stats.withoutLink}`);
-    console.log('='.repeat(50));
-    
+
     // List auto-linked churches
     if (stats.withAutoLink > 0) {
-      console.log('\n🤖 Auto-linked Churches:');
+
       enrichedChurches
         .filter(c => c.has_auto_link)
-        .forEach((c, idx) => {
-          console.log(`  ${idx + 1}. ${c.name}`);
-          console.log(`     → Region: ${c.suggested_region?.name}`);
-          console.log(`     → Confidence: ${c.link_confidence}%`);
-          console.log(`     → Location: ${c.contact?.city}, ${c.contact?.state}`);
-        });
     }
-    console.log('\n='.repeat(50) + '\n');
+
   }, [enrichedChurches]);
 
   /**
