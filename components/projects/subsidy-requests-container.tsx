@@ -284,16 +284,21 @@ export function SubsidyRequestsContainer({
         ) : (
           <div className="relative flex-1 overflow-hidden">
             <div className="h-full max-h-[280px] flex flex-col gap-3 overflow-y-auto pr-2">
-              {displaySubsidies.map((subsidy) => (
-                <SubsidyRequestCard
-                  key={subsidy.id}
-                  data={subsidy}
-                  onEdit={handleEditSubsidy}
-                  onDelete={onDeleteSubsidy}
-                  onView={handleViewSubsidy}
-                  onDuplicate={onDuplicateSubsidy}
-                />
-              ))}
+              {displaySubsidies.map((subsidy) => {
+                // Não mostrar edit/delete se o status for "approved" ou "closed"
+                const isApprovedOrClosed = subsidy.status === "approved" || subsidy.status === "closed"
+                
+                return (
+                  <SubsidyRequestCard
+                    key={subsidy.id}
+                    data={subsidy}
+                    onEdit={isApprovedOrClosed ? undefined : handleEditSubsidy}
+                    onDelete={isApprovedOrClosed ? undefined : onDeleteSubsidy}
+                    onView={handleViewSubsidy}
+                    onDuplicate={onDuplicateSubsidy}
+                  />
+                )
+              })}
             </div>
           </div>
         )}

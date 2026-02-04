@@ -166,7 +166,7 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
                     </div>
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent className="w-80">
+                <SelectContent className="w-80 bg-sidebar">
                   {institutions.map((institution) => (
                     <SelectItem 
                       key={institution.id} 

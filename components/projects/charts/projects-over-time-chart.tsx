@@ -346,7 +346,67 @@ export function ProjectsOverTimeChart({
       filtered: filtered
     })
     
-    // Fill missing days with zeros
+    // Para períodos >= 90 dias, agrupar por mês
+    const shouldGroupByMonth = timeRange === "90d" || timeRange === "180d" || timeRange === "365d"
+    
+    if (shouldGroupByMonth) {
+      // Agrupar dados por mês
+      const monthlyData = new Map<string, any>()
+      
+      filtered.forEach(item => {
+        const date = new Date(item.date)
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+        
+        if (!monthlyData.has(monthKey)) {
+          const monthData: any = { date: `${monthKey}-15` } // Usar dia 15 para melhor centralização
+          activeGroups.forEach(group => {
+            monthData[group.name.toLowerCase().replace(/\s+/g, '_')] = 0
+          })
+          monthlyData.set(monthKey, monthData)
+        }
+        
+        const monthData = monthlyData.get(monthKey)!
+        activeGroups.forEach(group => {
+          const key = group.name.toLowerCase().replace(/\s+/g, '_')
+          monthData[key] += (item[key] || 0)
+        })
+      })
+      
+      // Calcular meses a partir da data final
+      const monthsToShow = timeRange === "90d" ? 3 : timeRange === "180d" ? 6 : 12
+      const allMonths: any[] = []
+      
+      // Começar do mês da endDate e voltar X meses
+      const currentMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 15)
+      
+      for (let i = monthsToShow - 1; i >= 0; i--) {
+        const targetDate = new Date(endDate.getFullYear(), endDate.getMonth() - i, 15)
+        const monthKey = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`
+        const dateKey = `${monthKey}-15`
+        
+        if (monthlyData.has(monthKey)) {
+          allMonths.push(monthlyData.get(monthKey))
+        } else {
+          const emptyMonth: any = { date: dateKey }
+          activeGroups.forEach(group => {
+            emptyMonth[group.name.toLowerCase().replace(/\s+/g, '_')] = 0
+          })
+          allMonths.push(emptyMonth)
+        }
+      }
+      
+      console.log('📊 [ProjectsOverTimeChart] Monthly grouped data:', {
+        timeRange,
+        monthsToShow,
+        totalMonths: allMonths.length,
+        monthNames: allMonths.map(m => new Date(m.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })),
+        sampleData: allMonths.slice(0, 3)
+      })
+      
+      return allMonths
+    }
+    
+    // Fill missing days with zeros (para períodos < 90 dias)
     const dataMap = new Map(filtered.map(item => [item.date, item]))
     const allDays: any[] = []
     const currentDate = new Date(startDate)
@@ -585,7 +645,7 @@ export function ProjectsOverTimeChart({
               >
                 <SelectValue placeholder={t.charts.last3Months} />
               </SelectTrigger>
-              <SelectContent className="rounded-xl">
+              <SelectContent className="rounded-xl bg-sidebar">
                 <SelectItem value="7d" className="rounded-lg">
                   {(t.charts as any).last7Days || "Last 7 days"}
                 </SelectItem>
@@ -639,13 +699,13 @@ export function ProjectsOverTimeChart({
                 tickFormatter={(value) => {
                   const date = new Date(value)
                   // Para períodos curtos (7d, 30d), mostrar dia/mês
-                  // Para períodos longos (90d+), mostrar apenas mês
                   if (timeRange === "7d" || timeRange === "30d") {
                     return date.toLocaleDateString(i18n.language === 'pt' ? 'pt-BR' : i18n.language === 'nl' ? 'nl-NL' : 'en-US', {
                       day: "numeric",
                       month: "short",
                     })
                   }
+                  // Para períodos longos (90d+), mostrar apenas mês
                   return date.toLocaleDateString(i18n.language === 'pt' ? 'pt-BR' : i18n.language === 'nl' ? 'nl-NL' : 'en-US', {
                     month: "short",
                     year: timeRange === "365d" ? "2-digit" : undefined,
@@ -706,13 +766,13 @@ export function ProjectsOverTimeChart({
                 tickFormatter={(value) => {
                   const date = new Date(value)
                   // Para períodos curtos (7d, 30d), mostrar dia/mês
-                  // Para períodos longos (90d+), mostrar apenas mês
                   if (timeRange === "7d" || timeRange === "30d") {
                     return date.toLocaleDateString(i18n.language === 'pt' ? 'pt-BR' : i18n.language === 'nl' ? 'nl-NL' : 'en-US', {
                       day: "numeric",
                       month: "short",
                     })
                   }
+                  // Para períodos longos (90d+), mostrar apenas mês
                   return date.toLocaleDateString(i18n.language === 'pt' ? 'pt-BR' : i18n.language === 'nl' ? 'nl-NL' : 'en-US', {
                     month: "short",
                     year: timeRange === "365d" ? "2-digit" : undefined,

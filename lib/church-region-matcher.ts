@@ -24,6 +24,8 @@ export interface ChurchLocation {
   } | null
   region_id?: string | null
   region?: any
+  zip_code?: string | null
+  house_number?: number | null
 }
 
 export interface MatchResult {
@@ -92,6 +94,86 @@ const PROVINCE_NORMALIZATION_MAP: Record<string, string> = {
   'ut': 'UT',
   'zl': 'ZL',
   'zh': 'ZH',
+}
+
+/**
+ * Extrai código de província do ZIP code holandês
+ * 
+ * @param zipCode - ZIP code formato "3015 GD" ou "3015GD"
+ * @returns Código da província (ZH, NH, UT, etc.) ou null se inválido
+ * 
+ * @example
+ * getProvinceFromZipCode("3015 GD") // "ZH" (Rotterdam, Zuid-Holland)
+ * getProvinceFromZipCode("8242 PN") // "FL" (Lelystad, Flevoland)
+ * getProvinceFromZipCode("1012 AB") // "NH" (Amsterdam, Noord-Holland)
+ */
+export function getProvinceFromZipCode(zipCode: string | null | undefined): string | null {
+  if (!zipCode) return null;
+  
+  // Limpar e normalizar
+  const clean = zipCode.replace(/\s+/g, '').toUpperCase();
+  
+  // Validar formato: 4 dígitos + 2 letras
+  const match = clean.match(/^(\d{4})([A-Z]{2})$/);
+  if (!match) return null;
+  
+  const firstTwoDigits = clean.substring(0, 2);
+  
+  // Mapa de ranges de ZIP code por província
+  const zipToProvince: Record<string, string> = {
+    // Noord-Holland (Amsterdam region: 10xx-12xx, 13xx-19xx)
+    '10': 'NH', '11': 'NH', '12': 'NH', '13': 'NH', '14': 'NH', 
+    '15': 'NH', '16': 'NH', '17': 'NH', '18': 'NH', '19': 'NH',
+    
+    // Zuid-Holland (Den Haag: 25xx-27xx, Rotterdam: 30xx-32xx, Leiden/Delft: 23xx-24xx, 26xx)
+    '23': 'ZH', '24': 'ZH', '25': 'ZH', '26': 'ZH', '27': 'ZH',
+    '28': 'ZH', '29': 'ZH', '30': 'ZH', '31': 'ZH', '32': 'ZH',
+    '33': 'ZH', '34': 'ZH',
+    
+    // Utrecht (35xx-36xx)
+    '35': 'UT', '36': 'UT',
+    
+    // Zeeland (43xx-45xx)
+    '43': 'ZL', '44': 'ZL', '45': 'ZL', '46': 'ZL',
+    
+    // Noord-Brabant (47xx-54xx)
+    '47': 'NB', '48': 'NB', '49': 'NB', '50': 'NB', '51': 'NB', 
+    '52': 'NB', '53': 'NB', '54': 'NB', '55': 'NB',
+    
+    // Limburg (59xx-64xx)
+    '59': 'LI', '60': 'LI', '61': 'LI', '62': 'LI', '63': 'LI', '64': 'LI',
+    
+    // Gelderland (65xx-73xx)
+    '65': 'GE', '66': 'GE', '67': 'GE', '68': 'GE', '69': 'GE',
+    '70': 'GE', '71': 'GE', '72': 'GE', '73': 'GE',
+    
+    // Overijssel (74xx-77xx, 80xx-81xx, 84xx) - Excluindo 82-83 que são Flevoland
+    '74': 'OV', '75': 'OV', '76': 'OV', '77': 'OV',
+    '80': 'OV', '81': 'OV', '84': 'OV',
+    
+    // Flevoland (13xx para Almere, 82xx-83xx para Lelystad/Dronten)
+    '82': 'FL', '83': 'FL',
+    
+    // Drenthe (78xx-79xx, 94xx-95xx)
+    '78': 'DR', '79': 'DR', '94': 'DR', '95': 'DR',
+    
+    // Friesland (88xx-91xx)
+    '88': 'FR', '89': 'FR', '90': 'FR', '91': 'FR',
+    
+    // Groningen (96xx-99xx)
+    '96': 'GR', '97': 'GR', '98': 'GR', '99': 'GR',
+  };
+  
+  // Casos especiais
+  // Almere (1300-1399) é Flevoland, não Noord-Holland
+  if (firstTwoDigits === '13' && parseInt(clean.substring(2, 4)) <= 99) {
+    const fourDigits = clean.substring(0, 4);
+    if (fourDigits >= '1300' && fourDigits <= '1399') {
+      return 'FL'; // Almere = Flevoland
+    }
+  }
+  
+  return zipToProvince[firstTwoDigits] || null;
 }
 
 // ============================================================================
@@ -201,6 +283,48 @@ export function findMatchingRegion(
   
   const churchCity = church.contact.city
   const churchProvince = church.contact.state // state = província
+  
+  // ⚠️  VALIDAÇÃO CRUZADA: ZIP CODE vs CONTACT.STATE
+  const zipCodeProvince = getProvinceFromZipCode(church.zip_code);
+  const normalizedContactProvince = normalizeProvinceCode(churchProvince);
+  
+  // Detectar conflito: ZIP code e contact.state apontam para províncias diferentes
+  if (zipCodeProvince && normalizedContactProvince && zipCodeProvince !== normalizedContactProvince) {
+    console.warn(`\n⚠️  [CONFLICT DETECTED] Church: ${church.name}`);
+    console.warn(`   ZIP Code: ${church.zip_code} → Province: ${zipCodeProvince}`);
+    console.warn(`   Contact State: ${churchProvince} → Province: ${normalizedContactProvince}`);
+    console.warn(`   ⚡ Using ZIP code province as SOURCE OF TRUTH\n`);
+    
+    // PRIORIZAR ZIP CODE (mais confiável que contact.state)
+    // Procurar região com base no ZIP code
+    for (const region of regions) {
+      if (region.is_deleted) continue;
+      if (!region.territory) continue;
+      
+      try {
+        const territoryParsed = typeof region.territory === 'string' 
+          ? JSON.parse(region.territory) 
+          : region.territory;
+        
+        if (!territoryParsed?.NL) continue;
+        
+        const territoryProvinces = Object.keys(territoryParsed.NL);
+        
+        // Validar se província do ZIP code está no territory
+        if (territoryProvinces.includes(zipCodeProvince)) {
+          console.log(`   ✅ Match found via ZIP code: ${region.name}`);
+          return {
+            region,
+            confidence: 80, // Confidence alta (ZIP code-based)
+            matchType: 'province',
+            reason: `ZIP code province match (overriding contact.state): ${zipCodeProvince}`
+          };
+        }
+      } catch (error) {
+        continue;
+      }
+    }
+  }
   
   if (!churchProvince) {
     return { 
@@ -426,6 +550,7 @@ export const ChurchRegionMatcher = {
   // Funções de normalização
   normalizeProvinceCode,
   normalizeCityCode,
+  getProvinceFromZipCode,
   
   // Matching
   findMatchingRegion,
