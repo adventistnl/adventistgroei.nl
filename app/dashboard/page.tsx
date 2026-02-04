@@ -1233,7 +1233,7 @@ export default function DashboardPage() {
                 colSpan: "col-span-12 lg:col-span-8",
               },
               {
-                id: "projects-over-time-chart",
+                id: "budget-overview-card",
                 component: (
                   <>
                     { currentInstitutionData && (

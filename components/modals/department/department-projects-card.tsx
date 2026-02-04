@@ -26,6 +26,7 @@ import { useRouter } from "next/navigation"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionDeniedOverlay } from "@/components/shared/permission-denied-overlay"
+import { PrivacyWrapper } from "@/components/shared/privacy-wrapper"
 
 interface Project {
   id: string
