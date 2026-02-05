@@ -147,6 +147,11 @@ export function ViewSubsidyModal({
     validating: receiptsValidating,
   } = useSubsidyReceipts({
     subsidyRequestId: subsidy?.id,
+    onHistoryUpdate: async () => {
+      if (typeof refetchHistory === 'function') {
+        await refetchHistory()
+      }
+    },
   })
 
   // Mutations for updating subsidy status
@@ -602,7 +607,7 @@ export function ViewSubsidyModal({
         isNew: false
       }
     })
-  }, [historyData, t])
+  }, [historyData, t, modalT, i18n.language])
 
   // Sync messages with statusHistory from server
   // This ensures messages are updated after refetch from mutations
