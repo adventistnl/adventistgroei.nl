@@ -48,42 +48,15 @@ export function ChurchesByRegionChart({ churches, regions, data, loading }: Chur
 
   const id = "churches-by-region"
 
-  // DEBUG: Validate API data
-  React.useEffect(() => {
-    console.log('🔍 [ChurchesByRegionChart] API DATA VALIDATION:', {
-      receivedData: {
-        churchesCount: churches?.length || 0,
-        regionsCount: regions?.length || 0,
-        legacyDataCount: data?.length || 0,
-        churchesIsArray: Array.isArray(churches),
-        regionsIsArray: Array.isArray(regions),
-      },
-      churchesSample: churches?.slice(0, 3).map(c => ({
-        id: c?.id,
-        name: c?.name,
-        region_id: c?.region_id,
-        region_name: c?.region?.name,
-        is_deleted: c?.is_deleted
-      })),
-      regionsSample: regions?.slice(0, 3).map(r => ({
-        id: r?.id,
-        name: r?.name,
-        churches_count: r?.churches?.length || 0
-      })),
-      loading,
-    })
-  }, [churches, regions, data, loading])
 
   // Process churches from API to count by region
   const processedData = React.useMemo(() => {
-    console.log('📊 [ChurchesByRegionChart] Processing churches data')
     
     // Use churches from API if available, otherwise fall back to legacy data
     const sourceChurches = churches || []
     const sourceRegions = regions || []
     
     if (sourceChurches.length === 0 && data && data.length > 0) {
-      console.log('📊 [ChurchesByRegionChart] Using legacy data format')
       return data.map((item, index) => ({
         ...item,
         fill: getProjectColor(index)
@@ -92,7 +65,6 @@ export function ChurchesByRegionChart({ churches, regions, data, loading }: Chur
     
     // Validate regions data
     if (sourceRegions.length === 0) {
-      console.warn('⚠️ [ChurchesByRegionChart] No regions data available')
       return []
     }
     
@@ -107,15 +79,6 @@ export function ChurchesByRegionChart({ churches, regions, data, loading }: Chur
     
     // Calculate auto-linking statistics
     const autoLinkStats = calculateAutoLinkStats(enrichedChurches)
-    
-    console.log('🔗 [ChurchesByRegionChart] AUTO-LINKING STATISTICS:', {
-      total: autoLinkStats.total,
-      originalLinks: autoLinkStats.withOriginalLink,
-      autoLinked: autoLinkStats.withAutoLink,
-      highConfidence: autoLinkStats.withHighConfidence,
-      mediumConfidence: autoLinkStats.withMediumConfidence,
-      withoutLink: autoLinkStats.withoutLink
-    })
     
     // Count churches by region using enriched data
     const regionCounts = new Map<string, { id: string; name: string; count: number; originalCount: number; autoLinkedCount: number }>()
@@ -205,20 +168,6 @@ export function ChurchesByRegionChart({ churches, regions, data, loading }: Chur
         fill: "#e5e7eb" // Grey color for No Region
       })
     }
-    
-    console.log('📊 [ChurchesByRegionChart] Processed data with auto-linking:', {
-      totalRegions: result.length,
-      regionsWithChurches: result.filter(r => r.region !== 'no_region').length,
-      churchesWithoutRegion,
-      totalChurches: result.reduce((sum, r) => sum + r.churches, 0),
-      autoLinkedTotal: result.reduce((sum, r) => sum + r.autoLinkedCount, 0),
-      regionsList: result.map(r => ({ 
-        name: r.name, 
-        total: r.churches,
-        original: r.originalCount,
-        autoLinked: r.autoLinkedCount
-      }))
-    })
     
     return result
   }, [churches, regions, data, t])
