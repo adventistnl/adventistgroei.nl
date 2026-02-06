@@ -69,10 +69,6 @@ export function ProjectsOverTimeChart({
     if (groupingMode === 'departments') {
       // Filter valid departments
       if (!departments || !Array.isArray(departments)) {
-        console.warn('⚠️ [ProjectsOverTimeChart] departments is not a valid array:', {
-          departmentsType: typeof departments,
-          departmentsValue: departments
-        })
         return []
       }
       
@@ -84,20 +80,10 @@ export function ProjectsOverTimeChart({
     } else if (groupingMode === 'institutions') {
       // Filter valid institutions
       if (!institutions || !Array.isArray(institutions)) {
-        console.warn('⚠️ [ProjectsOverTimeChart] institutions is not a valid array:', {
-          institutionsType: typeof institutions,
-          institutionsValue: institutions
-        })
         return []
       }
       
       const filtered = institutions.filter(inst => inst && inst.id && inst.name)
-      
-      console.log('📊 [ProjectsOverTimeChart] Institutions received (grouping by institutions):', {
-        total: institutions.length,
-        filtered: filtered.length,
-        institutionsList: filtered.map(i => ({ id: i.id, name: i.name }))
-      })
       
       return filtered
     }
@@ -110,15 +96,6 @@ export function ProjectsOverTimeChart({
 
   // Generate dynamic chart config based on active groups (departments or institutions)
   const chartConfig: ChartConfig = React.useMemo(() => {
-    console.log('📊 [ProjectsOverTimeChart] Generating chartConfig with getProjectColor:', {
-      groupingMode,
-      groupsCount: activeGroups.length,
-      groups: activeGroups.map((g, idx) => ({
-        name: g.name,
-        color: getProjectColor(idx)
-      }))
-    })
-
     const config: ChartConfig = {
       totalProjects: {
         label: t.charts.projects,
@@ -138,20 +115,6 @@ export function ProjectsOverTimeChart({
 
   // Transform data to show dates on X-axis and groups (departments/institutions) as separate areas
   const chartData = React.useMemo(() => {
-    console.log('📊 [ProjectsOverTimeChart] Data received:', {
-      groupingMode,
-      totalProjects: data.length,
-      selectedYear,
-      sampleProjects: data.slice(0, 3).map(p => ({
-        id: p.id,
-        title: p.title,
-        institution_id: p.institution_id,
-        department_id: p.department_id,
-        created_at: p.created_at,
-        start_at: p.start_at
-      }))
-    })
-    
     // Filter projects based on grouping mode and selected year
     let filteredProjects: any[]
     
@@ -171,16 +134,6 @@ export function ProjectsOverTimeChart({
         return true
       })
       
-      console.log('📊 [ProjectsOverTimeChart] Department projects filtered:', {
-        total: filteredProjects.length,
-        selectedYear,
-        byDepartment: filteredProjects.reduce((acc, p) => {
-          const dept = activeGroups.find(d => d.id === p.department_id)
-          const deptName = dept?.name || 'Unknown'
-          acc[deptName] = (acc[deptName] || 0) + 1
-          return acc
-        }, {} as Record<string, number>)
-      })
     } else if (groupingMode === 'institutions') {
       // Filter projects by institution_id and selected year
       filteredProjects = data.filter(project => {
@@ -195,17 +148,6 @@ export function ProjectsOverTimeChart({
         }
         
         return true
-      })
-      
-      console.log('📊 [ProjectsOverTimeChart] Institution projects filtered:', {
-        total: filteredProjects.length,
-        selectedYear,
-        byInstitution: filteredProjects.reduce((acc, p) => {
-          const inst = activeGroups.find(i => i.id === p.institution_id)
-          const instName = inst?.name || 'Unknown'
-          acc[instName] = (acc[instName] || 0) + 1
-          return acc
-        }, {} as Record<string, number>)
       })
     } else {
       filteredProjects = []
@@ -247,16 +189,6 @@ export function ProjectsOverTimeChart({
     const sortedData = Array.from(dailyCounts.values()).sort((a, b) => 
       new Date(a.date).getTime() - new Date(b.date).getTime()
     )
-    
-    console.log('📊 [ProjectsOverTimeChart] Chart data transformed:', {
-      groupingMode,
-      totalDays: sortedData.length,
-      dateRange: sortedData.length > 0 ? {
-        start: sortedData[0]?.date,
-        end: sortedData[sortedData.length - 1]?.date
-      } : null,
-      sampleData: sortedData.slice(0, 3)
-    })
     
     return sortedData
   }, [data, activeGroups, groupingMode, selectedYear])
@@ -323,28 +255,15 @@ export function ProjectsOverTimeChart({
     const startDay = String(startDate.getDate()).padStart(2, '0')
     const startDateStr = `${startYear}-${startMonth}-${startDay}`
     
-    console.log('📊 [ProjectsOverTimeChart] Time range setup:', {
-      timeRange,
-      selectedYear,
-      endDateStr,
-      startDateStr,
-      chartDataDates: chartData.map(d => d.date)
-    })
     
     // Filter existing data within time range - using string comparison
     const filtered = chartData.filter(item => {
       const inRange = item.date >= startDateStr && item.date <= endDateStr
       if (!inRange) {
-        console.log(`📊 Excluding ${item.date} (not in range ${startDateStr} to ${endDateStr})`)
       }
       return inRange
     })
     
-    console.log('📊 [ProjectsOverTimeChart] After filter:', {
-      filteredCount: filtered.length,
-      filteredDates: filtered.map(d => d.date),
-      filtered: filtered
-    })
     
     // Para períodos >= 90 dias, agrupar por mês
     const shouldGroupByMonth = timeRange === "90d" || timeRange === "180d" || timeRange === "365d"
@@ -395,14 +314,6 @@ export function ProjectsOverTimeChart({
         }
       }
       
-      console.log('📊 [ProjectsOverTimeChart] Monthly grouped data:', {
-        timeRange,
-        monthsToShow,
-        totalMonths: allMonths.length,
-        monthNames: allMonths.map(m => new Date(m.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })),
-        sampleData: allMonths.slice(0, 3)
-      })
-      
       return allMonths
     }
     
@@ -437,12 +348,6 @@ export function ProjectsOverTimeChart({
       })
     })
     
-    console.log('📊 [ProjectsOverTimeChart] Final filtered data:', {
-      timeRange,
-      totalDays: allDays.length,
-      daysWithData: daysWithData.length,
-      sampleWithData: daysWithData.slice(0, 5)
-    })
     
     return allDays
   }, [chartData, timeRange, activeGroups, selectedYear])
@@ -466,14 +371,6 @@ export function ProjectsOverTimeChart({
     
     const totalProjects = Object.values(totals).reduce((sum, val) => sum + val, 0)
     
-    console.log('📊 [ProjectsOverTimeChart] Totals calculated:', {
-      groupingMode,
-      timeRange,
-      totals,
-      totalProjects,
-      filteredDataLength: filteredData.length,
-      sampleFilteredData: filteredData.slice(0, 3)
-    })
     
     return totals
   }, [filteredData, activeGroups, timeRange])

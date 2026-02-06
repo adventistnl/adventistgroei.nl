@@ -66,55 +66,14 @@ export function UsersByRoleChart({
   const [currentPage, setCurrentPage] = React.useState(1)
   const itemsPerPage = 5
 
-  // DEBUG: Validate API data
-  React.useEffect(() => {
-    console.log('🔍 [UsersByRoleChart] API DATA VALIDATION:', {
-      receivedData: {
-        usersCount: users?.length || 0,
-        legacyDataCount: data?.length || 0,
-        usersIsArray: Array.isArray(users),
-        dataIsArray: Array.isArray(data),
-        usersType: typeof users,
-        usersIsUndefined: users === undefined,
-        usersIsNull: users === null,
-      },
-      usersSample: users?.slice(0, 3).map(u => ({
-        id: u?.id,
-        name: u?.name,
-        user_roles: u?.user_roles?.map((ur: any) => ur?.role?.name),
-        user_roles_count: u?.user_roles?.length || 0,
-        is_deleted: u?.is_deleted
-      })),
-      usersWithRoles: users?.filter(u => u?.user_roles?.length > 0).length || 0,
-      usersWithoutRoles: users?.filter(u => !u?.user_roles || u?.user_roles?.length === 0).length || 0,
-      deletedUsers: users?.filter(u => u?.is_deleted).length || 0,
-      activeUsers: users?.filter(u => !u?.is_deleted).length || 0,
-      dataSample: data?.slice(0, 3),
-      loading,
-    })
-  }, [users, data, loading])
 
   // Process users from API to count by role
   const processedData = React.useMemo(() => {
-    console.log('📊 [UsersByRoleChart] Processing users data - START:', {
-      usersReceived: users?.length || 0,
-      usersType: typeof users,
-      usersIsArray: Array.isArray(users),
-      dataReceived: data?.length || 0,
-      selectedYear
-    })
     
     // Use users from API if available, otherwise fall back to legacy data
     const sourceData = users || []
     
-    console.log('📊 [UsersByRoleChart] Source data selected:', {
-      sourceLength: sourceData.length,
-      isFromUsers: !!users,
-      isFromData: !users && !!data
-    })
-    
     if (sourceData.length === 0 && data && data.length > 0) {
-      console.log('📊 [UsersByRoleChart] Using legacy data format')
       return data.map((item, index) => ({
         ...item,
         fill: getProjectColor(index)
@@ -122,7 +81,6 @@ export function UsersByRoleChart({
     }
     
     if (sourceData.length === 0) {
-      console.warn('⚠️ [UsersByRoleChart] NO DATA TO PROCESS - both users and data are empty')
       return []
     }
     
@@ -135,35 +93,16 @@ export function UsersByRoleChart({
         })
       : sourceData
     
-    console.log('📊 [UsersByRoleChart] Filtered by year:', {
-      selectedYear,
-      originalCount: sourceData.length,
-      filteredCount: filteredByYear.length
-    })
     
     // Count users by role
     const roleCounts = new Map<string, { role: string; count: number; label: string }>()
     
-    console.log('📊 [UsersByRoleChart] Processing users:', {
-      totalUsers: filteredByYear.length,
-      sampleUser: filteredByYear[0]
-    })
-    
     filteredByYear.forEach((user: any, index: number) => {
       if (user?.is_deleted) {
-        console.log(`⏭️ [UsersByRoleChart] Skipping deleted user ${index}:`, user?.name)
         return // Skip deleted users
       }
       
       const userRoles = user?.user_roles || []
-      
-      if (index < 3) {
-        console.log(`📊 [UsersByRoleChart] Processing user ${index}:`, {
-          name: user?.name,
-          rolesCount: userRoles.length,
-          roles: userRoles.map((ur: any) => ur?.role?.name || ur?.role?.key_code)
-        })
-      }
       
       if (userRoles.length === 0) {
         // User without role
@@ -196,13 +135,6 @@ export function UsersByRoleChart({
       fill: getProjectColor(index)
     }))
     
-    console.log('📊 [UsersByRoleChart] Processed data - FINAL:', {
-      totalRoles: result.length,
-      totalUsersInRoles: result.reduce((sum, r) => sum + r.count, 0),
-      roles: result.map(r => ({ role: r.role, label: r.label, count: r.count })),
-      selectedYear
-    })
-    
     return result
   }, [users, data, t, selectedYear])
 
@@ -224,15 +156,6 @@ export function UsersByRoleChart({
     const endIndex = Math.min(startIndex + itemsPerPage, total)
     const paginated = sorted.slice(startIndex, endIndex)
     
-    console.log('📊 [UsersByRoleChart] Filtered & Paginated data:', {
-      topN,
-      sortOrder,
-      currentPage,
-      totalItems: total,
-      totalPages: pages,
-      displayRange: `${startIndex + 1}-${endIndex}`,
-      items: paginated.map(r => ({ role: r.role, count: r.count }))
-    })
     
     return {
       chartData: paginated,

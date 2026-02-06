@@ -31,15 +31,6 @@ export function PrivacyProviderWithAuth({ children }: { children: React.ReactNod
     return mapAuthRoleToPrivacyRole(userKeyCodeRoles, auth?.user?.name, auth?.isLoading)
   }, [userKeyCodeRoles, auth?.user?.name, auth?.isLoading])
   
-  // 🔍 DEBUG: Log mapped role (only in development)
-  React.useEffect(() => {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('🔐 Privacy System:', {
-        userRoles: userKeyCodeRoles,
-        mappedTo: userRole
-      })
-    }
-  }, [userRole, userKeyCodeRoles])
 
   return (
     <PrivacyProvider userRole={userRole}>
@@ -73,9 +64,6 @@ function mapAuthRoleToPrivacyRole(
     // Only fallback to admin in non-production (development) to avoid leaking elevated access
     if (process.env.NODE_ENV !== 'production') {
       // Only show warning if auth is not currently loading (avoid false positives)
-      if (!isAuthLoading) {
-        console.warn('⚠️ No roles found, using admin as fallback (development mode)')
-      }
       return 'admin'
     }
 
@@ -151,9 +139,6 @@ function mapAuthRoleToPrivacyRole(
 
   // If no match found, default to 'user'
   if (!matchedRole) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn('⚠️ No matching role found, defaulting to "user"')
-    }
     return 'user'
   }
 
