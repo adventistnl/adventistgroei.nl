@@ -51,30 +51,6 @@ export function ChurchInfoSection({
 }: ChurchInfoSectionProps) {
   const { t } = useTranslation()
   const [openChurch, setOpenChurch] = useState(false)
-  
-  // Debug: Log when props change
-  useEffect(() => {
-    console.log("⛪ ChurchInfoSection received props:", { 
-      role, 
-      institution, 
-      church, 
-      churchName,
-      availableChurches: availableChurches.length,
-      availableChurchesData: availableChurches,
-      isEditing 
-    })
-    
-    // Debug específico para role
-    console.log("🎭 ROLE DEBUG:", {
-      role_value: role,
-      role_type: typeof role,
-      role_length: role?.length,
-      is_empty: !role || role === '',
-      translation_key: 'profile.church.no_role',
-      translation_value: t('profile.church.no_role')
-    })
-  }, [role, institution, church, churchName, availableChurches, isEditing, t])
-
   return (
     <ProfileSection
       icon={Building}
@@ -92,19 +68,19 @@ export function ChurchInfoSection({
           label={t('profile.church.role')}
           value={role || t('profile.church.no_role')}
           isEditing={false}
-          onChange={() => {}}
+          onChange={() => { }}
           disabled={true}
         />
-        
+
         {/* Institution - Read-only (bloqueado) */}
         <ProfileField
           label={t('profile.church.institution')}
           value={institution}
           isEditing={false}
-          onChange={() => {}}
+          onChange={() => { }}
           disabled={true}
         />
-        
+
         {/* Church - Editável com dropdown padrão do sistema */}
         <div className="space-y-2">
           <Label className="text-sm text-muted-foreground">
