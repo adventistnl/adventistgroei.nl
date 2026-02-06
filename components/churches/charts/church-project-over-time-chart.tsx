@@ -58,15 +58,6 @@ export function ChurchProjectOverTimeChart({
       church && church.id && church.name && !church.is_deleted
     )
     
-    console.log('📊 [ChurchProjectOverTimeChart] Active Churches:', {
-      total: churches.length,
-      filtered: filtered.length,
-      churchesList: filtered.map(c => ({ 
-        id: c.id, 
-        name: c.name
-      }))
-    })
-    
     return filtered
   }, [churches])
 
@@ -99,18 +90,6 @@ export function ChurchProjectOverTimeChart({
       }
       
       return false
-    })
-    
-    console.log('📊 [ChurchProjectOverTimeChart] Projects filtered:', {
-      totalProjects: projects.length,
-      churchProjects: filtered.length,
-      byChurch: filtered.reduce((acc: any, p: any) => {
-        const churchId = p.church_id || p.church?.id || p.Church?.id
-        const church = activeChurches.find(c => c.id === churchId)
-        const churchName = church?.name || 'Unknown'
-        acc[churchName] = (acc[churchName] || 0) + 1
-        return acc
-      }, {})
     })
     
     return filtered
@@ -161,15 +140,6 @@ export function ChurchProjectOverTimeChart({
     const sortedData = Array.from(dailyCounts.values()).sort((a, b) => 
       new Date(a.date).getTime() - new Date(b.date).getTime()
     )
-    
-    console.log('📊 [ChurchProjectOverTimeChart] Chart data:', {
-      totalDays: sortedData.length,
-      dateRange: sortedData.length > 0 ? {
-        start: sortedData[0]?.date,
-        end: sortedData[sortedData.length - 1]?.date
-      } : null,
-      sampleData: sortedData.slice(0, 3)
-    })
     
     return sortedData
   }, [churchProjects, activeChurches])
@@ -262,17 +232,6 @@ export function ChurchProjectOverTimeChart({
       
       currentDate.setDate(currentDate.getDate() + 1)
     }
-    
-    console.log('📊 [ChurchProjectOverTimeChart] Filtered data:', {
-      timeRange,
-      totalDays: allDays.length,
-      daysWithProjects: allDays.filter(d => 
-        activeChurches.some(church => {
-          const key = church.name.toLowerCase().replace(/\s+/g, '_')
-          return d[key] > 0
-        })
-      ).length
-    })
     
     return allDays
   }, [chartData, timeRange, activeChurches])
