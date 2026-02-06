@@ -12,7 +12,6 @@ import { ProjectSubsidiesTable, SubsidyRequestData, ActivityData } from "@/compo
 import { SubsidyRequestsContainer } from "@/components/projects/subsidy-requests-container"
 import { SubsidyRequestCardData } from "@/components/projects/subsidy-request-card"
 import { SubsidyActivityChart } from "@/components/projects/charts/subsidy-activity-chart"
-import { CommunicationsContainer } from "@/components/projects/communications-container"
 import { CommunicationCardData } from "@/components/projects/communication-card"
 import { GridContainer } from "@/components/shared/grid-container"
 import { KPICards } from "@/components/shared/kpi-cards-carousel"
@@ -224,22 +223,12 @@ export default function ProjectDetailsPage() {
     skip: !projectId,
     fetchPolicy: 'network-only', // Sempre buscar do servidor para garantir dados atualizados
     onCompleted: (data) => {
-      console.log('✅ [Project Query] Data loaded from API:', {
-        projectId: data?.project?.id,
-        title: data?.project?.title,
-        church_id: data?.project?.Church?.id,
-        church_department_id: data?.project?.church_department_id,
-        church_department: data?.project?.church_department,
-        hasChurchDepartment: !!data?.project?.church_department,
-        fullProject: data?.project
-      })
       toast.success(t('toasts.projectDetailsLoaded'), {
         duration: 3000
       })
     },
     onError: (error) => {
       toast.error(t('toasts.errorLoading'))
-      console.error("Error loading project:", error)
     }
   })
 
@@ -249,14 +238,6 @@ export default function ProjectDetailsPage() {
   const { data: usersData, loading: usersLoading } = useQuery(GET_ALL_USERS_QUERY, {
     variables: { institution_id: institutionIdForUsers },
     skip: !institutionIdForUsers,
-    onCompleted: (data) => {
-      console.log('Users loaded:', data.users)
-      console.log('Institution ID used:', institutionIdForUsers)
-      console.log('Source:', projectData?.project?.institution_id ? 'project' : currentInstitutionData?.id ? 'context' : 'user')
-    },
-    onError: (error) => {
-      console.error('Error loading users:', error)
-    }
   })
 
   // Extract and transform users data
@@ -268,18 +249,6 @@ export default function ProjectDetailsPage() {
     avatar: user.avatar,
     role: user.role || 'Member'
   }))
-
-  // DEBUG: Monitor KPIs and Budget
-  useEffect(() => {
-    if (projectData?.project?.kpis) {
-      console.log('Project KPIs:', {
-        kpis: projectData.project.kpis,
-        subsidizedBudget: projectData.project.kpis.subsidizedBudget,
-        budget: projectData.project.budget,
-        raw: projectData.project
-      })
-    }
-  }, [projectData])
 
   // Batch update mutation
   const [batchUpdateActivities, { loading: batchUpdateLoading }] = useMutation(BATCH_UPDATE_PROJECT_ACTIVITIES, {
@@ -296,7 +265,6 @@ export default function ProjectDetailsPage() {
     },
     onError: (error) => {
       toast.error(`${t('errors.updateError')}: ${error.message}`)
-      console.error("Error updating activities:", error)
     }
   })
 
@@ -309,7 +277,6 @@ export default function ProjectDetailsPage() {
     },
     onError: (error) => {
       toast.error(`${t('errors.updateError')}: ${error.message}`)
-      console.error("Error creating activity:", error)
     }
   })
 
@@ -323,7 +290,6 @@ export default function ProjectDetailsPage() {
     },
     onError: (error) => {
       toast.error(`${t('errors.updateError')}: ${error.message}`)
-      console.error("Error updating activity:", error)
     }
   })
 
@@ -338,7 +304,6 @@ export default function ProjectDetailsPage() {
     onError: (error) => {
       const errorMessage = error.graphQLErrors?.[0]?.message || error.message || 'Erro desconhecido'
       toast.error(errorMessage, { duration: 5000 })
-      console.error("Error creating subsidy request:", error)
     }
   })
 
@@ -358,7 +323,6 @@ export default function ProjectDetailsPage() {
       } else {
           toast.error(`${t('errors.updateError')}: ${error.message}`)
       }
-      console.error("Error updating subsidy request:", error)
     }
   })
 
@@ -368,20 +332,16 @@ export default function ProjectDetailsPage() {
       refetchProject()
     },
     onError: (error) => {
-      console.log('Page Subsidy Error (Full):', JSON.stringify(error, null, 2));
       let ext = (error.graphQLErrors?.[0]?.extensions as any);
       if (!ext && (error.networkError as any)?.result?.errors?.[0]?.extensions) {
         ext = (error.networkError as any).result.errors[0].extensions;
       }
-      console.log('❌ Page Subsidy Error (Extensions):', ext);
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
-      console.log('❌ Extracted Error Code:', errorCode);
       if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
           toast.error(t('toasts.documentsPending') || "All documents must be validated first", { duration: 5000 });
       } else {
           toast.error(`${t('errors.updateError')}: ${error.message}`)
       }
-      console.error("Error approving subsidy request:", error)
     }
   })
 
@@ -397,7 +357,6 @@ export default function ProjectDetailsPage() {
       } else {
           toast.error(`${t('errors.updateError')}: ${error.message}`)
       }
-      console.error("Error rejecting subsidy request:", error)
     }
   })
 
@@ -412,7 +371,6 @@ export default function ProjectDetailsPage() {
       // Extract the specific error message from GraphQL errors
       const errorMessage = error.graphQLErrors?.[0]?.message || error.message || 'Erro ao deletar solicitação de subsídio'
       toast.error(errorMessage, { duration: 5000 })
-      console.error("Error deleting subsidy request:", error)
     }
   })
 
@@ -422,19 +380,6 @@ export default function ProjectDetailsPage() {
 
   // Transform backend project to ProjectTableData format
   const transformProjectData = (backendProject: any): ProjectTableData => {
-    // DEBUG: Log backend project transformation
-    console.log('🔧 Transforming Project Data:', {
-      projectId: backendProject.id,
-      title: backendProject.title,
-      church_id: backendProject.Church?.id || backendProject.department?.church?.id,
-      church_department_id: backendProject.church_department_id,
-      church_department: backendProject.church_department,
-      hasChurchDepartment: !!backendProject.church_department,
-      owner: backendProject.owner,
-      owner_id: backendProject.owner_id,
-      hasOwnerObject: !!backendProject.owner,
-      hasOwnerId: !!backendProject.owner_id
-    })
 
     return {
       id: backendProject.id,
@@ -845,7 +790,6 @@ export default function ProjectDetailsPage() {
   const handleSelectionChange = useCallback((activities: ProjectActivityData[]) => {
     setSelectedActivities(activities)
     if (activities.length > 0) {
-      console.log(`${activities.length} atividade(s) selecionada(s):`, activities)
     }
   }, [])
 
@@ -902,12 +846,10 @@ export default function ProjectDetailsPage() {
       variables.is_subsidized = batchEditData.is_subsidized
     }
 
-    console.log('🔄 Batch update variables:', variables)
 
     try {
       await batchUpdateActivities({ variables })
     } catch (error) {
-      console.error('Error in batch edit:', error)
     }
   }, [selectedActivities, batchEditData, batchUpdateActivities])
 
@@ -944,13 +886,11 @@ export default function ProjectDetailsPage() {
       return
     }
 
-    console.log('🔵 Abrindo modal de subsídio com', selectedActivities.length, 'atividades:', selectedActivities)
     setIsRequestSubsidyModalOpen(true)
   }, [selectedActivities, activityHasSubsidy])
 
   const handleSubsidyRequestSubmit = async (data: SubsidyRequestFormData & { id?: string }): Promise<string | void> => {
     try {
-      console.log('📋 Submitting subsidy request:', data)
 
       // Transform items to match backend expected format
       const subsidyItems = data.items.map(item => {
@@ -971,7 +911,6 @@ export default function ProjectDetailsPage() {
 
       if (data.id) {
         // UPDATE MODE
-        console.log('🔄 Updating existing subsidy request:', data.id)
         const result = await updateSubsidyRequest({
           variables: {
             id: data.id,
@@ -988,10 +927,8 @@ export default function ProjectDetailsPage() {
           }
         })
         resultId = result.data?.updateSubsidyRequest?.id
-        console.log('Subsidy request updated successfully')
       } else {
         // CREATE MODE
-        console.log('✨ Creating new subsidy request')
         const result = await createSubsidyRequest({
           variables: {
             data: {
@@ -1008,16 +945,13 @@ export default function ProjectDetailsPage() {
           }
         })
         resultId = result.data?.createSubsidyRequest?.id
-        console.log('Subsidy request created successfully')
       }
 
       if (resultId) {
-        console.log('Subsidy request processed with ID:', resultId)
         return resultId // Return ID so modal can upload files
       }
 
     } catch (error) {
-      console.error('Error submitting subsidy request:', error)
       throw error // Re-throw so modal can handle error
     }
   }
@@ -1029,7 +963,6 @@ export default function ProjectDetailsPage() {
   }, [selectedActivities])
 
   const handleBatchExport = useCallback(() => {
-    console.log('Export activities:', selectedActivities)
     toast.success(`📊 Exportando ${selectedActivities.length} atividade(s)...`)
   }, [selectedActivities])
 
@@ -1038,7 +971,6 @@ export default function ProjectDetailsPage() {
   const handleEditSubsidyCard = async (id: string) => {
     const subsidy = subsidyRequests.find((s: SubsidyRequestCardData) => s.id === id)
     if (subsidy) {
-      console.log('📝 Edit subsidy card:', subsidy.title)
       setSelectedSubsidyCard(subsidy)
 
       let receiptsByActivity: Record<string, any[]> = {}
@@ -1046,7 +978,6 @@ export default function ProjectDetailsPage() {
       // Fetch receipts if editing
       try {
         const receipts = await fetchReceipts(subsidy.id)
-        console.log('Loaded receipts for edit:', receipts)
         if (receipts) {
           receiptsByActivity = receipts.reduce((acc: any, receipt: any) => {
             const activityId = receipt.project_activities_id
@@ -1058,7 +989,6 @@ export default function ProjectDetailsPage() {
           }, {})
         }
       } catch (error) {
-        console.error('Error fetching receipts for edit:', error)
       }
 
       // Prepare initial data for RequestSubsidyModal
@@ -1106,7 +1036,6 @@ export default function ProjectDetailsPage() {
   // Handler to update a subsidy request
   const handleUpdateSubsidyCard = async (id: string, data: SubsidyRequestFormData) => {
     try {
-      console.log('📋 Updating subsidy request:', { id, data })
 
       // Transform items to match backend expected format
       const subsidyItems = data.items.map(item => {
@@ -1138,9 +1067,7 @@ export default function ProjectDetailsPage() {
         }
       })
 
-      console.log('Subsidy request updated successfully')
     } catch (error) {
-      console.error('Error updating subsidy request:', error)
       throw error
     }
   }
@@ -1195,7 +1122,6 @@ export default function ProjectDetailsPage() {
   
   const linkActivitiesToSubsidy = async (subsidy: SubsidyRequestCardData, newActivities: ProjectActivityData[]) => {
     try {
-       console.log('🔗 Linking activities to subsidy:', { subsidyId: subsidy.id, newActivitiesCount: newActivities.length })
        
        // 1. Construct existing items
        const existingItems = subsidy.items?.map(item => ({
@@ -1269,15 +1195,6 @@ export default function ProjectDetailsPage() {
        // 3. Combine
        const allItems = [...existingItems, ...newItems]
 
-       console.log('🔗 [LinkItems] Subsidy Data:', { 
-         id: subsidy.id, 
-         requested_amount: subsidy.requested_amount,
-         is_for_advance: subsidy.is_for_advance
-       })
-       console.log('🔗 [LinkItems] New Items Payload:', newItems)
-       console.log('🔗 [LinkItems] All Items to Save:', allItems)
-       
-       // 4. Update
        await updateSubsidyRequest({
          variables: {
            id: subsidy.id,
@@ -1295,7 +1212,6 @@ export default function ProjectDetailsPage() {
        await refetchProject()
        
     } catch (error) {
-       console.error("Error linking activities:", error)
        toast.error(t('subsidy.activitiesLinkedError') || "Error linking activities")
     }
   }
@@ -1429,7 +1345,6 @@ export default function ProjectDetailsPage() {
         variables: { input }
       })
     } catch (error) {
-      console.error("Error creating activity:", error)
       toast.error("Erro ao criar atividade")
     }
   }
@@ -1531,7 +1446,6 @@ export default function ProjectDetailsPage() {
       refetchProject()
     } catch (error) {
       toast.error(`Erro ao adicionar usuário: ${error}`)
-      console.error('Error adding user to project:', error)
     }
   }
 
@@ -1764,13 +1678,11 @@ export default function ProjectDetailsPage() {
         input.assignee_ids = assignee_ids
       }
 
-      console.log('🚀 Sending update input:', JSON.stringify(input, null, 2))
 
       await updateProjectActivity({
         variables: { input }
       })
     } catch (error) {
-      console.error("Error updating activity:", error)
       toast.error("Erro ao atualizar atividade")
     }
   }
@@ -1919,7 +1831,6 @@ export default function ProjectDetailsPage() {
   const handleLinkActivity = (id: string) => {
     const subsidy = subsidyRequests.find((s: SubsidyRequestCardData) => s.id === id)
     if (subsidy) {
-      console.log('🔗 Link activity to subsidy:', subsidy.title)
       setSelectedSubsidyCard(subsidy)
       
       // Get IDs of activities already linked to this subsidy
