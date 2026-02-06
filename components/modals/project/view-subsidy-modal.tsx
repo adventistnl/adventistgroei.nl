@@ -22,6 +22,7 @@ import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { SubsidyRequestCardData } from "@/components/projects/subsidy-request-card"
+import { AdvanceSubsidyBadge } from "@/components/ui/advance-subsidy-badge"
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
 import { WithPermission } from "@/hocs/with-permission"
@@ -932,15 +933,18 @@ export function ViewSubsidyModal({
         <div className="border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <div>
-                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                  {subsidy.title}
-                </h2>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                    {subsidy.title}
+                  </h2>
+                </div>
                 <div className="flex items-center gap-2 mt-1.5">
                   <span className="text-xs text-gray-600 dark:text-gray-400">
                     {projectTranslations[i18n.language as keyof typeof projectTranslations]?.subsidy?.requestedOn || 'Requested on:'} {format(new Date(subsidy.requested_at), "dd/MM/yyyy")}
                   </span>
                 </div>
+                <AdvanceSubsidyBadge isForAdvance={subsidy.is_for_advance} />
               </div>
             </div>
 

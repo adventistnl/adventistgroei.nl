@@ -19,6 +19,7 @@ import { useCurrency } from "@/contexts/currency-context"
 import { WithPermission } from "@/hocs/with-permission"
 import { useHasPermission } from "@/hooks/use-has-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
+import { AdvanceSubsidyBadge } from "@/components/ui/advance-subsidy-badge"
 
 export interface SubsidyRequestCardData {
   id: string
@@ -163,7 +164,10 @@ export function SubsidyRequestCard({
 
           {/* Title */}
           <div className="min-w-0 flex-1">
-            <h4 className="truncate text-xs font-semibold text-gray-900">{data.title}</h4>
+            <div className="flex items-center gap-1.5">
+              <h4 className="truncate text-xs font-semibold text-gray-900">{data.title}</h4>
+              <AdvanceSubsidyBadge isForAdvance={data.is_for_advance} />
+            </div>
             {data.institution_name && (
               <p className="truncate text-[10px] text-gray-500">{data.institution_name}</p>
             )}
