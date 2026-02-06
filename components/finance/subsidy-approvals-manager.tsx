@@ -91,6 +91,7 @@ import { InlinePrivacyToggle, PrivacyWrapper } from "@/components/shared/privacy
 import { PrivacyConfig } from "@/contexts/privacy-context"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
+import { AdvanceSubsidyBadge } from "@/components/ui/advance-subsidy-badge"
 
 interface SubsidyRequest {
   id: string
@@ -963,7 +964,8 @@ export function SubsidyApprovalsManager({
       requested_amount_raw: request.requested_amount,
       activities_count: request.activities_count,
       priority: request.priority,
-      requested_at: format(new Date(request.requested_at), "dd/MM/yyyy", { locale: ptBR })
+      requested_at: format(new Date(request.requested_at), "dd/MM/yyyy", { locale: ptBR }),
+      is_for_advance: request.is_for_advance
     }
   }))
 
@@ -1015,9 +1017,9 @@ export function SubsidyApprovalsManager({
     
     return (
       <div
-        className="bg-card border-l-4 border-border rounded-md p-3 shadow-sm hover:shadow-md transition-all cursor-pointer mb-3 last:mb-0 relative"
-        style={{ borderLeftColor: group.color }}
         {...dragHandlers}
+        className="bg-card border border-l-4 border-border rounded-md p-3 shadow-sm hover:shadow-md transition-all cursor-pointer mb-3 last:mb-0 relative"
+        style={{ borderLeftColor: group.color }}
       >
         {/* Priority Flag */}
         <div className="absolute top-2 right-2">
@@ -1048,13 +1050,15 @@ export function SubsidyApprovalsManager({
                 </div>
               }
             >
-              <span className="text-sm font-semibold text-foreground">
+              <span className="text-sm font-semibold text-foreground flex items-center gap-1">
                 {item.metadata?.requested_amount}
+                <AdvanceSubsidyBadge isForAdvance={item.metadata?.is_for_advance} />
               </span>
             </PrivacyWrapper>
           ) : (
-            <span className="text-sm font-semibold text-foreground">
+            <span className="text-sm font-semibold text-foreground flex items-center gap-1">
               {item.metadata?.requested_amount}
+              <AdvanceSubsidyBadge isForAdvance={item.metadata?.is_for_advance} />
             </span>
           )}
           

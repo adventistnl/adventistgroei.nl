@@ -75,62 +75,9 @@ export function DepartmentLeadersCard({
 
   // 🔍 DEBUG: Validar dados de entrada
   useEffect(() => {
-    console.group('🔍 [DepartmentLeadersCard] DEBUG - Input Data Validation')
-    
-    // 1. Dados brutos recebidos
-    console.log('📥 [Input] Total Users Received:', users.length)
-    console.log('📥 [Input] Total Departments Received:', departments.length)
-    console.log('📥 [Input] Department Type Filter:', departmentType)
-    
-    // 2. Usuários ativos
     const activeUsers = users.filter(u => !u.is_deleted)
-    console.log('✅ [Users] Active Users:', activeUsers.length, '/', users.length)
-    
-    if (users.length > 0) {
-      console.table(users.map(u => ({
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        is_deleted: u.is_deleted || false,
-        roles_count: u.user_roles?.length || 0
-      })))
-    }
-    
-    // 3. Departamentos com leader_id
     const deptsWithLeader = departments.filter(d => d.leader_id)
-    const deptsWithoutLeader = departments.filter(d => !d.leader_id)
-    
-    console.log('👑 [Departments] With leader_id:', deptsWithLeader.length, '/', departments.length)
-    console.log('⚠️ [Departments] Without leader_id:', deptsWithoutLeader.length)
-    
-    if (deptsWithLeader.length > 0) {
-      console.log('👑 [Departments] Details with leader_id:')
-      console.table(deptsWithLeader.map(d => ({
-        dept_id: d.id,
-        dept_name: d.name,
-        church_id: d.church_id || 'institutional',
-        church_name: d.church_name || 'N/A',
-        leader_id: d.leader_id
-      })))
-    }
-    
-    if (deptsWithoutLeader.length > 0) {
-      console.warn('⚠️ [Departments] Without leader_id:', 
-        deptsWithoutLeader.map(d => ({
-          dept_id: d.id,
-          dept_name: d.name,
-          church_name: d.church_name || 'institutional'
-        }))
-      )
-    }
-    
-    // 4. Validação de cruzamento: leader_id existe na lista de usuários?
     const leaderIds = new Set(deptsWithLeader.map(d => d.leader_id).filter(Boolean))
-    const userIds = new Set(activeUsers.map(u => u.id))
-    
-    console.log('🔗 [Validation] Unique leader_ids found:', leaderIds.size)
-    console.log('🔗 [Validation] Active user_ids available:', userIds.size)
-    
     const missingLeaders: string[] = []
     const validLeaders: Array<{leader_id: string, user_name: string, dept_count: number}> = []
     
@@ -148,32 +95,6 @@ export function DepartmentLeadersCard({
         })
       }
     })
-    
-    if (validLeaders.length > 0) {
-      console.log('✅ [Validation] Valid Leaders (leader_id found in users):')
-      console.table(validLeaders)
-    }
-    
-    if (missingLeaders.length > 0) {
-      console.error('❌ [Validation] Missing Leaders (leader_id NOT found in users):', missingLeaders)
-      console.error('❌ These departments have leader_ids that don\'t match any user:', 
-        deptsWithLeader
-          .filter(d => missingLeaders.includes(d.leader_id as string))
-          .map(d => ({
-            dept_name: d.name,
-            leader_id: d.leader_id,
-            church_name: d.church_name || 'institutional'
-          }))
-      )
-    }
-    
-    // 5. Resumo final
-    console.log('📊 [Summary] Expected leaders to display:', validLeaders.length)
-    console.log('📊 [Summary] Total departments they manage:', 
-      validLeaders.reduce((sum, l) => sum + l.dept_count, 0)
-    )
-    
-    console.groupEnd()
   }, [users, departments, departmentType])
 
   // Filtrar departamentos por tipo
@@ -188,37 +109,16 @@ export function DepartmentLeadersCard({
 
   // 🔍 DEBUG: Validar filtro de departamentos por tipo
   useEffect(() => {
-    console.group('🔍 [DepartmentLeadersCard] DEBUG - Department Type Filtering')
-    console.log('🏷️ [Filter] Department Type:', departmentType)
-    console.log('📊 [Filter] Before filtering:', departments.length, 'departments')
-    console.log('📊 [Filter] After filtering:', filteredDepartments.length, 'departments')
-    
     if (departmentType !== 'all') {
       const filtered = departments.length - filteredDepartments.length
-      console.log(`🗂️ [Filter] Filtered out: ${filtered} departments`)
-      
       if (departmentType === 'church') {
         const institutional = departments.filter(d => !d.church_id)
-        console.log(`🏛️ [Filter] Institutional departments excluded: ${institutional.length}`)
       } else {
         const church = departments.filter(d => d.church_id)
-        console.log(`⛪ [Filter] Church departments excluded: ${church.length}`)
       }
     }
     
     const filteredWithLeader = filteredDepartments.filter(d => d.leader_id)
-    console.log('👑 [Filter] Departments with leader_id after filtering:', filteredWithLeader.length)
-    
-    if (filteredWithLeader.length > 0) {
-      console.table(filteredWithLeader.map(d => ({
-        dept_name: d.name,
-        leader_id: d.leader_id,
-        type: d.church_id ? 'church' : 'institutional',
-        church_name: d.church_name || 'N/A'
-      })))
-    }
-    
-    console.groupEnd()
   }, [departments, filteredDepartments, departmentType])
 
   /**
@@ -227,7 +127,6 @@ export function DepartmentLeadersCard({
    * OTIMIZADO: Usa Map para busca O(1) ao invés de find() O(n)
    */
   const leaders = useMemo(() => {
-    console.group('🔍 [DepartmentLeadersCard] DEBUG - Leaders Identification Process')
     
     // 1. Criar mapa de usuários ativos para busca O(1)
     const activeUsers = users.filter(user => !user.is_deleted)
@@ -235,8 +134,6 @@ export function DepartmentLeadersCard({
     activeUsers.forEach(user => {
       userMap.set(user.id, user)
     })
-    
-    console.log('📊 [Performance] Created user Map with', userMap.size, 'active users for O(1) lookup')
     
     // 2. Criar mapa de leader_id -> departamentos
     const leaderDepartmentsMap = new Map<string, Department[]>()
@@ -248,8 +145,6 @@ export function DepartmentLeadersCard({
       }
     })
     
-    console.log('📊 [Mapping] Found', leaderDepartmentsMap.size, 'unique leader_ids in departments')
-    
     // 3. Mapear líderes com seus departamentos usando busca otimizada
     const leadersWithDepartments = Array.from(leaderDepartmentsMap.entries())
       .map(([leaderId, ledDepartments]) => {
@@ -257,12 +152,8 @@ export function DepartmentLeadersCard({
         const user = userMap.get(leaderId)
         
         if (!user) {
-          console.error(`❌ [Missing Leader] leader_id "${leaderId}" not found in institution users`)
-          console.error('   Affected departments:', ledDepartments.map(d => d.name).join(', '))
           return null
         }
-        
-        console.log(`✅ [Found] Leader "${user.name}" manages ${ledDepartments.length} department(s)`)
 
         return {
           user,
@@ -272,17 +163,6 @@ export function DepartmentLeadersCard({
       })
       .filter((item): item is NonNullable<typeof item> => item !== null)
       .sort((a, b) => a.user.name.localeCompare(b.user.name))
-    
-    console.log('📊 [Result] Total leaders to display:', leadersWithDepartments.length)
-    console.table(leadersWithDepartments.map(l => ({
-      user_id: l.user.id,
-      user_name: l.user.name,
-      user_email: l.user.email,
-      departments_count: l.ledDepartments.length,
-      departments: l.ledDepartments.map(d => d.name).join(', ')
-    })))
-    
-    console.groupEnd()
 
     return leadersWithDepartments
   }, [users, filteredDepartments])

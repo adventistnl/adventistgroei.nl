@@ -55,27 +55,6 @@ export function ProjectsByChurchChart({
   const currentLanguage = i18n?.language || 'en'
   const tChurch = churchTranslations[currentLanguage as keyof typeof churchTranslations] || churchTranslations.en
   
-  // 🔍 DEBUG: Validar dados recebidos pelo componente
-  React.useEffect(() => {
-    console.log('🎯 [ProjectsByChurchChart] DEBUG - Dados recebidos:', {
-      data_exists: !!data,
-      data_length: data?.length || 0,
-      data_sample: data?.[0],
-      mode: mode,
-      loading: loading
-    })
-    
-    if (data && data.length > 0) {
-      console.log('📊 [ProjectsByChurchChart] DEBUG - Estrutura de cada item:', data.map((item: any) => ({
-        church: item.church || item.department,
-        fullName: item.fullName,
-        projects: item.projects,
-        activeProjects: item.activeProjects,
-        completedProjects: item.completedProjects,
-        fill: item.fill
-      })))
-    }
-  }, [data, mode, loading])
   
   // Process data and apply getProjectColor for consistency
   const chartData = React.useMemo(() => {
@@ -86,18 +65,6 @@ export function ProjectsByChurchChart({
       ...item,
       fill: getProjectColor(index)
     }))
-    
-    // 🔍 DEBUG: Validar dados processados para o gráfico
-    console.log('✅ [ProjectsByChurchChart] chartData processado:', {
-      total_items: processedData.length,
-      items_with_projects: processedData.filter(item => item.projects > 0).length,
-      total_projects: processedData.reduce((sum, item) => sum + item.projects, 0),
-      data_sample: processedData.map(item => ({
-        church: item.church || item.department,
-        projects: item.projects,
-        has_color: !!item.fill
-      }))
-    })
     
     return processedData
   }, [data])
@@ -134,31 +101,10 @@ export function ProjectsByChurchChart({
     [activeItem, chartData, itemKey]
   )
   
-  // 🔍 DEBUG: Validar item ativo e índice
-  React.useEffect(() => {
-    if (chartData.length > 0) {
-      console.log('🎯 [ProjectsByChurchChart] Item ativo:', {
-        activeItem,
-        activeIndex,
-        activeData: chartData[activeIndex],
-        totalItems: chartData.length
-      })
-    }
-  }, [activeItem, activeIndex, chartData])
   
   const itemKeys = React.useMemo(() => chartData.map((item) => item[itemKey]), [chartData, itemKey])
   const totalProjects = React.useMemo(() => {
     const total = chartData.reduce((sum, item) => sum + item.projects, 0)
-    
-    // 🔍 DEBUG: Validar total de projetos
-    console.log('📊 [ProjectsByChurchChart] Total de projetos calculado:', {
-      total,
-      mode: activeItem === '__ALL__' ? 'All Churches' : 'Single Church',
-      breakdown: chartData.map(item => ({
-        name: item[itemKey],
-        projects: item.projects
-      }))
-    })
     
     return total
   }, [chartData, itemKey, activeItem])
@@ -388,10 +334,6 @@ export function ProjectsByChurchChart({
                 // Allow clicking on pie sectors to select them
                 const clickedItem = data?.[itemKey]
                 if (clickedItem) {
-                  console.log('🖱️ [ProjectsByChurchChart] Clique no gráfico:', {
-                    clicked: clickedItem,
-                    data: data
-                  })
                   setActiveItem(clickedItem)
                   // Chama callback se fornecido
                   if (onItemClick) {

@@ -57,15 +57,6 @@ export function InstitutionalDepartmentProjectOverTimeChart({
       dept && dept.id && dept.name && !dept.is_deleted && !dept.church_id
     )
     
-    console.log('📊 [InstitutionalDepartmentProjectOverTimeChart] Institutional Departments:', {
-      total: departments.length,
-      filtered: filtered.length,
-      departmentsList: filtered.map(d => ({ 
-        id: d.id, 
-        name: d.name
-      }))
-    })
-    
     return filtered
   }, [departments])
 
@@ -77,17 +68,6 @@ export function InstitutionalDepartmentProjectOverTimeChart({
     const filtered = projects.filter((p: any) => 
       p.department_id && institutionalDeptIds.has(p.department_id)
     )
-    
-    console.log('📊 [InstitutionalDepartmentProjectOverTimeChart] Projects filtered:', {
-      totalProjects: projects.length,
-      institutionalDepartmentProjects: filtered.length,
-      byDepartment: filtered.reduce((acc: any, p: any) => {
-        const dept = institutionalDepartments.find(d => d.id === p.department_id)
-        const deptName = dept?.name || 'Unknown'
-        acc[deptName] = (acc[deptName] || 0) + 1
-        return acc
-      }, {})
-    })
     
     return filtered
   }, [projects, institutionalDepartments])
@@ -127,15 +107,6 @@ export function InstitutionalDepartmentProjectOverTimeChart({
     const sortedData = Array.from(dailyCounts.values()).sort((a, b) => 
       new Date(a.date).getTime() - new Date(b.date).getTime()
     )
-    
-    console.log('📊 [InstitutionalDepartmentProjectOverTimeChart] Chart data:', {
-      totalDays: sortedData.length,
-      dateRange: sortedData.length > 0 ? {
-        start: sortedData[0]?.date,
-        end: sortedData[sortedData.length - 1]?.date
-      } : null,
-      sampleData: sortedData.slice(0, 3)
-    })
     
     return sortedData
   }, [institutionalDepartmentProjects, institutionalDepartments])
@@ -231,17 +202,6 @@ export function InstitutionalDepartmentProjectOverTimeChart({
       
       currentDate.setDate(currentDate.getDate() + 1)
     }
-    
-    console.log('📊 [InstitutionalDepartmentProjectOverTimeChart] Filtered data:', {
-      timeRange,
-      totalDays: allDays.length,
-      daysWithProjects: allDays.filter(d => 
-        institutionalDepartments.some(dept => {
-          const key = dept.name.toLowerCase().replace(/\s+/g, '_')
-          return d[key] > 0
-        })
-      ).length
-    })
     
     return allDays
   }, [chartData, timeRange, institutionalDepartments])

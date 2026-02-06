@@ -485,6 +485,7 @@ export const projectTranslations = {
     
     // Subsidy Management
     subsidy: {
+      advance: "Advance",
       requestsTitle: "Subsidy Requests",
       noRequests: "No subsidy requests",
       noRequestsDescription: "Start by creating a new request.",
@@ -1542,6 +1543,7 @@ export const projectTranslations = {
     
     // Subsidy Management
     subsidy: {
+      advance: "Voorschot",
       requestsTitle: "Subsidie Aanvragen",
       noRequests: "Geen subsidie aanvragen",
       noRequestsDescription: "Begin met het maken van een nieuwe aanvraag.",

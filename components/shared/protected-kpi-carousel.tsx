@@ -79,42 +79,9 @@ export function ProtectedKPICarousel({
 }: ProtectedKPICarouselProps) {
   const { i18n } = useTranslation()
   
-  // Debug: Log configuração e dados do carrossel
-  React.useEffect(() => {
-    console.log('🎠 [ProtectedKPICarousel] Component Mounted/Updated:', {
-      totalKPICards: data.length,
-      hasCustomFirstItem: !!customFirstItem,
-      totalCardsToRender: data.length + (customFirstItem ? 1 : 0),
-      minCardsForCarousel,
-      showCarousel,
-      isLoading,
-      kpiCards: data.map(card => ({
-        id: card.id,
-        title: card.title,
-        value: card.value,
-        hasPermission: card.requiredPermission,
-        permissionType: Array.isArray(card.requiredPermission) 
-          ? `Multiple: [${card.requiredPermission.join(', ')}]`
-          : `Single: ${card.requiredPermission}`
-      }))
-    })
-  }, [data, customFirstItem, minCardsForCarousel, showCarousel, isLoading])
   
   // Determinar se deve usar carrossel baseado no número de cards
   const shouldUseCarousel = showCarousel && data.length >= minCardsForCarousel
-  
-  // Debug: Log decisão de layout
-  React.useEffect(() => {
-    const totalCards = data.length + (customFirstItem ? 1 : 0)
-    console.log('📐 [ProtectedKPICarousel] Layout Decision:', {
-      shouldUseCarousel,
-      reason: shouldUseCarousel 
-        ? `${data.length} cards >= ${minCardsForCarousel} minimum`
-        : `${data.length} cards < ${minCardsForCarousel} minimum`,
-      layoutType: shouldUseCarousel ? 'Carousel' : 'Grid',
-      totalCards
-    })
-  }, [shouldUseCarousel, data.length, customFirstItem, minCardsForCarousel])
   
   // Skeleton para loading state
   const renderSkeleton = () => (
@@ -133,16 +100,6 @@ export function ProtectedKPICarousel({
 
   // Renderizar card protegido individual
   const renderCard = (item: ProtectedKPICardData, index: number) => {
-    console.log(`🎴 [ProtectedKPICarousel] Rendering Card #${index + 1}:`, {
-      id: item.id,
-      title: item.title,
-      value: item.value,
-      requiredPermission: item.requiredPermission,
-      isMultiPermission: Array.isArray(item.requiredPermission),
-      permissionCount: Array.isArray(item.requiredPermission) 
-        ? item.requiredPermission.length 
-        : 1
-    })
     
     return (
       <ProtectedKPICard
@@ -181,13 +138,6 @@ export function ProtectedKPICarousel({
   if (!shouldUseCarousel) {
     const totalCards = data.length + (customFirstItem ? 1 : 0)
     
-    console.log('📊 [ProtectedKPICarousel - Grid Mode] Rendering:', {
-      totalCards,
-      hasCustomFirstItem: !!customFirstItem,
-      kpiCardsCount: data.length,
-      gridColumns: totalCards === 1 ? 1 : totalCards === 2 ? 2 : totalCards === 3 ? 3 : 4
-    })
-    
     return (
       <div className={cn(
         "grid gap-6 auto-rows-fr",
@@ -219,13 +169,6 @@ export function ProtectedKPICarousel({
   }
 
   // Renderizar carrossel
-  console.log('🎡 [ProtectedKPICarousel - Carousel Mode] Rendering:', {
-    totalCards,
-    hasCustomFirstItem: !!customFirstItem,
-    kpiCardsCount: data.length,
-    cardBasis: getCardBasis(),
-    showControls: totalCards > 2
-  })
   
   return (
     <div className={cn("w-full max-w-full overflow-hidden", className)}>
@@ -255,7 +198,6 @@ export function ProtectedKPICarousel({
           {/* Protected KPI Cards */}
           {data.map((item, index) => {
             const slotNumber = customFirstItem ? index + 1 : index
-            console.log(`📍 [ProtectedKPICarousel - Carousel] Card "${item.title}" in slot ${slotNumber}`)
             return (
               <CarouselItem 
                 key={item.id} 

@@ -87,22 +87,6 @@ export function ProtectedKPICard({
   // Normalizar permissões para array
   const permissions = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission]
   
-  // Debug: Log permissões e configuração do card
-  React.useEffect(() => {
-    console.log(`🔐 [ProtectedKPICard - ${id}] Card Configuration:`, {
-      id,
-      title,
-      value,
-      hasSubtitle: !!subtitle,
-      hasTrend: !!trend,
-      requiredPermissions: permissions,
-      permissionCount: permissions.length,
-      overlayHeight,
-      blurIntensity,
-      note: 'WithPermission HOC will validate access - if denied, fallback (skeleton + overlay) will render'
-    })
-  }, [id, title, value, permissions, overlayHeight, blurIntensity])
-  
   // Skeleton do card mantendo a mesma estrutura visual para proteção de privacidade
   const cardSkeleton = (
     <Card className={cn("w-full h-full", className)}>

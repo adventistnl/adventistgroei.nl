@@ -22,6 +22,7 @@ import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { SubsidyRequestCardData } from "@/components/projects/subsidy-request-card"
+import { AdvanceSubsidyBadge } from "@/components/ui/advance-subsidy-badge"
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
 import { WithPermission } from "@/hocs/with-permission"
@@ -91,13 +92,13 @@ export function ViewSubsidyModal({
   const { formatCurrency } = useCurrency()
   const { user } = useAuth()
   const { t, i18n } = useTranslation()
-  
+
   // Helper para acessar traduções do modal
   const modalT = React.useMemo(() => {
     const lang = i18n.language as keyof typeof projectTranslations
     return projectTranslations[lang]?.viewSubsidyModal || projectTranslations.pt.viewSubsidyModal
   }, [i18n.language])
-  
+
   const [selectedActivityIndex, setSelectedActivityIndex] = React.useState(0)
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true)
   const [newMessage, setNewMessage] = React.useState("")
@@ -116,15 +117,15 @@ export function ViewSubsidyModal({
   const chatInputRef = React.useRef<HTMLInputElement>(null)
   const [loadingDocuments, setLoadingDocuments] = React.useState(false)
   const [receipts, setReceipts] = React.useState<SubsidyReceipt[]>([])
-  const [subsidyStatuses, setSubsidyStatuses] = React.useState<Array<{id: string, name: string, description: string}>>([])
-  
+  const [subsidyStatuses, setSubsidyStatuses] = React.useState<Array<{ id: string, name: string, description: string }>>([])
+
   // Dialog states for replacing browser alerts
   const [deleteCommentDialog, setDeleteCommentDialog] = React.useState<{ isOpen: boolean; messageId: string | null }>({ isOpen: false, messageId: null })
   const [rejectionDialog, setRejectionDialog] = React.useState<{ isOpen: boolean }>({ isOpen: false })
-  const [statusConfirmationDialog, setStatusConfirmationDialog] = React.useState<{ 
-    isOpen: boolean; 
-    status: "approved" | "rejected" | "closed" | "advanced_closed" | null; 
-    statusId?: string 
+  const [statusConfirmationDialog, setStatusConfirmationDialog] = React.useState<{
+    isOpen: boolean;
+    status: "approved" | "rejected" | "closed" | "advanced_closed" | null;
+    statusId?: string
   }>({ isOpen: false, status: null })
 
   /* 
@@ -147,6 +148,11 @@ export function ViewSubsidyModal({
     validating: receiptsValidating,
   } = useSubsidyReceipts({
     subsidyRequestId: subsidy?.id,
+    onHistoryUpdate: async () => {
+      if (typeof refetchHistory === 'function') {
+        await refetchHistory()
+      }
+    },
   })
 
   // Mutations for updating subsidy status
@@ -169,17 +175,17 @@ export function ViewSubsidyModal({
       const modalT = projectTranslations[lang]?.viewSubsidyModal || projectTranslations.pt.viewSubsidyModal;
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
       if (errorCode === 'STATUS_IS_CLOSED') {
-          toast.error(modalT.errors.statusClosed);
+        toast.error(modalT.errors.statusClosed);
       } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
-          toast.error(modalT.errors.cannotCloseInReview);
+        toast.error(modalT.errors.cannotCloseInReview);
       } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
-          toast.error(modalT.errors.onlyClosedFromFinalState);
+        toast.error(modalT.errors.onlyClosedFromFinalState);
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(modalT.errors.documentsPending);
+        toast.error(modalT.errors.documentsPending);
       } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
-          toast.error(modalT.errors.onlyFinancialCanClose);
+        toast.error(modalT.errors.onlyFinancialCanClose);
       } else {
-          toast.error(modalT.errorMessages.statusUpdate.replace('{{error}}', error.message))
+        toast.error(modalT.errorMessages.statusUpdate.replace('{{error}}', error.message))
       }
       console.error("Error updating subsidy:", error)
     }
@@ -203,19 +209,19 @@ export function ViewSubsidyModal({
       const modalT = projectTranslations[lang]?.viewSubsidyModal || projectTranslations.pt.viewSubsidyModal;
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
       if (errorCode === 'STATUS_IS_CLOSED') {
-          toast.error(modalT.errors.statusClosed);
+        toast.error(modalT.errors.statusClosed);
       } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
-          toast.error(modalT.errors.cannotCloseInReview);
+        toast.error(modalT.errors.cannotCloseInReview);
       } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
-          toast.error(modalT.errors.onlyClosedFromFinalState);
+        toast.error(modalT.errors.onlyClosedFromFinalState);
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(modalT.errors.documentsPending);
+        toast.error(modalT.errors.documentsPending);
       } else if (errorCode === 'DOCUMENTS_REJECTED') {
-          toast.error(modalT.errors.documentsRejected);
+        toast.error(modalT.errors.documentsRejected);
       } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
-          toast.error(modalT.errors.onlyFinancialCanClose);
+        toast.error(modalT.errors.onlyFinancialCanClose);
       } else {
-          toast.error(modalT.errorMessages.approve.replace('{{error}}', error.message))
+        toast.error(modalT.errorMessages.approve.replace('{{error}}', error.message))
       }
       console.error("Error approving subsidy:", error)
     }
@@ -239,17 +245,17 @@ export function ViewSubsidyModal({
       const modalT = projectTranslations[lang]?.viewSubsidyModal || projectTranslations.pt.viewSubsidyModal;
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
       if (errorCode === 'STATUS_IS_CLOSED') {
-          toast.error(modalT.errors.statusClosed);
+        toast.error(modalT.errors.statusClosed);
       } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
-          toast.error(modalT.errors.cannotCloseInReview);
+        toast.error(modalT.errors.cannotCloseInReview);
       } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
-          toast.error(modalT.errors.onlyClosedFromFinalState);
+        toast.error(modalT.errors.onlyClosedFromFinalState);
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(modalT.errors.documentsPending);
+        toast.error(modalT.errors.documentsPending);
       } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
-          toast.error(modalT.errors.onlyFinancialCanClose);
+        toast.error(modalT.errors.onlyFinancialCanClose);
       } else {
-          toast.error(modalT.errorMessages.reject.replace('{{error}}', error.message))
+        toast.error(modalT.errorMessages.reject.replace('{{error}}', error.message))
       }
       console.error("Error rejecting subsidy:", error)
     }
@@ -299,7 +305,7 @@ export function ViewSubsidyModal({
 
   // Helper function to check if there are rejected documents
   const hasRejectedDocuments = (): boolean => {
-    return (receipts || []).some((receipt: any) => 
+    return (receipts || []).some((receipt: any) =>
       receipt.is_validated && !receipt.approved && !receipt.is_deleted
     )
   }
@@ -310,7 +316,7 @@ export function ViewSubsidyModal({
 
     // Rule: Closed status cannot be changed to anything else
     if (from === 'closed') return false
-    
+
     // Rule: Cannot approve if there are rejected documents
     if (to === 'approved' && hasRejectedDocuments()) {
       return false
@@ -318,51 +324,51 @@ export function ViewSubsidyModal({
 
     // Rule: Advance subsidies logic
     if (subsidy?.is_for_advance) {
-        if (from === 'approved') return to === 'advanced_closed'
-        if (from === 'advanced_closed') return to === 'closed'
-        // pending/in_review follow standard flow to approved/rejected
+      if (from === 'approved') return to === 'advanced_closed'
+      if (from === 'advanced_closed') return to === 'closed'
+      // pending/in_review follow standard flow to approved/rejected
     } else {
-        // Normal subsidies: Cannot go to advanced_closed
-        if (to === 'advanced_closed') return false
+      // Normal subsidies: Cannot go to advanced_closed
+      if (to === 'advanced_closed') return false
     }
-    
+
     // Rule: To Closed is allowed from Approved or Rejected only (not In Review)
     if (to === 'closed') {
       if (from === 'in_review') return false
       // Only allowed from approved or rejected
       return from === 'approved' || from === 'rejected'
     }
-    
+
     // Rule: If Approved or Rejected, can ONLY go to Closed (for normal subsidies)
     if (from === 'approved' || from === 'rejected') {
       return to === 'closed'
     }
-    
+
     return true
   }
 
   // Handle status change request
   const handleStatusChangeRequest = (statusName: string) => {
     const normalizedStatus = statusName.toLowerCase()
-    
+
     // Check validation first
     if (!canChangeStatus(normalizedStatus)) {
-        // Specific message for rejected documents blocking approval
-        if (normalizedStatus === 'approved' && hasRejectedDocuments()) {
-            toast.error(modalT.errors.documentsRejected)
-        } else {
-            toast.error(modalT.errors.statusChangeNotAllowed)
-        }
-        return
+      // Specific message for rejected documents blocking approval
+      if (normalizedStatus === 'approved' && hasRejectedDocuments()) {
+        toast.error(modalT.errors.documentsRejected)
+      } else {
+        toast.error(modalT.errors.statusChangeNotAllowed)
+      }
+      return
     }
 
     // Check document validation for pending documents (skip for advance subsidies which assume no docs)
     if (['approved', 'closed', 'rejected', 'advanced_closed'].includes(normalizedStatus) && !subsidy?.is_for_advance) {
-        const hasPending = (receipts || []).some((r: any) => !r.is_validated && !r.is_deleted);
-        if (hasPending) {
-             toast.error(modalT.errors.documentsPending);
-             return;
-        }
+      const hasPending = (receipts || []).some((r: any) => !r.is_validated && !r.is_deleted);
+      if (hasPending) {
+        toast.error(modalT.errors.documentsPending);
+        return;
+      }
     }
 
     // For Rejected, we have a specific dialog with reason input
@@ -380,7 +386,7 @@ export function ViewSubsidyModal({
       })
       return
     }
-    
+
     // For other statuses (Pending, In Review), execute immediately
     executeStatusChange(normalizedStatus)
   }
@@ -395,7 +401,7 @@ export function ViewSubsidyModal({
         setCurrentSubsidyStatus('approved')
         setMentionStatus('approved')
         setNewMessage(modalT.messageFormats.statusChangePrefix.replace('{{status}}', modalT.status?.approved || 'Approved'))
-        
+
         await approveSubsidyRequest({
           variables: {
             id: subsidy.id,
@@ -406,25 +412,25 @@ export function ViewSubsidyModal({
       } else if (status === 'closed' || status === 'advanced_closed') {
         const id = statusId || getStatusIdByName(status === 'closed' ? 'CLOSED' : 'ADVANCED_CLOSED')
         if (id) {
-           setCurrentSubsidyStatus(status === 'closed' ? 'closed' : 'advanced_closed')
-           setMentionStatus(status === 'closed' ? 'closed' : 'advanced_closed') // Note: mentionStatus type might need update if strict
-           
-           // Determine message based on status
-           const statusLabel = status === 'closed' 
-                ? (modalT.status?.closed || 'Closed')
-                : (t('subsidy.status.advancedClosed') || 'Advanced Closed');
-                
-           setNewMessage(modalT.messageFormats.statusChangePrefix.replace('{{status}}', statusLabel))
-           
-           await updateSubsidyRequest({
-             variables: {
-               id: subsidy.id,
-               data: {
-                 subsidy_status_id: id
-               },
-               language: i18n.language as any
-             }
-           })
+          setCurrentSubsidyStatus(status === 'closed' ? 'closed' : 'advanced_closed')
+          setMentionStatus(status === 'closed' ? 'closed' : 'advanced_closed') // Note: mentionStatus type might need update if strict
+
+          // Determine message based on status
+          const statusLabel = status === 'closed'
+            ? (modalT.status?.closed || 'Closed')
+            : (t('subsidy.status.advancedClosed') || 'Advanced Closed');
+
+          setNewMessage(modalT.messageFormats.statusChangePrefix.replace('{{status}}', statusLabel))
+
+          await updateSubsidyRequest({
+            variables: {
+              id: subsidy.id,
+              data: {
+                subsidy_status_id: id
+              },
+              language: i18n.language as any
+            }
+          })
         }
       }
     } catch (error) {
@@ -435,36 +441,35 @@ export function ViewSubsidyModal({
 
   // Helper to execute immediate status changes
   const executeStatusChange = async (status: string) => {
-     const statusId = getStatusIdByName(status.toUpperCase())
-     if (!statusId) {
-       toast.error(t('filters.status') + ' ' + t('common.notFound'))
-       return
-     }
-     
-     setCurrentSubsidyStatus(status as any)
-     setMentionStatus(status as any)
-     const statusLabel = modalT.status?.[status as keyof typeof modalT.status] || status
-     setNewMessage(modalT.messageFormats.statusChangePrefix.replace('{{status}}', statusLabel))
-     chatInputRef.current?.focus()
-     
-     try {
-       await updateSubsidyRequest({
-         variables: {
-           id: subsidy.id,
-           data: { subsidy_status_id: statusId },
-           language: i18n.language as any
-         }
-       })
-     } catch (error) {
-       console.error('Error updating status:', error)
-     }
+    const statusId = getStatusIdByName(status.toUpperCase())
+    if (!statusId) {
+      toast.error(t('filters.status') + ' ' + t('common.notFound'))
+      return
+    }
+
+    setCurrentSubsidyStatus(status as any)
+    setMentionStatus(status as any)
+    const statusLabel = modalT.status?.[status as keyof typeof modalT.status] || status
+    setNewMessage(modalT.messageFormats.statusChangePrefix.replace('{{status}}', statusLabel))
+    chatInputRef.current?.focus()
+
+    try {
+      await updateSubsidyRequest({
+        variables: {
+          id: subsidy.id,
+          data: { subsidy_status_id: statusId },
+          language: i18n.language as any
+        }
+      })
+    } catch (error) {
+      console.error('Error updating status:', error)
+    }
   }
   React.useEffect(() => {
     if (isOpen && subsidy?.id) {
       setLoadingDocuments(true)
       fetchReceipts(subsidy.id)
         .then((fetchedReceipts) => {
-          console.log('📄 Fetched receipts for subsidy:', fetchedReceipts)
           setReceipts(fetchedReceipts || [])
         })
         .catch((error) => {
@@ -574,23 +579,23 @@ export function ViewSubsidyModal({
   // Transform history data from backend to UI format
   const statusHistory = React.useMemo<StatusHistoryItem[]>(() => {
     if (!historyData?.getSubsidyStatusHistory) return []
-    
+
     return historyData.getSubsidyStatusHistory.map((item: any) => {
       // Usar traduções do sistema para mensagens de status automáticas
       let translatedReason = item.reason || ''
-      
+
       // Se é uma alteração de status automática (sem mensagem customizada do usuário)
       if (item.type === 'STATUS_CHANGE' && item.reason) {
         const statusName = item.status.name.toLowerCase()
         const statusKey = `projects.subsidy.${statusName}`
         const statusLabel = t(statusKey) || statusName
-        
+
         // Se a mensagem parece ser uma mensagem padrão de status, traduzir
         if (item.reason.includes('Status changed to') || item.reason.includes('mudou para') || item.reason.includes('Status alterado para')) {
           translatedReason = modalT.messageFormats.statusChangePrefix.replace('{{status}}', statusLabel)
         }
       }
-      
+
       return {
         id: item.id,
         status: item.status.name.toLowerCase(),
@@ -602,7 +607,7 @@ export function ViewSubsidyModal({
         isNew: false
       }
     })
-  }, [historyData, t])
+  }, [historyData, t, modalT, i18n.language])
 
   // Sync messages with statusHistory from server
   // This ensures messages are updated after refetch from mutations
@@ -680,19 +685,19 @@ export function ViewSubsidyModal({
     // Handle regular message
     const sendAsyncMessage = async () => {
       let messageText = newMessage
-      
+
       // Add status mention if present
       if (mentionStatus) {
         const statusLabel = statusConfig[mentionStatus].label
         messageText = `@Status: ${statusLabel} - ${messageText}`
       }
-      
+
       // Add priority mention if present
       if (mentionPriority) {
         const priorityLabel = mentionPriority === 'high' ? 'Alta' : mentionPriority === 'medium' ? 'Média' : 'Baixa'
         messageText = `@Prioridade: ${priorityLabel} - ${messageText}`
       }
-      
+
       try {
         await addSubsidyRequestMessage({
           variables: {
@@ -701,8 +706,8 @@ export function ViewSubsidyModal({
             language: i18n.language as any
           }
         })
-        
-        
+
+
         setNewMessage("")
         setMentionStatus(null)
         setMentionPriority(null)
@@ -725,7 +730,7 @@ export function ViewSubsidyModal({
 
     try {
       await deleteSubsidyRequestMessage({
-        variables: { 
+        variables: {
           id: deleteCommentDialog.messageId,
           language: i18n.language as any
         }
@@ -741,7 +746,7 @@ export function ViewSubsidyModal({
     const rejectedLabel = modalT.status?.rejected || 'Rejected'
     setNewMessage(modalT.messageFormats.statusChangeReasonPrefix?.replace('{{status}}', rejectedLabel).replace('{{reason}}', reason) || `Status changed to ${rejectedLabel}. Reason: ${reason}`)
     chatInputRef.current?.focus()
-    
+
     // Reject subsidy
     await rejectSubsidyRequest({
       variables: {
@@ -775,17 +780,17 @@ export function ViewSubsidyModal({
       // Validação direta sem nota - chamar API
       try {
         await validateReceipt(docId)
-        
+
         toast.success(modalT.success.documentValidated)
         setMentionMode(null)
 
         // Refetch receipts to update the list
         const updatedReceipts = await fetchReceipts(subsidy?.id)
         setReceipts(updatedReceipts || [])
-        
+
         // Refetch history from backend
         await refetchHistory()
-        
+
         // Notify parent to refresh subsidy data (status might have changed)
         onSubsidyUpdated?.()
       } catch (error) {
@@ -798,11 +803,11 @@ export function ViewSubsidyModal({
         toast.error(modalT.documents.addRejectionReason)
         return
       }
-      
+
       // Call API to reject document
       try {
         await rejectReceipt(docId, newMessage)
-        
+
         toast.success(modalT.success.documentRejected)
         setMentionMode(null)
         setNewMessage("")
@@ -810,10 +815,10 @@ export function ViewSubsidyModal({
         // Refetch receipts to update the list
         const updatedReceipts = await fetchReceipts(subsidy?.id)
         setReceipts(updatedReceipts || [])
-        
+
         // Refetch history from backend
         await refetchHistory()
-        
+
         // Notify parent to refresh subsidy data (status might have changed)
         onSubsidyUpdated?.()
       } catch (error) {
@@ -829,22 +834,22 @@ export function ViewSubsidyModal({
     SubsidyRequestCardData["status"],
     { label: string; icon: React.ElementType; className: string }
   > = {
-    pending: { 
+    pending: {
       label: t('subsidy.status.pending'),
       icon: Clock,
       className: "text-yellow-500"
     },
-    approved: { 
+    approved: {
       label: t('subsidy.status.approved'),
       icon: CheckCircle2,
       className: "text-green-600"
     },
-    rejected: { 
+    rejected: {
       label: t('subsidy.status.rejected'),
       icon: XCircle,
       className: "text-red-600"
     },
-    in_review: { 
+    in_review: {
       label: t('subsidy.status.inReview'),
       icon: AlertCircle,
       className: "text-blue-500"
@@ -872,7 +877,7 @@ export function ViewSubsidyModal({
     const allApproved = docs.every(d => d.is_validated === true)
     const anyRejected = docs.some(d => d.is_validated === false)
     const anyPending = docs.some(d => d.is_validated === undefined)
-    
+
     if (allApproved) return 'approved'
     if (anyRejected) return 'rejected'
     if (anyPending) return 'pending'
@@ -917,25 +922,28 @@ export function ViewSubsidyModal({
   }
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 animate-in fade-in-0 duration-300"
       onClick={handleBackdropClick}
     >
       <div className="relative w-[85vw] h-[90vh] bg-white dark:bg-gray-900 rounded-lg shadow-xl animate-in zoom-in-95 duration-300 flex flex-col overflow-hidden border border-gray-200 dark:border-gray-800">
-        
+
         {/* Header - Minimalista */}
         <div className="border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <div>
-                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                  {subsidy.title}
-                </h2>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                    {subsidy.title}
+                  </h2>
+                </div>
                 <div className="flex items-center gap-2 mt-1.5">
                   <span className="text-xs text-gray-600 dark:text-gray-400">
                     {projectTranslations[i18n.language as keyof typeof projectTranslations]?.subsidy?.requestedOn || 'Requested on:'} {format(new Date(subsidy.requested_at), "dd/MM/yyyy")}
                   </span>
                 </div>
+                <AdvanceSubsidyBadge isForAdvance={subsidy.is_for_advance} />
               </div>
             </div>
 
@@ -945,7 +953,7 @@ export function ViewSubsidyModal({
                 {/* Status Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button 
+                    <button
                       type="button"
                       className={cn(
                         "flex items-center gap-2 px-3 py-2 rounded-md border cursor-pointer min-w-[140px] justify-between transition-colors hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-gray-400",
@@ -978,30 +986,30 @@ export function ViewSubsidyModal({
                   </DropdownMenuTrigger>
                   <WithPermission requiredPermissions={[PermissionResolverName.ApproveSubsidyRequest, PermissionResolverName.RejectSubsidyRequest, PermissionResolverName.ValidateSubsidyReceipt]}>
                     <DropdownMenuContent align="start" className="z-[100]">
-                    <DropdownMenuLabel>{t('subsidy.status.changeStatus')}</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem 
+                      <DropdownMenuLabel>{t('subsidy.status.changeStatus')}</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
                         onClick={() => handleStatusChangeRequest('PENDING')}
                         disabled={!canChangeStatus('pending')}
-                    >
-                      <Clock className="mr-2 h-4 w-4 text-amber-500" />
-                      {t('subsidy.status.pending')}
-                    </DropdownMenuItem>
+                      >
+                        <Clock className="mr-2 h-4 w-4 text-amber-500" />
+                        {t('subsidy.status.pending')}
+                      </DropdownMenuItem>
 
-                    <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={() => handleStatusChangeRequest('IN_REVIEW')}
                         disabled={!canChangeStatus('in_review')}
-                    >
-                      <AlertCircle className="mr-2 h-4 w-4 text-blue-500" />
-                      {t('subsidy.status.inReview')}
-                    </DropdownMenuItem>
-                    
-                      <DropdownMenuItem 
-                          onClick={() => handleStatusChangeRequest('APPROVED')}
-                          disabled={!canChangeStatus('approved')}
-                          className={cn(
-                            hasRejectedDocuments() && "opacity-50 cursor-not-allowed"
-                          )}
+                      >
+                        <AlertCircle className="mr-2 h-4 w-4 text-blue-500" />
+                        {t('subsidy.status.inReview')}
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        onClick={() => handleStatusChangeRequest('APPROVED')}
+                        disabled={!canChangeStatus('approved')}
+                        className={cn(
+                          hasRejectedDocuments() && "opacity-50 cursor-not-allowed"
+                        )}
                       >
                         <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
                         <div className="flex flex-col">
@@ -1013,38 +1021,38 @@ export function ViewSubsidyModal({
                           )}
                         </div>
                       </DropdownMenuItem>
-                    
-                      <DropdownMenuItem 
-                          onClick={() => handleStatusChangeRequest('REJECTED')}
-                          disabled={!canChangeStatus('rejected')}
+
+                      <DropdownMenuItem
+                        onClick={() => handleStatusChangeRequest('REJECTED')}
+                        disabled={!canChangeStatus('rejected')}
                       >
                         <XCircle className="mr-2 h-4 w-4 text-red-500" />
                         {t('subsidy.status.rejected')}
                       </DropdownMenuItem>
 
-                     <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={() => handleStatusChangeRequest('CLOSED')}
                         disabled={!canChangeStatus('closed')}
-                    >
-                      <Ban className="mr-2 h-4 w-4 text-gray-500" />
-                      {t('subsidy.status.closed')}
-                    </DropdownMenuItem>
+                      >
+                        <Ban className="mr-2 h-4 w-4 text-gray-500" />
+                        {t('subsidy.status.closed')}
+                      </DropdownMenuItem>
 
-                     <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={() => handleStatusChangeRequest('ADVANCED_CLOSED')}
                         disabled={!canChangeStatus('advanced_closed')}
-                    >
-                      <CheckCircle2 className="mr-2 h-4 w-4 text-purple-600" />
-                      {t('subsidy.status.advancedClosed')}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </WithPermission>
+                      >
+                        <CheckCircle2 className="mr-2 h-4 w-4 text-purple-600" />
+                        {t('subsidy.status.advancedClosed')}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </WithPermission>
                 </DropdownMenu>
-                
+
                 {/* Priority Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild disabled={currentSubsidyStatus === 'closed'}>
-                    <button 
+                    <button
                       type="button"
                       onClick={(e) => {
                         console.log('🔍 [Priority Dropdown] Trigger clicked', e)
@@ -1196,7 +1204,7 @@ export function ViewSubsidyModal({
                 </Tooltip>
               </div>
             </TooltipProvider>
-            
+
             <Button
               onClick={onClose}
               variant="ghost"
@@ -1210,13 +1218,13 @@ export function ViewSubsidyModal({
 
         {/* Content */}
         <div className="flex-1 overflow-hidden flex">
-          
+
           {/* Main Panel - Activities & Documents */}
           <div className={cn(
             "flex-1 overflow-y-auto p-6 space-y-6 transition-all duration-300",
             isSidebarOpen ? "mr-0" : "mr-0"
           )}>
-            
+
             {/* Activities Navigation - Only show if not an advance request OR if advance request has documents */}
             {(subsidy.is_for_advance && (!receipts || receipts.length === 0)) ? (
               /* Advance Request Info Panel */
@@ -1265,56 +1273,57 @@ export function ViewSubsidyModal({
             ) : (
               /* Regular Subsidy - Activities Navigation */
               <div className="space-y-3">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                {t('subsidy.activities')}
-              </h3>
-              
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {/* Botão de colapso do chat ao lado do cabeçalho de atividades */}
-                {activities.map((activity, index) => {
-                  const docStatus = getActivityDocumentStatus(activity)
-                  return (
-                  <button
-                    key={activity.id}
-                    onClick={() => setSelectedActivityIndex(index)}
-                    className={cn(
-                      "flex-shrink-0 px-4 py-2.5 rounded-md border text-left transition-all relative",
-                      selectedActivityIndex === index
-                        ? "border-gray-900 dark:border-gray-100 bg-gray-900 dark:bg-gray-100"
-                        : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-700"
-                    )}
-                  >
-                    {/* Document Status Badge */}
-                    {docStatus !== 'none' && (
-                      <div className="absolute -top-1 -right-1">
-                        <div className={cn(
-                          "w-3 h-3 rounded-full border-2 border-white dark:border-gray-900",
-                          docStatus === 'approved' && "bg-green-500",
-                          docStatus === 'rejected' && "bg-red-500",
-                          docStatus === 'pending' && "bg-amber-500"
-                        )} />
-                      </div>
-                    )}
-                    <p className={cn(
-                      "text-xs font-medium truncate max-w-[180px]",
-                      selectedActivityIndex === index
-                        ? "text-white dark:text-gray-900"
-                        : "text-gray-900 dark:text-gray-100"
-                    )}>
-                      {activity.name}
-                    </p>
-                    <p className={cn(
-                      "text-xs mt-1",
-                      selectedActivityIndex === index 
-                        ? "text-gray-200 dark:text-gray-700"
-                        : "text-gray-500 dark:text-gray-400"
-                    )}>
-                      {formatCurrency(activity.requested_amount)}
-                    </p>
-                  </button>
-                )})}
+                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {t('subsidy.activities')}
+                </h3>
+
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {/* Botão de colapso do chat ao lado do cabeçalho de atividades */}
+                  {activities.map((activity, index) => {
+                    const docStatus = getActivityDocumentStatus(activity)
+                    return (
+                      <button
+                        key={activity.id}
+                        onClick={() => setSelectedActivityIndex(index)}
+                        className={cn(
+                          "flex-shrink-0 px-4 py-2.5 rounded-md border text-left transition-all relative",
+                          selectedActivityIndex === index
+                            ? "border-gray-900 dark:border-gray-100 bg-gray-900 dark:bg-gray-100"
+                            : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-700"
+                        )}
+                      >
+                        {/* Document Status Badge */}
+                        {docStatus !== 'none' && (
+                          <div className="absolute -top-1 -right-1">
+                            <div className={cn(
+                              "w-3 h-3 rounded-full border-2 border-white dark:border-gray-900",
+                              docStatus === 'approved' && "bg-green-500",
+                              docStatus === 'rejected' && "bg-red-500",
+                              docStatus === 'pending' && "bg-amber-500"
+                            )} />
+                          </div>
+                        )}
+                        <p className={cn(
+                          "text-xs font-medium truncate max-w-[180px]",
+                          selectedActivityIndex === index
+                            ? "text-white dark:text-gray-900"
+                            : "text-gray-900 dark:text-gray-100"
+                        )}>
+                          {activity.name}
+                        </p>
+                        <p className={cn(
+                          "text-xs mt-1",
+                          selectedActivityIndex === index
+                            ? "text-gray-200 dark:text-gray-700"
+                            : "text-gray-500 dark:text-gray-400"
+                        )}>
+                          {formatCurrency(activity.requested_amount)}
+                        </p>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
             )}
 
             {/* Current Activity Details - Show if not advance request OR if documents exist */}
@@ -1350,9 +1359,9 @@ export function ViewSubsidyModal({
                   <h5 className="text-xs font-medium text-gray-700 dark:text-gray-300">
                     {t('subsidy.documents')}
                   </h5>
-                  
+
                   {loadingDocuments || receiptsLoading ? (
-                      <div className="py-8 text-center">
+                    <div className="py-8 text-center">
                       <div className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                         <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
                         <span>{t('subsidy.loadingDocuments')}</span>
@@ -1367,107 +1376,107 @@ export function ViewSubsidyModal({
                       {currentActivity.documents.map((doc) => {
                         const validation = documentValidations[doc.id]
                         const isInMentionMode = mentionMode === doc.id
-                        
+
                         return (
-                        <div
-                          key={doc.id}
-                          className={cn(
-                            "group p-3 rounded-md transition-all border border-gray-200 dark:border-gray-800",
-                            doc.is_validated === true && "bg-green-50/30 dark:bg-green-950/5 border-l-4 border-l-green-500 dark:border-l-green-600",
-                            doc.is_validated === false && "bg-red-50/30 dark:bg-red-950/5 border-l-4 border-l-red-500 dark:border-l-red-600",
-                            doc.is_validated === undefined && "bg-gray-50 dark:bg-gray-800/50 border-l-4 border-l-amber-400 dark:border-l-amber-600 hover:border-l-amber-500 dark:hover:border-l-amber-500"
-                          )}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <FileText className={cn(
-                                "w-4 h-4",
-                                doc.is_validated === true && "text-green-600 dark:text-green-500",
-                                doc.is_validated === false && "text-red-600 dark:text-red-500",
-                                doc.is_validated === undefined && "text-amber-600 dark:text-amber-500"
-                              )} />
-                              <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                                  {doc.file_name}
-                                </p>
-                                {/* Status Badge Minimalista */}
-                                {doc.is_validated === true && (
-                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-100 dark:bg-green-950/50 border-green-400 text-green-700 dark:text-green-400">
-                                    {t('subsidy.status.approved')}
-                                  </Badge>
-                                )}
-                                {doc.is_validated === false && (
-                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-red-100 dark:bg-red-950/50 border-red-400 text-red-700 dark:text-red-400">
-                                    {t('subsidy.status.rejected')}
-                                  </Badge>
-                                )}
-                                {doc.is_validated === undefined && (
-                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-100 dark:bg-amber-950/50 border-amber-400 text-amber-700 dark:text-amber-400">
-                                    {t('subsidy.status.pending')}
-                                  </Badge>
-                                )}
+                          <div
+                            key={doc.id}
+                            className={cn(
+                              "group p-3 rounded-md transition-all border border-gray-200 dark:border-gray-800",
+                              doc.is_validated === true && "bg-green-50/30 dark:bg-green-950/5 border-l-4 border-l-green-500 dark:border-l-green-600",
+                              doc.is_validated === false && "bg-red-50/30 dark:bg-red-950/5 border-l-4 border-l-red-500 dark:border-l-red-600",
+                              doc.is_validated === undefined && "bg-gray-50 dark:bg-gray-800/50 border-l-4 border-l-amber-400 dark:border-l-amber-600 hover:border-l-amber-500 dark:hover:border-l-amber-500"
+                            )}
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <FileText className={cn(
+                                  "w-4 h-4",
+                                  doc.is_validated === true && "text-green-600 dark:text-green-500",
+                                  doc.is_validated === false && "text-red-600 dark:text-red-500",
+                                  doc.is_validated === undefined && "text-amber-600 dark:text-amber-500"
+                                )} />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                      {doc.file_name}
+                                    </p>
+                                    {/* Status Badge Minimalista */}
+                                    {doc.is_validated === true && (
+                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-100 dark:bg-green-950/50 border-green-400 text-green-700 dark:text-green-400">
+                                        {t('subsidy.status.approved')}
+                                      </Badge>
+                                    )}
+                                    {doc.is_validated === false && (
+                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-red-100 dark:bg-red-950/50 border-red-400 text-red-700 dark:text-red-400">
+                                        {t('subsidy.status.rejected')}
+                                      </Badge>
+                                    )}
+                                    {doc.is_validated === undefined && (
+                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-100 dark:bg-amber-950/50 border-amber-400 text-amber-700 dark:text-amber-400">
+                                        {t('subsidy.status.pending')}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <span className={cn(
+                                      "text-xs",
+                                      doc.is_validated !== undefined && "opacity-60"
+                                    )}>
+                                      {getDocumentTypeLabel(doc.document_type)}
+                                    </span>
+                                    <span className="text-xs text-gray-400 dark:text-gray-600">•</span>
+                                    <span className={cn(
+                                      "text-xs font-medium",
+                                      doc.is_validated === true && "text-green-700 dark:text-green-400",
+                                      doc.is_validated === false && "text-red-700 dark:text-red-400",
+                                      doc.is_validated === undefined && "text-gray-700 dark:text-gray-300"
+                                    )}>
+                                      {formatCurrency(doc.amount)}
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <span className={cn(
-                                  "text-xs",
-                                  doc.is_validated !== undefined && "opacity-60"
-                                )}>
-                                  {getDocumentTypeLabel(doc.document_type)}
-                                </span>
-                                <span className="text-xs text-gray-400 dark:text-gray-600">•</span>
-                                <span className={cn(
-                                  "text-xs font-medium",
-                                  doc.is_validated === true && "text-green-700 dark:text-green-400",
-                                  doc.is_validated === false && "text-red-700 dark:text-red-400",
-                                  doc.is_validated === undefined && "text-gray-700 dark:text-gray-300"
-                                )}>
-                                  {formatCurrency(doc.amount)}
-                                </span>
-                              </div>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-1">
-                              {/* Finance Management Actions - Hidden by default, shown on hover */}
+
+                              <div className="flex items-center gap-1">
+                                {/* Finance Management Actions - Hidden by default, shown on hover */}
                                 {doc.is_validated === undefined && currentSubsidyStatus !== 'closed' && (
                                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <WithPermission requiredPermissions={[PermissionResolverName.ValidateSubsidyReceipt]} partialPermissionCheck> 
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => handleValidateDocument(doc.id, true)}
-                                          className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950/30"
-                                        >
-                                          <Check className="w-3.5 h-3.5" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent side="top">
-                                        <p className="text-xs">{t('subsidy.approveDocument')}</p>
-                                      </TooltipContent>
-                                    </Tooltip>
+                                    <WithPermission requiredPermissions={[PermissionResolverName.ValidateSubsidyReceipt]} partialPermissionCheck>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleValidateDocument(doc.id, true)}
+                                            className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950/30"
+                                          >
+                                            <Check className="w-3.5 h-3.5" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top">
+                                          <p className="text-xs">{t('subsidy.approveDocument')}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
                                     </WithPermission>
                                     <WithPermission requiredPermissions={[PermissionResolverName.ValidateSubsidyReceipt]} partialPermissionCheck>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => {
-                                            setMentionMode(doc.id)
-                                            setNewMessage("")
-                                          }}
-                                          className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                        >
-                                          <Ban className="w-3.5 h-3.5" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent side="top">
-                                        <p className="text-xs">{t('subsidy.rejectDocument')}</p>
-                                      </TooltipContent>
-                                    </Tooltip>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                              setMentionMode(doc.id)
+                                              setNewMessage("")
+                                            }}
+                                            className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                          >
+                                            <Ban className="w-3.5 h-3.5" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top">
+                                          <p className="text-xs">{t('subsidy.rejectDocument')}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
                                     </WithPermission>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
@@ -1489,45 +1498,46 @@ export function ViewSubsidyModal({
                                     </Tooltip>
                                   </div>
                                 )}
-                              
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleDownload(doc)}
-                                    className="h-7 w-7 p-0 text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                                  >
-                                    <Download className="w-3.5 h-3.5" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top">
-                                  <p className="text-xs">{t('subsidy.downloadDocument')}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </div>
-                          </div>
-                          
-                          {/* Validation note display only */}
-                          {doc.validation_note && (
-                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                              <div className="flex items-start gap-2 p-2 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                                <AtSign className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs text-amber-900 dark:text-amber-200">
-                                    {doc.validation_note}
-                                  </p>
-                                  {doc.validated_by && doc.validated_at && (
-                                    <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1">
-                                      {t('subsidy.validatedBy', { user: doc.validated_by, date: format(new Date(doc.validated_at), "dd/MM/yyyy HH:mm", { locale: ptBR }) })}
-                                    </p>
-                                  )}
-                                </div>
+
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleDownload(doc)}
+                                      className="h-7 w-7 p-0 text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                                    >
+                                      <Download className="w-3.5 h-3.5" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">
+                                    <p className="text-xs">{t('subsidy.downloadDocument')}</p>
+                                  </TooltipContent>
+                                </Tooltip>
                               </div>
                             </div>
-                          )}
-                        </div>
-                      )})}
+
+                            {/* Validation note display only */}
+                            {doc.validation_note && (
+                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                <div className="flex items-start gap-2 p-2 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                                  <AtSign className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs text-amber-900 dark:text-amber-200">
+                                      {doc.validation_note}
+                                    </p>
+                                    {doc.validated_by && doc.validated_at && (
+                                      <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1">
+                                        {t('subsidy.validatedBy', { user: doc.validated_by, date: format(new Date(doc.validated_at), "dd/MM/yyyy HH:mm", { locale: ptBR }) })}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
 
                     </div>
                   )}
@@ -1606,28 +1616,28 @@ export function ViewSubsidyModal({
         warningMessage={t('subsidy.statusChange.warning.rejected')}
         confirmationText={t('rejection.dialog.confirmation')}
       />
-      
+
       {/* Status Confirmation Dialog */}
-       <ConfirmationDialog
+      <ConfirmationDialog
         isOpen={statusConfirmationDialog.isOpen}
         onClose={() => setStatusConfirmationDialog({ isOpen: false, status: null })}
         onConfirm={confirmStatusChangeAction}
         title={t('subsidy.statusChange.title')}
         description={
-            statusConfirmationDialog.status === 'approved' 
+          statusConfirmationDialog.status === 'approved'
             ? t('subsidy.statusChange.warning.approved')
             : statusConfirmationDialog.status === 'closed'
-                ? t('subsidy.statusChange.warning.closed')
-                : t('subsidy.statusChange.warning.generic')
+              ? t('subsidy.statusChange.warning.closed')
+              : t('subsidy.statusChange.warning.generic')
         }
         confirmText={t('common.confirm')}
         cancelText={t('common.cancel')}
         severity="high"
         warnings={[
-            {
-                icon: AlertCircle,
-                text: t('subsidy.irreversibleActionWarning')
-            }
+          {
+            icon: AlertCircle,
+            text: t('subsidy.irreversibleActionWarning')
+          }
         ]}
       />
     </div>
