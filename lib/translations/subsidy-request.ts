@@ -232,7 +232,10 @@ export const subsidyRequestTranslations = {
       button: "Request Advance",
       submit: "Submit Advance Request",
       success: "Advance request created successfully",
-      statusAdvancedClosed: "Advanced Closed"
+      statusAdvancedClosed: "Advanced Closed",
+      advanceAmount: "Advance Amount",
+      status: "Status",
+      noActivitiesNote: "No activities notes"
     }
   },
   
@@ -467,7 +470,10 @@ export const subsidyRequestTranslations = {
       button: "Solicitar Adiantamento",
       submit: "Enviar Solicitação de Adiantamento",
       success: "Solicitação de adiantamento criada com sucesso",
-      statusAdvancedClosed: "Adiantamento Encerrado"
+      statusAdvancedClosed: "Adiantamento Encerrado",
+      status: "Status",
+      advanceAmount: "Valor do Adiantamento",
+      noActivitiesNote: "Nenhuma atividade subsidiada selecionada"
     }
   },
   
@@ -703,7 +709,10 @@ export const subsidyRequestTranslations = {
       button: "Voorschot Aanvragen",
       submit: "Voorschotaanvraag Indienen",
       success: "Voorschotaanvraag succesvol aangemaakt",
-      statusAdvancedClosed: "Voorschot Afgesloten"
+      statusAdvancedClosed: "Voorschot Afgesloten",
+      noActivitiesNote: "Geen gesubsidieerde activiteiten geselecteerd",
+      advanceAmount: "Voorschotbedrag",
+      advanceStatus: "Voorschotstatus"
     }
   }
 }
