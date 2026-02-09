@@ -33,6 +33,9 @@ export interface DeleteSubsidyRequest_deleteSubsidyRequest {
   department_id: string;
   church_id: string | null;
   project_id: string;
+  refund_amount: any;
+  have_refund: boolean;
+  refund_done: boolean;
   subsidy_status: DeleteSubsidyRequest_deleteSubsidyRequest_subsidy_status;
 }
 

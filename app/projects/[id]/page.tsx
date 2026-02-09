@@ -52,13 +52,13 @@ import {
 
 import { ProjectTableData } from "@/components/projects/projects-table"
 import { Button } from "@/components/ui/button"
-import { 
-  DollarSign, 
-  CheckCircle, 
-  Activity, 
+import {
+  DollarSign,
+  CheckCircle,
+  Activity,
   Calendar,
   Target,
-  TrendingUp, 
+  TrendingUp,
   Church
 } from "lucide-react"
 import toast from "react-hot-toast"
@@ -128,23 +128,23 @@ export default function ProjectDetailsPage() {
   const { currentInstitutionData } = useInstitution()
   const { formatCurrency } = useCurrency()
   const projectId = params.id as string
-  
+
   // Translations
   const pt = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.pt
-  
+
   const locale = i18n.language === 'en' ? 'en-US' : i18n.language === 'nl' ? 'nl-NL' : 'pt-BR'
   const currency = i18n.language === 'en' ? 'USD' : i18n.language === 'nl' ? 'EUR' : 'BRL'
-  
+
   // State management
   const [project, setProject] = useState<ProjectTableData | null>(null)
   const [selectedActivities, setSelectedActivities] = useState<ProjectActivityData[]>([])
   const [subsidyRequests, setSubsidyRequests] = useState<SubsidyRequestCardData[]>([])
   const [communications, setCommunications] = useState<CommunicationCardData[]>([])
   const [activeTab, setActiveTab] = useState<"subsidies" | "communications">("subsidies")
-  
+
   // Hook for fetching receipts for edit mode
   const { fetchReceipts } = useSubsidyReceipts({
-    subsidyRequestId: undefined, 
+    subsidyRequestId: undefined,
   })
 
   // Helper helpers - moved from SubsidyRequestsContainer (consider extracting to utils if frequent)
@@ -167,7 +167,7 @@ export default function ProjectDetailsPage() {
     }
     return typeMap[type?.toLowerCase()] || 'OTHER'
   }
-  
+
   // Batch editing state
   const [batchEditData, setBatchEditData] = useState({
     status: "",
@@ -175,14 +175,14 @@ export default function ProjectDetailsPage() {
     activity_tag: "",
     is_subsidized: false
   })
-  
+
   // Filters state
   const [subsidyFilter, setSubsidyFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [priorityFilter, setPriorityFilter] = useState<string>("all")
   const [tagFilter, setTagFilter] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState<string>("")
-  
+
   // Modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteProjectModalOpen, setIsDeleteProjectModalOpen] = useState(false)
@@ -207,12 +207,12 @@ export default function ProjectDetailsPage() {
   const [linkedActivityIdsForModal, setLinkedActivityIdsForModal] = useState<string[]>([])
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false)
   const [selectedReceipt, setSelectedReceipt] = useState<any>(undefined)
-  
+
   // Selected items for modals
   const [selectedSubsidy, setSelectedSubsidy] = useState<SubsidyRequestData | undefined>(undefined)
   const [selectedSubsidyCard, setSelectedSubsidyCard] = useState<SubsidyRequestCardData | null>(null)
   const [selectedActivity, setSelectedActivity] = useState<ActivityData | undefined>(undefined)
-  
+
   // Edit mode states for RequestSubsidyModal
   const [editSubsidyInitialData, setEditSubsidyInitialData] = useState<any>(null)
   const [requestSubsidyMode, setRequestSubsidyMode] = useState<"create" | "edit">("create")
@@ -319,9 +319,9 @@ export default function ProjectDetailsPage() {
       }
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
       if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(t('toasts.documentsPending') || "All documents must be validated first", { duration: 5000 });
+        toast.error(t('toasts.documentsPending') || "All documents must be validated first", { duration: 5000 });
       } else {
-          toast.error(`${t('errors.updateError')}: ${error.message}`)
+        toast.error(`${t('errors.updateError')}: ${error.message}`)
       }
     }
   })
@@ -338,9 +338,9 @@ export default function ProjectDetailsPage() {
       }
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
       if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(t('toasts.documentsPending') || "All documents must be validated first", { duration: 5000 });
+        toast.error(t('toasts.documentsPending') || "All documents must be validated first", { duration: 5000 });
       } else {
-          toast.error(`${t('errors.updateError')}: ${error.message}`)
+        toast.error(`${t('errors.updateError')}: ${error.message}`)
       }
     }
   })
@@ -353,9 +353,9 @@ export default function ProjectDetailsPage() {
     onError: (error) => {
       const errorCode = (error.graphQLErrors?.[0]?.extensions as any)?.additional?.errorCode;
       if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(t('toasts.documentsPending') || "All documents must be validated first", { duration: 5000 });
+        toast.error(t('toasts.documentsPending') || "All documents must be validated first", { duration: 5000 });
       } else {
-          toast.error(`${t('errors.updateError')}: ${error.message}`)
+        toast.error(`${t('errors.updateError')}: ${error.message}`)
       }
     }
   })
@@ -429,7 +429,7 @@ export default function ProjectDetailsPage() {
       const transformedProject = transformProjectData(projectData.project)
 
       setProject(transformedProject)
-      
+
       // Show expired modal if project is expired
       if (projectData.project.status === 'EXPIRED') {
         setIsExpiredModalOpen(true)
@@ -469,6 +469,10 @@ export default function ProjectDetailsPage() {
           total_budget: subsidy.items?.reduce((sum: number, item: any) => sum + Number(item.project_activity?.budget_amount || 0), 0) || Number(subsidy.total_budget),
           is_for_advance: subsidy.is_for_advance,
           advance_amount: subsidy.advance_amount ? Number(subsidy.advance_amount) : undefined,
+          // Refund fields
+          refund_amount: subsidy.refund_amount ? Number(subsidy.refund_amount) : undefined,
+          have_refund: subsidy.have_refund || false,
+          refund_done: subsidy.refund_done || false,
           // Store items for detailed view
           items: subsidy.items?.map((item: any) => ({
             id: item.id,
@@ -524,7 +528,7 @@ export default function ProjectDetailsPage() {
   // Get all project activities - transform backend data to match ProjectActivityData interface
   const allProjectActivities = useMemo(() => {
     if (!projectData?.project?.activities) return []
-    
+
     const transformed = projectData.project.activities.map((activity: any) => {
       // Map backend enum values to frontend values
       const statusMap: Record<string, string> = {
@@ -560,11 +564,11 @@ export default function ProjectDetailsPage() {
         // Usar assignees diretamente
         assigned_users: activity.assignees && activity.assignees.length > 0
           ? activity.assignees.map((a: any) => ({
-              id: a.user.id,
-              name: a.user.name,
-              email: a.user.email,
-              initials: a.user.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase(),
-            }))
+            id: a.user.id,
+            name: a.user.name,
+            email: a.user.email,
+            initials: a.user.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase(),
+          }))
           : [],
         // Incluir assignees diretamente para o modal
         assignees: activity.assignees || [],
@@ -582,15 +586,15 @@ export default function ProjectDetailsPage() {
   // Transform users data for UsersAvatarGroup
   const projectUsers = useMemo(() => {
     if (!usersData?.users) return []
-    
+
     // Get unique users from activities assignees
     const allAssignees = allProjectActivities.flatMap(activity => activity.assigned_users || [])
-    
+
     // Remove duplicates by id
     const uniqueUsers = Array.from(
       new Map(allAssignees.map(user => [user.id, user])).values()
     )
-    
+
     // Always include project owner, even if not in any activity
     const ownerId = project?.owner?.id || project?.owner_id
     if (ownerId) {
@@ -608,7 +612,7 @@ export default function ProjectDetailsPage() {
         }
       }
     }
-    
+
     return uniqueUsers.map(user => ({
       id: user.id,
       name: user.name,
@@ -631,8 +635,8 @@ export default function ProjectDetailsPage() {
         title: t('details.totalActivities') || "Total Activities",
         value: kpis.totalActivities.toString(),
         subtitle: (t('details.activitiesStats') || "{{completed}} completed | {{inProgress}} in progress")
-            .replace('{{completed}}', kpis.completedActivities.toString())
-            .replace('{{inProgress}}', kpis.inProgressActivities.toString()),
+          .replace('{{completed}}', kpis.completedActivities.toString())
+          .replace('{{inProgress}}', kpis.inProgressActivities.toString()),
         trend: {
           value: kpis.completionRate,
           isPositive: kpis.completionRate > 50,
@@ -665,8 +669,8 @@ export default function ProjectDetailsPage() {
         title: t('details.completionRate') || "Completion Rate",
         value: `${kpis.completionRate}%`,
         subtitle: (t('details.completionSubtitle') || "{{completed}} of {{total}} finalized")
-            .replace('{{completed}}', kpis.completedActivities.toString())
-            .replace('{{total}}', kpis.totalActivities.toString()),
+          .replace('{{completed}}', kpis.completedActivities.toString())
+          .replace('{{total}}', kpis.totalActivities.toString()),
         trend: {
           value: kpis.completedActivities,
           isPositive: kpis.completedActivities > 0,
@@ -679,27 +683,27 @@ export default function ProjectDetailsPage() {
         title: t('details.subsidizedActivitiesTitle') || "Subsidized Activities",
         value: kpis.subsidizedActivities.toString(),
         subtitle: (t('details.subsidizedStats') || "{{percent}}% of total | {{count}} requests")
-            .replace('{{percent}}', kpis.subsidyRate.toString())
-            .replace('{{count}}', kpis.subsidyRequestsCount.toString()),
+          .replace('{{percent}}', kpis.subsidyRate.toString())
+          .replace('{{count}}', kpis.subsidyRequestsCount.toString()),
         icon: Target,
       },
       {
         id: "project-timeline",
-        title: kpis.daysRemaining > 0 
-          ? (t('details.timeRemaining') || "Time Remaining") 
+        title: kpis.daysRemaining > 0
+          ? (t('details.timeRemaining') || "Time Remaining")
           : (t('details.projectFinalized') || "Project Finalized"),
-        value: kpis.daysRemaining > 0 
+        value: kpis.daysRemaining > 0
           ? (t('details.daysRemainingCount') || "{{days}} days").replace('{{days}}', kpis.daysRemaining.toString())
           : (t('details.concluded') || "Concluded"),
         subtitle: (t('details.endsIn') || "Ends on {{date}}")
           .replace('{{date}}', endDate.toLocaleDateString(
-            i18n.language === 'pt' ? 'pt-BR' : 
-            i18n.language === 'nl' ? 'nl-NL' : 'en-US'
+            i18n.language === 'pt' ? 'pt-BR' :
+              i18n.language === 'nl' ? 'nl-NL' : 'en-US'
           )),
         trend: {
           value: Math.abs(kpis.daysRemaining),
           isPositive: kpis.daysRemaining > 30,
-          label: kpis.daysRemaining > 0 
+          label: kpis.daysRemaining > 0
             ? (t('details.daysPositiveLabel') || "days remaining")
             : (t('details.daysNegativeLabel') || "days ago")
         },
@@ -857,8 +861,8 @@ export default function ProjectDetailsPage() {
   const subsidizedActivityIds = useMemo(() => {
     const subsidies = projectData?.project?.subsidies
     if (!subsidies || subsidies.length === 0) return []
-    
-    return subsidies.flatMap((subsidy: any) => 
+
+    return subsidies.flatMap((subsidy: any) =>
       subsidy.items?.map((item: any) => item.project_activity_id) || []
     ) as string[]
   }, [projectData])
@@ -873,7 +877,7 @@ export default function ProjectDetailsPage() {
 
   const handleBatchSubsidyRequest = useCallback(() => {
     // Check if any selected activity already has a subsidy
-    const activitiesWithSubsidy = selectedActivities.filter(activity => 
+    const activitiesWithSubsidy = selectedActivities.filter(activity =>
       activityHasSubsidy(activity.id)
     )
 
@@ -895,7 +899,7 @@ export default function ProjectDetailsPage() {
       // Transform items to match backend expected format
       const subsidyItems = data.items.map(item => {
         const activityDocs = item.activity_documents?.filter(doc => doc.origin === 'ACTIVITY') || [];
-        
+
         return {
           project_activity_id: item.activity_id,
           requested_amount: item.requested_amount,
@@ -938,7 +942,7 @@ export default function ProjectDetailsPage() {
               department_id: data.department_id || undefined,
               church_id: data.church_id || undefined,
               project_id: data.project_id,
-              requester_id: user?.id, 
+              requester_id: user?.id,
               items: subsidyItems,
               notes: data.notes
             }
@@ -974,7 +978,7 @@ export default function ProjectDetailsPage() {
       setSelectedSubsidyCard(subsidy)
 
       let receiptsByActivity: Record<string, any[]> = {}
-      
+
       // Fetch receipts if editing
       try {
         const receipts = await fetchReceipts(subsidy.id)
@@ -1003,17 +1007,17 @@ export default function ProjectDetailsPage() {
         items: subsidy.items?.map(item => {
           // Get receipts for this activity
           const activityReceipts = receiptsByActivity[item.activity_id] || []
-          
+
           // Transform receipts to activity_documents format
           const activity_documents = activityReceipts.map((receipt: any) => ({
-             id: receipt.id,
-             file_name: receipt.filename,
-             file_type: getFileType(receipt.filename),
-             document_type: mapReceiptTypeToDocType(receipt.type),
-             amount: receipt.amount ? Number(receipt.amount) : 0, 
-             file_url: receipt.file_url,
-             isExpanded: false,
-             origin: 'EXISTING_RECEIPT'
+            id: receipt.id,
+            file_name: receipt.filename,
+            file_type: getFileType(receipt.filename),
+            document_type: mapReceiptTypeToDocType(receipt.type),
+            amount: receipt.amount ? Number(receipt.amount) : 0,
+            file_url: receipt.file_url,
+            isExpanded: false,
+            origin: 'EXISTING_RECEIPT'
           }))
 
           return {
@@ -1040,7 +1044,7 @@ export default function ProjectDetailsPage() {
       // Transform items to match backend expected format
       const subsidyItems = data.items.map(item => {
         const activityDocs = item.activity_documents?.filter(doc => doc.origin === 'ACTIVITY') || [];
-        
+
         return {
           project_activity_id: item.activity_id,
           requested_amount: item.requested_amount,
@@ -1103,28 +1107,28 @@ export default function ProjectDetailsPage() {
   const handleActivitiesSelected = (activities: ProjectActivityData[]) => {
     // Fechar modal de seleção
     setIsSelectActivitiesModalOpen(false)
-    
+
     // Check if we are linking to an existing advance request
     if (selectedSubsidyCard && (selectedSubsidyCard.is_for_advance || selectedSubsidyCard.status === 'advanced_closed')) {
       linkActivitiesToSubsidy(selectedSubsidyCard, activities)
       return
     }
-    
+
     // Normal flow: Create New Request
     // Definir atividades selecionadas
     setSelectedActivities(activities)
-    
+
     // Abrir modal de solicitação de subsídio com as atividades selecionadas
     setIsRequestSubsidyModalOpen(true)
-    
+
     toast.success(`${activities.length} atividade(s) selecionada(s)`, { duration: 2000 })
   }
-  
+
   const linkActivitiesToSubsidy = async (subsidy: SubsidyRequestCardData, newActivities: ProjectActivityData[]) => {
     try {
-       
-       // 1. Construct existing items
-       const existingItems = subsidy.items?.map(item => ({
+
+      // 1. Construct existing items
+      const existingItems = subsidy.items?.map(item => ({
         project_activity_id: item.activity_id,
         requested_amount: item.requested_amount,
         notes: item.notes || "",
@@ -1135,84 +1139,84 @@ export default function ProjectDetailsPage() {
         // If we don't send `linked_activity_document_ids` back, they might be lost if logic depends on input.
         // However, `SubsidyReceipt` records are persistent entities linked to `subsidy_request_item_id`.
         // If we delete items and recreate, receipt links will break unless handled.
-        
+
         // Wait! Backend `update` implementation:
         // await this.subsidyRequestItemRepository.deleteBySubsidyRequestId(id);
         // await this.subsidyRequestItemRepository.createMany(id, items);
-        
+
         // This is destructive for receipts linked to items!
         // `SubsidyReceipt` has `subsidy_request_item_id`.
         // If we delete the item, the receipt foreign key constraint might fail (if Cascade) or become orphan (if SetNull).
         // Let's check `SubsidyReceipt` schema/relation.
-        
+
         // If it's CASCADE, receipts are deleted -> BAD.
         // If it's SET NULL, receipts lose link -> BAD.
-        
+
         // BUT, Advance Requests normally don't have items initially.
         // If adding for the first time, it's fine.
         // If adding MORE activities later, we are replacing existing items.
-        
+
         // CRITICAL CHECK: Does `SubsidyRequestItemRepository.deleteBySubsidyRequestId` cause data loss for receipts?
         // In `SubsidyReceipt` model (schema.prisma usually), what is the relation?
         // Most likely `onDelete: Cascade`.
-        
+
         // If this is true, the `update` method in backend is DANGEROUS for existing items with receipts.
         // However, this task is specifically for "Advance Requests" which:
         // 1. Start with 0 items.
         // 2. User links activities (adding items).
         // 3. User likely hasn't uploaded receipts yet (since they are adding activities now to do so).
-        
+
         // IF user links activities, then uploads receipts, THEN links MORE activities:
         // The receipts would be deleted if we don't handle this carefully.
-        
+
         // Since I cannot change backend right now easily to be smart (it's a raw delete/create),
         // I should warn or be aware.
         // But the requirement is: "definir uma atividade e adicionar documentos DEPOIS da criação".
         // Use case: Create Advance -> Link Activity -> Upload Docs.
         // If user does: Create Advance -> Link Activity A -> Upload Doc A -> Link Activity B...
         // Doc A might be lost if `update` deletes Item A.
-        
+
         // Let's assume for now the user links all activities first.
         // OR, the backend handles re-linking if `SubsidyReceipt` is not cascaded.
         // Actually, looking at backend code `createFromActivityDocument`: it creates a `SubsidyReceipt`.
-        
+
         // RISK: The current backend `update` implementation seems naive for incremental updates if items have dependent data.
         // But I must implement the frontend part requested.
-        
-        // PROPOSAL: Just map new activities to item format.
-       })) || []
-       
-       // 2. Map new activities to items
-       const newItems = newActivities.map(activity => ({
-         project_activity_id: activity.id,
-         // For advance subsidies, the requested amount IS the advance amount.
-         // If linking multiple activities, we might need to split it, but usually it's 1-to-1 or user adjusts.
-         // For now, default to the subsidy's total requested amount (the advance).
-         requested_amount: subsidy.requested_amount, 
-         notes: ""
-       }))
-       
-       // 3. Combine
-       const allItems = [...existingItems, ...newItems]
 
-       await updateSubsidyRequest({
-         variables: {
-           id: subsidy.id,
-           data: {
-             items: allItems,
-             // We must preserve other fields or send partial?
-             // The input `SubsidyRequestUpdateDto` allows optional fields.
-             // But we need to make sure we don't accidentally unset things.
-             // Sending only `items` should be enough if DTO allows.
-            }
-         }
-       })
-       
-       toast.success(t('subsidy.activitiesLinkedSuccess') || "Activities linked successfully")
-       await refetchProject()
-       
+        // PROPOSAL: Just map new activities to item format.
+      })) || []
+
+      // 2. Map new activities to items
+      const newItems = newActivities.map(activity => ({
+        project_activity_id: activity.id,
+        // For advance subsidies, the requested amount IS the advance amount.
+        // If linking multiple activities, we might need to split it, but usually it's 1-to-1 or user adjusts.
+        // For now, default to the subsidy's total requested amount (the advance).
+        requested_amount: subsidy.requested_amount,
+        notes: ""
+      }))
+
+      // 3. Combine
+      const allItems = [...existingItems, ...newItems]
+
+      await updateSubsidyRequest({
+        variables: {
+          id: subsidy.id,
+          data: {
+            items: allItems,
+            // We must preserve other fields or send partial?
+            // The input `SubsidyRequestUpdateDto` allows optional fields.
+            // But we need to make sure we don't accidentally unset things.
+            // Sending only `items` should be enough if DTO allows.
+          }
+        }
+      })
+
+      toast.success(t('subsidy.activitiesLinkedSuccess') || "Activities linked successfully")
+      await refetchProject()
+
     } catch (error) {
-       toast.error(t('subsidy.activitiesLinkedError') || "Error linking activities")
+      toast.error(t('subsidy.activitiesLinkedError') || "Error linking activities")
     }
   }
 
@@ -1738,8 +1742,8 @@ export default function ProjectDetailsPage() {
   const batchEditFields: BatchEditField[] = useMemo(() => [
     {
       id: 'status',
-      label: t('dynamicFields.statusOptions.label'), 
-      translationKey: 'status', 
+      label: t('dynamicFields.statusOptions.label'),
+      translationKey: 'status',
       translationNamespace: 'dynamicFields',
       type: 'select',
       value: batchEditData.status,
@@ -1762,8 +1766,8 @@ export default function ProjectDetailsPage() {
     },
     {
       id: 'priority',
-      label: t('dynamicFields.priorityOptions.label'), 
-      translationKey: 'priority', 
+      label: t('dynamicFields.priorityOptions.label'),
+      translationKey: 'priority',
       translationNamespace: 'dynamicFields',
       type: 'select',
       value: batchEditData.priority,
@@ -1786,8 +1790,8 @@ export default function ProjectDetailsPage() {
     },
     {
       id: 'is_subsidized',
-      label: t('dynamicFields.subsidizedOptions.label'), 
-      translationKey: 'subsidized', 
+      label: t('dynamicFields.subsidizedOptions.label'),
+      translationKey: 'subsidized',
       translationNamespace: 'dynamicFields',
       type: 'switch',
       value: batchEditData.is_subsidized,
@@ -1801,14 +1805,14 @@ export default function ProjectDetailsPage() {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-[400px]">
-        <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
-            <LoadingSpinner 
-                text="Loading project..." 
-                icon={Church}
-                size="lg"
-              />
-              </div>
+          <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
+            <LoadingSpinner
+              text="Loading project..."
+              icon={Church}
+              size="lg"
+            />
           </div>
+        </div>
       </AppLayout>
     )
   }
@@ -1832,10 +1836,10 @@ export default function ProjectDetailsPage() {
     const subsidy = subsidyRequests.find((s: SubsidyRequestCardData) => s.id === id)
     if (subsidy) {
       setSelectedSubsidyCard(subsidy)
-      
+
       // Get IDs of activities already linked to this subsidy
       const linkedIds = subsidy.items?.map(item => item.activity_id) || []
-      
+
       // Combine with global subsidized IDs for the modal exclusion
       // We use a separate state or just pass combined array? 
       // The modal takes `subsidizedActivityIds`. 
@@ -1844,7 +1848,7 @@ export default function ProjectDetailsPage() {
       // Updating it here might affect others if not reset.
       // Better approach: Calculate it safely without modifying global state or just append.
       // The issue was typing of `prev`.
-      
+
       setLinkedActivityIdsForModal(linkedIds)
       setIsSelectActivitiesModalOpen(true)
     }
@@ -1874,7 +1878,7 @@ export default function ProjectDetailsPage() {
 
         {/* KPI Cards */}
         {projectKPIs && (
-          <KPICards 
+          <KPICards
             data={projectKPIs}
             isLoading={projectLoading}
             minCardsForCarousel={4}
@@ -1885,38 +1889,38 @@ export default function ProjectDetailsPage() {
         {/* Grid Container - Chart + Subsidy Cards OR Communications */}
         <GridContainer
           items={[
-                  {
-                    id: "subsidy-chart",
-                    component: (
-                      <SubsidyActivityChart
-                        data={subsidyRequests}
-                        selectedYear={new Date().getFullYear()}
-                      />
-                    ),
-                    colSpan: "col-span-12 lg:col-span-8",
-                  },
-                  {
-                    id: "subsidy-cards",
-                    component: (
-                        <SubsidyRequestsContainer
-                          subsidies={subsidyRequests}
-                          onAddSubsidy={handleAddSubsidyFromContainer}
-                          onEditSubsidy={handleEditSubsidyCard}
-                          onDeleteSubsidy={handleDeleteSubsidyCard}
-                          onDuplicateSubsidy={handleDuplicateSubsidyCard}
-                          onUpdateSubsidy={handleUpdateSubsidyCard}
-                          onLinkActivity={handleLinkActivity}
-                          allActivities={projectData.project.activities || []}
-                          subsidizedActivityIds={[...subsidizedActivityIds, ...linkedActivityIdsForModal]}
-                          onRefresh={async () => { await refetchProject() }}
-                          projectSubsidizedBudget={Number(projectData.project.subsidized_budget || 0)}
-                          projectId={projectId}
-                          projectName={project.title}
-                        />
-                    ),
-                    colSpan: "col-span-12 lg:col-span-4",
-                  },
-                ]
+            {
+              id: "subsidy-chart",
+              component: (
+                <SubsidyActivityChart
+                  data={subsidyRequests}
+                  selectedYear={new Date().getFullYear()}
+                />
+              ),
+              colSpan: "col-span-12 lg:col-span-8",
+            },
+            {
+              id: "subsidy-cards",
+              component: (
+                <SubsidyRequestsContainer
+                  subsidies={subsidyRequests}
+                  onAddSubsidy={handleAddSubsidyFromContainer}
+                  onEditSubsidy={handleEditSubsidyCard}
+                  onDeleteSubsidy={handleDeleteSubsidyCard}
+                  onDuplicateSubsidy={handleDuplicateSubsidyCard}
+                  onUpdateSubsidy={handleUpdateSubsidyCard}
+                  onLinkActivity={handleLinkActivity}
+                  allActivities={projectData.project.activities || []}
+                  subsidizedActivityIds={[...subsidizedActivityIds, ...linkedActivityIdsForModal]}
+                  onRefresh={async () => { await refetchProject() }}
+                  projectSubsidizedBudget={Number(projectData.project.subsidized_budget || 0)}
+                  projectId={projectId}
+                  projectName={project.title}
+                />
+              ),
+              colSpan: "col-span-12 lg:col-span-4",
+            },
+          ]
           }
           gap="lg"
         />
@@ -1975,7 +1979,7 @@ export default function ProjectDetailsPage() {
                 {
                   id: 'apply',
                   label: t('common.apply'),
-                  icon: <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+                  icon: <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>,
                   onClick: handleBatchEdit,
                   variant: 'outline',
                   requiredPermission: PermissionResolverName.UpdateProjectActivity
@@ -1984,7 +1988,7 @@ export default function ProjectDetailsPage() {
               batchPrimaryAction={{
                 id: 'request-subsidy',
                 label: t('subsidy.requestSubsidy'),
-                icon: <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
+                icon: <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="2" y2="22" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>,
                 onClick: handleBatchSubsidyRequest,
                 variant: 'default',
                 disabled: !canRequestSubsidy,
@@ -2019,7 +2023,7 @@ export default function ProjectDetailsPage() {
        
           </div> */}
         </div>
-        
+
         {/* Project Modals */}
         <ProjectModalsWrapper
           // Modal states
@@ -2112,13 +2116,13 @@ export default function ProjectDetailsPage() {
             <DialogHeader>
               <DialogTitle>Add User</DialogTitle>
             </DialogHeader>
-            
+
             <div className="space-y-4">
               {/* Users List */}
               <div className="max-h-[400px] overflow-y-auto space-y-1">
                 {usersData?.users && usersData.users.length > 0 ? (
                   usersData.users
-                    .filter((user: any) => 
+                    .filter((user: any) =>
                       !projectUsers.some(pu => pu.id === user.id)
                     )
                     .map((user: any) => {

@@ -24,6 +24,9 @@ export const GET_ALL_SUBSIDY_REQUESTS = gql`
       project_id
       is_for_advance
       advance_amount
+      refund_amount
+      have_refund
+      refund_done
       subsidy_status {
         id
         name

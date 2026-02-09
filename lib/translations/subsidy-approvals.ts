@@ -71,7 +71,8 @@ export const subsidyApprovalsTranslations = {
       approved: "Approved",
       closed: "Closed",
       rejected: "Rejected",
-      advanced_closed: "Advanced Closed"
+      advanced_closed: "Advanced Closed",
+      waiting_refund: "Waiting Refund"
     },
     
     // Priority labels
@@ -111,7 +112,8 @@ export const subsidyApprovalsTranslations = {
         approved: "Approved",
         closed: "Closed",
         rejected: "Rejected",
-        advanced_closed: "Advanced Closed"
+        advanced_closed: "Advanced Closed",
+        waiting_refund: "Waiting Refund"
       }
     },
     
@@ -122,7 +124,8 @@ export const subsidyApprovalsTranslations = {
       approved: "Subsidy has been approved and is released for payment. This is an irreversible action and can only transition to Closed. Updates to the subsidy or files are still possible.",
       rejected: "Subsidy has been rejected and will not be subsidized for some reason. This is an irreversible action and can only transition to Closed. Updates to the subsidy or files are still possible.",
       closed: "Final status, indicating that all necessary actions for the subsidy have been completed. From here, no update or deletion actions can be performed on the subsidy or files.",
-      advanced_closed: "Final status for advance subsidies. Indicates the advance has been reconciled and closed."
+      advanced_closed: "Final status for advance subsidies. Indicates the advance has been reconciled and closed.",
+      waiting_refund: "Subsidy is waiting for refund processing. Funds will be returned to the annual budget after confirmation."
     },
     
     // Card Header
@@ -261,7 +264,8 @@ export const subsidyApprovalsTranslations = {
       approved: "Aprovado",
       closed: "Fechado",
       rejected: "Rejeitado",
-      advanced_closed: "Adiantamento Fechado"
+      advanced_closed: "Adiantamento Fechado",
+      waiting_refund: "Aguardando Reembolso"
     },
     
     // Priority labels
@@ -301,7 +305,8 @@ export const subsidyApprovalsTranslations = {
         approved: "Aprovado",
         closed: "Fechado",
         rejected: "Rejeitado",
-        advanced_closed: "Adiantamento Fechado"
+        advanced_closed: "Adiantamento Fechado",
+        waiting_refund: "Aguardando Reembolso"
       }
     },
     
@@ -312,7 +317,8 @@ export const subsidyApprovalsTranslations = {
       approved: "Subsídio foi aprovado e está liberado para pagamento. Esta é uma ação irreversível e só pode transitar para Fechado. Atualizações no subsídio ou arquivos ainda são possíveis.",
       rejected: "Subsídio foi rejeitado e não será subsidiado por algum motivo. Esta é uma ação irreversível e só pode transitar para Fechado. Atualizações no subsídio ou arquivos ainda são possíveis.",
       closed: "Status final, indicando que todas as ações necessárias para o subsídio foram concluídas. A partir daqui, nenhuma atualização ou ação de exclusão pode ser realizada no subsídio ou arquivos.",
-      advanced_closed: "Status final para subsídios adiantados. Indica que o adiantamento foi reconciliado e fechado."
+      advanced_closed: "Status final para subsídios adiantados. Indica que o adiantamento foi reconciliado e fechado.",
+      waiting_refund: "Subsídio aguardando processamento de reembolso. Os fundos serão devolvidos ao orçamento anual após confirmação."
     },
     
     // Card Header
@@ -451,7 +457,8 @@ export const subsidyApprovalsTranslations = {
       approved: "Goedgekeurd",
       closed: "Gesloten",
       rejected: "Afgewezen",
-      advanced_closed: "Geavanceerd Gesloten"
+      advanced_closed: "Geavanceerd Gesloten",
+      waiting_refund: "Wacht op Terugbetaling"
     },
     
     // Priority labels
@@ -491,7 +498,8 @@ export const subsidyApprovalsTranslations = {
         approved: "Goedgekeurd",
         closed: "Gesloten",
         rejected: "Afgewezen",
-        advanced_closed: "Geavanceerd Gesloten"
+        advanced_closed: "Geavanceerd Gesloten",
+        waiting_refund: "Wacht op Terugbetaling"
       }
     },
     
@@ -502,7 +510,8 @@ export const subsidyApprovalsTranslations = {
       approved: "Subsidie is goedgekeurd en vrijgegeven voor betaling. Dit is een onomkeerbare actie en kan alleen overgaan naar Gesloten. Updates aan de subsidie of bestanden zijn nog mogelijk.",
       rejected: "Subsidie is afgewezen en zal om een bepaalde reden niet worden gesubsidieerd. Dit is een onomkeerbare actie en kan alleen overgaan naar Gesloten. Updates aan de subsidie of bestanden zijn nog mogelijk.",
       closed: "Eindstatus, wat aangeeft dat alle noodzakelijke acties voor de subsidie zijn voltooid. Vanaf hier kunnen geen update- of verwijderacties meer worden uitgevoerd op de subsidie of bestanden.",
-      advanced_closed: "Eindstatus voor voorschotsubsidies. Geeft aan dat het voorschot is verrekend en afgesloten."
+      advanced_closed: "Eindstatus voor voorschotsubsidies. Geeft aan dat het voorschot is verrekend en afgesloten.",
+      waiting_refund: "Subsidie wacht op terugbetalingsverwerking. Fondsen worden na bevestiging teruggegeven aan het jaarbudget."
     },
     
     // Card Header

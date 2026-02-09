@@ -30,6 +30,7 @@ import { PermissionResolverName } from "@/types/graphql-global-types"
 import { useSubsidyReceipts, SubsidyReceipt } from "@/hooks/use-subsidy-receipts"
 import { useMutation, useQuery } from "@apollo/client"
 import { UPDATE_SUBSIDY_REQUEST, APPROVE_SUBSIDY_REQUEST, REJECT_SUBSIDY_REQUEST, ADD_SUBSIDY_REQUEST_MESSAGE, UPDATE_SUBSIDY_REQUEST_MESSAGE, DELETE_SUBSIDY_REQUEST_MESSAGE } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
+import { CONFIRM_REFUND_DONE } from "@/graphql/mutations/REFUND_MUTATIONS"
 import { GET_SUBSIDY_STATUS_HISTORY } from "@/graphql/queries/SUBSIDY_STATUS_HISTORY_QUERIES"
 import { GET_ALL_SUBSIDY_STATUSES } from "@/graphql/queries/SUBSIDY_STATUS_QUERIES"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
@@ -37,6 +38,8 @@ import { RejectionDialog } from "@/components/modals/project/rejection-dialog"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { projectTranslations } from "@/lib/translations/projects"
 import { SubsidyChatPanel } from "@/components/modals/project/subsidy-chat-panel"
+import { RequestRefundModal } from "@/components/modals/project/request-refund-modal"
+import { subsidyRequestTranslations } from "@/lib/translations/subsidy-request"
 
 interface ActivityItem {
   id: string
@@ -127,6 +130,9 @@ export function ViewSubsidyModal({
     status: "approved" | "rejected" | "closed" | "advanced_closed" | null;
     statusId?: string
   }>({ isOpen: false, status: null })
+
+  // Refund modal state
+  const [showRequestRefundModal, setShowRequestRefundModal] = React.useState(false)
 
   /* 
    * Sync local status state when subsidy prop changes
@@ -282,6 +288,21 @@ export function ViewSubsidyModal({
     onError: (error) => {
       console.error("Error deleting message:", error)
       toast.error(modalT.errorMessages.messageDelete)
+    }
+  })
+
+  const [confirmRefundDone] = useMutation(CONFIRM_REFUND_DONE, {
+    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
+    awaitRefetchQueries: true,
+    onCompleted: () => {
+      const refundT = subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund ||
+        subsidyRequestTranslations.en.refund
+      toast.success(refundT.refundConfirmSuccess)
+      onSubsidyUpdated?.()
+    },
+    onError: (error) => {
+      console.error("Error confirming refund:", error)
+      toast.error(error.message)
     }
   })
 
@@ -828,6 +849,24 @@ export function ViewSubsidyModal({
     }
   }
 
+  const handleConfirmRefundDone = async () => {
+    const refundT = subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund ||
+      subsidyRequestTranslations.en.refund
+
+    if (confirm(refundT.confirmRefundDoneAction)) {
+      try {
+        await confirmRefundDone({
+          variables: {
+            id: subsidy.id,
+            language: i18n.language as any
+          }
+        })
+      } catch (error) {
+        // Error handled in mutation
+      }
+    }
+  }
+
   if (!isOpen || !subsidy) return null
 
   const statusConfig: Record<
@@ -863,6 +902,11 @@ export function ViewSubsidyModal({
       label: t('subsidy.status.advancedClosed') || "Advanced Closed",
       icon: CheckCircle2,
       className: "text-purple-600"
+    },
+    waiting_refund: {
+      label: t('subsidy.status.waitingRefund') || "Waiting Refund",
+      icon: DollarSign,
+      className: "text-orange-600"
     }
   }
 
@@ -944,6 +988,19 @@ export function ViewSubsidyModal({
                   </span>
                 </div>
                 <AdvanceSubsidyBadge isForAdvance={subsidy.is_for_advance} />
+                {(subsidy as any).have_refund && !(subsidy as any).refund_done && (
+                  <Badge variant="outline" className="text-sm bg-red-50 text-red-700 border-red-300 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800">
+                    <AlertCircle className="w-3 h-3 mr-1" />
+                    {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.refundPending || "Refund Pending"}
+                    - {formatCurrency((subsidy as any).refund_amount)}
+                  </Badge>
+                )}
+                {(subsidy as any).refund_done && (
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.refundDone || "Refund Done"}
+                  </Badge>
+                )}
               </div>
             </div>
 
@@ -1588,9 +1645,39 @@ export function ViewSubsidyModal({
                 <span>{subsidy.institution_name}</span>
               </div>
             )}
-            <Button variant="outline" onClick={onClose} className="ml-auto">
-              {t('subsidy.close')}
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* Request Refund Button - Only for ADVANCED_CLOSED or CLOSED without refund */}
+              {(subsidy.status === 'advanced_closed' || subsidy.status === 'closed') &&
+                !subsidy.have_refund && (
+                  <WithPermission requiredPermissions={[PermissionResolverName.RequestSubsidyRefund]}>
+                    <Button
+                      onClick={() => setShowRequestRefundModal(true)}
+                      variant="outline"
+                      size="sm"
+                      className="text-yellow-600 dark:text-yellow-400 border-yellow-600 dark:border-yellow-400 hover:bg-yellow-600 dark:hover:bg-yellow-400 hover:text-white dark:hover:text-white"
+                    >
+                      <DollarSign className="w-4 h-4 mr-2" />
+                      {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.requestRefund || "Request Refund"}
+                    </Button>
+                  </WithPermission>
+                )}
+              {/* Confirm Refund Done Button - Only when refund requested but not done */}
+              {subsidy.have_refund && !subsidy.refund_done && (
+                <WithPermission requiredPermissions={[PermissionResolverName.ConfirmRefundDone]}>
+                  <Button
+                    onClick={handleConfirmRefundDone}
+                    variant="default"
+                    size="sm"
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.confirmRefundDone || "Confirm Refund Done"}
+                  </Button>
+                </WithPermission>
+              )}
+              <Button variant="outline" onClick={onClose} className="ml-auto">
+                {t('subsidy.close')}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -1640,6 +1727,17 @@ export function ViewSubsidyModal({
           }
         ]}
       />
-    </div>
+      {/* Request Refund Modal */}
+      <RequestRefundModal
+        isOpen={showRequestRefundModal}
+        onClose={() => setShowRequestRefundModal(false)}
+        subsidyId={subsidy.id}
+        currentAmount={subsidy.requested_amount}
+        onSuccess={() => {
+          setShowRequestRefundModal(false)
+          onSubsidyUpdated?.()
+        }}
+      />
+    </div >
   )
 }

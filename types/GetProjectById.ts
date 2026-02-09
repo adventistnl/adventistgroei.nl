@@ -179,6 +179,11 @@ export interface GetProjectById_project_subsidies {
   department_id: string;
   church_id: string | null;
   project_id: string;
+  is_for_advance: boolean;
+  advance_amount: any | null;
+  refund_amount: any;
+  have_refund: boolean;
+  refund_done: boolean;
   subsidy_status: GetProjectById_project_subsidies_subsidy_status;
   institution: GetProjectById_project_subsidies_institution;
   department: GetProjectById_project_subsidies_department;

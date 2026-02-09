@@ -194,6 +194,9 @@ export const GET_PROJECT_BY_ID_QUERY = gql`
         project_id
         is_for_advance
         advance_amount
+        refund_amount
+        have_refund
+        refund_done
         subsidy_status {
           id
           name

@@ -301,6 +301,8 @@ export interface SubsidyRequestCreateDto {
   items: SubsidyRequestItemInput[];
   project_id: string;
   notes?: string | null;
+  is_for_advance?: boolean | null;
+  advance_amount?: number | null;
 }
 
 export interface SubsidyRequestItemInput {

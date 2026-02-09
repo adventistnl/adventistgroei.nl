@@ -9,6 +9,7 @@ import { institutionTranslations } from './translations/institutions'
 import { permissionsTranslations } from './translations/permissions'
 import { subsidyRequestTranslations } from './translations/subsidy-request'
 import { budgetTranslations } from './translations/budget'
+import { refundTranslations } from './translations/refund'
 
 // Recursos de tradução
 const resources = {
@@ -18,6 +19,7 @@ const resources = {
       ...projectDetailsTranslations.en,
       ...permissionsTranslations.en,
       dynamicFields: dynamicFieldsTranslations.en,
+      refund: refundTranslations.en,
       dashboard: {
         title: "General Dashboard",
         subtitle: "Overview of key system metrics",
@@ -2027,6 +2029,7 @@ const resources = {
       ...projectTranslations.nl,
       ...projectDetailsTranslations.nl,
       ...permissionsTranslations.nl,
+      refund: refundTranslations.nl,
       dynamicFields: dynamicFieldsTranslations.nl,
       dashboard: {
         title: "Algemeen Dashboard",
@@ -3850,12 +3853,13 @@ const resources = {
     }
   },
   pt: {
-    translation: {
+    translation: {  
       ...projectTranslations.pt,
       ...projectDetailsTranslations.pt,
       ...permissionsTranslations.pt,
       dynamicFields: dynamicFieldsTranslations.pt,
       institutions: institutionTranslations.pt,
+      refund: refundTranslations.pt,
       common: {
         ...projectTranslations.pt.common,
         language: "Idioma",
