@@ -4,7 +4,7 @@ export const subsidyRequestTranslations = {
     title: "Request Subsidy",
     selectedActivities: "{{count}} selected activity",
     selectedActivities_plural: "{{count}} selected activities",
-    
+
     // Info section
     about: {
       title: "About Subsidy Request",
@@ -236,6 +236,37 @@ export const subsidyRequestTranslations = {
       advanceAmount: "Advance Amount",
       status: "Status",
       noActivitiesNote: "No activities notes"
+    },
+
+    // Refund
+    refund: {
+      requestRefund: "Request Refund",
+      confirmRefundDone: "Confirm Refund Done",
+      refundAmount: "Refund Amount",
+      refundReason: "Refund Reason",
+      refundPending: "Waiting refund",
+      refundDone: "Refund Done",
+      waitingRefund: "Waiting Refund",
+      refundRequestSuccess: "Refund request submitted successfully",
+      refundConfirmSuccess: "Refund confirmed successfully",
+      refundAmountRequired: "Refund amount is required",
+      refundReasonRequired: "Refund reason is required",
+      confirmRefundRequest: "Are you sure you want to request a refund?",
+      confirmRefundDoneAction: "Are you sure you want to confirm that the refund has been processed?",
+      refundAmountLabel: "Refund Amount (€)",
+      refundReasonPlaceholder: "Explain the reason for the refund...",
+      refundModalTitle: "Request Refund",
+      refundModalDescription: "Request a refund for this subsidy. The amount will be returned to the budget.",
+      cancel: "Cancel",
+      submit: "Request Refund",
+      enterRefundAmount: "Enter refund amount",
+      enterRefundReason: "Enter reason for refund",
+      confirmButton: "Confirm Refund Done",
+      confirmRefundWarning: "This action will return the refund amount to the annual budget. This cannot be undone.",
+      alert: {
+        singlePending: "You have 1 subsidy waiting for refund processing",
+        multiplePending: "You have {{count}} subsidies waiting for refund processing"
+      }
     }
   },
   
@@ -474,6 +505,37 @@ export const subsidyRequestTranslations = {
       status: "Status",
       advanceAmount: "Valor do Adiantamento",
       noActivitiesNote: "Nenhuma atividade subsidiada selecionada"
+    },
+
+    // Refund
+    refund: {
+      requestRefund: "Solicitar Reembolso",
+      confirmRefundDone: "Confirmar Reembolso",
+      refundAmount: "Valor do Reembolso",
+      refundReason: "Motivo do Reembolso",
+      refundPending: "Reembolso Pendente",
+      refundDone: "Reembolso Concluído",
+      waitingRefund: "Aguardando Reembolso",
+      refundRequestSuccess: "Solicitação de reembolso enviada com sucesso",
+      refundConfirmSuccess: "Reembolso confirmado com sucesso",
+      refundAmountRequired: "Valor do reembolso é obrigatório",
+      refundReasonRequired: "Motivo do reembolso é obrigatório",
+      confirmRefundRequest: "Tem certeza que deseja solicitar um reembolso?",
+      confirmRefundDoneAction: "Tem certeza que deseja confirmar que o reembolso foi processado?",
+      refundAmountLabel: "Valor do Reembolso (€)",
+      refundReasonPlaceholder: "Explique o motivo do reembolso...",
+      refundModalTitle: "Solicitar Reembolso",
+      refundModalDescription: "Solicite um reembolso para este subsídio. O valor será devolvido ao orçamento.",
+      cancel: "Cancelar",
+      submit: "Solicitar Reembolso",
+      enterRefundAmount: "Digite o valor do reembolso",
+      enterRefundReason: "Digite o motivo do reembolso",
+      confirmButton: "Confirmar Reembolso Concluído",
+      confirmRefundWarning: "Esta ação retornará o valor do reembolso ao orçamento anual. Isso não pode ser desfeito.",
+      alert: {
+        singlePending: "Você tem 1 subsídio aguardando processamento de reembolso",
+        multiplePending: "Você tem {{count}} subsídios aguardando processamento de reembolso"
+      }
     }
   },
   
@@ -713,6 +775,31 @@ export const subsidyRequestTranslations = {
       noActivitiesNote: "Geen gesubsidieerde activiteiten geselecteerd",
       advanceAmount: "Voorschotbedrag",
       advanceStatus: "Voorschotstatus"
+    },
+
+    // Refund
+    refund: {
+      requestRefund: "Terugbetaling Aanvragen",
+      confirmRefundDone: "Bevestig Terugbetaling",
+      refundAmount: "Terugbetalingsbedrag",
+      refundReason: "Reden voor Terugbetaling",
+      refundPending: "Terugbetaling In Behandeling",
+      refundDone: "Terugbetaling Voltooid",
+      waitingRefund: "Wacht op Terugbetaling",
+      refundRequestSuccess: "Terugbetalingsaanvraag succesvol ingediend",
+      refundConfirmSuccess: "Terugbetaling succesvol bevestigd",
+      refundAmountRequired: "Terugbetalingsbedrag is verplicht",
+      refundReasonRequired: "Reden voor terugbetaling is verplicht",
+      confirmRefundRequest: "Weet u zeker dat u een terugbetaling wilt aanvragen?",
+      confirmRefundDoneAction: "Weet u zeker dat u wilt bevestigen dat de terugbetaling is verwerkt?",
+      refundAmountLabel: "Terugbetalingsbedrag (€)",
+      refundReasonPlaceholder: "Leg de reden voor de terugbetaling uit...",
+      refundModalTitle: "Terugbetaling Aanvragen",
+      refundModalDescription: "Vraag een terugbetaling aan voor deze subsidie. Het bedrag wordt teruggegeven aan het budget.",
+      cancel: "Annuleren",
+      submit: "Terugbetaling Aanvragen",
+      confirmButton: "Bevestig Terugbetaling Voltooid",
+      confirmRefundWarning: "Deze actie zal het terugbetalingsbedrag terugbrengen naar het jaarbudget. Dit kan niet ongedaan worden gemaakt."
     }
   }
 }

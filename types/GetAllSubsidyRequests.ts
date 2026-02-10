@@ -81,6 +81,11 @@ export interface GetAllSubsidyRequests_subsidyRequests {
   department_id: string;
   church_id: string | null;
   project_id: string;
+  is_for_advance: boolean;
+  advance_amount: any | null;
+  refund_amount: any;
+  have_refund: boolean;
+  refund_done: boolean;
   subsidy_status: GetAllSubsidyRequests_subsidyRequests_subsidy_status;
   institution: GetAllSubsidyRequests_subsidyRequests_institution;
   department: GetAllSubsidyRequests_subsidyRequests_department;

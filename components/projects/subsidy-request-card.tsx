@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { MoreVertical, FileText, DollarSign, Archive, Info, Eye, Pencil, Trash2, Plus } from "lucide-react"
+import { MoreVertical, FileText, DollarSign, Archive, Info, Eye, Pencil, Trash2, Plus, AlertCircle, CheckCircle2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -20,12 +20,13 @@ import { WithPermission } from "@/hocs/with-permission"
 import { useHasPermission } from "@/hooks/use-has-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AdvanceSubsidyBadge } from "@/components/ui/advance-subsidy-badge"
+import { RefundStatusBadge } from "@/components/ui/refund-status-badge"
 
 export interface SubsidyRequestCardData {
   id: string
   title: string
   requested_at: string | Date
-  status: "pending" | "approved" | "rejected" | "in_review" | "closed" | "advanced_closed"
+  status: "pending" | "approved" | "rejected" | "in_review" | "closed" | "advanced_closed" | "waiting_refund"
   requested_amount: number
   approved_amount?: number
   rejection_reason?: string
@@ -71,6 +72,9 @@ export interface SubsidyRequestCardData {
       is_subsidized?: boolean
     }
   }>
+  refund_amount?: number
+  have_refund?: boolean
+  refund_done?: boolean
 }
 
 interface SubsidyRequestCardProps {
@@ -97,7 +101,7 @@ export function SubsidyRequestCard({
   const { t, i18n } = useTranslation()
   const { formatCurrency } = useCurrency()
   const contentDisabledClass = data.archived ? "opacity-60 pointer-events-none" : ""
-  
+
   // Check if any action is available (for showing/hiding the menu button)
   const hasAnyPermission = useHasPermission(
     [
@@ -108,7 +112,7 @@ export function SubsidyRequestCard({
     [],
     true // partial check - user needs at least one permission
   )
-  
+
   const statusConfig: Record<
     SubsidyRequestCardData["status"],
     { label: string; className: string }
@@ -119,6 +123,7 @@ export function SubsidyRequestCard({
     in_review: { label: t('subsidy.status.inReview') || t('subsidy.deleteRequest.statusLabels.in_review') || "In Review", className: "bg-blue-50 text-blue-700 border-blue-200" },
     closed: { label: t('subsidy.status.closed') || t('subsidy.deleteRequest.statusLabels.closed') || t('subsidy.closed') || "Closed", className: "bg-gray-50 text-gray-700 border-gray-200" },
     advanced_closed: { label: t('subsidy.status.advancedClosed') || "Advanced Closed", className: "bg-purple-50 text-purple-700 border-purple-200" },
+    waiting_refund: { label: t('subsidy.status.waitingRefund') || "Waiting Refund", className: "bg-orange-50 text-orange-700 border-orange-200" },
   }
 
   // Use fallback for unknown status
@@ -141,8 +146,16 @@ export function SubsidyRequestCard({
     <div
       className={cn(
         "group relative flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-3 transition-all hover:border-gray-300 hover:shadow-sm",
+        onView ? "cursor-pointer" : "",
         className
       )}
+      onClick={(e) => {
+        // Prevent opening if clicking on interactive elements
+        if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('[role="button"]')) {
+          return
+        }
+        if (onView) onView(data.id)
+      }}
     >
       {/* Header: Icon + Title + Menu */}
       {/* Archived overlay indicator */}
@@ -164,9 +177,13 @@ export function SubsidyRequestCard({
 
           {/* Title */}
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <h4 className="truncate text-xs font-semibold text-gray-900">{data.title}</h4>
               <AdvanceSubsidyBadge isForAdvance={data.is_for_advance} />
+              <RefundStatusBadge
+                haveRefund={data.have_refund}
+                refundDone={data.refund_done}
+              />
             </div>
             {data.institution_name && (
               <p className="truncate text-[10px] text-gray-500">{data.institution_name}</p>
@@ -177,7 +194,7 @@ export function SubsidyRequestCard({
         {/* Three-dot menu (only if user has any permission) */}
         {hasAnyPermission && (
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button
                 variant="ghost"
                 size="icon"
@@ -202,17 +219,17 @@ export function SubsidyRequestCard({
                     {t('actions.edit')}
                   </DropdownMenuItem>
                 </WithPermission>
-              )}  
+              )}
               {/* Link Activity (Advance Requests only) - hide if already linked (has items) */}
               {data.is_for_advance && !data.archived && onLinkActivity && (!data.items || data.items.length === 0) && (
                 <DropdownMenuItem onClick={() => onLinkActivity(data.id)}>
                   <div className="flex items-center">
-                      <Plus className="w-3 h-3 mr-2" />
-                      {t('subsidy.linkActivity') || "Link Activity"}
+                    <Plus className="w-3 h-3 mr-2" />
+                    {t('subsidy.linkActivity') || "Link Activity"}
                   </div>
                 </DropdownMenuItem>
               )}
-              
+
               {onDelete && (
                 <WithPermission requiredPermissions={[PermissionResolverName.DeleteSubsidyRequest]}>
                   <DropdownMenuSeparator />

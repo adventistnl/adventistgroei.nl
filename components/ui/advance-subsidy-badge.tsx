@@ -1,7 +1,7 @@
 import React from 'react'
-import { Badge } from '@/components/ui/badge'
 import { Zap } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { SubsidyStatusBadge } from './subsidy-status-badge'
 
 interface AdvanceSubsidyBadgeProps {
   isForAdvance?: boolean
@@ -10,16 +10,23 @@ interface AdvanceSubsidyBadgeProps {
 
 export function AdvanceSubsidyBadge({ isForAdvance, className }: AdvanceSubsidyBadgeProps) {
   const { t } = useTranslation()
-  
+
   if (!isForAdvance) return null
 
   return (
-    <Badge 
-      variant="outline" 
-      className={`bg-amber-50 dark:bg-amber-950/30 border-amber-400 dark:border-amber-600 text-amber-700 dark:text-amber-400 text-xs px-2 py-0.5 ${className || ''}`}
-    >
-      <Zap className="w-3 h-3 mr-1 fill-amber-500" />
-      {t('subsidy.advance')}
-    </Badge>
+    <SubsidyStatusBadge
+      icon={Zap}
+      text={t('subsidy.advance')}
+      variant="custom"
+      customColors={{
+        bg: "bg-amber-50",
+        text: "text-amber-700",
+        border: "border-amber-400",
+        darkBg: "dark:bg-amber-950/30",
+        darkText: "dark:text-amber-400",
+        darkBorder: "dark:border-amber-600"
+      }}
+      className={className}
+    />
   )
 }

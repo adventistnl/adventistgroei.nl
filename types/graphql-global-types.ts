@@ -2075,6 +2075,8 @@ export type Mutation = {
   approveAnnualBudget: ApproveBudgetResponse;
   approveSubsidyRequest: SubsidyRequest;
   batchUpdateProjectActivities: Array<ProjectActivity>;
+  confirmRefundDone: SubsidyRequest;
+  createAdvanceRequest: SubsidyRequest;
   createChurch: Church;
   createCommunication: Communication;
   createContact: Contact;
@@ -2120,6 +2122,7 @@ export type Mutation = {
   removeProjectVoluntary: VoluntariesOnProjects;
   removeRoleFromUser: UserModel;
   requestRevisionAnnualBudget: RequestRevisionBudgetResponse;
+  requestSubsidyRefund: SubsidyRequest;
   resetPassword: ForgotPasswordResponse;
   sendForgotPasswordCode: ForgotPasswordResponse;
   /** Send an invitation email */
@@ -2187,6 +2190,19 @@ export type MutationApproveSubsidyRequestArgs = {
 
 export type MutationBatchUpdateProjectActivitiesArgs = {
   data: ProjectActivityBatchUpdateDto;
+};
+
+
+export type MutationConfirmRefundDoneArgs = {
+  id: Scalars['String']['input'];
+  language?: InputMaybe<LanguagePreference>;
+};
+
+
+export type MutationCreateAdvanceRequestArgs = {
+  advanceAmount: Scalars['Float']['input'];
+  language?: InputMaybe<LanguagePreference>;
+  projectId: Scalars['String']['input'];
 };
 
 
@@ -2416,6 +2432,14 @@ export type MutationRemoveRoleFromUserArgs = {
 export type MutationRequestRevisionAnnualBudgetArgs = {
   data: RequestRevisionAnnualBudgetDto;
   id: Scalars['String']['input'];
+};
+
+
+export type MutationRequestSubsidyRefundArgs = {
+  id: Scalars['String']['input'];
+  language?: InputMaybe<LanguagePreference>;
+  reason: Scalars['String']['input'];
+  refundAmount: Scalars['Float']['input'];
 };
 
 
@@ -2991,6 +3015,8 @@ export enum PermissionResolverName {
   ChurchesActivityData = 'churchesActivityData',
   Communication = 'communication',
   Communications = 'communications',
+  ConfirmRefundDone = 'confirmRefundDone',
+  CreateAdvanceRequest = 'createAdvanceRequest',
   CreateChurch = 'createChurch',
   CreateCommunication = 'createCommunication',
   CreateDepartment = 'createDepartment',
@@ -3037,6 +3063,7 @@ export enum PermissionResolverName {
   EntityDistribution = 'entityDistribution',
   GetActivityDocuments = 'getActivityDocuments',
   GetSpecificProjectKpIs = 'getSpecificProjectKPIs',
+  GetSubsidiesWaitingRefund = 'getSubsidiesWaitingRefund',
   GetSubsidyReceipts = 'getSubsidyReceipts',
   GetSubsidyStatusHistory = 'getSubsidyStatusHistory',
   Institution = 'institution',
@@ -3062,6 +3089,7 @@ export enum PermissionResolverName {
   RemoveProjectVoluntary = 'removeProjectVoluntary',
   RemoveRoleFromUser = 'removeRoleFromUser',
   RequestRevisionAnnualBudget = 'requestRevisionAnnualBudget',
+  RequestSubsidyRefund = 'requestSubsidyRefund',
   Role = 'role',
   Roles = 'roles',
   SendInviteEmail = 'sendInviteEmail',
@@ -3617,6 +3645,7 @@ export type Query = {
   downloadSubsidyReceipt: Scalars['String']['output'];
   entityDistribution: Array<EntityDistribution>;
   getActivityDocuments: Array<ActivityDocuments>;
+  getSubsidiesWaitingRefund: Array<SubsidyRequest>;
   getSubsidyReceipts: Array<SubsidyReceipt>;
   getSubsidyReceiptsByItemId: Array<SubsidyReceipt>;
   getSubsidyReceiptsByRequestId: Array<SubsidyReceipt>;
@@ -3771,6 +3800,11 @@ export type QueryEntityDistributionArgs = {
 
 export type QueryGetActivityDocumentsArgs = {
   activityId: Scalars['ID']['input'];
+};
+
+
+export type QueryGetSubsidiesWaitingRefundArgs = {
+  institutionId?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -4485,6 +4519,7 @@ export type SubsidyReceiptWhereInput = {
 export type SubsidyRequest = {
   __typename?: 'SubsidyRequest';
   _count: SubsidyRequestCount;
+  advance_amount?: Maybe<Scalars['Decimal']['output']>;
   approved_amount: Scalars['Decimal']['output'];
   approved_at?: Maybe<Scalars['DateTime']['output']>;
   approved_by?: Maybe<Scalars['String']['output']>;
@@ -4497,14 +4532,18 @@ export type SubsidyRequest = {
   department: Department;
   department_id: Scalars['String']['output'];
   description: Scalars['String']['output'];
+  have_refund: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   institution: Institution;
   institution_id: Scalars['String']['output'];
   is_deleted: Scalars['Boolean']['output'];
+  is_for_advance: Scalars['Boolean']['output'];
   items?: Maybe<Array<SubsidyRequestItem>>;
   priority: SubsidyRequestPriority;
   project: Project;
   project_id: Scalars['String']['output'];
+  refund_amount: Scalars['Decimal']['output'];
+  refund_done: Scalars['Boolean']['output'];
   rejection_reason?: Maybe<Scalars['String']['output']>;
   requester: User;
   requester_id: Scalars['String']['output'];
@@ -4525,10 +4564,12 @@ export type SubsidyRequestCount = {
 };
 
 export type SubsidyRequestCreateDto = {
+  advance_amount?: InputMaybe<Scalars['Float']['input']>;
   church_id?: InputMaybe<Scalars['String']['input']>;
   department_id: Scalars['String']['input'];
   description: Scalars['String']['input'];
   institution_id?: InputMaybe<Scalars['String']['input']>;
+  is_for_advance?: InputMaybe<Scalars['Boolean']['input']>;
   items: Array<SubsidyRequestItemInput>;
   notes?: InputMaybe<Scalars['String']['input']>;
   project_id: Scalars['String']['input'];
@@ -4645,6 +4686,7 @@ export type SubsidyRequestWhereInput = {
   AND?: InputMaybe<Array<SubsidyRequestWhereInput>>;
   NOT?: InputMaybe<Array<SubsidyRequestWhereInput>>;
   OR?: InputMaybe<Array<SubsidyRequestWhereInput>>;
+  advance_amount?: InputMaybe<DecimalNullableFilter>;
   approved_amount?: InputMaybe<DecimalFilter>;
   approved_at?: InputMaybe<DateTimeNullableFilter>;
   approved_by?: InputMaybe<StringNullableFilter>;
@@ -4657,14 +4699,18 @@ export type SubsidyRequestWhereInput = {
   department?: InputMaybe<DepartmentScalarRelationFilter>;
   department_id?: InputMaybe<StringFilter>;
   description?: InputMaybe<StringFilter>;
+  have_refund?: InputMaybe<BoolFilter>;
   id?: InputMaybe<StringFilter>;
   institution?: InputMaybe<InstitutionScalarRelationFilter>;
   institution_id?: InputMaybe<StringFilter>;
   is_deleted?: InputMaybe<BoolFilter>;
+  is_for_advance?: InputMaybe<BoolFilter>;
   items?: InputMaybe<SubsidyRequestItemListRelationFilter>;
   priority?: InputMaybe<EnumSubsidyRequestPriorityFilter>;
   project?: InputMaybe<ProjectScalarRelationFilter>;
   project_id?: InputMaybe<StringFilter>;
+  refund_amount?: InputMaybe<DecimalFilter>;
+  refund_done?: InputMaybe<BoolFilter>;
   rejection_reason?: InputMaybe<StringNullableFilter>;
   requester?: InputMaybe<UserScalarRelationFilter>;
   requester_id?: InputMaybe<StringFilter>;

@@ -30,13 +30,18 @@ import { PermissionResolverName } from "@/types/graphql-global-types"
 import { useSubsidyReceipts, SubsidyReceipt } from "@/hooks/use-subsidy-receipts"
 import { useMutation, useQuery } from "@apollo/client"
 import { UPDATE_SUBSIDY_REQUEST, APPROVE_SUBSIDY_REQUEST, REJECT_SUBSIDY_REQUEST, ADD_SUBSIDY_REQUEST_MESSAGE, UPDATE_SUBSIDY_REQUEST_MESSAGE, DELETE_SUBSIDY_REQUEST_MESSAGE } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
+import { CONFIRM_REFUND_DONE } from "@/graphql/mutations/REFUND_MUTATIONS"
 import { GET_SUBSIDY_STATUS_HISTORY } from "@/graphql/queries/SUBSIDY_STATUS_HISTORY_QUERIES"
 import { GET_ALL_SUBSIDY_STATUSES } from "@/graphql/queries/SUBSIDY_STATUS_QUERIES"
+import { GET_SUBSIDY_REQUEST_BY_ID } from "@/graphql/queries/SUBSIDY_REQUESTS_QUERY"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { RejectionDialog } from "@/components/modals/project/rejection-dialog"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { projectTranslations } from "@/lib/translations/projects"
 import { SubsidyChatPanel } from "@/components/modals/project/subsidy-chat-panel"
+import { RequestRefundModal } from "@/components/modals/project/request-refund-modal"
+import { ConfirmRefundDoneModal } from "@/components/modals/confirm-refund-done-modal"
+import { subsidyRequestTranslations } from "@/lib/translations/subsidy-request"
 
 interface ActivityItem {
   id: string
@@ -128,15 +133,45 @@ export function ViewSubsidyModal({
     statusId?: string
   }>({ isOpen: false, status: null })
 
+  // Refund modal state
+  const [showRequestRefundModal, setShowRequestRefundModal] = React.useState(false)
+  const [showConfirmRefundModal, setShowConfirmRefundModal] = React.useState(false)
+
+  // Fetch updated subsidy data directly to ensure fresh state (especially for refund buttons/tags)
+  const { data: subsidyData, refetch: refetchSubsidyDetails } = useQuery(GET_SUBSIDY_REQUEST_BY_ID, {
+    variables: { id: subsidy.id },
+    fetchPolicy: 'network-only',
+    skip: !subsidy.id
+  })
+
+  // Use fetched data if available, otherwise use prop
+  // We need to map the backend data to SubsidyRequestCardData structure if it differs slightly,
+  // but for the fields we care about (status, refund fields), the backend structure in GET_SUBSIDY_REQUEST_BY_ID
+  // matches what we need for the checks.
+  // We'll overlay the fresh fields onto the prop subsidy to keep the structure consistent.
+  const activeSubsidy = React.useMemo(() => {
+    if (!subsidyData?.subsidyRequest) return subsidy
+
+    const fresh = subsidyData.subsidyRequest
+    return {
+      ...subsidy,
+      status: fresh.subsidy_status?.name?.toLowerCase() || subsidy.status,
+      have_refund: fresh.have_refund,
+      refund_done: fresh.refund_done,
+      refund_amount: fresh.refund_amount,
+      refund_reason: fresh.refund_reason,
+      // Update other fields if necessary
+    }
+  }, [subsidy, subsidyData])
+
   /* 
-   * Sync local status state when subsidy prop changes
-   * This ensures that if the parent refreshes the data, the modal shows the correct status
+   * Sync local status state when activeSubsidy changes
    */
   React.useEffect(() => {
-    if (subsidy?.status) {
-      setCurrentSubsidyStatus(subsidy.status as any)
+    if (activeSubsidy?.status) {
+      setCurrentSubsidyStatus(activeSubsidy.status as any)
     }
-  }, [subsidy])
+  }, [activeSubsidy])
 
   // Hook for fetching and managing subsidy receipts
   const {
@@ -147,23 +182,23 @@ export function ViewSubsidyModal({
     loading: receiptsLoading,
     validating: receiptsValidating,
   } = useSubsidyReceipts({
-    subsidyRequestId: subsidy?.id,
+    subsidyRequestId: activeSubsidy?.id,
     onHistoryUpdate: async () => {
-      if (typeof refetchHistory === 'function') {
-        await refetchHistory()
-      }
+      // Refresh everything when a document action happens
+      await refetchHistory()
     },
   })
 
   // Mutations for updating subsidy status
   const [updateSubsidyRequest] = useMutation(UPDATE_SUBSIDY_REQUEST, {
-    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
+    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: activeSubsidy?.id } }],
     awaitRefetchQueries: true,
     onCompleted: () => {
       const lang = i18n.language as keyof typeof projectTranslations
       const modalT = projectTranslations[lang]?.viewSubsidyModal || projectTranslations.pt.viewSubsidyModal
       toast.success(modalT.success.statusUpdated)
-      // Trigger callback to refresh data in parent
+      // Trigger callback to refresh data in parent AND locally
+      refetchSubsidyDetails()
       onSubsidyUpdated?.()
     },
     onError: (error) => {
@@ -192,15 +227,17 @@ export function ViewSubsidyModal({
   })
 
   const [approveSubsidyRequest] = useMutation(APPROVE_SUBSIDY_REQUEST, {
-    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
+    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: activeSubsidy?.id } }],
     awaitRefetchQueries: true,
     onCompleted: () => {
       const lang = i18n.language as keyof typeof projectTranslations
       const modalT = projectTranslations[lang]?.viewSubsidyModal || projectTranslations.pt.viewSubsidyModal
       toast.success(modalT.success.subsidyApproved)
+      refetchSubsidyDetails()
       onSubsidyUpdated?.()
     },
     onError: (error) => {
+      // ... error handling logic (keep same)
       let ext = (error.graphQLErrors?.[0]?.extensions as any);
       if (!ext && (error.networkError as any)?.result?.errors?.[0]?.extensions) {
         ext = (error.networkError as any).result.errors[0].extensions;
@@ -227,16 +264,19 @@ export function ViewSubsidyModal({
     }
   })
 
+  // ... other mutations
   const [rejectSubsidyRequest] = useMutation(REJECT_SUBSIDY_REQUEST, {
-    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
+    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: activeSubsidy?.id } }],
     awaitRefetchQueries: true,
     onCompleted: () => {
       const lang = i18n.language as keyof typeof projectTranslations
       const modalT = projectTranslations[lang]?.viewSubsidyModal || projectTranslations.pt.viewSubsidyModal
       toast.success(modalT.success.subsidyRejected)
+      refetchSubsidyDetails()
       onSubsidyUpdated?.()
     },
     onError: (error) => {
+      // ... error handling logic
       let ext = (error.graphQLErrors?.[0]?.extensions as any);
       if (!ext && (error.networkError as any)?.result?.errors?.[0]?.extensions) {
         ext = (error.networkError as any).result.errors[0].extensions;
@@ -262,7 +302,8 @@ export function ViewSubsidyModal({
   })
 
   const [addSubsidyRequestMessage] = useMutation(ADD_SUBSIDY_REQUEST_MESSAGE, {
-    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
+    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: activeSubsidy?.id } }],
+    // ...
     onError: (error) => {
       console.error("Error adding message:", error)
       toast.error(modalT.errorMessages.messageSent)
@@ -270,7 +311,8 @@ export function ViewSubsidyModal({
   })
 
   const [updateSubsidyRequestMessage] = useMutation(UPDATE_SUBSIDY_REQUEST_MESSAGE, {
-    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
+    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: activeSubsidy?.id } }],
+    // ...
     onError: (error) => {
       console.error("Error updating message:", error)
       toast.error(modalT.errorMessages.messageUpdate)
@@ -278,10 +320,27 @@ export function ViewSubsidyModal({
   })
 
   const [deleteSubsidyRequestMessage] = useMutation(DELETE_SUBSIDY_REQUEST_MESSAGE, {
-    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: subsidy?.id } }],
+    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: activeSubsidy?.id } }],
+    // ...
     onError: (error) => {
       console.error("Error deleting message:", error)
       toast.error(modalT.errorMessages.messageDelete)
+    }
+  })
+
+  const [confirmRefundDone] = useMutation(CONFIRM_REFUND_DONE, {
+    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: activeSubsidy?.id } }],
+    awaitRefetchQueries: true,
+    onCompleted: () => {
+      const refundT = subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund ||
+        subsidyRequestTranslations.en.refund
+      toast.success(refundT.refundConfirmSuccess)
+      refetchSubsidyDetails()
+      onSubsidyUpdated?.()
+    },
+    onError: (error) => {
+      console.error("Error confirming refund:", error)
+      toast.error(error.message)
     }
   })
 
@@ -323,7 +382,7 @@ export function ViewSubsidyModal({
     }
 
     // Rule: Advance subsidies logic
-    if (subsidy?.is_for_advance) {
+    if (activeSubsidy?.is_for_advance) {
       if (from === 'approved') return to === 'advanced_closed'
       if (from === 'advanced_closed') return to === 'closed'
       // pending/in_review follow standard flow to approved/rejected
@@ -363,7 +422,7 @@ export function ViewSubsidyModal({
     }
 
     // Check document validation for pending documents (skip for advance subsidies which assume no docs)
-    if (['approved', 'closed', 'rejected', 'advanced_closed'].includes(normalizedStatus) && !subsidy?.is_for_advance) {
+    if (['approved', 'closed', 'rejected', 'advanced_closed'].includes(normalizedStatus) && !activeSubsidy?.is_for_advance) {
       const hasPending = (receipts || []).some((r: any) => !r.is_validated && !r.is_deleted);
       if (hasPending) {
         toast.error(modalT.errors.documentsPending);
@@ -404,8 +463,8 @@ export function ViewSubsidyModal({
 
         await approveSubsidyRequest({
           variables: {
-            id: subsidy.id,
-            approved_amount: subsidy.requested_amount,
+            id: activeSubsidy.id,
+            approved_amount: activeSubsidy.requested_amount,
             language: i18n.language as any
           }
         })
@@ -424,7 +483,7 @@ export function ViewSubsidyModal({
 
           await updateSubsidyRequest({
             variables: {
-              id: subsidy.id,
+              id: activeSubsidy.id,
               data: {
                 subsidy_status_id: id
               },
@@ -456,7 +515,7 @@ export function ViewSubsidyModal({
     try {
       await updateSubsidyRequest({
         variables: {
-          id: subsidy.id,
+          id: activeSubsidy.id,
           data: { subsidy_status_id: statusId },
           language: i18n.language as any
         }
@@ -466,9 +525,9 @@ export function ViewSubsidyModal({
     }
   }
   React.useEffect(() => {
-    if (isOpen && subsidy?.id) {
+    if (isOpen && activeSubsidy?.id) {
       setLoadingDocuments(true)
-      fetchReceipts(subsidy.id)
+      fetchReceipts(activeSubsidy.id)
         .then((fetchedReceipts) => {
           setReceipts(fetchedReceipts || [])
         })
@@ -481,7 +540,7 @@ export function ViewSubsidyModal({
         })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, subsidy?.id])
+  }, [isOpen, activeSubsidy?.id])
 
   // Helper to map receipt type to document type
   const mapReceiptTypeToDocType = (type: string): "INVOICE" | "RECEIPT" | "CONTRACT" | "PROOF_OF_PAYMENT" | "OTHER" => {
@@ -507,7 +566,7 @@ export function ViewSubsidyModal({
 
   // Transform subsidy items to activities format with real documents
   const activities = React.useMemo<ActivityItem[]>(() => {
-    if (!subsidy || !subsidy.items) return []
+    if (!activeSubsidy || !activeSubsidy.items) return []
 
     // Group receipts by activity_id
     const receiptsByActivity = receipts.reduce((acc, receipt) => {
@@ -519,7 +578,7 @@ export function ViewSubsidyModal({
       return acc
     }, {} as Record<string, SubsidyReceipt[]>)
 
-    return subsidy.items.map(item => {
+    return activeSubsidy.items.map(item => {
       // Get receipts for this activity
       const activityReceipts = receiptsByActivity[item.activity_id] || []
 
@@ -560,18 +619,26 @@ export function ViewSubsidyModal({
         documents: documents
       }
     })
-  }, [subsidy, receipts])
+  }, [activeSubsidy, receipts])
 
   // Fetch real status history from backend
-  const { data: historyData, loading: historyLoading, refetch: refetchHistory } = useQuery(
+  const { data: historyData, loading: historyLoading, refetch: refetchHistoryRaw } = useQuery(
     GET_SUBSIDY_STATUS_HISTORY,
     {
       variables: {
-        subsidyRequestId: subsidy?.id
+        subsidyRequestId: activeSubsidy?.id
       },
-      skip: !subsidy?.id,
+      skip: !activeSubsidy?.id,
     }
   )
+
+  // Helper to refresh all data (history + details)
+  const refetchHistory = async () => {
+    await Promise.all([
+      refetchHistoryRaw(),
+      refetchSubsidyDetails()
+    ])
+  }
 
   // Mutations
 
@@ -662,7 +729,7 @@ export function ViewSubsidyModal({
         const messageText = `${t('toasts.documentCommentPrefix', { name: commentingDocument.name })}${newMessage}`
         await addSubsidyRequestMessage({
           variables: {
-            id: subsidy?.id,
+            id: activeSubsidy?.id,
             message: messageText,
             language: i18n.language as any
           }
@@ -701,7 +768,7 @@ export function ViewSubsidyModal({
       try {
         await addSubsidyRequestMessage({
           variables: {
-            id: subsidy?.id,
+            id: activeSubsidy?.id,
             message: messageText,
             language: i18n.language as any
           }
@@ -750,7 +817,7 @@ export function ViewSubsidyModal({
     // Reject subsidy
     await rejectSubsidyRequest({
       variables: {
-        id: subsidy.id,
+        id: activeSubsidy.id,
         rejection_reason: reason,
         language: i18n.language as any
       }
@@ -785,7 +852,7 @@ export function ViewSubsidyModal({
         setMentionMode(null)
 
         // Refetch receipts to update the list
-        const updatedReceipts = await fetchReceipts(subsidy?.id)
+        const updatedReceipts = await fetchReceipts(activeSubsidy?.id)
         setReceipts(updatedReceipts || [])
 
         // Refetch history from backend
@@ -813,7 +880,7 @@ export function ViewSubsidyModal({
         setNewMessage("")
 
         // Refetch receipts to update the list
-        const updatedReceipts = await fetchReceipts(subsidy?.id)
+        const updatedReceipts = await fetchReceipts(activeSubsidy?.id)
         setReceipts(updatedReceipts || [])
 
         // Refetch history from backend
@@ -825,6 +892,28 @@ export function ViewSubsidyModal({
         console.error('Error rejecting document:', error)
         // Error toast is already shown by the hook
       }
+    }
+  }
+
+  const [isConfirmingRefund, setIsConfirmingRefund] = React.useState(false)
+
+  const handleConfirmRefundDone = async () => {
+    if (isConfirmingRefund) return
+    setIsConfirmingRefund(true)
+    try {
+      await confirmRefundDone({
+        variables: {
+          id: activeSubsidy.id,
+          language: i18n.language as any
+        }
+      })
+      await refetchHistory()
+      onSubsidyUpdated?.()
+      setShowConfirmRefundModal(false)
+    } catch (error) {
+      // Error handled in mutation
+    } finally {
+      setIsConfirmingRefund(false)
     }
   }
 
@@ -863,6 +952,11 @@ export function ViewSubsidyModal({
       label: t('subsidy.status.advancedClosed') || "Advanced Closed",
       icon: CheckCircle2,
       className: "text-purple-600"
+    },
+    waiting_refund: {
+      label: t('subsidy.status.waitingRefund') || "Waiting Refund",
+      icon: DollarSign,
+      className: "text-orange-600"
     }
   }
 
@@ -944,6 +1038,19 @@ export function ViewSubsidyModal({
                   </span>
                 </div>
                 <AdvanceSubsidyBadge isForAdvance={subsidy.is_for_advance} />
+                {(subsidy as any).have_refund && !(subsidy as any).refund_done && (
+                  <Badge variant="outline" className="text-sm bg-red-50 text-red-700 border-red-300 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800">
+                    <AlertCircle className="w-3 h-3 mr-1" />
+                    {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.refundPending}
+                    - {formatCurrency((subsidy as any).refund_amount)}
+                  </Badge>
+                )}
+                {(subsidy as any).refund_done && (
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.refundDone || "Refund Done"}
+                  </Badge>
+                )}
               </div>
             </div>
 
@@ -1582,15 +1689,45 @@ export function ViewSubsidyModal({
         {/* Footer */}
         <div className="border-t border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900">
           <div className="flex items-center justify-between">
-            {subsidy.institution_name && (
+            {activeSubsidy.institution_name && (
               <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                 <Building2 className="w-3.5 h-3.5" />
-                <span>{subsidy.institution_name}</span>
+                <span>{activeSubsidy.institution_name}</span>
               </div>
             )}
-            <Button variant="outline" onClick={onClose} className="ml-auto">
-              {t('subsidy.close')}
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* Request Refund Button - Only for ADVANCED_CLOSED or CLOSED without refund */}
+              {(activeSubsidy.status === 'advanced_closed' || activeSubsidy.status === 'closed') &&
+                !activeSubsidy.have_refund && (
+                  <WithPermission requiredPermissions={[PermissionResolverName.RequestSubsidyRefund]}>
+                    <Button
+                      onClick={() => setShowRequestRefundModal(true)}
+                      variant="outline"
+                      size="sm"
+                      className="text-yellow-600 dark:text-yellow-400 border-yellow-600 dark:border-yellow-400 hover:bg-yellow-600 dark:hover:bg-yellow-400 hover:text-white dark:hover:text-white"
+                    >
+                      <DollarSign className="w-4 h-4 mr-2" />
+                      {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.requestRefund || "Request Refund"}
+                    </Button>
+                  </WithPermission>
+                )}
+              {/* Confirm Refund Done Button - Only when refund requested but not done */}
+              {activeSubsidy.have_refund && !activeSubsidy.refund_done && (
+                <WithPermission requiredPermissions={[PermissionResolverName.ConfirmRefundDone]}>
+                  <Button
+                    onClick={() => setShowConfirmRefundModal(true)}
+                    variant="default"
+                    size="sm"
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.confirmRefundDone || "Confirm Refund Done"}
+                  </Button>
+                </WithPermission>
+              )}
+              <Button variant="outline" onClick={onClose} className="ml-auto">
+                {t('subsidy.close')}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -1640,6 +1777,27 @@ export function ViewSubsidyModal({
           }
         ]}
       />
-    </div>
+      {/* Request Refund Modal */}
+      <RequestRefundModal
+        isOpen={showRequestRefundModal}
+        onClose={() => setShowRequestRefundModal(false)}
+        subsidyId={activeSubsidy.id}
+        currentAmount={activeSubsidy.requested_amount}
+        onSuccess={async () => {
+          setShowRequestRefundModal(false)
+          await refetchHistory()
+          onSubsidyUpdated?.()
+        }}
+      />
+
+      {/* Confirm Refund Done Modal */}
+      <ConfirmRefundDoneModal
+        isOpen={showConfirmRefundModal}
+        onClose={() => setShowConfirmRefundModal(false)}
+        onConfirm={handleConfirmRefundDone}
+        refundAmount={Number((activeSubsidy as any).refund_amount || 0)}
+        isLoading={isConfirmingRefund}
+      />
+    </div >
   )
 }

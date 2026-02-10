@@ -9,12 +9,13 @@ import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { 
+import {
   CheckCircle,
+  CheckCircle2,
   Clock,
   XCircle,
   AlertCircle,
-  Plus, 
+  Plus,
   MoreHorizontal,
   Edit,
   Trash2,
@@ -56,13 +57,14 @@ import { useCurrency } from "@/contexts/currency-context"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { subsidyApprovalsTranslations } from "@/lib/translations/subsidy-approvals"
+import { subsidyRequestTranslations } from "@/lib/translations/subsidy-request"
 import { ChartHeader } from "@/components/charts/chart-header"
 
 // Import Charts
-import { 
-  RequestsOverTimeChart, 
-  StatusOverviewChart, 
-  RequestsByDepartmentChart 
+import {
+  RequestsOverTimeChart,
+  StatusOverviewChart,
+  RequestsByDepartmentChart
 } from "@/components/finance/charts"
 
 // Charts
@@ -92,6 +94,7 @@ import { PrivacyConfig } from "@/contexts/privacy-context"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AdvanceSubsidyBadge } from "@/components/ui/advance-subsidy-badge"
+import { RefundStatusBadge } from "@/components/ui/refund-status-badge"
 
 interface SubsidyRequest {
   id: string
@@ -100,7 +103,7 @@ interface SubsidyRequest {
   church_name?: string
   requested_amount: number
   approved_amount?: number
-  status: "pending" | "in_review" | "approved" | "closed" | "rejected" | "advanced_closed"
+  status: "pending" | "in_review" | "approved" | "closed" | "rejected" | "advanced_closed" | "waiting_refund"
   requested_at: string
   reviewed_at?: string
   reviewed_by?: string
@@ -124,6 +127,10 @@ interface SubsidyRequest {
   }>
   is_for_advance?: boolean
   advance_amount?: number
+  have_refund?: boolean
+  refund_done?: boolean
+  refund_amount?: number
+  refund_reason?: string
 }
 
 interface SubsidyApprovalsManagerProps {
@@ -191,15 +198,15 @@ export function SubsidyApprovalsManager({
       }
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
       if (errorCode === 'STATUS_IS_CLOSED') {
-          toast.error(translations.toasts?.statusClosed || "Status Closed cannot be changed");
+        toast.error(translations.toasts?.statusClosed || "Status Closed cannot be changed");
       } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
-          toast.error(translations.toasts?.inReviewToClosed || "Cannot close In Review requests");
+        toast.error(translations.toasts?.inReviewToClosed || "Cannot close In Review requests");
       } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
-          toast.error(translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close");
+        toast.error(translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close");
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(translations.toasts?.documentsPending || "All documents must be validated first");
+        toast.error(translations.toasts?.documentsPending || "All documents must be validated first");
       } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
-          toast.error(translations.toasts?.onlyFinancialCanClose || "Only users with the Financial Manager role can close subsidy requests");
+        toast.error(translations.toasts?.onlyFinancialCanClose || "Only users with the Financial Manager role can close subsidy requests");
       } else {
         toast.error(translations.toasts.approveError.replace('{{message}}', err.message))
       }
@@ -220,15 +227,15 @@ export function SubsidyApprovalsManager({
       }
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
       if (errorCode === 'STATUS_IS_CLOSED') {
-          toast.error(translations.toasts?.statusClosed || "Status Closed cannot be changed");
+        toast.error(translations.toasts?.statusClosed || "Status Closed cannot be changed");
       } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
-          toast.error(translations.toasts?.inReviewToClosed || "Cannot close In Review requests");
+        toast.error(translations.toasts?.inReviewToClosed || "Cannot close In Review requests");
       } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
-          toast.error(translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close");
+        toast.error(translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close");
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(translations.toasts?.documentsPending || "All documents must be validated first");
+        toast.error(translations.toasts?.documentsPending || "All documents must be validated first");
       } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
-          toast.error(translations.toasts?.onlyFinancialCanClose || "Only users with the Financial Manager role can close subsidy requests");
+        toast.error(translations.toasts?.onlyFinancialCanClose || "Only users with the Financial Manager role can close subsidy requests");
       } else {
         toast.error(translations.toasts.rejectError.replace('{{message}}', err.message))
       }
@@ -249,15 +256,15 @@ export function SubsidyApprovalsManager({
       }
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
       if (errorCode === 'STATUS_IS_CLOSED') {
-          toast.error(translations.toasts?.statusClosed || "Status Closed cannot be changed");
+        toast.error(translations.toasts?.statusClosed || "Status Closed cannot be changed");
       } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
-          toast.error(translations.toasts?.inReviewToClosed || "Cannot close In Review requests");
+        toast.error(translations.toasts?.inReviewToClosed || "Cannot close In Review requests");
       } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
-          toast.error(translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close");
+        toast.error(translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close");
       } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-          toast.error(translations.toasts?.documentsPending || "All documents must be validated first");
+        toast.error(translations.toasts?.documentsPending || "All documents must be validated first");
       } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
-          toast.error(translations.toasts?.onlyFinancialCanClose || "Only users with the Financial Manager role can close subsidy requests");
+        toast.error(translations.toasts?.onlyFinancialCanClose || "Only users with the Financial Manager role can close subsidy requests");
       } else {
         toast.error(translations.toasts.statusUpdateError.replace('{{message}}', err.message))
       }
@@ -267,25 +274,25 @@ export function SubsidyApprovalsManager({
   // Helper function to get status ID by name from the statuses query
   const getStatusIdByName = (statusName: string): string | null => {
     if (!statusesData?.subsidyStatuses) return null
-    
-    const status = statusesData.subsidyStatuses.find((s: any) => 
+
+    const status = statusesData.subsidyStatuses.find((s: any) =>
       s.name?.toUpperCase() === statusName.toUpperCase()
     )
     return status?.id || null
   }
 
   // States for confirmation dialogs
-  const [confirmationDialog, setConfirmationDialog] = useState<{ 
-      isOpen: boolean; 
-      action: 'approve' | 'reject' | 'close' | 'status_change'; 
-      itemId: string;
-      status?: string 
+  const [confirmationDialog, setConfirmationDialog] = useState<{
+    isOpen: boolean;
+    action: 'approve' | 'reject' | 'close' | 'status_change';
+    itemId: string;
+    status?: string
   }>({ isOpen: false, action: 'status_change', itemId: '' })
-  
-  const [rejectionDialog, setRejectionDialog] = useState<{ 
-      isOpen: boolean; 
-      itemId: string; 
-      reason: string 
+
+  const [rejectionDialog, setRejectionDialog] = useState<{
+    isOpen: boolean;
+    itemId: string;
+    reason: string
   }>({ isOpen: false, itemId: '', reason: '' })
 
   const getStatusChangeError = (subsidy: SubsidyRequest, to: string): string | null => {
@@ -293,28 +300,28 @@ export function SubsidyApprovalsManager({
 
     // Rule: Closed status cannot be changed to anything else
     if (from === 'closed') return translations.toasts?.statusClosed || "Status Closed cannot be changed"
-    
+
     // Rule: To Closed is allowed from Approved or Rejected or Advanced Closed
     if (to === 'closed') {
       if (from === 'in_review') return translations.toasts?.inReviewToClosed || "Cannot close In Review requests"
       // Only allowed from approved, rejected or advanced_closed
       if (from !== 'approved' && from !== 'rejected' && from !== 'advanced_closed') return translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close"
     }
-    
+
     // Rule: Advance subsidies logic
     if (subsidy.is_for_advance) {
-        if (from === 'approved') {
-            // Can go to advanced_closed
-            if (to === 'advanced_closed') return null
-            // Cannot go to closed directly (must go to advanced_closed first)
-            if (to === 'closed') return translations.toasts?.mustBeAdvancedClosed || "Adv. Subsidies must be Advanced Closed first"
-        }
-        if (from === 'advanced_closed') {
-            // Can go to closed
-            if (to === 'closed') return null
-            // Cannot go back to approved
-            return translations.toasts?.finalState || "Advanced Closed can only change to Closed"
-        }
+      if (from === 'approved') {
+        // Can go to advanced_closed
+        if (to === 'advanced_closed') return null
+        // Cannot go to closed directly (must go to advanced_closed first)
+        if (to === 'closed') return translations.toasts?.mustBeAdvancedClosed || "Adv. Subsidies must be Advanced Closed first"
+      }
+      if (from === 'advanced_closed') {
+        // Can go to closed
+        if (to === 'closed') return null
+        // Cannot go back to approved
+        return translations.toasts?.finalState || "Advanced Closed can only change to Closed"
+      }
     }
 
     // Rule: If Approved or Rejected, can ONLY go to Closed (for normal subsidies)
@@ -327,12 +334,12 @@ export function SubsidyApprovalsManager({
     // However, for ADVANCE request creation, no docs required.
     // If user added docs later, we might want to validate.
     if (['approved', 'closed', 'rejected', 'advanced_closed'].includes(to)) {
-       const hasPending = (subsidy.receipts || []).some(r => !r.is_validated);
-       if (hasPending) {
-           return translations.toasts?.documentsPending || "All documents must be validated first"
-       }
+      const hasPending = (subsidy.receipts || []).some(r => !r.is_validated);
+      if (hasPending) {
+        return translations.toasts?.documentsPending || "All documents must be validated first"
+      }
     }
-    
+
     return null
   }
 
@@ -344,14 +351,15 @@ export function SubsidyApprovalsManager({
       'APPROVED': 'approved',
       'REJECTED': 'rejected',
       'CLOSED': 'closed',
-      'ADVANCED_CLOSED': 'advanced_closed'
+      'ADVANCED_CLOSED': 'advanced_closed',
+      'WAITING_REFUND': 'waiting_refund'
     }
     return statusMap[statusName?.toUpperCase()] || 'pending'
   }
 
   const subsidyRequests: SubsidyRequest[] = useMemo(() => {
     if (!subsidyData?.subsidyRequests) return []
-    
+
     return subsidyData.subsidyRequests.map((request: any) => ({
       id: request.id,
       title: request.description || request.project?.title || translations.defaults.untitledRequest,
@@ -378,7 +386,11 @@ export function SubsidyApprovalsManager({
       })) || [],
       department_name: request.department?.name || translations.defaults.otherDepartment,
       is_for_advance: request.is_for_advance,
-      advance_amount: request.advance_amount ? parseFloat(request.advance_amount) : undefined
+      advance_amount: request.advance_amount ? parseFloat(request.advance_amount) : undefined,
+      have_refund: request.have_refund,
+      refund_done: request.refund_done,
+      refund_amount: request.refund_amount ? parseFloat(request.refund_amount) : undefined,
+      refund_reason: request.refund_reason
     }))
   }, [subsidyData])
 
@@ -391,16 +403,16 @@ export function SubsidyApprovalsManager({
     const approvedRequests = subsidyRequests.filter(r => r.status === 'approved').length
     const closedRequests = subsidyRequests.filter(r => r.status === 'closed').length
     const rejectedRequests = subsidyRequests.filter(r => r.status === 'rejected').length
-    
+
     const totalRequested = subsidyRequests.reduce((sum, r) => sum + r.requested_amount, 0)
     const totalApproved = subsidyRequests
       .filter(r => r.status === 'approved' || r.status === 'closed')
       .reduce((sum, r) => sum + (r.approved_amount || r.requested_amount), 0)
-    
-    const approvalRate = totalRequests > 0 
-      ? Math.round(((approvedRequests + closedRequests) / totalRequests) * 100) 
+
+    const approvalRate = totalRequests > 0
+      ? Math.round(((approvedRequests + closedRequests) / totalRequests) * 100)
       : 0
-    
+
     return {
       totalRequests,
       pendingRequests,
@@ -428,7 +440,7 @@ export function SubsidyApprovalsManager({
       },
       privacyConfig: privacyConfigs?.totalRequests,
       headerAction: privacyConfigs?.totalRequests ? (
-        <InlinePrivacyToggle 
+        <InlinePrivacyToggle
           config={privacyConfigs.totalRequests}
           className="w-6 h-6 flex-shrink-0"
         />
@@ -447,7 +459,7 @@ export function SubsidyApprovalsManager({
       },
       privacyConfig: privacyConfigs?.pendingReview,
       headerAction: privacyConfigs?.pendingReview ? (
-        <InlinePrivacyToggle 
+        <InlinePrivacyToggle
           config={privacyConfigs.pendingReview}
           className="w-6 h-6 flex-shrink-0"
         />
@@ -466,7 +478,7 @@ export function SubsidyApprovalsManager({
       },
       privacyConfig: privacyConfigs?.totalRequested,
       headerAction: privacyConfigs?.totalRequested ? (
-        <InlinePrivacyToggle 
+        <InlinePrivacyToggle
           config={privacyConfigs.totalRequested}
           className="w-6 h-6 flex-shrink-0"
         />
@@ -485,7 +497,7 @@ export function SubsidyApprovalsManager({
       },
       privacyConfig: privacyConfigs?.totalApproved,
       headerAction: privacyConfigs?.totalApproved ? (
-        <InlinePrivacyToggle 
+        <InlinePrivacyToggle
           config={privacyConfigs.totalApproved}
           className="w-6 h-6 flex-shrink-0"
         />
@@ -504,7 +516,7 @@ export function SubsidyApprovalsManager({
       },
       privacyConfig: privacyConfigs?.approvalRate,
       headerAction: privacyConfigs?.approvalRate ? (
-        <InlinePrivacyToggle 
+        <InlinePrivacyToggle
           config={privacyConfigs.approvalRate}
           className="w-6 h-6 flex-shrink-0"
         />
@@ -521,18 +533,20 @@ export function SubsidyApprovalsManager({
       'approved': '#10b981',
       'closed': '#059669',
       'rejected': '#ef4444',
-      'advanced_closed': '#7c3aed'
+      'advanced_closed': '#7c3aed',
+      'waiting_refund': '#f97316'
     }
-    
+
     const statusLabelMap: Record<string, string> = {
       'pending': 'Pending',
       'in_review': 'In Review',
       'approved': 'Approved',
       'closed': 'Closed',
       'rejected': 'Rejected',
-      'advanced_closed': 'Advanced Closed'
+      'advanced_closed': 'Advanced Closed',
+      'waiting_refund': 'Waiting Refund'
     }
-    
+
     // Count requests by status from actual data
     const statusCounts: Record<string, number> = {
       'pending': 0,
@@ -540,15 +554,16 @@ export function SubsidyApprovalsManager({
       'approved': 0,
       'closed': 0,
       'rejected': 0,
-      'advanced_closed': 0
+      'advanced_closed': 0,
+      'waiting_refund': 0
     }
-    
+
     subsidyRequests.forEach(request => {
       if (statusCounts[request.status] !== undefined) {
         statusCounts[request.status]++
       }
     })
-    
+
     const byStatusData = Object.keys(statusColorMap).map(statusKey => ({
       status: statusLabelMap[statusKey],
       count: statusCounts[statusKey] || 0,
@@ -557,10 +572,10 @@ export function SubsidyApprovalsManager({
 
     // 2. By Month (RequestsOverTimeChart)
     // Group requests by month from created_at
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
-                        'July', 'August', 'September', 'October', 'November', 'December']
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December']
     const monthData: Record<string, any> = {}
-    
+
     // Initialize all months with 0 counts
     monthNames.forEach((month, index) => {
       const quarter = Math.floor(index / 3) + 1
@@ -575,7 +590,7 @@ export function SubsidyApprovalsManager({
         quarter
       }
     })
-    
+
     // Count requests by month and status
     subsidyRequests.forEach(request => {
       const date = new Date(request.requested_at)
@@ -585,29 +600,29 @@ export function SubsidyApprovalsManager({
         monthData[monthName][statusKey]++
       }
     })
-    
+
     const byMonthData = Object.values(monthData)
 
     // 3. By Department (RequestsByDepartmentChart)
     // Group by department with EXACT created_at date
     const dateMap: Record<string, any> = {}
-    
+
     subsidyRequests.forEach((request, index) => {
       const createdDate = new Date(request.requested_at)
       const dateKey = createdDate.toISOString().split('T')[0]
       const dept = request.department_name || 'Other'
       const monthAbbr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][createdDate.getMonth()]
-      
+
       if (!dateMap[dateKey]) {
         dateMap[dateKey] = { date: dateKey, month: monthAbbr }
       }
-      
+
       if (!dateMap[dateKey][dept]) {
         dateMap[dateKey][dept] = 0
       }
       dateMap[dateKey][dept] += request.requested_amount
     })
-    
+
     const byDepartmentData = Object.values(dateMap)
 
     return {
@@ -622,7 +637,7 @@ export function SubsidyApprovalsManager({
   const handleRefresh = async () => {
     setRefreshing(true)
     const refreshToast = toast.loading(translations.toasts.refreshing)
-    
+
     try {
       if (refetchSubsidies) {
         await refetchSubsidies()
@@ -652,32 +667,32 @@ export function SubsidyApprovalsManager({
     const subsidy = subsidyRequests.find(r => r.id === id)
     if (!subsidy) return
     try {
-        await approveSubsidyMutation({ variables: { id, approved_amount: subsidy.requested_amount } })
-    } catch (e) {}
+      await approveSubsidyMutation({ variables: { id, approved_amount: subsidy.requested_amount } })
+    } catch (e) { }
   }
 
   const executeReject = async (id: string, reason: string) => {
-      try {
-          await rejectSubsidyMutation({ variables: { id, rejection_reason: reason } })
-      } catch (e) {}
+    try {
+      await rejectSubsidyMutation({ variables: { id, rejection_reason: reason } })
+    } catch (e) { }
   }
 
   const executeStatusUpdate = async (id: string, status: string) => {
-      const statusId = getStatusIdByName(status.toUpperCase())
-      if (!statusId) return
-      try {
-          await updateSubsidyMutation({ variables: { id, data: { subsidy_status_id: statusId } } })
-      } catch (e) {}
+    const statusId = getStatusIdByName(status.toUpperCase())
+    if (!statusId) return
+    try {
+      await updateSubsidyMutation({ variables: { id, data: { subsidy_status_id: statusId } } })
+    } catch (e) { }
   }
 
   const handleApprove = async (subsidyId: string) => {
     const request = subsidyRequests.find(r => r.id === subsidyId)
     if (!request) return
-    
+
     const error = getStatusChangeError(request, 'approved')
     if (error) {
-         toast.error(error)
-         return
+      toast.error(error)
+      return
     }
     setConfirmationDialog({ isOpen: true, action: 'approve', itemId: subsidyId })
   }
@@ -685,17 +700,17 @@ export function SubsidyApprovalsManager({
   const handleReject = async (subsidyId: string) => {
     const request = subsidyRequests.find(r => r.id === subsidyId)
     if (!request) return
-    
+
     const error = getStatusChangeError(request, 'rejected')
     if (error) {
-         toast.error(error)
-         return
+      toast.error(error)
+      return
     }
     setRejectionDialog({ isOpen: true, itemId: subsidyId, reason: translations.defaults.rejectionReason || '' })
   }
 
   const handleMarkInReview = async (subsidyId: string) => {
-     handleKanbanItemMove(subsidyId, 'pending', 'in_review')
+    handleKanbanItemMove(subsidyId, 'pending', 'in_review')
   }
 
   // Refactored Kanban Move Handler
@@ -706,64 +721,69 @@ export function SubsidyApprovalsManager({
     // Validar regras de negócio
     const error = getStatusChangeError(request, toGroupId)
     if (error) {
-        toast.error(error)
-        // Note: Kanban might have optimistically moved the item. A refresh usually fixes this, 
-        // or a library specific revert. Since we don't have direct revert access here easily without library specifics,
-        // we rely on the component re-render from props/refresh.
-        return
+      toast.error(error)
+      // Note: Kanban might have optimistically moved the item. A refresh usually fixes this, 
+      // or a library specific revert. Since we don't have direct revert access here easily without library specifics,
+      // we rely on the component re-render from props/refresh.
+      return
     }
 
     if (toGroupId === 'approved') {
-        setConfirmationDialog({ isOpen: true, action: 'approve', itemId })
+      setConfirmationDialog({ isOpen: true, action: 'approve', itemId })
     } else if (toGroupId === 'rejected') {
-        setRejectionDialog({ isOpen: true, itemId, reason: '' })
+      setRejectionDialog({ isOpen: true, itemId, reason: '' })
     } else if (toGroupId === 'closed') {
-        setConfirmationDialog({ isOpen: true, action: 'close', itemId })
+      setConfirmationDialog({ isOpen: true, action: 'close', itemId })
     } else {
-        // Direct update for statuses that don't need confirmation (like Pending <-> In Review)
-        executeStatusUpdate(itemId, toGroupId)
+      // Direct update for statuses that don't need confirmation (like Pending <-> In Review)
+      executeStatusUpdate(itemId, toGroupId)
     }
   }
 
   // Status configuration
-  const statusConfig: Record<SubsidyRequest["status"], { 
+  const statusConfig: Record<SubsidyRequest["status"], {
     label: string
     variant: "success" | "warning" | "error" | "info" | "neutral"
     icon: any
   }> = {
-    pending: { 
-      label: translations.status.pending, 
+    pending: {
+      label: translations.status.pending,
       variant: "warning",
       icon: Clock
     },
-    in_review: { 
-      label: translations.status.in_review, 
+    in_review: {
+      label: translations.status.in_review,
       variant: "info",
       icon: AlertCircle
     },
-    approved: { 
-      label: translations.status.approved, 
+    approved: {
+      label: translations.status.approved,
       variant: "success",
       icon: CheckCircle
     },
-    closed: { 
-      label: translations.status.closed, 
+    closed: {
+      label: translations.status.closed,
       variant: "neutral",
       icon: FileText
     },
     rejected: {
-      label: translations.status.rejected, 
+      label: translations.status.rejected,
       variant: "error",
       icon: XCircle
     },
-    advanced_closed: { 
-      label: translations.status.advanced_closed, 
+    advanced_closed: {
+      label: translations.status.advanced_closed,
       variant: "neutral",
       icon: CheckCircle
+    },
+    waiting_refund: {
+      label: translations.status.waiting_refund || "Waiting Refund",
+      variant: "warning",
+      icon: DollarSign
     }
   }
 
-  const priorityConfig: Record<SubsidyRequest["priority"], { 
+  const priorityConfig: Record<SubsidyRequest["priority"], {
     label: string
     variant: "success" | "warning" | "error" | "info" | "neutral"
   }> = {
@@ -784,9 +804,16 @@ export function SubsidyApprovalsManager({
             <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
               <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <div>
+            <div className="flex-1">
               <div className="font-medium text-sm text-foreground">
                 {row.original.title}
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                <AdvanceSubsidyBadge isForAdvance={row.original.is_for_advance} />
+                <RefundStatusBadge
+                  haveRefund={row.original.have_refund}
+                  refundDone={row.original.refund_done}
+                />
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">
                 {row.original.church_name || row.original.institution_name}
@@ -802,7 +829,7 @@ export function SubsidyApprovalsManager({
       header: translations.table.requested,
       cell: ({ row }) => (
         privacyConfigs?.tableMonetaryValues ? (
-          <PrivacyWrapper 
+          <PrivacyWrapper
             config={privacyConfigs.tableMonetaryValues}
             showToggle={false}
             className="inline-block"
@@ -865,7 +892,8 @@ export function SubsidyApprovalsManager({
           approved: 'success',
           closed: 'success',
           rejected: 'error',
-          advanced_closed: 'neutral'
+          advanced_closed: 'neutral',
+          waiting_refund: 'warning'
         }
         const dotColorMap: Record<SubsidyRequest['status'], string> = {
           pending: 'bg-amber-500',
@@ -873,7 +901,8 @@ export function SubsidyApprovalsManager({
           approved: 'bg-green-500',
           closed: 'bg-emerald-600',
           rejected: 'bg-red-500',
-          advanced_closed: 'bg-purple-600'
+          advanced_closed: 'bg-purple-600',
+          waiting_refund: 'bg-orange-500'
         }
         return (
           <StatusBadge
@@ -911,13 +940,13 @@ export function SubsidyApprovalsManager({
                 <Settings className="mr-2 h-4 w-4" />
                 {translations.actions.manageSubsidy}
               </DropdownMenuItem>
-              
+
               {/* Approve/Reject buttons for pending and in_review */}
               {(row.original.status === 'pending' || row.original.status === 'in_review') && (
                 <>
                   <DropdownMenuSeparator />
                   <WithPermission requiredPermissions={[PermissionResolverName.ApproveSubsidyRequest]}>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => handleApprove(row.original.id)}
                       className="text-green-600"
                     >
@@ -926,7 +955,7 @@ export function SubsidyApprovalsManager({
                     </DropdownMenuItem>
                   </WithPermission>
                   <WithPermission requiredPermissions={[PermissionResolverName.RejectSubsidyRequest]}>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => handleReject(row.original.id)}
                       className="text-red-600"
                     >
@@ -949,6 +978,7 @@ export function SubsidyApprovalsManager({
     { id: 'in_review', name: translations.kanban.groups.in_review, color: '#3b82f6', tooltip: translations.statusRules.in_review },
     { id: 'approved', name: translations.kanban.groups.approved, color: '#10b981', tooltip: translations.statusRules.approved },
     { id: 'advanced_closed', name: translations.kanban.groups.advanced_closed, color: '#7c3aed', tooltip: translations.statusRules.advanced_closed },
+    { id: 'waiting_refund', name: translations.kanban.groups.waiting_refund || 'Waiting Refund', color: '#f97316', tooltip: translations.statusRules.waiting_refund || 'Subsidies waiting for refund processing' },
     { id: 'closed', name: translations.kanban.groups.closed, color: '#059669', tooltip: translations.statusRules.closed },
     { id: 'rejected', name: translations.kanban.groups.rejected, color: '#ef4444', tooltip: translations.statusRules.rejected },
   ]
@@ -965,7 +995,10 @@ export function SubsidyApprovalsManager({
       activities_count: request.activities_count,
       priority: request.priority,
       requested_at: format(new Date(request.requested_at), "dd/MM/yyyy", { locale: ptBR }),
-      is_for_advance: request.is_for_advance
+      is_for_advance: request.is_for_advance,
+      have_refund: request.have_refund,
+      refund_done: request.refund_done,
+      refund_amount: request.refund_amount
     }
   }))
 
@@ -1007,19 +1040,26 @@ export function SubsidyApprovalsManager({
   const renderKanbanItem = (item: KanbanItem, group: KanbanGroup, dragHandlers?: any) => {
     const itemActions = kanbanActions.filter(action => action.showInItem)
     const priority = item.metadata?.priority as SubsidyRequest["priority"] || 'low'
-    
+
     // Priority flag colors
     const priorityFlagColors: Record<SubsidyRequest["priority"], string> = {
       high: 'bg-red-500',
       medium: 'bg-yellow-500',
       low: 'bg-green-500'
     }
-    
+
     return (
       <div
         {...dragHandlers}
         className="bg-card border border-l-4 border-border rounded-md p-3 shadow-sm hover:shadow-md transition-all cursor-pointer mb-3 last:mb-0 relative"
         style={{ borderLeftColor: group.color }}
+        onClick={(e) => {
+          // Prevent opening if clicking on interactive elements or if dragging
+          if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('[role="button"]')) {
+            return
+          }
+          if (item?.id) handleViewSubsidy(item.id)
+        }}
       >
         {/* Priority Flag */}
         <div className="absolute top-2 right-2">
@@ -1050,20 +1090,36 @@ export function SubsidyApprovalsManager({
                 </div>
               }
             >
-              <span className="text-sm font-semibold text-foreground flex items-center gap-1">
-                {item.metadata?.requested_amount}
-                <AdvanceSubsidyBadge isForAdvance={item.metadata?.is_for_advance} />
-              </span>
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-semibold text-foreground">
+                  {item.metadata?.requested_amount}
+                </span>
+                <div className="flex items-center gap-1 flex-wrap">
+                  <AdvanceSubsidyBadge isForAdvance={item.metadata?.is_for_advance} />
+                  <RefundStatusBadge
+                    haveRefund={item.metadata?.have_refund}
+                    refundDone={item.metadata?.refund_done}
+                  />
+                </div>
+              </div>
             </PrivacyWrapper>
           ) : (
-            <span className="text-sm font-semibold text-foreground flex items-center gap-1">
-              {item.metadata?.requested_amount}
-              <AdvanceSubsidyBadge isForAdvance={item.metadata?.is_for_advance} />
-            </span>
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-semibold text-foreground">
+                {item.metadata?.requested_amount}
+              </span>
+              <div className="flex items-center gap-1 flex-wrap">
+                <AdvanceSubsidyBadge isForAdvance={item.metadata?.is_for_advance} />
+                <RefundStatusBadge
+                  haveRefund={item.metadata?.have_refund}
+                  refundDone={item.metadata?.refund_done}
+                />
+              </div>
+            </div>
           )}
-          
+
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0">
                 <MoreHorizontal className="h-3 w-3" />
               </Button>
@@ -1151,7 +1207,7 @@ export function SubsidyApprovalsManager({
           autoplayDelay={5000}
         >
           {/* Requests by Department Chart */}
-           <RequestsByDepartmentChart
+          <RequestsByDepartmentChart
             data={chartData.byDepartment}
             privacyConfig={privacyConfigs?.byDepartmentChart}
             loading={isLoading}
@@ -1186,13 +1242,13 @@ export function SubsidyApprovalsManager({
           actions={
             <>
               {viewMode === 'table' && privacyConfigs?.tableMonetaryValues && (
-                <InlinePrivacyToggle 
+                <InlinePrivacyToggle
                   config={privacyConfigs.tableMonetaryValues}
                   className="w-8 h-8"
                 />
               )}
               {viewMode === 'kanban' && privacyConfigs?.kanbanMonetaryValues && (
-                <InlinePrivacyToggle 
+                <InlinePrivacyToggle
                   config={privacyConfigs.kanbanMonetaryValues}
                   className="w-8 h-8"
                 />
@@ -1235,35 +1291,35 @@ export function SubsidyApprovalsManager({
           }}
         />
       )}
-      
-       {/* Confirmation Dialog */}
-       <ConfirmationDialog
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
         isOpen={confirmationDialog.isOpen}
         onClose={() => setConfirmationDialog({ ...confirmationDialog, isOpen: false })}
         onConfirm={async () => {
-            if (confirmationDialog.action === 'approve') {
-                await executeApprove(confirmationDialog.itemId)
-            } else if (confirmationDialog.action === 'close') {
-                await executeStatusUpdate(confirmationDialog.itemId, 'closed')
-            }
-            setConfirmationDialog({ ...confirmationDialog, isOpen: false })
+          if (confirmationDialog.action === 'approve') {
+            await executeApprove(confirmationDialog.itemId)
+          } else if (confirmationDialog.action === 'close') {
+            await executeStatusUpdate(confirmationDialog.itemId, 'closed')
+          }
+          setConfirmationDialog({ ...confirmationDialog, isOpen: false })
         }}
         title={t('subsidy.statusChange.title')}
         description={
-             confirmationDialog.action === 'approve' 
-             ? t('subsidy.statusChange.warning.approved')
-             : confirmationDialog.action === 'close'
-                ? t('subsidy.statusChange.warning.closed')
-                : t('subsidy.statusChange.warning.generic')
+          confirmationDialog.action === 'approve'
+            ? t('subsidy.statusChange.warning.approved')
+            : confirmationDialog.action === 'close'
+              ? t('subsidy.statusChange.warning.closed')
+              : t('subsidy.statusChange.warning.generic')
         }
         confirmText={t('common.confirm')}
         cancelText={t('common.cancel')}
         severity="high"
         warnings={[
-            {
-                icon: AlertCircle,
-                text: t('subsidy.irreversibleActionWarning')
-            }
+          {
+            icon: AlertCircle,
+            text: t('subsidy.irreversibleActionWarning')
+          }
         ]}
       />
 
@@ -1272,19 +1328,19 @@ export function SubsidyApprovalsManager({
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
-                <AlertCircle className="w-5 h-5" />
-                {t('subsidy.rejectTitle')}
+              <AlertCircle className="w-5 h-5" />
+              {t('subsidy.rejectTitle')}
             </DialogTitle>
             <DialogDescription>
               {t('subsidy.reasonRejection')}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:border-red-800">
-                <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-2 text-justify">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    {t('subsidy.statusChange.warning.rejected')}
-                </p>
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:border-red-800">
+              <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-2 text-justify">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                {t('subsidy.statusChange.warning.rejected')}
+              </p>
             </div>
             <Textarea
               value={rejectionDialog.reason}
@@ -1299,16 +1355,16 @@ export function SubsidyApprovalsManager({
               {t('common.cancel')}
             </Button>
             <div className="flex flex-col gap-2 w-full sm:w-auto">
-                <Button variant="destructive" onClick={async () => {
-                    await executeReject(rejectionDialog.itemId, rejectionDialog.reason)
-                    setRejectionDialog({ ...rejectionDialog, isOpen: false })
-                }} className="w-full">
+              <Button variant="destructive" onClick={async () => {
+                await executeReject(rejectionDialog.itemId, rejectionDialog.reason)
+                setRejectionDialog({ ...rejectionDialog, isOpen: false })
+              }} className="w-full">
                 <AlertCircle className="w-4 h-4 mr-2" />
                 {t('common.reject')}
-                </Button>
-                <p className="text-xs text-center text-red-600">
-                    {t('common.riskAware')}
-                </p>
+              </Button>
+              <p className="text-xs text-center text-red-600">
+                {t('common.riskAware')}
+              </p>
             </div>
           </DialogFooter>
         </DialogContent>
