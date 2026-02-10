@@ -39,6 +39,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { projectTranslations } from "@/lib/translations/projects"
 import { SubsidyChatPanel } from "@/components/modals/project/subsidy-chat-panel"
 import { RequestRefundModal } from "@/components/modals/project/request-refund-modal"
+import { ConfirmRefundDoneModal } from "@/components/modals/confirm-refund-done-modal"
 import { subsidyRequestTranslations } from "@/lib/translations/subsidy-request"
 
 interface ActivityItem {
@@ -133,6 +134,7 @@ export function ViewSubsidyModal({
 
   // Refund modal state
   const [showRequestRefundModal, setShowRequestRefundModal] = React.useState(false)
+  const [showConfirmRefundModal, setShowConfirmRefundModal] = React.useState(false)
 
   /* 
    * Sync local status state when subsidy prop changes
@@ -850,20 +852,16 @@ export function ViewSubsidyModal({
   }
 
   const handleConfirmRefundDone = async () => {
-    const refundT = subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund ||
-      subsidyRequestTranslations.en.refund
-
-    if (confirm(refundT.confirmRefundDoneAction)) {
-      try {
-        await confirmRefundDone({
-          variables: {
-            id: subsidy.id,
-            language: i18n.language as any
-          }
-        })
-      } catch (error) {
-        // Error handled in mutation
-      }
+    try {
+      await confirmRefundDone({
+        variables: {
+          id: subsidy.id,
+          language: i18n.language as any
+        }
+      })
+      setShowConfirmRefundModal(false)
+    } catch (error) {
+      // Error handled in mutation
     }
   }
 
@@ -991,7 +989,7 @@ export function ViewSubsidyModal({
                 {(subsidy as any).have_refund && !(subsidy as any).refund_done && (
                   <Badge variant="outline" className="text-sm bg-red-50 text-red-700 border-red-300 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800">
                     <AlertCircle className="w-3 h-3 mr-1" />
-                    {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.refundPending || "Refund Pending"}
+                    {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.refundPending}
                     - {formatCurrency((subsidy as any).refund_amount)}
                   </Badge>
                 )}
@@ -1665,7 +1663,7 @@ export function ViewSubsidyModal({
               {subsidy.have_refund && !subsidy.refund_done && (
                 <WithPermission requiredPermissions={[PermissionResolverName.ConfirmRefundDone]}>
                   <Button
-                    onClick={handleConfirmRefundDone}
+                    onClick={() => setShowConfirmRefundModal(true)}
                     variant="default"
                     size="sm"
                   >
@@ -1737,6 +1735,14 @@ export function ViewSubsidyModal({
           setShowRequestRefundModal(false)
           onSubsidyUpdated?.()
         }}
+      />
+
+      {/* Confirm Refund Done Modal */}
+      <ConfirmRefundDoneModal
+        isOpen={showConfirmRefundModal}
+        onClose={() => setShowConfirmRefundModal(false)}
+        onConfirm={handleConfirmRefundDone}
+        refundAmount={Number((subsidy as any).refund_amount || 0)}
       />
     </div >
   )

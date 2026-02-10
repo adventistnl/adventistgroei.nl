@@ -173,15 +173,15 @@ export function SubsidyRequestCard({
               <AdvanceSubsidyBadge isForAdvance={data.is_for_advance} />
               {/* Refund Badges */}
               {data.have_refund && !data.refund_done && (
-                <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-red-50 text-red-700 border-red-300 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800">
-                  <AlertCircle className="w-2.5 h-2.5 mr-0.5" />
-                  Refund
+                <Badge variant="outline" className="text-xs px-2 py-0.5 bg-red-50 text-red-700 border-red-300 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800">
+                  <AlertCircle className="w-3 h-3 mr-1" />
+                  {t('subsidyRequest.refund.waitingRefund')}
                 </Badge>
               )}
               {data.refund_done && (
-                <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-green-50 text-green-700 border-green-300 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800">
-                  <CheckCircle2 className="w-2.5 h-2.5 mr-0.5" />
-                  Refund Done
+                <Badge variant="outline" className="text-xs px-2 py-0.5 bg-green-50 text-green-700 border-green-300 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800">
+                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                  {t('subsidyRequest.refund.refundDone')}
                 </Badge>
               )}
             </div>

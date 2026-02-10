@@ -4,7 +4,7 @@ export const subsidyRequestTranslations = {
     title: "Request Subsidy",
     selectedActivities: "{{count}} selected activity",
     selectedActivities_plural: "{{count}} selected activities",
-    
+
     // Info section
     about: {
       title: "About Subsidy Request",
@@ -244,7 +244,7 @@ export const subsidyRequestTranslations = {
       confirmRefundDone: "Confirm Refund Done",
       refundAmount: "Refund Amount",
       refundReason: "Refund Reason",
-      refundPending: "Refund Pending",
+      refundPending: "Waiting refund",
       refundDone: "Refund Done",
       waitingRefund: "Waiting Refund",
       refundRequestSuccess: "Refund request submitted successfully",
@@ -261,6 +261,8 @@ export const subsidyRequestTranslations = {
       submit: "Request Refund",
       enterRefundAmount: "Enter refund amount",
       enterRefundReason: "Enter reason for refund",
+      confirmButton: "Confirm Refund Done",
+      confirmRefundWarning: "This action will return the refund amount to the annual budget. This cannot be undone.",
       alert: {
         singlePending: "You have 1 subsidy waiting for refund processing",
         multiplePending: "You have {{count}} subsidies waiting for refund processing"
@@ -528,6 +530,8 @@ export const subsidyRequestTranslations = {
       submit: "Solicitar Reembolso",
       enterRefundAmount: "Digite o valor do reembolso",
       enterRefundReason: "Digite o motivo do reembolso",
+      confirmButton: "Confirmar Reembolso Concluído",
+      confirmRefundWarning: "Esta ação retornará o valor do reembolso ao orçamento anual. Isso não pode ser desfeito.",
       alert: {
         singlePending: "Você tem 1 subsídio aguardando processamento de reembolso",
         multiplePending: "Você tem {{count}} subsídios aguardando processamento de reembolso"
@@ -793,7 +797,9 @@ export const subsidyRequestTranslations = {
       refundModalTitle: "Terugbetaling Aanvragen",
       refundModalDescription: "Vraag een terugbetaling aan voor deze subsidie. Het bedrag wordt teruggegeven aan het budget.",
       cancel: "Annuleren",
-      submit: "Terugbetaling Aanvragen"
+      submit: "Terugbetaling Aanvragen",
+      confirmButton: "Bevestig Terugbetaling Voltooid",
+      confirmRefundWarning: "Deze actie zal het terugbetalingsbedrag terugbrengen naar het jaarbudget. Dit kan niet ongedaan worden gemaakt."
     }
   }
 }
