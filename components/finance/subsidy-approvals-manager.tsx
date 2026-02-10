@@ -1053,6 +1053,13 @@ export function SubsidyApprovalsManager({
         {...dragHandlers}
         className="bg-card border border-l-4 border-border rounded-md p-3 shadow-sm hover:shadow-md transition-all cursor-pointer mb-3 last:mb-0 relative"
         style={{ borderLeftColor: group.color }}
+        onClick={(e) => {
+          // Prevent opening if clicking on interactive elements or if dragging
+          if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('[role="button"]')) {
+            return
+          }
+          if (item?.id) handleViewSubsidy(item.id)
+        }}
       >
         {/* Priority Flag */}
         <div className="absolute top-2 right-2">
@@ -1112,7 +1119,7 @@ export function SubsidyApprovalsManager({
           )}
 
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0">
                 <MoreHorizontal className="h-3 w-3" />
               </Button>

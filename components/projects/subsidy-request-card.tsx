@@ -146,8 +146,16 @@ export function SubsidyRequestCard({
     <div
       className={cn(
         "group relative flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-3 transition-all hover:border-gray-300 hover:shadow-sm",
+        onView ? "cursor-pointer" : "",
         className
       )}
+      onClick={(e) => {
+        // Prevent opening if clicking on interactive elements
+        if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('[role="button"]')) {
+          return
+        }
+        if (onView) onView(data.id)
+      }}
     >
       {/* Header: Icon + Title + Menu */}
       {/* Archived overlay indicator */}
@@ -186,7 +194,7 @@ export function SubsidyRequestCard({
         {/* Three-dot menu (only if user has any permission) */}
         {hasAnyPermission && (
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button
                 variant="ghost"
                 size="icon"
