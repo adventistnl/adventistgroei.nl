@@ -20,6 +20,7 @@ import { WithPermission } from "@/hocs/with-permission"
 import { useHasPermission } from "@/hooks/use-has-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AdvanceSubsidyBadge } from "@/components/ui/advance-subsidy-badge"
+import { RefundStatusBadge } from "@/components/ui/refund-status-badge"
 
 export interface SubsidyRequestCardData {
   id: string
@@ -171,19 +172,10 @@ export function SubsidyRequestCard({
             <div className="flex items-center gap-1.5 flex-wrap">
               <h4 className="truncate text-xs font-semibold text-gray-900">{data.title}</h4>
               <AdvanceSubsidyBadge isForAdvance={data.is_for_advance} />
-              {/* Refund Badges */}
-              {data.have_refund && !data.refund_done && (
-                <Badge variant="outline" className="text-xs px-2 py-0.5 bg-red-50 text-red-700 border-red-300 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800">
-                  <AlertCircle className="w-3 h-3 mr-1" />
-                  {t('subsidyRequest.refund.waitingRefund')}
-                </Badge>
-              )}
-              {data.refund_done && (
-                <Badge variant="outline" className="text-xs px-2 py-0.5 bg-green-50 text-green-700 border-green-300 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800">
-                  <CheckCircle2 className="w-3 h-3 mr-1" />
-                  {t('subsidyRequest.refund.refundDone')}
-                </Badge>
-              )}
+              <RefundStatusBadge
+                haveRefund={data.have_refund}
+                refundDone={data.refund_done}
+              />
             </div>
             {data.institution_name && (
               <p className="truncate text-[10px] text-gray-500">{data.institution_name}</p>

@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator"
 import {
   CheckCircle,
+  CheckCircle2,
   Clock,
   XCircle,
   AlertCircle,
@@ -56,6 +57,7 @@ import { useCurrency } from "@/contexts/currency-context"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { subsidyApprovalsTranslations } from "@/lib/translations/subsidy-approvals"
+import { subsidyRequestTranslations } from "@/lib/translations/subsidy-request"
 import { ChartHeader } from "@/components/charts/chart-header"
 
 // Import Charts
@@ -92,6 +94,7 @@ import { PrivacyConfig } from "@/contexts/privacy-context"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AdvanceSubsidyBadge } from "@/components/ui/advance-subsidy-badge"
+import { RefundStatusBadge } from "@/components/ui/refund-status-badge"
 
 interface SubsidyRequest {
   id: string
@@ -801,9 +804,16 @@ export function SubsidyApprovalsManager({
             <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
               <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <div>
+            <div className="flex-1">
               <div className="font-medium text-sm text-foreground">
                 {row.original.title}
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                <AdvanceSubsidyBadge isForAdvance={row.original.is_for_advance} />
+                <RefundStatusBadge
+                  haveRefund={row.original.have_refund}
+                  refundDone={row.original.refund_done}
+                />
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">
                 {row.original.church_name || row.original.institution_name}
@@ -985,7 +995,10 @@ export function SubsidyApprovalsManager({
       activities_count: request.activities_count,
       priority: request.priority,
       requested_at: format(new Date(request.requested_at), "dd/MM/yyyy", { locale: ptBR }),
-      is_for_advance: request.is_for_advance
+      is_for_advance: request.is_for_advance,
+      have_refund: request.have_refund,
+      refund_done: request.refund_done,
+      refund_amount: request.refund_amount
     }
   }))
 
@@ -1070,16 +1083,32 @@ export function SubsidyApprovalsManager({
                 </div>
               }
             >
-              <span className="text-sm font-semibold text-foreground flex items-center gap-1">
-                {item.metadata?.requested_amount}
-                <AdvanceSubsidyBadge isForAdvance={item.metadata?.is_for_advance} />
-              </span>
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-semibold text-foreground">
+                  {item.metadata?.requested_amount}
+                </span>
+                <div className="flex items-center gap-1 flex-wrap">
+                  <AdvanceSubsidyBadge isForAdvance={item.metadata?.is_for_advance} />
+                  <RefundStatusBadge
+                    haveRefund={item.metadata?.have_refund}
+                    refundDone={item.metadata?.refund_done}
+                  />
+                </div>
+              </div>
             </PrivacyWrapper>
           ) : (
-            <span className="text-sm font-semibold text-foreground flex items-center gap-1">
-              {item.metadata?.requested_amount}
-              <AdvanceSubsidyBadge isForAdvance={item.metadata?.is_for_advance} />
-            </span>
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-semibold text-foreground">
+                {item.metadata?.requested_amount}
+              </span>
+              <div className="flex items-center gap-1 flex-wrap">
+                <AdvanceSubsidyBadge isForAdvance={item.metadata?.is_for_advance} />
+                <RefundStatusBadge
+                  haveRefund={item.metadata?.have_refund}
+                  refundDone={item.metadata?.refund_done}
+                />
+              </div>
+            </div>
           )}
 
           <DropdownMenu>
