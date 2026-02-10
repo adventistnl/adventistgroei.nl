@@ -124,6 +124,10 @@ interface SubsidyRequest {
   }>
   is_for_advance?: boolean
   advance_amount?: number
+  have_refund?: boolean
+  refund_done?: boolean
+  refund_amount?: number
+  refund_reason?: string
 }
 
 interface SubsidyApprovalsManagerProps {
@@ -379,7 +383,11 @@ export function SubsidyApprovalsManager({
       })) || [],
       department_name: request.department?.name || translations.defaults.otherDepartment,
       is_for_advance: request.is_for_advance,
-      advance_amount: request.advance_amount ? parseFloat(request.advance_amount) : undefined
+      advance_amount: request.advance_amount ? parseFloat(request.advance_amount) : undefined,
+      have_refund: request.have_refund,
+      refund_done: request.refund_done,
+      refund_amount: request.refund_amount ? parseFloat(request.refund_amount) : undefined,
+      refund_reason: request.refund_reason
     }))
   }, [subsidyData])
 
