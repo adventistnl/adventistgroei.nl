@@ -44,6 +44,9 @@ interface RequestsOverTimeChartProps {
       pending: string
       rejected: string
       in_review: string
+      closed: string
+      advanced_closed: string
+      waiting_refund: string
     }
     statusLabels: {
       approved: string
@@ -73,6 +76,14 @@ const chartConfig = {
   rejected: {
     label: "Rejected",
     color: "hsl(0, 84%, 60%)",
+  },
+  advanced_closed: {
+    label: "Advanced Closed",
+    color: "hsl(271, 76%, 53%)",
+  },
+  waiting_refund: {
+    label: "Waiting Refund",
+    color: "hsl(24, 95%, 53%)",
   },
 } satisfies ChartConfig
 
@@ -107,8 +118,10 @@ export function RequestsOverTimeChart({
       approved: acc.approved + (month.approved || 0),
       closed: acc.closed + (month.closed || 0),
       rejected: acc.rejected + (month.rejected || 0),
-      total: acc.total + (month.pending || 0) + (month.in_review || 0) + (month.approved || 0) + (month.closed || 0) + (month.rejected || 0)
-    }), { pending: 0, in_review: 0, approved: 0, closed: 0, rejected: 0, total: 0 })
+      advanced_closed: acc.advanced_closed + (month.advanced_closed || 0),
+      waiting_refund: acc.waiting_refund + (month.waiting_refund || 0),
+      total: acc.total + (month.pending || 0) + (month.in_review || 0) + (month.approved || 0) + (month.closed || 0) + (month.rejected || 0) + (month.advanced_closed || 0) + (month.waiting_refund || 0)
+    }), { pending: 0, in_review: 0, approved: 0, closed: 0, rejected: 0, advanced_closed: 0, waiting_refund: 0, total: 0 })
   }, [filteredData])
 
   const approvalRate = totals.total > 0 
@@ -220,6 +233,18 @@ export function RequestsOverTimeChart({
               dataKey="rejected"
               stackId="a"
               fill="var(--color-rejected)"
+              radius={[0, 0, 0, 0]}
+            />
+            <Bar
+              dataKey="advanced_closed"
+              stackId="a"
+              fill="var(--color-advanced_closed)"
+              radius={[0, 0, 0, 0]}
+            />
+            <Bar
+              dataKey="waiting_refund"
+              stackId="a"
+              fill="var(--color-waiting_refund)"
               radius={[4, 4, 0, 0]}
             />
           </BarChart>
@@ -251,7 +276,7 @@ export function RequestsOverTimeChart({
           {translations?.footer.approvalRate || "Approval rate"}: {approvalRate}% <TrendingUp className="h-4 w-4" />
         </div>
         <div className="leading-none text-muted-foreground">
-          {translations?.footer.totalRequests || "Total requests"}: {totals.total} ({totals.pending} {translations?.footer.pending || "pending"}, {totals.in_review} {translations?.footer.in_review || "in review"}, {totals.approved} {translations?.footer.approved || "approved"}, {totals.closed} closed, {totals.rejected} {translations?.footer.rejected || "rejected"})
+          {translations?.footer.totalRequests || "Total requests"}: {totals.total} ({totals.pending} {translations?.footer.pending || "pending"}, {totals.in_review} {translations?.footer.in_review || "in review"}, {totals.approved} {translations?.footer.approved || "approved"}, {totals.closed} {translations?.footer.closed || "closed"}, {totals.rejected} {translations?.footer.rejected || "rejected"}, {totals.advanced_closed} {translations?.footer.advanced_closed || "advanced closed"}, {totals.waiting_refund} {translations?.footer.waiting_refund || "waiting refund"})
         </div>
       </CardFooter>
     </Card>

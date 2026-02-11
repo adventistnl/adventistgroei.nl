@@ -192,7 +192,7 @@ export default function AnnualBudgetPage() {
   }, [availableYearsData])
 
   usePageTitle({
-    title: t('annual_budget.title')
+    title: t('annual_budget.title', 'Annual Budget')
   })
 
   // Transform institution annual budgets to component format
@@ -355,7 +355,7 @@ export default function AnnualBudgetPage() {
 
     const institutionBudget = institutionAnnualBudgets[selectedYear]
     if (!institutionBudget?.id) {
-      toast.error(t('annual_budget.messages.institution_budget_not_found'))
+      toast.error(t('annual_budget.messages.institution_budget_not_found', 'Institution budget not found'))
       return
     }
 
@@ -423,7 +423,7 @@ export default function AnnualBudgetPage() {
         toast.dismiss(loadingToast)
         toast.success(
           isNowLocked 
-            ? t('annual_budget.modals.messages.lock_success') 
+            ? t('annual_budget.modals.messages.lock_success', 'Budget locked successfully') 
             : t('annual_budget.modals.messages.unlock_success', `Institution and ${departmentBudgetsWithLocks.length} departments unlocked successfully`), 
           {
             id: `institution-lock-${institutionBudget.id}`,
@@ -440,7 +440,7 @@ export default function AnnualBudgetPage() {
         error?.networkError?.result?.errors?.[0]?.message ||
         error?.networkError?.message ||
         error?.message ||
-        t('annual_budget.modals.messages.lock_error')
+        t('annual_budget.modals.messages.lock_error', 'Failed to toggle budget lock')
 
       toast.error(errorMessage, {
         id: `institution-lock-error-${institutionBudget.id}`,
@@ -466,7 +466,7 @@ export default function AnnualBudgetPage() {
     const isLocked = currentBudget?.is_locked || false
     
     if (isLocked) {
-      toast.error(t('annual_budget.messages.budget_locked_edit'), { duration: 3000 })
+      toast.error(t('annual_budget.messages.budget_locked_edit', 'Cannot edit locked budget'), { duration: 3000 })
       return
     }
     if (currentBudget) {
@@ -503,16 +503,16 @@ export default function AnnualBudgetPage() {
     return [
       {
         id: "total_budget",
-        title: t('annual_budget.kpi_cards.total_institution_budget.title'),
-        value: hasInstitutionBudget ? formatCurrencyCompat(kpiData.totalInstitutionBudget, null, { compact: true }) : t('annual_budget.kpi_cards.total_institution_budget.not_set'),
+        title: t('annual_budget.kpi_cards.total_institution_budget.title', 'Total Institution Budget'),
+        value: hasInstitutionBudget ? formatCurrencyCompat(kpiData.totalInstitutionBudget, null, { compact: true }) : t('annual_budget.kpi_cards.total_institution_budget.not_set', 'Not Set'),
         icon: DollarSign,
         subtitle: hasInstitutionBudget 
-          ? t('annual_budget.kpi_cards.total_institution_budget.subtitle', { year: selectedYear })
-          : t('annual_budget.kpi_cards.total_institution_budget.subtitle_not_set', { year: selectedYear }),
+          ? t('annual_budget.kpi_cards.total_institution_budget.subtitle', `Budget for ${selectedYear}`, { year: selectedYear })
+          : t('annual_budget.kpi_cards.total_institution_budget.subtitle_not_set', `Click to set budget for ${selectedYear}`, { year: selectedYear }),
         trend: hasInstitutionBudget ? {
           value: 5,
           isPositive: true,
-          label: t('annual_budget.kpi_cards.total_institution_budget.trend')
+          label: t('annual_budget.kpi_cards.total_institution_budget.trend', 'vs last year')
         } : undefined,
         onClick: !hasInstitutionBudget ? handleCreateInstitutionBudget : handleEditInstitutionBudget,
         className: !hasInstitutionBudget 
@@ -528,7 +528,7 @@ export default function AnnualBudgetPage() {
             <button
               onClick={handleToggleInstitutionBudgetLock}
               className="relative group z-10 cursor-pointer"
-              title={isLocked ? t('annual_budget.table.lock_actions.unlock') : t('annual_budget.table.lock_actions.lock')}
+              title={isLocked ? t('annual_budget.table.lock_actions.unlock', 'Unlock budget') : t('annual_budget.table.lock_actions.lock', 'Lock budget')}
             >
               <div className={`w-6 h-6 border-2 border-dashed rounded-full flex items-center justify-center transition-all ${
                 isLocked 
@@ -547,14 +547,14 @@ export default function AnnualBudgetPage() {
       },
     {
       id: "total_allocated",
-      title: t('annual_budget.kpi_cards.total_allocated.title'),
+      title: t('annual_budget.kpi_cards.total_allocated.title', 'Total Allocated'),
       value: formatCurrencyCompat(kpiData.totalAllocated, null, { compact: true }),
       icon: CheckCircle,
-      subtitle: t('annual_budget.kpi_cards.total_allocated.subtitle'),
+      subtitle: t('annual_budget.kpi_cards.total_allocated.subtitle', 'Allocated to departments'),
       trend: {
         value: 8,
         isPositive: true,
-        label: t('annual_budget.kpi_cards.total_allocated.trend')
+        label: t('annual_budget.kpi_cards.total_allocated.trend', 'increase')
       },
       className: !hasInstitutionBudget 
         ? "opacity-40 pointer-events-none" 
@@ -569,14 +569,14 @@ export default function AnnualBudgetPage() {
     },
     {
       id: "total_spent",
-      title: t('annual_budget.kpi_cards.total_spent.title'),
+      title: t('annual_budget.kpi_cards.total_spent.title', 'Total Spent'),
       value: formatCurrencyCompat(kpiData.totalSpent, null, { compact: true }),
       icon: TrendingUp,
-      subtitle: t('annual_budget.kpi_cards.total_spent.subtitle'),
+      subtitle: t('annual_budget.kpi_cards.total_spent.subtitle', 'Actual expenses'),
       trend: {
         value: 12,
         isPositive: true,
-        label: t('annual_budget.kpi_cards.total_spent.trend')
+        label: t('annual_budget.kpi_cards.total_spent.trend', 'this month')
       },
       className: !hasInstitutionBudget 
         ? "opacity-40 pointer-events-none" 
@@ -591,18 +591,18 @@ export default function AnnualBudgetPage() {
     },
     {
       id: "budget_remaining",
-      title: t('annual_budget.kpi_cards.budget_remaining.title'),
+      title: t('annual_budget.kpi_cards.budget_remaining.title', 'Budget Remaining'),
       value: (
         <span className={isDeficit ? 'text-red-600' : 'text-green-600'}>
           {isDeficit && '-'}{formatCurrencyCompat(Math.abs(budgetRemainingValue), null, { compact: true })}
         </span>
       ),
       icon: isDeficit ? AlertTriangle : CheckCircle,
-      subtitle: isDeficit ? t('annual_budget.kpi_cards.budget_remaining.subtitle_deficit') : t('annual_budget.kpi_cards.budget_remaining.subtitle_available'),
+      subtitle: isDeficit ? t('annual_budget.kpi_cards.budget_remaining.subtitle_deficit', 'Over budget') : t('annual_budget.kpi_cards.budget_remaining.subtitle_available', 'Still available'),
       trend: {
         value: Math.round((Math.abs(budgetRemainingValue) / kpiData.totalInstitutionBudget) * 100) || 0,
         isPositive: !isDeficit,
-        label: isDeficit ? t('annual_budget.kpi_cards.budget_remaining.trend_over') : t('annual_budget.kpi_cards.budget_remaining.trend')
+        label: isDeficit ? t('annual_budget.kpi_cards.budget_remaining.trend_over', 'over budget') : t('annual_budget.kpi_cards.budget_remaining.trend', 'remaining')
       },
       className: !hasInstitutionBudget 
         ? "opacity-40 pointer-events-none" 
@@ -619,14 +619,14 @@ export default function AnnualBudgetPage() {
     },
     {
       id: "budget_utilization",
-      title: t('annual_budget.kpi_cards.budget_utilization.title'),
+      title: t('annual_budget.kpi_cards.budget_utilization.title', 'Budget Utilization'),
       value: `${kpiData.budgetUtilization}%`,
       icon: Building,
-      subtitle: t('annual_budget.kpi_cards.budget_utilization.subtitle', { count: kpiData.activeDepartments }),
+      subtitle: t('annual_budget.kpi_cards.budget_utilization.subtitle', `${kpiData.activeDepartments} active departments`, { count: kpiData.activeDepartments }),
       trend: {
         value: 3,
         isPositive: utilizationRate < 90,
-        label: t('annual_budget.kpi_cards.budget_utilization.trend')
+        label: t('annual_budget.kpi_cards.budget_utilization.trend', 'of total budget')
       },
       className: !hasInstitutionBudget 
         ? "opacity-40 pointer-events-none" 
@@ -829,7 +829,7 @@ export default function AnnualBudgetPage() {
     let refreshToast: string | undefined = undefined
     
     if (showNotification) {
-      refreshToast = toast.loading(t('annual_budget.messages.refreshing'))
+      refreshToast = toast.loading(t('annual_budget.messages.refreshing', 'Refreshing data...'))
     }
     
     try {
@@ -841,11 +841,11 @@ export default function AnnualBudgetPage() {
       ])
       
       if (showNotification) {
-        toast.success(t('annual_budget.messages.refresh_success'), { duration: 2000 })
+        toast.success(t('annual_budget.messages.refresh_success', 'Data refreshed successfully'), { duration: 2000 })
       }
     } catch (error) {
       if (showNotification) {
-        toast.error(t('annual_budget.messages.refresh_error'))
+        toast.error(t('annual_budget.messages.refresh_error', 'Failed to refresh data'))
       }
       console.error('Erro ao recarregar dados:', error)
     } finally {
@@ -868,18 +868,18 @@ export default function AnnualBudgetPage() {
     const nextYear = Math.max(...availableYears) + 1
 
     if (nextYear > maxAllowedYear) {
-      toast.error(t('annual_budget.messages.cannot_add_year_beyond', { maxYear: maxAllowedYear }))
+      toast.error(t('annual_budget.messages.cannot_add_year_beyond', `Cannot add year beyond ${maxAllowedYear}`, { maxYear: maxAllowedYear }))
       return
     }
 
     if (availableYears.includes(nextYear)) {
-      toast.error(t('annual_budget.messages.year_already_exists'))
+      toast.error(t('annual_budget.messages.year_already_exists', 'Year already exists'))
       return
     }
 
     // Add year locally to frontend state
     setAvailableYears(prev => [...prev, nextYear].sort((a, b) => b - a))
-    toast.success(t('annual_budget.messages.year_added_success', { year: nextYear }))
+    toast.success(t('annual_budget.messages.year_added_success', `Year ${nextYear} added successfully`, { year: nextYear }))
   }
 
   const handleApproveRequest = async (requestId: string, approvedAmount?: number) => {
@@ -897,7 +897,7 @@ export default function AnnualBudgetPage() {
       })
       if (result.data?.approveAnnualBudget) {
         await handleRefresh()
-        toast.success(t('annual_budget.messages.approve_success'))
+        toast.success(t('annual_budget.messages.approve_success', 'Budget approved successfully'))
       }
     } catch (error: any) {
       console.error('Error approving budget:', error)
@@ -907,7 +907,7 @@ export default function AnnualBudgetPage() {
         error?.networkError?.result?.errors?.[0]?.message ||
         error?.networkError?.message ||
         error?.message ||
-        t('annual_budget.messages.approve_error')
+        t('annual_budget.messages.approve_error', 'Failed to approve budget')
 
       toast.error(errorMessage)
     } finally {
@@ -930,7 +930,7 @@ export default function AnnualBudgetPage() {
       })
       if (result.data?.rejectAnnualBudget) {
         await handleRefresh()
-        toast.success(t('annual_budget.messages.reject_success'))
+        toast.success(t('annual_budget.messages.reject_success', 'Budget rejected successfully'))
       }
     } catch (error: any) {
       console.error('Error rejecting budget:', error)
@@ -940,7 +940,7 @@ export default function AnnualBudgetPage() {
         error?.networkError?.result?.errors?.[0]?.message ||
         error?.networkError?.message ||
         error?.message ||
-        t('annual_budget.messages.reject_error')
+        t('annual_budget.messages.reject_error', 'Failed to reject budget')
 
       toast.error(errorMessage)
     } finally {
@@ -960,7 +960,7 @@ export default function AnnualBudgetPage() {
       })
       if (result.data?.requestRevisionAnnualBudget) {
         await handleRefresh()
-        toast.success(t('annual_budget.messages.revision_success'))
+        toast.success(t('annual_budget.messages.revision_success', 'Revision requested successfully'))
       }
     } catch (error: any) {
       console.error('Error requesting revision:', error)
@@ -970,7 +970,7 @@ export default function AnnualBudgetPage() {
         error?.networkError?.result?.errors?.[0]?.message ||
         error?.networkError?.message ||
         error?.message ||
-        t('annual_budget.messages.revision_error')
+        t('annual_budget.messages.revision_error', 'Failed to request revision')
 
       toast.error(errorMessage)
     }
@@ -996,7 +996,7 @@ export default function AnnualBudgetPage() {
         
         const isNowLocked = result.data.toggleBudgetLock.is_locked
         // Usar toast com id para evitar duplicatas
-        toast.success(isNowLocked ? t('annual_budget.messages.lock_success') : t('annual_budget.messages.unlock_success'), {
+        toast.success(isNowLocked ? t('annual_budget.messages.lock_success', 'Budget locked successfully') : t('annual_budget.messages.unlock_success', 'Budget unlocked successfully'), {
           id: `budget-lock-${requestId}`,
           duration: 2000
         })
@@ -1009,7 +1009,7 @@ export default function AnnualBudgetPage() {
         error?.networkError?.result?.errors?.[0]?.message ||
         error?.networkError?.message ||
         error?.message ||
-        t('annual_budget.messages.lock_error')
+        t('annual_budget.messages.lock_error', 'Failed to toggle budget lock')
 
       toast.error(errorMessage, {
         id: `budget-lock-error-${requestId}`,
@@ -1029,7 +1029,7 @@ export default function AnnualBudgetPage() {
       })
       if (result.data?.deleteAnnualBudget) {
         await handleRefresh()
-        toast.success(t('annual_budget.messages.delete_success'))
+        toast.success(t('annual_budget.messages.delete_success', 'Budget deleted successfully'))
       }
     } catch (error: any) {
       console.error('Error deleting budget:', error)
@@ -1039,7 +1039,7 @@ export default function AnnualBudgetPage() {
         error?.networkError?.result?.errors?.[0]?.message ||
         error?.networkError?.message ||
         error?.message ||
-        t('annual_budget.messages.delete_error')
+        t('annual_budget.messages.delete_error', 'Failed to delete budget')
 
       toast.error(errorMessage)
     }
@@ -1064,7 +1064,7 @@ export default function AnnualBudgetPage() {
         })
         if (result.data?.updateDepartmentBudget) {
           await handleRefresh()
-          toast.success(t('annual_budget.messages.department_budget_updated'))
+          toast.success(t('annual_budget.messages.department_budget_updated', 'Department budget updated successfully'))
           setIsViewEditModalOpen(false)
           setSelectedDepartmentData(null)
         }
@@ -1086,7 +1086,7 @@ export default function AnnualBudgetPage() {
         })
         if (result.data?.createDepartmentBudget) {
           await handleRefresh()
-          toast.success(t('annual_budget.messages.department_budget_created', { departmentName: departmentData.departmentName }))
+          toast.success(t('annual_budget.messages.department_budget_created', `Budget for ${departmentData.departmentName} created successfully`, { departmentName: departmentData.departmentName }))
           setIsViewEditModalOpen(false)
           setSelectedDepartmentData(null)
         }
@@ -1099,7 +1099,7 @@ export default function AnnualBudgetPage() {
         error?.networkError?.result?.errors?.[0]?.message ||
         error?.networkError?.message ||
         error?.message ||
-        t('annual_budget.messages.department_budget_save_failed')
+        t('annual_budget.messages.department_budget_save_failed', 'Failed to save department budget')
 
       toast.error(errorMessage)
     }
@@ -1123,7 +1123,7 @@ export default function AnnualBudgetPage() {
       })
       if (result.data?.createInstitutionBudget) {
         await handleRefresh()
-        toast.success(t('annual_budget.messages.institution_budget_created', { year: budget.year }))
+        toast.success(t('annual_budget.messages.institution_budget_created', `Institution budget for ${budget.year} created successfully`, { year: budget.year }))
         setIsInstitutionBudgetModalOpen(false)
         setInstitutionBudgetData(null)
       }
@@ -1135,7 +1135,7 @@ export default function AnnualBudgetPage() {
         error?.networkError?.result?.errors?.[0]?.message ||
         error?.networkError?.message ||
         error?.message ||
-        t('annual_budget.messages.institution_budget_create_failed')
+        t('annual_budget.messages.institution_budget_create_failed', 'Failed to create institution budget')
 
       toast.error(errorMessage)
     }
@@ -1143,7 +1143,7 @@ export default function AnnualBudgetPage() {
 
   const handleUpdateBudget = async (budget: AnnualBudgetData) => {
     if (!budget.id) {
-      toast.error(t('annual_budget.messages.budget_id_required'))
+      toast.error(t('annual_budget.messages.budget_id_required', 'Budget ID is required'))
       return
     }
 
@@ -1163,7 +1163,7 @@ export default function AnnualBudgetPage() {
       })
       if (result.data?.updateInstitutionBudget) {
         await handleRefresh()
-        toast.success(t('annual_budget.messages.budget_updated'))
+        toast.success(t('annual_budget.messages.budget_updated', 'Budget updated successfully'))
         setIsInstitutionBudgetModalOpen(false)
         setInstitutionBudgetData(null)
         setSelectedRequest(null)
@@ -1176,7 +1176,7 @@ export default function AnnualBudgetPage() {
         error?.networkError?.result?.errors?.[0]?.message ||
         error?.networkError?.message ||
         error?.message ||
-        t('annual_budget.messages.budget_update_failed')
+        t('annual_budget.messages.budget_update_failed', 'Failed to update budget')
 
       toast.error(errorMessage)
     }
@@ -1221,7 +1221,7 @@ export default function AnnualBudgetPage() {
       accessorKey: "departmentId",
       header: () => (
         <div className="text-left font-medium text-foreground">
-          {t('annual_budget.table.headers.department_name')}
+          {t('annual_budget.table.headers.department_name', 'Department Name')}
         </div>
       ),
       cell: ({ row }) => {
@@ -1319,7 +1319,7 @@ export default function AnnualBudgetPage() {
       id: "budget_total",
       header: () => (
         <div className="text-center font-medium text-foreground">
-          {t('annual_budget.table.headers.budget_total')}
+          {t('annual_budget.table.headers.budget_total', 'Budget Total')}
         </div>
       ),
       cell: ({ row }) => {
@@ -1340,7 +1340,7 @@ export default function AnnualBudgetPage() {
       id: "allocated_amount",
       header: () => (
         <div className="text-center font-medium text-foreground">
-          {t('annual_budget.table.headers.allocated_amount')}
+          {t('annual_budget.table.headers.allocated_amount', 'Allocated Amount')}
         </div>
       ),
       cell: ({ row }) => {
@@ -1361,7 +1361,7 @@ export default function AnnualBudgetPage() {
       id: "spent_amount",
       header: () => (
         <div className="text-center font-medium text-foreground">
-          {t('annual_budget.table.headers.spent_amount')}
+          {t('annual_budget.table.headers.spent_amount', 'Spent Amount')}
         </div>
       ),
       cell: ({ row }) => {
@@ -1381,7 +1381,7 @@ export default function AnnualBudgetPage() {
       id: "usage_percentage",
       header: () => (
         <div className="text-center font-medium text-foreground">
-          {t('annual_budget.table.headers.usage_percentage')}
+          {t('annual_budget.table.headers.usage_percentage', 'Usage Percentage')}
         </div>
       ),
       cell: ({ row }) => {
@@ -1403,7 +1403,7 @@ export default function AnnualBudgetPage() {
       id: "lock_status",
       header: () => (
         <div className="text-center font-medium text-foreground">
-          {t('annual_budget.table.headers.lock_status')}
+          {t('annual_budget.table.headers.lock_status', 'Lock Status')}
         </div>
       ),
       cell: ({ row }) => {
@@ -1428,7 +1428,7 @@ export default function AnnualBudgetPage() {
                     ? 'border-foreground bg-foreground hover:bg-foreground/90 cursor-pointer' 
                     : 'border-border bg-muted opacity-60 hover:opacity-100 hover:border-foreground/60 cursor-pointer'
               }`}
-              title={isDisabled ? t('annual_budget.table.lock_tooltips.disabled') : isLocked ? t('annual_budget.table.lock_tooltips.locked') : t('annual_budget.table.lock_tooltips.unlocked')}
+              title={isDisabled ? t('annual_budget.table.lock_tooltips.disabled', 'Budget must be created first') : isLocked ? t('annual_budget.table.lock_tooltips.locked', 'Budget is locked') : t('annual_budget.table.lock_tooltips.unlocked', 'Budget is unlocked')}
             >
               {isLocked ? (
                 <Lock className={`w-3 h-3 ${isDisabled ? 'text-muted-foreground' : 'text-background'}`} />
@@ -1445,7 +1445,7 @@ export default function AnnualBudgetPage() {
       accessorKey: "hasBudgetRecord",
       header: () => (
         <div className="text-center font-medium text-foreground">
-          {t('annual_budget.table.headers.budget_status')}
+          {t('annual_budget.table.headers.budget_status', 'Budget Status')}
         </div>
       ),
       cell: ({ row }) => {
@@ -1457,12 +1457,12 @@ export default function AnnualBudgetPage() {
             {hasBudget ? (
               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-green-500" />
-                {t('annual_budget.table.budget_status_labels.completed')}
+                {t('annual_budget.table.budget_status_labels.completed', 'Completed')}
               </Badge>
             ) : (
               <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-xs flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-muted-foreground" />
-                {t('annual_budget.table.budget_status_labels.missing')}
+                {t('annual_budget.table.budget_status_labels.missing', 'Missing')}
               </Badge>
             )}
           </div>
@@ -1483,7 +1483,7 @@ export default function AnnualBudgetPage() {
       id: "actions",
       header: () => (
         <div className="text-right font-medium text-foreground">
-          {t('annual_budget.table.headers.actions')}
+          {t('annual_budget.table.headers.actions', 'Actions')}
         </div>
       ),
       cell: ({ row }) => {
@@ -1508,7 +1508,7 @@ export default function AnnualBudgetPage() {
                   }}>
                     <Settings className="w-4 h-4 mr-2" />
                     {hasBudget 
-                      ? t('annual_budget.table.actions_menu.manage')
+                      ? t('annual_budget.table.actions_menu.manage', 'Manage Budget')
                       : t('annual_budget.table.actions_menu.register', 'Register Budget')
                     }
                   </DropdownMenuItem>
@@ -1528,12 +1528,12 @@ export default function AnnualBudgetPage() {
                     {isLocked ? (
                       <>
                         <Unlock className="w-4 h-4 mr-2" />
-                        {t('annual_budget.table.actions_menu.unlock')}
+                        {t('annual_budget.table.actions_menu.unlock', 'Unlock Budget')}
                       </>
                     ) : (
                       <>
                         <Lock className="w-4 h-4 mr-2" />
-                        {t('annual_budget.table.actions_menu.lock')}
+                        {t('annual_budget.table.actions_menu.lock', 'Lock Budget')}
                       </>
                     )}
                   </DropdownMenuItem>
@@ -1577,10 +1577,10 @@ export default function AnnualBudgetPage() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h2 className="text-2rem sm:text-2.5rem lg:text-3rem font-bold text-foreground">
-                {t('annual_budget.title')}
+                {t('annual_budget.title', 'Annual Budget')}
               </h2>
               <p className="text-muted-foreground text-sm sm:text-base">
-                {t('annual_budget.subtitle')}
+                {t('annual_budget.subtitle', 'Plan and track your annual budget allocations')}
               </p>
                 {currentInstitutionData && (
                   <div className="flex items-center gap-2 mt-3">
@@ -1608,7 +1608,7 @@ export default function AnnualBudgetPage() {
                 size="icon"
                 onClick={() => handleRefresh(true)}
                 disabled={refreshing}
-                title={t('annual_budget.buttons.refresh')}
+                title={t('annual_budget.buttons.refresh', 'Refresh data')}
               >
                 <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
               </Button>
@@ -1681,10 +1681,10 @@ export default function AnnualBudgetPage() {
                   <div>
                     <CardTitle className="flex items-center gap-2 text-foreground">
                       <DollarSign className="w-5 h-5 text-muted-foreground" />
-                      {t('annual_budget.table.title_departments')}
+                      {t('annual_budget.table.title_departments', 'Department Budgets')}
                     </CardTitle>
                     <CardDescription className="text-muted-foreground">
-                      {t('annual_budget.table.subtitle_departments')}
+                      {t('annual_budget.table.subtitle_departments', 'Manage budget allocations for each department')}
                     </CardDescription>
                   </div>
                 </div>

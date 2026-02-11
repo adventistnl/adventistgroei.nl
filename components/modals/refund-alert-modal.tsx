@@ -12,15 +12,23 @@ import {
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
-import { DollarSign, AlertCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useCurrency } from '@/contexts/currency-context'
-import { Badge } from '@/components/ui/badge'
 
 interface RefundSubsidy {
   id: string
   description: string
+  requested_amount: number
   refund_amount: number
+  project: {
+    id: string
+    name: string
+    owner: {
+      id: string
+      name: string
+      email: string
+    }
+  }
   institution: {
     id: string
     name: string
@@ -55,65 +63,65 @@ export const RefundAlertModal: React.FC<RefundAlertModalProps> = ({
     onClose()
   }
 
+  const totalRequestedAmount = refunds.reduce((sum, refund) => sum + Number(refund.requested_amount), 0)
   const totalRefundAmount = refunds.reduce((sum, refund) => sum + Number(refund.refund_amount), 0)
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-950">
-              <DollarSign className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-            </div>
-            <div>
-              <DialogTitle className="text-xl">
-                {t('refund.alert.modalTitle')}
-              </DialogTitle>
-              <DialogDescription>
-                {refunds.length === 1
-                  ? t('refund.alert.singlePending')
-                  : t('refund.alert.multiplePending', { count: refunds.length })}
-              </DialogDescription>
-            </div>
-          </div>
+          <DialogTitle className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            {t('refund.alert.modalTitle')}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-gray-600 dark:text-gray-400">
+            {refunds.length === 1
+              ? t('refund.alert.singlePending')
+              : t('refund.alert.multiplePending', { count: refunds.length })}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Summary */}
-          <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-950/30">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-orange-900 dark:text-orange-100">
-                {t('refund.alert.totalPending')}
-              </span>
-              <span className="text-lg font-bold text-orange-600 dark:text-orange-400">
+          {/* KPIs - Minimalista e Monocromático */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-md">
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                {t('refund.alert.totalRequested') || 'Total Solicitado'}
+              </p>
+              <p className="text-base font-bold text-gray-900 dark:text-gray-100">
+                {formatCurrency(totalRequestedAmount)}
+              </p>
+            </div>
+            <div className="p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-md">
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                {t('refund.alert.totalRefund') || 'Total Reembolso'}
+              </p>
+              <p className="text-base font-bold text-gray-900 dark:text-gray-100">
                 {formatCurrency(totalRefundAmount)}
-              </span>
+              </p>
             </div>
           </div>
 
-          {/* Refund List */}
-          <div className="max-h-[300px] space-y-2 overflow-y-auto">
+          {/* Refund List - Minimalista */}
+          <div className="max-h-[280px] space-y-2 overflow-y-auto">
             {refunds.map((refund) => (
               <div
                 key={refund.id}
-                className="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800"
+                className="rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-3"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">
-                      {refund.description || t('refund.alert.untitledSubsidy')}
+                    <p className="text-sm text-gray-900 dark:text-gray-100 truncate">
+                      {refund.project?.name || refund.description || t('refund.alert.untitledSubsidy')}
                     </p>
-                    <div className="flex flex-wrap items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-xs">
-                        {refund.institution.name}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {refund.department.name}
-                      </Badge>
-                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                      {refund.department.name}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
-                    <span className="font-semibold text-sm whitespace-nowrap">
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {t('refund.alert.refundLabel') || 'Reembolso'}
+                    </span>
+                    <span className="font-bold text-sm text-gray-900 dark:text-gray-100 whitespace-nowrap">
                       {formatCurrency(Number(refund.refund_amount))}
                     </span>
                   </div>
@@ -123,7 +131,7 @@ export const RefundAlertModal: React.FC<RefundAlertModalProps> = ({
           </div>
 
           {/* Don't remind checkbox */}
-          <div className="flex items-center space-x-2 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800">
+          <div className="flex items-center space-x-2 p-3 border border-gray-200 dark:border-gray-800 rounded-md">
             <Checkbox
               id="dont-remind"
               checked={dontRemindChecked}
@@ -131,7 +139,7 @@ export const RefundAlertModal: React.FC<RefundAlertModalProps> = ({
             />
             <Label
               htmlFor="dont-remind"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed cursor-pointer"
             >
               {t('refund.alert.dontRemindToday')}
             </Label>
@@ -139,7 +147,7 @@ export const RefundAlertModal: React.FC<RefundAlertModalProps> = ({
         </div>
 
         <DialogFooter>
-          <Button onClick={handleClose} className="w-full sm:w-auto">
+          <Button onClick={handleClose} variant="outline" className="w-full sm:w-auto border-gray-300 dark:border-gray-700">
             {t('refund.alert.understood')}
           </Button>
         </DialogFooter>

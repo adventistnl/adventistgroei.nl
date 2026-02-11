@@ -179,11 +179,6 @@ export function SubsidyRequestCard({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 flex-wrap">
               <h4 className="truncate text-xs font-semibold text-gray-900">{data.title}</h4>
-              <AdvanceSubsidyBadge isForAdvance={data.is_for_advance} />
-              <RefundStatusBadge
-                haveRefund={data.have_refund}
-                refundDone={data.refund_done}
-              />
             </div>
             {data.institution_name && (
               <p className="truncate text-[10px] text-gray-500">{data.institution_name}</p>
@@ -206,15 +201,15 @@ export function SubsidyRequestCard({
             <DropdownMenuContent align="end" className="w-48">
               {onView && (
                 <WithPermission requiredPermissions={[PermissionResolverName.SubsidyRequest]}>
-                  <DropdownMenuItem onClick={() => onView(data.id)}>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onView(data.id); }}>
                     <Eye className="w-4 h-4 mr-2" />
                     {t('actions.view')}
                   </DropdownMenuItem>
                 </WithPermission>
               )}
               {onEdit && (!data.is_for_advance || (data.items && data.items.length > 0)) && (
-                <WithPermission requiredPermissions={[PermissionResolverName.UpdateSubsidyRequest]}>
-                  <DropdownMenuItem onClick={() => onEdit(data.id)}>
+                <WithPermission requiredPermissions={[PermissionResolverName.UpdateSubsidyRequest, PermissionResolverName.CreateSubsidyRequest]}>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(data.id); }}>
                     <Pencil className="w-4 h-4 mr-2" />
                     {t('actions.edit')}
                   </DropdownMenuItem>
@@ -222,7 +217,7 @@ export function SubsidyRequestCard({
               )}
               {/* Link Activity (Advance Requests only) - hide if already linked (has items) */}
               {data.is_for_advance && !data.archived && onLinkActivity && (!data.items || data.items.length === 0) && (
-                <DropdownMenuItem onClick={() => onLinkActivity(data.id)}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onLinkActivity(data.id); }}>
                   <div className="flex items-center">
                     <Plus className="w-3 h-3 mr-2" />
                     {t('subsidy.linkActivity') || "Link Activity"}
@@ -234,7 +229,7 @@ export function SubsidyRequestCard({
                 <WithPermission requiredPermissions={[PermissionResolverName.DeleteSubsidyRequest]}>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => onDelete(data.id)}
+                    onClick={(e) => { e.stopPropagation(); onDelete(data.id); }}
                     className="text-red-600 focus:text-red-600"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
@@ -246,7 +241,7 @@ export function SubsidyRequestCard({
               {/* {onDuplicate && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => onDuplicate(data.id)}>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate(data.id); }}>
                     {t('actions.duplicate')}
                   </DropdownMenuItem>
                 </>
@@ -256,7 +251,7 @@ export function SubsidyRequestCard({
               {onArchive && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => onArchive && onArchive(data.id)}>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive && onArchive(data.id); }}>
                     <Archive className="w-3 h-3 mr-2" />
                     {data.archived ? t('actions.unarchive') : t('actions.archive')}
                   </DropdownMenuItem>
@@ -277,9 +272,17 @@ export function SubsidyRequestCard({
 
         {/* Status Badge + Amount in same row */}
         <div className="flex items-center justify-between gap-2">
-          <Badge variant="outline" className={cn("text-[10px] font-medium px-1.5 py-0.5", currentStatus.className)}>
-            {currentStatus.label}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className={cn("text-[10px] font-medium px-1.5 py-0.5", currentStatus.className)}>
+              {currentStatus.label}
+            </Badge>
+            <AdvanceSubsidyBadge isForAdvance={data.is_for_advance} />
+            <RefundStatusBadge
+              haveRefund={data.have_refund}
+              refundDone={data.refund_done}
+            />
+          </div>
+
 
           {/* Amount */}
           <div className="flex items-center gap-1">

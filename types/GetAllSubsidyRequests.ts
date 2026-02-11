@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ActivityStatus, ActivityPriority } from "./globalTypes";
+import { LanguagePreference, ActivityStatus, ActivityPriority } from "./globalTypes";
 
 // ====================================================
 // GraphQL query operation: GetAllSubsidyRequests
@@ -22,16 +22,41 @@ export interface GetAllSubsidyRequests_subsidyRequests_institution {
   name: string;
 }
 
+export interface GetAllSubsidyRequests_subsidyRequests_department_leader {
+  __typename: "User";
+  id: string;
+  name: string;
+  email: string;
+  language_preference: LanguagePreference;
+}
+
 export interface GetAllSubsidyRequests_subsidyRequests_department {
   __typename: "Department";
   id: string;
   name: string;
+  leader: GetAllSubsidyRequests_subsidyRequests_department_leader;
 }
 
 export interface GetAllSubsidyRequests_subsidyRequests_church {
   __typename: "Church";
   id: string;
   name: string;
+}
+
+export interface GetAllSubsidyRequests_subsidyRequests_project_owner {
+  __typename: "User";
+  id: string;
+  name: string;
+  email: string;
+  language_preference: LanguagePreference;
+}
+
+export interface GetAllSubsidyRequests_subsidyRequests_project {
+  __typename: "Project";
+  id: string;
+  title: string;
+  owner_id: string;
+  owner: GetAllSubsidyRequests_subsidyRequests_project_owner;
 }
 
 export interface GetAllSubsidyRequests_subsidyRequests_items_project_activity {
@@ -48,7 +73,6 @@ export interface GetAllSubsidyRequests_subsidyRequests_items_project_activity {
 export interface GetAllSubsidyRequests_subsidyRequests_items {
   __typename: "SubsidyRequestItem";
   id: string;
-  subsidy_request_id: string;
   project_activity_id: string;
   requested_amount: any;
   approved_amount: any;
@@ -86,10 +110,12 @@ export interface GetAllSubsidyRequests_subsidyRequests {
   refund_amount: any;
   have_refund: boolean;
   refund_done: boolean;
+  subsidy_statuses_id: string;
   subsidy_status: GetAllSubsidyRequests_subsidyRequests_subsidy_status;
   institution: GetAllSubsidyRequests_subsidyRequests_institution;
   department: GetAllSubsidyRequests_subsidyRequests_department;
   church: GetAllSubsidyRequests_subsidyRequests_church | null;
+  project: GetAllSubsidyRequests_subsidyRequests_project;
   items: GetAllSubsidyRequests_subsidyRequests_items[] | null;
   receipts: GetAllSubsidyRequests_subsidyRequests_receipts[] | null;
 }

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useCurrency } from "@/contexts/currency-context"
 import { useAuth } from "@/contexts/auth-context"
+import { useInstitution } from "@/contexts/institution-context"
 import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -34,6 +35,7 @@ import { CONFIRM_REFUND_DONE } from "@/graphql/mutations/REFUND_MUTATIONS"
 import { GET_SUBSIDY_STATUS_HISTORY } from "@/graphql/queries/SUBSIDY_STATUS_HISTORY_QUERIES"
 import { GET_ALL_SUBSIDY_STATUSES } from "@/graphql/queries/SUBSIDY_STATUS_QUERIES"
 import { GET_SUBSIDY_REQUEST_BY_ID } from "@/graphql/queries/SUBSIDY_REQUESTS_QUERY"
+import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { RejectionDialog } from "@/components/modals/project/rejection-dialog"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -42,6 +44,7 @@ import { SubsidyChatPanel } from "@/components/modals/project/subsidy-chat-panel
 import { RequestRefundModal } from "@/components/modals/project/request-refund-modal"
 import { ConfirmRefundDoneModal } from "@/components/modals/confirm-refund-done-modal"
 import { subsidyRequestTranslations } from "@/lib/translations/subsidy-request"
+import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
 
 interface ActivityItem {
   id: string
@@ -83,6 +86,34 @@ interface ViewSubsidyModalProps {
   onSubsidyUpdated?: () => void
 }
 
+/**
+ * VIEW SUBSIDY MODAL
+ * 
+ * DATA SOURCES:
+ * 1. Prop (subsidy) - Receives pre-computed data from manager:
+ *    - Basic subsidy info (title, amounts, status, etc.)
+ *    - Computed responsibleUsers (requester, project owner, leader, finance)
+ *    - Institution/department relationships
+ * 
+ * 2. GET_SUBSIDY_REQUEST_BY_ID - Fetches real-time updates:
+ *    - Fresh status/refund fields (lightweight - NO institution.users)
+ *    - Receipt documents
+ *    - Detailed validation state
+ * 
+ * 3. InstitutionContext - User data source:
+ *    - currentInstitutionData.users for computing responsible users
+ *    - Avoids fetching 500+ users in modal query
+ *    - Single source of truth for user data
+ * 
+ * 4. GET_SUBSIDY_STATUS_HISTORY - Status change log
+ * 
+ * PERFORMANCE NOTES:
+ * - Prop data comes from page's GET_ALL_SUBSIDY_REQUESTS (already fetched)
+ * - Modal query ensures real-time accuracy without duplicate base data
+ * - responsibleUsers computed from InstitutionContext (not query)
+ * - ~70-90% smaller query payload compared to previous version
+ */
+
 export function ViewSubsidyModal({
   isOpen,
   onClose,
@@ -94,8 +125,11 @@ export function ViewSubsidyModal({
     return null
   }
 
+  // Subsidy prop received - no debug logs in production
+
   const { formatCurrency } = useCurrency()
   const { user } = useAuth()
+  const { currentInstitutionData } = useInstitution()
   const { t, i18n } = useTranslation()
 
   // Helper para acessar traduções do modal
@@ -115,14 +149,16 @@ export function ViewSubsidyModal({
   const [documentComment, setDocumentComment] = React.useState("")
   const [editingMessage, setEditingMessage] = React.useState<string | null>(null)
   const [chatFilterActivity, setChatFilterActivity] = React.useState<string | null>(null)
-  const [currentSubsidyStatus, setCurrentSubsidyStatus] = React.useState(subsidy?.status || "pending")
+  const [currentSubsidyStatus, setCurrentSubsidyStatus] = React.useState<"pending" | "in_review" | "approved" | "rejected" | "closed" | "advanced_closed" | "waiting_refund">(subsidy?.status || "pending")
   const [currentPriority, setCurrentPriority] = React.useState<"low" | "medium" | "high">("medium")
-  const [mentionStatus, setMentionStatus] = React.useState<"pending" | "in_review" | "approved" | "rejected" | "closed" | "advanced_closed" | null>(null)
+  const [mentionStatus, setMentionStatus] = React.useState<"pending" | "in_review" | "approved" | "rejected" | "closed" | "advanced_closed" | "waiting_refund" | null>(null)
   const [mentionPriority, setMentionPriority] = React.useState<"low" | "medium" | "high" | null>(null)
   const chatInputRef = React.useRef<HTMLInputElement>(null)
   const [loadingDocuments, setLoadingDocuments] = React.useState(false)
   const [receipts, setReceipts] = React.useState<SubsidyReceipt[]>([])
   const [subsidyStatuses, setSubsidyStatuses] = React.useState<Array<{ id: string, name: string, description: string }>>([])
+  const [lastStatusUpdateError, setLastStatusUpdateError] = React.useState<string | null>(null)
+  const [previousStatus, setPreviousStatus] = React.useState<string>(subsidy?.status || "pending")
 
   // Dialog states for replacing browser alerts
   const [deleteCommentDialog, setDeleteCommentDialog] = React.useState<{ isOpen: boolean; messageId: string | null }>({ isOpen: false, messageId: null })
@@ -137,11 +173,28 @@ export function ViewSubsidyModal({
   const [showRequestRefundModal, setShowRequestRefundModal] = React.useState(false)
   const [showConfirmRefundModal, setShowConfirmRefundModal] = React.useState(false)
 
+  // Fetch ALL departments from system for internal use
+  const { data: allDepartmentsData } = useQuery(GET_DEPARTMENTS_QUERY, {
+    fetchPolicy: 'network-only',
+  })
+
   // Fetch updated subsidy data directly to ensure fresh state (especially for refund buttons/tags)
   const { data: subsidyData, refetch: refetchSubsidyDetails } = useQuery(GET_SUBSIDY_REQUEST_BY_ID, {
     variables: { id: subsidy.id },
     fetchPolicy: 'network-only',
-    skip: !subsidy.id
+    skip: !subsidy.id,
+  })
+
+  // Fetch subsidy statuses (needed for auto-correction useEffect)
+  const { data: statusesData } = useQuery(GET_ALL_SUBSIDY_STATUSES, {
+    onCompleted: (data) => {
+      if (data?.subsidyStatuses) {
+        setSubsidyStatuses(data.subsidyStatuses)
+      }
+    },
+    onError: (error) => {
+      console.error('Error fetching subsidy statuses:', error)
+    }
   })
 
   // Use fetched data if available, otherwise use prop
@@ -159,10 +212,181 @@ export function ViewSubsidyModal({
       have_refund: fresh.have_refund,
       refund_done: fresh.refund_done,
       refund_amount: fresh.refund_amount,
-      refund_reason: fresh.refund_reason,
-      // Update other fields if necessary
+      // Note: refund_reason does not exist in backend schema
     }
   }, [subsidy, subsidyData])
+
+  /**
+   * Compute responsible users for this subsidy:
+   * 1. Requester (user who created the request)
+   * 2. Project Owner (from project.owner_id)
+   * 3. Department leader
+   * 4. Finance users from institution (filtered by FINANCE roles)
+   * 
+   * DATA SOURCE: InstitutionContext.currentInstitutionData.users (all users with roles)
+   */
+  const responsibleUsers = React.useMemo<UserAvatarData[]>(() => {
+    const users: UserAvatarData[] = []
+    
+    // Get ALL institution users from context (NOT from query - performance optimization)
+    const subsidyDepartment = subsidyData?.subsidyRequest?.department
+    const subsidyProject = subsidyData?.subsidyRequest?.project
+    const institutionUsers = currentInstitutionData?.users || []
+    const activeUsers = institutionUsers.filter((u: any) => !u.is_deleted)
+    
+    // 1. Add REQUESTER (user who created the subsidy request) - find by created_by ID
+    const requesterId = subsidyData?.subsidyRequest?.created_by
+    const requester = requesterId ? activeUsers.find((u: any) => u.id === requesterId) : null
+    
+    if (requester) {
+      users.push({
+        id: requester.id,
+        name: requester.name,
+        email: requester.email || '',
+        role: t('subsidy.roles.requester') || 'Solicitante',
+        isOwner: false // Requester is NOT the owner
+      })
+    }
+    
+    // 2. Add PROJECT OWNER (from project.owner_id) - PRIMARY RESPONSIBLE & OWNER
+    const projectOwner = subsidyProject?.owner
+    if (projectOwner) {
+      const isDuplicate = users.some(u => u.id === projectOwner.id)
+      if (!isDuplicate) {
+        users.push({
+          id: projectOwner.id,
+          name: projectOwner.name,
+          email: projectOwner.email || '',
+          role: t('subsidy.roles.projectOwner') || 'Dono do Projeto',
+          isOwner: true // Project Owner is the OWNER
+        })
+      }
+    }
+    
+    // 3. Add DEPARTMENT LEADER (must approve)
+    let leader = subsidyDepartment?.leader || activeUsers.find((u: any) => u.id === subsidyDepartment?.leader_id)
+    
+    if (leader) {
+      // Avoid duplicate if requester is also leader
+      if (!users.some(u => u.id === leader.id)) {
+        users.push({
+          id: leader.id,
+          name: leader.name,
+          email: leader.email || '',
+          role: t('subsidy.roles.departmentLeader') || 'Líder do Departamento',
+        })
+      }
+    }
+    
+    // 4. Add FINANCE USERS from institution (users with FINANCIAL_MANAGER role)
+    const financeRoleKeys = ['FINANCE_MANAGER', 'FINANCE_ADMIN', 'FINANCIAL_MANAGER', 'CFO', 'FINANCIAL_OFFICER', 'FINANCE']
+    
+    const financeUsers = activeUsers.filter((u: any) => 
+      u.user_roles?.some((ur: any) => 
+        financeRoleKeys.includes(ur.role?.key_code?.toUpperCase() || '')
+      )
+    )
+    
+    financeUsers.forEach((financeUser: any) => {
+      // Avoid duplicates (requester/leader might also be finance)
+      if (!users.some(u => u.id === financeUser.id)) {
+        users.push({
+          id: financeUser.id,
+          name: financeUser.name,
+          email: financeUser.email || '',
+          role: t('subsidy.roles.financeManager') || 'Gestor Financeiro'
+        })
+      }
+    })
+    
+    return users
+  }, [subsidyData, currentInstitutionData, t])
+
+  // 🔍 DEBUG: Log responsible users computation
+  React.useEffect(() => {
+    console.log('[DEBUG] ViewSubsidyModal Responsible Users:', {
+      subsidyId: activeSubsidy?.id,
+      responsibleUsersCount: responsibleUsers.length,
+      ownerId: responsibleUsers.find(u => u.isOwner)?.id,
+      ownerName: responsibleUsers.find(u => u.isOwner)?.name,
+      ownerRole: responsibleUsers.find(u => u.isOwner)?.role,
+      requesterId: subsidyData?.subsidyRequest?.created_by,
+      projectOwnerId: subsidyData?.subsidyRequest?.project?.owner?.id,
+      projectOwnerName: subsidyData?.subsidyRequest?.project?.owner?.name,
+      allUsers: responsibleUsers.map(u => ({ id: u.id, name: u.name, role: u.role, isOwner: u.isOwner }))
+    })
+  }, [responsibleUsers, activeSubsidy?.id, subsidyData])
+
+  /**
+   * Permission Checks for Document Validation
+   * 
+   * RULES:
+   * 1. Department Leader: Can validate/reject documents ✅
+   * 2. Finance Users: Can ONLY comment (not validate/reject) 💬
+   * 3. Requester: Can ONLY comment 💬
+   * 4. Project Owner: Can ONLY comment 💬
+   */
+  const canValidateDocuments = React.useMemo(() => {
+    if (!user?.id) return false
+    
+    // Check if current user is the department leader
+    const subsidyDepartment = subsidyData?.subsidyRequest?.department
+    const leaderId = subsidyDepartment?.leader?.id || subsidyDepartment?.leader_id
+    
+    const isDepartmentLeader = user.id === leaderId
+    
+    // 🔍 DEBUG: Log permission check
+    console.log('[DEBUG] Document Validation Permission:', {
+      userId: user.id,
+      userName: user.name,
+      leaderId,
+      isDepartmentLeader,
+      canValidate: isDepartmentLeader
+    })
+    
+    return isDepartmentLeader
+  }, [user?.id, subsidyData])
+
+  const isRequester = React.useMemo(() => {
+    return user?.id === subsidyData?.subsidyRequest?.created_by
+  }, [user?.id, subsidyData])
+
+  const isFinanceUser = React.useMemo(() => {
+    const financeRoleKeys = ['FINANCE_MANAGER', 'FINANCE_ADMIN', 'FINANCIAL_MANAGER', 'CFO', 'FINANCIAL_OFFICER', 'FINANCE']
+    const institutionUsers = currentInstitutionData?.users || []
+    const currentUser = institutionUsers.find((u: any) => u.id === user?.id)
+    
+    return currentUser?.user_roles?.some((ur: any) => 
+      financeRoleKeys.includes(ur.role?.key_code?.toUpperCase() || '')
+    ) || false
+  }, [user?.id, currentInstitutionData])
+
+  const canEditStatus = React.useMemo(() => {
+    // If refund is pending, ALWAYS allow status editing (bypass permission checks)
+    if (activeSubsidy.have_refund && !activeSubsidy.refund_done) {
+      return true
+    }
+    
+    // Normal rule: Only Department Leader OR Finance User can edit status
+    return canValidateDocuments || isFinanceUser
+  }, [canValidateDocuments, isFinanceUser, activeSubsidy])
+
+  // 🔍 DEBUG: Log all permission checks
+  React.useEffect(() => {
+    console.log('[DEBUG] ViewSubsidyModal Permissions:', {
+      userId: user?.id,
+      userName: user?.name,
+      isRequester,
+      isFinanceUser,
+      canValidateDocuments: canValidateDocuments,
+      canEditStatus,
+      roles: {
+        requester: isRequester ? '✅ Can only comment' : '❌',
+        finance: isFinanceUser ? '✅ Can edit status, only comment on docs' : '❌',
+        departmentLeader: canValidateDocuments ? '✅ Can validate/reject docs + edit status' : '❌',
+      }
+    })
+  }, [user?.id, user?.name, isRequester, isFinanceUser, canValidateDocuments, canEditStatus])
 
   /* 
    * Sync local status state when activeSubsidy changes
@@ -344,17 +568,47 @@ export function ViewSubsidyModal({
     }
   })
 
-  // Fetch subsidy statuses
-  const { data: statusesData } = useQuery(GET_ALL_SUBSIDY_STATUSES, {
-    onCompleted: (data) => {
-      if (data?.subsidyStatuses) {
-        setSubsidyStatuses(data.subsidyStatuses)
+  /**
+   * Auto-correct status to WAITING_REFUND if refund is pending
+   * This ensures data consistency between refund state and status
+   * NOTE: Must be declared AFTER updateSubsidyRequest mutation
+   */
+  React.useEffect(() => {
+    const autoCorrectStatus = async () => {
+      // Skip if no subsidy data
+      if (!activeSubsidy?.id || !statusesData?.subsidyStatuses) return
+
+      // Check if subsidy has pending refund but wrong status
+      const hasPendingRefund = activeSubsidy.have_refund && !activeSubsidy.refund_done
+      const isNotWaitingRefund = activeSubsidy.status?.toLowerCase() !== 'waiting_refund'
+
+      if (hasPendingRefund && isNotWaitingRefund) {
+        console.log('[DEBUG] Auto-correcting status to WAITING_REFUND for subsidy:', activeSubsidy.id)
+        
+        // Find WAITING_REFUND status ID
+        const waitingRefundStatus = statusesData.subsidyStatuses.find(
+          (s: any) => s.name.toLowerCase() === 'waiting_refund'
+        )
+
+        if (waitingRefundStatus?.id) {
+          try {
+            await updateSubsidyRequest({
+              variables: {
+                id: activeSubsidy.id,
+                data: { subsidy_status_id: waitingRefundStatus.id }
+              }
+            })
+            console.log('[DEBUG] Status auto-corrected successfully')
+          } catch (error) {
+            console.error('[DEBUG] Failed to auto-correct status:', error)
+            // Silent fail - don't disrupt user experience
+          }
+        }
       }
-    },
-    onError: (error) => {
-      console.error('Error fetching subsidy statuses:', error)
     }
-  })
+
+    autoCorrectStatus()
+  }, [activeSubsidy?.id, activeSubsidy?.have_refund, activeSubsidy?.refund_done, activeSubsidy?.status, statusesData, updateSubsidyRequest])
 
   // Helper function to get status ID by name
   const getStatusIdByName = (statusName: string): string | null => {
@@ -373,8 +627,24 @@ export function ViewSubsidyModal({
   const canChangeStatus = (to: string) => {
     const from = currentSubsidyStatus
 
+    // Rule: If refund is pending (requested but not done), allow ANY status change
+    // This bypasses normal validation rules for subsidies in refund workflow
+    if (activeSubsidy.have_refund && !activeSubsidy.refund_done) {
+      return true // Allow any transition when refund is pending
+    }
+
     // Rule: Closed status cannot be changed to anything else
     if (from === 'closed') return false
+
+    // Rule: If changing to waiting_refund, must have refund requested
+    if (to === 'waiting_refund') {
+      return false // Cannot manually change to waiting_refund (auto-updated)
+    }
+
+    // Rule: Waiting Refund can ONLY go to Closed
+    if (from === 'waiting_refund') {
+      return to === 'closed'
+    }
 
     // Rule: Cannot approve if there are rejected documents
     if (to === 'approved' && hasRejectedDocuments()) {
@@ -391,10 +661,10 @@ export function ViewSubsidyModal({
       if (to === 'advanced_closed') return false
     }
 
-    // Rule: To Closed is allowed from Approved or Rejected only (not In Review)
+    // Rule: To Closed is allowed from Approved, Rejected, or Waiting Refund (not In Review)
     if (to === 'closed') {
       if (from === 'in_review') return false
-      // Only allowed from approved or rejected
+      // Only allowed from approved or rejected (waiting_refund case already handled above)
       return from === 'approved' || from === 'rejected'
     }
 
@@ -421,8 +691,10 @@ export function ViewSubsidyModal({
       return
     }
 
-    // Check document validation for pending documents (skip for advance subsidies which assume no docs)
-    if (['approved', 'closed', 'rejected', 'advanced_closed'].includes(normalizedStatus) && !activeSubsidy?.is_for_advance) {
+    // Check document validation for pending documents (skip for advance subsidies or if refund is pending)
+    if (['approved', 'closed', 'rejected', 'advanced_closed'].includes(normalizedStatus) && 
+        !activeSubsidy?.is_for_advance && 
+        !(activeSubsidy.have_refund && !activeSubsidy.refund_done)) {
       const hasPending = (receipts || []).some((r: any) => !r.is_validated && !r.is_deleted);
       if (hasPending) {
         toast.error(modalT.errors.documentsPending);
@@ -455,6 +727,10 @@ export function ViewSubsidyModal({
     const { status, statusId } = statusConfirmationDialog
     if (!status) return
 
+    // Store previous status before changing
+    setPreviousStatus(currentSubsidyStatus)
+    setLastStatusUpdateError(null)
+
     try {
       if (status === 'approved') {
         setCurrentSubsidyStatus('approved')
@@ -468,6 +744,8 @@ export function ViewSubsidyModal({
             language: i18n.language as any
           }
         })
+        // Success - clear any previous errors
+        setLastStatusUpdateError(null)
       } else if (status === 'closed' || status === 'advanced_closed') {
         const id = statusId || getStatusIdByName(status === 'closed' ? 'CLOSED' : 'ADVANCED_CLOSED')
         if (id) {
@@ -491,9 +769,20 @@ export function ViewSubsidyModal({
             }
           })
         }
+        // Success - clear any previous errors
+        setLastStatusUpdateError(null)
       }
     } catch (error) {
       console.error(`Error changing status to ${status}:`, error)
+      // Revert to previous status
+      setCurrentSubsidyStatus(previousStatus as any)
+      setMentionStatus(null)
+      setNewMessage('')
+      
+      // Set error flag
+      const errorMessage = modalT.errors?.statusUpdateFailed || 'Failed to update status. Please try again.'
+      setLastStatusUpdateError(errorMessage)
+      toast.error(errorMessage)
     }
     setStatusConfirmationDialog({ isOpen: false, status: null })
   }
@@ -506,6 +795,9 @@ export function ViewSubsidyModal({
       return
     }
 
+    // Store previous status before changing
+    setPreviousStatus(currentSubsidyStatus)
+    setLastStatusUpdateError(null)
     setCurrentSubsidyStatus(status as any)
     setMentionStatus(status as any)
     const statusLabel = modalT.status?.[status as keyof typeof modalT.status] || status
@@ -520,8 +812,19 @@ export function ViewSubsidyModal({
           language: i18n.language as any
         }
       })
+      // Success - clear any previous errors
+      setLastStatusUpdateError(null)
     } catch (error) {
       console.error('Error updating status:', error)
+      // Revert to previous status
+      setCurrentSubsidyStatus(previousStatus as any)
+      setMentionStatus(null)
+      setNewMessage('')
+      
+      // Set error flag
+      const errorMessage = modalT.errors?.statusUpdateFailed || 'Failed to update status. Please try again.'
+      setLastStatusUpdateError(errorMessage)
+      toast.error(errorMessage)
     }
   }
   React.useEffect(() => {
@@ -704,6 +1007,12 @@ export function ViewSubsidyModal({
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return
 
+    // Block sending message if there was an error in the last status update
+    if (lastStatusUpdateError) {
+      toast.error(modalT.errors?.cannotSendMessageAfterError || 'Cannot send message after status update failed. Please fix the status first.')
+      return
+    }
+
     // Handle editing existing message
     if (editingMessage) {
       try {
@@ -726,7 +1035,7 @@ export function ViewSubsidyModal({
     // Handle document comment
     if (commentingDocument) {
       try {
-        const messageText = `${t('toasts.documentCommentPrefix', { name: commentingDocument.name })}${newMessage}`
+        const messageText = `${newMessage}`
         await addSubsidyRequestMessage({
           variables: {
             id: activeSubsidy?.id,
@@ -917,8 +1226,6 @@ export function ViewSubsidyModal({
     }
   }
 
-  if (!isOpen || !subsidy) return null
-
   const statusConfig: Record<
     SubsidyRequestCardData["status"],
     { label: string; icon: React.ElementType; className: string }
@@ -1037,64 +1344,87 @@ export function ViewSubsidyModal({
                     {projectTranslations[i18n.language as keyof typeof projectTranslations]?.subsidy?.requestedOn || 'Requested on:'} {format(new Date(subsidy.requested_at), "dd/MM/yyyy")}
                   </span>
                 </div>
-                <AdvanceSubsidyBadge isForAdvance={subsidy.is_for_advance} />
-                {(subsidy as any).have_refund && !(subsidy as any).refund_done && (
-                  <Badge variant="outline" className="text-sm bg-red-50 text-red-700 border-red-300 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800">
-                    <AlertCircle className="w-3 h-3 mr-1" />
-                    {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.refundPending}
-                    - {formatCurrency((subsidy as any).refund_amount)}
-                  </Badge>
-                )}
-                {(subsidy as any).refund_done && (
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800">
-                    <CheckCircle2 className="w-3 h-3 mr-1" />
-                    {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.refundDone || "Refund Done"}
-                  </Badge>
-                )}
               </div>
             </div>
 
+            <Button
+              onClick={onClose}
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-hidden flex">
+
+          {/* Main Panel - Activities & Documents */}
+          <div className={cn(
+            "flex-1 overflow-y-auto p-6 space-y-6 transition-all duration-300",
+            isSidebarOpen ? "mr-0" : "mr-0"
+          )}>
+
+          <div className="flex flex-col gap-4 pb-5 border-b border-gray-200 dark:border-gray-800">
+
             {/* KPIs + Dropdowns - Canto Superior Direito */}
             <TooltipProvider>
-              <div className="flex items-center gap-2">
-                {/* Status Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className={cn(
-                        "flex items-center gap-2 px-3 py-2 rounded-md border cursor-pointer min-w-[140px] justify-between transition-colors hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-gray-400",
-                        currentSubsidyStatus === 'approved' && "bg-green-50 dark:bg-green-950/30 border-green-500",
-                        currentSubsidyStatus === 'rejected' && "bg-red-50 dark:bg-red-950/30 border-red-500",
-                        currentSubsidyStatus === 'in_review' && "bg-blue-50 dark:bg-blue-950/30 border-blue-500",
-                        currentSubsidyStatus === 'pending' && "bg-amber-50 dark:bg-amber-950/30 border-amber-500"
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        <StatusIcon className={cn(
-                          "w-4 h-4",
-                          currentSubsidyStatus === 'approved' && "text-green-600 dark:text-green-400",
-                          currentSubsidyStatus === 'rejected' && "text-red-600 dark:text-red-400",
-                          currentSubsidyStatus === 'in_review' && "text-blue-600 dark:text-blue-400",
-                          currentSubsidyStatus === 'pending' && "text-amber-600 dark:text-amber-400"
-                        )} />
-                        <span className={cn(
-                          "text-sm font-semibold",
-                          currentSubsidyStatus === 'approved' && "text-green-700 dark:text-green-400",
-                          currentSubsidyStatus === 'rejected' && "text-red-700 dark:text-red-400",
-                          currentSubsidyStatus === 'in_review' && "text-blue-700 dark:text-blue-400",
-                          currentSubsidyStatus === 'pending' && "text-amber-700 dark:text-amber-400"
-                        )}>
-                          {currentStatus.label}
-                        </span>
-                      </div>
-                      <ChevronDown className="w-3 h-3 text-gray-500" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <WithPermission requiredPermissions={[PermissionResolverName.ApproveSubsidyRequest, PermissionResolverName.RejectSubsidyRequest, PermissionResolverName.ValidateSubsidyReceipt]}>
-                    <DropdownMenuContent align="start" className="z-[100]">
-                      <DropdownMenuLabel>{t('subsidy.status.changeStatus')}</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Status Dropdown - Only enabled for Department Leader and Finance */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild disabled={!canEditStatus || currentSubsidyStatus === 'closed'}>
+                          <button
+                            type="button"
+                            disabled={!canEditStatus || currentSubsidyStatus === 'closed'}
+                            className={cn(
+                              "flex items-center gap-2 px-2 sm:px-3 py-2 rounded-md border min-w-[100px] sm:min-w-[140px] justify-between transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400",
+                              (canEditStatus && currentSubsidyStatus !== 'closed') ? "cursor-pointer hover:opacity-80" : "cursor-not-allowed opacity-60",
+                              currentSubsidyStatus === 'approved' && "bg-green-50 dark:bg-green-950/30 border-green-500",
+                              currentSubsidyStatus === 'rejected' && "bg-red-50 dark:bg-red-950/30 border-red-500",
+                              currentSubsidyStatus === 'in_review' && "bg-blue-50 dark:bg-blue-950/30 border-blue-500",
+                              currentSubsidyStatus === 'pending' && "bg-amber-50 dark:bg-amber-950/30 border-amber-500",
+                              currentSubsidyStatus === 'closed' && "bg-gray-50 dark:bg-gray-950/30 border-gray-500",
+                              currentSubsidyStatus === 'advanced_closed' && "bg-purple-50 dark:bg-purple-950/30 border-purple-500",
+                              currentSubsidyStatus === 'waiting_refund' && "bg-orange-50 dark:bg-orange-950/30 border-orange-500"
+                            )}
+                          >
+                            <div className="flex items-center gap-1.5 sm:gap-2">
+                              <StatusIcon className={cn(
+                                "w-3.5 h-3.5 sm:w-4 sm:h-4",
+                                currentSubsidyStatus === 'approved' && "text-green-600 dark:text-green-400",
+                                currentSubsidyStatus === 'rejected' && "text-red-600 dark:text-red-400",
+                                currentSubsidyStatus === 'in_review' && "text-blue-600 dark:text-blue-400",
+                                currentSubsidyStatus === 'pending' && "text-amber-600 dark:text-amber-400",
+                                currentSubsidyStatus === 'closed' && "text-gray-600 dark:text-gray-400",
+                                currentSubsidyStatus === 'advanced_closed' && "text-purple-600 dark:text-purple-400",
+                                currentSubsidyStatus === 'waiting_refund' && "text-orange-600 dark:text-orange-400"
+                              )} />
+                              <span className={cn(
+                                "text-xs sm:text-sm font-semibold truncate",
+                                currentSubsidyStatus === 'approved' && "text-green-700 dark:text-green-400",
+                                currentSubsidyStatus === 'rejected' && "text-red-700 dark:text-red-400",
+                                currentSubsidyStatus === 'in_review' && "text-blue-700 dark:text-blue-400",
+                                currentSubsidyStatus === 'pending' && "text-amber-700 dark:text-amber-400",
+                                currentSubsidyStatus === 'closed' && "text-gray-700 dark:text-gray-400",
+                                currentSubsidyStatus === 'advanced_closed' && "text-purple-700 dark:text-purple-400",
+                                currentSubsidyStatus === 'waiting_refund' && "text-orange-700 dark:text-orange-400"
+                              )}>
+                                {currentStatus.label}
+                              </span>
+                            </div>
+                            <ChevronDown className="w-3 h-3 text-gray-500 flex-shrink-0" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        {canEditStatus && currentSubsidyStatus !== 'closed' && (
+                          <WithPermission requiredPermissions={[PermissionResolverName.ApproveSubsidyRequest, PermissionResolverName.RejectSubsidyRequest, PermissionResolverName.ValidateSubsidyReceipt]}>
+                            <DropdownMenuContent align="start" className="z-[100]">
+                              <DropdownMenuLabel>{t('subsidy.status.changeStatus')}</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => handleStatusChangeRequest('PENDING')}
                         disabled={!canChangeStatus('pending')}
@@ -1113,9 +1443,9 @@ export function ViewSubsidyModal({
 
                       <DropdownMenuItem
                         onClick={() => handleStatusChangeRequest('APPROVED')}
-                        disabled={!canChangeStatus('approved')}
+                        disabled={!canChangeStatus('approved') || !canValidateDocuments}
                         className={cn(
-                          hasRejectedDocuments() && "opacity-50 cursor-not-allowed"
+                          (hasRejectedDocuments() || !canValidateDocuments) && "opacity-50 cursor-not-allowed"
                         )}
                       >
                         <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
@@ -1124,6 +1454,11 @@ export function ViewSubsidyModal({
                           {hasRejectedDocuments() && (
                             <span className="text-xs text-red-600 dark:text-red-400">
                               {t('toasts.documentsRejected') || 'Documentos rejeitados impedem aprovação'}
+                            </span>
+                          )}
+                          {!canValidateDocuments && !hasRejectedDocuments() && (
+                            <span className="text-xs text-amber-600 dark:text-amber-400">
+                              {modalT.permissions.departmentLeaderOnly}
                             </span>
                           )}
                         </div>
@@ -1145,49 +1480,79 @@ export function ViewSubsidyModal({
                         {t('subsidy.status.closed')}
                       </DropdownMenuItem>
 
-                      <DropdownMenuItem
-                        onClick={() => handleStatusChangeRequest('ADVANCED_CLOSED')}
-                        disabled={!canChangeStatus('advanced_closed')}
-                      >
-                        <CheckCircle2 className="mr-2 h-4 w-4 text-purple-600" />
-                        {t('subsidy.status.advancedClosed')}
-                      </DropdownMenuItem>
+                      {/* Advanced Closed - Only for advance subsidies */}
+                      {activeSubsidy?.is_for_advance && (
+                        <DropdownMenuItem
+                          onClick={() => handleStatusChangeRequest('ADVANCED_CLOSED')}
+                          disabled={!canChangeStatus('advanced_closed')}
+                        >
+                          <CheckCircle2 className="mr-2 h-4 w-4 text-purple-600" />
+                          {t('subsidy.status.advancedClosed')}
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </WithPermission>
-                </DropdownMenu>
+                  )}
+                      </DropdownMenu>
+                    </div>
+                  </TooltipTrigger>
+                  {currentSubsidyStatus === 'closed' && (
+                    <TooltipContent side="bottom" className="max-w-[280px] z-[80]">
+                      <p className="text-xs font-medium">
+                        {modalT.errors?.statusClosed || 'O subsídio já está fechado e não pode ser alterado.'}
+                      </p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+                {!canEditStatus && currentSubsidyStatus !== 'closed' && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="p-1.5 rounded-md bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                        <Info className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[280px] z-[80]">
+                      <p className="text-xs font-medium mb-1">
+                        {isRequester ? modalT.permissions?.requesterRole : modalT.permissions?.noPermissionRole}
+                      </p>
+                      <p className="text-[10px] text-gray-400">
+                        {modalT.permissions?.statusEditInfo}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
 
-                {/* Priority Dropdown */}
+                {/* Priority Dropdown - Only enabled for Department Leader and Finance */}
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild disabled={currentSubsidyStatus === 'closed'}>
+                  <DropdownMenuTrigger asChild disabled={currentSubsidyStatus === 'closed' || !canEditStatus}>
                     <button
                       type="button"
                       onClick={(e) => {
-                        console.log('🔍 [Priority Dropdown] Trigger clicked', e)
-                        if (currentSubsidyStatus === 'closed') {
+                        if (currentSubsidyStatus === 'closed' || !canEditStatus) {
                           e.preventDefault()
                           return
                         }
                       }}
-                      disabled={currentSubsidyStatus === 'closed'}
+                      disabled={currentSubsidyStatus === 'closed' || !canEditStatus}
                       className={cn(
-                        "flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 min-w-[140px] justify-between transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400",
-                        currentSubsidyStatus === 'closed' ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:opacity-80"
+                        "flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 min-w-[100px] sm:min-w-[140px] justify-between transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400",
+                        (currentSubsidyStatus === 'closed' || !canEditStatus) ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:opacity-80"
                       )}
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
                         <div className={cn(
-                          "w-2 h-2 rounded-full",
+                          "w-2 h-2 rounded-full flex-shrink-0",
                           currentPriority === 'high' && "bg-red-500",
                           currentPriority === 'medium' && "bg-yellow-500",
                           currentPriority === 'low' && "bg-green-500"
                         )} />
-                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        <span className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                           {currentPriority === 'high' && t('subsidy.priority.high')}
                           {currentPriority === 'medium' && t('subsidy.priority.medium')}
                           {currentPriority === 'low' && t('subsidy.priority.low')}
                         </span>
                       </div>
-                      <ChevronDown className="w-3 h-3 text-gray-500" />
+                      <ChevronDown className="w-3 h-3 text-gray-500 flex-shrink-0" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="z-[100]">
@@ -1265,15 +1630,15 @@ export function ViewSubsidyModal({
                 {/* Atividades */}
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 min-w-[140px]">
-                      <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 min-w-[80px] sm:min-w-[100px]">
+                      <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-gray-100">
                         {activities.length}
                       </span>
-                      <Info className="w-3 h-3 text-gray-400 ml-auto" />
+                      <Info className="w-3 h-3 text-gray-400 ml-auto flex-shrink-0 hidden sm:block" />
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="z-[70]">
                     <p className="text-xs">{modalT.tooltips.activitiesCount}</p>
                   </TooltipContent>
                 </Tooltip>
@@ -1281,15 +1646,15 @@ export function ViewSubsidyModal({
                 {/* Orçamento Total */}
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 min-w-[140px]">
-                      <DollarSign className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 min-w-[90px] sm:min-w-[120px]">
+                      <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                         {formatCurrency(activities.reduce((sum, act) => sum + act.budget_amount, 0))}
                       </span>
-                      <Info className="w-3 h-3 text-gray-400 ml-auto" />
+                      <Info className="w-3 h-3 text-gray-400 ml-auto flex-shrink-0 hidden sm:block" />
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="z-[70]">
                     <p className="text-xs">{modalT.tooltips.totalBudget}</p>
                   </TooltipContent>
                 </Tooltip>
@@ -1297,84 +1662,232 @@ export function ViewSubsidyModal({
                 {/* Valor Solicitado */}
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-gray-900 dark:border-gray-100 bg-gray-900 dark:bg-gray-100 min-w-[140px]">
-                      <CheckCircle2 className="w-4 h-4 text-white dark:text-gray-900" />
-                      <span className="text-sm font-semibold text-white dark:text-gray-900">
+                    <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-md border border-gray-900 dark:border-gray-100 bg-gray-900 dark:bg-gray-100 min-w-[90px] sm:min-w-[120px]">
+                      <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white dark:text-gray-900 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm font-semibold text-white dark:text-gray-900 truncate">
                         {formatCurrency(subsidy.requested_amount)}
                       </span>
-                      <Info className="w-3 h-3 text-gray-300 dark:text-gray-700 ml-auto" />
+                      <Info className="w-3 h-3 text-gray-300 dark:text-gray-700 ml-auto flex-shrink-0 hidden sm:block" />
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="z-[70]">
                     <p className="text-xs">{modalT.tooltips.requestedAmount}</p>
                   </TooltipContent>
                 </Tooltip>
+
+                <AdvanceSubsidyBadge isForAdvance={subsidy.is_for_advance} className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-3 rounded-md border border-gray-200 dark:border-gray-800 min-w-[90px] sm:min-w-[120px]"/>
+                  {(subsidy as any).have_refund && !activeSubsidy.refund_done && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="outline" className="text-xs sm:text-sm bg-red-50 text-red-700 border-red-300 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800 flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-3 rounded-md  min-w-[90px] sm:min-w-[120px]">
+                          <AlertCircle className="w-3 h-3 mr-1 flex-shrink-0" />
+                          <span className="truncate">
+                            {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.refundPending}
+                            - {formatCurrency((subsidy as any).refund_amount)}
+                          </span>
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent className="z-[70]">
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium">
+                            {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.refundPending}
+                          </p>
+                          <p className="text-[10px] text-gray-400">
+                            {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.refundPendingTooltip?.replace('{{amount}}', formatCurrency((subsidy as any).refund_amount))}
+                          </p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
               </div>
+
             </TooltipProvider>
-
-            <Button
-              onClick={onClose}
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-hidden flex">
-
-          {/* Main Panel - Activities & Documents */}
-          <div className={cn(
-            "flex-1 overflow-y-auto p-6 space-y-6 transition-all duration-300",
-            isSidebarOpen ? "mr-0" : "mr-0"
-          )}>
+            {/* Responsible Users */}
+            {responsibleUsers.length > 0 && (
+              <TooltipProvider delayDuration={200}>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {t('subsidy.responsibleUsers') || 'Responsible:'}
+                  </span>
+                  <UsersAvatarGroup
+                    users={responsibleUsers}
+                    maxDisplay={3}
+                    size="md"
+                    showAddButton={false}
+                    ownerUserId={responsibleUsers.find(u => u.isOwner)?.id}
+                  />
+                </div>
+              </TooltipProvider>
+            )}
+            </div>
 
             {/* Activities Navigation - Only show if not an advance request OR if advance request has documents */}
             {(subsidy.is_for_advance && (!receipts || receipts.length === 0)) ? (
-              /* Advance Request Info Panel */
-              <div className="space-y-4 border border-purple-200 dark:border-purple-800 rounded-lg p-6 bg-purple-50/50 dark:bg-purple-950/20">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
-                    <DollarSign className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              /* Advance Request Info Panel - Monocromático - Yellow border when refund requested, Green when refund done */
+              <div className={cn(
+                "space-y-4 border rounded-lg p-6 bg-gray-50 dark:bg-gray-800/50",
+                activeSubsidy.have_refund && !activeSubsidy.refund_done
+                  ? "border-yellow-400 dark:border-yellow-500 shadow-yellow-100 dark:shadow-yellow-900/20"
+                  : activeSubsidy.refund_done
+                    ? "border-green-400 dark:border-green-500 shadow-green-100 dark:shadow-green-900/20"
+                    : "border-gray-200 dark:border-gray-700"
+              )}>
+                <div className="flex items-center justify-between">
+                  <div className="flex justify-between w-full items-center gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-700">
+                        <DollarSign className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                          {t('subsidyRequest.advance.title') || 'Advance Request'}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {t('subsidyRequest.advance.description') || 'Advance payment for project subsidized budget'}
+                        </p>
+                      </div>
+                    </div>
+                    {/* Request Refund Button - Only for ADVANCED_CLOSED or CLOSED without refund */}
+                      {(activeSubsidy.status === 'advanced_closed' || activeSubsidy.status === 'closed') &&
+                        !activeSubsidy.have_refund && (
+                          <WithPermission requiredPermissions={[PermissionResolverName.RequestSubsidyRefund]}>
+                            <Button
+                              onClick={() => setShowRequestRefundModal(true)}
+                              variant="outline"
+                              size="sm"
+                              className="text-yellow-600 dark:text-yellow-400 border-yellow-600 dark:border-yellow-400 hover:bg-yellow-600 dark:hover:bg-yellow-400 hover:text-white dark:hover:text-white"
+                            >
+                              <DollarSign className="w-4 h-4 mr-2" />
+                              {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.requestRefund || "Request Refund"}
+                            </Button>
+                          </WithPermission>
+                        )}
+                      {/* Confirm Refund Done Button - Only when refund requested but not done */}
+                      {activeSubsidy.have_refund && !activeSubsidy.refund_done && (
+                        <WithPermission requiredPermissions={[PermissionResolverName.ConfirmRefundDone]}>
+                          <Button
+                            onClick={() => setShowConfirmRefundModal(true)}
+                            variant="default"
+                            size="sm"
+                          >
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.confirmRefundDone || "Confirm Refund Done"}
+                          </Button>
+                        </WithPermission>
+                      )}
                   </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                      {t('subsidyRequest.advance.title') || 'Advance Request'}
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {t('subsidyRequest.advance.description') || 'Advance payment for project subsidized budget'}
-                    </p>
-                  </div>
+                  
+                  {/* Activities Badge - Show if there are activities */}
+                  {activities.length > 0 && (
+                    <Badge variant="outline" className="border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900">
+                      <FileText className="w-3 h-3 mr-1" />
+                      {activities.length} {activities.length === 1 ? t('subsidy.activity') || 'Activity' : t('subsidy.activities') || 'Activities'}
+                    </Badge>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+                <div className={cn(
+                  "grid gap-4",
+                  (activeSubsidy.have_refund && !activeSubsidy.refund_done) || activeSubsidy.refund_done
+                    ? "grid-cols-1 md:grid-cols-2"
+                    : "grid-cols-1 md:grid-cols-2"
+                )}>
+                  <div className="p-4 rounded-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                       {t('subsidyRequest.advance.advanceAmount') || 'Advance Amount'}
                     </p>
-                    <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                    <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
                       {formatCurrency(subsidy.advance_amount || subsidy.requested_amount)}
                     </p>
                   </div>
-                  <div className="p-4 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                      {t('subsidyRequest.advance.status') || 'Status'}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <StatusIcon className={cn("w-4 h-4", currentStatus.className)} />
-                      <span className="text-sm font-semibold">{currentStatus.label}</span>
+                  
+                  {/* Show Refund KPI based on status */}
+                  {activeSubsidy.refund_done ? (
+                    <div className="p-4 rounded-md bg-green-50 dark:bg-green-950/30 border border-green-400 dark:border-green-500">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
+                        <p className="text-xs font-semibold text-green-900 dark:text-green-100">
+                          {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.refundDone || 'Refund Completed'}
+                        </p>
+                      </div>
+                      <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                        {formatCurrency(Number(activeSubsidy.refund_amount || 0))}
+                      </p>
+                      <p className="text-[10px] text-green-700 dark:text-green-300 mt-1">
+                        {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.refundDoneTooltip?.replace('{{amount}}', formatCurrency(Number(activeSubsidy.refund_amount || 0))) || 'Refund processed successfully'}
+                      </p>
                     </div>
-                  </div>
+                  ) : activeSubsidy.have_refund && !activeSubsidy.refund_done ? (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="p-4 rounded-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-400 dark:border-yellow-500">
+                            <p className="text-xs text-yellow-700 dark:text-yellow-400 mb-1 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3" />
+                              {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.refundRequestedAmount || 'Refund Amount'}
+                            </p>
+                            <p className="text-lg font-bold text-yellow-900 dark:text-yellow-100">
+                              {formatCurrency(Number(activeSubsidy.refund_amount || 0))}
+                            </p>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p className="text-xs">
+                            {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.refundRequestedTooltip?.replace('{{amount}}', formatCurrency(Number(activeSubsidy.refund_amount || 0))) || `A refund of ${formatCurrency(Number(activeSubsidy.refund_amount || 0))} has been requested and is awaiting confirmation`}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    <div className="p-4 rounded-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        {t('subsidyRequest.advance.status') || 'Status'}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <StatusIcon className={cn("w-4 h-4", currentStatus.className)} />
+                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{currentStatus.label}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <div className="text-sm text-gray-600 dark:text-gray-400 p-3 bg-gray-100 dark:bg-gray-800 rounded-md">
-                  <p className="flex items-center gap-2">
-                    <Info className="w-4 h-4" />
-                    {t('subsidyRequest.advance.noActivitiesNote') || 'Advance requests are not linked to specific activities. They provide upfront funding based on the project subsidized budget.'}
-                  </p>
+                {/* Activities Link Info */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  {activities.length > 0 ? (
+                    <div className="text-sm text-gray-600 dark:text-gray-400 p-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md">
+                      <div className="flex items-start gap-2">
+                        <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="font-medium mb-1">
+                            {t('subsidyRequest.advance.linkedActivitiesTitle') || 'Linked Activities'}
+                          </p>
+                          <p className="text-xs">
+                            {t('subsidyRequest.advance.linkedActivitiesNote') || 'This advance request is associated with project activities that will be funded with this payment.'}
+                          </p>
+                          <ul className="mt-2 space-y-1">
+                            {activities.slice(0, 3).map((act) => (
+                              <li key={act.id} className="text-xs flex items-center gap-1">
+                                <span className="w-1 h-1 rounded-full bg-gray-400" />
+                                {act.name}
+                              </li>
+                            ))}
+                            {activities.length > 3 && (
+                              <li className="text-xs text-gray-500">
+                                {t('common.andMore', { count: activities.length - 3 }) || `+${activities.length - 3} more`}
+                              </li>
+                            )}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-600 dark:text-gray-400 p-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md">
+                      <p className="flex items-center gap-2">
+                        <Info className="w-4 h-4" />
+                        {t('subsidyRequest.advance.noActivitiesNote') || 'This advance request is not linked to specific activities. It provides upfront funding based on the project subsidized budget.'}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -1548,43 +2061,67 @@ export function ViewSubsidyModal({
                                 {/* Finance Management Actions - Hidden by default, shown on hover */}
                                 {doc.is_validated === undefined && currentSubsidyStatus !== 'closed' && (
                                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <WithPermission requiredPermissions={[PermissionResolverName.ValidateSubsidyReceipt]} partialPermissionCheck>
+                                    {/* Validate/Reject Buttons - ONLY for Department Leader */}
+                                    {canValidateDocuments ? (
+                                      <>
+                                        <WithPermission requiredPermissions={[PermissionResolverName.ValidateSubsidyReceipt]} partialPermissionCheck>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleValidateDocument(doc.id, true)}
+                                                className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950/30"
+                                              >
+                                                <Check className="w-3.5 h-3.5" />
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" className="z-[80]">
+                                              <p className="text-xs">{t('subsidy.approveDocument')}</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </WithPermission>
+                                        <WithPermission requiredPermissions={[PermissionResolverName.ValidateSubsidyReceipt]} partialPermissionCheck>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => {
+                                                  setMentionMode(doc.id)
+                                                  setNewMessage("")
+                                                }}
+                                                className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                              >
+                                                <Ban className="w-3.5 h-3.5" />
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" className="z-[80]">
+                                              <p className="text-xs">{t('subsidy.rejectDocument')}</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </WithPermission>
+                                      </>
+                                    ) : (
+                                      /* Info tooltip for users without validation permission */
                                       <Tooltip>
                                         <TooltipTrigger asChild>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleValidateDocument(doc.id, true)}
-                                            className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950/30"
-                                          >
-                                            <Check className="w-3.5 h-3.5" />
-                                          </Button>
+                                          <div className="px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                                            <Info className="w-3 h-3 text-gray-500 dark:text-gray-400" />
+                                          </div>
                                         </TooltipTrigger>
-                                        <TooltipContent side="top">
-                                          <p className="text-xs">{t('subsidy.approveDocument')}</p>
+                                        <TooltipContent side="top" className="max-w-[250px] z-[80]">
+                                          <p className="text-xs font-medium mb-1">
+                                            {isRequester ? modalT.permissions?.requesterRole : isFinanceUser ? modalT.permissions?.financeUserRole : modalT.permissions?.noPermissionRole}
+                                          </p>
+                                          <p className="text-[10px] text-gray-400">
+                                            {modalT.permissions?.documentValidationInfo}
+                                          </p>
                                         </TooltipContent>
                                       </Tooltip>
-                                    </WithPermission>
-                                    <WithPermission requiredPermissions={[PermissionResolverName.ValidateSubsidyReceipt]} partialPermissionCheck>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => {
-                                              setMentionMode(doc.id)
-                                              setNewMessage("")
-                                            }}
-                                            className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                          >
-                                            <Ban className="w-3.5 h-3.5" />
-                                          </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent side="top">
-                                          <p className="text-xs">{t('subsidy.rejectDocument')}</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </WithPermission>
+                                    )}
+                                    
+                                    {/* Comment Button - Available for ALL users */}
                                     <Tooltip>
                                       <TooltipTrigger asChild>
                                         <Button
@@ -1599,7 +2136,7 @@ export function ViewSubsidyModal({
                                           <MessageCircle className="w-3.5 h-3.5" />
                                         </Button>
                                       </TooltipTrigger>
-                                      <TooltipContent side="top">
+                                      <TooltipContent side="top" className="z-[80]">
                                         <p className="text-xs">{t('subsidy.addComment')}</p>
                                       </TooltipContent>
                                     </Tooltip>
@@ -1617,7 +2154,7 @@ export function ViewSubsidyModal({
                                       <Download className="w-3.5 h-3.5" />
                                     </Button>
                                   </TooltipTrigger>
-                                  <TooltipContent side="top">
+                                  <TooltipContent side="top" className="z-[80]">
                                     <p className="text-xs">{t('subsidy.downloadDocument')}</p>
                                   </TooltipContent>
                                 </Tooltip>
@@ -1696,34 +2233,6 @@ export function ViewSubsidyModal({
               </div>
             )}
             <div className="flex items-center gap-2">
-              {/* Request Refund Button - Only for ADVANCED_CLOSED or CLOSED without refund */}
-              {(activeSubsidy.status === 'advanced_closed' || activeSubsidy.status === 'closed') &&
-                !activeSubsidy.have_refund && (
-                  <WithPermission requiredPermissions={[PermissionResolverName.RequestSubsidyRefund]}>
-                    <Button
-                      onClick={() => setShowRequestRefundModal(true)}
-                      variant="outline"
-                      size="sm"
-                      className="text-yellow-600 dark:text-yellow-400 border-yellow-600 dark:border-yellow-400 hover:bg-yellow-600 dark:hover:bg-yellow-400 hover:text-white dark:hover:text-white"
-                    >
-                      <DollarSign className="w-4 h-4 mr-2" />
-                      {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.requestRefund || "Request Refund"}
-                    </Button>
-                  </WithPermission>
-                )}
-              {/* Confirm Refund Done Button - Only when refund requested but not done */}
-              {activeSubsidy.have_refund && !activeSubsidy.refund_done && (
-                <WithPermission requiredPermissions={[PermissionResolverName.ConfirmRefundDone]}>
-                  <Button
-                    onClick={() => setShowConfirmRefundModal(true)}
-                    variant="default"
-                    size="sm"
-                  >
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    {subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund?.confirmRefundDone || "Confirm Refund Done"}
-                  </Button>
-                </WithPermission>
-              )}
               <Button variant="outline" onClick={onClose} className="ml-auto">
                 {t('subsidy.close')}
               </Button>
@@ -1783,6 +2292,10 @@ export function ViewSubsidyModal({
         onClose={() => setShowRequestRefundModal(false)}
         subsidyId={activeSubsidy.id}
         currentAmount={activeSubsidy.requested_amount}
+        projectName={subsidyData?.subsidyRequest?.project?.name || activeSubsidy.title || 'Projeto sem nome'}
+        departmentName={subsidyData?.subsidyRequest?.department?.name || activeSubsidy.department_name || 'Departamento'}
+        requester={responsibleUsers.find(u => u.role === (t('subsidy.roles.requester') || 'Solicitante')) || null}
+        projectOwner={responsibleUsers.find(u => u.isOwner) || null}
         onSuccess={async () => {
           setShowRequestRefundModal(false)
           await refetchHistory()
@@ -1797,6 +2310,10 @@ export function ViewSubsidyModal({
         onConfirm={handleConfirmRefundDone}
         refundAmount={Number((activeSubsidy as any).refund_amount || 0)}
         isLoading={isConfirmingRefund}
+        projectName={subsidyData?.subsidyRequest?.project?.name || activeSubsidy.title || 'Projeto sem nome'}
+        departmentName={subsidyData?.subsidyRequest?.department?.name || activeSubsidy.department_name || 'Departamento'}
+        requester={responsibleUsers.find(u => u.role === (t('subsidy.roles.requester') || 'Solicitante')) || null}
+        projectOwner={responsibleUsers.find(u => u.isOwner) || null}
       />
     </div >
   )

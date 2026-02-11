@@ -60,6 +60,72 @@ export function DepartmentLeaderInfoCard({
   const t = departmentTranslations[currentLanguage as keyof typeof departmentTranslations] || departmentTranslations.en
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
 
+  // Debug: Log received props
+  React.useEffect(() => {
+    console.group('🎯 [DepartmentLeaderInfoCard] Props Received')
+    console.log('📍 Component mounted/updated')
+    console.log('')
+    
+    console.group('🏢 department prop')
+    console.log('Raw:', department)
+    console.table({
+      id: department.id,
+      name: department.name,
+      leader_id: department.leader_id || '❌ NULL',
+      is_deleted: department.is_deleted || false
+    })
+    console.groupEnd()
+    
+    console.group('👥 users prop')
+    console.log('Array length:', users.length)
+    console.log('Raw array:', users)
+    console.table(users.map(u => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      is_deleted: u.is_deleted || false,
+      language_preference: u.language_preference || 'N/A'
+    })))
+    console.groupEnd()
+    
+    console.group('🔍 Leader Lookup Logic')
+    console.log('Executing: const leader = users.find(u => u.id === department.leader_id)')
+    console.log('Searching for leader_id:', department.leader_id || 'NULL')
+    
+    const foundLeader = users.find(u => u.id === department.leader_id)
+    console.log('Result:', foundLeader || '❌ undefined')
+    
+    if (foundLeader) {
+      console.log('')
+      console.log('✅ LEADER FOUND:')
+      console.log({
+        id: foundLeader.id,
+        name: foundLeader.name,
+        email: foundLeader.email,
+        is_deleted: foundLeader.is_deleted || false
+      })
+      console.log('Will render: Leader card with user info')
+    } else {
+      if (department.leader_id) {
+        console.error('💥 MISMATCH: leader_id exists but user NOT found')
+        console.log('leader_id value:', department.leader_id)
+        console.log('Available user IDs:', users.map(u => u.id))
+        console.log('Will render: "No Leader Assigned" empty state')
+      } else {
+        console.warn('ℹ️ No leader_id set')
+        console.log('Will render: "No Leader Assigned" empty state')
+      }
+    }
+    console.groupEnd()
+    
+    console.group('📊 Component State')
+    console.log('loading:', loading)
+    console.log('showHeader:', showHeader)
+    console.groupEnd()
+    
+    console.groupEnd()
+  }, [department, users, loading, showHeader])
+
   // Buscar líder pelo leader_id
   const leader = users.find(u => u.id === department.leader_id)
 

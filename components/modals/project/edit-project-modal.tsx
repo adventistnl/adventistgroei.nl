@@ -61,9 +61,10 @@ import { cn } from "@/lib/utils"
 import { projectTranslations } from "@/lib/translations/projects"
 import { ProjectTableData } from "@/components/projects/projects-table"
 import { UPDATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
+import { ADD_ROLE_TO_USER } from "@/graphql/mutations/USER_MUTATIONS"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
-import { GET_ALL_USERS_QUERY } from "@/graphql/queries/GET_USER_QUERY"
 import { GET_PROJECTS_QUERY, GET_PROJECT_BY_ID_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
+import { GET_ALL_ROLES_QUERY } from "@/graphql/queries/GET_ROLES_QUERY"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
 import { UserMultiSelector, User } from "@/components/shared/user-multi-selector"
 import { useInstitution } from "@/contexts/institution-context"
@@ -102,7 +103,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
     }
   }, [i18n.language])
   
-  const { currentInstitutionData } = useInstitution()
+  const { currentInstitutionData, refetchInstitutionById } = useInstitution()
 
   const institutionId = currentInstitutionData?.id
 
@@ -112,13 +113,13 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
     skip: !institutionId
   })
 
-  // Fetch users for owner selection
-  const { data: usersData } = useQuery(GET_ALL_USERS_QUERY, {
-    variables: { institution_id: institutionId },
-    skip: !institutionId
-  })
+  // Get users from institution context (already includes user_roles)
+  const institutionUsers = currentInstitutionData?.users || []
 
-  const availableUsers = (usersData?.users || []).map((user: any): User => ({
+  // Fetch all roles to find PROJECT_OWNER role
+  const { data: rolesData } = useQuery(GET_ALL_ROLES_QUERY)
+
+  const availableUsers = institutionUsers.map((user: any): User => ({
     id: user.id,
     name: user.name,
     email: user.email,
@@ -148,6 +149,14 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
     onError: (error) => {
       toast.error(`${t.errors.updateError}: ${error.message}`)
       console.error("Error updating project:", error)
+    }
+  })
+
+  // Mutation to add role to user
+  const [addRoleToUser] = useMutation(ADD_ROLE_TO_USER, {
+    onCompleted: () => {
+      // Refetch institution data to update users list with new roles
+      refetchInstitutionById()
     }
   })
 
@@ -311,9 +320,51 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
         return
       }
 
+      // Update project first
       await updateProject({
         variables: updateVariables
       })
+
+      // Assign PROJECT_OWNER role to the selected owner if they don't have it yet
+      if (formData.owner_id && rolesData?.roles) {
+        // Find PROJECT_OWNER role by key_code
+        const projectOwnerRole = rolesData.roles.find(
+          (role: any) => role.key_code === 'PROJECT_OWNER'
+        )
+
+        if (projectOwnerRole) {
+          // Find the selected owner user to check their current roles
+          const ownerUser = institutionUsers.find((u: any) => u.id === formData.owner_id)
+          
+          if (ownerUser) {
+            // Check if user already has PROJECT_OWNER role
+            const hasProjectOwnerRole = ownerUser.user_roles?.some(
+              (userRole: any) => userRole.role.key_code === 'PROJECT_OWNER'
+            )
+
+            // Only add role if user doesn't have it
+            if (!hasProjectOwnerRole) {
+              try {
+                await addRoleToUser({
+                  variables: {
+                    userId: formData.owner_id,
+                    roleId: projectOwnerRole.id
+                  }
+                })
+                toast.success(`${t.projectOwner || 'Project Owner'} role assigned to ${ownerUser.name}`, {
+                  duration: 3000
+                })
+              } catch (roleError) {
+                console.error('Error assigning PROJECT_OWNER role:', roleError)
+                // Don't block the project update if role assignment fails
+                toast.warning('Project updated, but failed to assign Project Owner role')
+              }
+            }
+          }
+        } else {
+          console.warn('PROJECT_OWNER role not found in system')
+        }
+      }
 
       setErrors({})
     } catch (error) {

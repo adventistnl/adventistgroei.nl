@@ -9,6 +9,7 @@ export const GET_DEPARTMENTS_QUERY = gql`
       name
       description
       contact_id
+      leader_id
       created_at
       updated_at
       created_by

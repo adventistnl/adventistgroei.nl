@@ -20,6 +20,9 @@ export const metadata: Metadata = {
   description: "Comprehensive church management platform for Seventh-day Adventist churches",
   generator: "v1.app",
   // Favicons serão gerenciados dinamicamente pelo componente DynamicFavicon
+}
+
+export const viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#000000' },

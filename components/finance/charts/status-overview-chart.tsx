@@ -44,6 +44,8 @@ interface StatusOverviewChartProps {
       approved: string
       rejected: string
       closed: string
+      advanced_closed: string
+      waiting_refund: string
     }
   }
 }
@@ -57,7 +59,9 @@ export function StatusOverviewChart({ data, loading, translations }: StatusOverv
     { status: 'In Review', fill: '#3b82f6' },
     { status: 'Approved', fill: '#10b981' },
     { status: 'Rejected', fill: '#ef4444' },
-    { status: 'Closed', fill: '#6b7280' }
+    { status: 'Closed', fill: '#059669' },
+    { status: 'Advanced Closed', fill: '#7c3aed' },
+    { status: 'Waiting Refund', fill: '#f97316' }
   ]
 
   // Merge backend data with all statuses, ensuring all statuses appear
@@ -69,7 +73,9 @@ export function StatusOverviewChart({ data, loading, translations }: StatusOverv
         { status: 'In Review', count: 0, fill: '#3b82f6' },
         { status: 'Approved', count: 0, fill: '#10b981' },
         { status: 'Closed', count: 0, fill: '#059669' },
-        { status: 'Rejected', count: 0, fill: '#ef4444' }
+        { status: 'Rejected', count: 0, fill: '#ef4444' },
+        { status: 'Advanced Closed', count: 0, fill: '#7c3aed' },
+        { status: 'Waiting Refund', count: 0, fill: '#f97316' }
       ]
     }
 
@@ -97,7 +103,9 @@ export function StatusOverviewChart({ data, loading, translations }: StatusOverv
     'In Review': AlertCircle,
     'Approved': CheckCircle,
     'Closed': CheckCircle,
-    'Rejected': XCircle
+    'Rejected': XCircle,
+    'Advanced Closed': CheckCircle,
+    'Waiting Refund': Clock
   }
 
   // Generate chart config dynamically

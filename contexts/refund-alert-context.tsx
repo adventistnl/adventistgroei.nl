@@ -9,6 +9,7 @@ import { RefundAlertModal } from '@/components/modals/refund-alert-modal'
 interface RefundSubsidy {
   id: string
   description: string
+  requested_amount: number
   refund_amount: number
   have_refund: boolean
   refund_done: boolean
@@ -17,6 +18,15 @@ interface RefundSubsidy {
     id: string
     name: string
     email: string
+  }
+  project: {
+    id: string
+    name: string
+    owner: {
+      id: string
+      name: string
+      email: string
+    }
   }
   institution: {
     id: string
@@ -96,7 +106,13 @@ export const RefundAlertProvider: React.FC<RefundAlertProviderProps> = ({ childr
     fetchPolicy: 'cache-and-network'
   })
 
-  const pendingRefunds: RefundSubsidy[] = data?.getSubsidiesWaitingRefund || []
+  // Filter refunds to show only where user is project owner OR requester
+  const allRefunds: RefundSubsidy[] = data?.getSubsidiesWaitingRefund || []
+  const pendingRefunds = allRefunds.filter(refund => {
+    const isRequester = refund.requester?.id === user?.id
+    const isProjectOwner = refund.project?.owner?.id === user?.id
+    return isRequester || isProjectOwner
+  })
   const refundCount = pendingRefunds.length
 
   // Show modal when there are pending refunds (once per day)

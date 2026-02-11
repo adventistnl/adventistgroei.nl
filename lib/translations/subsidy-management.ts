@@ -9,6 +9,7 @@ export const subsidyManagementTranslations = {
       inReview: "In review",
       changeStatus: "Change Status",
       advancedClosed: "Advanced Closed",
+      waitingRefund: "Waiting Refund",
     },
     requestSubsidy: "Request Subsidy",
     requestedOn: "Requested on",
@@ -102,7 +103,8 @@ export const subsidyManagementTranslations = {
       closed: "Gesloten",
       inReview: "In beoordeling",
       changeStatus: "Status Wijzigen",
-      advancedClosed: "Geavanceerd Gesloten"
+      advancedClosed: "Geavanceerd Gesloten",
+      waitingRefund: "Wacht op Terugbetaling",
     },
     requestSubsidy: "Subsidie aanvragen",
     requestedOn: "Aangevraagd op",

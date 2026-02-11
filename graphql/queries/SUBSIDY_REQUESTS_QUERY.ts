@@ -3,7 +3,8 @@ import { gql } from "@apollo/client";
 
 /**
  * Query to fetch all subsidy requests
- * Can optionally filter by institution_id
+ * OPTIMIZED: Removed institution.users (use InstitutionContext instead)
+ * OPTIMIZED: Removed redundant fields (leader_id, subsidy_request_id)
  */
 export const GET_ALL_SUBSIDY_REQUESTS = gql`
   query GetAllSubsidyRequests {
@@ -28,6 +29,7 @@ export const GET_ALL_SUBSIDY_REQUESTS = gql`
       refund_amount
       have_refund
       refund_done
+      subsidy_statuses_id
       subsidy_status {
         id
         name
@@ -40,14 +42,30 @@ export const GET_ALL_SUBSIDY_REQUESTS = gql`
       department {
         id
         name
+        leader {
+          id
+          name
+          email
+          language_preference
+        }
       }
       church {
         id
         name
       }
+      project {
+        id
+        title
+        owner_id
+        owner {
+          id
+          name
+          email
+          language_preference
+        }
+      }
       items {
         id
-        subsidy_request_id
         project_activity_id
         requested_amount
         approved_amount
@@ -98,6 +116,7 @@ export const GET_SUBSIDY_REQUEST_BY_ID = gql`
       refund_amount
       have_refund
       refund_done
+      subsidy_statuses_id
       subsidy_status {
         id
         name
@@ -107,17 +126,39 @@ export const GET_SUBSIDY_REQUEST_BY_ID = gql`
         id
         name
       }
+      # ✅ created_by (requester ID) - we'll find the user in institution.users from InstitutionContext
+      created_by
       department {
         id
         name
+        leader {
+          id
+          name
+          email
+          language_preference
+        }
       }
       church {
         id
         name
       }
+      project {
+        id
+        title
+        department_id
+        owner_id
+        owner {
+          id
+          name
+          email
+          language_preference
+        }
+        # REMOVED: department field causes error when project.department_id is NULL
+        # Backend schema defines Project.department as non-nullable, but DB allows NULL
+        # We prioritize subsidy.department anyway, so this fallback is not critical
+      }
       items {
         id
-        subsidy_request_id
         project_activity_id
         requested_amount
         approved_amount

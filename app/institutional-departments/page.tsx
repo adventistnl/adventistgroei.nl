@@ -1290,36 +1290,42 @@ export default function DepartmentsPage() {
             ...(viewMode === 'detail' && selectedDepartmentDetail ? [
               {
                 id: "DepartmentInfoAndProjects",
-                component: (
-                  <div className="flex flex-col gap-4 h-[calc(100vh-24rem)] min-h-[600px]">
-                    <div className="h-[23%] min-h-[100px]">
-                      <DepartmentLeaderInfoCard
-                        department={{
-                          id: selectedDepartmentDetail.id,
-                          name: selectedDepartmentDetail.name,
-                          leader_id: selectedDepartmentDetail.leader_id
-                        }}
-                        users={(currentInstitutionData?.users || []).filter(user => !user.is_deleted).map(u => ({
-                          id: u.id,
-                          name: u.name,
-                          email: u.email,
-                          language_preference: u.language_preference || undefined
-                        }))}
-                        loading={isLoading}
-                        showHeader={false}
-                      />
+                component: (() => {
+                  const departmentProp = {
+                    id: selectedDepartmentDetail.id,
+                    name: selectedDepartmentDetail.name,
+                    leader_id: selectedDepartmentDetail.leader_id
+                  }
+                  
+                  const usersProp = (currentInstitutionData?.users || []).filter(user => !user.is_deleted).map(u => ({
+                    id: u.id,
+                    name: u.name,
+                    email: u.email,
+                    language_preference: u.language_preference || undefined
+                  }))
+                  
+                  return (
+                    <div className="flex flex-col gap-4 h-[calc(100vh-24rem)] min-h-[600px]">
+                      <div className="h-[23%] min-h-[100px]">
+                        <DepartmentLeaderInfoCard
+                          department={departmentProp}
+                          users={usersProp}
+                          loading={isLoading}
+                          showHeader={false}
+                        />
+                      </div>
+                      <div className="flex-1 h-[77%] min-h-[400px]">
+                        <DepartmentProjectsCard
+                          projects={allProjects as any}
+                          departmentId={selectedDepartmentDetail.id}
+                          departmentName={selectedDepartmentDetail.name}
+                          loading={projectsLoading}
+                          privacyConfig={PRIVACY_CONFIGS.projectsFooterFinancial}
+                        />
+                      </div>
                     </div>
-                    <div className="flex-1 h-[77%] min-h-[400px]">
-                      <DepartmentProjectsCard
-                        projects={allProjects as any}
-                        departmentId={selectedDepartmentDetail.id}
-                        departmentName={selectedDepartmentDetail.name}
-                        loading={projectsLoading}
-                        privacyConfig={PRIVACY_CONFIGS.projectsFooterFinancial}
-                      />
-                    </div>
-                  </div>
-                ),
+                  )
+                })(),
                 colSpan: "col-span-12 lg:col-span-5",
               }
             ] : [
@@ -1332,7 +1338,7 @@ export default function DepartmentsPage() {
                       name: u.name,
                       email: u.email,
                       language_preference: u.language_preference || undefined,
-                      user_roles: u.user_roles,
+                      user_roles: u.user_roles || undefined,
                       is_deleted: u.is_deleted
                     }))}
                     departments={departments.map(d => ({

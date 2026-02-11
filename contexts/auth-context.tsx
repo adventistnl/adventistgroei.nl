@@ -64,10 +64,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           );
           // Salvar as permissions reconstruídas no cookie para próxima vez
           const maxAge = 2592000; // 30 dias (assumir remember me = true)
+          const isProduction = process.env.NODE_ENV === 'production'
           setCookie('auth-permissions', JSON.stringify(decodedPermissions), { 
             path: '/', 
             sameSite: 'Strict', 
-            secure: true, 
+            secure: isProduction, 
             maxAge 
           });
         }
@@ -103,12 +104,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
 
         const maxAge = rememberMe ? 2592000 : 86400; // 30 dias ou 1 dia
+        const isProduction = process.env.NODE_ENV === 'production'
 
         // Armazenar user no localStorage
         localStorage.setItem('auth-user', JSON.stringify(data.login.user));
-        // Armazenar token e permissões como cookies
-        setCookie('auth-token', accessToken, { path: '/', sameSite: 'Strict', secure: true, maxAge });
-        setCookie('auth-permissions', JSON.stringify(permissions), { path: '/', sameSite: 'Strict', secure: true, maxAge });
+        // Armazenar token e permissões como cookies (secure apenas em produção/HTTPS)
+        setCookie('auth-token', accessToken, { path: '/', sameSite: 'Strict', secure: isProduction, maxAge });
+        setCookie('auth-permissions', JSON.stringify(permissions), { path: '/', sameSite: 'Strict', secure: isProduction, maxAge });
         setToken(accessToken);
         setUser(data.login.user);
         setPermissions(permissions);

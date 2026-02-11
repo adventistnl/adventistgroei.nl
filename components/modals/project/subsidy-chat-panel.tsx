@@ -80,8 +80,8 @@ interface SubsidyChatPanelProps {
   messagesEndRef: React.RefObject<HTMLDivElement | null>
   
   // Menções
-  mentionStatus: "pending" | "in_review" | "approved" | "rejected" | "closed" | "advanced_closed" | null
-  setMentionStatus: React.Dispatch<React.SetStateAction<"pending" | "in_review" | "approved" | "rejected" | "closed" | "advanced_closed" | null>>
+  mentionStatus: "pending" | "in_review" | "approved" | "rejected" | "closed" | "advanced_closed" | "waiting_refund" | null
+  setMentionStatus: React.Dispatch<React.SetStateAction<"pending" | "in_review" | "approved" | "rejected" | "closed" | "advanced_closed" | "waiting_refund" | null>>
   mentionPriority: "low" | "medium" | "high" | null
   setMentionPriority: React.Dispatch<React.SetStateAction<"low" | "medium" | "high" | null>>
   

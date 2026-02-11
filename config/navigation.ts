@@ -128,7 +128,7 @@ const navSections: NavSection[] = [
         icon: DollarSign,
         items: [
           { title: "Annual Budget", url: "/finance/annual-budget", permissions: [PermissionResolverName.AnnualBudgets], translationKey: "sidebar.annualBudget" },
-          { title: "Subsidy Approvals", url: "/finance/subsidy-approvals", permissions: [PermissionResolverName.SubsidyRequests], translationKey: "sidebar.subsidyApprovals" },
+          { title: "Subsidy Request", url: "/finance/subsidy-request", permissions: [PermissionResolverName.SubsidyRequests], translationKey: "sidebar.subsidyApprovals" },
         ],
         permissions: [],
         translationKey: "sidebar.financeManagement"
@@ -228,7 +228,7 @@ const _legacyNavMainBase: NavItem[] = [
     items: [
       { title: "Annual Budget", url: "/finance/annual-budget", permissions: [PermissionResolverName.Settings], translationKey: "sidebar.annualBudget" },
       // { title: "Funding Rules", url: "/finance/funding-rules", permissions: [PermissionResolverName.Institutions] },
-      { title: "Subsidy Approvals", url: "/finance/subsidy-approvals", permissions: [PermissionResolverName.Institutions], translationKey: "sidebar.subsidyApprovals" },
+      { title: "Subsidy Request", url: "/finance/subsidy-request", permissions: [PermissionResolverName.Institutions], translationKey: "sidebar.subsidyApprovals" },
     ],
     permissions: [],
     translationKey: "sidebar.financeManagement"

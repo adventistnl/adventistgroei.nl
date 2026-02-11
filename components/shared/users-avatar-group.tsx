@@ -126,7 +126,7 @@ export function UsersAvatarGroup({
                 </AvatarFallback>
               </Avatar>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="text-xs" sideOffset={5}>
+            <TooltipContent side="bottom" className="text-xs z-[70]" sideOffset={5}>
               <p className="font-medium">Adicionar usuário ao projeto</p>
             </TooltipContent>
           </Tooltip>
@@ -180,7 +180,7 @@ export function UsersAvatarGroup({
                       </AvatarFallback>
                     </Avatar>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-xs max-w-[200px]" sideOffset={5}>
+                  <TooltipContent side="bottom" className="text-xs max-w-[200px] z-[70]" sideOffset={5}>
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <p className="font-medium">{user.name}</p>
@@ -223,13 +223,52 @@ export function UsersAvatarGroup({
                     </AvatarFallback>
                   </Avatar>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="text-xs" sideOffset={5}>
-                  <p className="font-medium">
-                    {remainingCount} usuário{remainingCount > 1 ? 's' : ''} adiciona{remainingCount > 1 ? 'is' : 'l'}
-                  </p>
-                  <p className="text-gray-400 text-[10px] mt-1">
-                    Clique para ver todos
-                  </p>
+                <TooltipContent side="bottom" className="text-xs max-w-[250px] z-[70]" sideOffset={5}>
+                  <div className="space-y-2">
+                    <p className="font-medium">
+                      {remainingCount} usuário{remainingCount > 1 ? 's' : ''} adiciona{remainingCount > 1 ? 'is' : 'l'}:
+                    </p>
+                    <div className="space-y-1 max-h-[200px] overflow-y-auto">
+                      {users.slice(maxDisplay).map((user) => {
+                        const isOwner = user.id === ownerUserId
+                        return (
+                          <div key={user.id} className="flex items-center gap-2 py-1 px-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+                            <Avatar className="size-5 border">
+                              <AvatarImage src={user.avatar} alt={user.name} />
+                              <AvatarFallback className={cn(
+                                "text-[8px]",
+                                isOwner 
+                                  ? "bg-yellow-600 dark:bg-yellow-500 text-white font-bold" 
+                                  : "bg-gray-600 dark:bg-gray-700 text-white"
+                              )}>
+                                {getInitials(user)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <p className="text-[10px] font-medium truncate">{user.name}</p>
+                                {isOwner && (
+                                  <span className="bg-yellow-500 text-white text-[7px] px-1 py-0.5 rounded font-bold uppercase flex-shrink-0">
+                                    Owner
+                                  </span>
+                                )}
+                              </div>
+                              {user.role && (
+                                <p className="text-[9px] text-gray-400 truncate">
+                                  {isOwner ? 'Project Owner' : user.role}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    {onShowAllUsers && (
+                      <p className="text-gray-400 text-[10px] mt-2 pt-2 border-t border-gray-700">
+                        Clique para ver todos
+                      </p>
+                    )}
+                  </div>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -254,7 +293,7 @@ export function UsersAvatarGroup({
                   </AvatarFallback>
                 </Avatar>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs font-medium" sideOffset={5}>
+              <TooltipContent side="bottom" className="text-xs font-medium z-[70]" sideOffset={5}>
                 <p>Adicionar usuário ao projeto</p>
               </TooltipContent>
             </Tooltip>

@@ -54,6 +54,7 @@ export const GET_SUBSIDIES_WAITING_REFUND = gql`
     getSubsidiesWaitingRefund(institutionId: $institutionId) {
       id
       description
+      requested_amount
       refund_amount
       have_refund
       refund_done
@@ -62,6 +63,15 @@ export const GET_SUBSIDIES_WAITING_REFUND = gql`
         id
         name
         email
+      }
+      project {
+        id
+        name
+        owner {
+          id
+          name
+          email
+        }
       }
       institution {
         id

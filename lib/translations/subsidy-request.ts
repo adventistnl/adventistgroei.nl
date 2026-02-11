@@ -235,7 +235,13 @@ export const subsidyRequestTranslations = {
       statusAdvancedClosed: "Advanced Closed",
       advanceAmount: "Advance Amount",
       status: "Status",
-      noActivitiesNote: "No activities notes"
+      noActivitiesNote: "This advance request is not linked to specific activities. It provides upfront funding based on the project subsidized budget.",
+      linkedActivitiesTitle: "Linked Activities",
+      linkedActivitiesNote: "This advance request is associated with project activities that will be funded with this payment.",
+      maxButton: "MAX",
+      confirmationRequired: "Please confirm that you understand the terms",
+      confirmationLabel: "I understand the advance payment terms",
+      confirmationText: "I understand that I am requesting 50% of the subsidized budget value before full subsidy processing. If the advance amount is not justified for project use, a refund of the unjustified amount may be requested."
     },
 
     // Refund
@@ -245,7 +251,9 @@ export const subsidyRequestTranslations = {
       refundAmount: "Refund Amount",
       refundReason: "Refund Reason",
       refundPending: "Waiting refund",
+      refundPendingTooltip: "Awaiting refund confirmation of {{amount}}",
       refundDone: "Refund Done",
+      refundDoneTooltip: "Amount of {{amount}} has been refunded",
       waitingRefund: "Waiting Refund",
       refundRequestSuccess: "Refund request submitted successfully",
       refundConfirmSuccess: "Refund confirmed successfully",
@@ -253,20 +261,61 @@ export const subsidyRequestTranslations = {
       refundReasonRequired: "Refund reason is required",
       confirmRefundRequest: "Are you sure you want to request a refund?",
       confirmRefundDoneAction: "Are you sure you want to confirm that the refund has been processed?",
-      refundAmountLabel: "Refund Amount (€)",
+      refundAmountLabel: "Refund Amount",
       refundReasonPlaceholder: "Explain the reason for the refund...",
       refundModalTitle: "Request Refund",
-      refundModalDescription: "Request a refund for this subsidy. The amount will be returned to the budget.",
+      refundModalDescription: "Request a refund for this subsidy.",
       cancel: "Cancel",
       submit: "Request Refund",
       enterRefundAmount: "Enter refund amount",
       enterRefundReason: "Enter reason for refund",
       confirmButton: "Confirm Refund Done",
       confirmRefundWarning: "This action will return the refund amount to the annual budget. This cannot be undone.",
+      // Modal sections
+      projectInfo: "Project Information",
+      refundDetails: "Refund Details",
+      importantNotice: "Important Notice",
+      awareness: "Confirmation",
+      // KPIs
+      subsidyAmount: "Subsidy Amount",
+      // Confirm completion modal
+      confirmCompletionIntro: "By confirming the completion of the refund:",
+      completionNotice1: "The amount of {{amount}} will be considered returned to the department budget.",
+      completionNotice2: "This action cannot be undone",
+      completionNotice2Detail: "and will close the refund process.",
+      completionNotice3: "The subsidy status will be updated to 'Closed'.",
+      completionNotice4: "A record of this confirmation will be added to the history",
+      completionNotice4Detail: "permanently.",
+      confirmAwarenessLabel: "I confirm that I have received the refund of {{amount}}",
+      confirmAwarenessDetail: "and I am aware that this action will permanently close the refund process and cannot be reversed.",
+      processing: "Processing...",
+      refundingAmount: "Refunding",
+      maxButton: "MAX",
+      maximum: "Maximum",
+      // Project details
+      project: "Project",
+      department: "Department",
+      responsibles: "Responsibles",
+      // Notice bullets
+      noticeIntro: "When requesting a refund:",
+      noticeResponsibles: "Project responsibles will receive a notification",
+      noticeResponsiblesDetail: "to make the payment of the requested amount.",
+      noticeBudget: "The amount will be returned to the department budget",
+      noticeHistory: "This action will generate a record in the subsidy history",
+      noticeHistoryDetail: ".",
+      // Awareness checkbox
+      awarenessLabel: "I am aware that this action will notify the responsibles and request the refund of the amount from the project, returning the funds to the department budget.",
+      // Validation
+      characters: "characters",
       alert: {
         singlePending: "You have 1 subsidy waiting for refund processing",
         multiplePending: "You have {{count}} subsidies waiting for refund processing"
-      }
+      },
+      // Refund status indicators
+      refundRequested: "Refund Requested",
+      refundRequestedAmount: "Refund Amount",
+      refundRequestedTooltip: "A refund of {{amount}} has been requested and is awaiting confirmation",
+      statusWithRefund: "Status: Refund requested ({{amount}})"
     }
   },
   
@@ -504,7 +553,13 @@ export const subsidyRequestTranslations = {
       statusAdvancedClosed: "Adiantamento Encerrado",
       status: "Status",
       advanceAmount: "Valor do Adiantamento",
-      noActivitiesNote: "Nenhuma atividade subsidiada selecionada"
+      noActivitiesNote: "Esta solicitação de adiantamento não está vinculada a atividades específicas. Ela fornece financiamento antecipado com base no orçamento subsidiado do projeto.",
+      linkedActivitiesTitle: "Atividades Vinculadas",
+      linkedActivitiesNote: "Esta solicitação de adiantamento está associada a atividades do projeto que serão financiadas com este pagamento.",
+      maxButton: "MÁXIMO",
+      confirmationRequired: "Por favor, confirme que você entende os termos",
+      confirmationLabel: "Compreendo os termos do pagamento antecipado",
+      confirmationText: "Compreendo que estou solicitando 50% do valor do orçamento subsidiado antes do processamento completo do subsídio. Caso o valor do adiantamento não seja justificado para uso no projeto, poderá ser solicitado o reembolso do valor não justificado."
     },
 
     // Refund
@@ -514,7 +569,9 @@ export const subsidyRequestTranslations = {
       refundAmount: "Valor do Reembolso",
       refundReason: "Motivo do Reembolso",
       refundPending: "Reembolso Pendente",
+      refundPendingTooltip: "Aguardando confirmação de reembolso de {{amount}}",
       refundDone: "Reembolso Concluído",
+      refundDoneTooltip: "Valor de {{amount}} foi reembolsado",
       waitingRefund: "Aguardando Reembolso",
       refundRequestSuccess: "Solicitação de reembolso enviada com sucesso",
       refundConfirmSuccess: "Reembolso confirmado com sucesso",
@@ -522,20 +579,61 @@ export const subsidyRequestTranslations = {
       refundReasonRequired: "Motivo do reembolso é obrigatório",
       confirmRefundRequest: "Tem certeza que deseja solicitar um reembolso?",
       confirmRefundDoneAction: "Tem certeza que deseja confirmar que o reembolso foi processado?",
-      refundAmountLabel: "Valor do Reembolso (€)",
+      refundAmountLabel: "Valor do Reembolso",
       refundReasonPlaceholder: "Explique o motivo do reembolso...",
       refundModalTitle: "Solicitar Reembolso",
-      refundModalDescription: "Solicite um reembolso para este subsídio. O valor será devolvido ao orçamento.",
+      refundModalDescription: "Solicite um reembolso para este subsídio.",
       cancel: "Cancelar",
       submit: "Solicitar Reembolso",
       enterRefundAmount: "Digite o valor do reembolso",
       enterRefundReason: "Digite o motivo do reembolso",
       confirmButton: "Confirmar Reembolso Concluído",
       confirmRefundWarning: "Esta ação retornará o valor do reembolso ao orçamento anual. Isso não pode ser desfeito.",
+      // Modal sections
+      projectInfo: "Informações do Projeto",
+      refundDetails: "Detalhes do Reembolso",
+      importantNotice: "Aviso Importante",
+      awareness: "Confirmação",
+      // KPIs
+      subsidyAmount: "Valor do Subsídio",
+      // Confirm completion modal
+      confirmCompletionIntro: "Ao confirmar a conclusão do reembolso:",
+      completionNotice1: "O valor de {{amount}} será considerado devolvido ao orçamento do departamento.",
+      completionNotice2: "Esta ação não pode ser desfeita",
+      completionNotice2Detail: "e encerrará o processo de reembolso.",
+      completionNotice3: "O status do subsídio será atualizado para 'Fechado'.",
+      completionNotice4: "Um registro desta confirmação será adicionado ao histórico",
+      completionNotice4Detail: "permanentemente.",
+      confirmAwarenessLabel: "Confirmo que recebi o reembolso de {{amount}}",
+      confirmAwarenessDetail: "e estou ciente de que esta ação encerrará definitivamente o processo de reembolso e não poderá ser revertida.",
+      processing: "Processando...",
+      refundingAmount: "Reembolsando",
+      maxButton: "MÁXIMO",
+      maximum: "Máximo",
+      // Project details
+      project: "Projeto",
+      department: "Departamento",
+      responsibles: "Responsáveis",
+      // Notice bullets
+      noticeIntro: "Ao solicitar o reembolso:",
+      noticeResponsibles: "Os responsáveis pelo projeto receberão uma notificação",
+      noticeResponsiblesDetail: "para efetuar o pagamento do valor solicitado.",
+      noticeBudget: "O valor será devolvido ao orçamento do departamento",
+      noticeHistory: "Esta ação gerará um registro no histórico",
+      noticeHistoryDetail: "do subsídio.",
+      // Awareness checkbox
+      awarenessLabel: "Estou ciente de que esta ação irá notificar os responsáveis e solicitar o reembolso do valor ao projeto, devolvendo o montante ao orçamento do departamento.",
+      // Validation
+      characters: "caracteres",
       alert: {
         singlePending: "Você tem 1 subsídio aguardando processamento de reembolso",
         multiplePending: "Você tem {{count}} subsídios aguardando processamento de reembolso"
-      }
+      },
+      // Indicadores de status de reembolso
+      refundRequested: "Reembolso Solicitado",
+      refundRequestedAmount: "Valor de Reembolso",
+      refundRequestedTooltip: "Um reembolso de {{amount}} foi solicitado e está aguardando confirmação",
+      statusWithRefund: "Status: Reembolso solicitado ({{amount}})"
     }
   },
   
@@ -772,9 +870,15 @@ export const subsidyRequestTranslations = {
       submit: "Voorschotaanvraag Indienen",
       success: "Voorschotaanvraag succesvol aangemaakt",
       statusAdvancedClosed: "Voorschot Afgesloten",
-      noActivitiesNote: "Geen gesubsidieerde activiteiten geselecteerd",
+      noActivitiesNote: "Deze voorschotaanvraag is niet gekoppeld aan specifieke activiteiten. Het biedt upfront financiering op basis van het gesubsidieerde projectbudget.",
+      linkedActivitiesTitle: "Gekoppelde Activiteiten",
+      linkedActivitiesNote: "Deze voorschotaanvraag is gekoppeld aan projectactiviteiten die met deze betaling worden gefinancierd.",
       advanceAmount: "Voorschotbedrag",
-      advanceStatus: "Voorschotstatus"
+      advanceStatus: "Voorschotstatus",
+      maxButton: "MAX",
+      confirmationRequired: "Bevestig alstublieft dat u de voorwaarden begrijpt",
+      confirmationLabel: "Ik begrijp de voorschotbetalingsvoorwaarden",
+      confirmationText: "Ik begrijp dat ik 50% van het gesubsidieerde budgetbedrag aanvraag vóór volledige subsidieafhandeling. Als het voorschotbedrag niet gerechtvaardigd is voor projectgebruik, kan terugbetaling van het niet-gerechtvaardigde bedrag worden gevraagd."
     },
 
     // Refund
@@ -784,7 +888,9 @@ export const subsidyRequestTranslations = {
       refundAmount: "Terugbetalingsbedrag",
       refundReason: "Reden voor Terugbetaling",
       refundPending: "Terugbetaling In Behandeling",
+      refundPendingTooltip: "Wacht op terugbetalingsbevestiging van {{amount}}",
       refundDone: "Terugbetaling Voltooid",
+      refundDoneTooltip: "Bedrag van {{amount}} is terugbetaald",
       waitingRefund: "Wacht op Terugbetaling",
       refundRequestSuccess: "Terugbetalingsaanvraag succesvol ingediend",
       refundConfirmSuccess: "Terugbetaling succesvol bevestigd",
@@ -792,14 +898,61 @@ export const subsidyRequestTranslations = {
       refundReasonRequired: "Reden voor terugbetaling is verplicht",
       confirmRefundRequest: "Weet u zeker dat u een terugbetaling wilt aanvragen?",
       confirmRefundDoneAction: "Weet u zeker dat u wilt bevestigen dat de terugbetaling is verwerkt?",
-      refundAmountLabel: "Terugbetalingsbedrag (€)",
+      refundAmountLabel: "Terugbetalingsbedrag",
       refundReasonPlaceholder: "Leg de reden voor de terugbetaling uit...",
       refundModalTitle: "Terugbetaling Aanvragen",
-      refundModalDescription: "Vraag een terugbetaling aan voor deze subsidie. Het bedrag wordt teruggegeven aan het budget.",
+      refundModalDescription: "Vraag een terugbetaling aan voor deze subsidie.",
       cancel: "Annuleren",
       submit: "Terugbetaling Aanvragen",
+      enterRefundAmount: "Voer terugbetalingsbedrag in",
+      enterRefundReason: "Voer reden voor terugbetaling in",
       confirmButton: "Bevestig Terugbetaling Voltooid",
-      confirmRefundWarning: "Deze actie zal het terugbetalingsbedrag terugbrengen naar het jaarbudget. Dit kan niet ongedaan worden gemaakt."
+      confirmRefundWarning: "Deze actie zal het terugbetalingsbedrag terugbrengen naar het jaarbudget. Dit kan niet ongedaan worden gemaakt.",
+      // Modal sections
+      projectInfo: "Projectinformatie",
+      refundDetails: "Terugbetalingsdetails",
+      importantNotice: "Belangrijke Kennisgeving",
+      awareness: "Bevestiging",
+      // KPIs
+      subsidyAmount: "Subsidiebedrag",
+      // Confirm completion modal
+      confirmCompletionIntro: "Door het voltooien van de terugbetaling te bevestigen:",
+      completionNotice1: "Het bedrag van {{amount}} wordt beschouwd als teruggebracht naar het afdelingsbudget.",
+      completionNotice2: "Deze actie kan niet ongedaan worden gemaakt",
+      completionNotice2Detail: "en zal het terugbetalingsproces afsluiten.",
+      completionNotice3: "De subsidiestatus wordt bijgewerkt naar 'Gesloten'.",
+      completionNotice4: "Een record van deze bevestiging wordt toegevoegd aan de geschiedenis",
+      completionNotice4Detail: "permanent.",
+      confirmAwarenessLabel: "Ik bevestig dat ik de terugbetaling van {{amount}} heb ontvangen",
+      confirmAwarenessDetail: "en ik ben me ervan bewust dat deze actie het terugbetalingsproces permanent zal afsluiten en niet kan worden teruggedraaid.",
+      processing: "Verwerken...",
+      refundingAmount: "Terugbetalen",
+      maxButton: "MAX",
+      maximum: "Maximum",
+      // Project details
+      project: "Project",
+      department: "Afdeling",
+      responsibles: "Verantwoordelijken",
+      // Notice bullets
+      noticeIntro: "Bij het aanvragen van een terugbetaling:",
+      noticeResponsibles: "Projectverantwoordelijken ontvangen een melding",
+      noticeResponsiblesDetail: "om de betaling van het gevraagde bedrag te doen.",
+      noticeBudget: "Het bedrag wordt teruggestort naar het afdelingsbudget",
+      noticeHistory: "Deze actie genereert een record in de subsidiegeschiedenis",
+      noticeHistoryDetail: ".",
+      // Awareness checkbox
+      awarenessLabel: "Ik ben me ervan bewust dat deze actie de verantwoordelijken zal waarschuwen en om terugbetaling van het bedrag aan het project zal vragen, waarbij de middelen naar het afdelingsbudget worden teruggebracht.",
+      // Validation
+      characters: "tekens",
+      alert: {
+        singlePending: "U heeft 1 subsidie die wacht op terugbetalingsverwerking",
+        multiplePending: "U heeft {{count}} subsidies die wachten op terugbetalingsverwerking"
+      },
+      // Terugbetaling status indicatoren
+      refundRequested: "Terugbetaling Aangevraagd",
+      refundRequestedAmount: "Terugbetalingsbedrag",
+      refundRequestedTooltip: "Een terugbetaling van {{amount}} is aangevraagd en wacht op bevestiging",
+      statusWithRefund: "Status: Terugbetaling aangevraagd ({{amount}})"
     }
   }
 }

@@ -117,7 +117,7 @@ export const structureTranslations = {
       churchDepartments: "Church Departments",
       financeManagement: "Finance Management",
       annualBudget: "Annual Budget",
-      subsidyApprovals: "Subsidy Approvals",
+      subsidyRequest: "Subsidy Request",
       usersAccess: "Users & Access",
       users: "Users",
       accessManagement: "Access Management",
