@@ -107,28 +107,15 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
   useEffect(() => {
     if (!activeInstitutionId) {
       if (authUser?.institution_id) {
-        console.log('[InstitutionContext] Setting activeInstitutionId from authUser:', authUser.institution_id);
         setActiveInstitutionId(authUser.institution_id);
       } else if (user?.institution_id) {
-        console.log('[InstitutionContext] Setting activeInstitutionId from user:', user.institution_id);
         setActiveInstitutionId(user.institution_id);
       } else if (institutions.length > 0) {
-        console.log('[InstitutionContext] Setting activeInstitutionId from first institution:', institutions[0].id);
         setActiveInstitutionId(institutions[0].id);
       }
     }
   }, [authUser, user, institutions, activeInstitutionId]);
   
-  // Log de debug para monitorar estados
-  useEffect(() => {
-    console.log('[InstitutionContext] State:', {
-      activeInstitutionId,
-      institutionsCount: institutions.length,
-      hasCurrentData: !!specificInstitutionData,
-      loading,
-      specificLoading
-    });
-  }, [activeInstitutionId, institutions, specificInstitutionData, loading, specificLoading]);
 
 
   // Troca de instituição

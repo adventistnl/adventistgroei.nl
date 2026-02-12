@@ -115,8 +115,8 @@ Removido o wrapper `<WithPermission>` pois a filtragem agora é feita no hook:
       permissions: [PermissionResolverName.Settings] 
     },
     { 
-      title: "Subsidy Approvals", 
-      url: "/finance/subsidy-approvals", 
+      title: "Subsidy Request", 
+      url: "/finance/subsidy-request", 
       permissions: [PermissionResolverName.Institutions] 
     },
   ],
@@ -129,17 +129,17 @@ Removido o wrapper `<WithPermission>` pois a filtragem agora é feita no hook:
 **Cenário 1: Usuário com permissão `Settings`**
 - ✅ Seção "Finance Management" é exibida
 - ✅ Subitem "Annual Budget" é exibido
-- ❌ Subitem "Subsidy Approvals" é oculto
+- ❌ Subitem "Subsidy Request" é oculto
 
 **Cenário 2: Usuário com permissão `Institutions`**
 - ✅ Seção "Finance Management" é exibida
 - ❌ Subitem "Annual Budget" é oculto
-- ✅ Subitem "Subsidy Approvals" é exibido
+- ✅ Subitem "Subsidy Request" é exibido
 
 **Cenário 3: Usuário com ambas as permissões**
 - ✅ Seção "Finance Management" é exibida
 - ✅ Subitem "Annual Budget" é exibido
-- ✅ Subitem "Subsidy Approvals" é exibido
+- ✅ Subitem "Subsidy Request" é exibido
 
 **Cenário 4: Usuário sem nenhuma permissão**
 - ❌ Seção "Finance Management" é completamente oculta

@@ -152,7 +152,7 @@ export function ConfirmationDialog({
             id="confirm-action"
             checked={isConfirmed}
             onChange={(e) => setIsConfirmed(e.target.checked)}
-            className="w-4 h-4 mt-0.5 text-gray-900 bg-white border-gray-300 rounded focus:ring-gray-500 dark:focus:ring-gray-400 dark:bg-gray-700 dark:border-gray-600"
+            className="w-4 h-4 mt-0.5 text-gray-900 bg-white border-gray-300 rounded focus:ring-gray-500 dark:focus:ring-gray-600 dark:bg-gray-700 dark:border-gray-600"
           />
           <label htmlFor="confirm-action" className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed cursor-pointer">
             {t.common.confirmAction || 'Confirmo que desejo executar esta ação e entendo as consequências.'}

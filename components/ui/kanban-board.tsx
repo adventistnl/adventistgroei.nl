@@ -452,9 +452,9 @@ export function KanbanBoard({
                               draggable: true,
                               className: draggingItemId === item.id ? 'opacity-50 scale-95' : ''
                             } : undefined
-                            return renderItem(item, group, dragHandlers)
+                            return <React.Fragment key={item.id}>{renderItem(item, group, dragHandlers)}</React.Fragment>
                           }
-                          return defaultRenderItem(item, group)
+                          return <React.Fragment key={item.id}>{defaultRenderItem(item, group)}</React.Fragment>
                         })
                       ) : (
                         renderEmptyGroup ? renderEmptyGroup(group) : defaultRenderEmptyGroup(group)

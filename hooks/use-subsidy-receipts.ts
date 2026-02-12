@@ -31,12 +31,14 @@ interface UseSubsidyReceiptsProps {
   subsidyRequestId?: string
   subsidyRequestItemId?: string
   projectActivityId?: string
+  onHistoryUpdate?: () => void | Promise<void>
 }
 
 export function useSubsidyReceipts({
   subsidyRequestId,
   subsidyRequestItemId,
   projectActivityId,
+  onHistoryUpdate,
 }: UseSubsidyReceiptsProps) {
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
   const [uploading, setUploading] = useState(false)
@@ -227,8 +229,11 @@ export function useSubsidyReceipts({
       setUploadProgress(prev => ({ ...prev, [file.name]: 100 }))
       toast.success(`${file.name} enviado com sucesso!`)
 
-      // Refetch receipts to update the list
       await fetchReceipts()
+      
+      if (onHistoryUpdate) {
+        await onHistoryUpdate()
+      }
 
       return result
     } catch (error: any) {

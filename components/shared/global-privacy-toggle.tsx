@@ -76,16 +76,6 @@ export function GlobalPrivacyToggle({
       ? `${t.someHidden} (${hiddenCount})`
       : t.hideAll
 
-  // Log para debug
-  React.useEffect(() => {
-    console.log('🌐 [GlobalPrivacy] State:', {
-      hasHiddenComponents,
-      allHidden,
-      hiddenCount,
-      totalComponents: getRegisteredComponents().length,
-      privacyState
-    })
-  }, [hasHiddenComponents, allHidden, hiddenCount, privacyState, getRegisteredComponents])
 
   if (variant === 'icon') {
     return (

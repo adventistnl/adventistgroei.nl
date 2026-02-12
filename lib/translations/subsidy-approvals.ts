@@ -1,7 +1,7 @@
-export const subsidyApprovalsTranslations = {
+export const subsidyRequestTranslations = {
   en: {
     // Page title
-    pageTitle: "Subsidy Approvals",
+    pageTitle: "Subsidy Requests",
     pageDescription: "Review and approve subsidy requests from churches and institutions",
     
     // Toasts
@@ -26,7 +26,8 @@ export const subsidyApprovalsTranslations = {
       documentsPending: "All documents must be validated before proceeding.",
       mustBeAdvancedClosed: "Advance subsidies must be Advanced Closed first.",
       documentsRejected: "Cannot approve subsidy with rejected documents",
-      onlyFinancialCanClose: "Only users with the Financial Manager role can close subsidy requests"
+      onlyFinancialCanClose: "Only users with the Financial Manager role can close subsidy requests",
+      refundNotRequested: "No refund has been requested for this subsidy"
     },
     
     // Default values
@@ -71,7 +72,8 @@ export const subsidyApprovalsTranslations = {
       approved: "Approved",
       closed: "Closed",
       rejected: "Rejected",
-      advanced_closed: "Advanced Closed"
+      advanced_closed: "Advanced Closed",
+      waiting_refund: "Waiting Refund"
     },
     
     // Priority labels
@@ -83,13 +85,20 @@ export const subsidyApprovalsTranslations = {
     
     // Table columns
     table: {
-      requestTitle: "Request Title",
+      requestTitle: "Request",
+      type: "Type",
       requested: "Requested",
       activities: "Activities",
       priority: "Priority",
       status: "Status",
       date: "Date",
+      responsibles: "Responsibles",
       actions: "Actions"
+    },
+    types: {
+      advance: "Advance",
+      refund: "Refund",
+      subsidy: "Subsidy"
     },
     
     // Actions
@@ -103,6 +112,24 @@ export const subsidyApprovalsTranslations = {
       }
     },
     
+    // Permissions
+    permissions: {
+      financeOnly: "Only finance users can approve or reject subsidy requests"
+    },
+    
+    // UI Labels
+    ui: {
+      itemCountLabel: "requests"
+    },
+    
+    // Filters
+    filters: {
+      showAllRequests: "Show only my requests",
+      showingMyRequests: "Showing my requests only",
+      clickToShowAll: "Click to show all requests",
+      clickToFilter: "Click to filter by your responsibilities"
+    },
+    
     // Kanban
     kanban: {
       groups: {
@@ -111,7 +138,8 @@ export const subsidyApprovalsTranslations = {
         approved: "Approved",
         closed: "Closed",
         rejected: "Rejected",
-        advanced_closed: "Advanced Closed"
+        advanced_closed: "Advanced Closed",
+        waiting_refund: "Waiting Refund"
       }
     },
     
@@ -122,7 +150,8 @@ export const subsidyApprovalsTranslations = {
       approved: "Subsidy has been approved and is released for payment. This is an irreversible action and can only transition to Closed. Updates to the subsidy or files are still possible.",
       rejected: "Subsidy has been rejected and will not be subsidized for some reason. This is an irreversible action and can only transition to Closed. Updates to the subsidy or files are still possible.",
       closed: "Final status, indicating that all necessary actions for the subsidy have been completed. From here, no update or deletion actions can be performed on the subsidy or files.",
-      advanced_closed: "Final status for advance subsidies. Indicates the advance has been reconciled and closed."
+      advanced_closed: "Final status for advance subsidies. Indicates the advance has been reconciled and closed.",
+      waiting_refund: "Subsidy is waiting for refund processing. Funds will be returned to the annual budget after confirmation."
     },
     
     // Card Header
@@ -161,7 +190,10 @@ export const subsidyApprovalsTranslations = {
           approved: "approved",
           pending: "pending",
           rejected: "rejected",
-          in_review: "in review"
+          in_review: "in review",
+          closed: "closed",
+          advanced_closed: "advanced closed",
+          waiting_refund: "waiting refund"
         },
         statusLabels: {
           approved: "Approved",
@@ -183,9 +215,18 @@ export const subsidyApprovalsTranslations = {
           approved: "Approved",
           rejected: "Rejected",
           closed: "Closed",
-          advanced_closed: "Advanced Closed"
+          advanced_closed: "Advanced Closed",
+          waiting_refund: "Waiting Refund"
         }
       }
+    },
+    
+    // Roles
+    roles: {
+      requester: "Requester",
+      projectOwner: "Project Owner",
+      departmentLeader: "Department Leader",
+      financeManager: "Finance Manager"
     }
   },
   
@@ -216,7 +257,8 @@ export const subsidyApprovalsTranslations = {
       documentsPending: "Todos os documentos devem ser validados primeiro",
       mustBeAdvancedClosed: "Subsídios de adiantamento devem ser Adiantamento Fechado primeiro.",
       documentsRejected: "Não é possível aprovar subsídio com documentos rejeitados",
-      onlyFinancialCanClose: "Apenas usuários com a função de Gerente Financeiro podem fechar solicitações de subsídio"
+      onlyFinancialCanClose: "Apenas usuários com a função de Gerente Financeiro podem fechar solicitações de subsídio",
+      refundNotRequested: "Nenhum reembolso foi solicitado para este subsídio"
     },
     
     // Default values
@@ -261,7 +303,8 @@ export const subsidyApprovalsTranslations = {
       approved: "Aprovado",
       closed: "Fechado",
       rejected: "Rejeitado",
-      advanced_closed: "Adiantamento Fechado"
+      advanced_closed: "Adiantamento Fechado",
+      waiting_refund: "Aguardando Reembolso"
     },
     
     // Priority labels
@@ -273,13 +316,20 @@ export const subsidyApprovalsTranslations = {
     
     // Table columns
     table: {
-      requestTitle: "Título da Solicitação",
+      requestTitle: "Solicitação",
+      type: "Tipo",
       requested: "Solicitado",
       activities: "Atividades",
       priority: "Prioridade",
       status: "Status",
       date: "Data",
+      responsibles: "Responsáveis",
       actions: "Ações"
+    },
+    types: {
+      advance: "Adiantamento",
+      refund: "Reembolso",
+      subsidy: "Subsídio"
     },
     
     // Actions
@@ -293,6 +343,24 @@ export const subsidyApprovalsTranslations = {
       }
     },
     
+    // Permissions
+    permissions: {
+      financeOnly: "Apenas usuários de finanças podem aprovar ou rejeitar solicitações de subsídio"
+    },
+    
+    // UI Labels
+    ui: {
+      itemCountLabel: "solicitações"
+    },
+    
+    // Filters
+    filters: {
+      showAllRequests: "Mostrar apenas meus pedidos",
+      showingMyRequests: "Mostrando apenas meus pedidos",
+      clickToShowAll: "Clique para mostrar todos os pedidos",
+      clickToFilter: "Clique para filtrar por suas responsabilidades"
+    },
+    
     // Kanban
     kanban: {
       groups: {
@@ -301,7 +369,8 @@ export const subsidyApprovalsTranslations = {
         approved: "Aprovado",
         closed: "Fechado",
         rejected: "Rejeitado",
-        advanced_closed: "Adiantamento Fechado"
+        advanced_closed: "Adiantamento Fechado",
+        waiting_refund: "Aguardando Reembolso"
       }
     },
     
@@ -312,7 +381,8 @@ export const subsidyApprovalsTranslations = {
       approved: "Subsídio foi aprovado e está liberado para pagamento. Esta é uma ação irreversível e só pode transitar para Fechado. Atualizações no subsídio ou arquivos ainda são possíveis.",
       rejected: "Subsídio foi rejeitado e não será subsidiado por algum motivo. Esta é uma ação irreversível e só pode transitar para Fechado. Atualizações no subsídio ou arquivos ainda são possíveis.",
       closed: "Status final, indicando que todas as ações necessárias para o subsídio foram concluídas. A partir daqui, nenhuma atualização ou ação de exclusão pode ser realizada no subsídio ou arquivos.",
-      advanced_closed: "Status final para subsídios adiantados. Indica que o adiantamento foi reconciliado e fechado."
+      advanced_closed: "Status final para subsídios adiantados. Indica que o adiantamento foi reconciliado e fechado.",
+      waiting_refund: "Subsídio aguardando processamento de reembolso. Os fundos serão devolvidos ao orçamento anual após confirmação."
     },
     
     // Card Header
@@ -351,7 +421,10 @@ export const subsidyApprovalsTranslations = {
           approved: "aprovado",
           pending: "pendente",
           rejected: "rejeitado",
-          in_review: "em revisão"
+          in_review: "em revisão",
+          closed: "fechado",
+          advanced_closed: "adiantamento fechado",
+          waiting_refund: "aguardando reembolso"
         },
         statusLabels: {
           approved: "Aprovado",
@@ -373,10 +446,17 @@ export const subsidyApprovalsTranslations = {
           approved: "Aprovado",
           rejected: "Rejeitado",
           closed: "Fechado",
-          advanced_closed: "Adiantamento Fechado"
+          advanced_closed: "Adiantamento Fechado",
+          waiting_refund: "Aguardando Reembolso"
         }
-      }
-    }
+      }    },
+    
+    // Roles
+    roles: {
+      requester: "Solicitante",
+      projectOwner: "Proprietário do Projeto",
+      departmentLeader: "Líder do Departamento",
+      financeManager: "Gerente Financeiro"    }
   },
   
   nl: {
@@ -406,7 +486,8 @@ export const subsidyApprovalsTranslations = {
       documentsPending: "Alle documenten moeten eerst worden gevalideerd",
       mustBeAdvancedClosed: "Voorschotsubsidies moeten eerst Geavanceerd Gesloten zijn.",
       documentsRejected: "Kan subsidie met afgewezen documenten niet goedkeuren",
-      onlyFinancialCanClose: "Alleen gebruikers met de rol Financieel Manager kunnen subsidieaanvragen sluiten"
+      onlyFinancialCanClose: "Alleen gebruikers met de rol Financieel Manager kunnen subsidieaanvragen sluiten",
+      refundNotRequested: "Er is geen terugbetaling aangevraagd voor deze subsidie"
     },
     
     // Default values
@@ -451,7 +532,8 @@ export const subsidyApprovalsTranslations = {
       approved: "Goedgekeurd",
       closed: "Gesloten",
       rejected: "Afgewezen",
-      advanced_closed: "Geavanceerd Gesloten"
+      advanced_closed: "Geavanceerd Gesloten",
+      waiting_refund: "Wacht op Terugbetaling"
     },
     
     // Priority labels
@@ -463,13 +545,20 @@ export const subsidyApprovalsTranslations = {
     
     // Table columns
     table: {
-      requestTitle: "Aanvraag Titel",
+      requestTitle: "Aanvraag",
+      type: "Type",
       requested: "Aangevraagd",
       activities: "Activiteiten",
       priority: "Prioriteit",
       status: "Status",
       date: "Datum",
+      responsibles: "Verantwoordelijken",
       actions: "Acties"
+    },
+    types: {
+      advance: "Voorschot",
+      refund: "Terugbetaling",
+      subsidy: "Subsidie"
     },
     
     // Actions
@@ -483,6 +572,24 @@ export const subsidyApprovalsTranslations = {
       }
     },
     
+    // Permissions
+    permissions: {
+      financeOnly: "Alleen financiële gebruikers kunnen subsidieaanvragen goedkeuren of afwijzen"
+    },
+    
+    // UI Labels
+    ui: {
+      itemCountLabel: "aanvragen"
+    },
+    
+    // Filters
+    filters: {
+      showAllRequests: "Toon alleen mijn aanvragen",
+      showingMyRequests: "Toont alleen mijn aanvragen",
+      clickToShowAll: "Klik om alle aanvragen te tonen",
+      clickToFilter: "Klik om te filteren op uw verantwoordelijkheden"
+    },
+    
     // Kanban
     kanban: {
       groups: {
@@ -491,7 +598,8 @@ export const subsidyApprovalsTranslations = {
         approved: "Goedgekeurd",
         closed: "Gesloten",
         rejected: "Afgewezen",
-        advanced_closed: "Geavanceerd Gesloten"
+        advanced_closed: "Geavanceerd Gesloten",
+        waiting_refund: "Wacht op Terugbetaling"
       }
     },
     
@@ -502,7 +610,8 @@ export const subsidyApprovalsTranslations = {
       approved: "Subsidie is goedgekeurd en vrijgegeven voor betaling. Dit is een onomkeerbare actie en kan alleen overgaan naar Gesloten. Updates aan de subsidie of bestanden zijn nog mogelijk.",
       rejected: "Subsidie is afgewezen en zal om een bepaalde reden niet worden gesubsidieerd. Dit is een onomkeerbare actie en kan alleen overgaan naar Gesloten. Updates aan de subsidie of bestanden zijn nog mogelijk.",
       closed: "Eindstatus, wat aangeeft dat alle noodzakelijke acties voor de subsidie zijn voltooid. Vanaf hier kunnen geen update- of verwijderacties meer worden uitgevoerd op de subsidie of bestanden.",
-      advanced_closed: "Eindstatus voor voorschotsubsidies. Geeft aan dat het voorschot is verrekend en afgesloten."
+      advanced_closed: "Eindstatus voor voorschotsubsidies. Geeft aan dat het voorschot is verrekend en afgesloten.",
+      waiting_refund: "Subsidie wacht op terugbetalingsverwerking. Fondsen worden na bevestiging teruggegeven aan het jaarbudget."
     },
     
     // Card Header
@@ -541,7 +650,10 @@ export const subsidyApprovalsTranslations = {
           approved: "goedgekeurd",
           pending: "in behandeling",
           rejected: "afgewezen",
-          in_review: "in beoordeling"
+          in_review: "in beoordeling",
+          closed: "gesloten",
+          advanced_closed: "geavanceerd gesloten",
+          waiting_refund: "wachtend op terugbetaling"
         },
         statusLabels: {
           approved: "Goedgekeurd",
@@ -563,9 +675,18 @@ export const subsidyApprovalsTranslations = {
           approved: "Goedgekeurd",
           rejected: "Afgewezen",
           closed: "Gesloten",
-          advanced_closed: "Geavanceerd Gesloten"
+          advanced_closed: "Geavanceerd Gesloten",
+          waiting_refund: "Wachtend op Terugbetaling"
         }
       }
+    },
+    
+    // Roles
+    roles: {
+      requester: "Aanvrager",
+      projectOwner: "Projecteigenaar",
+      departmentLeader: "Afdelingshoofd",
+      financeManager: "Financiël Manager"
     }
   }
 }

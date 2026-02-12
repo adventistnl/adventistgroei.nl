@@ -75,6 +75,9 @@ export interface UpdateSubsidyRequest_updateSubsidyRequest {
   department_id: string;
   church_id: string | null;
   project_id: string;
+  refund_amount: any;
+  have_refund: boolean;
+  refund_done: boolean;
   subsidy_status: UpdateSubsidyRequest_updateSubsidyRequest_subsidy_status;
   institution: UpdateSubsidyRequest_updateSubsidyRequest_institution;
   department: UpdateSubsidyRequest_updateSubsidyRequest_department;

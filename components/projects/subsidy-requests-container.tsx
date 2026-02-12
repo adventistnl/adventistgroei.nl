@@ -163,12 +163,12 @@ export function SubsidyRequestsContainer({
       <div className={cn(gridColSpan, className, "h-full")}>
       <div className="bg-card text-card-foreground flex gap-6 rounded-xl border p-3 shadow-sm h-full flex flex-col">
         {/* Header */}
-        <div className="flex items-start justify-between flex-shrink-0">
-          <div className="space-y-0.5">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{defaultTitle}</h3>
-            {description && <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>}
+        <div className="flex flex-col sm:flex-row sm:items-start items-stretch justify-between gap-3 sm:gap-4 flex-shrink-0">
+          <div className="space-y-0.5 flex-1 min-w-0">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{defaultTitle}</h3>
+            {description && <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{description}</p>}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 sm:flex-shrink-0">
 
           {/* Advance Button */}
           <WithPermission requiredPermissions={[PermissionResolverName.CreateSubsidyRequest]}>
@@ -176,12 +176,12 @@ export function SubsidyRequestsContainer({
                 onClick={() => setIsAdvanceModalOpen(true)}
                 size="sm"
                 variant="outline"
-                className="gap-2"
+                className="gap-1.5 sm:gap-2 flex-1 sm:flex-initial"
                 disabled={displaySubsidies.some(s => s.is_for_advance && s.status !== 'rejected')}
                 title={displaySubsidies.some(s => s.is_for_advance && s.status !== 'rejected') ? t("subsidy.advanceAlreadyExists") : ""}
               >
-                <Banknote className="h-4 w-4" />
-                {t("subsidyRequest.advance.button")}
+                <Banknote className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{t("subsidyRequest.advance.button")}</span>
               </Button>
           </WithPermission>
 
@@ -191,10 +191,10 @@ export function SubsidyRequestsContainer({
               <Button
                 onClick={onAddSubsidy}
                 size="sm"
-                className="gap-2 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 dark:text-gray-900"
+                className="gap-1.5 sm:gap-2 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 dark:text-gray-900 flex-1 sm:flex-initial"
               >
-                <Plus className="h-4 w-4" />
-                {t("common.add")}
+                <Plus className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{t("common.add")}</span>
               </Button>
             </WithPermission>
           )}

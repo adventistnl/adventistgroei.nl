@@ -12,10 +12,6 @@ interface ProfileHeaderProps {
 }
 
 export function ProfileHeader({ name, email, avatar, isComplete = false }: ProfileHeaderProps) {
-  // Debug: Log when props change
-  useEffect(() => {
-    console.log("👤 ProfileHeader received props:", { name, email, avatar, isComplete })
-  }, [name, email, avatar, isComplete])
 
   const initials = name
     .split(" ")

@@ -7,6 +7,8 @@ import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { useAuth } from "@/contexts/auth-context"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { 
   CheckCircle, 
   RefreshCw,
@@ -18,7 +20,7 @@ import "@/lib/i18n"
 import { createPrivacyConfig } from "@/config/privacy-roles.config"
 
 // Components
-import { SubsidyApprovalsManager } from "@/components/finance/subsidy-approvals-manager"
+import { SubsidyRequestManager } from "@/components/finance/subsidy-request-manager"
 import { GlobalPrivacyToggle } from "@/components/shared/global-privacy-toggle"
 import { useInstitution } from "@/contexts/institution-context"
 import { WithPermission } from "@/hocs/with-permission"
@@ -26,14 +28,24 @@ import { AccessDenied } from "@/components/access/access-denied"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { GET_ALL_SUBSIDY_REQUESTS } from "@/graphql/queries/SUBSIDY_REQUESTS_QUERY"
 import { GET_SUBSIDY_ANALYTICS } from "@/graphql/queries/SUBSIDY_ANALYTICS_QUERIES"
-import { subsidyApprovalsTranslations } from "@/lib/translations/subsidy-approvals"
+import { subsidyRequestTranslations } from "@/lib/translations/subsidy-request"
 
-export default function SubsidyApprovalsPage() {
+export default function SubsidyRequestPage() {
   const { t, i18n } = useTranslation()
+  const { user } = useAuth()
   const { currentInstitutionData, loading: institutionLoading } = useInstitution()
   const [refreshing, setRefreshing] = useState(false)
+  const [filterByResponsible, setFilterByResponsible] = useState(true) // Default: mostrar apenas pedidos do usuário
   
-  const translations = subsidyApprovalsTranslations[i18n.language as keyof typeof subsidyApprovalsTranslations] || subsidyApprovalsTranslations.en
+  const translations = subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations] || subsidyRequestTranslations.en
+
+  // Get user initials for the filter button
+  const userInitials = React.useMemo(() => {
+    if (!user?.name) return '??'
+    const names = user.name.trim().split(' ')
+    if (names.length === 1) return names[0].substring(0, 2).toUpperCase()
+    return (names[0][0] + names[names.length - 1][0]).toUpperCase()
+  }, [user?.name])
 
   // Privacy configurations for KPIs (memoized to ensure stable IDs)
   const PRIVACY_CONFIGS = useMemo(() => ({
@@ -56,12 +68,36 @@ export default function SubsidyApprovalsPage() {
   // Fetch subsidy requests from backend
   const { data: subsidyData, loading: subsidyLoading, error: subsidyError, refetch: refetchSubsidies } = useQuery(GET_ALL_SUBSIDY_REQUESTS, {
     fetchPolicy: 'network-only', // Always fetch from server to ensure fresh data
+    onError: (error) => {
+      console.error('[SubsidyApprovals] GraphQL Error:', error)
+      console.error('[SubsidyApprovals] Network Error:', error.networkError)
+      console.error('[SubsidyApprovals] GraphQL Errors:', error.graphQLErrors)
+    }
   })
+
+  // 🔍 DEBUG: Log subsidy data
+  useEffect(() => {
+    console.log('[DEBUG] SubsidyData:', {
+      hasData: !!subsidyData,
+      subsidyRequests: subsidyData?.subsidyRequests,
+      requestsCount: subsidyData?.subsidyRequests?.length,
+      loading: subsidyLoading,
+      error: subsidyError
+    })
+  }, [subsidyData, subsidyLoading, subsidyError])
 
   // Handle subsidy error with useEffect (Apollo Client v3.14+)
   useEffect(() => {
     if (subsidyError) {
-      toast.error(translations.toasts.loadingError)
+      const errorMessage = subsidyError.graphQLErrors?.[0]?.message || 
+                          subsidyError.message || 
+                          translations.toasts.loadingError
+      console.error('[SubsidyApprovals] Error details:', {
+        message: errorMessage,
+        graphQLErrors: subsidyError.graphQLErrors,
+        networkError: subsidyError.networkError
+      })
+      toast.error(`${translations.toasts.loadingError}: ${errorMessage}`)
     }
   }, [subsidyError, translations.toasts.loadingError])
 
@@ -72,8 +108,46 @@ export default function SubsidyApprovalsPage() {
     skip: !currentInstitutionData?.id,
   })
 
+  // 🔍 DEBUG: Log analytics data
+  useEffect(() => {
+    console.log('[DEBUG] AnalyticsData:', {
+      hasData: !!analyticsData,
+      analytics: analyticsData,
+      loading: analyticsLoading,
+      institutionId: currentInstitutionData?.id,
+      skipped: !currentInstitutionData?.id
+    })
+  }, [analyticsData, analyticsLoading, currentInstitutionData?.id])
+
+  // 🔍 DEBUG: Log institution data
+  useEffect(() => {
+    console.log('[DEBUG] InstitutionData:', {
+      hasData: !!currentInstitutionData,
+      institutionId: currentInstitutionData?.id,
+      institutionName: currentInstitutionData?.name,
+      usersCount: currentInstitutionData?.users?.length,
+      loading: institutionLoading
+    })
+  }, [currentInstitutionData, institutionLoading])
+
   // Combined loading state
   const isLoading = institutionLoading || subsidyLoading || analyticsLoading
+
+  // 🔍 DEBUG: Log props being passed to SubsidyRequestManager
+  useEffect(() => {
+    console.log('[DEBUG] Props for SubsidyRequestManager:', {
+      context: 'institution',
+      entityId: currentInstitutionData?.id,
+      institutionUsersCount: currentInstitutionData?.users?.length,
+      isLoading,
+      hasSubsidyData: !!subsidyData,
+      subsidyRequestsCount: subsidyData?.subsidyRequests?.length,
+      hasAnalyticsData: !!analyticsData,
+      filterByUserId: filterByResponsible ? user?.id : undefined,
+      userId: user?.id,
+      filterByResponsible
+    })
+  }, [currentInstitutionData, subsidyData, analyticsData, isLoading, filterByResponsible, user?.id])
 
   // Refresh handler
   const handleRefresh = async () => {
@@ -121,6 +195,42 @@ export default function SubsidyApprovalsPage() {
             </div>
 
             <div className="flex items-center gap-3">
+              {/* Filter by User Responsible Toggle */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={filterByResponsible ? "default" : "outline"}
+                      size="icon"
+                      onClick={() => setFilterByResponsible(!filterByResponsible)}
+                      className={`relative h-10 w-10 rounded-full transition-all ${
+                        filterByResponsible 
+                          ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                          : 'hover:bg-accent'
+                      }`}
+                    >
+                      <span className="text-sm font-semibold">
+                        {userInitials}
+                      </span>
+                      {filterByResponsible && (
+                        <span className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full border-2 border-background" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="z-[70]">
+                    <p className="font-medium">
+                      {filterByResponsible 
+                        ? translations.filters?.showingMyRequests || 'Mostrando apenas meus pedidos'
+                        : translations.filters?.showAllRequests || 'Mostrar apenas meus pedidos'
+                      }
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {user?.name}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
               <GlobalPrivacyToggle 
                 variant="icon"
                 size="icon"
@@ -137,10 +247,11 @@ export default function SubsidyApprovalsPage() {
             </div>
           </div>
 
-          {/* Subsidy Approvals Manager Component */}
-          <SubsidyApprovalsManager 
+          {/* Subsidy Request Manager Component */}
+          <SubsidyRequestManager 
             context="institution"
             entityId={currentInstitutionData?.id}
+            institutionUsers={currentInstitutionData?.users || []}
             isLoading={isLoading}
             onRefresh={handleRefresh}
             showCharts={true}
@@ -152,6 +263,7 @@ export default function SubsidyApprovalsPage() {
               await refetchAnalytics()
             }}
             privacyConfigs={PRIVACY_CONFIGS}
+            filterByUserId={filterByResponsible ? user?.id : undefined}
           />
         </div>
       </WithPermission>

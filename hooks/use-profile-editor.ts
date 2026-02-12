@@ -29,7 +29,6 @@ export function useProfileEditor(initialProfile: ExtendedProfile, refetchUser?: 
 
   // Sync profile when initialProfile changes (e.g., when user data loads)
   useEffect(() => {
-    console.log("🔄 useProfileEditor: Syncing with new initialProfile", initialProfile)
     setProfile(initialProfile)
     setEditData(initialProfile)
   }, [initialProfile])
@@ -76,7 +75,6 @@ export function useProfileEditor(initialProfile: ExtendedProfile, refetchUser?: 
         return
       }
 
-      console.log("Updating own user profile with data:", updateData)
       
       // Call the updateOwnUser mutation
       const result = await updateOwnUser({
@@ -108,7 +106,6 @@ export function useProfileEditor(initialProfile: ExtendedProfile, refetchUser?: 
         
         // Refetch user data to get updated information
         if (refetchUser) {
-          console.log("Refetching user data...")
           await refetchUser()
         }
         
@@ -125,15 +122,12 @@ export function useProfileEditor(initialProfile: ExtendedProfile, refetchUser?: 
               address: updatedUser.contact?.address || authUser.contact.address || '',
             } : undefined
           }
-          console.log("Updating auth context with new user data...")
           updateAuthUser(updatedAuthUser)
         }
         
         toast.success('Profile updated successfully!')
-        console.log("User profile updated successfully")
       }
     } catch (error: any) {
-      console.error("Error updating user profile:", error)
       
       // Show user-friendly error message
       if (error.message?.includes('permission')) {

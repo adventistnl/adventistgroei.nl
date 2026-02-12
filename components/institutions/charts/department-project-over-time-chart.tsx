@@ -61,17 +61,6 @@ export function DepartmentProjectOverTimeChart({
       dept && dept.id && dept.name && !dept.is_deleted && dept.church_id
     )
     
-    console.log('📊 [DepartmentProjectOverTimeChart] Church Departments:', {
-      total: departments.length,
-      filtered: filtered.length,
-      departmentsList: filtered.map(d => ({ 
-        id: d.id, 
-        name: d.name, 
-        church_id: d.church_id,
-        church_name: d.church_name 
-      }))
-    })
-    
     return filtered
   }, [departments])
 
@@ -83,17 +72,6 @@ export function DepartmentProjectOverTimeChart({
     const filtered = projects.filter((p: any) => 
       p.church_department_id && churchDeptIds.has(p.church_department_id)
     )
-    
-    console.log('📊 [DepartmentProjectOverTimeChart] Projects filtered:', {
-      totalProjects: projects.length,
-      churchDepartmentProjects: filtered.length,
-      byDepartment: filtered.reduce((acc: any, p: any) => {
-        const dept = churchDepartments.find(d => d.id === p.church_department_id)
-        const deptName = dept?.name || 'Unknown'
-        acc[deptName] = (acc[deptName] || 0) + 1
-        return acc
-      }, {})
-    })
     
     return filtered
   }, [projects, churchDepartments])
@@ -133,15 +111,6 @@ export function DepartmentProjectOverTimeChart({
     const sortedData = Array.from(dailyCounts.values()).sort((a, b) => 
       new Date(a.date).getTime() - new Date(b.date).getTime()
     )
-    
-    console.log('📊 [DepartmentProjectOverTimeChart] Chart data:', {
-      totalDays: sortedData.length,
-      dateRange: sortedData.length > 0 ? {
-        start: sortedData[0]?.date,
-        end: sortedData[sortedData.length - 1]?.date
-      } : null,
-      sampleData: sortedData.slice(0, 3)
-    })
     
     return sortedData
   }, [churchDepartmentProjects, churchDepartments])

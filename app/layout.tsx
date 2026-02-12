@@ -10,8 +10,6 @@ import { NavigationLoadingProvider } from "@/contexts/navigation-loading-context
 import { CurrencyProvider } from "@/contexts/currency-context"
 import { I18nProvider } from "@/lib/i18n/i18n-provider"
 import { PrivacyProviderWithAuth } from "@/components/shared/privacy-provider-with-auth"
-import { PrivacyDebugPanel } from "@/components/shared/privacy-debug-panel"
-import { PrivacyButtonDebugPanel } from "@/components/shared/privacy-button-debug"
 import { DynamicFavicon } from "@/components/shared/dynamic-favicon"
 import { ToastProvider } from "@/components/ui/toast-provider"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -22,6 +20,9 @@ export const metadata: Metadata = {
   description: "Comprehensive church management platform for Seventh-day Adventist churches",
   generator: "v1.app",
   // Favicons serão gerenciados dinamicamente pelo componente DynamicFavicon
+}
+
+export const viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#000000' },
@@ -44,25 +45,23 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <I18nProvider>
-          <GraphQLProvider>
-            <AuthProvider>
-              <PrivacyProviderWithAuth>
-                <InstitutionProvider>
-                  <CurrencyProvider>
-                    <PageProvider>
-                      <NavigationLoadingProvider>
-                        {children}
-                        <ToastProvider />
-                        <PrivacyDebugPanel />
-                        <PrivacyButtonDebugPanel />
-                      </NavigationLoadingProvider>
-                    </PageProvider>
-                  </CurrencyProvider>
-                </InstitutionProvider>
-              </PrivacyProviderWithAuth>
-            </AuthProvider>
-          </GraphQLProvider>
-        </I18nProvider>
+            <GraphQLProvider>
+              <AuthProvider>
+                <PrivacyProviderWithAuth>
+                  <InstitutionProvider>
+                    <CurrencyProvider>
+                      <PageProvider>
+                        <NavigationLoadingProvider>
+                          {children}
+                          <ToastProvider />
+                        </NavigationLoadingProvider>
+                      </PageProvider>
+                    </CurrencyProvider>
+                  </InstitutionProvider>
+                </PrivacyProviderWithAuth>
+              </AuthProvider>
+            </GraphQLProvider>
+          </I18nProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -485,12 +485,14 @@ export const projectTranslations = {
     
     // Subsidy Management
     subsidy: {
+      advance: "Advance",
       requestsTitle: "Subsidy Requests",
       noRequests: "No subsidy requests",
       noRequestsDescription: "Start by creating a new request.",
       requestCount_one: "request",
       requestCount_other: "requests",
       requestedOn: "Requested on:",
+      responsibleUsers: "Responsible:",
       pending: "Pending",
       approved: "Approved",
       rejected: "Rejected",
@@ -535,6 +537,8 @@ export const projectTranslations = {
       subsidyRejected: "Subsidy request rejected!",
       requestLabel: "Subsidy Request",
       activitiesLower: "activities",
+      activity: "Activity",
+      activities: "Activities",
       receiptsLower: "receipts",
       approvedLower: "approved",
       changeStatus: "Change Status",
@@ -547,7 +551,6 @@ export const projectTranslations = {
       deleteCommentConfirm: "Are you sure you want to delete this comment?",
       statusChangePrefix: "Status changed to {{status}}",
       statusChangeReasonPrefix: "Status changed to {{status}}: {{reason}}",
-      activities: "Activities",
       documents: "Documents",
       noDocuments: "No documents attached",
       loadingDocuments: "Loading documents...",
@@ -560,6 +563,15 @@ export const projectTranslations = {
       mention: "Mention",
       currentStatus: "Current Status",
       currentPriority: "Current Priority",
+      
+      // Roles
+      roles: {
+        requester: "Requester",
+        projectOwner: "Project Owner",
+        departmentLeader: "Department Leader",
+        financeManager: "Finance Manager"
+      },
+      
       placeholders: {
         editComment: "Edit your comment...",
         documentComment: "Type your comment on the document...",
@@ -675,7 +687,9 @@ export const projectTranslations = {
         documentsRejected: "Cannot approve subsidy with rejected documents",
         statusChangeNotAllowed: "This status change is not allowed",
         rejectionReasonRequired: "Please provide a reason for rejection",
-        onlyFinancialCanClose: "Only users with the Financial Manager role can close subsidy requests"
+        onlyFinancialCanClose: "Only users with the Financial Manager role can close subsidy requests",
+        statusUpdateFailed: "Failed to update subsidy status. Please try again.",
+        cannotSendMessageAfterError: "Cannot send message while status update has failed. Please fix the status first."
       },
       
       // Success messages
@@ -775,6 +789,16 @@ export const projectTranslations = {
         warningClosed: "You are about to close this subsidy request. This action cannot be undone.",
         warningGeneric: "You are about to change the status of this request.",
         irreversibleAction: "This action is irreversible"
+      },
+      
+      // Permission tooltips
+      permissions: {
+        requesterRole: "You are the requester",
+        financeUserRole: "Finance User",
+        noPermissionRole: "No permission",
+        documentValidationInfo: "Only the department leader can validate or reject documents. You can add comments.",
+        statusEditInfo: "Only the department leader or finance users can change the request status.",
+        departmentLeaderOnly: "Only department leader can approve"
       }
     },
 
@@ -1542,12 +1566,14 @@ export const projectTranslations = {
     
     // Subsidy Management
     subsidy: {
+      advance: "Voorschot",
       requestsTitle: "Subsidie Aanvragen",
       noRequests: "Geen subsidie aanvragen",
       noRequestsDescription: "Begin met het maken van een nieuwe aanvraag.",
       requestCount_one: "aanvraag",
       requestCount_other: "aanvragen",
       requestedOn: "Aangevraagd op:",
+      responsibleUsers: "Verantwoordelijk:",
       pending: "In Behandeling",
       inReview: "In Beoordeling",
       approved: "Goedgekeurd",
@@ -1592,6 +1618,8 @@ export const projectTranslations = {
       subsidyRejected: "Subsidie aanvraag afgewezen!",
       requestLabel: "Subsidieaanvraag",
       activitiesLower: "activiteiten",
+      activity: "Activiteit",
+      activities: "Activiteiten",
       receiptsLower: "bonnen",
       approvedLower: "goedgekeurd",
       changeStatus: "Status Wijzigen",
@@ -1604,7 +1632,15 @@ export const projectTranslations = {
       deleteCommentConfirm: "Weet u zeker dat u deze opmerking wilt verwijderen?",
       statusChangePrefix: "Status gewijzigd naar {{status}}",
       statusChangeReasonPrefix: "Status gewijzigd naar {{status}}: {{reason}}",
-      activities: "Activiteiten",
+      
+      // Roles
+      roles: {
+        requester: "Aanvrager",
+        projectOwner: "Projecteigenaar",
+        departmentLeader: "Afdelingshoofd",
+        financeManager: "Financiële Manager"
+      },
+      
       documents: "Documenten",
       noDocuments: "Geen documenten bijgevoegd",
       loadingDocuments: "Documenten laden...",
@@ -1731,7 +1767,9 @@ export const projectTranslations = {
         documentsRejected: "Kan subsidie niet goedkeuren met afgewezen documenten",
         statusChangeNotAllowed: "Deze statuswijziging is niet toegestaan",
         rejectionReasonRequired: "Geef een reden op voor afwijzing",
-        onlyFinancialCanClose: "Alleen gebruikers met de rol Financieel Manager kunnen subsidieaanvragen sluiten"
+        onlyFinancialCanClose: "Alleen gebruikers met de rol Financieel Manager kunnen subsidieaanvragen sluiten",
+        statusUpdateFailed: "Kan subsidiestatus niet bijwerken. Probeer het opnieuw.",
+        cannotSendMessageAfterError: "Kan geen bericht verzenden terwijl de statusupdate is mislukt. Herstel eerst de status."
       },
       
       // Success messages
@@ -1831,6 +1869,16 @@ export const projectTranslations = {
         warningClosed: "U staat op het punt dit subsidieverzoek te sluiten. Deze actie kan niet ongedaan worden gemaakt.",
         warningGeneric: "U staat op het punt de status van dit verzoek te wijzigen.",
         irreversibleAction: "Deze actie is onomkeerbaar"
+      },
+      
+      // Toestemming tooltips
+      permissions: {
+        requesterRole: "U bent de aanvrager",
+        financeUserRole: "Financiële Gebruiker",
+        noPermissionRole: "Geen toestemming",
+        documentValidationInfo: "Alleen de afdelingsleider kan documenten valideren of afwijzen. U kunt opmerkingen toevoegen.",
+        statusEditInfo: "Alleen de afdelingsleider of financiële gebruikers kunnen de aanvraagstatus wijzigen.",
+        departmentLeaderOnly: "Alleen afdelingsleider kan goedkeuren"
       }
     },
     
@@ -2618,6 +2666,7 @@ export const projectTranslations = {
       requestCount_one: "solicitação",
       requestCount_other: "solicitações",
       requestedOn: "Solicitado em:",
+      responsibleUsers: "Responsáveis:",
       pending: "Pendente",
       inReview: "In Beoordeling",
       approved: "Goedgekeurd",
@@ -2662,6 +2711,8 @@ export const projectTranslations = {
       subsidyRejected: "Pedido de subsídio rejeitado!",
       requestLabel: "Pedido de Subsídio",
       activitiesLower: "atividades",
+      activity: "Atividade",
+      activities: "Atividades",
       receiptsLower: "recibos",
       approvedLower: "aprovado",
       changeStatus: "Alterar Status",
@@ -2675,6 +2726,13 @@ export const projectTranslations = {
       statusChangePrefix: "Alteração de status para {{status}}",
       statusChangeReasonPrefix: "Alteração de status para {{status}}: {{reason}}",
       
+      // Roles
+      roles: {
+        requester: "Solicitante",
+        projectOwner: "Proprietário do Projeto",
+        departmentLeader: "Líder do Departamento",
+        financeManager: "Gerente Financeiro"
+      },
       // Delete Subsidy Request Modal
       deleteRequest: {
         title: "Excluir Solicitação de Subsídio",
@@ -2754,7 +2812,9 @@ export const projectTranslations = {
         documentsRejected: "Não é possível aprovar subsídio com documentos rejeitados",
         statusChangeNotAllowed: "Esta mudança de status não é permitida",
         rejectionReasonRequired: "Por favor, forneça um motivo para a rejeição",
-        onlyFinancialCanClose: "Apenas usuários com a função de Gerente Financeiro podem fechar solicitações de subsídio"
+        onlyFinancialCanClose: "Apenas usuários com a função de Gerente Financeiro podem fechar solicitações de subsídio",
+        statusUpdateFailed: "Falha ao atualizar o status do subsídio. Por favor, tente novamente.",
+        cannotSendMessageAfterError: "Não é possível enviar mensagem enquanto a atualização do status falhou. Por favor, corrija o status primeiro."
       },
       
       // Mensagens de sucesso
@@ -2854,6 +2914,16 @@ export const projectTranslations = {
         warningClosed: "Você está prestes a fechar esta solicitação de subsídio. Esta ação não pode ser desfeita.",
         warningGeneric: "Você está prestes a alterar o status desta solicitação.",
         irreversibleAction: "Esta ação é irreversível"
+      },
+      
+      // Tooltips de permissões
+      permissions: {
+        requesterRole: "Você é o solicitante",
+        financeUserRole: "Usuário Financeiro",
+        noPermissionRole: "Sem permissão",
+        documentValidationInfo: "Apenas o líder do departamento pode validar ou rejeitar documentos. Você pode adicionar comentários.",
+        statusEditInfo: "Apenas o líder do departamento ou usuários financeiros podem alterar o status da solicitação.",
+        departmentLeaderOnly: "Apenas líder do departamento pode aprovar"
       }
     },
 
