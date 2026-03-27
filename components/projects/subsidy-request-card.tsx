@@ -34,6 +34,7 @@ export interface SubsidyRequestCardData {
   rejected_at?: Date
   archived?: boolean
   // Advance request fields
+  request_type?: string
   is_for_advance?: boolean
   advance_amount?: number
   // IDs for editing

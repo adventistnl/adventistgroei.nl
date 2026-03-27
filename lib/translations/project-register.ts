@@ -115,12 +115,17 @@ export const projectRegisterTranslations = {
       churchProject: "Enable if this project is linked to a specific church",
       churchDepartment: "Specific church department responsible for this project",
       department: "Select the institutional department for budget allocation",
-      responsible: "Select the person responsible for managing this project"
+      responsible: "Automatically set from the department leader"
+    },
+    labels: {
+      departmentLeader: "Leader"
     },
     placeholders: {
       enterProjectTitle: "Enter project title",
       describeProject: "Describe the project objectives and scope",
       selectDepartment: "Select department",
+      selectDepartmentFirst: "Select a department first",
+      noLeaderAssigned: "No leader assigned to this department",
       selectResponsible: "Select responsible",
       selectResponsibilityType: "Select responsibility type",
       selectDeadline: "Select deadline",
@@ -172,7 +177,8 @@ export const projectRegisterTranslations = {
       reason1: "The annual budget has not been finalized yet",
       reason2: "Department budgets are under approval process",
       reason3: "No budget is available for new projects",
-      contactAdvice: "Contact the administrator or finance manager for more information."
+      contactAdvice: "Contact the administrator or finance manager for more information.",
+      leaderNotFound: "Department leader not found in the users list."
     },
     actions: {
       moreInfo: "More Info"
@@ -470,7 +476,14 @@ export const projectRegisterTranslations = {
       subsidized: "Subsidized",
       nonSubsidized: "Non-Subsidized",
       specialProject: "Special Project",
-      activitiesRegistered: "activities registered"
+      activitiesRegistered: "activities registered",
+      responsible: "Responsible People",
+      owner: "Owner",
+      coOwner: "Co-Owner",
+      responsibilityType: "Responsibility Type",
+      settings: "Settings",
+      private: "Private",
+      publicEvent: "Public Event"
     }
   },
   pt: {
@@ -589,12 +602,17 @@ export const projectRegisterTranslations = {
       churchProject: "Ative se este projeto for vinculado a uma igreja específica",
       churchDepartment: "Departamento específico da igreja responsável por este projeto",
       department: "Selecione o departamento institucional para alocação de orçamento",
-      responsible: "Selecione a pessoa responsável por gerenciar este projeto"
+      responsible: "Preenchido automaticamente pelo líder do departamento selecionado"
+    },
+    labels: {
+      departmentLeader: "Líder"
     },
     placeholders: {
       enterProjectTitle: "Digite o título do projeto",
       describeProject: "Descreva os objetivos e escopo do projeto",
       selectDepartment: "Selecione o departamento",
+      selectDepartmentFirst: "Selecione um departamento primeiro",
+      noLeaderAssigned: "Nenhum líder atribuído ao departamento",
       selectResponsible: "Selecione o responsável",
       selectResponsibilityType: "Selecione o tipo de responsabilidade",
       selectDeadline: "Selecione o prazo",
@@ -646,7 +664,8 @@ export const projectRegisterTranslations = {
       reason1: "O orçamento anual ainda não foi finalizado",
       reason2: "Os orçamentos departamentais estão em processo de aprovação",
       reason3: "Não há orçamento disponível para novos projetos",
-      contactAdvice: "Entre em contato com o administrador ou responsável financeiro para mais informações."
+      contactAdvice: "Entre em contato com o administrador ou responsável financeiro para mais informações.",
+      leaderNotFound: "Líder do departamento não encontrado na lista de usuários."
     },
     actions: {
       moreInfo: "Mais Informações"
@@ -944,7 +963,14 @@ export const projectRegisterTranslations = {
       subsidized: "Subsidiadas",
       nonSubsidized: "Não Subsidiadas",
       specialProject: "Projeto Especial",
-      activitiesRegistered: "atividades registradas"
+      activitiesRegistered: "atividades registradas",
+      responsible: "Pessoas Responsáveis",
+      owner: "Responsável",
+      coOwner: "Co-Responsável",
+      responsibilityType: "Tipo de Responsabilidade",
+      settings: "Configurações",
+      private: "Privado",
+      publicEvent: "Evento Público"
     }
   },
   nl: {
@@ -1011,7 +1037,7 @@ export const projectRegisterTranslations = {
       churchProject: "Schakel in als dit project aan een specifieke kerk is gekoppeld",
       churchDepartment: "Specifieke kerkafdeling verantwoordelijk voor dit project",
       department: "Selecteer de institutionele afdeling voor budgettoewijzing",
-      responsible: "Selecteer de persoon verantwoordelijk voor het beheer van dit project",
+      responsible: "Automatisch ingesteld op basis van de afdelingsleider",
       projectResponsibleType: "Definieer wie verantwoordelijk zal zijn voor dit project",
       registerAsEvent: "Creëert een openbaar evenement gekoppeld aan dit project",
       privateProject: "Project is alleen zichtbaar voor geautoriseerde leden",
@@ -1026,6 +1052,8 @@ export const projectRegisterTranslations = {
       enterProjectTitle: "Voer projecttitel in",
       describeProject: "Beschrijf de projectdoelstellingen en reikwijdte",
       selectDepartment: "Selecteer afdeling",
+      selectDepartmentFirst: "Selecteer eerst een afdeling",
+      noLeaderAssigned: "Geen leider toegewezen aan deze afdeling",
       selectDeadline: "Selecteer deadline",
       addResponsiblePerson: "Voeg verantwoordelijke persoon toe",
       enterActivityName: "Voer activiteitsnaam in",
@@ -1068,7 +1096,11 @@ export const projectRegisterTranslations = {
       reason1: "De jaarlijkse begroting is nog niet gefinaliseerd",
       reason2: "Afdelingsbudgetten zijn in het goedkeuringsproces",
       reason3: "Er is geen budget beschikbaar voor nieuwe projecten",
-      contactAdvice: "Neem contact op met de beheerder of financiële manager voor meer informatie."
+      contactAdvice: "Neem contact op met de beheerder of financiële manager voor meer informatie.",
+      leaderNotFound: "Afdelingsleider niet gevonden in de gebruikerslijst."
+    },
+    labels: {
+      departmentLeader: "Leider"
     },
     actions: {
       moreInfo: "Meer Info"
@@ -1321,7 +1353,14 @@ export const projectRegisterTranslations = {
       subsidized: "Gesubsidieerd",
       nonSubsidized: "Niet-gesubsidieerd",
       specialProject: "Speciaal Project",
-      activitiesRegistered: "activiteiten geregistreerd"
+      activitiesRegistered: "activiteiten geregistreerd",
+      responsible: "Verantwoordelijke Personen",
+      owner: "Eigenaar",
+      coOwner: "Mede-eigenaar",
+      responsibilityType: "Type Verantwoordelijkheid",
+      settings: "Instellingen",
+      private: "Privé",
+      publicEvent: "Publiek Evenement"
     }
   }
 }

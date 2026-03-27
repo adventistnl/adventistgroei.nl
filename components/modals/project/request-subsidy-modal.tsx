@@ -36,11 +36,16 @@ const FUNDING_POLICIES = {
   default_institution_percent: 65
 }
 
+// ─── Unified request type ─────────────────────────────────────────────────────
+export type RequestType = "advance" | "without_document" | "with_document"
+
 interface SubsidyRequestItem {
   activity_id: string
   activity_name: string
   requested_amount: number
   budget_amount: number
+  /** Original institution-approved amount from the funding plan (used for MAX button) */
+  institution_requested_amount?: number
   activity_documents: UploadedDocument[]
   notes: string
   existing_receipt_updates?: {
@@ -75,6 +80,12 @@ interface RequestSubsidyModalProps {
   departmentName?: string
   churchName?: string
   churchDepartmentName?: string
+  /** Annual budget allocated to the institutional department (from annual_budgets for current year) */
+  departmentAllocatedBudget?: number
+  /** Total expenses already recorded in the institutional department budget for the current year */
+  departmentBudgetUsed?: number
+  /** Year of the department annual budget being shown */
+  departmentBudgetYear?: number
   /** Subsidy request ID (required for edit mode to upload files) */
   subsidyRequestId?: string
   onSubmit: (data: SubsidyRequestData) => Promise<string | void> // Returns subsidy ID in create mode
@@ -86,6 +97,16 @@ interface RequestSubsidyModalProps {
   /** IDs of activities that already have subsidies */
   subsidizedActivityIds?: string[]
   availableBudget?: number
+  /** Subsidized budget of the project (used for advance max calculation) */
+  subsidizedBudget?: number
+  /** Project name for advance form display */
+  projectName?: string
+  /** Pre-select request type when modal opens (default: "with_document") */
+  initialRequestType?: RequestType
+  /** Called when advance type is submitted; receives the approved advance amount */
+  onAdvanceSubmit?: (advanceAmount: number) => Promise<void>
+  /** Total amount already committed in other subsidy requests for this project (excluding rejected) */
+  totalAlreadyRequested?: number
 }
 
 export interface SubsidyRequestData {
@@ -95,6 +116,8 @@ export interface SubsidyRequestData {
   project_id: string
   requested_amount: number
   is_for_advance?: boolean
+  /** Type that routes to the correct backend mutation */
+  request_type?: 'WITH_DOCUMENT' | 'WITHOUT_DOCUMENT' | 'ADVANCE'
   notes: string
   items: SubsidyRequestItem[]
 }
@@ -112,6 +135,9 @@ export function RequestSubsidyModal({
   departmentName = "",
   churchName = "",
   churchDepartmentName = "",
+  departmentAllocatedBudget = 0,
+  departmentBudgetUsed = 0,
+  departmentBudgetYear,
   subsidyRequestId,
   onSubmit,
   allActivities = [],
@@ -119,10 +145,36 @@ export function RequestSubsidyModal({
   mode = "create",
   subsidizedActivityIds = [],
   availableBudget = 0,
+  subsidizedBudget = 0,
+  projectName,
+  initialRequestType,
+  onAdvanceSubmit,
+  totalAlreadyRequested = 0,
 }: RequestSubsidyModalProps) {
   const { formatCurrency, selectedCurrency } = useCurrency()
   const { t, i18n } = useTranslation()
   const [dragActive, setDragActive] = useState(false)
+
+  // ── Unified request type ────────────────────────────────────────────────────
+  const [requestType, setRequestType] = useState<RequestType>(initialRequestType ?? "with_document")
+  const [advanceAmount, setAdvanceAmount] = useState<string>("")
+  const [advanceConfirmed, setAdvanceConfirmed] = useState(false)
+  const [advanceError, setAdvanceError] = useState<string | null>(null)
+  const maxAdvance = subsidizedBudget * 0.5
+
+  // without_document: awareness checkbox
+  const [withoutDocConfirmed, setWithoutDocConfirmed] = useState(false)
+
+  // Reset advance state when modal opens / type changes
+  React.useEffect(() => {
+    if (isOpen) {
+      setRequestType(initialRequestType ?? "with_document")
+      setAdvanceAmount("")
+      setAdvanceConfirmed(false)
+      setAdvanceError(null)
+      setWithoutDocConfirmed(false)
+    }
+  }, [isOpen, initialRequestType])
   
   // Permission checks
   const canUpdate = useHasPermission([PermissionResolverName.UpdateSubsidyRequest])
@@ -156,23 +208,6 @@ export function RequestSubsidyModal({
   // Usar o nome do church_department encontrado, ou o passado via props como fallback
   const finalChurchDepartmentName = resolvedChurchDepartment?.name || churchDepartmentName
   
-  // Debug: Log church department resolution
-  React.useEffect(() => {
-    if (isOpen && churchDepartmentId) {
-      console.log('🏛️ [RequestSubsidyModal] Church Department Resolution:', {
-        churchDepartmentIdFromProps: churchDepartmentId,
-        churchDepartmentNameFromProps: churchDepartmentName,
-        allChurchDepartmentsCount: allChurchDepartments.length,
-        resolvedChurchDepartment: resolvedChurchDepartment ? {
-          id: resolvedChurchDepartment.id,
-          name: resolvedChurchDepartment.name,
-          church_id: resolvedChurchDepartment.church_id,
-          church_name: resolvedChurchDepartment.church_name
-        } : null,
-        finalChurchDepartmentName
-      })
-    }
-  }, [isOpen, churchDepartmentId, churchDepartmentName, allChurchDepartments, resolvedChurchDepartment, finalChurchDepartmentName])
   const [currentActivityIndex, setCurrentActivityIndex] = useState(0)
   const [isEditingValues, setIsEditingValues] = useState(false)
   const [tempRequestedAmount, setTempRequestedAmount] = useState(0)
@@ -182,28 +217,6 @@ export function RequestSubsidyModal({
   const [pendingFiles, setPendingFiles] = useState<Map<string, File>>(new Map()) // Files pending upload (create mode)
   const [isSubmitting, setIsSubmitting] = useState(false) // Loading state for submission
 
-  // Debug: Log props received
-  React.useEffect(() => {
-    if (isOpen) {
-      console.log('💰 [RequestSubsidyModal] Props received:', {
-        mode,
-        projectId,
-        institutionId,
-        institutionName,
-        departmentId,
-        departmentName,
-        churchId,
-        churchName,
-        churchDepartmentId,
-        churchDepartmentNameFromProps: churchDepartmentName,
-        finalChurchDepartmentName,
-        selectedActivitiesCount: selectedActivities.length,
-        subsidyRequestId,
-        availableBudget,
-        activityBudgets: selectedActivities.map(a => ({ id: a.id, name: a.name, budget: a.budget_amount }))
-      })
-    }
-  }, [isOpen, mode, projectId, institutionId, institutionName, departmentId, departmentName, churchId, churchName, churchDepartmentId, churchDepartmentName, finalChurchDepartmentName, selectedActivities.length, subsidyRequestId, availableBudget])
 
   // Subsidy receipts hook for file uploads (only active in edit mode)
   const {
@@ -240,7 +253,6 @@ export function RequestSubsidyModal({
   // Update formData when modal opens in CREATE mode with selectedActivities
   React.useEffect(() => {
     if (isOpen && mode === "create" && selectedActivities.length > 0) {
-      console.log('🆕 Create mode - Loading selectedActivities:', selectedActivities.length)
       setFormData({
         institution_id: institutionId,
         department_id: departmentId,
@@ -269,6 +281,7 @@ export function RequestSubsidyModal({
             activity_name: activity.name,
             requested_amount: activity.institution_requested_amount || 0,
             budget_amount: activity.budget_amount,
+            institution_requested_amount: activity.institution_requested_amount,
             activity_documents: existingDocs,
             notes: ""
           }
@@ -280,11 +293,7 @@ export function RequestSubsidyModal({
 
   // If initialData is provided (edit mode), populate the form with it when opening
   React.useEffect(() => {
-    console.log('🔍 Modal useEffect triggered:', { isOpen, mode, hasInitialData: !!initialData, initialDataItems: initialData?.items?.length || 0 })
-
     if (isOpen && initialData && mode === "edit") {
-      console.log('📝 Edit mode - Loading initialData:', initialData)
-      console.log('📝 initialData.items:', initialData.items)
 
       // In edit mode, always use initialData items (even if empty array)
       // Only fall back to selectedActivities if initialData.items is undefined
@@ -346,41 +355,38 @@ export function RequestSubsidyModal({
     }
   }, [isOpen, selectedActivities.length, totalRequestedAmount, availableBudget, mode, initialData])
 
-  // Load available subsidized activities
+  // Load available activities for the add-activity picker
+  // NOTE: does NOT filter by is_subsidized here — let the modal itself handle that via filterSubsidized prop.
+  // Also update whenever formData.items changes so already-added activities are excluded.
   React.useEffect(() => {
-    if (isOpen && allActivities.length > 0) {
-      const selectedIds = formData.items.map(item => item.activity_id)
-      const available = allActivities.filter(
-        act => act.is_subsidized && !selectedIds.includes(act.id)
-      )
+    if (isOpen) {
+      const alreadyAddedIds = new Set(formData.items.map(item => item.activity_id))
+      const available = allActivities.filter(act => !alreadyAddedIds.has(act.id))
       setAvailableActivities(available)
     }
   }, [isOpen, allActivities, formData.items])
 
-  // Validação de atividade individual - função auxiliar
+  // Validação de atividade individual — ciente do tipo de solicitação selecionado
+  // WITHOUT_DOCUMENT e ADVANCE não exigem documentos; apenas requestedAmount > 0 é suficiente
   const validateActivity = useCallback((item: SubsidyRequestItem) => {
     const hasRequestedAmount = item.requested_amount > 0
     const hasDocuments = item.activity_documents.length > 0
     const docTotal = item.activity_documents.reduce((sum, doc) => sum + (doc.amount || 0), 0)
-    const hasValidDocumentAmounts = item.activity_documents.length > 0 
+    const hasValidDocumentAmounts = item.activity_documents.length > 0
       ? item.activity_documents.every(doc => doc.amount && doc.amount > 0)
       : false
-    
+
     // Documents must match or exceed request, but NOT exceed (with 0.01 tolerance)
     const documentsMatchOrExceedRequest = hasDocuments && docTotal >= item.requested_amount
     const documentsDoNotExceedRequest = hasDocuments && docTotal <= item.requested_amount + 0.01
     const documentsMatchRequest = documentsMatchOrExceedRequest && documentsDoNotExceedRequest
-    
-    console.log('🔍 [validateActivity] Validation check:', {
-      activityName: item.activity_name,
-      requestedAmount: item.requested_amount,
-      docTotal,
-      documentsMatchOrExceedRequest,
-      documentsDoNotExceedRequest,
-      documentsMatchRequest,
-      isComplete: hasRequestedAmount && hasDocuments && hasValidDocumentAmounts && documentsMatchRequest
-    })
-    
+
+    // For types that don't require documents, isComplete only needs a positive amount
+    const requiresDocs = requestType === 'with_document'
+    const isComplete = requiresDocs
+      ? hasRequestedAmount && hasDocuments && hasValidDocumentAmounts && documentsMatchRequest
+      : hasRequestedAmount
+
     return {
       hasRequestedAmount,
       hasDocuments,
@@ -388,10 +394,10 @@ export function RequestSubsidyModal({
       documentsMatchOrExceedRequest,
       documentsDoNotExceedRequest,
       documentsMatchRequest,
-      isComplete: hasRequestedAmount && hasDocuments && hasValidDocumentAmounts && documentsMatchRequest,
+      isComplete,
       docTotal
     }
-  }, [])
+  }, [requestType]) // requestType is a dependency — validation logic changes by type
 
   // Gerar badges de validação para uma atividade
   const getValidationBadges = useCallback((item: SubsidyRequestItem): ValidationBadgeData[] => {
@@ -439,33 +445,57 @@ export function RequestSubsidyModal({
       item,
       validation: validateActivity(item)
     }))
-    
+
     const allComplete = results.every(r => r.validation.isComplete)
     const completedCount = results.filter(r => r.validation.isComplete).length
-    
+
     return {
       results,
       allComplete,
       completedCount,
       totalCount: results.length
     }
-  }, [formData.items, validateActivity])
+  }, [formData.items, validateActivity, requestType])
+
+  /** Unified canSubmit per request type */
+  const canSubmit = requestType === 'advance'
+    ? !!advanceAmount && parseFloat(advanceAmount) > 0 && parseFloat(advanceAmount) <= maxAdvance && advanceConfirmed && availableBudget > 0
+    : requestType === 'without_document'
+    ? formData.items.length > 0 &&
+      formData.items.every(item => item.requested_amount > 0) &&
+      formData.notes.trim().length > 0 &&
+      withoutDocConfirmed &&
+      availableBudget > 0 &&
+      totalRequestedAmount <= availableBudget
+    : validateAllActivities.allComplete && availableBudget > 0 && totalRequestedAmount <= availableBudget
+
+  // Per-type validation checklist items (for footer)
+  const withoutDocChecks = [
+    {
+      id: 'activities',
+      label: i18n.language === 'pt' ? 'Atividades com valor definido' : i18n.language === 'nl' ? 'Activiteiten met waarde' : 'Activities with value',
+      ok: formData.items.length > 0 && formData.items.every(item => item.requested_amount > 0),
+    },
+    {
+      id: 'notes',
+      label: i18n.language === 'pt' ? 'Justificativa geral preenchida' : i18n.language === 'nl' ? 'Toelichting ingevuld' : 'General notes filled',
+      ok: formData.notes.trim().length > 0,
+    },
+    {
+      id: 'confirm',
+      label: i18n.language === 'pt' ? 'Ciente sobre possível devolução' : i18n.language === 'nl' ? 'Bewust van mogelijke terugbetaling' : 'Aware of potential refund',
+      ok: withoutDocConfirmed,
+    },
+  ]
 
   if (!isOpen) return null
 
-  // Safety check
-  if (!formData.items || formData.items.length === 0) {
-    console.warn('⚠️ Modal aberto sem atividades!')
-    return null
-  }
+  // All request types can open with 0 activities — user adds them via SelectActivitiesModal
+  const _currentItem = (requestType === 'advance' || formData.items.length === 0)
+    ? null
+    : formData.items[currentActivityIndex] ?? null
 
-  const currentItem = formData.items[currentActivityIndex]
-
-  // Safety check for currentItem
-  if (!currentItem) {
-    console.error('❌ Item atual não encontrado no índice', currentActivityIndex)
-    return null
-  }
+  const currentItem = _currentItem as SubsidyRequestItem
 
   const handleItemChange = (field: keyof SubsidyRequestItem, value: any) => {
     setFormData(prev => ({
@@ -480,13 +510,6 @@ export function RequestSubsidyModal({
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return
-
-    console.log('📤 handleFileUpload called:', {
-      mode,
-      subsidyRequestId,
-      activityId: currentItem.activity_id,
-      filesCount: files.length,
-    })
 
     // Always store files locally first - upload happens on save with metadata
     const newDocuments: UploadedDocument[] = Array.from(files).map((file, idx) => {
@@ -550,14 +573,23 @@ export function RequestSubsidyModal({
   }
 
   const handleAddActivities = (activities: ProjectActivityData[]) => {
-    const newItems = activities.map(activity => ({
-      activity_id: activity.id,
-      activity_name: activity.name,
-      requested_amount: 0,
-      budget_amount: activity.budget_amount,
-      activity_documents: [],
-      notes: ""
-    }))
+    const newItems = activities.map(activity => {
+      // Pre-fill with institution_requested_amount if the activity already has a known subsidized value,
+      // otherwise default to 0 so the user fills it in (or uses the MAX button).
+      // Cap at availableBudget to never exceed the project's remaining budget.
+      const preFilledAmount = activity.institution_requested_amount && activity.institution_requested_amount > 0
+        ? Math.min(activity.institution_requested_amount, availableBudget)
+        : 0
+      return {
+        activity_id: activity.id,
+        activity_name: activity.name,
+        requested_amount: preFilledAmount,
+        budget_amount: activity.budget_amount,
+        institution_requested_amount: activity.institution_requested_amount,
+        activity_documents: [],
+        notes: ""
+      }
+    })
     
     setFormData(prev => ({
       ...prev,
@@ -569,8 +601,73 @@ export function RequestSubsidyModal({
   }
 
   const handleSubmit = async () => {
-    // Validation
-    if (!formData.institution_id) {
+    // ── Advance type: simple amount + confirmation ──────────────────────────
+    if (requestType === 'advance') {
+      const numValue = parseFloat(advanceAmount)
+      if (isNaN(numValue) || numValue <= 0) {
+        setAdvanceError(translations.validation?.amountPositive ?? 'Amount must be positive')
+        return
+      }
+      if (numValue > maxAdvance) {
+        setAdvanceError(
+          i18n.language === 'pt'
+            ? `O valor excede 50% do orçamento subsidiado (máx: ${formatCurrency(maxAdvance)})`
+            : i18n.language === 'nl'
+            ? `Bedrag overschrijdt 50% van het gesubsidieerde budget (max: ${formatCurrency(maxAdvance)})`
+            : `Amount exceeds 50% of the subsidized budget (max: ${formatCurrency(maxAdvance)})`
+        )
+        return
+      }
+      if (!advanceConfirmed) {
+        setAdvanceError(
+          i18n.language === 'pt'
+            ? 'Confirme que você entende os termos do adiantamento'
+            : i18n.language === 'nl'
+            ? 'Bevestig dat u de voorwaarden begrijpt'
+            : 'Please confirm that you understand the advance terms'
+        )
+        return
+      }
+      setIsSubmitting(true)
+      try {
+        await onAdvanceSubmit?.(numValue)
+        setAdvanceAmount('')
+        setAdvanceConfirmed(false)
+        setAdvanceError(null)
+        onClose()
+      } catch (err) {
+        setAdvanceError(err instanceof Error ? err.message : 'An error occurred')
+      } finally {
+        setIsSubmitting(false)
+      }
+      return
+    }
+
+    // ── Without document: extra validations ─────────────────────────────────
+    if (requestType === 'without_document') {
+      if (!formData.notes.trim()) {
+        toast.error(
+          i18n.language === 'pt' ? 'A justificativa geral é obrigatória.' :
+          i18n.language === 'nl' ? 'De toelichting is verplicht.' :
+          'General notes are required.'
+        )
+        return
+      }
+      if (!withoutDocConfirmed) {
+        toast.error(
+          i18n.language === 'pt' ? 'Confirme que está ciente sobre a possibilidade de devolução.' :
+          i18n.language === 'nl' ? 'Bevestig dat u op de hoogte bent van mogelijke terugbetaling.' :
+          'Please confirm awareness of the potential refund obligation.'
+        )
+        return
+      }
+    }
+
+    const requireDocuments = requestType === 'with_document'
+
+    // Validation — resolve institution_id with context fallback
+    const resolvedInstitutionId = formData.institution_id || currentInstitutionData?.id || ""
+    if (!resolvedInstitutionId) {
       toast.error(translations.validation.institutionRequired)
       return
     }
@@ -592,28 +689,29 @@ export function RequestSubsidyModal({
       return
     }
 
-    // Check if all activities have documents
-    const activitiesWithoutDocs = formData.items.filter(item => item.activity_documents.length === 0)
-    if (activitiesWithoutDocs.length > 0) {
-      toast.error(translations.validation.documentsRequired)
-      return
-    }
-
-    // Validate that total requested amount equals sum of document amounts for each activity
-    for (const item of formData.items) {
-      const docTotal = item.activity_documents.reduce((sum, doc) => sum + (doc.amount || 0), 0)
-      if (Math.abs(item.requested_amount - docTotal) > 0.01) {
-        toast.error(translations.toasts.documentAmountMismatch
-          .replace('{{activity}}', item.activity_name)
-          .replace('{{requested}}', formatCurrency(item.requested_amount))
-          .replace('{{total}}', formatCurrency(docTotal)))
+    if (requireDocuments) {
+      // Check if all activities have documents
+      const activitiesWithoutDocs = formData.items.filter(item => item.activity_documents.length === 0)
+      if (activitiesWithoutDocs.length > 0) {
+        toast.error(translations.validation.documentsRequired)
         return
       }
-      // Check if all documents have amount > 0
-      const docsWithoutAmount = item.activity_documents.filter(doc => !doc.amount || doc.amount <= 0)
-      if (docsWithoutAmount.length > 0) {
-        toast.error(translations.toasts.documentsNeedAmount.replace('{{activity}}', item.activity_name))
-        return
+
+      // Validate that total requested amount equals sum of document amounts
+      for (const item of formData.items) {
+        const docTotal = item.activity_documents.reduce((sum, doc) => sum + (doc.amount || 0), 0)
+        if (Math.abs(item.requested_amount - docTotal) > 0.01) {
+          toast.error(translations.toasts.documentAmountMismatch
+            .replace('{{activity}}', item.activity_name)
+            .replace('{{requested}}', formatCurrency(item.requested_amount))
+            .replace('{{total}}', formatCurrency(docTotal)))
+          return
+        }
+        const docsWithoutAmount = item.activity_documents.filter(doc => !doc.amount || doc.amount <= 0)
+        if (docsWithoutAmount.length > 0) {
+          toast.error(translations.toasts.documentsNeedAmount.replace('{{activity}}', item.activity_name))
+          return
+        }
       }
     }
 
@@ -628,13 +726,6 @@ export function RequestSubsidyModal({
             if (doc.id.startsWith('temp-')) {
               const file = pendingFiles.get(doc.id)
               if (file) {
-                console.log('📤 [Submit] Uploading pending file:', {
-                  fileName: file.name,
-                  activityId: item.activity_id,
-                  amount: doc.amount,
-                  type: doc.document_type
-                })
-
                 await uploadReceipt(file, subsidyRequestId, item.activity_id, {
                   type: doc.document_type === 'INVOICE' ? 'invoice' :
                         doc.document_type === 'RECEIPT' ? 'receipt' :
@@ -649,6 +740,7 @@ export function RequestSubsidyModal({
 
         const finalData = {
           ...formData,
+          institution_id: resolvedInstitutionId,
           id: subsidyRequestId,
           items: formData.items.map(item => ({
              ...item,
@@ -675,22 +767,39 @@ export function RequestSubsidyModal({
       // Create mode - submit and then upload files if subsidy ID is returned
       setIsSubmitting(true)
       try {
-        const createdSubsidyId = await onSubmit(formData)
+        const submitPayload: SubsidyRequestData = {
+          ...formData,
+          institution_id: resolvedInstitutionId,
+          request_type: requestType === 'with_document' ? 'WITH_DOCUMENT'
+            : requestType === 'without_document' ? 'WITHOUT_DOCUMENT'
+            : 'ADVANCE'
+        }
+
+
+        const createdSubsidyId = await onSubmit(submitPayload)
+
+
+        if (!createdSubsidyId) {
+          // Backend did not return an ID — treat as failure, do NOT show success
+          console.error('❌ [RequestSubsidyModal] onSubmit returned no ID — backend may have failed silently. Check Network tab for GraphQL errors.')
+          // Note: onSubmit (handleSubsidyRequestSubmit in page.tsx) will already have thrown if there
+          // was an explicit error. If we reach here with undefined it means Apollo returned data: null
+          // without errors — which is unexpected. Show a generic error.
+          toast.error(
+            i18n.language === 'pt' ? 'Nenhum ID retornado pelo servidor. Verifique o console.' :
+            i18n.language === 'nl' ? 'Geen ID ontvangen van de server. Controleer de console.' :
+            'No ID returned from server. Check console for details.'
+          )
+          return
+        }
         
-        if (createdSubsidyId && pendingFiles.size > 0) {
-          console.log('📤 [Create] Uploading files for new subsidy:', createdSubsidyId)
+        if (pendingFiles.size > 0) {
           
           // Upload all pending files
           for (const item of formData.items) {
             for (const doc of item.activity_documents) {
               const file = pendingFiles.get(doc.id)
               if (file) {
-                console.log('📤 [Create] Uploading file:', {
-                  fileName: file.name,
-                  activityId: item.activity_id,
-                  amount: doc.amount,
-                  type: doc.document_type
-                })
 
                 await uploadReceipt(file, createdSubsidyId, item.activity_id, {
                   type: doc.document_type === 'INVOICE' ? 'invoice' :
@@ -702,15 +811,14 @@ export function RequestSubsidyModal({
               }
             }
           }
-          
-          console.log('✅ [Create] All files uploaded successfully')
         }
         
+        // Only show success when we have confirmed the record was created
         toast.success(translations.success.created)
         setPendingFiles(new Map())
         onClose()
       } catch (error) {
-        console.error('❌ [Create] Error:', error)
+        console.error('❌ [Create] Error in handleSubmit:', error)
         toast.error(translations.toasts.createError)
       } finally {
         setIsSubmitting(false)
@@ -774,6 +882,29 @@ export function RequestSubsidyModal({
 
           {/* Summary Bar */}
           <div className="px-3 sm:px-4 py-2 sm:py-3 border-b border-gray-200 bg-gray-50">
+            {/* Budget KPIs — always visible so user sees project limits */}
+            <div className="grid grid-cols-3 gap-2 mb-2 pb-2 border-b border-gray-200">
+              <div className="flex flex-col">
+                <span className="text-[10px] text-gray-400 uppercase tracking-wide">
+                  {i18n.language === 'pt' ? 'Orç. subsidiado' : i18n.language === 'nl' ? 'Gesubsidieerd' : 'Subsidized budget'}
+                </span>
+                <span className="text-xs font-bold text-gray-800">{formatCurrency(subsidizedBudget)}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] text-gray-400 uppercase tracking-wide">
+                  {i18n.language === 'pt' ? 'Já solicitado' : i18n.language === 'nl' ? 'Al aangevraagd' : 'Already requested'}
+                </span>
+                <span className="text-xs font-bold text-orange-600">{formatCurrency(totalAlreadyRequested)}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] text-gray-400 uppercase tracking-wide">
+                  {i18n.language === 'pt' ? 'Disponível' : i18n.language === 'nl' ? 'Beschikbaar' : 'Available'}
+                </span>
+                <span className={`text-xs font-bold ${
+                  availableBudget <= 0 ? 'text-red-600' : availableBudget < subsidizedBudget * 0.2 ? 'text-amber-600' : 'text-green-700'
+                }`}>{formatCurrency(availableBudget)}</span>
+              </div>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
               {/* Total Requested */}
               <div className="flex items-center gap-1.5 sm:gap-2">
@@ -796,14 +927,45 @@ export function RequestSubsidyModal({
               </div>
 
               {/* Department (if applicable - for institutional projects) */}
-              {departmentId && !churchId && (
-                <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-gray-600" />
-                  <div>
-                    <p className="text-xs text-gray-500">{translations.labels.department}</p>
-                    <p className="text-sm font-semibold text-gray-900">
+              {departmentName && !churchId && (
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Building2 className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-500 truncate">
+                      {translations.labels.department}
+                      {departmentBudgetYear ? (
+                        <span className="ml-1 text-gray-400">({departmentBudgetYear})</span>
+                      ) : null}
+                    </p>
+                    <p className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
                       {departmentName || translations.status.notInformed}
                     </p>
+                    {/* {departmentAllocatedBudget > 0 && (
+                      <div className="flex flex-col gap-0.5 mt-0.5">
+                        <span className="text-[10px] text-gray-400">
+                          {i18n.language === 'pt' ? 'Orç. alocado' : i18n.language === 'nl' ? 'Toegewezen bud.' : 'Alloc. budget'}:
+                          {' '}<span className="font-semibold text-gray-700">{formatCurrency(departmentAllocatedBudget)}</span>
+                        </span>
+                        <span className="text-[10px] text-gray-400">
+                          {i18n.language === 'pt' ? 'Utilizado' : i18n.language === 'nl' ? 'Gebruikt' : 'Used'}:
+                          {' '}<span className={`font-semibold ${
+                            departmentBudgetUsed >= departmentAllocatedBudget
+                              ? 'text-red-600'
+                              : departmentBudgetUsed >= departmentAllocatedBudget * 0.8
+                              ? 'text-amber-600'
+                              : 'text-green-700'
+                          }`}>{formatCurrency(departmentBudgetUsed)}</span>
+                        </span>
+                        <span className="text-[10px] text-gray-400">
+                          {i18n.language === 'pt' ? 'Saldo dept.' : i18n.language === 'nl' ? 'Saldo afd.' : 'Dept. balance'}:
+                          {' '}<span className={`font-semibold ${
+                            departmentAllocatedBudget - departmentBudgetUsed <= 0
+                              ? 'text-red-600'
+                              : 'text-green-700'
+                          }`}>{formatCurrency(Math.max(0, departmentAllocatedBudget - departmentBudgetUsed))}</span>
+                        </span>
+                      </div>
+                    )} */}
                   </div>
                 </div>
               )}
@@ -824,16 +986,6 @@ export function RequestSubsidyModal({
               {/* Church Department (if applicable - for church projects) */}
               {(() => {
                 const shouldShow = churchId && churchDepartmentId
-                console.log('💰 [RequestSubsidyModal] Church Department display logic:', {
-                  churchId,
-                  churchDepartmentId,
-                  churchDepartmentNameFromProps: churchDepartmentName,
-                  finalChurchDepartmentName,
-                  shouldShow,
-                  hasChurchId: !!churchId,
-                  hasChurchDepartmentId: !!churchDepartmentId,
-                  hasResolvedDepartment: !!resolvedChurchDepartment
-                })
                 return shouldShow ? (
                   <div className="flex items-center gap-1.5 sm:gap-2">
                     <Layers className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 flex-shrink-0" />
@@ -853,8 +1005,188 @@ export function RequestSubsidyModal({
         {/* Main Content */}
         <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6">
           
-          {/* Subsidy Validation Info - New Component */}
-          <SubsidyValidationInfo
+          {/* ── Request Type Selector ──────────────────────────────────────────── */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              {i18n.language === 'pt' ? 'Tipo de solicitação' : i18n.language === 'nl' ? 'Type aanvraag' : 'Request type'}
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                {
+                  value: 'advance' as RequestType,
+                  icon: '💳',
+                  label: i18n.language === 'pt' ? 'Adiantamento' : i18n.language === 'nl' ? 'Voorschot' : 'Advance Request',
+                  description: i18n.language === 'pt' ? '50% do orçamento subsidiado antes dos documentos' : i18n.language === 'nl' ? '50% van gesubsidieerd budget vooraf' : '50% of subsidized budget upfront',
+                },
+                {
+                  value: 'without_document' as RequestType,
+                  icon: '📋',
+                  label: i18n.language === 'pt' ? 'Sem Comprovante' : i18n.language === 'nl' ? 'Zonder document' : 'Without Document',
+                  description: i18n.language === 'pt' ? 'Vincula atividade sem anexar comprovante' : i18n.language === 'nl' ? 'Koppel activiteit zonder document' : 'Link activity without receipt attachment',
+                },
+                {
+                  value: 'with_document' as RequestType,
+                  icon: '📎',
+                  label: i18n.language === 'pt' ? 'Com Comprovante' : i18n.language === 'nl' ? 'Met document' : 'With Document',
+                  description: i18n.language === 'pt' ? 'Vincula atividade e anexa comprovante' : i18n.language === 'nl' ? 'Koppel activiteit en voeg document toe' : 'Link activity and attach receipt',
+                },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setRequestType(opt.value)}
+                  className={`flex flex-col items-start gap-1 rounded-lg border-2 p-2.5 text-left transition-all ${
+                    requestType === opt.value
+                      ? 'border-gray-900 bg-gray-50'
+                      : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <span className="text-base">{opt.icon}</span>
+                  <span className={`text-xs font-semibold leading-tight ${
+                    requestType === opt.value ? 'text-gray-900' : 'text-gray-700'
+                  }`}>{opt.label}</span>
+                  <span className="text-[10px] leading-tight text-gray-500">{opt.description}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Advance Request Form ─────────────────────────────────────────────── */}
+          {requestType === 'advance' && (
+            <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-gray-900 flex items-center justify-center flex-shrink-0">
+                  <DollarSign className="w-3.5 h-3.5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {i18n.language === 'pt' ? 'Adiantamento de subsídio' : i18n.language === 'nl' ? 'Subsidievoorschot' : 'Subsidy Advance'}
+                  </p>
+                  {projectName && <p className="text-xs text-gray-500">{projectName}</p>}
+                </div>
+              </div>
+
+              {/* Amount input */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-gray-700">
+                  {i18n.language === 'pt' ? 'Valor do adiantamento' : i18n.language === 'nl' ? 'Voorschotbedrag' : 'Advance Amount'}
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max={maxAdvance}
+                    value={advanceAmount}
+                    onChange={(e) => { setAdvanceAmount(e.target.value); setAdvanceError(null) }}
+                    placeholder="0.00"
+                    disabled={isSubmitting}
+                    className="flex-1 h-9 text-sm"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setAdvanceAmount(maxAdvance.toFixed(2)); setAdvanceError(null) }}
+                    disabled={isSubmitting}
+                    className="h-9 px-3 text-xs"
+                  >
+                    <Zap className="w-3 h-3 mr-1" />MAX
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500">
+                  {i18n.language === 'pt'
+                    ? `Máximo permitido (50%): ${formatCurrency(maxAdvance)}`
+                    : i18n.language === 'nl'
+                    ? `Maximum toegestaan (50%): ${formatCurrency(maxAdvance)}`
+                    : `Maximum allowed (50%): ${formatCurrency(maxAdvance)}`}
+                </p>
+              </div>
+
+              {/* Important notice */}
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-1.5">
+                <div className="flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                  <p className="text-xs font-semibold text-amber-800">
+                    {i18n.language === 'pt' ? 'Aviso importante' : i18n.language === 'nl' ? 'Belangrijk bericht' : 'Important Notice'}
+                  </p>
+                </div>
+                <p className="text-xs text-amber-700">
+                  {i18n.language === 'pt'
+                    ? 'Você está solicitando 50% do valor subsidiado antes da prestação de contas. Se o valor não for justificado, a devolução poderá ser solicitada.'
+                    : i18n.language === 'nl'
+                    ? 'U vraagt 50% van het gesubsidieerde bedrag op voorhand aan. Als het bedrag niet kan worden verantwoord, kan terugbetaling worden gevraagd.'
+                    : 'You are requesting 50% of the subsidized budget before providing receipts. If the amount is not justified, a refund may be requested.'}
+                </p>
+              </div>
+
+              {/* Confirmation checkbox */}
+              <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-3">
+                <Checkbox
+                  id="advanceConfirm"
+                  checked={advanceConfirmed}
+                  onCheckedChange={(v) => { setAdvanceConfirmed(v === true); setAdvanceError(null) }}
+                  disabled={isSubmitting}
+                  className="mt-0.5"
+                />
+                <Label htmlFor="advanceConfirm" className="text-xs text-gray-700 cursor-pointer leading-relaxed">
+                  {i18n.language === 'pt'
+                    ? 'Entendo que estou solicitando um adiantamento e me comprometo a enviar os comprovantes de gastos no prazo estipulado.'
+                    : i18n.language === 'nl'
+                    ? 'Ik begrijp dat ik een voorschot aanvraag en verplicht me de bewijsstukken tijdig in te dienen.'
+                    : 'I understand I am requesting an advance and commit to submitting expense receipts within the stipulated deadline.'}
+                </Label>
+              </div>
+
+              {advanceError && (
+                <div className="flex items-center gap-2 p-2.5 bg-red-50 border border-red-200 rounded-lg">
+                  <AlertCircle className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
+                  <p className="text-xs text-red-700">{advanceError}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ─── without_document awareness notice + checkbox ────────────────── */}
+          {requestType === 'without_document' && (
+            <div className="space-y-2.5 rounded-lg border border-gray-200 bg-gray-50 p-3">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-3.5 h-3.5 text-gray-500 flex-shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="text-xs font-semibold text-gray-800">
+                    {i18n.language === 'pt' ? 'Solicitação sem comprovante' : i18n.language === 'nl' ? 'Aanvraag zonder document' : 'Request without document'}
+                  </p>
+                  <p className="text-[11px] text-gray-500 leading-relaxed">
+                    {i18n.language === 'pt'
+                      ? 'Você está vinculando uma atividade sem anexar comprovante. Se um comprovante não for enviado posteriormente dentro do prazo, pode ser solicitada a devolução do valor à igreja ou departamento que realizou a solicitação.'
+                      : i18n.language === 'nl'
+                      ? 'U koppelt een activiteit zonder bewijsstuk. Als er later geen bewijsstuk wordt ingediend binnen de deadline, kan terugbetaling worden gevraagd aan de kerk of het departement.'
+                      : 'You are linking an activity without attaching a receipt. If a receipt is not submitted later within the deadline, a refund of the amount may be requested from the church or department that submitted this request.'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5 pt-1 border-t border-gray-200">
+                <Checkbox
+                  id="withoutDocConfirm"
+                  checked={withoutDocConfirmed}
+                  onCheckedChange={(v) => setWithoutDocConfirmed(v === true)}
+                  className="mt-0.5"
+                />
+                <Label htmlFor="withoutDocConfirm" className="text-[11px] text-gray-700 cursor-pointer leading-relaxed">
+                  {i18n.language === 'pt'
+                    ? 'Estou ciente e aceito que, se o comprovante não for enviado no prazo, poderei ser responsabilizado pela devolução do valor solicitado.'
+                    : i18n.language === 'nl'
+                    ? 'Ik begrijp dit en accepteer dat ik verantwoordelijk kan worden gehouden voor terugbetaling als het bewijsstuk niet tijdig wordt ingediend.'
+                    : 'I understand and accept that if the receipt is not submitted on time, I may be held responsible for returning the requested amount.'}
+                </Label>
+              </div>
+            </div>
+          )}
+
+          {/* ─── Normal subsidy sections (not advance) ─────────────────────────── */}
+          {requestType !== 'advance' && <>
+          {/* Subsidy Validation Info — only for with_document type */}
+          {requestType === 'with_document' && currentItem && <SubsidyValidationInfo
             badges={getValidationBadges(currentItem)}
             isValid={validateActivity(currentItem).isComplete}
             translations={{
@@ -869,7 +1201,7 @@ export function RequestSubsidyModal({
               }
             }}
             initiallyExpanded={false}
-          />
+          />}
           
           {/* Activity Navigation */}
           <div className="space-y-2 sm:space-y-3">
@@ -900,7 +1232,7 @@ export function RequestSubsidyModal({
                   <span className="sm:hidden">‹</span>
                 </Button>
                 <span className="text-xs text-gray-600 whitespace-nowrap">
-                  {(currentActivityIndex + 1)}/{formData.items.length}
+                  {formData.items.length > 0 ? `${currentActivityIndex + 1}/${formData.items.length}` : '0/0'}
                 </span>
                 <Button
                   variant="outline"
@@ -984,10 +1316,24 @@ export function RequestSubsidyModal({
                 </TooltipProvider>
               </WithPermission>
             </div>
+
+            {/* Empty state — no activities linked yet */}
+            {formData.items.length === 0 && (
+              <div className="flex items-center gap-2.5 p-3 rounded-lg border border-dashed border-gray-300 bg-gray-50">
+                <Info className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <p className="text-xs text-gray-500">
+                  {i18n.language === 'pt'
+                    ? 'Nenhuma atividade vinculada. Clique no + para adicionar uma atividade a esta solicitação.'
+                    : i18n.language === 'nl'
+                    ? 'Geen activiteit gekoppeld. Klik op + om een activiteit aan deze aanvraag toe te voegen.'
+                    : 'No activity linked yet. Click + to add an activity to this request.'}
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Current Activity Details */}
-          <div className="space-y-3 sm:space-y-4 border border-gray-200 rounded-lg p-3 sm:p-4 bg-gray-50">
+          {/* Current Activity Details — only when an activity is selected */}
+          {currentItem && <div className="space-y-3 sm:space-y-4 border border-gray-200 rounded-lg p-3 sm:p-4 bg-gray-50">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-semibold text-gray-900">{currentItem.activity_name}</h4>
               <TagBadge
@@ -1066,193 +1412,80 @@ export function RequestSubsidyModal({
               </div>
 
               {isEditingValues ? (
-                // Edit Mode - Focus on Institution Amount
-                <div className="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  {/* Funding Policy Badges - REPLACED with Project Budget Info */}
-                  <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-200">
-                     <Badge variant="outline" className="text-xs bg-white border-gray-300">
-                        <Info className="w-3 h-3 mr-1" />
-                        {translations.labels.projectBudgetLimit}
-                      </Badge>
-                  </div>
-
-                  {/* Institution Value Input with Max Button */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-600 font-medium">{translations.budget.requestedLabel}</span>
-                      <span className="font-semibold text-gray-900">
-                        {currentItem.budget_amount > 0 
-                          ? translations.budget.percentageLabel.replace('{{percent}}', Math.round((tempRequestedAmount / currentItem.budget_amount) * 100).toString())
-                          : translations.budget.percentageLabel.replace('{{percent}}', '0')
+                // Edit Mode — minimalist: just the input + MAX button + one limit line
+                <div className="space-y-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      value={tempRequestedAmount}
+                      onChange={(e) => {
+                        const value = Number(e.target.value) || 0
+                        // Cap at: institution_requested_amount (from KPI) → activity budget → availableBudget
+                        const maxAllowed = Math.min(
+                          availableBudget,
+                          currentItem.institution_requested_amount || currentItem.budget_amount
+                        )
+                        if (value <= maxAllowed + 0.01 && value >= 0) {
+                          setTempRequestedAmount(value)
+                        } else if (value > maxAllowed) {
+                          toast.error(translations.validation.maxAllowed.replace('{{amount}}', formatCurrency(maxAllowed)))
                         }
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <Input
-                        type="number"
-                        value={tempRequestedAmount}
-                        onChange={(e) => {
-                          const value = Number(e.target.value) || 0
-                          
-                          // Maximum is the available budget (project subsidized budget - already requested)
-                          const maxAllowed = availableBudget
-                          
-                          console.log('🎯 [RequestContribution] Input change:', {
-                            value,
-                            maxAllowed,
-                            availableBudget,
-                            activityBudget: currentItem.budget_amount,
-                            activityName: currentItem.activity_name,
-                            willBeBlocked: value > maxAllowed
-                          })
-                          
-                          if (value <= maxAllowed + 0.01 && value >= 0) {
-                            setTempRequestedAmount(value)
-                          } else if (value > maxAllowed) {
-                            toast.error(translations.validation.maxAllowed.replace('{{amount}}', formatCurrency(maxAllowed)))
-                          }
-                        }}
-                        className="h-9 text-sm font-medium flex-1"
-                        min={0}
-                        max={availableBudget}
-                        placeholder={translations.budget.placeholder}
-                      />
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                          // Use available budget as maximum (project subsidized budget limit)
-                          const maxAllowed = availableBudget
-                          
-                          console.log('⚡ [MAX Button] Setting max value:', {
-                            maxAllowed,
-                            availableBudget,
-                            activityBudget: currentItem.budget_amount,
-                            activityName: currentItem.activity_name,
-                            currentRequested: currentItem.requested_amount,
-                            source: 'availableBudget (project subsidized budget limit)'
-                          })
-                          
-                          setTempRequestedAmount(maxAllowed)
-                          toast.success(translations.toasts.maxValueSet
-                            .replace('{{label}}', translations.budget.maxButton)
-                            .replace('{{amount}}', formatCurrency(maxAllowed)))
-                              }}
-                              className="h-9 px-3"
-                            >
-                              <Zap className="w-4 h-4 mr-1" />
-                              {translations.budget.maxButton}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="text-xs">{translations.budget.maxButtonTooltip}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
+                      }}
+                      className="h-9 text-sm font-medium flex-1"
+                      min={0}
+                      max={Math.min(availableBudget, currentItem.institution_requested_amount || currentItem.budget_amount)}
+                      placeholder={translations.budget.placeholder}
+                    />
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              // MAX = institution-approved amount (from KPI) capped by available project budget
+                              const maxAllowed = Math.min(
+                                availableBudget,
+                                currentItem.institution_requested_amount || currentItem.budget_amount
+                              )
+                              setTempRequestedAmount(maxAllowed)
+                              toast.success(translations.toasts.maxValueSet
+                                .replace('{{label}}', translations.budget.maxButton)
+                                .replace('{{amount}}', formatCurrency(maxAllowed)))
+                            }}
+                            className="h-9 px-3"
+                          >
+                            <Zap className="w-4 h-4 mr-1" />
+                            {translations.budget.maxButton}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">{translations.budget.maxButtonTooltip}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
-
-                  {/* Calculated Values Display */}
-                  <div className="space-y-2 pt-2 border-t border-gray-200">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-600">{translations.budget.totalBudget}</span>
-                      <span className="font-semibold text-gray-900">{formatCurrency(currentItem.budget_amount)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1">
-                        <Building2 className="w-3 h-3 text-gray-500" />
-                        <span className="text-gray-600">{translations.budget.requestContribution}</span>
-                      </div>
-                      <span className="font-semibold text-gray-900">{formatCurrency(tempRequestedAmount)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1">
-                        <Church className="w-3 h-3 text-gray-500" />
-                        <span className="text-gray-600">{translations.budget.selfRemainder}</span>
-                      </div>
-                      <span className="font-semibold text-gray-900">
-                        {formatCurrency(Math.max(0, currentItem.budget_amount - tempRequestedAmount))}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Info box with limit */}
-                  {(() => {
-                    // Use available budget as maximum (project subsidized budget limit)
-                    const maxAllowed = availableBudget
-                    
-                    console.log('ℹ️ [Info Box] Available budget limit:', {
-                      maxAllowed,
-                      availableBudget,
-                      activityBudget: currentItem.budget_amount,
-                      formatted: formatCurrency(maxAllowed)
-                    })
-                    
-                    return (
-                      <div className="flex items-start gap-2 text-xs text-gray-500 bg-white p-2 rounded border border-gray-200">
-                        <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="font-medium text-gray-700 mb-0.5">{translations.budget.limitTitle}</p>
-                          <p>{translations.budget.limitMaxAllowed} <span className="font-semibold text-gray-900">{formatCurrency(maxAllowed)}</span></p>
-                        </div>
-                      </div>
-                    )
-                  })()}
+                  <p className="text-xs text-muted-foreground">
+                    {i18n.language === 'pt'
+                      ? <>Máx. disponível: <strong className="text-foreground">{formatCurrency(Math.min(availableBudget, currentItem.institution_requested_amount || currentItem.budget_amount))}</strong></>
+                      : i18n.language === 'nl'
+                      ? <>Max. beschikbaar: <strong className="text-foreground">{formatCurrency(Math.min(availableBudget, currentItem.institution_requested_amount || currentItem.budget_amount))}</strong></>
+                      : <>Max. available: <strong className="text-foreground">{formatCurrency(Math.min(availableBudget, currentItem.institution_requested_amount || currentItem.budget_amount))}</strong></>
+                    }
+                  </p>
                 </div>
               ) : (
-                // View Mode - Show Institution Request with Auto-calculated Church Value
-                <div className="space-y-3">
-                  {/* Main Institution Request Card */}
-                  <div className="p-4 rounded-lg border-2 border-gray-300 bg-white">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="w-4 h-4 text-gray-600" />
-                        <span className="text-xs font-medium text-gray-700">{translations.budget.requestedValue}</span>
-                      </div>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="text-xs">{translations.budget.requestedValueTooltip}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <p className="text-2xl font-bold text-gray-900">{formatCurrency(currentItem.requested_amount)}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {currentItem.budget_amount > 0 
-                        ? translations.budget.percentOfTotal.replace('{{percent}}', Math.round((currentItem.requested_amount / currentItem.budget_amount) * 100).toString())
-                        : translations.budget.percentOfTotal.replace('{{percent}}', '0')
-                      }
-                    </p>
-                  </div>
-
-                  {/* Budget Breakdown */}
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Total Budget */}
-                    <div className="p-3 rounded-lg border border-gray-200 bg-gray-50">
-                      <div className="flex items-center gap-1 mb-1">
-                        <DollarSign className="w-3 h-3 text-gray-500" />
-                        <span className="text-xs text-gray-600">{translations.budget.totalBudgetLabel}</span>
-                      </div>
-                      <p className="text-sm font-semibold text-gray-900">{formatCurrency(currentItem.budget_amount)}</p>
-                    </div>
-
-                    {/* Self Contribution */}
-                    <div className="p-3 rounded-lg border border-gray-200 bg-gray-50">
-                      <div className="flex items-center gap-1 mb-1">
-                        <Church className="w-3 h-3 text-gray-500" />
-                        <span className="text-xs text-gray-600">{translations.budget.selfRemainderLabel}</span>
-                      </div>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {formatCurrency(Math.max(0, currentItem.budget_amount - currentItem.requested_amount))}
+                // View Mode — just the requested value + percentage hint
+                <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-white">
+                  <span className="text-xs text-muted-foreground">{translations.budget.requestedValue}</span>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-gray-900">{formatCurrency(currentItem.requested_amount)}</p>
+                    {currentItem.budget_amount > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        {Math.round((currentItem.requested_amount / currentItem.budget_amount) * 100)}%
+                        {i18n.language === 'pt' ? ' do orçamento' : i18n.language === 'nl' ? ' van budget' : ' of budget'}
                       </p>
-                    </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1268,10 +1501,10 @@ export function RequestSubsidyModal({
                 className="min-h-[80px] text-sm resize-none border-2 border-gray-300 focus:border-gray-900 focus:ring-gray-900"
               />
             </div>
-          </div>
+          </div>}{/* end currentItem details */}
 
-          {/* Documents Section */}
-          <div className="space-y-4">
+          {/* Documents Section — only shown for "with_document" type AND when an activity is selected */}
+          {requestType === 'with_document' && currentItem && <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-semibold text-gray-900">{translations.documents.title}</h3>
@@ -1620,7 +1853,11 @@ export function RequestSubsidyModal({
               }
               return null
             })()}
-          </div>
+          </div>}
+          {/* end documents section */}
+
+          </>}
+          {/* end non-advance sections wrap */}
 
           {/* General Notes */}
           <div className="space-y-2">
@@ -1650,29 +1887,76 @@ export function RequestSubsidyModal({
         {/* Footer */}
         <div className="border-t border-gray-200 p-3 sm:p-4 bg-white">
           <div className="flex flex-col gap-3 sm:gap-4">
-            {/* Progress Badge - Always on top */}
-            <div className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border-2 transition-all self-start ${
-              validateAllActivities.allComplete
-                ? 'border-green-500 bg-green-50'
-                : 'border-amber-500 bg-amber-50'
-            }`}>
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                {validateAllActivities.allComplete ? (
-                  <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 flex-shrink-0" />
-                ) : (
-                  <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 text-amber-600 flex-shrink-0" />
-                )}                <div className="min-w-0">
-                  <p className={`text-xs font-semibold truncate ${
-                    validateAllActivities.allComplete ? 'text-green-700' : 'text-amber-700'
-                  }`}>
-                    {validateAllActivities.completedCount}/{validateAllActivities.totalCount} {translations.status.completed}
-                  </p>
-                  <p className="text-xs text-gray-600 truncate">
-                    {validateAllActivities.allComplete ? translations.status.readyToSubmit : translations.status.pendingValidation}
-                  </p>
+            {/* Per-type validation checklist */}
+            {requestType === 'without_document' && (
+              <div className="flex flex-wrap gap-2">
+                {withoutDocChecks.map(check => (
+                  <div
+                    key={check.id}
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded-md border text-[11px] transition-colors ${
+                      check.ok
+                        ? 'border-gray-300 bg-gray-100 text-gray-700'
+                        : 'border-gray-200 bg-white text-gray-400'
+                    }`}
+                  >
+                    {check.ok
+                      ? <Check className="w-3 h-3 text-gray-600 flex-shrink-0" />
+                      : <div className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0" />}
+                    <span className={check.ok ? 'font-medium' : ''}>{check.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {requestType === 'with_document' && (
+              <div className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-all self-start ${
+                canSubmit ? 'border-gray-300 bg-gray-100' : 'border-gray-200 bg-white'
+              }`}>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  {canSubmit ? (
+                    <Check className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 flex-shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-gray-700 truncate">
+                      {validateAllActivities.completedCount}/{validateAllActivities.totalCount}{' '}
+                      {i18n.language === 'pt' ? 'atividades completas' : i18n.language === 'nl' ? 'activiteiten compleet' : 'activities complete'}
+                    </p>
+                    <p className="text-[11px] text-gray-500 truncate">
+                      {canSubmit
+                        ? (i18n.language === 'pt' ? 'Pronto para enviar' : i18n.language === 'nl' ? 'Klaar om in te dienen' : 'Ready to submit')
+                        : (i18n.language === 'pt' ? 'Documentos e valores pendentes' : i18n.language === 'nl' ? 'Documenten en bedragen vereist' : 'Documents and amounts required')}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* Budget constraint warning */}
+            {requestType !== 'advance' && availableBudget <= 0 && (
+              <div className="flex items-center gap-2 p-2.5 bg-red-50 border border-red-200 rounded-lg">
+                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                <p className="text-xs text-red-700 font-medium">
+                  {i18n.language === 'pt'
+                    ? 'Não há saldo disponível. Todo o orçamento subsidiado já foi comprometido.'
+                    : i18n.language === 'nl'
+                    ? 'Geen beschikbaar saldo. Alle gesubsidieerde budget is al toegewezen.'
+                    : 'No available balance. All subsidized budget has already been committed.'}
+                </p>
+              </div>
+            )}
+            {requestType !== 'advance' && availableBudget > 0 && totalRequestedAmount > availableBudget && (
+              <div className="flex items-center gap-2 p-2.5 bg-red-50 border border-red-200 rounded-lg">
+                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                <p className="text-xs text-red-700 font-medium">
+                  {i18n.language === 'pt'
+                    ? `Valor solicitado (${formatCurrency(totalRequestedAmount)}) excede o saldo disponível (${formatCurrency(availableBudget)}).`
+                    : i18n.language === 'nl'
+                    ? `Aangevraagd bedrag (${formatCurrency(totalRequestedAmount)}) overschrijdt beschikbaar saldo (${formatCurrency(availableBudget)}).`
+                    : `Requested amount (${formatCurrency(totalRequestedAmount)}) exceeds available balance (${formatCurrency(availableBudget)}).`}
+                </p>
+              </div>
+            )}
 
             {/* Statistics and Actions Row */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
@@ -1718,7 +2002,7 @@ export function RequestSubsidyModal({
                         <Button
                           onClick={handleSubmit}
                           size="sm"
-                          disabled={!validateAllActivities.allComplete || isSubmitting || !canSave}
+                          disabled={!canSubmit || isSubmitting || (requestType !== 'advance' && !canSave)}
                           className="h-8 sm:h-9 px-3 sm:px-4 w-full text-xs sm:text-sm bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-50"
                         >
                           {isSubmitting ? (
@@ -1736,14 +2020,18 @@ export function RequestSubsidyModal({
                         </Button>
                       </div>
                     </TooltipTrigger>
-                    {!canSave && (
+                    {(!canSave || (requestType !== 'advance' && (availableBudget <= 0 || totalRequestedAmount > availableBudget))) && (
                       <TooltipContent>
                         <p className="text-xs max-w-[200px]">
-                          {i18n.language === 'pt'
-                            ? `Você não tem permissão para ${mode === 'edit' ? 'atualizar' : 'criar'} solicitações de subsídio. Entre em contato com o administrador para solicitar acesso.`
-                            : i18n.language === 'nl'
-                            ? `U heeft geen toestemming om subsidieaanvragen ${mode === 'edit' ? 'bij te werken' : 'aan te maken'}. Neem contact op met de beheerder om toegang aan te vragen.`
-                            : `You do not have permission to ${mode === 'edit' ? 'update' : 'create'} subsidy requests. Contact the administrator to request access.`}
+                          {!canSave
+                            ? (i18n.language === 'pt'
+                                ? `Você não tem permissão para ${mode === 'edit' ? 'atualizar' : 'criar'} solicitações de subsídio.`
+                                : i18n.language === 'nl'
+                                ? `U heeft geen toestemming om subsidieaanvragen ${mode === 'edit' ? 'bij te werken' : 'aan te maken'}.`
+                                : `You do not have permission to ${mode === 'edit' ? 'update' : 'create'} subsidy requests.`)
+                            : availableBudget <= 0
+                            ? (i18n.language === 'pt' ? 'Sem saldo disponível para nova solicitação.' : i18n.language === 'nl' ? 'Geen beschikbaar saldo.' : 'No available balance for a new request.')
+                            : (i18n.language === 'pt' ? `Valor excede o saldo disponível (${formatCurrency(availableBudget)}).` : i18n.language === 'nl' ? `Bedrag overschrijdt beschikbaar saldo (${formatCurrency(availableBudget)}).` : `Amount exceeds available balance (${formatCurrency(availableBudget)}).`)}
                         </p>
                       </TooltipContent>
                     )}

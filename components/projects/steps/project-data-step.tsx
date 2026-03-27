@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Globe, Building, Users, Target, Home, Settings, MapPin, CalendarIcon, Check, Info, AlertTriangle } from 'lucide-react'
+import { Globe, Building, Users, Target, Home, Settings, MapPin, CalendarIcon, Check, Info, AlertTriangle, UserCheck } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -21,11 +21,13 @@ import { cn } from '@/lib/utils'
 import { StepInfo } from '../step-info'
 import { ProjectFormData } from '@/components/projects/types'
 import { useInstitution } from '@/contexts/institution-context'
+import { useAuth } from '@/contexts/auth-context'
+import { UsersAvatarGroup, UserAvatarData } from '@/components/shared/users-avatar-group'
 
 interface ProjectDataStepProps {
   formData: ProjectFormData
   errors: Record<string, string>
-  departments: Array<{ id: string; name: string; annual_budget?: number }>
+  departments: Array<{ id: string; name: string; annual_budget?: number; leader_id?: string | null }>
   users: Array<{ id: string; name: string; email: string }>
   churches: Array<{ id: string; name: string }>
   onChange: (data: Partial<ProjectFormData>) => void
@@ -42,8 +44,8 @@ const TYPE_ICONS = {
 
 export function ProjectDataStep({ formData, errors, departments, users, churches, onChange }: ProjectDataStepProps) {
   const { t } = useTranslation()
+  const { user: authUser } = useAuth()
   const [openDepartment, setOpenDepartment] = useState(false)
-  const [openResponsible, setOpenResponsible] = useState(false)
   const [openChurch, setOpenChurch] = useState(false)
   const [openChurchDepartment, setOpenChurchDepartment] = useState(false)
   const [showDepartmentInfoModal, setShowDepartmentInfoModal] = useState(false)
@@ -74,6 +76,40 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
 
   const loadingChurchDepartments = !currentInstitutionData
 
+  // Derive the leader user for the currently selected department
+  const selectedDepartment = departments.find(d => d.id === formData.department_id)
+  const departmentLeaderId = selectedDepartment?.leader_id ?? null
+  const departmentLeader = departmentLeaderId
+    ? users.find(u => u.id === departmentLeaderId) ?? null
+    : null
+
+  // Auto-set responsible_id when department changes (based on leader_id)
+  useEffect(() => {
+    if (!formData.department_id) return
+    const dept = departments.find(d => d.id === formData.department_id)
+    if (!dept) return
+
+    const leaderId = dept.leader_id ?? null
+    const leader = leaderId ? users.find(u => u.id === leaderId) ?? null : null
+
+    // Debug output
+    console.group('🏢 [ProjectDataStep] Department selected')
+    console.log('Department:', { id: dept.id, name: dept.name })
+    console.log('leader_id:', leaderId ?? '❌ NULL')
+    if (leader) {
+      console.log('Leader found:', { id: leader.id, name: leader.name, email: leader.email })
+    } else if (leaderId) {
+      console.warn('⚠️ leader_id exists but user NOT found in users array. leader_id:', leaderId)
+      console.log('Available user IDs:', users.map(u => u.id))
+    } else {
+      console.warn('ℹ️ No leader_id set for this department')
+    }
+    console.groupEnd()
+
+    // Auto-populate responsible_id with leader (or clear if no leader)
+    onChange({ responsible_id: leaderId ?? '' })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.department_id])
 
   // Check if there are departments available
   const hasDepartments = departments && departments.length > 0
@@ -556,10 +592,10 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
               </Dialog>
 
 
-              {/* Responsible Person */}
+              {/* Responsible Person - auto-filled from department leader_id */}
               <div className="flex-1 space-y-4">
                 <Label htmlFor="responsible" className="flex items-center gap-2 text-base font-medium">
-                  <Users className="w-4 h-4 text-muted-foreground" />
+                  <UserCheck className="w-4 h-4 text-muted-foreground" />
                   {t('projectRegister.fields.responsiblePeople')} *
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -570,54 +606,61 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
                     </TooltipContent>
                   </Tooltip>
                 </Label>
-                <Popover open={openResponsible} onOpenChange={setOpenResponsible}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openResponsible}
-                      className={`h-12 w-full justify-between border-2 ${errors.responsible_id ? 'border-red-500' : 'border-border'} hover:border-primary/50 transition-colors`}
-                    >
-                      {formData.responsible_id
-                        ? users.find((user) => user.id === formData.responsible_id)?.name
-                        : t('projectRegister.placeholders.selectResponsible')}
-                      <Users className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder={t('projectRegister.placeholders.searchUser')} />
-                      <CommandList>
-                        <CommandEmpty>{t('projectRegister.noResults.user')}</CommandEmpty>
-                        <CommandGroup>
-                          {users.map((user) => (
-                            <CommandItem
-                              key={user.id}
-                              value={user.name}
-                              onSelect={() => {
-                                onChange({ responsible_id: user.id })
-                                setOpenResponsible(false)
-                              }}
-                            >
-                              <div className="flex items-center gap-3 w-full">
-                                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                                  <Users className="w-4 h-4 text-primary" />
-                                </div>
-                                <div className="flex-1">
-                                  <span className="font-medium">{user.name}</span>
-                                  <div className="text-xs text-muted-foreground">{user.email}</div>
-                                </div>
-                                {formData.responsible_id === user.id && (
-                                  <Check className="ml-auto h-4 w-4" />
-                                )}
-                              </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+
+                {/* Leader + Co-Owner card - shows when a department is selected */}
+                {formData.department_id && departmentLeader ? (() => {
+                  // Co-owner: prefer authUser (logged-in user), fallback to users array lookup
+                  const coOwnerUser: { id: string; name: string; email: string } | null =
+                    authUser
+                      ? { id: authUser.id, name: authUser.name, email: authUser.email ?? '' }
+                      : formData.co_owner_id
+                        ? users.find(u => u.id === formData.co_owner_id) ?? null
+                        : null
+
+                  // Build deduplicated users list: owner first, then co-owner if different
+                  const avatarUsers: UserAvatarData[] = [
+                    { id: departmentLeader.id, name: departmentLeader.name, email: departmentLeader.email },
+                    ...(coOwnerUser && coOwnerUser.id !== departmentLeader.id
+                      ? [{ id: coOwnerUser.id, name: coOwnerUser.name, email: coOwnerUser.email }]
+                      : [])
+                  ]
+
+                  return (
+                    <div className={`animate-in fade-in-0 slide-in-from-top-1 duration-200 flex items-center gap-2 p-3 rounded-lg border-2 ${
+                      errors.responsible_id ? 'border-red-500' : 'border-border'
+                    } bg-muted/30`}>
+                      <UsersAvatarGroup
+                        users={avatarUsers}
+                        maxDisplay={3}
+                        size="sm"
+                        showAddButton={false}
+                        ownerUserId={departmentLeader.id}
+                        coOwnerUserId={coOwnerUser && coOwnerUser.id !== departmentLeader.id ? coOwnerUser.id : undefined}
+                      />
+                    </div>
+                  )
+                })() : formData.department_id && !departmentLeader && departmentLeaderId ? (
+                  /* leader_id exists but user not in list - rare fallback */
+                  <div className="flex items-center gap-3 p-3 rounded-lg border-2 border-yellow-500/50 bg-yellow-50/30 dark:bg-yellow-900/10">
+                    <Users className="w-5 h-5 text-yellow-600" />
+                    <p className="text-sm text-muted-foreground">
+                      {t('projectRegister.warnings.leaderNotFound')}
+                    </p>
+                  </div>
+                ) : (
+                  /* No department selected or no leader */
+                  <div className={`flex items-center gap-3 h-12 px-3 rounded-lg border-2 ${
+                    errors.responsible_id ? 'border-red-500' : 'border-dashed border-border'
+                  } text-muted-foreground`}>
+                    <Users className="w-4 h-4" />
+                    <span className="text-sm">
+                      {!formData.department_id
+                        ? t('projectRegister.placeholders.selectDepartmentFirst')
+                        : t('projectRegister.placeholders.noLeaderAssigned')}
+                    </span>
+                  </div>
+                )}
+
                 {errors.responsible_id && <p className="text-sm text-red-600">{errors.responsible_id}</p>}
               </div>
             </div>

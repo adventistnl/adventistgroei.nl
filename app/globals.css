@@ -239,6 +239,13 @@
 
 /* ✅ Custom sidebar optimizations */
 @layer components {
+  /* Hide scrollbar in sidebar content while keeping scroll */
+  [data-slot="sidebar-content"] {
+    scrollbar-width: none;
+  }
+  [data-slot="sidebar-content"]::-webkit-scrollbar {
+    display: none;
+  }
   /* Ícones padrão - mesmo tamanho dos botões do app (h-4 w-4) */
   .sidebar-icon {
     @apply min-w-4 min-h-4 w-4 h-4 shrink-0 flex-shrink-0;

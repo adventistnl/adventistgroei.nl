@@ -1,6 +1,54 @@
 import { gql } from "@apollo/client";
 
 /**
+ * Validate (approve) a subsidy receipt.
+ * Permission: VALIDATE_SUBSIDY_RECEIPT (ADMIN, FINANCIAL_MANAGER, INSTITUTIONAL_LEADER)
+ */
+export const VALIDATE_SUBSIDY_RECEIPT = gql`
+  mutation ValidateSubsidyReceipt($id: ID!, $note: String) {
+    validateSubsidyReceipt(id: $id, note: $note) {
+      id
+      filename
+      is_validated
+      approved
+      validated_at
+      validated_by
+      note
+      amount
+      file_url
+      subsidy_request {
+        id
+        subsidy_statuses_id
+      }
+    }
+  }
+`;
+
+/**
+ * Reject a subsidy receipt.
+ * Permission: VALIDATE_SUBSIDY_RECEIPT (same as validate — ADMIN, FINANCIAL_MANAGER, INSTITUTIONAL_LEADER)
+ */
+export const REJECT_SUBSIDY_RECEIPT = gql`
+  mutation RejectSubsidyReceipt($id: ID!, $reason: String) {
+    rejectSubsidyReceipt(id: $id, reason: $reason) {
+      id
+      filename
+      is_validated
+      approved
+      validated_at
+      validated_by
+      rejection_reason
+      amount
+      file_url
+      subsidy_request {
+        id
+        subsidy_statuses_id
+      }
+    }
+  }
+`;
+
+/**
  * Request a refund for a subsidy
  */
 export const REQUEST_SUBSIDY_REFUND = gql`

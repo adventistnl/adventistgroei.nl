@@ -89,6 +89,7 @@ import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
+import { useAuth } from "@/contexts/auth-context"
 import { projectRegisterTranslations } from "@/lib/translations/project-register"
 import { projectTranslations } from "@/lib/translations/projects"
 import { LanguageSelector } from "@/components/shared/language-selector"
@@ -121,14 +122,19 @@ type Activity = ProjectActivity
 import toast from "react-hot-toast"
 import { useMutation, useQuery } from "@apollo/client"
 import { CREATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
+import { CREATE_PROJECT_HISTORY } from "@/graphql/mutations/PROJECT_HISTORY_MUTATIONS"
+import { ProjectHistoryType } from "@/types/project-history"
+import { ADD_ROLE_TO_USER } from "@/graphql/mutations/USER_MUTATIONS"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
 import { GET_ALL_USERS_QUERY } from "@/graphql/queries/GET_USER_QUERY"
 import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
+import { GET_ALL_ROLES_QUERY } from "@/graphql/queries/GET_ROLES_QUERY"
 import { ProjectType, LanguagePreference, EventType } from "@/types/globalTypes"
 import "@/lib/i18n"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
+import { LoadingSpinner } from "@/components/shared/loading-spinner"
 
 // Predefined activities with translation keys
 // The 'key' field is used to fetch translations, tagKeys are database keys
@@ -233,9 +239,13 @@ function ProjectRegisterContent() {
   }
 
 
-  // Get institution context
+  // Get current user and institution context
+  const { user: currentUser } = useAuth()
   const { currentInstitutionData } = useInstitution()
   const institutionId = currentInstitutionData?.id
+
+  // One-shot mutation for logging project creation event
+  const [logProjectCreated] = useMutation(CREATE_PROJECT_HISTORY)
 
   // GraphQL mutation for creating project
   const [createProjectMutation, { loading: creatingProject }] = useMutation(CREATE_PROJECT_MUTATION, {
@@ -256,8 +266,16 @@ function ProjectRegisterContent() {
       toast.success(translations.toast.projectCreated, {
         duration: 3000
       })
-      // Navigate back to projects page
-      router.push('/projects')
+
+      // Log project creation event in history
+      const newProjectId = data?.createProject?.id
+      if (newProjectId) {
+        logProjectCreated({
+          variables: { data: { project_id: newProjectId, type: ProjectHistoryType.CREATED } }
+        }).catch(() => { /* non-blocking */ })
+      }
+
+      // Navigation is handled in handleSubmit after role assignment
     },
     onError: (error) => {
       // Extract user-friendly error message
@@ -286,12 +304,19 @@ function ProjectRegisterContent() {
     skip: !institutionId
   })
 
+  // Fetch all roles to identify PROJECT_OWNER role id
+  const { data: rolesData } = useQuery(GET_ALL_ROLES_QUERY)
+
+  // Mutation to assign role to a user
+  const [addRoleToUser] = useMutation(ADD_ROLE_TO_USER)
+
   // Extract data with fallback to empty arrays and filter by current year budget
   const currentYear = new Date().getFullYear()
   const departments = (departmentsData?.departments || []).filter((dept: any) =>
     dept.annual_budgets?.some((budget: any) => budget.year === currentYear && budget.is_locked === true)
   )
-  const users = usersData?.users || []
+  // Filter only active (non-deleted) users
+  const users = (usersData?.users || []).filter((user: any) => !user.is_deleted) as Array<{ id: string; name: string; email: string }>
   const churches = churchesData?.churches || []
 
   // Get translations for current language - usar o sistema i18n global
@@ -338,6 +363,7 @@ function ProjectRegisterContent() {
     subsidy_percentage: 35,
     is_special_case: false,
     church_department_id: null,
+    co_owner_id: undefined,
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -369,6 +395,9 @@ function ProjectRegisterContent() {
 
   // State for collapsible special project rules
   const [isSpecialRulesOpen, setIsSpecialRulesOpen] = useState(true)
+
+  // State for collapsible project info card in review step
+  const [isProjectInfoOpen, setIsProjectInfoOpen] = useState(true)
 
   // State for trash (deleted activities)
   const [deletedActivities, setDeletedActivities] = useState<Activity[]>([])
@@ -474,6 +503,13 @@ function ProjectRegisterContent() {
     }
   }, [isSpecialProject, isChurchPlanting])
 
+  // Set co_owner_id to current logged-in user on mount and whenever currentUser changes
+  useEffect(() => {
+    if (currentUser?.id) {
+      setFormData(prev => ({ ...prev, co_owner_id: prev.co_owner_id ?? currentUser.id }))
+    }
+  }, [currentUser?.id])
+
   // Update currentActivity default assignee when project responsible changes
   useEffect(() => {
     if (formData.responsible_id && !editingActivityId) {
@@ -554,8 +590,10 @@ function ProjectRegisterContent() {
 
       currentActivities.push(updatedActivity)
 
-      const groupName = toGroup === 'subsidized' ? 'Subsidiadas' : 'Não Subsidiadas'
-      toast.success(`${activity.name} movida para ${groupName}`)
+      const groupName = toGroup === 'subsidized'
+        ? t('projectRegister.activityGroups.subsidized', 'Subsidiadas')
+        : t('projectRegister.activityGroups.nonSubsidized', 'Não Subsidiadas')
+      toast.success(`${activity.name} ${t('projectRegister.toast.movedTo', 'movida para')} ${groupName}`)
 
       return {
         ...prev,
@@ -997,6 +1035,10 @@ function ProjectRegisterContent() {
         required_volunteers: false, // Adjust based on your needs
         is_event: formData.register_as_event || false,
         owner_id: formData.responsible_id,
+        // Only send co_owner_id when it is explicitly set and different from the owner
+        co_owner_id: (formData.co_owner_id && formData.co_owner_id !== formData.responsible_id)
+          ? formData.co_owner_id
+          : undefined,
         activities: mappedActivities,
         is_special_case: isSpecialProject || isChurchPlanting || false,
         special_case_reason: isChurchPlanting ? churchPlantingJustification : specialProjectJustification,
@@ -1024,6 +1066,59 @@ function ProjectRegisterContent() {
       const result = await createProjectMutation({ variables })
 
       toast.dismiss(loadingToast)
+
+      // Guard: if creation failed, onError already showed the toast — do not redirect
+      if (!result?.data) {
+        return
+      }
+
+      // Assign PROJECT_OWNER role to owner and co_owner after project is created
+      const projectOwnerRole = rolesData?.roles?.find(
+        (role: any) => role.key_code === 'PROJECT_OWNER'
+      )
+
+      if (projectOwnerRole) {
+        const roleAssignments: Array<{ userId: string; label: string }> = []
+
+        // Owner
+        if (formData.responsible_id) {
+          const ownerInUsers = (usersData?.users || []).find((u: any) => u.id === formData.responsible_id)
+          const alreadyHasRole = ownerInUsers?.user_roles?.some(
+            (ur: any) => ur.role?.key_code === 'PROJECT_OWNER'
+          )
+          if (!alreadyHasRole) {
+            roleAssignments.push({ userId: formData.responsible_id, label: ownerInUsers?.name || 'Owner' })
+          }
+        }
+
+        // Co-Owner
+        if (formData.co_owner_id && formData.co_owner_id !== formData.responsible_id) {
+          const coOwnerInUsers = (usersData?.users || []).find((u: any) => u.id === formData.co_owner_id)
+          const alreadyHasRole = coOwnerInUsers?.user_roles?.some(
+            (ur: any) => ur.role?.key_code === 'PROJECT_OWNER'
+          )
+          if (!alreadyHasRole) {
+            roleAssignments.push({ userId: formData.co_owner_id, label: coOwnerInUsers?.name || 'Co-Owner' })
+          }
+        }
+
+        // Execute role assignments in parallel
+        if (roleAssignments.length > 0) {
+          await Promise.allSettled(
+            roleAssignments.map(({ userId, label }) =>
+              addRoleToUser({ variables: { userId, roleId: projectOwnerRole.id } })
+                .then(() => toast.success(`Role Project Owner atribuído a ${label}`, { duration: 2500 }))
+                .catch(() => {
+                  // Non-blocking: log silently if role already exists or fails
+                  console.warn(`Failed to assign PROJECT_OWNER role to ${label}`)
+                })
+            )
+          )
+        }
+      }
+
+      // Navigate only after role assignments complete
+      router.push('/projects')
 
     } catch (error: any) {
       toast.dismiss(loadingToast)
@@ -1227,7 +1322,7 @@ function ProjectRegisterContent() {
           <div className="space-y-4">
             <h4 className="font-medium flex items-center gap-2">
               <Plus className="w-4 h-4 text-muted-foreground" />
-              {translations.quickActivities.title}
+              {t('projectRegister.quickActivities.title')}
             </h4>
 
             <Carousel
@@ -1255,7 +1350,7 @@ function ProjectRegisterContent() {
                             </Badge>
                           </div>
                           <p className="text-xs text-muted-foreground line-clamp-2">
-                            {t(`projectRegister.quickActivities.${activity.key}.description`)}
+                            {(() => { const d = t(`projectRegister.quickActivities.${activity.key}.description`); return d.length > 20 ? d.slice(0, 20) + '...' : d })()} 
                           </p>
                           <div className="flex flex-wrap gap-1">
                             {activity.tagKeys.map((tagKey: string) => renderTagWithIcon(tagKey))}
@@ -2522,81 +2617,168 @@ function ProjectRegisterContent() {
               </Card>
             </div>
 
-            {/* Informações do Projeto */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="w-5 h-5 text-muted-foreground" />
-                  {translations.summary.projectInfo}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <Target className="w-5 h-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">{translations.fields.projectTitle}</p>
-                        <p className="text-base text-foreground">{formData.title}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <Building className="w-5 h-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">{translations.fields.department}</p>
-                        <p className="text-base text-foreground">
-                          {departments.find((d: any) => d.id === formData.department_id)?.name}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <Users className="w-5 h-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Responsável</p>
-                        <p className="text-base text-foreground">
-                          {users.find((u: any) => u.id === formData.responsible_id)?.name || "Não selecionado"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <Home className="w-5 h-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Tipo de Responsabilidade</p>
-                        <p className="text-base text-foreground capitalize">{formData.project_responsible_type}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <Settings className="w-5 h-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Configurações</p>
-                        <div className="flex gap-2 mt-1">
-                          {formData.is_private && (
-                            <Badge variant="secondary" className="text-xs">Privado</Badge>
-                          )}
-                          {formData.register_as_event && (
-                            <Badge variant="secondary" className="text-xs">Evento Público</Badge>
+            {/* Informações do Projeto — Collapsible */}
+            {(() => {
+              const ownerUser = users.find((u: any) => u.id === formData.responsible_id) ?? null
+              const coOwnerUser: { id: string; name: string; email: string } | null =
+                currentUser && formData.co_owner_id
+                  ? { id: currentUser.id, name: currentUser.name, email: currentUser.email ?? '' }
+                  : users.find((u: any) => u.id === formData.co_owner_id) ?? null
+              const avatarUsers: UserAvatarData[] = [
+                ...(ownerUser ? [{ id: ownerUser.id, name: ownerUser.name, email: ownerUser.email }] : []),
+                ...(coOwnerUser && coOwnerUser.id !== ownerUser?.id
+                  ? [{ id: coOwnerUser.id, name: coOwnerUser.name, email: coOwnerUser.email }]
+                  : [])
+              ]
+              return (
+                <Card>
+                  {/* Clickable header — always visible */}
+                  <button
+                    type="button"
+                    onClick={() => setIsProjectInfoOpen(prev => !prev)}
+                    className="w-full text-left"
+                  >
+                    <CardHeader>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                          <span className="text-sm font-semibold text-foreground truncate">
+                            {translations.summary.projectInfo}
+                          </span>
+                          {formData.title && (
+                            <span className="text-xs text-muted-foreground truncate hidden sm:block">
+                              — {formData.title}
+                            </span>
                           )}
                         </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {/* Avatar group always visible in header */}
+                          {!isProjectInfoOpen && avatarUsers.length > 0 && (
+                            <UsersAvatarGroup
+                              users={avatarUsers}
+                              ownerUserId={formData.responsible_id}
+                              coOwnerUserId={coOwnerUser && coOwnerUser.id !== ownerUser?.id ? coOwnerUser.id : undefined}
+                              maxDisplay={3}
+                              size="sm"
+                              showLabel={false}
+                              showAddButton={false}
+                            />
+                          )}
+                          <div className="text-muted-foreground transition-transform duration-200" style={{ transform: isProjectInfoOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }}>
+                            <ChevronDown className="w-4 h-4" />
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    </CardHeader>
+                  </button>
 
-                    <div className="flex items-start gap-3">
-                      <FileText className="w-5 h-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">{translations.fields.projectDescription}</p>
-                        <p className="text-sm text-foreground">{formData.description}</p>
+                  {/* Collapsible body */}
+                  {isProjectInfoOpen && (
+                    <CardContent className="pt-0">
+                      <div className="divide-y divide-border">
+
+                        {/* Title + Department — side by side, wraps on small screens */}
+                        <div className="flex flex-wrap gap-x-8 gap-y-4 py-4">
+                          <div className="flex items-start gap-3 flex-1 min-w-[200px]">
+                            <Target className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-muted-foreground mb-0.5">{translations.fields.projectTitle}</p>
+                              <p className="text-sm font-medium text-foreground break-words">{formData.title}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3 flex-1 min-w-[200px]">
+                            <Building className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-muted-foreground mb-0.5">{translations.fields.department}</p>
+                              <p className="text-sm font-medium text-foreground">
+                                {departments.find((d: any) => d.id === formData.department_id)?.name ?? '—'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Responsible People — owner + co-owner with avatars and name labels */}
+                        <div className="flex items-start gap-3 py-4">
+                          <Users className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0 space-y-2">
+                            <p className="text-xs font-medium text-muted-foreground">{t('projectRegister.review.responsible')}</p>
+                            {avatarUsers.length > 0 ? (
+                              <div className="flex items-center gap-3 flex-wrap">
+                                <UsersAvatarGroup
+                                  users={avatarUsers}
+                                  ownerUserId={formData.responsible_id}
+                                  coOwnerUserId={coOwnerUser && coOwnerUser.id !== ownerUser?.id ? coOwnerUser.id : undefined}
+                                  maxDisplay={4}
+                                  size="sm"
+                                  showLabel={false}
+                                  showAddButton={false}
+                                />
+                                <div className="flex flex-col gap-0.5">
+                                  {ownerUser && (
+                                    <p className="text-xs text-foreground">
+                                      {ownerUser.name}{' '}
+                                      <span className="text-amber-500 font-medium">({t('projectRegister.review.owner')})</span>
+                                    </p>
+                                  )}
+                                  {coOwnerUser && coOwnerUser.id !== ownerUser?.id && (
+                                    <p className="text-xs text-foreground">
+                                      {coOwnerUser.name}{' '}
+                                      <span className="text-blue-500 font-medium">({t('projectRegister.review.coOwner')})</span>
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">—</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Responsibility Type + Settings — side by side, wraps on small screens */}
+                        <div className="flex flex-wrap gap-x-8 gap-y-4 py-4">
+                          <div className="flex items-start gap-3 flex-1 min-w-[160px]">
+                            <Home className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-muted-foreground mb-0.5">{t('projectRegister.review.responsibilityType')}</p>
+                              <p className="text-sm text-foreground capitalize">
+                                {t(`projectRegister.responsibilityTypes.${formData.project_responsible_type}`, formData.project_responsible_type)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3 flex-1 min-w-[160px]">
+                            <Settings className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-muted-foreground mb-1">{t('projectRegister.review.settings')}</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {formData.is_private && (
+                                  <Badge variant="secondary" className="text-xs">{t('projectRegister.review.private')}</Badge>
+                                )}
+                                {formData.register_as_event && (
+                                  <Badge variant="secondary" className="text-xs">{t('projectRegister.review.publicEvent')}</Badge>
+                                )}
+                                {!formData.is_private && !formData.register_as_event && (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Description — full width */}
+                        <div className="flex items-start gap-3 py-4">
+                          <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-muted-foreground mb-1">{translations.fields.projectDescription}</p>
+                            <p className="text-sm text-foreground leading-relaxed">{formData.description}</p>
+                          </div>
+                        </div>
+
                       </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                    </CardContent>
+                  )}
+                </Card>
+              )
+            })()}
 
             {/* Conformidade com Políticas */}
             <Card>
@@ -2724,9 +2906,9 @@ function ProjectRegisterContent() {
                   <CardTitle className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Sprout className="w-5 h-5 text-muted-foreground" />
-                      Atividades Não Subsidiadas
+                      {t('projectRegister.activityGroups.nonSubsidized', 'Atividades Não Subsidiadas')}
                     </div>
-                    <Badge variant="secondary">{nonSubsidizedActivities.length} atividades</Badge>
+                    <Badge variant="secondary">{t('projectRegister.fundingCalculator.activitiesCount', { count: nonSubsidizedActivities.length })}</Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -2755,7 +2937,7 @@ function ProjectRegisterContent() {
                       </div>
                     ))}
                     <div className="pt-3 border-t border-border flex justify-between items-center">
-                      <span className="font-medium text-foreground">Subtotal Igreja:</span>
+                      <span className="font-medium text-foreground">{t('projectRegister.review.selfSubtotal', 'Subtotal Igreja:')}</span>
                       <span className="text-lg font-bold text-foreground">
                         € {nonSubsidizedActivities.reduce((sum, a) => sum + a.budget_amount, 0).toLocaleString()}
                       </span>
@@ -2772,6 +2954,12 @@ function ProjectRegisterContent() {
 
   return (
     <TooltipProvider>
+      {/* Full-page loading overlay during project creation and role assignment */}
+      {isLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+            <LoadingSpinner />
+        </div>
+      )}
       <AppLayout>
         <div className="w-full max-w-full overflow-hidden">{/* Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
@@ -2873,7 +3061,15 @@ function ProjectRegisterContent() {
                   <Button
                     onClick={handleNext}
                     className="gap-2"
-                    disabled={isLoading || (currentStep === 1 && formData._isStepValid === false)}
+                    disabled={
+                      isLoading ||
+                      (currentStep === 1 && !formData._isStepValid) ||
+                      (currentStep === 2 && formData.activities.length === 0) ||
+                      (currentStep === 3 && !isSpecialProject && !isChurchPlanting && (
+                        formData.institution_contribution > FUNDING_POLICIES.max_institution_amount ||
+                        (formData.total_budget > 0 && (formData.institution_contribution / formData.total_budget) * 100 > FUNDING_POLICIES.max_institution_percent)
+                      ))
+                    }
                   >
                     <span className="hidden sm:inline">{translations.buttons.next}</span>
                     <ChevronRight className="w-4 h-4" />

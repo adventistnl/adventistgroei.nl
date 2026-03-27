@@ -3527,10 +3527,20 @@ export type ProjectScalarRelationFilter = {
 export enum ProjectStatus {
   Concluded = 'CONCLUDED',
   Draft = 'DRAFT',
+  /** @deprecated Use Overdue instead */
   Expired = 'EXPIRED',
   InProgress = 'IN_PROGRESS',
   InReview = 'IN_REVIEW',
-  OnHold = 'ON_HOLD'
+  /** @deprecated No longer part of the active workflow */
+  OnHold = 'ON_HOLD',
+  // Extended frontend statuses
+  OpenRequest = 'OPEN_REQUEST',
+  AdjustmentsNeeded = 'ADJUSTMENTS_NEEDED',
+  Overdue = 'OVERDUE',
+  PendingReceipt = 'PENDING_RECEIPT',
+  WaitingRefund = 'WAITING_REFUND',
+  /** @deprecated No longer part of the active workflow */
+  Pending = 'PENDING',
 }
 
 export enum ProjectType {

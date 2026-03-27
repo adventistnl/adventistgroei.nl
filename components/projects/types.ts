@@ -30,6 +30,7 @@ export interface ProjectFormData {
   location_church_plant?: string
   special_budget?: number
   _isStepValid?: boolean // Internal field for step validation
+  co_owner_id?: string // Co-owner auto-populated from department's created_by
   event?: {
     title: string
     description: string

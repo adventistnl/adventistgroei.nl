@@ -28,7 +28,8 @@ import {
   Flag,
   UserPlus,
   History,
-  Upload
+  Upload,
+  Lock,
 } from "lucide-react"
 import { useQuery } from "@apollo/client"
 import { GET_PROJECT_ACTIVITY_LOGS_QUERY } from "@/graphql/queries/ACTIVITY_LOGS_QUERY"
@@ -71,6 +72,10 @@ export interface ActivityDetailsModalProps {
   activity: ProjectActivityData | null
   onSave?: (data: Partial<ProjectActivityData>) => void
   project?: any
+  /** When true, all editing, uploading and saving are disabled (e.g. project is CONCLUDED) */
+  readOnly?: boolean
+  /** Reason displayed in a tooltip/banner when readOnly=true */
+  readOnlyReason?: string
   institutionUsers?: Array<{
     id: string
     name: string
@@ -86,6 +91,8 @@ export function ActivityDetailsModal({
   activity,
   onSave,
   project,
+  readOnly = false,
+  readOnlyReason,
   institutionUsers = []
 }: ActivityDetailsModalProps) {
   const { t } = useTranslation()
@@ -372,11 +379,17 @@ export function ActivityDetailsModal({
   }
 
   const handleInputChange = (field: string, value: string | number | boolean | string[]) => {
+    if (readOnly) return
     setFormData(prev => ({
       ...prev,
       [field]: value
     }))
     setHasChanges(true)
+  }
+
+  // Guard: open field editing only when not read-only
+  const handleOpenEditField = (field: string) => {
+    if (!readOnly) setEditingField(field)
   }
 
   const handleSave = async () => {
@@ -461,7 +474,7 @@ export function ActivityDetailsModal({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setEditingField('name')}
+                    onClick={() => handleOpenEditField('name')}
                     className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600 flex-shrink-0"
                   >
                     <Edit3 className="w-3 h-3" />
@@ -510,7 +523,7 @@ export function ActivityDetailsModal({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setEditingField('budget')}
+                            onClick={() => handleOpenEditField('budget')}
                             className="h-5 w-5 p-0 text-gray-400 hover:text-gray-600"
                           >
                             <Edit3 className="w-3 h-3" />
@@ -597,7 +610,7 @@ export function ActivityDetailsModal({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setEditingField('status')}
+                      onClick={() => handleOpenEditField('status')}
                       className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
                     >
                       <Edit3 className="w-3 h-3" />
@@ -653,7 +666,7 @@ export function ActivityDetailsModal({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setEditingField('priority')}
+                      onClick={() => handleOpenEditField('priority')}
                       className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
                     >
                       <Edit3 className="w-3 h-3" />
@@ -731,7 +744,7 @@ export function ActivityDetailsModal({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setEditingField('category')}
+                      onClick={() => handleOpenEditField('category')}
                       className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
                     >
                       <Edit3 className="w-3 h-3" />
@@ -779,6 +792,7 @@ export function ActivityDetailsModal({
                     )}
                   </div>
                 )}
+                {!readOnly && (
                 <UserMultiSelector
                   availableUsers={availableUsers}
                   selectedUsers={assignedUsers}
@@ -787,6 +801,7 @@ export function ActivityDetailsModal({
                   dialogTitle={t('activities.modal.select_assignees')}
                   searchPlaceholder={t('activities.modal.search_user')}
                 />
+                )}
               </div>
             </div>
 
@@ -838,7 +853,7 @@ export function ActivityDetailsModal({
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">{t('activities.modal.description')}</h3>
                 <div className="flex items-center gap-2">
-                  {!isDescriptionEditing && (
+                  {!isDescriptionEditing && !readOnly && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -919,8 +934,12 @@ export function ActivityDetailsModal({
                 </div>
               ) : (
                 <div 
-                  className="relative border border-gray-200 rounded-lg p-4 min-h-[120px] cursor-pointer hover:bg-gray-50 transition-colors group"
-                  onClick={() => setIsDescriptionEditing(true)}
+                  className={`relative border border-gray-200 rounded-lg p-4 min-h-[120px] group ${
+                    readOnly
+                      ? 'cursor-default'
+                      : 'cursor-pointer hover:bg-gray-50 transition-colors'
+                  }`}
+                  onClick={() => { if (!readOnly) setIsDescriptionEditing(true) }}
                 >
                   {formData.description ? (
                     <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
@@ -954,7 +973,8 @@ export function ActivityDetailsModal({
                 )}
               </div>
               
-              {/* Simple Drop Zone */}
+              {/* Simple Drop Zone — hidden when project is read-only (concluded) */}
+              {!readOnly && (
               <div
                 className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:border-gray-300 transition-colors cursor-pointer"
                 onClick={() => {
@@ -1004,6 +1024,7 @@ export function ActivityDetailsModal({
                 <p className="text-sm text-gray-500">{t('activities.documents.drag_or_click')}</p>
                 <p className="text-xs text-gray-500 mt-2">{t('activities.documents.supported_formats')}</p>
               </div>
+              )}
 
               {/* Pending Files */}
               {pendingFiles.length > 0 && (
@@ -1189,7 +1210,22 @@ export function ActivityDetailsModal({
         <div className="border-t border-gray-200 p-3 bg-white">
           <div className="flex justify-between">
             <div className="flex items-center">
-              {(hasChanges || pendingFiles.length > 0) && (
+              {readOnly && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-default select-none">
+                        <Lock className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span>{readOnlyReason ?? t('activities.modal.readOnly') ?? 'Read-only'}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs text-xs">
+                      {readOnlyReason ?? t('activities.modal.readOnlyTooltip') ?? 'This activity cannot be edited because the project is concluded.'}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              {!readOnly && (hasChanges || pendingFiles.length > 0) && (
                 <div className="flex items-center gap-2 text-sm text-amber-600">
                   <AlertCircle className="w-4 h-4" />
                   <span>
@@ -1206,7 +1242,7 @@ export function ActivityDetailsModal({
               <Button variant="outline" onClick={onClose} size="sm" className="px-4 h-8 text-gray-600 border-gray-300">
                 {t('activities.modal.close')}
               </Button>
-              {(hasChanges || pendingFiles.length > 0) && (
+              {!readOnly && (hasChanges || pendingFiles.length > 0) && (
                 <Button 
                   onClick={handleSave}
                   size="sm"

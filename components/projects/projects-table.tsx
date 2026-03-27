@@ -55,6 +55,8 @@ export interface ProjectTableData {
   // Names for display
   institutionName?: string
   departmentName?: string
+  churchName?: string
+  churchDepartmentName?: string
   status: string  // ProjectStatus from backend (DRAFT, IN_PROGRESS, etc.)
   subsidyRequests?: number
   subsidyAmount?: number
@@ -93,6 +95,12 @@ export interface ProjectTableData {
     email: string
   }
   owner_id?: string // Direct owner_id field from API
+  co_owner_id?: string
+  co_owner?: {
+    id: string
+    name: string
+    email: string
+  }
   church_id?: string // Direct church_id field from API
   church_department?: {
     id: string
@@ -104,6 +112,15 @@ export interface ProjectTableData {
     }
   }
   activitiesData?: any[] // Full activities data with assignees for collaborators column
+  collaborators?: Array<{
+    role: 'owner' | 'co_owner' | 'assignee'
+    activity_ids?: string[]
+    user: {
+      id: string
+      name: string
+      email: string
+    }
+  }>
 }
 
 interface ProjectsTableProps {

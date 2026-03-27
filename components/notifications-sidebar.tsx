@@ -1,13 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { useState, useEffect } from "react"
-import { Bell, X, Check, Clock, AlertCircle, CheckCircle, Info, ArrowRight } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { Bell, Check } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Sheet,
   SheetContent,
@@ -18,345 +15,169 @@ import {
 } from "@/components/ui/sheet"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import toast from "react-hot-toast"
+import { useNotifications } from "@/contexts/notifications-context"
+import { NotifCard } from "@/components/notifications/notif-card"
+import { QuickViewProjectModal } from "@/components/modals/project/quick-view-project-modal"
+import { type ProjectTableData } from "@/components/projects/projects-table"
 
-// Translations object
-const notificationsTranslations = {
+// ─── i18n ─────────────────────────────────────────────────────────────────────
+
+const T = {
   en: {
     title: "Notifications",
-    subtitle: "Stay updated with your church management system",
-    markAllRead: "Mark all read",
-    markedAsRead: "Notification marked as read",
-    allMarkedAsRead: "All notifications marked as read",
-    more: "More...",
+    subtitle: "Real-time updates from your projects",
+    markAllRead: "Mark all as read",
+    viewHistory: "View history",
     emptyTitle: "No notifications",
-    emptyMessage: "You're all caught up! Check back later for updates.",
-    types: {
-      info: "info",
-      success: "success",
-      warning: "warning",
-      error: "error"
-    }
+    emptyMessage: "New activity from your projects will appear here.",
   },
   pt: {
     title: "Notificações",
-    subtitle: "Fique atualizado com o sistema de gestão da igreja",
+    subtitle: "Atualizações em tempo real dos seus projetos",
     markAllRead: "Marcar todas como lidas",
-    markedAsRead: "Notificação marcada como lida",
-    allMarkedAsRead: "Todas as notificações marcadas como lidas",
-    more: "Mais...",
+    viewHistory: "Ver histórico",
     emptyTitle: "Sem notificações",
-    emptyMessage: "Você está em dia! Volte mais tarde para atualizações.",
-    types: {
-      info: "info",
-      success: "sucesso",
-      warning: "aviso",
-      error: "erro"
-    }
+    emptyMessage: "Novas atividades dos seus projetos aparecerão aqui.",
   },
   nl: {
     title: "Meldingen",
-    subtitle: "Blijf op de hoogte van uw kerkbeheersysteem",
+    subtitle: "Realtime updates van uw projecten",
     markAllRead: "Alles als gelezen markeren",
-    markedAsRead: "Melding gemarkeerd als gelezen",
-    allMarkedAsRead: "Alle meldingen gemarkeerd als gelezen",
-    more: "Meer...",
+    viewHistory: "Geschiedenis bekijken",
     emptyTitle: "Geen meldingen",
-    emptyMessage: "Je bent helemaal bij! Kom later terug voor updates.",
-    types: {
-      info: "info",
-      success: "succes",
-      warning: "waarschuwing",
-      error: "fout"
-    }
+    emptyMessage: "Nieuwe activiteit van uw projecten verschijnt hier.",
   },
-  es: {
-    title: "Notificaciones",
-    subtitle: "Mantente actualizado con el sistema de gestión de la iglesia",
-    markAllRead: "Marcar todas como leídas",
-    markedAsRead: "Notificación marcada como leída",
-    allMarkedAsRead: "Todas las notificaciones marcadas como leídas",
-    more: "Más...",
-    emptyTitle: "Sin notificaciones",
-    emptyMessage: "¡Estás al día! Vuelve más tarde para actualizaciones.",
-    types: {
-      info: "info",
-      success: "éxito",
-      warning: "advertencia",
-      error: "error"
-    }
-  }
+} as const
+
+type Lang = keyof typeof T
+
+// ─── Minimal project stub for the QuickView modal ────────────────────────────
+
+function buildProjectStub(projectId: string, projectTitle?: string): ProjectTableData {
+  return {
+    id: projectId,
+    title: projectTitle ?? "",
+    status: "",
+    description: "",
+    budget: 0,
+    department_id: "",
+    institutionId: "",
+    is_private: false,
+    required_volunteers: false,
+    start_at: "",
+    end_at: "",
+    language_preference: "en",
+  } as ProjectTableData
 }
 
-interface Notification {
-  id: string
-  title: string
-  message: string
-  type: "info" | "success" | "warning" | "error"
-  status: "unread" | "read"
-  timestamp: string
-  actionLabel?: string
-  actionHref?: string
-}
+// ─── Main component ────────────────────────────────────────────────────────────
 
-interface NotificationsSidebarProps {
-  notifications?: Notification[] // Optional prop to receive real notifications
-  onNotificationRead?: (id: string) => void // Callback when notification is marked as read
-  onAllRead?: () => void // Callback when all notifications are marked as read
-}
-
-const mockNotifications: Notification[] = [
-  {
-    id: "1",
-    title: "New Member Registration",
-    message: "Maria Silva registered from São Paulo Capital region",
-    type: "success",
-    status: "unread",
-    timestamp: "2024-08-27T10:30:00Z",
-    actionLabel: "View Member",
-    actionHref: "/members"
-  },
-  {
-    id: "2",
-    title: "Subsidy Request Approved",
-    message: "Youth Department subsidy of R$ 15,000 has been approved",
-    type: "success",
-    status: "unread",
-    timestamp: "2024-08-27T09:15:00Z",
-    actionLabel: "View Details",
-    actionHref: "/subsidies"
-  },
-  {
-    id: "3",
-    title: "Event Reminder",
-    message: "Evangelism campaign starts tomorrow in Rio de Janeiro",
-    type: "info",
-    status: "unread",
-    timestamp: "2024-08-27T08:45:00Z",
-    actionLabel: "View Event",
-    actionHref: "/events"
-  },
-  {
-    id: "4",
-    title: "Budget Alert",
-    message: "Communication Department has reached 85% of monthly budget",
-    type: "warning",
-    status: "read",
-    timestamp: "2024-08-26T16:20:00Z",
-    actionLabel: "Review Budget",
-    actionHref: "/reports"
-  },
-  {
-    id: "5",
-    title: "System Maintenance",
-    message: "Scheduled maintenance tonight from 2:00 AM to 4:00 AM",
-    type: "info",
-    status: "read",
-    timestamp: "2024-08-26T14:00:00Z"
-  },
-  {
-    id: "6",
-    title: "New Church Registered",
-    message: "Igreja Central de Brasília successfully added to the system",
-    type: "success",
-    status: "read",
-    timestamp: "2024-08-25T11:30:00Z",
-    actionLabel: "View Church",
-    actionHref: "/churches"
-  }
-]
-
-export function NotificationsSidebar({ 
-  notifications: externalNotifications,
-  onNotificationRead,
-  onAllRead 
-}: NotificationsSidebarProps = {}) {
+export function NotificationsSidebar() {
   const { i18n } = useTranslation()
-  const t = notificationsTranslations[i18n.language as keyof typeof notificationsTranslations] || notificationsTranslations.en
-  
-  // Use external notifications if provided, otherwise use mock data
-  const [notifications, setNotifications] = useState<Notification[]>(externalNotifications || mockNotifications)
-  const [isOpen, setIsOpen] = useState(false)
-  const router = useRouter()
+  const lang = (i18n.language?.split("-")[0] ?? "en") as Lang
+  const t = T[lang] ?? T.en
 
-  // Update notifications when external prop changes
-  useEffect(() => {
-    if (externalNotifications) {
-      setNotifications(externalNotifications)
-    }
-  }, [externalNotifications])
+  const { notifications, unreadCount, markRead, markAllRead, remove } = useNotifications()
+  const [open, setOpen] = React.useState(false)
 
-  const unreadCount = notifications.filter(n => n.status === "unread").length
+  // State for opening QuickViewProjectModal at the history tab
+  const [historyModal, setHistoryModal] = React.useState<{
+    projectId: string
+    projectTitle?: string
+  } | null>(null)
 
-  const [expandedNotification, setExpandedNotification] = useState<string | null>(null)
-
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id 
-          ? { ...notification, status: "read" as const }
-          : notification
-      )
-    )
-    
-    // Call external callback if provided
-    if (onNotificationRead) {
-      onNotificationRead(id)
-    }
-    
-    toast.success(`✅ ${t.markedAsRead}`, {
-      duration: 2000
-    })
+  function handleOpenHistory(projectId: string, projectTitle: string | undefined) {
+    setHistoryModal({ projectId, projectTitle })
   }
-
-  const toggleExpanded = (id: string) => {
-    setExpandedNotification(expandedNotification === id ? null : id)
-    // Mark as read when expanded
-    if (expandedNotification !== id) {
-      markAsRead(id)
-    }
-  }
-
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notification => ({ ...notification, status: "read" as const }))
-    )
-    
-    // Call external callback if provided
-    if (onAllRead) {
-      onAllRead()
-    }
-    
-    toast.success(`✅ ${t.allMarkedAsRead}`, {
-      duration: 3000
-    })
-  }
-
-  const getNotificationIcon = (type: Notification["type"]) => {
-    switch (type) {
-      case "success":
-        return <CheckCircle className="w-4 h-4 text-muted-foreground" />
-      case "warning":
-        return <AlertCircle className="w-4 h-4 text-muted-foreground" />
-      case "error":
-        return <AlertCircle className="w-4 h-4 text-muted-foreground" />
-      default:
-        return <Info className="w-4 h-4 text-muted-foreground" />
-    }
-  }
-
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild>
-        <Button variant="outline" size="icon" className="relative h-9 w-9">
-          <Bell className="h-4 w-4" />
-          {unreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-xs"
-            >
-              {unreadCount}
-            </Badge>
-          )}
-        </Button>
-      </SheetTrigger>
-      
-      <SheetContent className="w-[400px] sm:w-[540px] p-6">
-        <SheetHeader className="space-y-3">
-          <div className="space-y-2">
-            <SheetTitle className="flex items-center gap-2 text-lg">
-              <Bell className="w-5 h-5" />
-              {t.title}
-            </SheetTitle>
-            <SheetDescription className="text-sm">
-              {t.subtitle}
-            </SheetDescription>
-          </div>
-          {unreadCount > 0 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={markAllAsRead}
-              className="w-full justify-start text-muted-foreground hover:text-foreground"
-            >
-              <Check className="w-4 h-4 mr-2" />
-              {t.markAllRead}
-            </Button>
-          )}
-        </SheetHeader>
-
-        <Separator className="my-4" />
-
-        <ScrollArea className="h-[calc(100vh-180px)] pr-4">
-          <div className="space-y-3">
-            {notifications.map((notification) => (
-              <div 
-                key={notification.id} 
-                className={`p-4 border rounded-lg transition-all hover:bg-muted/30 cursor-pointer ${
-                  notification.status === "unread" 
-                    ? "border-l-4 border-l-foreground/20 bg-muted/10" 
-                    : "border-l-4 border-l-transparent"
-                }`}
-                onClick={() => toggleExpanded(notification.id)}
+    <>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <Button variant="outline" size="icon" className="relative h-9 w-9">
+            <Bell className="h-4 w-4" />
+            {unreadCount > 0 && (
+              <Badge
+                variant="destructive"
+                className="absolute -top-1.5 -right-1.5 h-4 w-4 flex items-center justify-center p-0 text-[10px]"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    {getNotificationIcon(notification.type)}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="text-sm font-medium truncate text-foreground">{notification.title}</h4>
-                        {notification.status === "unread" && (
-                          <div className="w-2 h-2 bg-foreground/60 rounded-full shrink-0" />
-                        )}
-                      </div>
-                      
-                      {expandedNotification === notification.id ? (
-                        <div className="space-y-3">
-                          <p className="text-sm text-muted-foreground">{notification.message}</p>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Clock className="w-3 h-3" />
-                              {new Date(notification.timestamp).toLocaleString()}
-                            </div>
-                            <Badge 
-                              variant="outline" 
-                              className="text-xs border-border/60 bg-muted/50"
-                            >
-                              {t.types[notification.type]}
-                            </Badge>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs text-muted-foreground line-clamp-1 flex-1">
-                            {notification.message}
-                          </p>
-                          <button className="text-xs text-foreground/60 hover:text-foreground hover:underline ml-2 shrink-0">
-                            {t.more}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </Badge>
+            )}
+          </Button>
+        </SheetTrigger>
 
-            {notifications.length === 0 && (
-              <div className="flex items-center justify-center min-h-[400px]">
-                <div className="text-center py-12 px-4">
-                  <Bell className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2 text-foreground">{t.emptyTitle}</h3>
-                  <p className="text-sm text-muted-foreground max-w-[280px]">
-                    {t.emptyMessage}
-                  </p>
-                </div>
+        <SheetContent side="right" className="w-[360px] sm:w-[400px] flex flex-col p-0">
+          <SheetHeader className="px-5 pt-5 pb-3 shrink-0">
+            <SheetTitle className="flex items-center gap-2 text-sm font-semibold">
+              <Bell className="w-4 h-4" />
+              <div className="flex items-center gap-2">
+                {unreadCount > 0 && (
+                  <Badge variant="secondary" className="ml-auto text-xs tabular-nums">
+                    {unreadCount}
+                  </Badge>
+                )}
+                {t.title}
+              </div>
+             
+            
+            </SheetTitle>
+            <SheetDescription className="text-xs">{t.subtitle}</SheetDescription>
+          </SheetHeader>
+
+          {unreadCount > 0 && (
+            <div className="px-4 pb-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={markAllRead}
+                className="w-full justify-start text-xs text-muted-foreground h-7 gap-1.5"
+              >
+                <Check className="w-3 h-3" />
+                {t.markAllRead}
+              </Button>
+            </div>
+          )}
+
+          <Separator className="shrink-0" />
+
+          <ScrollArea className="flex-1 px-3 py-2">
+            {notifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center min-h-[320px] text-center px-4">
+                <Bell className="w-10 h-10 text-muted-foreground/20 mb-3" />
+                <p className="text-sm font-medium text-foreground">{t.emptyTitle}</p>
+                <p className="text-xs text-muted-foreground mt-1 max-w-[220px]">
+                  {t.emptyMessage}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {notifications.map((n) => (
+                  <NotifCard
+                    key={n.id}
+                    notification={n}
+                    lang={lang}
+                    labelViewHistory={t.viewHistory}
+                    onMarkRead={markRead}
+                    onRemove={remove}
+                    onOpenHistory={handleOpenHistory}
+                  />
+                ))}
               </div>
             )}
-          </div>
-        </ScrollArea>
-      </SheetContent>
-    </Sheet>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+
+      {/* QuickView modal — opens on history tab when triggered from a notification card */}
+      {historyModal && (
+        <QuickViewProjectModal
+          isOpen={!!historyModal}
+          onClose={() => setHistoryModal(null)}
+          project={buildProjectStub(historyModal.projectId, historyModal.projectTitle)}
+          initialTab="history"
+        />
+      )}
+    </>
   )
 }

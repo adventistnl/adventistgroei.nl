@@ -4,6 +4,7 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useMutation } from "@apollo/client"
+import { useProjectHistory, buildStatusChangedPayload } from "@/hooks/graphql/use-project-history"
 import {
   ArrowLeft,
   MoreVertical,
@@ -19,7 +20,10 @@ import {
   ChevronDown,
   Loader2,
   Church,
+  ArrowBigDownDash,
+  History,
 } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -43,11 +47,150 @@ import { ProjectTableData } from "@/components/projects/projects-table"
 import { mockDepartments } from "@/data/mockData"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
 import { UserListModal } from "@/components/shared/user-list-modal"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import { ChatProjectRoom, type ChatProject } from "@/components/chat/chat-project-room"
 import { useCurrency } from "@/contexts/currency-context"
 import { useAuth } from "@/contexts/auth-context"
 import toast from "react-hot-toast"
 import { UPDATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { ProjectStatus } from "@/types/graphql-global-types"
+
+// ─── Status Configuration ────────────────────────────────────────────────────
+// Single source of truth for every status. To add a new status:
+//   1. Add its entry here
+//   2. Add translation keys in lib/translations/projects.ts (EN / PT / NL)
+// Everything else (select items, badge styles, dot colours, availability)
+// is derived from this config automatically.
+
+type StatusConditionPayload = {
+  canSetConcluded: boolean
+  isConcluded: boolean
+}
+
+export type StatusConfigEntry = {
+  /** Key used to look up label in t.status */
+  labelKey: string
+  /** Tailwind classes for the trigger / badge chip */
+  triggerClass: string
+  /** Tailwind class for the small round dot indicator */
+  dotColor: string
+  /** Hex colour for the Kanban column left-border and header dot */
+  kanbanColor: string
+  /**
+   * If present the status only appears in the dropdown when the predicate
+   * returns true. Statuses without this are always available (unless the
+   * project is CONCLUDED).
+   */
+  requiresCondition?: (payload: StatusConditionPayload) => boolean
+}
+
+/** Status entry with the label already resolved from i18n translations. */
+export type ResolvedStatusEntry = Omit<StatusConfigEntry, 'labelKey'> & { label: string }
+
+/** Ordered list – determines the visual order in the Kanban columns and the Select dropdown */
+export const PROJECT_STATUS_ORDER: string[] = [
+  'DRAFT',
+  'OPEN_REQUEST',
+  'IN_REVIEW',
+  'ADJUSTMENTS_NEEDED',
+  'IN_PROGRESS',
+  'PENDING_RECEIPT',
+  'WAITING_REFUND',
+  'OVERDUE',
+  'CONCLUDED',
+]
+
+export const PROJECT_STATUS_CONFIG: Record<string, StatusConfigEntry> = {
+  // ── Gray / neutral ── starting point in the workflow
+  DRAFT: {
+    labelKey: 'draft',
+    kanbanColor: '#6b7280',
+    dotColor: 'bg-gray-500',
+    triggerClass: 'bg-gray-50 text-gray-900 border-gray-200 dark:bg-gray-800/60 dark:text-gray-100 dark:border-gray-600',
+  },
+  // ── Sky blue ── open workflow request
+  OPEN_REQUEST: {
+    labelKey: 'openRequest',
+    kanbanColor: '#0ea5e9',
+    dotColor: 'bg-sky-500',
+    triggerClass: 'bg-sky-50 text-sky-900 border-sky-200 dark:bg-sky-900/30 dark:text-sky-100 dark:border-sky-700',
+  },
+  // ── Blue ── under review / evaluation
+  IN_REVIEW: {
+    labelKey: 'inReview',
+    kanbanColor: '#3b82f6',
+    dotColor: 'bg-blue-500',
+    triggerClass: 'bg-blue-50 text-blue-900 border-blue-200 dark:bg-blue-900/30 dark:text-blue-100 dark:border-blue-700',
+  },
+  // ── Orange ── attention: corrections required
+  ADJUSTMENTS_NEEDED: {
+    labelKey: 'adjustmentsNeeded',
+    kanbanColor: '#f97316',
+    dotColor: 'bg-orange-500',
+    triggerClass: 'bg-orange-50 text-orange-900 border-orange-200 dark:bg-orange-900/30 dark:text-orange-100 dark:border-orange-700',
+  },
+  // ── Green ── positive / active execution
+  IN_PROGRESS: {
+    labelKey: 'inProgress',
+    kanbanColor: '#22c55e',
+    dotColor: 'bg-green-500',
+    triggerClass: 'bg-green-50 text-green-900 border-green-200 dark:bg-green-900/30 dark:text-green-100 dark:border-green-700',
+  },
+  // ── Cyan ── process: awaiting receipt
+  PENDING_RECEIPT: {
+    labelKey: 'pendingReceipt',
+    kanbanColor: '#06b6d4',
+    dotColor: 'bg-cyan-500',
+    triggerClass: 'bg-cyan-50 text-cyan-900 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-100 dark:border-cyan-700',
+  },
+  // ── Teal ── process: awaiting reimbursement
+  WAITING_REFUND: {
+    labelKey: 'waitingRefund',
+    kanbanColor: '#14b8a6',
+    dotColor: 'bg-teal-500',
+    triggerClass: 'bg-teal-50 text-teal-900 border-teal-200 dark:bg-teal-900/30 dark:text-teal-100 dark:border-teal-700',
+  },
+  // ── Red ── critical: deadline passed / overdue
+  OVERDUE: {
+    labelKey: 'overdue',
+    kanbanColor: '#ef4444',
+    dotColor: 'bg-red-500',
+    triggerClass: 'bg-red-50 text-red-900 border-red-200 dark:bg-red-900/30 dark:text-red-100 dark:border-red-700',
+  },
+  // ── Dark green ── success: project fully concluded
+  CONCLUDED: {
+    labelKey: 'concluded',
+    kanbanColor: '#16a34a',
+    dotColor: 'bg-green-700',
+    triggerClass: 'bg-green-50 text-green-900 border-green-300 dark:bg-green-900/40 dark:text-green-100 dark:border-green-700',
+    requiresCondition: ({ canSetConcluded }) => canSetConcluded,
+  },
+}
+
+/**
+ * Returns a fully-resolved status config map where each entry has an
+ * already-translated `label` field. Pass the translation object so labels
+ * are always in the active locale.
+ *
+ * @example
+ *   const config = getProjectStatusConfig(t_project)
+ *   config['IN_PROGRESS'].label  // "In Progress" | "Em Andamento" | "In Uitvoering"
+ */
+export function getProjectStatusConfig(
+  t: { status: Record<string, string> },
+): Record<string, ResolvedStatusEntry> {
+  return Object.fromEntries(
+    PROJECT_STATUS_ORDER.map((key) => {
+      const { labelKey, ...rest } = PROJECT_STATUS_CONFIG[key]
+      return [key, { ...rest, label: t.status[labelKey] ?? key } satisfies ResolvedStatusEntry]
+    }),
+  )
+}
 
 interface ProjectCompletionData {
   allActivitiesCompleted: boolean
@@ -89,6 +232,8 @@ interface ProjectHeaderProps {
   users?: UserAvatarData[]
   /** Owner ID to identify and highlight the project owner */
   ownerId?: string
+  /** Co-Owner ID to highlight the co-owner with a blue badge */
+  coOwnerId?: string
   /** Callback to refetch project data after status update */
   onRefetch?: () => void
   /** Data about project completion status for status validation */
@@ -106,6 +251,7 @@ export function ProjectHeader({
   fundingPolicies: fundingPoliciesProp,
   users = [],
   ownerId,
+  coOwnerId,
   onRefetch,
   completionData,
 }: ProjectHeaderProps) {
@@ -116,8 +262,12 @@ export function ProjectHeader({
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
   const [isUserListModalOpen, setIsUserListModalOpen] = React.useState(false)
 
-  // Check if current user is the project owner
-  const isCurrentUserOwner = user?.id && ownerId && user.id === ownerId
+  const { logHistory } = useProjectHistory({ projectId: project.id, skipFetch: true })
+  const [historyOpen, setHistoryOpen] = React.useState(false)
+
+  // Check if current user is the project owner or co-owner
+  const isCurrentUserOwner = !!(user?.id && ownerId && user.id === ownerId)
+  const isCurrentUserCoOwner = !!(user?.id && coOwnerId && user.id === coOwnerId)
 
   // Mutation for updating project status
   const [updateProjectStatus, { loading: isUpdatingStatus }] = useMutation(UPDATE_PROJECT_MUTATION, {
@@ -151,18 +301,21 @@ export function ProjectHeader({
 
   const handleStatusChange = async (newStatus: string) => {
     if (newStatus === project.status) return
-    
-    // Check if current user is the owner
-    if (!isCurrentUserOwner) {
+
+    // Co-owner can only change to OPEN_REQUEST
+    if (!isCurrentUserOwner && isCurrentUserCoOwner) {
+      if (newStatus !== 'OPEN_REQUEST') {
+        toast.error(t.errors?.onlyOwnerCanEdit || "Only the project owner can edit the project status")
+        return
+      }
+    } else if (!isCurrentUserOwner) {
       toast.error(t.errors?.onlyOwnerCanEdit || "Only the project owner can edit the project status")
       return
     }
     
     // Prevent invalid status changes
     if (isStatusDisabled(newStatus)) {
-      if (newStatus === 'EXPIRED') {
-        toast.error(t.status?.cannotSetExpired || 'Cannot set project as expired before due date')
-      } else if (newStatus === 'CONCLUDED') {
+      if (newStatus === 'CONCLUDED') {
         toast.error(t.status?.cannotSetConcluded || 'Cannot conclude project: all activities, documents and subsidies must be completed first')
       } else {
         toast.error(t.status?.invalidStatusChange || 'Invalid status change')
@@ -177,22 +330,17 @@ export function ProjectHeader({
     }
     
     try {
+      const oldStatus = project.status
       await updateProjectStatus({
         variables: {
           id: project.id,
           status: newStatus,
         },
       })
+      logHistory(buildStatusChangedPayload(oldStatus, newStatus))
     } catch (e) {
       // Error handled by onError callback
     }
-  }
-
-  // Helper function to check if project can be expired
-  const canSetExpired = (): boolean => {
-    const now = new Date()
-    const endDate = new Date(project.end_at)
-    return now > endDate
   }
 
   // Helper function to check if project can be concluded
@@ -222,11 +370,6 @@ export function ProjectHeader({
       return status !== 'CONCLUDED'
     }
     
-    // EXPIRED is only enabled if due date has passed
-    if (status === 'EXPIRED') {
-      return !canSetExpired()
-    }
-    
     // CONCLUDED is only enabled if all conditions are met
     if (status === 'CONCLUDED') {
       return !canSetConcluded()
@@ -235,44 +378,42 @@ export function ProjectHeader({
     return false
   }
 
-  // Available statuses for selection with business rules
-  // EXPIRED is only available if due date has passed
-  // CONCLUDED is only available if all activities, documents and subsidies are complete
-  const availableStatuses = [
-    ProjectStatus.Draft,
-    ProjectStatus.InProgress,
-    ProjectStatus.InReview,
-    ProjectStatus.OnHold,
-    ...(canSetExpired() ? [ProjectStatus.Expired] : []),
-    ...(canSetConcluded() ? [ProjectStatus.Concluded] : []),
-  ]
-
-  // Check if project is concluded or expired (read-only for concluded, warning for expired)
   const isConcluded = project.status === 'CONCLUDED'
-  const isExpired = project.status === 'EXPIRED'
 
-  // Status colors for backend statuses
-  const statusColors: Record<string, string> = {
-    DRAFT: "bg-gray-50 text-gray-900 border-gray-200",
-    IN_PROGRESS: "bg-green-50 text-green-900 border-green-200",
-    IN_REVIEW: "bg-blue-50 text-blue-900 border-blue-200",
-    ON_HOLD: "bg-amber-50 text-amber-900 border-amber-200",
-    EXPIRED: "bg-red-50 text-red-900 border-red-200",
-    CONCLUDED: "bg-slate-50 text-slate-900 border-slate-200",
-  }
-
-  // Get status label from translations
-  const getStatusLabel = (status: string): string => {
-    const statusLabels: Record<string, string> = {
-      DRAFT: t.status?.draft || 'Draft',
-      IN_PROGRESS: t.status?.inProgress || 'In Progress',
-      IN_REVIEW: t.status?.inReview || 'In Review',
-      ON_HOLD: t.status?.onHold || 'On Hold',
-      EXPIRED: t.status?.expired || 'Expired',
-      CONCLUDED: t.status?.concluded || 'Concluded',
+  // Build ChatProject shape from available header data for the history sheet
+  const chatProject = React.useMemo((): ChatProject => {
+    const ownerUser = users.find(u => u.id === ownerId)
+    const coOwnerUser = coOwnerId && coOwnerId !== ownerId ? users.find(u => u.id === coOwnerId) : undefined
+    const collabIds = new Set([ownerId, coOwnerId].filter(Boolean))
+    const collaborators = users
+      .filter(u => !collabIds.has(u.id))
+      .map(u => ({ role: u.role ?? 'Member', user: { id: u.id, name: u.name, email: u.email } }))
+    return {
+      id: project.id,
+      title: project.title,
+      status: project.status ?? '',
+      owner: ownerUser ? { id: ownerUser.id, name: ownerUser.name } : undefined,
+      co_owner: coOwnerUser ? { id: coOwnerUser.id, name: coOwnerUser.name } : undefined,
+      collaborators,
     }
-    return statusLabels[status] || status
+  }, [project.id, project.title, project.status, users, ownerId, coOwnerId])
+
+  // Available statuses derived from config + business rules
+  const conditionPayload: StatusConditionPayload = {
+    canSetConcluded: canSetConcluded(),
+    isConcluded,
   }
+
+  const availableStatuses = PROJECT_STATUS_ORDER.filter((status) => {
+    const cfg = PROJECT_STATUS_CONFIG[status]
+    if (!cfg) return false
+    if (cfg.requiresCondition) return cfg.requiresCondition(conditionPayload)
+    return true
+  })
+
+  /** Returns the i18n label for any status value */
+  const getStatusLabel = (status: string): string =>
+    (t.status as Record<string, string>)[PROJECT_STATUS_CONFIG[status]?.labelKey] || status
 
   const getDepartmentName = (departmentId: string) => {
     const department = mockDepartments.find(d => d.id === departmentId)
@@ -393,8 +534,40 @@ export function ProjectHeader({
                     showAddButton={false}
                     onShowAllUsers={() => setIsUserListModalOpen(true)}
                     ownerUserId={ownerId}
+                    coOwnerUserId={coOwnerId !== ownerId ? coOwnerId : undefined}
                   />
                 </div>
+
+                {/* Submit Request Button - For owner and co-owner when project is in DRAFT */}
+                {(isCurrentUserOwner || isCurrentUserCoOwner) && project.status === 'DRAFT' && (
+                  <button
+                    type="button"
+                    onClick={() => handleStatusChange('OPEN_REQUEST')}
+                    disabled={isUpdatingStatus}
+                    className={cn(
+                      "relative overflow-hidden group inline-flex items-center gap-2",
+                      "border border-border dark:border-border rounded-md",
+                      "bg-transparent text-foreground dark:text-foreground",
+                      "h-9 sm:h-9 md:h-8 px-3 text-sm font-medium whitespace-nowrap flex-shrink-0",
+                      "transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    )}
+                  >
+                    {/* Fill bar — slides in from left on hover */}
+                    <span
+                      aria-hidden
+                      className="absolute inset-y-0 left-0 w-0 group-hover:w-full bg-slate-900 dark:bg-slate-100 transition-[width] duration-500 ease-out"
+                    />
+                    {/* Content layer — always above the fill bar */}
+                    <span className="relative z-10 inline-flex items-center gap-2 transition-colors duration-500 group-hover:text-white dark:group-hover:text-slate-900">
+                      {isUpdatingStatus ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ArrowBigDownDash className="h-4 w-4" />
+                      )}
+                      <span className="sm:inline">{t.status?.submitRequest || 'Submit Request'}</span>
+                    </span>
+                  </button>
+                )}
 
                 {/* Status - Full width on mobile, auto on tablet */}
                 <div className="w-full sm:w-full md:w-auto">
@@ -407,7 +580,7 @@ export function ProjectHeader({
                       <SelectTrigger 
                         className={cn(
                           "w-full sm:w-full md:w-auto md:min-w-[140px] h-9 sm:h-9 md:h-8 text-sm",
-                          statusColors[project.status] || statusColors.DRAFT,
+                          PROJECT_STATUS_CONFIG[project.status]?.triggerClass,
                           isConcluded && "opacity-60 cursor-not-allowed"
                         )}
                       >
@@ -417,31 +590,24 @@ export function ProjectHeader({
                           <SelectValue placeholder={getStatusLabel(project.status)} />
                         )}
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white dark:bg-gray-950 border border-border shadow-md">
                         {/* Show current status even if it wouldn't be normally available */}
-                        {!availableStatuses.includes(project.status as any) && (
+                        {!availableStatuses.includes(project.status) && (
                           <SelectItem 
                             value={project.status}
                             disabled
                             className="cursor-not-allowed opacity-50"
                           >
                             <div className="flex items-center gap-2">
-                              <div className={cn(
-                                "w-2 h-2 rounded-full",
-                                project.status === 'DRAFT' && "bg-gray-500",
-                                project.status === 'IN_PROGRESS' && "bg-green-500",
-                                project.status === 'IN_REVIEW' && "bg-blue-500",
-                                project.status === 'ON_HOLD' && "bg-amber-500",
-                                project.status === 'EXPIRED' && "bg-red-500",
-                                project.status === 'CONCLUDED' && "bg-slate-500",
-                              )} />
-                              {getStatusLabel(project.status)} {project.status === 'EXPIRED' && '(Expirado)'} {project.status === 'CONCLUDED' && '(Permanente)'}
+                              <div className={cn("w-2 h-2 rounded-full", PROJECT_STATUS_CONFIG[project.status]?.dotColor ?? 'bg-gray-400')} />
+                              {getStatusLabel(project.status)}
                             </div>
                           </SelectItem>
                         )}
                         {availableStatuses.map((status) => {
                           const isDisabled = isStatusDisabled(status)
                           const isCurrentStatus = project.status === status
+                          const cfg = PROJECT_STATUS_CONFIG[status]
                           
                           return (
                             <SelectItem 
@@ -455,21 +621,10 @@ export function ProjectHeader({
                               )}
                             >
                               <div className="flex items-center gap-2">
-                                <div className={cn(
-                                  "w-2 h-2 rounded-full",
-                                  status === 'DRAFT' && "bg-gray-500",
-                                  status === 'IN_PROGRESS' && "bg-green-500",
-                                  status === 'IN_REVIEW' && "bg-blue-500",
-                                  status === 'ON_HOLD' && "bg-amber-500",
-                                  status === 'EXPIRED' && "bg-red-500",
-                                  status === 'CONCLUDED' && "bg-slate-500",
-                                )} />
+                                <div className={cn("w-2 h-2 rounded-full", cfg?.dotColor)} />
                                 <span>{getStatusLabel(status)}</span>
-                                {isDisabled && status === 'EXPIRED' && (
-                                  <span className="text-xs text-muted-foreground hidden sm:hidden md:inline">(Disponível após data de fim)</span>
-                                )}
                                 {isDisabled && status === 'CONCLUDED' && (
-                                  <span className="text-xs text-muted-foreground hidden sm:hidden md:inline">(Requer atividades e documentos completos)</span>
+                                  <span className="text-xs text-muted-foreground hidden md:inline">(Requer atividades e documentos completos)</span>
                                 )}
                               </div>
                             </SelectItem>
@@ -481,27 +636,29 @@ export function ProjectHeader({
                     <Badge 
                       className={cn(
                         "w-full sm:w-full md:w-auto justify-center sm:justify-center md:justify-start h-9 sm:h-9 md:h-8 px-3 text-sm font-medium",
-                        statusColors[project.status] || statusColors.DRAFT
+                        PROJECT_STATUS_CONFIG[project.status]?.triggerClass
                       )}
                     >
                       <div className="flex items-center gap-2">
-                        <div className={cn(
-                          "w-2 h-2 rounded-full",
-                          project.status === 'DRAFT' && "bg-gray-500",
-                          project.status === 'IN_PROGRESS' && "bg-green-500",
-                          project.status === 'IN_REVIEW' && "bg-blue-500",
-                          project.status === 'ON_HOLD' && "bg-amber-500",
-                          project.status === 'EXPIRED' && "bg-red-500",
-                          project.status === 'CONCLUDED' && "bg-slate-500",
-                        )} />
+                        <div className={cn("w-2 h-2 rounded-full", PROJECT_STATUS_CONFIG[project.status]?.dotColor ?? 'bg-gray-400')} />
                         <span>{getStatusLabel(project.status)}</span>
                       </div>
                     </Badge>
                   )}
                 </div>
-                {/* Action Buttons - Only for Owner - Responsive positioning */}
-                {isCurrentUserOwner && (
-                  <div className="flex justify-end sm:justify-end md:justify-start">
+                {/* Action Buttons - Owner: edit + delete; Co-Owner: edit only */}
+                {(isCurrentUserOwner || isCurrentUserCoOwner) && (
+                  <div className="flex justify-end sm:justify-end md:justify-start gap-2">
+                    {/* Project History button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-auto"
+                      onClick={() => setHistoryOpen(true)}
+                      aria-label="Project history"
+                    >
+                      <History className="h-4 w-4" />
+                    </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm" className="w-auto">
@@ -515,7 +672,8 @@ export function ProjectHeader({
                             {t.actions.editProject}
                           </DropdownMenuItem>
                         )}
-                        {onDelete && (
+                        {/* Delete is restricted to the owner only */}
+                        {isCurrentUserOwner && onDelete && (
                           <>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -605,7 +763,27 @@ export function ProjectHeader({
         onClose={() => setIsUserListModalOpen(false)}
         users={orderedUsers}
         ownerUserId={ownerId}
+        coOwnerUserId={coOwnerId !== ownerId ? coOwnerId : undefined}
       />
+
+      {/* Project History Sheet */}
+      <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
+        <SheetContent side="right" className="w-[380px] sm:w-[420px] flex flex-col p-0">
+          <SheetHeader className="px-5 pt-5 pb-3 shrink-0">
+            <SheetTitle className="flex items-center gap-2 text-sm font-semibold">
+              <History className="w-4 h-4" />
+              {project.title}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 min-h-0 flex flex-col border-t">
+            <ChatProjectRoom
+              project={chatProject}
+              canComment={isCurrentUserOwner || isCurrentUserCoOwner}
+              onBack={() => setHistoryOpen(false)}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

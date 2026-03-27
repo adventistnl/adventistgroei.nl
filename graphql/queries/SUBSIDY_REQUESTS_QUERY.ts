@@ -1,4 +1,3 @@
-
 import { gql } from "@apollo/client";
 
 /**
@@ -86,10 +85,61 @@ export const GET_ALL_SUBSIDY_REQUESTS = gql`
          id
          is_validated
       }
+      collaborators {
+        role
+        user {
+          id
+          name
+          email
+        }
+      }
     }
   }
 `;
 
+/**
+ * List subsidy requests flagged for refund (have_refund = true).
+ * Visible to Admin / Institutional Dept. Leader / Financial Manager.
+ */
+export const GET_SUBSIDIES_WAITING_REFUND = gql`
+  query GetSubsidiesWaitingRefund($institutionId: String) {
+    getSubsidiesWaitingRefund(institutionId: $institutionId) {
+      id
+      description
+      total_budget
+      approved_amount
+      refund_amount
+      have_refund
+      refund_done
+      created_at
+      subsidy_status {
+        id
+        name
+      }
+      requester {
+        id
+        name
+        email
+      }
+      project {
+        id
+        title
+      }
+      institution {
+        id
+        name
+      }
+      department {
+        id
+        name
+      }
+      church {
+        id
+        name
+      }
+    }
+  }
+`;
 /**
  * Query to fetch a single subsidy request by ID
  */
@@ -142,16 +192,23 @@ export const GET_SUBSIDY_REQUEST_BY_ID = gql`
         id
         name
       }
+      request_type
       project {
         id
         title
         department_id
         owner_id
+        co_owner_id
         owner {
           id
           name
           email
           language_preference
+        }
+        co_owner {
+          id
+          name
+          email
         }
         # REMOVED: department field causes error when project.department_id is NULL
         # Backend schema defines Project.department as non-nullable, but DB allows NULL
@@ -178,6 +235,14 @@ export const GET_SUBSIDY_REQUEST_BY_ID = gql`
       receipts: subsidy_receipts {
          id
          is_validated
+      }
+      collaborators {
+        role
+        user {
+          id
+          name
+          email
+        }
       }
     }
   }

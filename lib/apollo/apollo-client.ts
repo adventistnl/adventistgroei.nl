@@ -1,6 +1,9 @@
 import { config } from "@/config/global";
-import { ApolloClient, InMemoryCache } from "@apollo/client";
+import { ApolloClient, InMemoryCache, split } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
+import { GraphQLWsLink } from "@apollo/client/link/subscriptions";
+import { getMainDefinition } from "@apollo/client/utilities";
+import { createClient } from "graphql-ws";
 import { createUploadLink } from "apollo-upload-client";
 
 /**
@@ -45,6 +48,47 @@ export function makeClient() {
     };
   });
 
+  // WebSocket link for subscriptions (only in browser)
+  const wsLink =
+    typeof window !== "undefined"
+      ? new GraphQLWsLink(
+          createClient({
+            url: config.graphqlApiUrl.replace(/^http/, "ws"),
+            connectionParams: () => {
+              const token =
+                (typeof window !== "undefined" && localStorage.getItem("auth-token")) || "";
+              return {
+                headers: {
+                  Authorization: token ? `Bearer ${token}` : "",
+                },
+              };
+            },            retryAttempts: Infinity,
+            shouldRetry: () => true,
+            on: {
+              connecting: () => console.log("[WS] connecting to", config.graphqlApiUrl.replace(/^http/, "ws")),
+              connected: () => console.log("[WS] connected ✅"),
+              reconnecting: () => console.warn("[WS] reconnecting..."),
+              closed: (e) => console.warn("[WS] closed", e),
+              error: (e) => console.error("[WS] error", e),
+            },          })
+        )
+      : null;
+
+  // Route subscriptions → WebSocket, everything else → HTTP
+  const splitLink = wsLink
+    ? split(
+        ({ query }) => {
+          const def = getMainDefinition(query);
+          return (
+            def.kind === "OperationDefinition" &&
+            def.operation === "subscription"
+          );
+        },
+        wsLink,
+        authLink.concat(uploadLink)
+      )
+    : authLink.concat(uploadLink);
+
   return new ApolloClient({
     cache: new InMemoryCache({
       typePolicies: {
@@ -68,6 +112,6 @@ export function makeClient() {
         },
       },
     }),
-    link: authLink.concat(uploadLink),
+    link: splitLink,
   });
 }

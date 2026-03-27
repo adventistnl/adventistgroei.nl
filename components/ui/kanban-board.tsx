@@ -52,10 +52,25 @@ export interface KanbanMoveRule {
    */
   disableDropTo?: string[]
   /**
+   * Per-item drag guard. Return false to prevent the item from being dragged at all.
+   * Evaluated before disableDragFrom and canMove.
+   */
+  canDragItem?: (item: KanbanItem) => boolean
+  /**
    * Custom validation function for allowed moves
    * Return false to prevent the move
    */
   canMove?: (itemId: string, fromGroupId: string, toGroupId: string, item?: KanbanItem) => boolean
+  /**
+   * Returns a custom error message when a move is blocked.
+   * If provided, this overrides the generic "move not allowed" toast.
+   */
+  getCanMoveErrorMessage?: (itemId: string, fromGroupId: string, toGroupId: string, item?: KanbanItem) => string | undefined
+  /**
+   * Returns the list of group IDs that should be visually disabled (greyed out)
+   * when the given item is being dragged. Called once at drag-start for instant feedback.
+   */
+  getDisabledGroupsForItem?: (item: KanbanItem) => string[]
 }
 
 export interface KanbanBoardProps {
@@ -150,6 +165,7 @@ export function KanbanBoard({
   const { t } = useTranslation()
   const [dragOverGroupId, setDragOverGroupId] = useState<string | null>(null)
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null)
+  const [disabledGroupsForDrag, setDisabledGroupsForDrag] = useState<string[]>([])
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false)
 
   // Group items by their groupId
@@ -190,6 +206,11 @@ export function KanbanBoard({
     if (!enableDragDrop) return false
     if (!moveRules) return true
     
+    // Per-item drag guard (e.g. only owner can drag)
+    if (moveRules.canDragItem && !moveRules.canDragItem(item)) {
+      return false
+    }
+
     // Check if drag is disabled from this group
     if (moveRules.disableDragFrom?.includes(item.groupId)) {
       return false
@@ -205,6 +226,9 @@ export function KanbanBoard({
       return
     }
     setDraggingItemId(item.id)
+    // Compute which groups are invalid for this item — instant visual feedback
+    const disabled = moveRules?.getDisabledGroupsForItem ? moveRules.getDisabledGroupsForItem(item) : []
+    setDisabledGroupsForDrag(disabled)
     e.dataTransfer.setData('text/plain', JSON.stringify({
       itemId: item.id,
       fromGroupId: item.groupId
@@ -232,6 +256,7 @@ export function KanbanBoard({
     if (!enableDragDrop) return
     setDraggingItemId(null)
     setDragOverGroupId(null)
+    setDisabledGroupsForDrag([])
   }
 
   const handleDrop = async (e: React.DragEvent, toGroupId: string) => {
@@ -247,7 +272,9 @@ export function KanbanBoard({
       if (fromGroupId !== toGroupId) {
         // Validate if the move is allowed
         if (!isMoveAllowed(itemId, fromGroupId, toGroupId)) {
-          toast.error('This move is not allowed', {
+          const item = items.find(i => i.id === itemId)
+          const customMsg = moveRules?.getCanMoveErrorMessage?.(itemId, fromGroupId, toGroupId, item)
+          toast.error(customMsg ?? 'This move is not allowed', {
             duration: 2000,
           })
           return
@@ -405,13 +432,16 @@ export function KanbanBoard({
         <div className="flex gap-6 h-full" style={{ minWidth: 'min-content' }}>
           {groups.map((group) => {
             const groupItems = itemsByGroup[group.id] || []
+            const isDisabledDropTarget = draggingItemId !== null && disabledGroupsForDrag.includes(group.id)
             
             return (
               <div key={group.id} className="flex-shrink-0 w-80">
                 <Card 
                   className={`h-full transition-all duration-200 ${
                     dragOverGroupId === group.id ? 'ring-1 ring-foreground/20 bg-muted/20' : ''
-                  } ${draggingItemId ? 'border-dashed' : ''}`}
+                  } ${draggingItemId ? 'border-dashed' : ''} ${
+                    isDisabledDropTarget ? 'opacity-40 pointer-events-none select-none' : ''
+                  }`}
                   onDragOver={(e) => handleDragOver(e, group.id)}
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, group.id)}

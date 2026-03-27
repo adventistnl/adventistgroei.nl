@@ -1,21 +1,17 @@
 import * as React from "react"
-import { Plus, Inbox, Banknote } from "lucide-react"
+import { Plus, Inbox } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { useMutation } from "@apollo/client"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/shared/empty-state"
 import { SubsidyRequestCard, SubsidyRequestCardData } from "./subsidy-request-card"
 import { ViewSubsidyModal } from "@/components/modals/project/view-subsidy-modal"
 import { RequestSubsidyModal, SubsidyRequestData as SubsidyRequestFormData } from "@/components/modals/project/request-subsidy-modal"
-import { RequestAdvanceModal } from "@/components/modals/project/request-advance-modal"
-import { useSubsidyReceipts, SubsidyReceipt } from "@/hooks/use-subsidy-receipts"
 import { useCurrency } from "@/contexts/currency-context"
+import { useInstitution } from "@/contexts/institution-context"
 import { cn } from "@/lib/utils"
 import type { ProjectActivityData } from "@/components/projects/project-activities-table"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
-import { CREATE_ADVANCE_REQUEST } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
-import { toast } from "sonner"
 
 interface SubsidyRequestsContainerProps {
   /** Array of subsidy request data */
@@ -53,6 +49,22 @@ interface SubsidyRequestsContainerProps {
   projectSubsidizedBudget?: number
   projectId?: string
   projectName?: string
+  /** Institution name to display in the modal summary */
+  institutionName?: string
+  /** Department ID (institutional projects) */
+  departmentId?: string
+  /** Department name (institutional projects) */
+  departmentName?: string
+  /** Church ID (church projects) */
+  churchId?: string
+  /** Church name (church projects) */
+  churchName?: string
+  /** Church department ID (church projects) */
+  churchDepartmentId?: string
+  /** Church department name (church projects) */
+  churchDepartmentName?: string
+  /** When true, hides Add and Request Advance buttons (project is still in Draft state) */
+  isDraft?: boolean
 }
 
 export function SubsidyRequestsContainer({
@@ -76,21 +88,23 @@ export function SubsidyRequestsContainer({
   projectSubsidizedBudget = 0,
   projectId,
   projectName,
+  institutionName: institutionNameProp,
+  departmentId = "",
+  departmentName = "",
+  churchId = "",
+  churchName = "",
+  churchDepartmentId = "",
+  churchDepartmentName = "",
+  isDraft = false,
 }: SubsidyRequestsContainerProps) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const { formatCurrency } = useCurrency()
+  const { currentInstitutionData } = useInstitution()
+  const institutionName = institutionNameProp || currentInstitutionData?.name || ""
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false)
   const [selectedSubsidy, setSelectedSubsidy] = React.useState<SubsidyRequestCardData | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
 
-  const [isAdvanceModalOpen, setIsAdvanceModalOpen] = React.useState(false)
-
-  // Mutation for advance request
-  const [createAdvanceRequest] = useMutation(CREATE_ADVANCE_REQUEST)
-
-
-
-  // Usando dados reais passados via props
   const displaySubsidies = subsidies
 
   // Default translations
@@ -114,45 +128,6 @@ export function SubsidyRequestsContainer({
     }
   }
 
-  // Delete flow with confirm modal
-  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = React.useState(false)
-  const [subsidyPendingDelete, setSubsidyPendingDelete] = React.useState<SubsidyRequestCardData | null>(null)
-
-  const handleRequestDelete = (id: string) => {
-    const subsidy = displaySubsidies.find(s => s.id === id)
-    if (!subsidy) return
-    setSubsidyPendingDelete(subsidy)
-    setIsConfirmDeleteOpen(true)
-  }
-
-  const confirmDelete = () => {
-    if (!subsidyPendingDelete) return
-    // Only allow delete if NOT approved or in_review
-    if (subsidyPendingDelete.status === "approved" || subsidyPendingDelete.status === "in_review") {
-      // show info via toast and close modal
-      setIsConfirmDeleteOpen(false)
-      setSubsidyPendingDelete(null)
-      return
-    }
-
-    // Call parent callback to handle actual deletion
-    if (onDeleteSubsidy) onDeleteSubsidy(subsidyPendingDelete.id)
-    setIsConfirmDeleteOpen(false)
-    setSubsidyPendingDelete(null)
-  }
-
-  // Archive flow - call parent callback (archive is handled as a delete action)
-  const handleArchive = (id: string) => {
-    // TODO: Add onArchiveSubsidy callback prop if archive functionality is needed
-    console.log('Archive subsidy:', id)
-  }
-
-  const handleEditSubsidy = (id: string) => {
-    if (onEditSubsidy) onEditSubsidy(id)
-  }
-
-
-
   const handleCloseViewModal = () => {
     setIsViewModalOpen(false)
     setSelectedSubsidy(null)
@@ -170,23 +145,8 @@ export function SubsidyRequestsContainer({
           </div>
           <div className="flex gap-2 sm:flex-shrink-0">
 
-          {/* Advance Button */}
-          <WithPermission requiredPermissions={[PermissionResolverName.CreateSubsidyRequest]}>
-              <Button
-                onClick={() => setIsAdvanceModalOpen(true)}
-                size="sm"
-                variant="outline"
-                className="gap-1.5 sm:gap-2 flex-1 sm:flex-initial"
-                disabled={displaySubsidies.some(s => s.is_for_advance && s.status !== 'rejected')}
-                title={displaySubsidies.some(s => s.is_for_advance && s.status !== 'rejected') ? t("subsidy.advanceAlreadyExists") : ""}
-              >
-                <Banknote className="h-4 w-4 flex-shrink-0" />
-                <span className="truncate">{t("subsidyRequest.advance.button")}</span>
-              </Button>
-          </WithPermission>
-
-          {/* Add Button */}
-          {onAddSubsidy && (
+          {/* Add button – hidden when project is still in Draft */}
+          {!isDraft && onAddSubsidy && (
             <WithPermission requiredPermissions={[PermissionResolverName.CreateSubsidyRequest]}>
               <Button
                 onClick={onAddSubsidy}
@@ -213,7 +173,7 @@ export function SubsidyRequestsContainer({
           </div>
         ) : (
           <div className="relative flex-1 overflow-hidden">
-            <div className="h-full max-h-[280px] flex flex-col gap-3 overflow-y-auto pr-2">
+            <div className="h-full max-h-[480px] flex flex-col gap-3 overflow-y-auto pr-2">
               {displaySubsidies.map((subsidy) => {
                 const isApprovedOrClosed = subsidy.status === "approved" || subsidy.status === "closed"
 
@@ -256,6 +216,7 @@ export function SubsidyRequestsContainer({
         isOpen={isViewModalOpen}
         onClose={handleCloseViewModal}
         subsidy={selectedSubsidy}
+        allActivities={allActivities}
         onSubsidyUpdated={async () => {
           // Trigger a refetch of the data
           if (onRefresh) {
@@ -267,33 +228,7 @@ export function SubsidyRequestsContainer({
 
 
 
-      {/* Request Advance Modal */}
-      <RequestAdvanceModal
-        isOpen={isAdvanceModalOpen}
-        onClose={() => setIsAdvanceModalOpen(false)}
-        onSubmit={async (advanceAmount: number) => {
-          if (!projectId) return
-          
-          try {
-            await createAdvanceRequest({
-              variables: {
-                projectId,
-                advanceAmount,
-                language: i18n.language?.toLowerCase() || 'en'
-              }
-            })
-            toast.success(t("subsidyRequest.advance.success"))
-            if (onRefresh) {
-              await onRefresh()
-            }
-          } catch (error) {
-            console.error('Error creating advance request:', error)
-            throw error
-          }
-        }}
-        subsidizedBudget={projectSubsidizedBudget}
-        projectName={projectName}
-      />
+
     </>
   )
 }

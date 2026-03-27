@@ -8,11 +8,14 @@ import { PageProvider } from "@/contexts/page-context"
 import { InstitutionProvider } from "@/contexts/institution-context"
 import { NavigationLoadingProvider } from "@/contexts/navigation-loading-context"
 import { CurrencyProvider } from "@/contexts/currency-context"
+import { NotificationsProvider } from "@/contexts/notifications-context"
+import { GlobalNotificationsWatcher } from "@/components/notifications/global-notifications-watcher"
 import { I18nProvider } from "@/lib/i18n/i18n-provider"
 import { PrivacyProviderWithAuth } from "@/components/shared/privacy-provider-with-auth"
 import { DynamicFavicon } from "@/components/shared/dynamic-favicon"
 import { ToastProvider } from "@/components/ui/toast-provider"
 import { ThemeProvider } from "@/components/theme-provider"
+import { RefundRequestDebugger } from "@/components/debug/refund-request-debugger"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -50,12 +53,16 @@ export default function RootLayout({
                 <PrivacyProviderWithAuth>
                   <InstitutionProvider>
                     <CurrencyProvider>
-                      <PageProvider>
-                        <NavigationLoadingProvider>
-                          {children}
-                          <ToastProvider />
-                        </NavigationLoadingProvider>
-                      </PageProvider>
+                      <NotificationsProvider>
+                        <GlobalNotificationsWatcher />
+                        <PageProvider>
+                          <NavigationLoadingProvider>
+                            {children}
+                            <ToastProvider />
+                            <RefundRequestDebugger />
+                          </NavigationLoadingProvider>
+                        </PageProvider>
+                      </NotificationsProvider>
                     </CurrencyProvider>
                   </InstitutionProvider>
                 </PrivacyProviderWithAuth>

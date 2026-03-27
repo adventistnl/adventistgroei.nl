@@ -157,6 +157,10 @@ interface ProjectActivitiesTableProps {
   onViewActivity?: (activity: ProjectActivityData) => void
   onUploadReceipt?: (activity: ProjectActivityData) => void
   onSaveActivity?: (data: Partial<ProjectActivityData>) => void
+  /** When true, opening an activity's detail modal will be read-only (no edits/uploads) */
+  readOnly?: boolean
+  /** Reason shown in the activity modal tooltip when readOnly=true */
+  readOnlyReason?: string
   institutionUsers?: Array<{
     id: string
     name: string
@@ -219,6 +223,8 @@ export function ProjectActivitiesTable({
   onViewActivity,
   onUploadReceipt,
   onSaveActivity,
+  readOnly = false,
+  readOnlyReason,
   institutionUsers = [],
   enableRowSelection = false,
   selectedActivities,
@@ -647,6 +653,8 @@ export function ProjectActivitiesTable({
         activity={selectedActivityForView}
         project={project}
         institutionUsers={institutionUsers}
+        readOnly={readOnly}
+        readOnlyReason={readOnlyReason}
         onSave={(updatedActivity) => {
           if (onSaveActivity) {
             onSaveActivity(updatedActivity)

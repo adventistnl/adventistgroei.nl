@@ -21,6 +21,9 @@ export const CREATE_SUBSIDY_REQUEST = gql`
       department_id
       church_id
       project_id
+      request_type
+      is_for_advance
+      advance_amount
       refund_amount
       have_refund
       refund_done
@@ -310,6 +313,9 @@ export const GET_SUBSIDY_REQUESTS_BY_PROJECT = gql`
       department_id
       church_id
       project_id
+      request_type
+      is_for_advance
+      advance_amount
       refund_amount
       have_refund
       refund_done

@@ -238,6 +238,11 @@ export const subsidyRequestTranslations = {
       noActivitiesNote: "This advance request is not linked to specific activities. It provides upfront funding based on the project subsidized budget.",
       linkedActivitiesTitle: "Linked Activities",
       linkedActivitiesNote: "This advance request is associated with project activities that will be funded with this payment.",
+      linkActivityTitle: "Link Activities",
+      linkActivityDescription: "Select project activities to link to this advance request.",
+      noActivitiesLinked: "No activities linked",
+      linkActivityHint: "Use the + button to link activities.",
+      noActivitiesStatus: "No activities registered.",
       maxButton: "MAX",
       confirmationRequired: "Please confirm that you understand the terms",
       confirmationLabel: "I understand the advance payment terms",
@@ -315,10 +320,47 @@ export const subsidyRequestTranslations = {
       refundRequested: "Refund Requested",
       refundRequestedAmount: "Refund Amount",
       refundRequestedTooltip: "A refund of {{amount}} has been requested and is awaiting confirmation",
-      statusWithRefund: "Status: Refund requested ({{amount}})"
+      statusWithRefund: "Status: Refund requested ({{amount}})",
+      // Refund receipt upload
+      uploadRefundReceiptTitle: "Proof of Refund Payment",
+      uploadRefundReceiptDescription: "Upload the proof of payment for the refund amount.",
+      uploadRefundReceiptButton: "Upload Proof",
+      uploadNotePlaceholder: "Optional note (e.g. TED bank receipt)",
+      refundReceiptPending: "Pending validation",
+      refundReceiptApproved: "Approved",
+      refundReceiptRejected: "Rejected",
+      putInReviewButton: "Submit for Review",
+      putInReviewTooltip: "Send the refund receipt for review so the subsidy can be finalized.",
+      deleteRefundReceipt: "Delete",
+      validateRefundReceipt: "Validate",
+      validateNoteLabel: "Optional validation note:",
+      validateNotePlaceholder: "e.g. Receipt accepted",
+      noRefundReceiptYet: "No proof of payment uploaded yet.",
+      cancel: "Cancel"
+    },
+
+    // Receipt hook messages
+    receipts: {
+      fetchError: "Error fetching receipts",
+      uploadSuccess: "{{filename}} uploaded successfully!",
+      uploadError: "Error uploading file",
+      refundUploadError: "Error uploading refund receipt",
+      deleteSuccess: "Receipt deleted successfully",
+      deleteError: "Error deleting receipt",
+      validateSuccess: "Receipt validated successfully",
+      validateError: "Error validating receipt",
+      rejectSuccess: "Receipt rejected",
+      rejectError: "Error rejecting receipt",
+      downloadSuccess: "Download started",
+      downloadError: "Error downloading file",
+      updateSuccess: "Receipt updated successfully!",
+      updateError: "Error updating receipt",
+      invalidFileType: "Invalid file type. Only JPG, PNG and PDF are allowed.",
+      fileTooLarge: "File too large. Maximum size: 10MB.",
+      invalidFileExtension: "Invalid file extension. Only .jpg, .jpeg, .png and .pdf are allowed."
     }
   },
-  
+
   pt: {
     // Modal header
     title: "Solicitar Subsídio",
@@ -556,6 +598,11 @@ export const subsidyRequestTranslations = {
       noActivitiesNote: "Esta solicitação de adiantamento não está vinculada a atividades específicas. Ela fornece financiamento antecipado com base no orçamento subsidiado do projeto.",
       linkedActivitiesTitle: "Atividades Vinculadas",
       linkedActivitiesNote: "Esta solicitação de adiantamento está associada a atividades do projeto que serão financiadas com este pagamento.",
+      linkActivityTitle: "Vincular Atividades",
+      linkActivityDescription: "Selecione as atividades do projeto para vincular a este adiantamento.",
+      noActivitiesLinked: "Nenhuma atividade vinculada",
+      linkActivityHint: "Use o + para vincular atividades.",
+      noActivitiesStatus: "Nenhuma atividade registrada.",
       maxButton: "MÁXIMO",
       confirmationRequired: "Por favor, confirme que você entende os termos",
       confirmationLabel: "Compreendo os termos do pagamento antecipado",
@@ -633,7 +680,44 @@ export const subsidyRequestTranslations = {
       refundRequested: "Reembolso Solicitado",
       refundRequestedAmount: "Valor de Reembolso",
       refundRequestedTooltip: "Um reembolso de {{amount}} foi solicitado e está aguardando confirmação",
-      statusWithRefund: "Status: Reembolso solicitado ({{amount}})"
+      statusWithRefund: "Status: Reembolso solicitado ({{amount}})",
+      // Upload de comprovante de reembolso
+      uploadRefundReceiptTitle: "Comprovante de Pagamento do Reembolso",
+      uploadRefundReceiptDescription: "Envie o comprovante de pagamento do valor do reembolso.",
+      uploadRefundReceiptButton: "Enviar Comprovante",
+      uploadNotePlaceholder: "Nota opcional (ex.: comprovante TED banco X)",
+      refundReceiptPending: "Aguardando validação",
+      refundReceiptApproved: "Aprovado",
+      refundReceiptRejected: "Rejeitado",
+      putInReviewButton: "Enviar para Revisão",
+      putInReviewTooltip: "Envie o comprovante de reembolso para revisão para que o subsídio possa ser finalizado.",
+      deleteRefundReceipt: "Excluir",
+      validateRefundReceipt: "Validar",
+      validateNoteLabel: "Nota de validação (opcional):",
+      validateNotePlaceholder: "ex.: Comprovante aceito",
+      noRefundReceiptYet: "Nenhum comprovante de pagamento enviado ainda.",
+      cancel: "Cancelar"
+    },
+
+    // Mensagens do hook de recibos
+    receipts: {
+      fetchError: "Erro ao buscar recibos",
+      uploadSuccess: "{{filename}} enviado com sucesso!",
+      uploadError: "Erro ao fazer upload do arquivo",
+      refundUploadError: "Erro ao fazer upload do comprovante de reembolso",
+      deleteSuccess: "Recibo excluído com sucesso",
+      deleteError: "Erro ao excluir recibo",
+      validateSuccess: "Recibo validado com sucesso",
+      validateError: "Erro ao validar recibo",
+      rejectSuccess: "Recibo rejeitado",
+      rejectError: "Erro ao rejeitar recibo",
+      downloadSuccess: "Download iniciado",
+      downloadError: "Erro ao fazer download do arquivo",
+      updateSuccess: "Recibo atualizado com sucesso!",
+      updateError: "Erro ao atualizar recibo",
+      invalidFileType: "Tipo de arquivo inválido. Apenas JPG, PNG e PDF são permitidos.",
+      fileTooLarge: "Arquivo muito grande. Tamanho máximo: 10MB.",
+      invalidFileExtension: "Extensão de arquivo inválida. Apenas .jpg, .jpeg, .png e .pdf são permitidos."
     }
   },
   
@@ -873,6 +957,11 @@ export const subsidyRequestTranslations = {
       noActivitiesNote: "Deze voorschotaanvraag is niet gekoppeld aan specifieke activiteiten. Het biedt upfront financiering op basis van het gesubsidieerde projectbudget.",
       linkedActivitiesTitle: "Gekoppelde Activiteiten",
       linkedActivitiesNote: "Deze voorschotaanvraag is gekoppeld aan projectactiviteiten die met deze betaling worden gefinancierd.",
+      linkActivityTitle: "Activiteiten Koppelen",
+      linkActivityDescription: "Selecteer projectactiviteiten om te koppelen aan deze voorschotaanvraag.",
+      noActivitiesLinked: "Geen activiteiten gekoppeld",
+      linkActivityHint: "Gebruik de + knop om activiteiten te koppelen.",
+      noActivitiesStatus: "Geen activiteiten geregistreerd.",
       advanceAmount: "Voorschotbedrag",
       advanceStatus: "Voorschotstatus",
       maxButton: "MAX",
@@ -952,7 +1041,44 @@ export const subsidyRequestTranslations = {
       refundRequested: "Terugbetaling Aangevraagd",
       refundRequestedAmount: "Terugbetalingsbedrag",
       refundRequestedTooltip: "Een terugbetaling van {{amount}} is aangevraagd en wacht op bevestiging",
-      statusWithRefund: "Status: Terugbetaling aangevraagd ({{amount}})"
+      statusWithRefund: "Status: Terugbetaling aangevraagd ({{amount}})",
+      // Upload bewijs van terugbetaling
+      uploadRefundReceiptTitle: "Bewijs van Terugbetalingsbetaling",
+      uploadRefundReceiptDescription: "Upload het betalingsbewijs voor het terugbetalingsbedrag.",
+      uploadRefundReceiptButton: "Bewijs Uploaden",
+      uploadNotePlaceholder: "Optionele notitie (bijv. TED bankoverschrijving)",
+      refundReceiptPending: "In afwachting van validatie",
+      refundReceiptApproved: "Goedgekeurd",
+      refundReceiptRejected: "Afgewezen",
+      putInReviewButton: "Indienen ter Beoordeling",
+      putInReviewTooltip: "Dien het terugbetalingsbewijs in ter beoordeling zodat de subsidie kan worden afgerond.",
+      deleteRefundReceipt: "Verwijderen",
+      validateRefundReceipt: "Valideren",
+      validateNoteLabel: "Optionele validatienotitie:",
+      validateNotePlaceholder: "bijv. Bewijs geaccepteerd",
+      noRefundReceiptYet: "Nog geen betalingsbewijs geüpload.",
+      cancel: "Annuleren"
+    },
+
+    // Berichten van de ontvangstbewijshaak
+    receipts: {
+      fetchError: "Fout bij ophalen van ontvangstbewijzen",
+      uploadSuccess: "{{filename}} succesvol geüpload!",
+      uploadError: "Fout bij uploaden van bestand",
+      refundUploadError: "Fout bij uploaden van terugbetalingsbewijs",
+      deleteSuccess: "Ontvangstbewijs succesvol verwijderd",
+      deleteError: "Fout bij verwijderen van ontvangstbewijs",
+      validateSuccess: "Ontvangstbewijs succesvol gevalideerd",
+      validateError: "Fout bij valideren van ontvangstbewijs",
+      rejectSuccess: "Ontvangstbewijs afgewezen",
+      rejectError: "Fout bij afwijzen van ontvangstbewijs",
+      downloadSuccess: "Download gestart",
+      downloadError: "Fout bij downloaden van bestand",
+      updateSuccess: "Ontvangstbewijs succesvol bijgewerkt!",
+      updateError: "Fout bij bijwerken van ontvangstbewijs",
+      invalidFileType: "Ongeldig bestandstype. Alleen JPG, PNG en PDF zijn toegestaan.",
+      fileTooLarge: "Bestand te groot. Maximale grootte: 10MB.",
+      invalidFileExtension: "Ongeldige bestandsextensie. Alleen .jpg, .jpeg, .png en .pdf zijn toegestaan."
     }
   }
 }

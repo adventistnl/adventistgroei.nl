@@ -23,6 +23,8 @@ export interface UserAvatarData {
   role?: string
   initials?: string
   isOwner?: boolean
+  isCoOwner?: boolean
+  isFinance?: boolean
 }
 
 interface UsersAvatarGroupProps {
@@ -37,6 +39,7 @@ interface UsersAvatarGroupProps {
   showAddButton?: boolean
   onShowAllUsers?: () => void
   ownerUserId?: string // ID of the project owner for special styling
+  coOwnerUserId?: string // ID of the co-owner for blue styling
 }
 
 const sizeConfig = {
@@ -95,6 +98,7 @@ export function UsersAvatarGroup({
   showAddButton = true,
   onShowAllUsers,
   ownerUserId,
+  coOwnerUserId,
 }: UsersAvatarGroupProps) {
   const config = sizeConfig[size]
   const displayedUsers = users.slice(0, maxDisplay)
@@ -126,7 +130,7 @@ export function UsersAvatarGroup({
                 </AvatarFallback>
               </Avatar>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="text-xs z-[70]" sideOffset={5}>
+            <TooltipContent side="bottom" className="text-xs z-[300]" sideOffset={5}>
               <p className="font-medium">Adicionar usuário ao projeto</p>
             </TooltipContent>
           </Tooltip>
@@ -155,6 +159,8 @@ export function UsersAvatarGroup({
         <div className="flex -space-x-2">
           {displayedUsers.map((user) => {
             const isOwner = user.id === ownerUserId
+            const isCoOwner = !isOwner && user.id === coOwnerUserId
+            const isFinance = !isOwner && !isCoOwner && !!user.isFinance
             
             return (
               <TooltipProvider key={user.id} delayDuration={200}>
@@ -165,22 +171,30 @@ export function UsersAvatarGroup({
                         config.avatar,
                         "border-2 cursor-pointer hover:scale-110 transition-transform hover:z-50",
                         isOwner 
-                          ? "border-black dark:border-white border-4 ring-2 ring-yellow-400 dark:ring-yellow-300" 
-                          : "border-background"
+                          ? "border-black dark:border-white border-4 ring-2 ring-yellow-400 dark:ring-yellow-300"
+                          : isCoOwner
+                            ? "bg-gray-700 dark:bg-gray-700 border-[3px] ring-2 ring-blue-300 dark:ring-blue-500"
+                            : isFinance
+                              ? "border-[3px] ring-2 ring-purple-400 dark:ring-purple-500"
+                              : "border-background"
                       )}
                     >
                       <AvatarImage src={user.avatar} alt={user.name} />
                       <AvatarFallback className={cn(
                         config.fontSize,
                         isOwner 
-                          ? "bg-yellow-600 dark:bg-yellow-500 text-white font-bold" 
-                          : "bg-gray-600 dark:bg-gray-700 text-white font-semibold"
+                          ? "bg-yellow-600 dark:bg-yellow-500 text-white font-bold"
+                          : isCoOwner
+                            ? "bg-blue-500 dark:bg-blue-600 text-white font-bold"
+                            : isFinance
+                              ? "bg-purple-600 dark:bg-purple-700 text-white font-bold"
+                              : "bg-gray-600 dark:bg-gray-700 text-white font-semibold"
                       )}>
                         {getInitials(user)}
                       </AvatarFallback>
                     </Avatar>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-xs max-w-[200px] z-[70]" sideOffset={5}>
+                  <TooltipContent side="bottom" className="text-xs max-w-[200px] z-[300]" sideOffset={5}>
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <p className="font-medium">{user.name}</p>
@@ -189,13 +203,23 @@ export function UsersAvatarGroup({
                             Owner
                           </span>
                         )}
+                        {isCoOwner && (
+                          <span className="bg-blue-500 text-white text-[8px] px-1.5 py-0.5 rounded font-bold uppercase">
+                            Co-Owner
+                          </span>
+                        )}
+                        {isFinance && (
+                          <span className="bg-purple-600 text-white text-[8px] px-1.5 py-0.5 rounded font-bold uppercase">
+                            Finance
+                          </span>
+                        )}
                       </div>
                       {user.email && (
                         <p className="text-gray-400 text-[10px]">{user.email}</p>
                       )}
                       {user.role && (
                         <p className="text-gray-400 text-[10px] capitalize">
-                          {isOwner ? 'Project Owner' : user.role}
+                          {isOwner ? 'Project Owner' : isCoOwner ? 'Co-Owner' : isFinance ? 'Finance' : user.role}
                         </p>
                       )}
                     </div>
@@ -223,7 +247,7 @@ export function UsersAvatarGroup({
                     </AvatarFallback>
                   </Avatar>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="text-xs max-w-[250px] z-[70]" sideOffset={5}>
+                <TooltipContent side="bottom" className="text-xs max-w-[250px] z-[300]" sideOffset={5}>
                   <div className="space-y-2">
                     <p className="font-medium">
                       {remainingCount} usuário{remainingCount > 1 ? 's' : ''} adiciona{remainingCount > 1 ? 'is' : 'l'}:
@@ -231,6 +255,8 @@ export function UsersAvatarGroup({
                     <div className="space-y-1 max-h-[200px] overflow-y-auto">
                       {users.slice(maxDisplay).map((user) => {
                         const isOwner = user.id === ownerUserId
+                        const isCoOwner = !isOwner && user.id === coOwnerUserId
+                        const isFinance = !isOwner && !isCoOwner && !!user.isFinance
                         return (
                           <div key={user.id} className="flex items-center gap-2 py-1 px-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
                             <Avatar className="size-5 border">
@@ -238,8 +264,12 @@ export function UsersAvatarGroup({
                               <AvatarFallback className={cn(
                                 "text-[8px]",
                                 isOwner 
-                                  ? "bg-yellow-600 dark:bg-yellow-500 text-white font-bold" 
-                                  : "bg-gray-600 dark:bg-gray-700 text-white"
+                                  ? "bg-yellow-600 dark:bg-yellow-500 text-white font-bold"
+                                  : isCoOwner
+                                    ? "bg-blue-500 dark:bg-blue-600 text-white font-bold"
+                                    : isFinance
+                                      ? "bg-purple-600 dark:bg-purple-700 text-white font-bold"
+                                      : "bg-gray-600 dark:bg-gray-700 text-white"
                               )}>
                                 {getInitials(user)}
                               </AvatarFallback>
@@ -252,10 +282,20 @@ export function UsersAvatarGroup({
                                     Owner
                                   </span>
                                 )}
+                                {isCoOwner && (
+                                  <span className="bg-blue-500 text-white text-[7px] px-1 py-0.5 rounded font-bold uppercase flex-shrink-0">
+                                    Co-Owner
+                                  </span>
+                                )}
+                                {isFinance && (
+                                  <span className="bg-purple-600 text-white text-[7px] px-1 py-0.5 rounded font-bold uppercase flex-shrink-0">
+                                    Finance
+                                  </span>
+                                )}
                               </div>
                               {user.role && (
                                 <p className="text-[9px] text-gray-400 truncate">
-                                  {isOwner ? 'Project Owner' : user.role}
+                                  {isOwner ? 'Project Owner' : isCoOwner ? 'Co-Owner' : isFinance ? 'Finance' : user.role}
                                 </p>
                               )}
                             </div>
@@ -293,7 +333,7 @@ export function UsersAvatarGroup({
                   </AvatarFallback>
                 </Avatar>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs font-medium z-[70]" sideOffset={5}>
+              <TooltipContent side="bottom" className="text-xs font-medium z-[300]" sideOffset={5}>
                 <p>Adicionar usuário ao projeto</p>
               </TooltipContent>
             </Tooltip>

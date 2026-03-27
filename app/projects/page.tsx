@@ -31,7 +31,7 @@ import { projectTranslations } from "@/lib/translations/projects"
 import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { DELETE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
-import { Globe, Plus, RefreshCw, Building, MoreHorizontal, Eye, Edit, Activity, TrendingUp, Users, DollarSign, Folder, ArrowRight, Calendar, Building2, Clock, CheckCircle2, ListChecks } from "lucide-react"
+import { Globe, Plus, RefreshCw, Building, MoreHorizontal, Eye, Edit, Activity, TrendingUp, Users, DollarSign, Folder, ArrowRight, Calendar, Building2, Clock, CheckCircle2, ListChecks, LayoutGrid, List, ExternalLink, ScanEye } from "lucide-react"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
@@ -44,9 +44,13 @@ import { UseTable } from "@/components/ui/use-table"
 import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
 import { createProjectColumns } from "@/components/projects/projects-table-columns"
 import { EditProjectModal } from "@/components/modals/project/edit-project-modal"
+import { QuickViewProjectModal } from "@/components/modals/project/quick-view-project-modal"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
 import { MyProjectsFilter } from "@/components/shared/my-projects-filter"
 import { YearFilter } from "@/components/shared/year-filter"
+import { ProjectKanbanView } from "@/components/projects/project-kanban-view"
+import { ProjectRefundRequestsCard } from "@/components/projects/project-refund-requests-card"
+import { PROJECT_STATUS_CONFIG, PROJECT_STATUS_ORDER } from "@/components/projects/project-header"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import toast from "react-hot-toast"
@@ -68,6 +72,10 @@ function ProjectsPageContent() {
   const [refreshing, setRefreshing] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedProject, setSelectedProject] = useState<ProjectTableData | undefined>(undefined)
+  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false)
+  const [quickViewProject, setQuickViewProject] = useState<ProjectTableData | undefined>(undefined)
 
   const institutionId = currentInstitutionData?.id
 
@@ -159,9 +167,14 @@ function ProjectsPageContent() {
         eventId: project.event_id || null,
         // Preserve activities data with owners for user avatar display
         activitiesData: project.activities || [],
+        // Collaborators from API (owner + co_owner + assignees, deduped)
+        collaborators: project.collaborators || [],
         // Preserve owner data for assigned user column
         owner_id: project.owner_id || project.owner?.id,
         owner: project.owner || null,
+        // Preserve co-owner data
+        co_owner_id: project.co_owner_id || project.co_owner?.id || null,
+        co_owner: project.co_owner || null,
         // Preserve church data for church column
         church_id: project.church_id,
         church: project.church,
@@ -209,21 +222,29 @@ function ProjectsPageContent() {
     
     // Apply "My Projects" filter if active
     if (showMyProjectsOnly && user?.id) {
+      const uid = user.id
       filtered = filtered.filter(project => {
-        // Check if user is the owner
-        const isOwner = user.id === project.owner_id || user.id === project.owner?.id
-        
-        // Check if user is a collaborator in any activity
-        const isCollaborator = project.activitiesData?.some((activity: any) => 
-          activity.assignees?.some((assignee: any) => assignee.user?.id === user.id)
-        )
-        
-        return isOwner || isCollaborator
+        // 1. Direct owner check (most reliable field)
+        if (project.owner_id === uid || project.owner?.id === uid) return true
+
+        // 2. Direct co-owner check
+        if (project.co_owner_id === uid || project.co_owner?.id === uid) return true
+
+        // 3. Collaborators array (consolidates owner + co_owner + assignees from API)
+        if (project.collaborators?.some((c: any) => c.user?.id === uid)) return true
+
+        return false
       })
     }
     
     return filtered
   }, [filterValues.department, filterValues.church, projectsByYear, showMyProjectsOnly, user])
+
+  // Apply status filter for the table/kanban section
+  const statusFilteredData = useMemo(() => {
+    if (statusFilter === 'all') return filteredData
+    return filteredData.filter(p => p.status === statusFilter)
+  }, [filteredData, statusFilter])
 
   // Configure PageFilters
   const pageFilters: FilterConfig[] = useMemo(() => {
@@ -406,97 +427,37 @@ function ProjectsPageContent() {
       ),
       cell: ({ row }) => {
         const project = row.original
+        const collaborators = project.collaborators || []
 
-        
-        // Get unique users from activities - extract user from assignees
-        const activityUsers = project.activitiesData?.flatMap((activity: any) => 
-          activity.assignees?.map((assignee: any) => assignee.user) || []
-        ) || []
-
-        
-        // Remove duplicates by id
-        const uniqueUsers = Array.from(
-          new Map(activityUsers.map((user: any) => [user.id, user])).values()
-        )
-        // Get owner
-        const ownerId = project.owner?.id || project.owner_id
-        // Reorder users to show owner first
-        let orderedUsers: UserAvatarData[] = []
-        
-        if (ownerId) {
-          const ownerInUsers = uniqueUsers.find((user: any) => user.id === ownerId)
-          
-          // If owner is in activity users, use that data
-          if (ownerInUsers) {
-            const otherUsers = uniqueUsers.filter((user: any) => user.id !== ownerId)
-            orderedUsers = [
-              {
-                id: (ownerInUsers as any).id,
-                name: (ownerInUsers as any).name,
-                email: (ownerInUsers as any).email,
-                role: 'Owner',
-                isOwner: true
-              },
-              ...otherUsers.map((user: any) => ({
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: 'Colaborador'
-              }))
-            ]
-          } else if (project.owner) {
-            // If owner is not in activities, add from project.owner
-            orderedUsers = [
-              {
-                id: project.owner.id,
-                name: project.owner.name,
-                email: project.owner.email,
-                role: 'Owner',
-                isOwner: true
-              },
-              ...uniqueUsers.map((user: any) => ({
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: 'Colaborador'
-              }))
-            ]
-          } else {
-            // No owner data available
-            orderedUsers = uniqueUsers.map((user: any) => ({
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              role: 'Colaborador'
-            }))
-          }
-        } else {
-          // No owner ID
-          orderedUsers = uniqueUsers.map((user: any) => ({
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            role: 'Colaborador'
-          }))
-        }
-        
-        
-        if (orderedUsers.length === 0) {
+        if (collaborators.length === 0) {
           return (
             <div className="text-xs text-muted-foreground">
               {t_project.table.noCollaborators || "No collaborators"}
             </div>
           )
         }
-        
+
+        const ownerId = collaborators.find((c: any) => c.role === 'owner')?.user?.id
+        const coOwnerId = collaborators.find((c: any) => c.role === 'co_owner')?.user?.id
+
+        const users: UserAvatarData[] = collaborators.map((c: any) => ({
+          id: c.user.id,
+          name: c.user.name,
+          email: c.user.email,
+          role: c.role === 'owner' ? 'Owner' : c.role === 'co_owner' ? 'Co-Owner' : 'Assignee',
+          isOwner: c.role === 'owner',
+          isCoOwner: c.role === 'co_owner'
+        }))
+
         return (
           <UsersAvatarGroup
-            users={orderedUsers}
+            users={users}
             maxDisplay={2}
             size="sm"
             showLabel={false}
             showAddButton={false}
             ownerUserId={ownerId}
+            coOwnerUserId={coOwnerId}
           />
         )
       },
@@ -613,11 +574,14 @@ function ProjectsPageContent() {
         // Map backend status to display text and colors
         const statusConfig: Record<string, { text: string; variant: 'success' | 'warning' | 'error' | 'info' | 'default'; dotColor: string }> = {
           DRAFT: { text: t_project.status?.draft || 'Draft', variant: 'default', dotColor: '#6b7280' },
-          IN_PROGRESS: { text: t_project.status?.inProgress || 'In Progress', variant: 'success', dotColor: '#10b981' },
+          OPEN_REQUEST: { text: t_project.status?.openRequest || 'Open Request', variant: 'info', dotColor: '#0ea5e9' },
           IN_REVIEW: { text: t_project.status?.inReview || 'In Review', variant: 'info', dotColor: '#3b82f6' },
-          ON_HOLD: { text: t_project.status?.onHold || 'On Hold', variant: 'warning', dotColor: '#f59e0b' },
-          EXPIRED: { text: t_project.status?.expired || 'Expired', variant: 'error', dotColor: '#ef4444' },
-          CONCLUDED: { text: t_project.status?.concluded || 'Concluded', variant: 'default', dotColor: '#64748b' },
+          ADJUSTMENTS_NEEDED: { text: t_project.status?.adjustmentsNeeded || 'Adjustments Needed', variant: 'warning', dotColor: '#f97316' },
+          IN_PROGRESS: { text: t_project.status?.inProgress || 'In Progress', variant: 'success', dotColor: '#22c55e' },
+          PENDING_RECEIPT: { text: t_project.status?.pendingReceipt || 'Pending Receipt', variant: 'info', dotColor: '#06b6d4' },
+          WAITING_REFUND: { text: t_project.status?.waitingRefund || 'Waiting Refund', variant: 'info', dotColor: '#14b8a6' },
+          OVERDUE: { text: t_project.status?.overdue || 'Overdue', variant: 'error', dotColor: '#ef4444' },
+          CONCLUDED: { text: t_project.status?.concluded || 'Concluded', variant: 'success', dotColor: '#16a34a' },
         }
         
         const config = statusConfig[status] || statusConfig.DRAFT
@@ -674,11 +638,21 @@ function ProjectsPageContent() {
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation()
+                    handleQuickViewProject(project)
+                  }}
+                  className="cursor-pointer"
+                >
+                  <ScanEye className="mr-2 h-4 w-4" />
+                  {t_project.table?.quickView ?? "Quick View"}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation()
                     handleViewProject(project)
                   }}
                   className="cursor-pointer"
                 >
-                  <Eye className="mr-2 h-4 w-4" />
+                  <ExternalLink className="mr-2 h-4 w-4" />
                   {t_project.viewProject}
                 </DropdownMenuItem>
                 
@@ -791,6 +765,11 @@ function ProjectsPageContent() {
     setAvailableYears(prev => [...prev, nextYear].sort((a, b) => b - a))
     setSelectedYear(nextYear)
     toast.success(t_project.yearFilter.yearAdded.replace('{{year}}', nextYear.toString()))
+  }
+
+  const handleQuickViewProject = (project: ProjectTableData) => {
+    setQuickViewProject(project)
+    setIsQuickViewOpen(true)
   }
 
   const handleViewProject = (project: ProjectTableData) => {
@@ -972,51 +951,112 @@ function ProjectsPageContent() {
 
         <Separator />
 
-        {/* Projects Table */}
+        {/* Subsidy Refund Requests Card */}
+        <ProjectRefundRequestsCard />
+
+        {/* Projects Table / Kanban */}
         <Card>
           <CardHeader>
-            <div className="grid gap-1">
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="w-5 h-5" />
-                {t_project.projectsOverview}
-              </CardTitle>
-              <CardDescription>
-                {t_project?.pageHeader?.manageDescription || "Manage and track all projects across departments"}
-                {filterValues.department !== "all" && (
-                  <span className="ml-2">
-                    • Department: {departments.find((d: any) => d.id === filterValues.department)?.name}
-                  </span>
-                )}
-                {filterValues.church !== "all" && (
-                  <span className="ml-2">
-                    • Church: {activeChurches.find((c: any) => c.id === filterValues.church)?.name}
-                  </span>
-                )}
-              </CardDescription>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              {/* Title + description */}
+              <div className="grid gap-1 min-w-0">
+                <CardTitle className="flex items-center gap-2">
+                  {viewMode === 'kanban'
+                    ? <LayoutGrid className="w-5 h-5" />
+                    : <Globe className="w-5 h-5" />}
+                  {t_project.projectsOverview}
+                </CardTitle>
+                <CardDescription>
+                  {t_project?.pageHeader?.manageDescription || "Manage and track all projects across departments"}
+                  {filterValues.department !== 'all' && (
+                    <span className="ml-2">
+                      • {departments.find((d: any) => d.id === filterValues.department)?.name}
+                    </span>
+                  )}
+                  {filterValues.church !== 'all' && (
+                    <span className="ml-2">
+                      • {activeChurches.find((c: any) => c.id === filterValues.church)?.name}
+                    </span>
+                  )}
+                </CardDescription>
+              </div>
+
+              {/* Controls: status filter + view toggle */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {/* Status filter */}
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="h-8 w-[160px] text-xs">
+                    <SelectValue placeholder={t_project.table?.status || 'Status'} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white dark:bg-gray-950 border border-border shadow-md">
+                    <SelectItem value="all">
+                      {t_project.filters?.allDepartments?.split(' ')?.[0] || 'All'} Status
+                    </SelectItem>
+                    {PROJECT_STATUS_ORDER.map(s => (
+                      <SelectItem key={s} value={s}>
+                        {(t_project.status as Record<string, string>)?.[PROJECT_STATUS_CONFIG[s]?.labelKey] ?? s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* View toggle */}
+                <div className="flex items-center border rounded-md">
+                  <Button
+                    variant={viewMode === 'table' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('table')}
+                    className="rounded-r-none h-8 px-2"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('kanban')}
+                    className="rounded-l-none h-8 px-2"
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
           </CardHeader>
-          <CardContent className="overflow-hidden">
-            <UseTable
-              columns={projectColumns}
-              data={filteredData}
-              searchKey="title"
-              translations={{
-                search: t_project.searchProjects,
-                clearFilters: t_project.table.clearFilters,
-                columns: t_project.table.columns,
-                toggleColumns: t_project.table.toggleColumns,
-                rowsPerPage: t_project.table.rowsPerPage,
-                showingResults: (from, to, total) => t_project.table.showingResults
-                  .replace('{{from}}', from.toString())
-                  .replace('{{to}}', to.toString())
-                  .replace('{{total}}', total.toString()),
-                previous: t_project.table.previous,
-                next: t_project.table.next,
-                noResults: t_project.table.noResults,
-                all: t_project.filters?.allDepartments?.split(' ')?.[0] || "All"
-              }}
-            />
-          </CardContent>
+
+          {viewMode === 'kanban' ? (
+            <CardContent className="overflow-hidden p-0">
+              <ProjectKanbanView
+                projects={statusFilteredData}
+                departments={departments}
+                onView={handleViewProject}
+                onEdit={handleEditProject}
+                onQuickView={handleQuickViewProject}
+              />
+            </CardContent>
+          ) : (
+            <CardContent className="overflow-hidden">
+              <UseTable
+                columns={projectColumns}
+                data={statusFilteredData}
+                searchKey="title"
+                translations={{
+                  search: t_project.searchProjects,
+                  clearFilters: t_project.table.clearFilters,
+                  columns: t_project.table.columns,
+                  toggleColumns: t_project.table.toggleColumns,
+                  rowsPerPage: t_project.table.rowsPerPage,
+                  showingResults: (from, to, total) => t_project.table.showingResults
+                    .replace('{{from}}', from.toString())
+                    .replace('{{to}}', to.toString())
+                    .replace('{{total}}', total.toString()),
+                  previous: t_project.table.previous,
+                  next: t_project.table.next,
+                  noResults: t_project.table.noResults,
+                  all: t_project.filters?.allDepartments?.split(' ')?.[0] || 'All'
+                }}
+              />
+            </CardContent>
+          )}
 
           {/* Edit Project Modal */}
           <EditProjectModal
@@ -1027,6 +1067,17 @@ function ProjectsPageContent() {
             }}
             onSuccess={handleEditProjectSuccess}
             project={selectedProject}
+          />
+
+          {/* Quick View Project Modal */}
+          <QuickViewProjectModal
+            isOpen={isQuickViewOpen}
+            onClose={() => {
+              setIsQuickViewOpen(false)
+              setQuickViewProject(undefined)
+            }}
+            project={quickViewProject ?? null}
+            onStatusUpdated={() => refetch()}
           />
         </Card>
 

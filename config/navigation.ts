@@ -292,6 +292,18 @@ const _legacyNavMainBase: NavItem[] = [
     // }
 ]
 
+// Rotas cujos sub-paths são gerenciados por itens dedicados na sidebar
+// (ex: /projects/[id] tem item próprio em NavProjects → o item /projects NÃO deve ficar ativo)
+const EXACT_MATCH_ONLY_ROUTES = ["/projects"]
+
+function isNavItemActive(itemUrl: string, pathname: string): boolean {
+  if (itemUrl === "#") return false
+  if (pathname === itemUrl) return true
+  // Rotas em EXACT_MATCH_ONLY_ROUTES só ativam em match exato
+  if (EXACT_MATCH_ONLY_ROUTES.includes(itemUrl)) return false
+  return itemUrl !== "/" && pathname.startsWith(itemUrl + "/")
+}
+
 // Função estável para obter navegação com estado ativo
 export function getNavMainWithActiveState(
   pathname: string,
@@ -301,17 +313,10 @@ export function getNavMainWithActiveState(
   return navMainBase
     .filter(item => shouldShowNavItem(item, userPermissions))
     .map(item => {
-      // Verifica se é uma rota direta ou se o pathname começa com o URL do item
-      // Isso permite que /projects/123 ative o item /projects
-      const isDirectActive = item.url !== "#" && (
-        pathname === item.url || 
-        (item.url !== "/" && pathname.startsWith(item.url + "/"))
-      )
+      const isDirectActive = isNavItemActive(item.url, pathname)
       
-      // Verifica se algum subitem está ativo
-      const hasActiveChild = item.items?.some(subItem => 
-        pathname === subItem.url || 
-        (subItem.url !== "/" && pathname.startsWith(subItem.url + "/"))
+      const hasActiveChild = item.items?.some(subItem =>
+        isNavItemActive(subItem.url, pathname)
       ) || false
       
       const isItemActive = isDirectActive || hasActiveChild
@@ -326,8 +331,7 @@ export function getNavMainWithActiveState(
         isActive: isItemActive,
         items: filteredSubItems?.map(subItem => ({
           ...subItem,
-          isActive: pathname === subItem.url || 
-            (subItem.url !== "/" && pathname.startsWith(subItem.url + "/"))
+          isActive: isNavItemActive(subItem.url, pathname)
         }))
       }
     })
@@ -344,14 +348,10 @@ export function getNavSectionsWithActiveState(
       const filteredItems = section.items
         .filter(item => shouldShowNavItem(item, userPermissions))
         .map(item => {
-          const isDirectActive = item.url !== "#" && (
-            pathname === item.url || 
-            (item.url !== "/" && pathname.startsWith(item.url + "/"))
-          )
+          const isDirectActive = isNavItemActive(item.url, pathname)
           
-          const hasActiveChild = item.items?.some(subItem => 
-            pathname === subItem.url || 
-            (subItem.url !== "/" && pathname.startsWith(subItem.url + "/"))
+          const hasActiveChild = item.items?.some(subItem =>
+            isNavItemActive(subItem.url, pathname)
           ) || false
           
           const isItemActive = isDirectActive || hasActiveChild
@@ -366,8 +366,7 @@ export function getNavSectionsWithActiveState(
             isActive: isItemActive,
             items: filteredSubItems?.map(subItem => ({
               ...subItem,
-              isActive: pathname === subItem.url || 
-                (subItem.url !== "/" && pathname.startsWith(subItem.url + "/"))
+              isActive: isNavItemActive(subItem.url, pathname)
             }))
           }
         })

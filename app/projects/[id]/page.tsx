@@ -6,16 +6,20 @@ import { useTranslation } from "react-i18next"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { ProjectHeader } from "@/components/projects/project-header"
+import { AdjustmentNotificationBanner } from "@/components/projects/adjustment-notification-banner"
+import { ReceiptStatusBanner } from "@/components/projects/receipt-status-banner"
 import { ProjectActivitiesFilters } from "@/components/projects/project-activities-filters"
 import { ProjectActivitiesTable, ProjectActivityData } from "@/components/projects/project-activities-table"
 import { ProjectSubsidiesTable, SubsidyRequestData, ActivityData } from "@/components/projects/project-subsidies-table"
 import { SubsidyRequestsContainer } from "@/components/projects/subsidy-requests-container"
 import { SubsidyRequestCardData } from "@/components/projects/subsidy-request-card"
+import { OpenRequestOverlay } from "@/components/projects/open-request-overlay"
 import { SubsidyActivityChart } from "@/components/projects/charts/subsidy-activity-chart"
 import { CommunicationCardData } from "@/components/projects/communication-card"
 import { GridContainer } from "@/components/shared/grid-container"
 import { KPICards } from "@/components/shared/kpi-cards-carousel"
 import { ProjectModalsWrapper } from "@/components/projects/project-modals-wrapper"
+import { FundingDistributionModal } from "@/components/modals/project/funding-distribution-modal"
 import { projectTranslations } from "@/lib/translations/projects"
 // View subsidy modal is handled internally by SubsidyRequestsContainer
 
@@ -57,10 +61,22 @@ import {
   CheckCircle,
   Activity,
   Calendar,
-  Target,
   TrendingUp,
-  Church
+  Church,
+  Lock,
+  Pencil,
+  Building,
+  Home,
+  FileText,
 } from "lucide-react"
+import { Slider } from "@/components/ui/slider"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import {
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
 import { useQuery, useMutation } from "@apollo/client"
@@ -68,14 +84,19 @@ import { GET_PROJECT_BY_ID_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { GET_ALL_USERS_QUERY } from "@/graphql/queries/GET_USER_QUERY"
 import { BATCH_UPDATE_PROJECT_ACTIVITIES, CREATE_PROJECT_ACTIVITY, UPDATE_PROJECT_ACTIVITY } from "@/graphql/mutations/PROJECT_ACTIVITY_MUTATIONS"
 import { CREATE_SUBSIDY_REQUEST, UPDATE_SUBSIDY_REQUEST, APPROVE_SUBSIDY_REQUEST, REJECT_SUBSIDY_REQUEST, DELETE_SUBSIDY_REQUEST } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
+import { UPDATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
+import { useProjectHistory } from "@/hooks/graphql/use-project-history"
+import { ProjectHistoryType } from "@/types/project-history"
 import { useAuth } from "@/contexts/auth-context"
 import { useInstitution } from "@/contexts/institution-context"
 import { useSubsidyReceipts } from "@/hooks/use-subsidy-receipts"
 import { useCurrency } from "@/contexts/currency-context"
 import { ActivityTags, EntityType, ActivityPriority, ActivityStatus, PermissionResolverName } from "@/types/graphql-global-types"
+import type { Contact } from "@/types/graphql-global-types"
 import { LoadingSpinner } from "@/components/shared/loading-spinner"
 import { CardDescription, CardTitle } from "@/components/ui/card"
 import { WithPermission } from "@/hocs/with-permission"
+import { ContactViewEditModal } from "@/components/modals/contact/contact-view-edit-modal"
 
 // Helper functions for ActivityTags
 const getActivityTagLabel = (tag: ActivityTags): string => {
@@ -128,6 +149,7 @@ export default function ProjectDetailsPage() {
   const { currentInstitutionData } = useInstitution()
   const { formatCurrency } = useCurrency()
   const projectId = params.id as string
+  const { logHistory } = useProjectHistory({ projectId, skipFetch: true })
 
   // Translations
   const pt = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.pt
@@ -208,6 +230,12 @@ export default function ProjectDetailsPage() {
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false)
   const [selectedReceipt, setSelectedReceipt] = useState<any>(undefined)
 
+  // Owner contact modal
+  const [isOwnerContactModalOpen, setIsOwnerContactModalOpen] = useState(false)
+
+  // Funding Distribution Modal
+  const [isFundingDistributionModalOpen, setIsFundingDistributionModalOpen] = useState(false)
+
   // Selected items for modals
   const [selectedSubsidy, setSelectedSubsidy] = useState<SubsidyRequestData | undefined>(undefined)
   const [selectedSubsidyCard, setSelectedSubsidyCard] = useState<SubsidyRequestCardData | null>(null)
@@ -222,7 +250,7 @@ export default function ProjectDetailsPage() {
     variables: { id: projectId },
     skip: !projectId,
     fetchPolicy: 'network-only', // Sempre buscar do servidor para garantir dados atualizados
-    onCompleted: (data) => {
+    onCompleted: () => {
       toast.success(t('toasts.projectDetailsLoaded'), {
         duration: 3000
       })
@@ -254,6 +282,7 @@ export default function ProjectDetailsPage() {
   const [batchUpdateActivities, { loading: batchUpdateLoading }] = useMutation(BATCH_UPDATE_PROJECT_ACTIVITIES, {
     onCompleted: () => {
       toast.success(t('activity.activityUpdated'), { duration: 3000 })
+      logHistory({ type: ProjectHistoryType.UPDATED, comment: 'Batch activity update' })
       refetchProject()
       setSelectedActivities([])
       setBatchEditData({
@@ -270,8 +299,9 @@ export default function ProjectDetailsPage() {
 
   // Create activity mutation
   const [createProjectActivity, { loading: createActivityLoading }] = useMutation(CREATE_PROJECT_ACTIVITY, {
-    onCompleted: () => {
+    onCompleted: (data) => {
       toast.success(t('activity.activityCreated'), { duration: 3000 })
+      logHistory({ type: ProjectHistoryType.ACTIVITY_CREATED, new_value: data?.createProjectActivity?.name })
       refetchProject()
       setIsRegisterActivityModalOpen(false)
     },
@@ -284,6 +314,7 @@ export default function ProjectDetailsPage() {
   const [updateProjectActivity, { loading: updateActivityLoading }] = useMutation(UPDATE_PROJECT_ACTIVITY, {
     onCompleted: () => {
       toast.success(t('activity.activityUpdated'), { duration: 3000 })
+      logHistory({ type: ProjectHistoryType.ACTIVITY_UPDATED })
       refetchProject()
       setIsEditActivityModalOpen(false)
       setSelectedActivity(undefined)
@@ -294,22 +325,27 @@ export default function ProjectDetailsPage() {
   })
 
   // Subsidy Request Mutations
+  // errorPolicy: 'all' ensures GraphQL errors are returned in result.errors
+  // instead of being swallowed by onError (Apollo Client 3 behavior)
   const [createSubsidyRequest, { loading: createSubsidyLoading }] = useMutation(CREATE_SUBSIDY_REQUEST, {
+    errorPolicy: 'all',
     onCompleted: () => {
       // Don't show toast here - let the modal handle success message
+      // Don't close the modal here either — the modal closes itself AFTER file uploads complete
+      logHistory({ type: ProjectHistoryType.SUBSIDY_CREATED })
       refetchProject()
-      setIsRequestSubsidyModalOpen(false)
-      setSelectedActivities([])
     },
     onError: (error) => {
       const errorMessage = error.graphQLErrors?.[0]?.message || error.message || 'Erro desconhecido'
-      toast.error(errorMessage, { duration: 5000 })
+      console.error('❌ [createSubsidyRequest] onError fired:', { message: errorMessage, graphQLErrors: error.graphQLErrors, networkError: error.networkError })
+      // Note: with errorPolicy:'all', we do NOT show toast here — handleSubsidyRequestSubmit will read result.errors and throw
     }
   })
 
   const [updateSubsidyRequest, { loading: updateSubsidyLoading }] = useMutation(UPDATE_SUBSIDY_REQUEST, {
     onCompleted: () => {
       toast.success(t('subsidy.subsidyUpdated'), { duration: 3000 })
+      logHistory({ type: ProjectHistoryType.SUBSIDY_UPDATED })
       refetchProject()
     },
     onError: (error) => {
@@ -329,6 +365,7 @@ export default function ProjectDetailsPage() {
   const [approveSubsidyRequest, { loading: approveSubsidyLoading }] = useMutation(APPROVE_SUBSIDY_REQUEST, {
     onCompleted: () => {
       toast.success(t('subsidy.subsidyApproved'), { duration: 3000 })
+      logHistory({ type: ProjectHistoryType.SUBSIDY_APPROVED })
       refetchProject()
     },
     onError: (error) => {
@@ -348,6 +385,7 @@ export default function ProjectDetailsPage() {
   const [rejectSubsidyRequest, { loading: rejectSubsidyLoading }] = useMutation(REJECT_SUBSIDY_REQUEST, {
     onCompleted: () => {
       toast.success(t('subsidy.subsidyRejected'), { duration: 3000 })
+      logHistory({ type: ProjectHistoryType.SUBSIDY_REJECTED })
       refetchProject()
     },
     onError: (error) => {
@@ -360,9 +398,37 @@ export default function ProjectDetailsPage() {
     }
   })
 
+  // Update project mutation (for subsidized_budget)
+  const [updateProject, { loading: updateProjectLoading }] = useMutation(UPDATE_PROJECT_MUTATION, {
+    onCompleted: () => {
+      toast.success(t('toasts.projectUpdated') || 'Projeto atualizado com sucesso', { duration: 3000 })
+      logHistory({ type: ProjectHistoryType.BUDGET_UPDATED })
+      refetchProject()
+      setIsFundingDistributionModalOpen(false)
+    },
+    onError: (error) => {
+      toast.error(`${t('errors.updateError')}: ${error.message}`)
+    }
+  })
+
+  const handleSaveFundingDistribution = async (subsidizedBudget: number, balance: number) => {
+    await updateProject({
+      variables: {
+        id: projectId,
+        subsidized_budget: subsidizedBudget,
+        balance,
+      }
+    })
+  }
+
+  const handleOpenFundingDistributionModal = () => {
+    setIsFundingDistributionModalOpen(true)
+  }
+
   const [deleteSubsidyRequest, { loading: deleteSubsidyLoading }] = useMutation(DELETE_SUBSIDY_REQUEST, {
     onCompleted: () => {
       toast.success(t('subsidy.subsidyDeleted'), { duration: 3000 })
+      logHistory({ type: ProjectHistoryType.SUBSIDY_DELETED })
       refetchProject()
       setIsDeleteSubsidyRequestModalOpen(false)
       setSelectedSubsidyCard(null)
@@ -467,6 +533,7 @@ export default function ProjectDetailsPage() {
           department_name: subsidy.department?.name,
           activities_count: subsidy.items?.length || 0,
           total_budget: subsidy.items?.reduce((sum: number, item: any) => sum + Number(item.project_activity?.budget_amount || 0), 0) || Number(subsidy.total_budget),
+          request_type: subsidy.request_type,
           is_for_advance: subsidy.is_for_advance,
           advance_amount: subsidy.advance_amount ? Number(subsidy.advance_amount) : undefined,
           // Refund fields
@@ -576,6 +643,12 @@ export default function ProjectDetailsPage() {
         tags: activity.tags || [],
         custom_tags: activity.custom_tags || [],
         activity_funding: activity.activity_funding || [],
+        // Derive institution_requested_amount from activity_funding (entity with highest contribution or first entry)
+        institution_requested_amount: (() => {
+          const funding = Array.isArray(activity.activity_funding) ? activity.activity_funding : []
+          const instFunding = funding.find((f: any) => f.entity_type === 'INSTITUTION' || f.entity_type === 'DEPARTMENT')
+          return (instFunding ?? funding[0])?.entity_contribution_amount ?? undefined
+        })(),
         // Include activity documents for subsidy modal
         activity_documents: activity.activity_documents || [],
       }
@@ -583,44 +656,75 @@ export default function ProjectDetailsPage() {
     return transformed
   }, [projectData, projectId])
 
-  // Transform users data for UsersAvatarGroup
+  // Derive projectUsers directly from the API collaborators field — no manual deduplication needed
   const projectUsers = useMemo(() => {
-    if (!usersData?.users) return []
-
-    // Get unique users from activities assignees
-    const allAssignees = allProjectActivities.flatMap(activity => activity.assigned_users || [])
-
-    // Remove duplicates by id
-    const uniqueUsers = Array.from(
-      new Map(allAssignees.map(user => [user.id, user])).values()
-    )
-
-    // Always include project owner, even if not in any activity
-    const ownerId = project?.owner?.id || project?.owner_id
-    if (ownerId) {
-      const ownerInAssignees = uniqueUsers.find(user => user.id === ownerId)
-      if (!ownerInAssignees) {
-        // Find owner in institution users
-        const ownerData = institutionUsers.find(user => user.id === ownerId)
-        if (ownerData) {
-          uniqueUsers.unshift({
-            id: ownerData.id,
-            name: ownerData.name,
-            email: ownerData.email,
-            initials: ownerData.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-          })
-        }
-      }
-    }
-
-    return uniqueUsers.map(user => ({
+    const collaborators: Array<{ role: string; user: { id: string; name: string; email: string } }> =
+      projectData?.project?.collaborators ?? []
+    if (collaborators.length === 0) return []
+    return collaborators.map(({ role, user }) => ({
       id: user.id,
       name: user.name,
       email: user.email,
-      role: 'Colaborador',
-      initials: user.initials
+      role,
+      initials: user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
+      isOwner: role === 'owner',
     }))
-  }, [usersData, allProjectActivities, project, institutionUsers])
+  }, [projectData?.project?.collaborators])
+
+  // Check if the current user is a collaborator on this project (any role)
+  const isProjectMember = useMemo(() => {
+    if (!user?.id) return false
+    const collaborators: Array<{ role: string; user: { id: string } }> =
+      projectData?.project?.collaborators ?? []
+    return collaborators.some((c) => c.user?.id === user.id)
+  }, [user?.id, projectData?.project?.collaborators])
+
+  // Only Owner or Co-owner can edit/delete/duplicate subsidy requests
+  const isOwnerOrCoOwner = useMemo(() => {
+    if (!user?.id) return false
+    const collaborators: Array<{ role: string; user: { id: string } }> =
+      projectData?.project?.collaborators ?? []
+    return collaborators.some(
+      (c) => c.user?.id === user.id && (c.role === 'owner' || c.role === 'co_owner')
+    )
+  }, [user?.id, projectData?.project?.collaborators])
+
+  // Locks editing/adding when project requires only receipt uploads
+  const isReceiptPending =
+    project?.status === 'PENDING_RECEIPT' || project?.status === 'WAITING_REFUND'
+
+  // Locks all editing when project is concluded
+  const isProjectConcluded = project?.status === 'CONCLUDED'
+
+  // Build a Contact-shaped object from the project owner, used for the readonly contact modal
+  const ownerAsContact = useMemo((): Contact | null => {
+    const owner = projectData?.project?.owner
+    if (!owner) return null
+    const now = new Date().toISOString()
+    return {
+      id: owner.id,
+      name: owner.name ?? null,
+      email: owner.email ?? null,
+      phone: null,
+      mobile: null,
+      country: null,
+      city: null,
+      address: null,
+      full_address: null,
+      postal_code: null,
+      website: null,
+      notes: null,
+      is_primary: true,
+      is_deleted: false,
+      created_at: now,
+      updated_at: now,
+      created_by: owner.id,
+      updated_by: owner.id,
+      deleted_at: null,
+      deleted_by: null,
+      _count: { Church: 0, Department: 0, Event: 0, User: 0 },
+    } as Contact
+  }, [projectData?.project?.owner])
 
   // Get KPIs from backend (pre-calculated)
   const projectKPIs = useMemo(() => {
@@ -663,6 +767,28 @@ export default function ProjectDetailsPage() {
           label: t('details.subsidizedBudgetSubtitle') || "of total budget"
         },
         icon: TrendingUp,
+        headerAction: project?.status === 'DRAFT' ? (
+          <button
+            onClick={(e) => { e.stopPropagation(); handleOpenFundingDistributionModal() }}
+            className="relative group z-10 cursor-pointer"
+            title={t('details.editSubsidyDistribution') || 'Editar distribuição de subsídio'}
+          >
+            <div className="w-6 h-6 border-2 border-dashed border-muted-foreground/40 rounded-full flex items-center justify-center transition-all hover:border-primary hover:bg-primary/10">
+              <Pencil className="w-3 h-3 text-muted-foreground group-hover:text-primary" />
+            </div>
+          </button>
+        ) : undefined,
+      },
+      {
+        id: "total-subsidy-requested",
+        title: t('details.totalSubsidyRequestedTitle') || "Total Subsidy Requested",
+        value: formatCurrency(
+          subsidyRequests.reduce((sum, s) => sum + (Number(s.requested_amount) || 0), 0),
+          { compact: true }
+        ),
+        subtitle: (t('details.totalSubsidyRequestedSubtitle') || "{{count}} request(s)")
+          .replace('{{count}}', subsidyRequests.length.toString()),
+        icon: FileText,
       },
       {
         id: "completion-rate",
@@ -677,15 +803,6 @@ export default function ProjectDetailsPage() {
           label: t('details.totalActivities') || "Total Activities"
         },
         icon: CheckCircle,
-      },
-      {
-        id: "subsidized-activities",
-        title: t('details.subsidizedActivitiesTitle') || "Subsidized Activities",
-        value: kpis.subsidizedActivities.toString(),
-        subtitle: (t('details.subsidizedStats') || "{{percent}}% of total | {{count}} requests")
-          .replace('{{percent}}', kpis.subsidyRate.toString())
-          .replace('{{count}}', kpis.subsidyRequestsCount.toString()),
-        icon: Target,
       },
       {
         id: "project-timeline",
@@ -710,7 +827,7 @@ export default function ProjectDetailsPage() {
         icon: Calendar,
       },
     ]
-  }, [projectData, formatCurrency, t, i18n.language])
+  }, [projectData, subsidyRequests, formatCurrency, t, i18n.language])
 
 
   usePageTitle({
@@ -872,6 +989,10 @@ export default function ProjectDetailsPage() {
     return subsidizedActivityIds.includes(activityId)
   }, [subsidizedActivityIds])
 
+  // True when at least one activity is selected and none of them already have a subsidy
+  const canRequestSubsidy = selectedActivities.length > 0 &&
+    !selectedActivities.some(a => activityHasSubsidy(a.id))
+
 
 
 
@@ -894,146 +1015,172 @@ export default function ProjectDetailsPage() {
   }, [selectedActivities, activityHasSubsidy])
 
   const handleSubsidyRequestSubmit = async (data: SubsidyRequestFormData & { id?: string }): Promise<string | void> => {
+    // ── Resolve request type ────────────────────────────────────────────────
+    const requestType: string = (data as any).request_type || 'WITH_DOCUMENT'
+    const language = i18n.language === 'nl' ? 'nl' : 'en'
+
+    console.group('📋 [handleSubsidyRequestSubmit] START')
+    console.log('requestType:', requestType)
+    console.log('mode:', data.id ? 'UPDATE' : 'CREATE')
+    console.log('items count:', data.items?.length ?? 0)
+    console.log('project_id:', data.project_id)
+    console.log('institution_id:', data.institution_id)
+    console.log('department_id:', data.department_id)
+    console.log('church_id:', data.church_id)
+    console.log('requested_amount:', data.requested_amount)
+    console.groupEnd()
+
     try {
+      // ── Shared department resolution ────────────────────────────────────
+      const resolvedDeptId =
+        data.department_id ||
+        projectData?.project?.department_id ||
+        projectData?.project?.department?.id ||
+        (projectData?.project as any)?.church_department_id ||
+        (projectData?.project as any)?.church_department?.id ||
+        ""
 
-      // Transform items to match backend expected format
-      const subsidyItems = data.items.map(item => {
-        const activityDocs = item.activity_documents?.filter(doc => doc.origin === 'ACTIVITY') || [];
-
-        return {
-          project_activity_id: item.activity_id,
-          requested_amount: item.requested_amount,
-          notes: item.notes || "",
-          // Include linked activity document IDs if any
-          linked_activity_document_ids: activityDocs.map(doc => doc.id),
-          // Include corresponding amounts for each document
-          linked_document_amounts: activityDocs.map(doc => doc.amount || 0)
-        };
-      })
-
-      let resultId: string | undefined;
-
+      // ─────────────────────────────────────────────────────────────────────
+      // UPDATE MODE (data.id is set)
+      // ─────────────────────────────────────────────────────────────────────
       if (data.id) {
-        // UPDATE MODE
+        console.log('🔄 [handleSubsidyRequestSubmit] UPDATE mode — id:', data.id)
+
+        const updateItems = data.items.map(item => {
+          const activityDocs = item.activity_documents?.filter(doc => doc.origin === 'ACTIVITY') || []
+          return {
+            project_activity_id: item.activity_id,
+            requested_amount: item.requested_amount,
+            notes: item.notes || "",
+            linked_activity_document_ids: activityDocs.map(doc => doc.id),
+            linked_document_amounts: activityDocs.map(doc => doc.amount || 0),
+          }
+        })
+
         const result = await updateSubsidyRequest({
           variables: {
             id: data.id,
             data: {
-              description: data.notes || (pt.subsidy.subsidyRequestDescription || "Subsidy request with {{count}} activityies").replace('{{count}}', data.items.length.toString()),
-              // We typically don't change total_budget blindly on update if it's advance, 
-              // but if the modal allows editing, we should pass it.
-              // Logic check: if it's advance, `total_budget` might be fixed? 
-              // For now, let's pass what we have.
+              description: data.notes || `Subsídio — ${data.items.length} atividade(s)`,
               total_budget: data.requested_amount,
-              items: subsidyItems,
-              notes: data.notes
-            }
-          }
+              items: updateItems,
+              notes: data.notes,
+            },
+          },
         })
-        resultId = result.data?.updateSubsidyRequest?.id
-      } else {
-        // CREATE MODE
-        const result = await createSubsidyRequest({
-          variables: {
-            data: {
-              description: data.notes || (pt.subsidy.subsidyRequestDescription || "Subsidy request with {{count}} activityies").replace('{{count}}', data.items.length.toString()),
-              total_budget: data.requested_amount,
-              institution_id: data.institution_id,
-              department_id: data.department_id || undefined,
-              church_id: data.church_id || undefined,
-              project_id: data.project_id,
-              requester_id: user?.id,
-              items: subsidyItems,
-              notes: data.notes
-            }
-          }
-        })
-        resultId = result.data?.createSubsidyRequest?.id
+
+        if (result.errors && result.errors.length > 0) {
+          console.error('❌ [handleSubsidyRequestSubmit] UPDATE GraphQL errors:', result.errors)
+          throw new Error(result.errors[0]?.message || 'Erro ao atualizar requisição')
+        }
+
+        const resultId = result.data?.updateSubsidyRequest?.id
+        if (!resultId) {
+          console.error('❌ [handleSubsidyRequestSubmit] UPDATE: resultId falsy. Full result:', result)
+          throw new Error('updateSubsidyRequest retornou nulo sem erros.')
+        }
+
+        console.log('✅ [handleSubsidyRequestSubmit] UPDATE OK — id:', resultId)
+        return resultId
       }
 
-      if (resultId) {
-        return resultId // Return ID so modal can upload files
+      // ─────────────────────────────────────────────────────────────────────
+      // CREATE MODE — shared validations
+      // ─────────────────────────────────────────────────────────────────────
+      if (!user?.id) {
+        throw new Error('Usuário não autenticado. Faça login novamente.')
       }
+
+      if (!resolvedDeptId) {
+        console.error('❌ [handleSubsidyRequestSubmit] department_id vazio. Fontes verificadas:', {
+          'data.department_id': data.department_id,
+          'project.department_id': projectData?.project?.department_id,
+          'project.department.id': projectData?.project?.department?.id,
+          'project.church_department_id': (projectData?.project as any)?.church_department_id,
+          'project.church_department.id': (projectData?.project as any)?.church_department?.id,
+        })
+        throw new Error('department_id obrigatório não encontrado. Verifique os dados do projeto.')
+      }
+
+      const description = data.notes?.trim() ||
+        `${requestType === 'WITHOUT_DOCUMENT' ? 'Sem comprovante' : 'Subsídio'} — ${data.items.length} atividade(s)`
+
+      // ─────────────────────────────────────────────────────────────────────
+      // WITHOUT_DOCUMENT: items with empty document arrays + request_type tag
+      // WITH_DOCUMENT:    items with pre-existing activity doc IDs linked
+      //   (newly uploaded files are sent via uploadReceipt after ID is returned)
+      // ─────────────────────────────────────────────────────────────────────
+      const createItems = data.items.map(item => {
+        if (requestType === 'WITHOUT_DOCUMENT') {
+          return {
+            project_activity_id: item.activity_id,
+            requested_amount: item.requested_amount,
+            notes: item.notes || "",
+            linked_activity_document_ids: [] as string[],
+            linked_document_amounts: [] as number[],
+          }
+        }
+        // WITH_DOCUMENT: link only backend-persisted activity docs (no temp IDs)
+        const backendDocs = item.activity_documents?.filter(
+          doc => doc.origin === 'ACTIVITY' && !doc.id.startsWith('temp-')
+        ) || []
+        return {
+          project_activity_id: item.activity_id,
+          requested_amount: item.requested_amount,
+          notes: item.notes || "",
+          linked_activity_document_ids: backendDocs.map(doc => doc.id),
+          linked_document_amounts: backendDocs.map(doc => doc.amount || 0),
+        }
+      })
+
+      const createVars = {
+        description,
+        total_budget: data.requested_amount,
+        project_id: data.project_id,
+        requester_id: user.id,
+        department_id: resolvedDeptId,
+        // request_type: backend field added 07/03/2026 — routes doc-processing logic
+        request_type: requestType,
+        ...(data.institution_id ? { institution_id: data.institution_id } : {}),
+        ...(data.church_id ? { church_id: data.church_id } : {}),
+        ...(data.notes?.trim() ? { notes: data.notes.trim() } : {}),
+        items: createItems,
+      }
+
+      console.group(`🚀 [handleSubsidyRequestSubmit] CREATE — ${requestType}`)
+      console.log('variables.data:', JSON.stringify(createVars, null, 2))
+      console.groupEnd()
+
+      const result = await createSubsidyRequest({
+        variables: {
+          data: createVars,
+          language,
+        },
+      })
+
+      console.log('📬 [handleSubsidyRequestSubmit] mutation result:', {
+        data: result.data,
+        errors: result.errors,
+      })
+
+      if (result.errors && result.errors.length > 0) {
+        const errMsg = result.errors[0]?.message || 'Erro GraphQL'
+        console.error(`❌ [handleSubsidyRequestSubmit] CREATE (${requestType}) GraphQL errors:`, result.errors)
+        throw new Error(errMsg)
+      }
+
+      const resultId = result.data?.createSubsidyRequest?.id
+      if (!resultId) {
+        console.error(`❌ [handleSubsidyRequestSubmit] CREATE (${requestType}): resultId falsy, sem erros. Full result:`, result)
+        throw new Error(`createSubsidyRequest (${requestType}) retornou nulo sem erros. Verifique o Network tab.`)
+      }
+
+      console.log(`✅ [handleSubsidyRequestSubmit] CREATE OK (${requestType}) — id:`, resultId)
+      return resultId
 
     } catch (error) {
-      throw error // Re-throw so modal can handle error
-    }
-  }
-
-  // Check if all selected activities are subsidized
-  const canRequestSubsidy = useMemo(() => {
-    if (selectedActivities.length === 0) return false
-    return selectedActivities.every(act => act.is_subsidized === true)
-  }, [selectedActivities])
-
-  const handleBatchExport = useCallback(() => {
-    toast.success(`📊 Exportando ${selectedActivities.length} atividade(s)...`)
-  }, [selectedActivities])
-
-  // View subsidy is handled internally by SubsidyRequestsContainer using ViewSubsidyModal
-
-  const handleEditSubsidyCard = async (id: string) => {
-    const subsidy = subsidyRequests.find((s: SubsidyRequestCardData) => s.id === id)
-    if (subsidy) {
-      setSelectedSubsidyCard(subsidy)
-
-      let receiptsByActivity: Record<string, any[]> = {}
-
-      // Fetch receipts if editing
-      try {
-        const receipts = await fetchReceipts(subsidy.id)
-        if (receipts) {
-          receiptsByActivity = receipts.reduce((acc: any, receipt: any) => {
-            const activityId = receipt.project_activities_id
-            if (!acc[activityId]) {
-              acc[activityId] = []
-            }
-            acc[activityId].push(receipt)
-            return acc
-          }, {})
-        }
-      } catch (error) {
-      }
-
-      // Prepare initial data for RequestSubsidyModal
-      const initialData = {
-        institution_id: subsidy.institution_id || "",
-        department_id: subsidy.department_id || "",
-        church_id: subsidy.church_id || "",
-        project_id: subsidy.project_id || project?.id || "",
-        requested_amount: subsidy.requested_amount,
-        is_for_advance: subsidy.is_for_advance, // Pass flag to modal
-        notes: subsidy.description || subsidy.notes || "",
-        items: subsidy.items?.map(item => {
-          // Get receipts for this activity
-          const activityReceipts = receiptsByActivity[item.activity_id] || []
-
-          // Transform receipts to activity_documents format
-          const activity_documents = activityReceipts.map((receipt: any) => ({
-            id: receipt.id,
-            file_name: receipt.filename,
-            file_type: getFileType(receipt.filename),
-            document_type: mapReceiptTypeToDocType(receipt.type),
-            amount: receipt.amount ? Number(receipt.amount) : 0,
-            file_url: receipt.file_url,
-            isExpanded: false,
-            origin: 'EXISTING_RECEIPT'
-          }))
-
-          return {
-            activity_id: item.activity_id,
-            activity_name: item.activity_name,
-            requested_amount: item.requested_amount,
-            budget_amount: item.budget_amount,
-            activity_documents,
-            notes: item.notes || ""
-          }
-        }) || []
-      }
-
-      setEditSubsidyInitialData(initialData)
-      setRequestSubsidyMode("edit")
-      setIsRequestSubsidyModalOpen(true)
+      console.error('❌ [handleSubsidyRequestSubmit] CATCH:', error)
+      throw error
     }
   }
 
@@ -1100,8 +1247,10 @@ export default function ProjectDetailsPage() {
   }
 
   const handleAddSubsidyFromContainer = () => {
-    // Abrir modal de seleção de atividades
-    setIsSelectActivitiesModalOpen(true)
+    // Abrir modal de solicitação diretamente com atividades vazias
+    // (o próprio modal tem seleção interna de atividades)
+    setSelectedActivities([])
+    setIsRequestSubsidyModalOpen(true)
   }
 
   const handleActivitiesSelected = (activities: ProjectActivityData[]) => {
@@ -1700,15 +1849,14 @@ export default function ProjectDetailsPage() {
 
   // Handlers for Subsidy Request Card modals
   const handleEditSubsidyRequestFromView = (subsidy: SubsidyRequestCardData) => {
-    // TODO: Convert SubsidyRequestCardData to activities and open RequestSubsidyModal
-    // For now, just show a message
     toast.success(`Abrindo edição para: ${subsidy.title}`, { duration: 2000 })
-    // Future implementation: 
-    // 1. Find or create activities related to this subsidy
-    // 2. Set selectedActivities with those activities
-    // 3. Open RequestSubsidyModal in edit mode
-    // setSelectedActivities(relatedActivities)
-    // setIsRequestSubsidyModalOpen(true)
+  }
+
+  const handleEditSubsidyCard = (id: string) => {
+    const subsidy = subsidyRequests.find((s: SubsidyRequestCardData) => s.id === id)
+    if (subsidy) {
+      handleEditSubsidyRequestFromView(subsidy)
+    }
   }
 
   const handleDeleteSubsidyRequestSuccess = (deletedSubsidy: SubsidyRequestCardData) => {
@@ -1855,17 +2003,19 @@ export default function ProjectDetailsPage() {
   }
 
   return (
+    <>
     <AppLayout>
       <div className="space-y-6">
         {/* Project Header */}
         <ProjectHeader
           project={project}
-          onEdit={handleEditProject}
+          onEdit={(isReceiptPending || isProjectConcluded) ? undefined : handleEditProject}
           onDelete={handleDeleteProject}
           onCreateEvent={handleCreateEvent}
           onCreateCommunication={handleCreateCommunication}
           users={projectUsers}
           ownerId={project.owner?.id || project.owner_id}
+          coOwnerId={projectData?.project?.co_owner_id || projectData?.project?.co_owner?.id}
           onRefetch={refetchProject}
           completionData={{
             allActivitiesCompleted: projectData?.project?.kpis ? projectData.project.kpis.completedActivities === projectData.project.kpis.totalActivities : false,
@@ -1875,6 +2025,22 @@ export default function ProjectDetailsPage() {
             totalSubsidies: subsidyRequests.length
           }}
         />
+
+        {/* Adjustment notifications — shown to the project owner / co-owner */}
+        <AdjustmentNotificationBanner
+          projectId={projectId}
+          projectStatus={project?.status}
+          isOwnerOrCoOwner={isOwnerOrCoOwner}
+          onResolved={() => refetchProject()}
+        />
+
+        {/* Receipt / Refund status banner — shown when project is locked for editing */}
+        <ReceiptStatusBanner projectStatus={project?.status} />
+
+        {/* ── OPEN REQUEST OVERLAY + Content wrapper ─────────────────────────────────
+             Wrapper is relative so the absolute overlay covers KPI cards too.
+        ─────────────────────────────────────────────────────────────────── */}
+        <div className="relative space-y-6">
 
         {/* KPI Cards */}
         {projectKPIs && (
@@ -1886,8 +2052,8 @@ export default function ProjectDetailsPage() {
           />
         )}
 
-        {/* Grid Container - Chart + Subsidy Cards OR Communications */}
-        <GridContainer
+          {/* Grid Container - Chart + Subsidy Cards OR Communications */}
+          <GridContainer
           items={[
             {
               id: "subsidy-chart",
@@ -1904,11 +2070,11 @@ export default function ProjectDetailsPage() {
               component: (
                 <SubsidyRequestsContainer
                   subsidies={subsidyRequests}
-                  onAddSubsidy={handleAddSubsidyFromContainer}
-                  onEditSubsidy={handleEditSubsidyCard}
-                  onDeleteSubsidy={handleDeleteSubsidyCard}
-                  onDuplicateSubsidy={handleDuplicateSubsidyCard}
-                  onUpdateSubsidy={handleUpdateSubsidyCard}
+                  onAddSubsidy={(isProjectMember && !isReceiptPending && !isProjectConcluded) ? handleAddSubsidyFromContainer : undefined}
+                  onEditSubsidy={(isOwnerOrCoOwner && !isProjectConcluded) ? handleEditSubsidyCard : undefined}
+                  onDeleteSubsidy={(isOwnerOrCoOwner && !isProjectConcluded) ? handleDeleteSubsidyCard : undefined}
+                  onDuplicateSubsidy={(isOwnerOrCoOwner && !isProjectConcluded) ? handleDuplicateSubsidyCard : undefined}
+                  onUpdateSubsidy={(isOwnerOrCoOwner && !isProjectConcluded) ? handleUpdateSubsidyCard : undefined}
                   onLinkActivity={handleLinkActivity}
                   allActivities={projectData.project.activities || []}
                   subsidizedActivityIds={[...subsidizedActivityIds, ...linkedActivityIdsForModal]}
@@ -1916,6 +2082,14 @@ export default function ProjectDetailsPage() {
                   projectSubsidizedBudget={Number(projectData.project.subsidized_budget || 0)}
                   projectId={projectId}
                   projectName={project.title}
+                  institutionName={projectData.project.Institution?.name || currentInstitutionData?.name || ""}
+                  departmentId={projectData.project.department_id || projectData.project.department?.id || ""}
+                  departmentName={projectData.project.department?.name || ""}
+                  churchId={projectData.project.church_id || projectData.project.Church?.id || ""}
+                  churchName={projectData.project.church?.name || projectData.project.Church?.name || ""}
+                  churchDepartmentId={projectData.project.church_department_id || projectData.project.church_department?.id || ""}
+                  churchDepartmentName={projectData.project.church_department?.name || ""}
+                  isDraft={project.status === 'DRAFT'}
                 />
               ),
               colSpan: "col-span-12 lg:col-span-4",
@@ -1925,8 +2099,8 @@ export default function ProjectDetailsPage() {
           gap="lg"
         />
 
-        {/* Main Content Grid - Project Activities */}
-        <div className="grid grid-cols-12 gap-6">
+          {/* Main Content Grid - Project Activities */}
+          <div className="grid grid-cols-12 gap-6">
           {/* Left Column - Activities (col-span-8) */}
           <div className="bg-card text-card-foreground flex gap-6 rounded-xl border p-3 shadow-sm h-full flex flex-col col-span-12 lg:col-span-12 space-y-6">
             <div className="grid flex-1 gap-1 mb-0">
@@ -1951,6 +2125,7 @@ export default function ProjectDetailsPage() {
                 onSearchChange={setSearchQuery}
                 onClearFilters={clearFilters}
                 onAddActivity={handleAddActivity}
+                canAddActivity={isProjectMember && !isReceiptPending && !isProjectConcluded}
               />
             </div>
 
@@ -1975,7 +2150,9 @@ export default function ProjectDetailsPage() {
               selectedActivities={selectedActivities}
               onSelectionChange={handleSelectionChange}
               batchEditFields={batchEditFields}
-              batchActions={[
+              readOnly={isProjectConcluded}
+              readOnlyReason={isProjectConcluded ? (t('projects.status.cannotModifyConcluded') ?? 'This project is concluded and cannot be modified.') : undefined}
+              batchActions={isProjectConcluded ? [] : [
                 {
                   id: 'apply',
                   label: t('common.apply'),
@@ -1985,13 +2162,13 @@ export default function ProjectDetailsPage() {
                   requiredPermission: PermissionResolverName.UpdateProjectActivity
                 }
               ]}
-              batchPrimaryAction={{
+              batchPrimaryAction={isProjectConcluded ? undefined : {
                 id: 'request-subsidy',
                 label: t('subsidy.requestSubsidy'),
                 icon: <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="2" y2="22" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>,
                 onClick: handleBatchSubsidyRequest,
                 variant: 'default',
-                disabled: !canRequestSubsidy,
+                disabled: !canRequestSubsidy || !isProjectMember || isReceiptPending,
                 requiredPermission: PermissionResolverName.CreateSubsidyRequest
               }}
               batchSummary={
@@ -2022,7 +2199,43 @@ export default function ProjectDetailsPage() {
           {/* <div className="col-span-12 lg:col-span-4">
        
           </div> */}
-        </div>
+          </div>
+
+          {/* OPEN REQUEST OVERLAY — reusable component, absolute inside relative wrapper */}
+          <OpenRequestOverlay
+            visible={project.status === 'OPEN_REQUEST' || project.status === 'IN_REVIEW'}
+            projectTitle={project.title}
+            departmentName={project.departmentName}
+            ownerName={projectData?.project?.owner?.name}
+            formattedBudget={
+              project.budget != null
+                ? formatCurrency(Number(project.budget))
+                : undefined
+            }
+            subsidizedBudget={
+              projectData?.project?.kpis?.subsidizedBudget != null
+                ? formatCurrency(Number(projectData.project.kpis.subsidizedBudget))
+                : undefined
+            }
+            users={projectUsers}
+            ownerUserId={projectData?.project?.owner_id ?? projectData?.project?.owner?.id}
+            coOwnerUserId={projectData?.project?.co_owner_id ?? projectData?.project?.co_owner?.id}
+            translations={{
+              title: pt.openRequestOverlay?.title ?? 'Open Request',
+              description: pt.openRequestOverlay?.description ?? '',
+              projectLabel: pt.openRequestOverlay?.projectLabel ?? 'Project',
+              departmentLabel: pt.openRequestOverlay?.departmentLabel,
+              reviewerLabel: pt.openRequestOverlay?.reviewerLabel ?? 'Submitted by',
+              viewContact: pt.openRequestOverlay?.viewContact ?? 'View Contact',
+              backToProjects: pt.openRequestOverlay?.backToProjects ?? 'Back to Projects',
+              statusBadge: pt.openRequestOverlay?.statusBadge ?? 'Under review',
+              budgetLabel: pt.openRequestOverlay?.budgetLabel ?? 'Budget',
+              subsidizedBudgetLabel: pt.openRequestOverlay?.subsidizedBudgetLabel,
+            }}
+            onViewContact={projectData?.project?.owner ? () => setIsOwnerContactModalOpen(true) : undefined}
+            onBackToProjects={() => router.back()}
+          />
+        </div>{/* end relative wrapper */}
 
         {/* Project Modals */}
         <ProjectModalsWrapper
@@ -2110,69 +2323,32 @@ export default function ProjectDetailsPage() {
           transformActivityToProjectActivity={transformActivityToProjectActivity}
         />
 
-        {/* Add User Modal */}
-        <Dialog open={isAddUserModalOpen} onOpenChange={setIsAddUserModalOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Add User</DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              {/* Users List */}
-              <div className="max-h-[400px] overflow-y-auto space-y-1">
-                {usersData?.users && usersData.users.length > 0 ? (
-                  usersData.users
-                    .filter((user: any) =>
-                      !projectUsers.some(pu => pu.id === user.id)
-                    )
-                    .map((user: any) => {
-                      const userInitials = user.name
-                        .split(" ")
-                        .map((n: string) => n[0])
-                        .join("")
-                        .toUpperCase()
-                        .slice(0, 2)
-
-                      return (
-                        <button
-                          key={user.id}
-                          type="button"
-                          onClick={() => handleUserSelect(user)}
-                          className="w-full flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
-                        >
-                          <Avatar className="h-10 w-10 border-2 border-background">
-                            <AvatarImage src={user.avatar} alt={user.name} />
-                            <AvatarFallback className="text-xs bg-gray-600 dark:bg-gray-700 text-white font-semibold">
-                              {userInitials}
-                            </AvatarFallback>
-                          </Avatar>
-
-                          <div className="flex-1 text-left min-w-0">
-                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                              {user.name}
-                            </p>
-                            {user.email && (
-                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                {user.email}
-                              </p>
-                            )}
-                          </div>
-                        </button>
-                      )
-                    })
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {usersLoading ? "Carregando usuários..." : "Nenhum usuário disponível"}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
       </div>
     </AppLayout>
+
+    {/* Mini Funding Distribution Modal */}
+    <FundingDistributionModal
+      isOpen={isFundingDistributionModalOpen}
+      onOpenChange={setIsFundingDistributionModalOpen}
+      onSave={handleSaveFundingDistribution}
+      loading={updateProjectLoading}
+      totalBudget={projectData?.project?.kpis?.projectBudget ?? 0}
+      subsidizedTotal={projectData?.project?.kpis?.subsidizedBudget ?? 0}
+    />
+
+    {/* Owner Contact Modal — readonly view of the project owner's contact info */}
+    {ownerAsContact && (
+      <ContactViewEditModal
+        isOpen={isOwnerContactModalOpen}
+        onOpenChange={setIsOwnerContactModalOpen}
+        contact={ownerAsContact}
+        entityName={project?.title}
+        entityType={pt.openRequestOverlay?.reviewerLabel ?? 'Submitted by'}
+        readonly={true}
+        updateMutation={(() => Promise.resolve({ data: undefined })) as any}
+        entityId={ownerAsContact.id}
+      />
+    )}
+    </>
   )
 }
