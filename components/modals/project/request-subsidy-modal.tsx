@@ -118,6 +118,7 @@ export interface SubsidyRequestData {
   is_for_advance?: boolean
   /** Type that routes to the correct backend mutation */
   request_type?: 'WITH_DOCUMENT' | 'WITHOUT_DOCUMENT' | 'ADVANCE'
+  advance_amount?: number
   notes: string
   items: SubsidyRequestItem[]
 }
@@ -337,8 +338,11 @@ export function RequestSubsidyModal({
 
   // Calculate total requested amount
   const totalRequestedAmount = useMemo(() => {
+    if (requestType === 'advance') {
+      return parseFloat(advanceAmount) || 0
+    }
     return formData.items.reduce((sum, item) => sum + item.requested_amount, 0)
-  }, [formData.items])
+  }, [formData.items, requestType, advanceAmount])
 
   // Update total when items change
   React.useEffect(() => {
@@ -630,7 +634,28 @@ export function RequestSubsidyModal({
       }
       setIsSubmitting(true)
       try {
-        await onAdvanceSubmit?.(numValue)
+        const resolvedInstitutionId = formData.institution_id || currentInstitutionData?.id || ""
+        const submitPayload: SubsidyRequestData = {
+          ...formData, // Ensures we have project_id, institution_id, etc.
+          institution_id: resolvedInstitutionId,
+          requested_amount: numValue,
+          request_type: 'ADVANCE',
+          is_for_advance: true,
+          advance_amount: numValue,
+          notes: formData.notes || "Pedido de Adiantamento",
+          items: []
+        };
+        const createdSubsidyId = await onSubmit(submitPayload)
+        
+        if (!createdSubsidyId) {
+          toast.error(
+            i18n.language === 'pt' ? 'Nenhum ID retornado pelo servidor. Verifique o console.' :
+            i18n.language === 'nl' ? 'Geen ID ontvangen van de server. Controleer de console.' :
+            'No ID returned from server. Check console for details.'
+          )
+          return
+        }
+
         setAdvanceAmount('')
         setAdvanceConfirmed(false)
         setAdvanceError(null)

@@ -16,6 +16,7 @@ export interface UpdateProject_updateProject {
   description: string;
   department_id: string;
   owner_id: string;
+  co_owner_id: string | null;
   institution_id: string | null;
   updated_at: any;
 }
@@ -42,5 +43,6 @@ export interface UpdateProjectVariables {
   institution_id?: string | null;
   church_id?: string | null;
   owner_id?: string | null;
+  co_owner_id?: string | null;
   deadline?: string | null;
 }

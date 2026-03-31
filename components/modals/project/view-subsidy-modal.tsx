@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { X, FileText, Download, Upload, Eye, ExternalLink, Bug, ChevronUp, Clock, CheckCircle2, XCircle, AlertCircle, DollarSign, Building2, User, Calendar, ChevronLeft, ChevronRight, Send, Info, MessageCircle, Check, Ban, AtSign, Pencil, Trash2, Filter, ChevronDown, Plus, RefreshCw, ImageIcon, TrendingUp } from "lucide-react"
+import { X, FileText, Download, Upload, Eye, ExternalLink, Bug, ChevronUp, Clock, CheckCircle2, XCircle, AlertCircle, DollarSign, Building2, User, Calendar, ChevronLeft, ChevronRight, Send, Info, MessageCircle, Check, Ban, AtSign, Pencil, Trash2, Filter, ChevronDown, Plus, RefreshCw, ImageIcon, TrendingUp, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -31,7 +31,7 @@ import { PermissionResolverName } from "@/types/graphql-global-types"
 import { useSubsidyReceipts, SubsidyReceipt } from "@/hooks/use-subsidy-receipts"
 import { useMutation, useQuery, useLazyQuery } from "@apollo/client"
 import { UPDATE_SUBSIDY_REQUEST, APPROVE_SUBSIDY_REQUEST, REJECT_SUBSIDY_REQUEST, ADD_SUBSIDY_REQUEST_MESSAGE, UPDATE_SUBSIDY_REQUEST_MESSAGE, DELETE_SUBSIDY_REQUEST_MESSAGE } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
-import { CONFIRM_REFUND_DONE } from "@/graphql/mutations/REFUND_MUTATIONS"
+import { CONFIRM_REFUND_DONE, REJECT_SUBSIDY_REFUND } from "@/graphql/mutations/REFUND_MUTATIONS"
 import { GET_SUBSIDY_STATUS_HISTORY } from "@/graphql/queries/SUBSIDY_STATUS_HISTORY_QUERIES"
 import { GET_ALL_SUBSIDY_STATUSES } from "@/graphql/queries/SUBSIDY_STATUS_QUERIES"
 import { GET_SUBSIDY_REQUEST_BY_ID } from "@/graphql/queries/SUBSIDY_REQUESTS_QUERY"
@@ -145,6 +145,12 @@ export function ViewSubsidyModal({
     return projectTranslations[lang]?.viewSubsidyModal || projectTranslations.pt.viewSubsidyModal
   }, [i18n.language])
 
+  // Refund translations
+  const refundT = React.useMemo(() => {
+    return subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.refund ||
+      subsidyRequestTranslations.en.refund
+  }, [i18n.language])
+
   const [selectedActivityIndex, setSelectedActivityIndex] = React.useState(0)
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true)
   const [newMessage, setNewMessage] = React.useState("")
@@ -189,6 +195,7 @@ export function ViewSubsidyModal({
   // Refund modal state
   const [showRequestRefundModal, setShowRequestRefundModal] = React.useState(false)
   const [showConfirmRefundModal, setShowConfirmRefundModal] = React.useState(false)
+  const [rejectRefundDialog, setRejectRefundDialog] = React.useState<{ isOpen: boolean; reason: string }>({ isOpen: false, reason: '' })
 
   // Refund receipt upload note + validate dialog state
   const [refundUploadNote, setRefundUploadNote] = React.useState('')
@@ -277,6 +284,8 @@ export function ViewSubsidyModal({
       have_refund: fresh.have_refund,
       refund_done: fresh.refund_done,
       refund_amount: fresh.refund_amount,
+      refund_type: fresh.refund_type,
+      refund_rejected: fresh.refund_rejected,
       // Use fresh items if available (more reliable activity_id mapping)
       items: (freshItems && freshItems.length > 0) ? freshItems : subsidy.items,
     }
@@ -599,6 +608,21 @@ export function ViewSubsidyModal({
     }
   })
 
+  const [rejectSubsidyRefund, { loading: isRejectingRefund }] = useMutation(REJECT_SUBSIDY_REFUND, {
+    refetchQueries: [{ query: GET_SUBSIDY_STATUS_HISTORY, variables: { subsidyRequestId: activeSubsidy?.id } }],
+    awaitRefetchQueries: true,
+    onCompleted: () => {
+      toast.success(t('subsidy.refundRejected') || "Refund rejected successfully.")
+      refetchSubsidyDetails()
+      onSubsidyUpdated?.()
+      setRejectRefundDialog({ isOpen: false, reason: '' })
+    },
+    onError: (error) => {
+      console.error("Error rejecting refund:", error)
+      toast.error(error.message)
+    }
+  })
+
   /**
    * Auto-correct status to WAITING_REFUND if refund is pending
    * This ensures data consistency between refund state and status
@@ -667,9 +691,9 @@ export function ViewSubsidyModal({
     // Rule: Closed status cannot be changed to anything else
     if (from === 'closed') return false
 
-    // Rule: If changing to waiting_refund, must have refund requested
+    // Rule: waiting_refund is triggered via the "Request Refund" button (not the status dropdown)
     if (to === 'waiting_refund') {
-      return false // Cannot manually change to waiting_refund (auto-updated)
+      return false
     }
 
     // Rule: Waiting Refund can ONLY go to Closed
@@ -692,10 +716,9 @@ export function ViewSubsidyModal({
       if (to === 'advanced_closed') return false
     }
 
-    // Rule: To Closed is allowed from Approved, Rejected, or Waiting Refund (not In Review)
+    // Rule: To Closed is allowed from Approved, Rejected (not In Review directly)
     if (to === 'closed') {
       if (from === 'in_review') return false
-      // Only allowed from approved or rejected (waiting_refund case already handled above)
       return from === 'approved' || from === 'rejected'
     }
 
@@ -1335,6 +1358,17 @@ export function ViewSubsidyModal({
     }
   }
 
+  const handleRejectRefundConfirmed = async () => {
+    if (isRejectingRefund || !rejectRefundDialog.reason.trim()) return
+    await rejectSubsidyRefund({
+      variables: {
+        id: activeSubsidy.id,
+        reason: rejectRefundDialog.reason.trim(),
+        language: i18n.language as any
+      }
+    })
+  }
+
   const statusConfig: Record<
     SubsidyRequestCardData["status"],
     { label: string; icon: React.ElementType; className: string }
@@ -1963,6 +1997,17 @@ export function ViewSubsidyModal({
                           {t('subsidy.status.advancedClosed')}
                         </DropdownMenuItem>
                       )}
+
+                      {/* Request Refund - Available from APPROVED or ADVANCED_CLOSED */}
+                      {(currentSubsidyStatus === 'approved' || currentSubsidyStatus === 'advanced_closed') &&
+                        !activeSubsidy.have_refund && (
+                        <DropdownMenuItem
+                          onClick={() => setShowRequestRefundModal(true)}
+                        >
+                          <DollarSign className="mr-2 h-4 w-4 text-orange-500" />
+                          {refundT.requestRefund}
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   )}
                       </DropdownMenu>
@@ -2174,6 +2219,66 @@ export function ViewSubsidyModal({
               </TooltipProvider>
             )}
             </div>
+
+            {/* Refund Action Banner */}
+            {activeSubsidy.have_refund && !activeSubsidy.refund_done && !activeSubsidy.refund_rejected && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-md bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800">
+                <div className="flex items-start sm:items-center gap-3">
+                  <DollarSign className="w-5 h-5 text-orange-600 dark:text-orange-400 mt-0.5 sm:mt-0" />
+                  <div>
+                    <h4 className="text-sm font-semibold text-orange-900 dark:text-orange-100">
+                      {t('subsidy.refundRequested') || 'Refund Requested'}
+                    </h4>
+                    <p className="text-xs text-orange-700 dark:text-orange-300 mt-0.5 max-w-[400px]">
+                      {(t('subsidy.refundAmountText') || 'A refund of {{amount}} was requested.').replace('{{amount}}', formatCurrency(activeSubsidy.refund_amount || 0))}
+                      {activeSubsidy.refund_type === 'PARTIAL' ? ' (Parcial)' : ' (Total)'}
+                    </p>
+                  </div>
+                </div>
+                
+                {isFinanceUser && (
+                  <div className="flex items-center gap-2 self-end sm:self-auto">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setRejectRefundDialog({ isOpen: true, reason: '' })}
+                      size="sm"
+                      className="border-orange-300 text-orange-700 hover:bg-orange-100 hover:text-orange-800 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-900"
+                    >
+                      {t('subsidy.rejectRefund') || 'Reject'}
+                    </Button>
+                    <Button 
+                      onClick={() => setShowConfirmRefundModal(true)}
+                      size="sm"
+                      className="bg-orange-600 hover:bg-orange-700 text-white dark:bg-orange-600 dark:hover:bg-orange-500"
+                    >
+                      {t('subsidy.confirmProcessed') || 'Confirm'}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Show if refund is processed */}
+            {activeSubsidy.have_refund && activeSubsidy.refund_done && !activeSubsidy.refund_rejected && (
+              <div className="flex items-start gap-2 px-3 py-2 rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 text-xs text-green-700 dark:text-green-400">
+                <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-600 dark:text-green-500" />
+                <span>
+                  {(t('subsidy.refundProcessedMsg') || 'Refund of {{amount}} was successfully processed.').replace('{{amount}}', formatCurrency(activeSubsidy.refund_amount || 0))}
+                  {activeSubsidy.refund_type === 'PARTIAL' ? ' (Parcial)' : ' (Total)'}
+                </span>
+              </div>
+            )}
+            
+            {/* Show if refund is rejected */}
+            {activeSubsidy.have_refund && activeSubsidy.refund_rejected && (
+              <div className="flex items-start gap-2 px-3 py-2 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-400">
+                <Ban className="w-4 h-4 mt-0.5 flex-shrink-0 text-red-600 dark:text-red-500" />
+                <span>
+                  {(t('subsidy.refundRejectedMsg') || 'Refund of {{amount}} was rejected.').replace('{{amount}}', formatCurrency(activeSubsidy.refund_amount || 0))}
+                  {activeSubsidy.refund_type === 'PARTIAL' ? ' (Parcial)' : ' (Total)'}
+                </span>
+              </div>
+            )}
 
             {/* Request type info banner */}
             <div className="flex items-start gap-2 px-3 py-2 rounded-md bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 text-xs text-gray-500 dark:text-gray-400">
@@ -3034,6 +3139,56 @@ export function ViewSubsidyModal({
           </div>
         </div>
       )}
+
+      {/* ── Reject Refund Dialog ──────────────────────────────────── */}
+      <Dialog
+        open={rejectRefundDialog.isOpen}
+        onOpenChange={(open) => !open && setRejectRefundDialog({ isOpen: false, reason: '' })}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {t('subsidy.rejectRefundTitle') || 'Reject Refund Request'}
+            </DialogTitle>
+            <DialogDescription>
+              {t('subsidy.rejectRefundDesc') || 'Please provide a reason for rejecting this refund request. This will be sent to the requester.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="refund-rejection-reason" className="text-sm">
+                {t('subsidy.rejectionReason') || 'Reason'} <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                id="refund-rejection-reason"
+                value={rejectRefundDialog.reason}
+                onChange={(e) => setRejectRefundDialog(prev => ({ ...prev, reason: e.target.value }))}
+                placeholder={t('subsidy.rejectionReasonPlaceholder') || 'Describe why the refund is being rejected...'}
+                className="min-h-[100px] resize-none"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRejectRefundDialog({ isOpen: false, reason: '' })}
+              disabled={isRejectingRefund}
+              size="sm"
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              onClick={handleRejectRefundConfirmed}
+              disabled={isRejectingRefund || !rejectRefundDialog.reason.trim()}
+              size="sm"
+              variant="destructive"
+            >
+              {isRejectingRefund ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              {t('subsidy.confirmReject') || 'Reject Request'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div >
   )
 }

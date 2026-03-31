@@ -303,8 +303,12 @@ export function KanbanStatusTransitionModal({
     } else if (requiresActivityMention) {
       onConfirm(activitiesMention.trim() || undefined)
     } else if (requiresRefundAmount) {
-      // Serialise subsidyId + amount as JSON so the kanban handler can use the selected subsidy directly
-      onConfirm(JSON.stringify({ subsidyId: selectedSubsidyId, refundAmount }))
+      // Serialise subsidyId + amount + refundType as JSON so the kanban handler can use the selected subsidy directly
+      onConfirm(JSON.stringify({ 
+        subsidyId: selectedSubsidyId, 
+        refundAmount,
+        refundType: Number(refundAmount) >= maxRefundAmount ? 'TOTAL' : 'PARTIAL'
+      }))
     } else {
       onConfirm(undefined)
     }

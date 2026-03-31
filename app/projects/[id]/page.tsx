@@ -1141,6 +1141,10 @@ export default function ProjectDetailsPage() {
         department_id: resolvedDeptId,
         // request_type: backend field added 07/03/2026 — routes doc-processing logic
         request_type: requestType,
+        ...(requestType === 'ADVANCE' ? { 
+          is_for_advance: true, 
+          advance_amount: data.advance_amount || data.requested_amount
+        } : {}),
         ...(data.institution_id ? { institution_id: data.institution_id } : {}),
         ...(data.church_id ? { church_id: data.church_id } : {}),
         ...(data.notes?.trim() ? { notes: data.notes.trim() } : {}),

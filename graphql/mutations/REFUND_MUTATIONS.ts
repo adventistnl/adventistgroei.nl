@@ -55,19 +55,46 @@ export const REQUEST_SUBSIDY_REFUND = gql`
   mutation RequestSubsidyRefund(
     $id: String!
     $refundAmount: Float!
+    $refundType: String!
     $reason: String!
     $language: LanguagePreference
   ) {
     requestSubsidyRefund(
       id: $id
       refundAmount: $refundAmount
+      refundType: $refundType
       reason: $reason
       language: $language
     ) {
       id
       refund_amount
+      refund_type
       have_refund
       refund_done
+      subsidy_status {
+        id
+        name
+      }
+    }
+  }
+`;
+
+/**
+ * Reject a requested refund
+ */
+export const REJECT_SUBSIDY_REFUND = gql`
+  mutation RejectSubsidyRefund(
+    $id: String!
+    $reason: String!
+    $language: LanguagePreference
+  ) {
+    rejectSubsidyRefund(
+      id: $id
+      reason: $reason
+      language: $language
+    ) {
+      id
+      refund_rejected
       subsidy_status {
         id
         name
@@ -94,45 +121,3 @@ export const CONFIRM_REFUND_DONE = gql`
   }
 `;
 
-/**
- * Get subsidies waiting for refund processing
- */
-export const GET_SUBSIDIES_WAITING_REFUND = gql`
-  query GetSubsidiesWaitingRefund($institutionId: String) {
-    getSubsidiesWaitingRefund(institutionId: $institutionId) {
-      id
-      description
-      requested_amount
-      refund_amount
-      have_refund
-      refund_done
-      created_at
-      requester {
-        id
-        name
-        email
-      }
-      project {
-        id
-        name
-        owner {
-          id
-          name
-          email
-        }
-      }
-      institution {
-        id
-        name
-      }
-      department {
-        id
-        name
-      }
-      subsidy_status {
-        id
-        name
-      }
-    }
-  }
-`;

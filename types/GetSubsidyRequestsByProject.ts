@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ActivityStatus, ActivityPriority } from "./globalTypes";
+import { SubsidyRequestType, ActivityStatus, ActivityPriority } from "./globalTypes";
 
 // ====================================================
 // GraphQL query operation: GetSubsidyRequestsByProject
@@ -75,6 +75,9 @@ export interface GetSubsidyRequestsByProject_subsidyRequests {
   department_id: string;
   church_id: string | null;
   project_id: string;
+  request_type: SubsidyRequestType;
+  is_for_advance: boolean;
+  advance_amount: any | null;
   refund_amount: any;
   have_refund: boolean;
   refund_done: boolean;

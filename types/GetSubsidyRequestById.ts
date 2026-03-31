@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { LanguagePreference, ActivityStatus, ActivityPriority } from "./globalTypes";
+import { LanguagePreference, SubsidyRequestType, ActivityStatus, ActivityPriority, CollaboratorRole } from "./globalTypes";
 
 // ====================================================
 // GraphQL query operation: GetSubsidyRequestById
@@ -51,13 +51,22 @@ export interface GetSubsidyRequestById_subsidyRequest_project_owner {
   language_preference: LanguagePreference;
 }
 
+export interface GetSubsidyRequestById_subsidyRequest_project_co_owner {
+  __typename: "User";
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface GetSubsidyRequestById_subsidyRequest_project {
   __typename: "Project";
   id: string;
   title: string;
   department_id: string;
   owner_id: string;
+  co_owner_id: string | null;
   owner: GetSubsidyRequestById_subsidyRequest_project_owner;
+  co_owner: GetSubsidyRequestById_subsidyRequest_project_co_owner | null;
 }
 
 export interface GetSubsidyRequestById_subsidyRequest_items_project_activity {
@@ -89,6 +98,19 @@ export interface GetSubsidyRequestById_subsidyRequest_receipts {
   is_validated: boolean;
 }
 
+export interface GetSubsidyRequestById_subsidyRequest_collaborators_user {
+  __typename: "User";
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface GetSubsidyRequestById_subsidyRequest_collaborators {
+  __typename: "ProjectCollaborator";
+  role: CollaboratorRole;
+  user: GetSubsidyRequestById_subsidyRequest_collaborators_user;
+}
+
 export interface GetSubsidyRequestById_subsidyRequest {
   __typename: "SubsidyRequest";
   id: string;
@@ -116,9 +138,11 @@ export interface GetSubsidyRequestById_subsidyRequest {
   institution: GetSubsidyRequestById_subsidyRequest_institution;
   department: GetSubsidyRequestById_subsidyRequest_department;
   church: GetSubsidyRequestById_subsidyRequest_church | null;
+  request_type: SubsidyRequestType;
   project: GetSubsidyRequestById_subsidyRequest_project;
   items: GetSubsidyRequestById_subsidyRequest_items[] | null;
   receipts: GetSubsidyRequestById_subsidyRequest_receipts[] | null;
+  collaborators: GetSubsidyRequestById_subsidyRequest_collaborators[];
 }
 
 export interface GetSubsidyRequestById {
