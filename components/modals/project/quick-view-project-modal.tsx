@@ -1150,13 +1150,13 @@ export function QuickViewProjectModal({
         }
         // If the transition was to WAITING_REFUND, fire requestSubsidyRefund for the selected subsidy
         if (pendingStatusRef.current.new === 'WAITING_REFUND' && pendingRefundRef.current) {
-          const { subsidyId, amount, reason } = pendingRefundRef.current
+          const { subsidyId, amount, reason, refundType } = pendingRefundRef.current
           console.log(
             `%c[QuickView] updateStatus ✔ → firing requestSubsidyRefund for subsidyId: ${subsidyId}`,
             "color: #a855f7; font-weight: bold"
           )
           requestSubsidyRefundMutation({
-            variables: { id: subsidyId, refundAmount: amount, reason, language: i18n.language as any },
+            variables: { id: subsidyId, refundAmount: amount, refundType: refundType || 'TOTAL', reason, language: i18n.language as any },
           })
           const histMsg = `💰 Refund of ${formatCurrency(amount)} requested. Reason: ${reason}`
           logHistory(buildCommentPayload(histMsg))
@@ -1217,6 +1217,7 @@ export function QuickViewProjectModal({
     subsidyId: string
     amount: number
     reason: string
+    refundType?: string
   } | null>(null)
 
   // ── Request subsidy refund mutation ──────────────────────────────────────
@@ -1317,7 +1318,12 @@ export function QuickViewProjectModal({
   const handleWaitingRefundConfirmed = async (subsidyId: string, amount: number, reason: string) => {
     if (!project?.id || !subsidyId) return
     setWaitingRefundDialogOpen(false)
-    pendingRefundRef.current = { subsidyId, amount, reason }
+    
+    const subsidy = fullProject?.subsidies?.find((s: any) => s.id === subsidyId)
+    const maxAmount = Number(subsidy?.total_budget ?? 0)
+    const refundType = amount >= maxAmount ? 'TOTAL' : 'PARTIAL'
+
+    pendingRefundRef.current = { subsidyId, amount, reason, refundType }
     pendingStatusRef.current = { old: originalStatus ?? project.status ?? "", new: 'WAITING_REFUND' }
     setActionType('select')
     await updateStatus({ variables: { id: project.id, status: 'WAITING_REFUND' } })

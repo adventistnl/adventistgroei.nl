@@ -434,16 +434,17 @@ export function ProjectKanbanView({
       // If project is moving to WAITING_REFUND, fire refund mutation with the selected subsidy
       if (pending.toGroupId === 'WAITING_REFUND' && justification) {
         try {
-          const { subsidyId, refundAmount: rawAmount } = JSON.parse(justification)
+          const { subsidyId, refundAmount: rawAmount, refundType } = JSON.parse(justification)
           if (subsidyId && rawAmount > 0) {
             console.log(
-              `%c[KanbanView] WAITING_REFUND — firing requestSubsidyRefund | subsidyId: ${subsidyId} | amount: ${rawAmount}`,
+              `%c[KanbanView] WAITING_REFUND — firing requestSubsidyRefund | subsidyId: ${subsidyId} | amount: ${rawAmount} | type: ${refundType}`,
               "color: #3b82f6; font-weight: bold"
             )
             requestSubsidyRefundMutation({
               variables: {
                 id: subsidyId,
                 refundAmount: rawAmount,
+                refundType: refundType || 'TOTAL',
                 reason: 'Refund requested via project status change to WAITING_REFUND',
                 language: i18n.language as any,
               },

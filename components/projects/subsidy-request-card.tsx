@@ -76,6 +76,8 @@ export interface SubsidyRequestCardData {
   refund_amount?: number
   have_refund?: boolean
   refund_done?: boolean
+  refund_type?: string
+  refund_rejected?: boolean
 }
 
 interface SubsidyRequestCardProps {
