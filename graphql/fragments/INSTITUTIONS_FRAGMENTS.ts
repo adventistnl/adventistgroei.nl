@@ -202,6 +202,10 @@ export const ANNUAL_BUDGET_FRAGMENT = gql`
     is_locked
     has_budget_record
     entity_type
+    approvedAmount
+    spentAmount
+    usagePercentage
+    remainingAmount
   }
 `;
 

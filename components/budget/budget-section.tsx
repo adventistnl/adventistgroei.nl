@@ -56,113 +56,14 @@ export function BudgetSection({
     })
   }, [currentInstitutionData, selectedYear])
 
-  // Query para buscar dados de subsidies para cruzar com as datas de aprovação
-  const { data: subsidyData } = useQuery(GET_ALL_SUBSIDY_REQUESTS)
-  
-  // Query para buscar histórico de status dos subsídios para obter datas precisas de aprovação
-  const { data: subsidyStatusHistoryData } = useQuery(GET_SUBSIDY_STATUS_HISTORY, {
-    variables: { subsidyRequestId: "ALL" },
-    skip: !subsidyData?.subsidyRequests?.length,
-  })
+  // Dados reais consolidados através dos dados transacionais do Ledger fornecidos pelo backend!
+  const { data: annualKpiData } = useAnnualBudgetKPIs(
+    currentInstitutionData?.id 
+      ? { variables: { year: selectedYear, institutionId: currentInstitutionData.id }, fetchPolicy: "network-only" }
+      : { skip: true }
+  )
 
-  // Dados reais baseados em subsídios aprovados
-  const spendingOverTimeData = useMemo(() => {
-    // Função auxiliar para encontrar a data real de aprovação usando o histórico
-    const findRealApprovalDate = (subsidyId: string, subsidyApprovedAt: string | null, subsidyUpdatedAt: string) => {
-      // Primeiro, tentar usar a data approved_at se existir
-      if (subsidyApprovedAt) {
-        return subsidyApprovedAt
-      }
-
-      // Se tiver histórico de status, procurar pela data de aprovação
-      if (subsidyStatusHistoryData?.getSubsidyStatusHistory) {
-        const approvalHistory = subsidyStatusHistoryData.getSubsidyStatusHistory.find((history: any) => 
-          history.subsidy_request_id === subsidyId && 
-          ['APPROVED', 'CLOSED'].includes(history.status?.name?.toUpperCase())
-        )
-        
-        if (approvalHistory) {
-          return approvalHistory.changed_at
-        }
-      }
-
-      // Fallback para updated_at
-      return subsidyUpdatedAt
-    }
-
-    // Função para contabilizar subsidios aprovados por mês e departamento
-    const processSubsidySpendingByMonth = () => {
-      if (!subsidyData?.subsidyRequests) {
-        return []
-      }
-
-      const allMonths = [
-        'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-        'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
-      ]
-
-      // Inicializar estrutura para todos os meses
-      const monthlySpending = new Map()
-      allMonths.forEach((month, index) => {
-        const date = new Date(selectedYear, index, 1)
-        monthlySpending.set(month, {
-          month: month,
-          date: format(date, 'yyyy-MM-dd'),
-          departments: []
-        })
-      })
-
-      // Filtrar subsidios aprovados e fechados
-      const approvedSubsidies = subsidyData.subsidyRequests
-        .filter((subsidy: any) => {
-          const statusMatch = ['APPROVED', 'CLOSED'].includes(subsidy.subsidy_status?.name)
-          const hasDepartment = subsidy.department_id
-          return statusMatch && hasDepartment
-        })
-
-      // Processar subsidios aprovados e fechados
-      approvedSubsidies.forEach((subsidy: any) => {
-        const deptId = subsidy.department_id
-        const deptName = subsidy.department?.name || `Departamento ${deptId}`
-        
-        // Usar função auxiliar para encontrar a data real de aprovação
-        const approvalDate = findRealApprovalDate(subsidy.id, subsidy.approved_at, subsidy.updated_at)
-        const approvedAmount = parseFloat(subsidy.approved_amount) || parseFloat(subsidy.total_budget) || 0
-
-        if (approvalDate && new Date(approvalDate).getFullYear() === selectedYear) {
-          const monthKey = format(new Date(approvalDate), 'MMM', { locale: ptBR })
-          // Garantir que a primeira letra seja maiúscula para corresponder à estrutura
-          const normalizedMonthKey = monthKey.charAt(0).toUpperCase() + monthKey.slice(1)
-
-          if (monthlySpending.has(normalizedMonthKey)) {
-            const monthData = monthlySpending.get(normalizedMonthKey)
-            
-            // Buscar se departamento já existe neste mês
-            let deptIndex = monthData.departments.findIndex(
-              (d: any) => d.departmentId === deptId
-            )
-            
-            if (deptIndex === -1) {
-              // Adicionar novo departamento
-              monthData.departments.push({
-                departmentId: deptId,
-                departmentName: deptName,
-                amount: approvedAmount
-              })
-            } else {
-              // Somar ao departamento existente
-              monthData.departments[deptIndex].amount += approvedAmount
-            }
-          }
-        }
-      })
-
-      // Converter para array e manter ordem dos meses
-      return Array.from(monthlySpending.values())
-    }
-
-    return processSubsidySpendingByMonth()
-  }, [subsidyData, subsidyStatusHistoryData, selectedYear])
+  const spendingOverTimeData = annualKpiData?.spendingOverTime || []
 
   // Se não há instituição selecionada, não renderiza nada
   if (!currentInstitutionData) {
