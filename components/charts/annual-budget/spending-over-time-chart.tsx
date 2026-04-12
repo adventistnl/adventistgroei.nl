@@ -89,6 +89,11 @@ export function SpendingOverTimeChart({ data, year }: SpendingOverTimeChartProps
   const [timeRange, setTimeRange] = React.useState("12m")
   const [chartType, setChartType] = React.useState<"area" | "bar">("area")
   const { isHidden } = useComponentPrivacy(PRIVACY_CONFIG)
+
+  // LOG PARA DEBUG
+  React.useEffect(() => {
+    console.log("CHART_DATA_RCV", { dataLength: data?.length, data: data });
+  }, [data])
   
 
   // Extrair lista única de departamentos de todos os dados
