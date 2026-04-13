@@ -3372,6 +3372,7 @@ export enum PermissionResolverName {
   InstitutionalDepartmentsKpIs = 'institutionalDepartmentsKPIs',
   Institutions = 'institutions',
   InviteUser = 'inviteUser',
+  LedgerHistory = 'ledgerHistory',
   MyProjects = 'myProjects',
   Notification = 'notification',
   Notifications = 'notifications',

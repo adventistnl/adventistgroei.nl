@@ -139,6 +139,56 @@ export const budgetTranslations = {
     // Fields
     fields: {
       already_allocated: "Already allocated to departments"
+    },
+    
+    // Ledger History
+    history: {
+      title: "Ledger History",
+      subtitle: "Detailed history of financial transactions and transfers",
+      filter_type: "Type",
+      categories: {
+        transaction: "Department Transactions",
+        transfer: "Institutional Transfers"
+      },
+      filters: {
+        year: "Year",
+        institution: "Institution",
+        department: "Department",
+        church: "Church",
+        region: "Region",
+        type: "Type",
+        all_types: "All Types",
+        entity: "Entity"
+      },
+      table: {
+        date: "Date",
+        entity: "Entity",
+        description: "Description",
+        type: "Type",
+        reference: "Reference",
+        amount: "Amount",
+        balance: "Balance After"
+      },
+      types: {
+        transaction: "Transaction",
+        transfer: "Transfer",
+        allocation_reserved: "Allocation Reserved",
+        allocation_released: "Allocation Released",
+        expense_approved: "Expense Approved",
+        manual_adjustment: "Manual Adjustment",
+        initial_funding: "Initial Funding",
+        distribution: "Distribution",
+        reallocation: "Reallocation",
+        reduction: "Reduction",
+        transfer_in: "Transfer In",
+        transfer_out: "Transfer Out"
+      },
+      empty: "No ledger entries found for the selected criteria",
+      summary: {
+        inflows: "Total Inflows",
+        outflows: "Total Outflows",
+        net: "Net Period Balance"
+      }
     }
   },
   
@@ -282,6 +332,56 @@ export const budgetTranslations = {
     // Fields  
     fields: {
       already_allocated: "Reeds toegewezen aan afdelingen"
+    },
+    
+    // Ledger History
+    history: {
+      title: "Grootboek Historie",
+      subtitle: "Gedetailleerde historie van financiële transacties en overboekingen",
+      filter_type: "Type",
+      categories: {
+        transaction: "Afdeling Transacties",
+        transfer: "Institutionele Overboekingen"
+      },
+      filters: {
+        year: "Jaar",
+        institution: "Instelling",
+        department: "Afdeling",
+        church: "Kerk",
+        region: "Regio",
+        type: "Type",
+        all_types: "Alle Typen",
+        entity: "Entiteit"
+      },
+      table: {
+        date: "Datum",
+        entity: "Entiteit",
+        description: "Omschrijving",
+        type: "Type",
+        reference: "Referentie",
+        amount: "Bedrag",
+        balance: "Saldo Na"
+      },
+      types: {
+        transaction: "Transactie",
+        transfer: "Overboeking",
+        allocation_reserved: "Allocatie Gereserveerd",
+        allocation_released: "Allocatie Vrijgegeven",
+        expense_approved: "Uitgave Goedgekeurd",
+        manual_adjustment: "Handmatige Aanpassing",
+        initial_funding: "Initiële Financiering",
+        distribution: "Distributie",
+        reallocation: "Herallocatie",
+        reduction: "Reductie",
+        transfer_in: "Inkomende Overboeking",
+        transfer_out: "Uitgaande Overboeking"
+      },
+      empty: "Geen grootboekmutaties gevonden voor de geselecteerde criteria",
+      summary: {
+        inflows: "Totaal Inkomend",
+        outflows: "Totaal Uitgaand",
+        net: "Netto Saldo Periode"
+      }
     }
   },
   
@@ -425,6 +525,56 @@ export const budgetTranslations = {
     // Fields
     fields: {
       already_allocated: "Já alocado para departamentos"
+    },
+    
+    // Ledger History
+    history: {
+      title: "Extrato Financeiro",
+      subtitle: "Histórico detalhado de transações e transferências",
+      filter_type: "Tipo",
+      categories: {
+        transaction: "Transações Departamentais",
+        transfer: "Transferências Institucionais"
+      },
+      filters: {
+        year: "Ano",
+        institution: "Instituição",
+        department: "Departamento",
+        church: "Igreja",
+        region: "Região",
+        type: "Tipo",
+        all_types: "Todos os Tipos",
+        entity: "Entidade"
+      },
+      table: {
+        date: "Data",
+        entity: "Entidade",
+        description: "Descrição",
+        type: "Tipo",
+        reference: "Referência",
+        amount: "Valor",
+        balance: "Saldo Após"
+      },
+      types: {
+        transaction: "Transação",
+        transfer: "Transferência",
+        allocation_reserved: "Alocação Reservada",
+        allocation_released: "Alocação Liberada",
+        expense_approved: "Despesa Aprovada",
+        manual_adjustment: "Ajuste Manual",
+        initial_funding: "Aporte Inicial",
+        distribution: "Distribuição",
+        reallocation: "Realocação",
+        reduction: "Redução",
+        transfer_in: "Transferência Recebida",
+        transfer_out: "Transferência Enviada"
+      },
+      empty: "Nenhuns lançamentos encontrados para os critérios selecionados",
+      summary: {
+        inflows: "Total de Entradas",
+        outflows: "Total de Saídas",
+        net: "Saldo Líquido no Período"
+      }
     }
   }
 }

@@ -471,8 +471,8 @@ export function UseTable<TData, TValue>({
       )}
 
       {/* Table */}
-      <Card>
-        <ScrollArea className="h-[400px] w-full">
+      <Card className={fillHeight ? "flex-1 flex flex-col overflow-hidden" : ""}>
+        <ScrollArea className={`${fillHeight ? "flex-1" : "h-[400px]"} w-full`}>
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (

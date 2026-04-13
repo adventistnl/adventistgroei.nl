@@ -63,7 +63,7 @@ export interface YearFilterProps {
  * ```
  */
 export function YearFilter({
-  availableYears,
+  availableYears = [],
   selectedYear,
   onYearChange,
   onAddYear,
