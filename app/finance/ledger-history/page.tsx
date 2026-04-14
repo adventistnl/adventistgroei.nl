@@ -18,13 +18,16 @@ import {
   ExternalLink,
   ArrowRightLeft,
   Wallet,
-  X
+  X,
+  Calendar as CalendarIcon
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
 import { useCurrency } from "@/contexts/currency-context"
 import { useInstitution } from "@/contexts/institution-context"
 import { useLedgerHistory, useAvailableYears } from "@/hooks/graphql/use-annual-budget-queries"
@@ -35,6 +38,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import toast from "react-hot-toast"
 import { Separator } from "@/components/ui/separator"
 import { StatusBadge } from "@/components/ui/status-badge"
+import { cn } from "@/lib/utils"
+import { startOfDay, endOfDay, isWithinInterval } from "date-fns"
+import { type DateRange } from "react-day-picker"
 
 /**
  * PÁGINA DE HISTÓRICO DO LIVRO RAZÃO (LEDGER HISTORY)
@@ -47,61 +53,109 @@ export default function LedgerHistoryPage() {
 
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const [globalSearch, setGlobalSearch] = useState("")
-  const [filters, setFilters] = useState({
-    departmentName: "all",
-    type: "all"
+  const [localSearch, setLocalSearch] = useState("")
+
+  // Table pagination state
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 50,
   })
 
-  usePageTitle({
-    title: t('budget.history.title', 'Financial Ledger History')
+  // Debounce global search to improve typing fluidity
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setGlobalSearch(localSearch)
+      setPagination(prev => ({ ...prev, pageIndex: 0 })) // Reset page on search
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [localSearch])
+
+  const [filters, setFilters] = useState<{
+    departmentName: string;
+    type: string;
+    dateRange: DateRange | undefined;
+  }>({
+    departmentName: "all",
+    type: "all",
+    dateRange: undefined
   })
+
+  // 1. Reset pagination when filters change
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, pageIndex: 0 }))
+  }, [filters, selectedYear])
+
+  // Reset dateRange when year changes
+  useEffect(() => {
+    setFilters(prev => ({ ...prev, dateRange: undefined }))
+  }, [selectedYear])
 
   // Hook para buscar anos disponíveis
   const { data: availableYearsData } = useAvailableYears()
 
   const availableYears = useMemo(() => {
     if (availableYearsData?.annualBudgets) {
-      return Array.from(new Set(availableYearsData.annualBudgets.map((b: any) => b.year)))
-        .sort((a: any, b: any) => b - a)
+      return Array.from(new Set(availableYearsData.annualBudgets.map((b: { year: number }) => b.year)))
+        .sort((a: number, b: number) => b - a)
     }
     return [new Date().getFullYear()]
   }, [availableYearsData])
 
-  // Hook principal - busca dados da instituição
+  // Helper to generate absolute UTC boundaries to prevent timezone shifting
+  const getUtcBoundaries = (range?: DateRange) => {
+    if (!range?.from) return { startDate: undefined, endDate: undefined }
+    
+    // start of day UTC
+    const startDate = new Date(Date.UTC(range.from.getFullYear(), range.from.getMonth(), range.from.getDate(), 0, 0, 0))
+    
+    const toDate = range.to || range.from
+    // end of day UTC
+    const endDate = new Date(Date.UTC(toDate.getFullYear(), toDate.getMonth(), toDate.getDate(), 23, 59, 59, 999))
+    
+    return { startDate, endDate }
+  }
+
+  const { startDate, endDate } = getUtcBoundaries(filters.dateRange)
+
+  // Hook principal - Paginated backend request
   const { data, loading, refetch } = useLedgerHistory({
     year: selectedYear,
     institutionId: currentInstitutionData?.id,
+    departmentId: filters.departmentName !== "all" ? filters.departmentName : undefined,
+    type: filters.type !== "all" ? filters.type : undefined,
+    search: globalSearch || undefined,
+    startDate,
+    endDate,
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize
   }, {
-    skip: !currentInstitutionData?.id
+    skip: !currentInstitutionData?.id,
   })
 
-  // 1. Filtragem Global (Aplicada ANTES dos KPIs e da Tabela)
-  const filteredEntries = useMemo(() => {
-    let entries = data?.ledgerHistory || []
+  // Frontend caching to prevent table skeleton flicker while typing/paginating
+  const [cachedData, setCachedData] = useState<{ items: LedgerHistoryEntry[], totalCount: number, pageCount: number }>({
+    items: [],
+    totalCount: 0,
+    pageCount: 0
+  })
 
-    // Filtro por Departamento (Busca por nome na lista flat)
-    if (filters.departmentName !== "all") {
-      entries = entries.filter((e: any) => e.entityName === filters.departmentName)
+  useEffect(() => {
+    if (data?.ledgerHistory && !loading) {
+      setCachedData({
+        items: data.ledgerHistory.items || [],
+        totalCount: data.ledgerHistory.totalCount || 0,
+        pageCount: data.ledgerHistory.pageInfo?.totalPages || 0
+      })
     }
+  }, [data, loading])
 
-    // Filtro por Tipo de Categoria (TRANSACTION vs TRANSFER)
-    if (filters.type !== "all") {
-      entries = entries.filter((e: any) => e.category === filters.type)
-    }
+  // Export full logic can be handled here - we export what is in cache, or theoretically perform a lazy fetch.
+  // We will export cached for now, allowing backend to filter.
+  const ledgerHistoryData = cachedData.items
 
-    // Busca Global
-    if (globalSearch) {
-      const search = globalSearch.toLowerCase()
-      entries = entries.filter((e: any) =>
-        e.description?.toLowerCase().includes(search) ||
-        e.entityName?.toLowerCase().includes(search) ||
-        e.createdBy?.toLowerCase().includes(search) ||
-        e.relatedEntity?.toLowerCase().includes(search)
-      )
-    }
-
-    return entries
-  }, [data, filters, globalSearch])
+  usePageTitle({
+    title: t('budget.history.title', 'Financial Ledger History')
+  })
 
   const handleRefresh = async () => {
     const refreshToast = toast.loading(t('budget.messages.refreshing', 'Refreshing data...'))
@@ -115,7 +169,56 @@ export default function LedgerHistoryPage() {
     }
   }
 
-  const columns: ColumnDef<any>[] = [
+  const handleExportCSV = async () => {
+    const exportToast = toast.loading(t('budget.history.exporting', 'Preparing export...'))
+    
+    try {
+      const entriesToExport = ledgerHistoryData
+
+      if (!entriesToExport || entriesToExport.length === 0) {
+        toast.error(t('budget.history.export_error_empty', 'No data to export'))
+        return
+      }
+
+      // Cabeçalhos
+      const headers = [
+        t('budget.history.table.date', 'Date'),
+        t('budget.history.table.type', 'Type'),
+        t('budget.history.table.entity', 'Entity'),
+        t('budget.history.table.description', 'Description'),
+        t('budget.history.table.created_by', 'Created By'),
+        t('budget.history.table.amount', 'Amount')
+      ]
+
+      const rows = entriesToExport.map((entry: LedgerHistoryEntry) => {
+        const date = format(new Date(entry.date), "dd/MM/yyyy HH:mm")
+        const type = t(`budget.history.types.${entry.type.toLowerCase()}`, entry.type.replace(/_/g, ' '))
+        const entity = entry.entityName || ''
+        const description = `"${(entry.description || '').replace(/"/g, '""')}"`
+        const creator = entry.createdBy || ''
+        const amount = entry.amount.toString().replace('.', ',')
+
+        return [date, type, entity, description, creator, amount].join(',')
+      })
+
+      const csvContent = [headers.join(','), ...rows].join('\n')
+      const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.setAttribute("href", url)
+      link.setAttribute("download", `ledger-history-${selectedYear}.csv`)
+      link.click()
+      URL.revokeObjectURL(url)
+
+      toast.success(t('budget.history.export_success', 'CSV exported successfully'))
+    } catch (e) {
+      toast.error(t('budget.history.export_error', 'Failed to export CSV'))
+    } finally {
+      toast.dismiss(exportToast)
+    }
+  }
+
+  const columns: ColumnDef<LedgerHistoryEntry>[] = [
     {
       accessorKey: "date",
       header: t('budget.history.table.date', 'Date'),
@@ -140,7 +243,7 @@ export default function LedgerHistoryPage() {
     },
     {
       accessorKey: "type",
-      header: t('history.table.type', 'Type'),
+      header: t('budget.history.table.type', 'Type'),
       cell: ({ row }) => {
         const type = row.original.type
         const category = row.original.category
@@ -201,7 +304,7 @@ export default function LedgerHistoryPage() {
           <div className="flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <User className="w-2.5 h-2.5 text-muted-foreground flex-shrink-0" />
             <span className="text-[10px] text-muted-foreground italic break-all">
-              By: {row.original.createdBy}
+              {t('budget.history.table.by', 'By')}: {row.original.createdBy}
             </span>
           </div>
         </div>
@@ -251,40 +354,75 @@ export default function LedgerHistoryPage() {
             <Button variant="outline" size="icon" onClick={handleRefresh} disabled={loading}>
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleExportCSV}>
               <Download className="w-4 h-4 mr-2" />
-              Export CSV
+              {t('budget.history.export_csv', 'Export CSV')}
             </Button>
           </div>
         </div>
         {/* Filters Bar - Styled as Card for better consistency */}
-        <Card className="p-4 border-2">
+        <Card className="p-4 border-2 text-foreground bg-background">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="relative w-full md:w-96">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder={t('budget.history.table.search_placeholder', 'Search description, entity or user...')}
-                value={globalSearch}
-                onChange={(e) => setGlobalSearch(e.target.value)}
-                className="pl-10 h-10 border-slate-200 focus:border-primary transition-colors"
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+                className="pl-10 h-10 border-slate-200 focus:border-primary transition-colors text-foreground bg-background"
               />
             </div>
 
             <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[260px] h-10 justify-start text-left font-normal border-slate-200 bg-background text-foreground",
+                      !filters.dateRange && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {filters.dateRange?.from ? (
+                      filters.dateRange.to ? (
+                        <>
+                          {format(filters.dateRange.from, "dd/MM/yy")} - {format(filters.dateRange.to, "dd/MM/yy")}
+                        </>
+                      ) : (
+                        format(filters.dateRange.from, "dd/MM/yy")
+                      )
+                    ) : (
+                      <span>{t('budget.history.filter_date', 'Filter by date')}</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-background" align="start">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={filters.dateRange?.from}
+                    selected={filters.dateRange}
+                    onSelect={(v) => setFilters(prev => ({ ...prev, dateRange: v }))}
+                    numberOfMonths={2}
+                  />
+                </PopoverContent>
+              </Popover>
+
               <Select
                 value={filters.departmentName}
                 onValueChange={(v) => setFilters(prev => ({ ...prev, departmentName: v }))}
               >
-                <SelectTrigger className="w-[300px] h-10 border-slate-200 bg-background">
+                <SelectTrigger className="w-[300px] h-10 border-slate-200 bg-background text-foreground">
                   <div className="flex items-center gap-2">
                     <Building className="w-4 h-4 text-muted-foreground" />
                     <SelectValue placeholder={t('budget.history.table.entity', 'Entity')} />
                   </div>
                 </SelectTrigger>
-                <SelectContent className="bg-background">
+                <SelectContent className="bg-background text-foreground">
                   <SelectItem value="all">{t('budget.history.all_entities', 'All Entities')}</SelectItem>
-                  {Array.from(new Set((data?.ledgerHistory || []).map((e: any) => e.entityName))).sort().map((name: string) => (
-                    <SelectItem key={name} value={name}>{name}</SelectItem>
+                  {Array.from(new Set(ledgerHistoryData.map((e: LedgerHistoryEntry) => e.entityName))).filter(Boolean).sort().map((name: string | undefined) => (
+                    name ? <SelectItem key={name} value={name}>{name}</SelectItem> : null
                   ))}
                 </SelectContent>
               </Select>
@@ -293,26 +431,26 @@ export default function LedgerHistoryPage() {
                 value={filters.type}
                 onValueChange={(v) => setFilters(prev => ({ ...prev, type: v }))}
               >
-                <SelectTrigger className="w-[300px] h-10 border-slate-200 bg-background">
+                <SelectTrigger className="w-[300px] h-10 border-slate-200 bg-background text-foreground">
                   <div className="flex items-center gap-2">
                     <ArrowRightLeft className="w-4 h-4 text-muted-foreground" />
                     <SelectValue placeholder={t('budget.history.filter_type', 'Type')} />
                   </div>
                 </SelectTrigger>
-                <SelectContent className="bg-background">
+                <SelectContent className="bg-background text-foreground">
                   <SelectItem value="all">{t('budget.history.all_types', 'All Types')}</SelectItem>
                   <SelectItem value="TRANSACTION">{t('budget.history.categories.transaction', 'Department Transactions')}</SelectItem>
                   <SelectItem value="TRANSFER">{t('budget.history.categories.transfer', 'Institutional Transfers')}</SelectItem>
                 </SelectContent>
               </Select>
 
-              {(filters.departmentName !== "all" || filters.type !== "all" || globalSearch) && (
+              {(filters.departmentName !== "all" || filters.type !== "all" || localSearch || filters.dateRange) && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setFilters({ departmentName: "all", type: "all" })
-                    setGlobalSearch("")
+                    setFilters({ departmentName: "all", type: "all", dateRange: undefined })
+                    setLocalSearch("")
                   }}
                   className="h-10 px-3 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
                 >
@@ -327,25 +465,35 @@ export default function LedgerHistoryPage() {
         {/* Main Ledger Table */}
         <Card>
           <CardContent className="p-0">
-            {loading ? (
+            {loading && cachedData.items.length === 0 ? (
               <div className="p-8 space-y-4">
                 {[...Array(5)].map((_, i) => (
                   <Skeleton key={i} className="h-12 w-full" />
                 ))}
               </div>
             ) : (
-              <UseTable
-                columns={columns}
-                data={filteredEntries}
-                showSearch={false}
-                translations={{
-                  rowsPerPage: t('budget.history.table.rows_per_page', 'Rows per page'),
-                  showingResults: (from, to, total) => t('budget.history.table.showing_results', { from, to, total, defaultValue: `Showing ${from} to ${to} of ${total} results` }),
-                  previous: t('budget.buttons.previous', 'Previous'),
-                  next: t('budget.buttons.next', 'Next'),
-                  noResults: t('budget.history.empty', 'No ledger entries found'),
-                }}
-              />
+              <div className={loading ? "opacity-50 pointer-events-none transition-opacity duration-200 relative" : "transition-opacity duration-200 relative"}>
+                <UseTable
+                  columns={columns}
+                  data={ledgerHistoryData}
+                  showSearch={false}
+                  manualPagination={true}
+                  pageCount={cachedData.pageCount}
+                  totalCount={cachedData.totalCount}
+                  paginationState={pagination}
+                  onPaginationChange={(p) => {
+                    const newPagination = typeof p === 'function' ? p(pagination) : p;
+                    setPagination(newPagination);
+                  }}
+                  translations={{
+                    rowsPerPage: t('budget.history.table.rows_per_page', 'Rows per page'),
+                    showingResults: (from, to, total) => t('budget.history.table.showing_results', { from, to, total, defaultValue: `Showing ${from} to ${to} of ${total} results` }),
+                    previous: t('budget.buttons.previous', 'Previous'),
+                    next: t('budget.buttons.next', 'Next'),
+                    noResults: t('budget.history.empty', 'No ledger entries found'),
+                  }}
+                />
+              </div>
             )}
           </CardContent>
         </Card>

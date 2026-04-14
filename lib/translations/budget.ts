@@ -167,8 +167,12 @@ export const budgetTranslations = {
         type: "Type",
         reference: "Reference",
         amount: "Amount",
-        balance: "Balance After"
+        balance: "Balance After",
+        created_by: "Created By"
       },
+      export_csv: "Export CSV",
+      export_success: "CSV exported successfully",
+      export_error_empty: "No data to export",
       types: {
         transaction: "Transaction",
         transfer: "Transfer",
@@ -360,8 +364,12 @@ export const budgetTranslations = {
         type: "Type",
         reference: "Referentie",
         amount: "Bedrag",
-        balance: "Saldo Na"
+        balance: "Saldo Na",
+        created_by: "Gemaakt Door"
       },
+      export_csv: "CSV Exporteren",
+      export_success: "CSV succesvol geëxporteerd",
+      export_error_empty: "Geen gegevens om te exporteren",
       types: {
         transaction: "Transactie",
         transfer: "Overboeking",
@@ -553,8 +561,12 @@ export const budgetTranslations = {
         type: "Tipo",
         reference: "Referência",
         amount: "Valor",
-        balance: "Saldo Após"
+        balance: "Saldo Após",
+        created_by: "Criado Por"
       },
+      export_csv: "Exportar CSV",
+      export_success: "CSV exportado com sucesso",
+      export_error_empty: "Sem dados para exportar",
       types: {
         transaction: "Transação",
         transfer: "Transferência",

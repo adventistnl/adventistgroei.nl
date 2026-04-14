@@ -133,6 +133,12 @@ interface UseTableProps<TData, TValue> {
     all?: string
     clearFilters?: string
   }
+  // Server-side pagination props
+  manualPagination?: boolean
+  pageCount?: number
+  onPaginationChange?: (pagination: { pageIndex: number; pageSize: number }) => void
+  paginationState?: { pageIndex: number; pageSize: number }
+  totalCount?: number
 }
 
 export function UseTable<TData, TValue>({
@@ -156,6 +162,11 @@ export function UseTable<TData, TValue>({
   translationNamespace = "projects", // Default namespace para projetos
   fillHeight = false,
   translations,
+  manualPagination,
+  pageCount,
+  onPaginationChange,
+  paginationState,
+  totalCount,
 }: UseTableProps<TData, TValue>) {
   const { t } = useTranslation()
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -219,22 +230,21 @@ export function UseTable<TData, TValue>({
     onGlobalFilterChange: setGlobalFilter,
     globalFilterFn: "includesString",
     enableRowSelection: enableRowSelection,
+    ...(onPaginationChange && { onPaginationChange }),
+    ...(pageCount !== undefined && { pageCount }),
+    manualPagination: manualPagination,
     state: {
       sorting,
       columnFilters,
-      columnVisibility: {
-        ...columnVisibility,
-        // Ocultar colunas progressivamente em telas menores
-        // Em mobile (sm): apenas primeira coluna + select + actions
-        // Em tablet (md): primeira + segunda coluna + select + actions
-        // Em desktop (lg+): todas as colunas
-      },
+      columnVisibility,
       rowSelection,
       globalFilter,
+      ...(paginationState && { pagination: paginationState }),
     },
     initialState: {
       pagination: {
         pageSize: 10,
+        pageIndex: 0,
       },
     },
   })
@@ -666,10 +676,10 @@ export function UseTable<TData, TValue>({
             table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1,
             Math.min(
               (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-              table.getFilteredRowModel().rows.length
+              totalCount ?? table.getFilteredRowModel().rows.length
             ),
-            table.getFilteredRowModel().rows.length
-          ) : `Showing ${table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to ${Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, table.getFilteredRowModel().rows.length)} of ${table.getFilteredRowModel().rows.length} results`}
+            totalCount ?? table.getFilteredRowModel().rows.length
+          ) : `Showing ${table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to ${Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, totalCount ?? table.getFilteredRowModel().rows.length)} of ${totalCount ?? table.getFilteredRowModel().rows.length} results`}
         </div>
 
         <div className="flex items-center space-x-2">
