@@ -514,7 +514,7 @@ export default function ProjectDetailsPage() {
           rejection_reason: subsidy.rejection_reason,
           // Fields for editing
           description: subsidy.description,
-          requester_id: subsidy.created_by,
+          requester_id: subsidy.requester?.id || subsidy.created_by,
           subsidy_statuses_id: subsidy.subsidy_status?.id,
           approved_at: subsidy.approved_at ? new Date(subsidy.approved_at) : undefined,
           rejected_at: subsidy.rejection_reason && subsidy.updated_at ? new Date(subsidy.updated_at) : undefined,
@@ -543,7 +543,7 @@ export default function ProjectDetailsPage() {
           // Store items for detailed view
           items: subsidy.items?.map((item: any) => ({
             id: item.id,
-            activity_id: item.project_activity_id,
+            activity_id: item.project_activity?.id || item.project_activity_id,
             activity_name: item.project_activity?.name || "Unknown",
             requested_amount: Number(item.requested_amount),
             approved_amount: Number(item.approved_amount || 0),
@@ -1254,6 +1254,9 @@ export default function ProjectDetailsPage() {
     // Abrir modal de solicitação diretamente com atividades vazias
     // (o próprio modal tem seleção interna de atividades)
     setSelectedActivities([])
+    setSelectedSubsidyCard(null)
+    setEditSubsidyInitialData(null)
+    setRequestSubsidyMode("create")
     setIsRequestSubsidyModalOpen(true)
   }
 
@@ -1272,6 +1275,9 @@ export default function ProjectDetailsPage() {
     setSelectedActivities(activities)
 
     // Abrir modal de solicitação de subsídio com as atividades selecionadas
+    setSelectedSubsidyCard(null)
+    setEditSubsidyInitialData(null)
+    setRequestSubsidyMode("create")
     setIsRequestSubsidyModalOpen(true)
 
     toast.success(`${activities.length} atividade(s) selecionada(s)`, { duration: 2000 })
@@ -1851,9 +1857,30 @@ export default function ProjectDetailsPage() {
     toast.success(t('activity.activityDeleted'), { duration: 3000 })
   }
 
-  // Handlers for Subsidy Request Card modals
   const handleEditSubsidyRequestFromView = (subsidy: SubsidyRequestCardData) => {
-    toast.success(`Abrindo edição para: ${subsidy.title}`, { duration: 2000 })
+    const mappedData = {
+      institution_id: subsidy.institution_id || institutionIdForUsers,
+      department_id: subsidy.department_id,
+      church_id: subsidy.church_id,
+      project_id: subsidy.project_id || projectId,
+      requested_amount: subsidy.requested_amount,
+      is_for_advance: subsidy.is_for_advance,
+      request_type: subsidy.request_type,
+      advance_amount: subsidy.advance_amount,
+      notes: subsidy.notes || subsidy.description || "",
+      items: subsidy.items?.map(item => ({
+        activity_id: item.activity_id,
+        activity_name: item.activity_name,
+        requested_amount: item.requested_amount,
+        budget_amount: item.budget_amount,
+        activity_documents: [],
+        notes: item.notes || ""
+      })) || []
+    };
+    setSelectedSubsidyCard(subsidy);
+    setEditSubsidyInitialData(mappedData);
+    setRequestSubsidyMode("edit");
+    setIsRequestSubsidyModalOpen(true);
   }
 
   const handleEditSubsidyCard = (id: string) => {
@@ -2075,8 +2102,8 @@ export default function ProjectDetailsPage() {
                 <SubsidyRequestsContainer
                   subsidies={subsidyRequests}
                   onAddSubsidy={(isProjectMember && !isReceiptPending && !isProjectConcluded) ? handleAddSubsidyFromContainer : undefined}
-                  onEditSubsidy={(isOwnerOrCoOwner && !isProjectConcluded) ? handleEditSubsidyCard : undefined}
-                  onDeleteSubsidy={(isOwnerOrCoOwner && !isProjectConcluded) ? handleDeleteSubsidyCard : undefined}
+                  onEditSubsidy={!isProjectConcluded ? handleEditSubsidyCard : undefined}
+                  onDeleteSubsidy={!isProjectConcluded ? handleDeleteSubsidyCard : undefined}
                   onDuplicateSubsidy={(isOwnerOrCoOwner && !isProjectConcluded) ? handleDuplicateSubsidyCard : undefined}
                   onUpdateSubsidy={(isOwnerOrCoOwner && !isProjectConcluded) ? handleUpdateSubsidyCard : undefined}
                   onLinkActivity={handleLinkActivity}

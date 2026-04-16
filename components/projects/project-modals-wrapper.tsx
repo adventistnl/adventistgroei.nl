@@ -153,7 +153,7 @@ export function ProjectModalsWrapper(props: ProjectModalsWrapperProps) {
   const rsm_deptBudgetYear = rsm_annualBudget ? _currentYear : undefined
 
   // Available subsidy balance (excludes rejected requests & the item being edited)
-  const rsm_subsidizedBudget = _proj?.kpis?.subsidizedBudget || 0
+  const rsm_subsidizedBudget = _proj?.kpis?.subsidizedBudget || Number(_proj?.subsidized_budget || 0)
   const rsm_totalRequested   = props.subsidyRequests?.reduce((sum, req) => {
     if (req.status === "rejected") return sum
     if (props.requestSubsidyMode === "edit" && req.id === props.selectedSubsidyCard?.id) return sum

@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils"
 import type { ProjectActivityData } from "@/components/projects/project-activities-table"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
+import { useAuth } from "@/contexts/auth-context"
 
 interface SubsidyRequestsContainerProps {
   /** Array of subsidy request data */
@@ -100,6 +101,7 @@ export function SubsidyRequestsContainer({
   const { t } = useTranslation()
   const { formatCurrency } = useCurrency()
   const { currentInstitutionData } = useInstitution()
+  const { user } = useAuth()
   const institutionName = institutionNameProp || currentInstitutionData?.name || ""
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false)
   const [selectedSubsidy, setSelectedSubsidy] = React.useState<SubsidyRequestCardData | null>(null)
@@ -175,13 +177,14 @@ export function SubsidyRequestsContainer({
           <div className="relative flex-1 overflow-hidden">
             <div className="h-full max-h-[480px] flex flex-col gap-3 overflow-y-auto pr-2">
               {displaySubsidies.map((subsidy) => {
-                const isApprovedOrClosed = subsidy.status === "approved" || subsidy.status === "closed"
+                const isRequester = subsidy.requester_id === user?.id
+                const isEditable = isRequester && ["pending", "in_review", "rejected", "adjustments_needed"].includes(subsidy.status)
 
                 return <SubsidyRequestCard
                   key={subsidy.id}
                   data={subsidy}
-                  onEdit={isApprovedOrClosed ? undefined : onEditSubsidy}
-                  onDelete={isApprovedOrClosed ? undefined : onDeleteSubsidy}
+                  onEdit={isEditable ? onEditSubsidy : undefined}
+                  onDelete={!isEditable ? undefined : onDeleteSubsidy}
                   onView={handleViewSubsidy}
                   onDuplicate={onDuplicateSubsidy}
                   onLinkActivity={onLinkActivity}

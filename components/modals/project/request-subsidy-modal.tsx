@@ -26,6 +26,7 @@ import { SelectActivitiesModal } from "./select-activities-modal"
 import { WithPermission } from "@/hocs/with-permission"
 import { useHasPermission } from "@/hooks/use-has-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
+import { useAuth } from "@/contexts/auth-context"
 
 // Funding policies
 const FUNDING_POLICIES = {
@@ -166,24 +167,36 @@ export function RequestSubsidyModal({
   // without_document: awareness checkbox
   const [withoutDocConfirmed, setWithoutDocConfirmed] = useState(false)
 
-  // Reset advance state when modal opens / type changes
+  // Reset or initialize advance state when modal opens
   React.useEffect(() => {
     if (isOpen) {
-      setRequestType(initialRequestType ?? "with_document")
-      setAdvanceAmount("")
-      setAdvanceConfirmed(false)
-      setAdvanceError(null)
-      setWithoutDocConfirmed(false)
+      if (mode === "edit" && initialData) {
+        const type = (initialData.request_type?.toLowerCase() || "with_document") as RequestType;
+        setRequestType(type);
+        setAdvanceAmount(initialData.advance_amount?.toString() || "");
+        setAdvanceConfirmed(type === "advance");
+        setWithoutDocConfirmed(type === "without_document");
+        setAdvanceError(null);
+      } else {
+        setRequestType(initialRequestType ?? "with_document")
+        setAdvanceAmount("")
+        setAdvanceConfirmed(false)
+        setAdvanceError(null)
+        setWithoutDocConfirmed(false)
+      }
     }
-  }, [isOpen, initialRequestType])
+  }, [isOpen, initialRequestType, mode, initialData])
   
   // Permission checks
   const canUpdate = useHasPermission([PermissionResolverName.UpdateSubsidyRequest])
   const canDelete = useHasPermission([PermissionResolverName.DeleteSubsidyRequest])
   const canCreate = useHasPermission([PermissionResolverName.CreateSubsidyRequest])
   
+  const { user } = useAuth()
+  const isRequester = mode === "edit" && initialData?.requester_id === user?.id
+
   // Determine if user can save based on mode
-  const canSave = mode === "edit" ? canUpdate : canCreate
+  const canSave = mode === "edit" ? (canUpdate || isRequester) : canCreate
   
   // Usar useInstitution para obter dados da instituição (mesmo processo do project-data-step)
   const { currentInstitutionData } = useInstitution()
