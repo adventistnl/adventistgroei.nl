@@ -47,6 +47,7 @@ interface RequestsOverTimeChartProps {
       closed: string
       advanced_closed: string
       waiting_refund: string
+      waiting_documents: string
     }
     statusLabels: {
       approved: string
@@ -85,6 +86,10 @@ const chartConfig = {
     label: "Waiting Refund",
     color: "hsl(24, 95%, 53%)",
   },
+  waiting_documents: {
+    label: "Waiting for Documents",
+    color: "hsl(20, 90%, 45%)",
+  },
 } satisfies ChartConfig
 
 export function RequestsOverTimeChart({ 
@@ -120,8 +125,9 @@ export function RequestsOverTimeChart({
       rejected: acc.rejected + (month.rejected || 0),
       advanced_closed: acc.advanced_closed + (month.advanced_closed || 0),
       waiting_refund: acc.waiting_refund + (month.waiting_refund || 0),
-      total: acc.total + (month.pending || 0) + (month.in_review || 0) + (month.approved || 0) + (month.closed || 0) + (month.rejected || 0) + (month.advanced_closed || 0) + (month.waiting_refund || 0)
-    }), { pending: 0, in_review: 0, approved: 0, closed: 0, rejected: 0, advanced_closed: 0, waiting_refund: 0, total: 0 })
+      waiting_documents: acc.waiting_documents + (month.waiting_documents || 0),
+      total: acc.total + (month.pending || 0) + (month.in_review || 0) + (month.approved || 0) + (month.closed || 0) + (month.rejected || 0) + (month.advanced_closed || 0) + (month.waiting_refund || 0) + (month.waiting_documents || 0)
+    }), { pending: 0, in_review: 0, approved: 0, closed: 0, rejected: 0, advanced_closed: 0, waiting_refund: 0, waiting_documents: 0, total: 0 })
   }, [filteredData])
 
   const approvalRate = totals.total > 0 
@@ -245,6 +251,12 @@ export function RequestsOverTimeChart({
               dataKey="waiting_refund"
               stackId="a"
               fill="var(--color-waiting_refund)"
+              radius={[0, 0, 0, 0]}
+            />
+            <Bar
+              dataKey="waiting_documents"
+              stackId="a"
+              fill="var(--color-waiting_documents)"
               radius={[4, 4, 0, 0]}
             />
           </BarChart>
@@ -276,7 +288,7 @@ export function RequestsOverTimeChart({
           {translations?.footer.approvalRate || "Approval rate"}: {approvalRate}% <TrendingUp className="h-4 w-4" />
         </div>
         <div className="leading-none text-muted-foreground">
-          {translations?.footer.totalRequests || "Total requests"}: {totals.total} ({totals.pending} {translations?.footer.pending || "pending"}, {totals.in_review} {translations?.footer.in_review || "in review"}, {totals.approved} {translations?.footer.approved || "approved"}, {totals.closed} {translations?.footer.closed || "closed"}, {totals.rejected} {translations?.footer.rejected || "rejected"}, {totals.advanced_closed} {translations?.footer.advanced_closed || "advanced closed"}, {totals.waiting_refund} {translations?.footer.waiting_refund || "waiting refund"})
+          {translations?.footer.totalRequests || "Total requests"}: {totals.total} ({totals.pending} {translations?.footer.pending || "pending"}, {totals.in_review} {translations?.footer.in_review || "in review"}, {totals.approved} {translations?.footer.approved || "approved"}, {totals.closed} {translations?.footer.closed || "closed"}, {totals.rejected} {translations?.footer.rejected || "rejected"}, {totals.advanced_closed} {translations?.footer.advanced_closed || "advanced closed"}, {totals.waiting_refund} {translations?.footer.waiting_refund || "waiting refund"}, {totals.waiting_documents} {translations?.footer.waiting_documents || "waiting documents"})
         </div>
       </CardFooter>
     </Card>

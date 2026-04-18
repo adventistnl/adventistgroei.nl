@@ -693,7 +693,12 @@ export const projectTranslations = {
         rejectionReasonRequired: "Please provide a reason for rejection",
         onlyFinancialCanClose: "Only users with the Financial Manager role can close subsidy requests",
         statusUpdateFailed: "Failed to update subsidy status. Please try again.",
-        cannotSendMessageAfterError: "Cannot send message while status update has failed. Please fix the status first."
+        cannotSendMessageAfterError: "Cannot send message while status update has failed. Please fix the status first.",
+        invalidTransitionToAdvancedClosed: "Only APPROVED subsidies can transition to Advanced Closed.",
+        invalidTransitionFromAdvancedClosed: "Advanced Closed can only move to Closed or Waiting for Documents.",
+        advanceRequestOnly: "This status transition is only allowed for advance-type subsidy requests.",
+        invalidTransitionToWaitingDocuments: "Only APPROVED or ADVANCED_CLOSED subsidies can move to Waiting for Documents.",
+        invalidTransitionFromWaitingDocuments: "Waiting for Documents can only move to Closed or Waiting Refund."
       },
       
       // Success messages
@@ -1947,7 +1952,13 @@ export const projectTranslations = {
         rejectionReasonRequired: "Geef een reden op voor afwijzing",
         onlyFinancialCanClose: "Alleen gebruikers met de rol Financieel Manager kunnen subsidieaanvragen sluiten",
         statusUpdateFailed: "Kan subsidiestatus niet bijwerken. Probeer het opnieuw.",
-        cannotSendMessageAfterError: "Kan geen bericht verzenden terwijl de statusupdate is mislukt. Herstel eerst de status."
+        cannotSendMessageAfterError: "Kan geen bericht sturen terwijl de statusupdate is mislukt. Los het status probleem eerst op.",
+        invalidTransitionToAdvancedClosed: "Alleen GOEDGEKEURDE subsidies kunnen naar Geavanceerd Gesloten.",
+        invalidTransitionFromAdvancedClosed: "Geavanceerd Gesloten kan alleen naar Gesloten of Wacht op Documenten.",
+        advanceRequestOnly: "Deze statusovergang is alleen toegestaan voor voorschot-type subsidieaanvragen.",
+        invalidTransitionToWaitingDocuments: "Alleen GOEDGEKEURDE of GEAVANCEERD_GESLOTEN subsidies kunnen naar Wacht op Documenten.",
+        invalidTransitionFromWaitingDocuments: "Wacht op Documenten kan alleen naar Gesloten of Wacht op Terugbetaling.",
+        cannotSendMessageAfterError: "Kan geen bericht sturen terwijl de statusupdate is mislukt. Los het status probleem eerst op."
       },
       
       // Success messages
@@ -3173,7 +3184,13 @@ export const projectTranslations = {
         rejectionReasonRequired: "Por favor, forneça um motivo para a rejeição",
         onlyFinancialCanClose: "Apenas usuários com a função de Gerente Financeiro podem fechar solicitações de subsídio",
         statusUpdateFailed: "Falha ao atualizar o status do subsídio. Por favor, tente novamente.",
-        cannotSendMessageAfterError: "Não é possível enviar mensagem enquanto a atualização do status falhou. Por favor, corrija o status primeiro."
+        cannotSendMessageAfterError: "Não é possível enviar mensagem enquanto a atualização de status falhou. Corrija o status primeiro.",
+        invalidTransitionToAdvancedClosed: "Apenas subsídios APROVADOS podem ir para Adiantamento Encerrado.",
+        invalidTransitionFromAdvancedClosed: "Adiantamento Encerrado só pode ir para Encerrado ou Aguardando Documentos.",
+        advanceRequestOnly: "Esta transição de status só é permitida para solicitações de subsídio do tipo adiantamento.",
+        invalidTransitionToWaitingDocuments: "Apenas subsídios APROVADOS ou ADIANTAMENTO_ENCERRADO podem ir para Aguardando Documentos.",
+        invalidTransitionFromWaitingDocuments: "Aguardando Documentos só pode ir para Encerrado ou Aguardando Reembolso.",
+        cannotSendMessageAfterError: "Não é possível enviar mensagem enquanto a atualização de status falhou. Corrija o status primeiro."
       },
       
       // Mensagens de sucesso
