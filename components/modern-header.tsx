@@ -6,9 +6,8 @@ import { GlobalSearch, SearchTrigger, useGlobalSearch } from "@/components/globa
 import { LanguageSelector } from "@/components/shared/language-selector"
 import { CurrencySelector } from "@/components/shared/currency-selector"
 import { ThemeSwitcher } from "@/components/theme-switcher"
-// TODO: Implementar no final
-// import { NotificationsSidebar } from "@/components/notifications-sidebar"
-// import { ChatUsersSelector } from "@/components/chat/chat-users-selector"
+import { NotificationsSidebar } from "@/components/notifications-sidebar"
+import { ChatSidebar } from "@/components/chat/chat-sidebar"
 import { InviteModal } from "@/components/modals/invite-modal"
 import { Button } from "@/components/ui/button"
 import {
@@ -120,10 +119,15 @@ export function ModernHeader() {
             </Button> */}
             
             {/* TODO: Implementar Notifications no final */}
-            {/* <NotificationsSidebar /> */}
 
             {/* Theme Switcher */}
             <ThemeSwitcher />
+
+            {/* Chat */}
+            <ChatSidebar />
+
+            {/* Notifications */}
+            <NotificationsSidebar />
 
             {/* Language Selector */}
             <LanguageSelector />

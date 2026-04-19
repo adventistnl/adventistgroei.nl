@@ -2021,6 +2021,7 @@ const resources = {
         ...subsidyManagementTranslations.en
       },
       subsidyRequest: subsidyRequestTranslations.en,
+      budget: budgetTranslations.en,
       projectRegister: projectRegisterTranslations.en
     }
   },
@@ -3849,6 +3850,7 @@ const resources = {
         ...subsidyManagementTranslations.nl
       },
       subsidyRequest: subsidyRequestTranslations.nl,
+      budget: budgetTranslations.nl,
       projectRegister: projectRegisterTranslations.nl
     }
   },
@@ -4810,6 +4812,7 @@ const resources = {
         ...subsidyManagementTranslations.pt
       },
       subsidyRequest: subsidyRequestTranslations.pt,
+      budget: budgetTranslations.pt,
       projectRegister: projectRegisterTranslations.pt
     }
   }

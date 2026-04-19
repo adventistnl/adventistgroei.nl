@@ -15,7 +15,6 @@ import { cn } from "@/lib/utils"
 import { InlineBatchEditor, BatchEditField } from "@/components/shared/inline-batch-editor"
 import { useTranslation } from "react-i18next"
 import { useCurrency } from "@/contexts/currency-context"
-import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { useHasPermission } from "@/hooks/use-has-permission"
 
@@ -315,7 +314,9 @@ export function BatchActionsPanelResponsive({
               {summary && (
                 <div className="border-t pt-3 flex-shrink-0">
                   <div className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-                    {showCurrency && typeof summary === 'string' ? formatCurrency(parseFloat(summary) || 0) : summary}
+                    {showCurrency && typeof summary === 'string'
+                      ? <span>{selectedCurrency.flag} {formatCurrency(parseFloat(summary) || 0)}</span>
+                      : summary}
                   </div>
                 </div>
               )}
@@ -463,8 +464,10 @@ export function BatchActionsPanelResponsive({
               {/* Summary Row Below - Desktop/Tablet */}
               {summary && (
                 <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-                  <div className="text-xs text-gray-500 dark:text-gray-500 opacity-60">
-                    {showCurrency && typeof summary === 'string' ? formatCurrency(parseFloat(summary) || 0) : summary}
+                  <div className="text-xs text-gray-500 dark:text-gray-500 opacity-60 flex items-center gap-1.5">
+                    {showCurrency && typeof summary === 'string'
+                      ? <><span>{selectedCurrency.flag}</span><span>{formatCurrency(parseFloat(summary) || 0)}</span><span className="text-gray-400">({selectedCurrency.code})</span></>
+                      : summary}
                   </div>
                 </div>
               )}

@@ -13,7 +13,8 @@ import {
   CheckCircle, 
   RefreshCw,
   Building,
-  DollarSign
+  DollarSign,
+  ShieldAlert
 } from "lucide-react"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
@@ -168,8 +169,27 @@ export default function SubsidyRequestPage() {
   return (
     <AppLayout>
       <WithPermission 
-        requiredPermissions={[PermissionResolverName.SubsidyRequest]} 
-        fallback={<AccessDenied />}
+        requiredPermissions={[PermissionResolverName.SubsidyRequests, PermissionResolverName.SubsidyStatuses]} 
+        fallback={
+          <div className="flex items-center justify-center min-h-[60vh] px-4">
+            <div className="text-card-foreground flex flex-col sm:flex-row items-center gap-4 sm:gap-6 rounded-xl border p-6 sm:p-8 shadow-sm w-full max-w-md backdrop-blur-sm">
+              <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-muted">
+                <ShieldAlert className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <div className="flex flex-col text-center sm:text-left">
+                <span className="text-sm font-semibold">
+                  {'Access Denied'}
+                </span>
+                <p className="text-xs text-gray-500 mt-1">
+                  {'You do not have permission to view subsidy requests.'}
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {'Contact your administrator to request access.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        }
       >
         <div className="space-y-6 sm:space-y-8 w-full max-w-full overflow-hidden">
           {/* Header */}

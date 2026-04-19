@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useQuery } from '@apollo/client'
-import { GET_SUBSIDIES_WAITING_REFUND } from '@/graphql/mutations/REFUND_MUTATIONS'
+import { GET_SUBSIDIES_WAITING_REFUND } from '@/graphql/queries/SUBSIDY_REQUESTS_QUERY'
 import { useAuth } from './auth-context'
 import { RefundAlertModal } from '@/components/modals/refund-alert-modal'
 

@@ -46,8 +46,7 @@ export function MobileHeader() {
 
   const handleInviteSent = (inviteData: any) => {
     toast.success("Invitation sent successfully!", {
-      duration: 3000,
-      icon: '📧'
+      duration: 3000
     })
   }
 

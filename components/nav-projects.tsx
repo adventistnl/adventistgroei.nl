@@ -3,6 +3,7 @@
 import * as React from "react"
 import {
   Folder,
+  FolderOpen,
   Forward,
   MoreHorizontal,
   Plus,
@@ -12,6 +13,7 @@ import {
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 import { projectTranslations } from "@/lib/translations/projects"
+import { usePathname } from "next/navigation"
 
 import {
   DropdownMenu,
@@ -45,6 +47,7 @@ export const NavProjects = React.memo(function NavProjects({ projects, loading }
   const router = useRouter()
   const { navigateWithLoading } = useNavigateWithLoading()
   const { i18n } = useTranslation()
+  const pathname = usePathname()
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
   const maxProjects = 3
   const hasMoreProjects = projects.length > maxProjects
@@ -98,16 +101,22 @@ export const NavProjects = React.memo(function NavProjects({ projects, loading }
               </SidebarMenuButton>
             </SidebarMenuItem>
           ) : (
-            displayedProjects.map((project) => (
+            displayedProjects.map((project) => {
+              const isActive = pathname.startsWith(`/projects/${project.id}`)
+              return (
               <SidebarMenuItem key={project.id}>
                 <SidebarMenuButton
+                  isActive={isActive}
                   onClick={() => navigateWithLoading(`/projects/${project.id}`, {
                     message: t.sidebar.openingProject.replace('{{title}}', project.title),
                     showToast: true
                   })}
                 >
                   <div className="flex items-center gap-2 w-full">
-                    <Folder className="sidebar-icon text-blue-500 flex-shrink-0" />
+                    {isActive
+                      ? <FolderOpen className="sidebar-icon text-white flex-shrink-0" />
+                      : <Folder className="sidebar-icon text-blue-500 flex-shrink-0" />
+                    }
                     <span className="truncate flex-1 min-w-0">{project.title}</span>
                     {project.is_private && (
                       <Lock className="w-3 h-3 text-amber-500 flex-shrink-0" />
@@ -143,22 +152,22 @@ export const NavProjects = React.memo(function NavProjects({ projects, loading }
                   </DropdownMenuContent>
                 </DropdownMenu>
               </SidebarMenuItem>
-            ))
+              )
+            })
           )}
         </SidebarMenu>
         {hasMoreProjects && (
-          <div className="px-2 py-2">
-            <Button
-              variant="outline"
-              size="sm"
+          <div className="px-2 pt-1 pb-2">
+            <button
+              type="button"
               onClick={() => navigateWithLoading('/projects', {
                 message: t.sidebar.loadingProjects,
                 showToast: false
               })}
-              className="w-full text-xs"
+              className="w-full text-xs text-muted-foreground/60 hover:text-muted-foreground transition-opacity hover:opacity-70 py-1 text-center"
             >
               {t.sidebar.seeMore}
-            </Button>
+            </button>
           </div>
         )}
       </SidebarGroup>

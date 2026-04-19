@@ -17,15 +17,7 @@ export function AdvanceSubsidyBadge({ isForAdvance, className }: AdvanceSubsidyB
     <SubsidyStatusBadge
       icon={Zap}
       text={t('subsidy.advance')}
-      variant="custom"
-      customColors={{
-        bg: "bg-amber-50",
-        text: "text-amber-700",
-        border: "border-amber-400",
-        darkBg: "dark:bg-amber-950/30",
-        darkText: "dark:text-amber-400",
-        darkBorder: "dark:border-amber-600"
-      }}
+      variant="advance"
       className={className}
     />
   )

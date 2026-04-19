@@ -1,5 +1,8 @@
 import { useState } from 'react'
+import { useApolloClient } from '@apollo/client'
+import { useTranslation } from 'react-i18next'
 import { useCookies } from '@/hooks/use-cookies'
+import { VALIDATE_SUBSIDY_RECEIPT, REJECT_SUBSIDY_RECEIPT } from '@/graphql/mutations/REFUND_MUTATIONS'
 import toast from 'react-hot-toast'
 
 // Constantes de validação (devem coincidir com o backend)
@@ -25,6 +28,7 @@ export interface SubsidyReceipt {
   created_at: string
   updated_at: string
   is_deleted: boolean
+  is_refund_receipt?: boolean
 }
 
 interface UseSubsidyReceiptsProps {
@@ -40,6 +44,7 @@ export function useSubsidyReceipts({
   projectActivityId,
   onHistoryUpdate,
 }: UseSubsidyReceiptsProps) {
+  const { t } = useTranslation()
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
   const [uploading, setUploading] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -47,6 +52,7 @@ export function useSubsidyReceipts({
   const [loading, setLoading] = useState(false)
   const [receipts, setReceipts] = useState<SubsidyReceipt[]>([])
   const { getCookies } = useCookies()
+  const apolloClient = useApolloClient()
 
   /**
    * Get API base URL
@@ -110,7 +116,7 @@ export function useSubsidyReceipts({
       return data
     } catch (error: any) {
       console.error('Fetch receipts error:', error)
-      toast.error(error.message || 'Erro ao buscar recibos')
+      toast.error(error.message || t('subsidyRequest.receipts.fetchError'))
       return []
     } finally {
       setLoading(false)
@@ -125,7 +131,7 @@ export function useSubsidyReceipts({
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       return {
         valid: false,
-        error: 'Tipo de arquivo inválido. Apenas JPG, PNG e PDF são permitidos.',
+        error: t('subsidyRequest.receipts.invalidFileType'),
       }
     }
 
@@ -133,7 +139,7 @@ export function useSubsidyReceipts({
     if (file.size > MAX_FILE_SIZE) {
       return {
         valid: false,
-        error: 'Arquivo muito grande. Tamanho máximo: 10MB.',
+        error: t('subsidyRequest.receipts.fileTooLarge'),
       }
     }
 
@@ -142,7 +148,7 @@ export function useSubsidyReceipts({
     if (!ALLOWED_EXTENSIONS.includes(extension)) {
       return {
         valid: false,
-        error: 'Extensão de arquivo inválida. Apenas .jpg, .jpeg, .png e .pdf são permitidos.',
+        error: t('subsidyRequest.receipts.invalidFileExtension'),
       }
     }
 
@@ -196,8 +202,8 @@ export function useSubsidyReceipts({
         formData.append('subsidy_request_item_id', options.subsidyRequestItemId)
       }
 
-      // Determine type - use provided type or default to 'receipt'
-      const type = options?.type || 'receipt'
+      // Determine type — backend accepts: 'pdf' | 'image' | 'invoice'
+      const type = options?.type || (file.type.startsWith('image/') ? 'image' : 'pdf')
       formData.append('type', type)
 
       if (options?.amount !== undefined) {
@@ -227,7 +233,7 @@ export function useSubsidyReceipts({
       console.log('✅ [Hook] Upload success, result:', result)
 
       setUploadProgress(prev => ({ ...prev, [file.name]: 100 }))
-      toast.success(`${file.name} enviado com sucesso!`)
+      toast.success(t('subsidyRequest.receipts.uploadSuccess', { filename: file.name }))
 
       await fetchReceipts()
       
@@ -245,7 +251,85 @@ export function useSubsidyReceipts({
       })
 
       console.error('Upload error:', error)
-      toast.error(error.message || 'Erro ao fazer upload do arquivo')
+      toast.error(error.message || t('subsidyRequest.receipts.uploadError'))
+      throw error
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  /**
+   * Upload a refund receipt (no project_activity_id, is_refund_receipt = true)
+   */
+  const uploadRefundReceipt = async (
+    file: File,
+    subsidyReqId: string,
+    options?: { amount?: number; note?: string }
+  ) => {
+    console.log('📤 [Hook] uploadRefundReceipt called:', { fileName: file.name, subsidyReqId, options })
+
+    try {
+      const validation = validateFile(file)
+      if (!validation.valid) {
+        throw new Error(validation.error)
+      }
+
+      setUploading(true)
+      setUploadProgress(prev => ({ ...prev, [file.name]: 0 }))
+
+      const token = getAuthToken()
+      const apiUrl = getApiUrl()
+
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('subsidy_request_id', subsidyReqId)
+      formData.append('is_refund_receipt', 'true')
+
+      const type = file.type.startsWith('image/') ? 'image' : 'pdf'
+      formData.append('type', type)
+
+      if (options?.amount !== undefined) {
+        formData.append('amount', String(options.amount))
+      }
+
+      if (options?.note) {
+        formData.append('note', options.note)
+      }
+
+      const response = await fetch(`${apiUrl}/subsidy-receipts/upload`, {
+        method: 'POST',
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Erro ao fazer upload do comprovante de reembolso')
+      }
+
+      const result = await response.json()
+      console.log('✅ [Hook] Refund receipt upload success:', result)
+
+      setUploadProgress(prev => ({ ...prev, [file.name]: 100 }))
+      toast.success(t('subsidyRequest.receipts.uploadSuccess', { filename: file.name }))
+
+      await fetchReceipts()
+
+      if (onHistoryUpdate) {
+        await onHistoryUpdate()
+      }
+
+      return result
+    } catch (error: any) {
+      console.error('❌ [Hook] Refund receipt upload error:', error)
+      setUploadProgress(prev => {
+        const newProgress = { ...prev }
+        delete newProgress[file.name]
+        return newProgress
+      })
+      toast.error(error.message || t('subsidyRequest.receipts.refundUploadError'))
       throw error
     } finally {
       setUploading(false)
@@ -302,13 +386,13 @@ export function useSubsidyReceipts({
         throw new Error(error.message || 'Erro ao excluir recibo')
       }
 
-      toast.success('Recibo excluído com sucesso')
+      toast.success(t('subsidyRequest.receipts.deleteSuccess'))
 
       // Refetch receipts to update the list
       await fetchReceipts()
     } catch (error: any) {
       console.error('Delete error:', error)
-      toast.error(error.message || 'Erro ao excluir recibo')
+      toast.error(error.message || t('subsidyRequest.receipts.deleteError'))
       throw error
     } finally {
       setDeleting(false)
@@ -316,33 +400,23 @@ export function useSubsidyReceipts({
   }
 
   /**
-   * Validate a receipt (admin/manager only)
+   * Validate (approve) a receipt via GraphQL mutation.
+   * Uses Apollo Client so the auth token is injected automatically.
    */
-  const validateReceipt = async (receiptId: string) => {
+  const validateReceipt = async (receiptId: string, note?: string) => {
     try {
       setValidating(true)
-      const token = getAuthToken()
-      const apiUrl = getApiUrl()
-
-      const response = await fetch(`${apiUrl}/subsidy-receipts/${receiptId}/validate`, {
-        method: 'POST',
-        headers: {
-          Authorization: token ? `Bearer ${token}` : '',
-        },
+      await apolloClient.mutate({
+        mutation: VALIDATE_SUBSIDY_RECEIPT,
+        variables: { id: receiptId, note: note || undefined },
       })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Erro ao validar recibo')
-      }
-
-      toast.success('Recibo validado com sucesso')
-
-      // Refetch receipts to update the list
+      toast.success(t('subsidyRequest.receipts.validateSuccess'))
       await fetchReceipts()
+      if (onHistoryUpdate) await onHistoryUpdate()
     } catch (error: any) {
+      const message = error?.graphQLErrors?.[0]?.message || error?.message || t('subsidyRequest.receipts.validateError')
       console.error('Validation error:', error)
-      toast.error(error.message || 'Erro ao validar recibo')
+      toast.error(message)
       throw error
     } finally {
       setValidating(false)
@@ -350,35 +424,23 @@ export function useSubsidyReceipts({
   }
 
   /**
-   * Reject a receipt (admin/manager only)
+   * Reject a receipt via GraphQL mutation.
+   * Uses Apollo Client so the auth token is injected automatically.
    */
   const rejectReceipt = async (receiptId: string, reason: string) => {
     try {
       setValidating(true)
-      const token = getAuthToken()
-      const apiUrl = getApiUrl()
-
-      const response = await fetch(`${apiUrl}/subsidy-receipts/${receiptId}/reject`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: token ? `Bearer ${token}` : '',
-        },
-        body: JSON.stringify({ reason }),
+      await apolloClient.mutate({
+        mutation: REJECT_SUBSIDY_RECEIPT,
+        variables: { id: receiptId, reason: reason || undefined },
       })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Erro ao rejeitar recibo')
-      }
-
-      toast.success('Recibo rejeitado')
-
-      // Refetch receipts to update the list
+      toast.success(t('subsidyRequest.receipts.rejectSuccess'))
       await fetchReceipts()
+      if (onHistoryUpdate) await onHistoryUpdate()
     } catch (error: any) {
+      const message = error?.graphQLErrors?.[0]?.message || error?.message || t('subsidyRequest.receipts.rejectError')
       console.error('Rejection error:', error)
-      toast.error(error.message || 'Erro ao rejeitar recibo')
+      toast.error(message)
       throw error
     } finally {
       setValidating(false)
@@ -419,10 +481,10 @@ export function useSubsidyReceipts({
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
 
-      toast.success('Download iniciado')
+      toast.success(t('subsidyRequest.receipts.downloadSuccess'))
     } catch (error: any) {
       console.error('Download error:', error)
-      toast.error(error.message || 'Erro ao fazer download do arquivo')
+      toast.error(error.message || t('subsidyRequest.receipts.downloadError'))
       throw error
     }
   }
@@ -458,10 +520,10 @@ export function useSubsidyReceipts({
       // Refetch receipts to update the list
       await fetchReceipts()
 
-      toast.success('Recibo atualizado com sucesso!')
+      toast.success(t('subsidyRequest.receipts.updateSuccess'))
       return result
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao atualizar recibo')
+      toast.error(error.message || t('subsidyRequest.receipts.updateError'))
       throw error
     }
   }
@@ -474,6 +536,7 @@ export function useSubsidyReceipts({
     validating,
     uploadProgress,
     uploadReceipt,
+    uploadRefundReceipt,
     uploadMultipleReceipts,
     updateReceipt,
     deleteReceipt,

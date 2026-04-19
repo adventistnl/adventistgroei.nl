@@ -68,6 +68,7 @@ import { GET_ALL_ROLES_QUERY } from "@/graphql/queries/GET_ROLES_QUERY"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
 import { UserMultiSelector, User } from "@/components/shared/user-multi-selector"
 import { useInstitution } from "@/contexts/institution-context"
+import { useAuth } from "@/contexts/auth-context"
 
 export interface EditProjectFormData {
   title: string
@@ -82,6 +83,7 @@ export interface EditProjectFormData {
   is_event: boolean
   type: "Local" | "Global"
   owner_id: string
+  co_owner_id: string
 }
 
 interface EditProjectModalProps {
@@ -104,10 +106,24 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
   }, [i18n.language])
   
   const { currentInstitutionData, refetchInstitutionById } = useInstitution()
+  const { user: currentUser } = useAuth()
 
   const institutionId = currentInstitutionData?.id
 
-  // Fetch departments
+
+  // Fetch project details directly from API when modal opens — ensures co_owner, owner and all fields are correct
+  const { data: projectDetailData, loading: projectDetailLoading } = useQuery(GET_PROJECT_BY_ID_QUERY, {
+    variables: { id: project?.id },
+    skip: !isOpen || !project?.id,
+    fetchPolicy: 'network-only',
+  })
+  const projectDetail = projectDetailData?.project
+
+  // Permission flags: only the project owner can change the owner field;
+  // only the co-owner can change the co-owner field.
+  const isOwner = !!currentUser?.id && currentUser.id === (projectDetail?.owner?.id ?? projectDetail?.owner_id)
+  const isCoOwner = !!currentUser?.id && currentUser.id === (projectDetail?.co_owner?.id ?? projectDetail?.co_owner_id)
+
   const { data: departmentsData } = useQuery(GET_DEPARTMENTS_QUERY, {
     variables: { institution_id: institutionId },
     skip: !institutionId
@@ -119,12 +135,28 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
   // Fetch all roles to find PROJECT_OWNER role
   const { data: rolesData } = useQuery(GET_ALL_ROLES_QUERY)
 
-  const availableUsers = institutionUsers.map((user: any): User => ({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: 'User'
-  }))
+  const availableUsers = React.useMemo((): User[] => {
+    const users: User[] = institutionUsers.map((user: any): User => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: 'User'
+    }))
+
+    // Garante que o owner do projeto (da API) esteja na lista
+    const apiOwner = projectDetail?.owner
+    if (apiOwner && !users.find(u => u.id === apiOwner.id)) {
+      users.push({ id: apiOwner.id, name: apiOwner.name, email: apiOwner.email, role: 'User' })
+    }
+
+    // Garante que o co_owner do projeto (da API) esteja na lista
+    const apiCoOwner = projectDetail?.co_owner
+    if (apiCoOwner && !users.find(u => u.id === apiCoOwner.id)) {
+      users.push({ id: apiCoOwner.id, name: apiCoOwner.name, email: apiCoOwner.email, role: 'User' })
+    }
+
+    return users
+  }, [institutionUsers, projectDetail])
 
   // Filter departments: only show those with locked annual budget for current year
   const currentYear = new Date().getFullYear()
@@ -173,6 +205,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
     is_event: false,
     type: "Local",
     owner_id: "",
+    co_owner_id: "",
   })
 
   const [errors, setErrors] = useState<Partial<EditProjectFormData>>({})
@@ -183,30 +216,29 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
   
   const totalSteps = 2
 
-  // Load project data when project changes
+  // Populate form when API data loads — uses projectDetail (from GET_PROJECT_BY_ID_QUERY) for accuracy
   useEffect(() => {
-    if (project) {
-      const resolvedOwnerId = project.owner?.id || project.owner_id || ""
-      
+    if (projectDetail) {
       setFormData({
-        title: project.title,
-        description: project.description,
-        department_id: project.department_id,
-        budget: project.budget,
-        start_at: new Date(project.start_at),
-        end_at: new Date(project.end_at),
-        language_preference: project.language_preference,
-        is_private: project.is_private,
-        required_volunteers: project.required_volunteers,
-        is_event: (project as any).is_event || false,
-        type: (project as any).type || "Local",
-        owner_id: resolvedOwnerId,
+        title: projectDetail.title ?? "",
+        description: projectDetail.description ?? "",
+        department_id: projectDetail.department_id ?? "",
+        budget: Number(projectDetail.budget) || 0,
+        start_at: new Date(projectDetail.start_at),
+        end_at: new Date(projectDetail.end_at),
+        language_preference: projectDetail.language_preference ?? "pt",
+        is_private: projectDetail.is_private ?? false,
+        required_volunteers: projectDetail.required_volunteers ?? false,
+        is_event: !!projectDetail.event_id,
+        type: projectDetail.type ?? "Local",
+        owner_id: projectDetail.owner?.id ?? projectDetail.owner_id ?? "",
+        co_owner_id: projectDetail.co_owner?.id ?? projectDetail.co_owner_id ?? "",
       })
-      
+
       setCurrentStep(1)
       setErrors({})
     }
-  }, [project])
+  }, [projectDetail])
 
   const getDepartmentName = (id: string) => {
     const dept = departments.find((d: any) => d.id === id)
@@ -313,6 +345,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
         is_private: formData.is_private,
         required_volunteers: formData.required_volunteers,
         owner_id: formData.owner_id,
+        co_owner_id: formData.co_owner_id || null,
       }
 
       if (!formData.owner_id || formData.owner_id.trim() === '') {
@@ -351,13 +384,13 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                     roleId: projectOwnerRole.id
                   }
                 })
-                toast.success(`${t.projectOwner || 'Project Owner'} role assigned to ${ownerUser.name}`, {
+                toast.success(`Project Owner role assigned to ${ownerUser.name}`, {
                   duration: 3000
                 })
               } catch (roleError) {
                 console.error('Error assigning PROJECT_OWNER role:', roleError)
                 // Don't block the project update if role assignment fails
-                toast.warning('Project updated, but failed to assign Project Owner role')
+                toast.error('Project updated, but failed to assign Project Owner role')
               }
             }
           }
@@ -402,6 +435,9 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
   if (!project) {
     return null
   }
+
+  // Show loading overlay while fetching project details from API
+  const isLoadingDetails = projectDetailLoading && !projectDetail
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -515,29 +551,28 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                   {t.errors.currentOwner} <span className="text-red-500">*</span>
                 </Label>
                 
-                {/* Clickable owner display container */}
+                {/* Clickable only for the project owner */}
                 <div 
                   className={cn(
-                    "p-3 border rounded-lg bg-muted/30 cursor-pointer transition-all",
-                    "hover:bg-muted/50 hover:border-primary/50",
+                    "p-3 border rounded-lg bg-muted/30 transition-all",
+                    isOwner
+                      ? "cursor-pointer hover:bg-muted/50 hover:border-primary/50"
+                      : "cursor-not-allowed opacity-70",
                     !formData.owner_id && "border-dashed"
                   )}
                   onClick={() => {
-                    // Trigger UserMultiSelector programmatically
+                    if (!isOwner) return
                     const selectorButton = document.querySelector('[data-owner-selector-button]') as HTMLButtonElement
-                    if (selectorButton) {
-                      selectorButton.click()
-                    }
+                    if (selectorButton) selectorButton.click()
                   }}
                   role="button"
-                  tabIndex={0}
+                  tabIndex={isOwner ? 0 : -1}
                   onKeyDown={(e) => {
+                    if (!isOwner) return
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()
                       const selectorButton = document.querySelector('[data-owner-selector-button]') as HTMLButtonElement
-                      if (selectorButton) {
-                        selectorButton.click()
-                      }
+                      if (selectorButton) selectorButton.click()
                     }
                   }}
                 >
@@ -558,20 +593,21 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                         labelText={t.errors.currentOwner}
                         showAddButton={false}
                       />
-                      <p className="text-xs text-muted-foreground mt-1">
+                     { isOwner && 
+                     <p className="text-xs text-muted-foreground mt-1">
                         {t.errors.clickToChange}
-                      </p>
+                      </p>}
                     </div>
                   ) : (
                     <div className="text-center py-2">
                       <p className="text-sm text-muted-foreground">
-                        {t.errors.clickToChange}
+                        {isOwner ? t.errors.clickToChange : "—"}
                       </p>
                     </div>
                   )}
                 </div>
                 
-                {/* Hidden owner selector - triggered programmatically */}
+                {/* Hidden owner selector — only rendered/active for the owner */}
                 <div className="hidden">
                   <UserMultiSelector
                     availableUsers={availableUsers}
@@ -583,7 +619,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                     buttonLabel={formData.owner_id ? "Change Owner" : "Select Owner"}
                     dialogTitle="Select Project Owner"
                     searchPlaceholder="Search users..."
-                    disabled={updateLoading}
+                    disabled={updateLoading || !isOwner}
                     maxSelections={1}
                     activityName={formData.title}
                     activityType="Project"
@@ -591,9 +627,100 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                   />
                 </div>
                 
-                {errors.owner_id && (
-                  <p className="text-sm text-red-500">{String(errors.owner_id)}</p>
-                )}
+              {/* Co-Owner Selection */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-sm">
+                  <Settings className="w-4 h-4 text-muted-foreground" />
+                  {"Co-Owner"}
+                  <span className="text-xs text-muted-foreground font-normal">(opcional)</span>
+                </Label>
+                
+                {/* Clickable for the co-owner OR for the owner (when no co-owner exists or to manage it) */}
+                <div 
+                  className={cn(
+                    "p-3 border rounded-lg bg-muted/30 transition-all",
+                    (isCoOwner || isOwner)
+                      ? "cursor-pointer hover:bg-muted/50 hover:border-primary/50"
+                      : "cursor-not-allowed opacity-70",
+                    !formData.co_owner_id && "border-dashed"
+                  )}
+                  onClick={() => {
+                    if (!isCoOwner && !isOwner) return
+                    const selectorButton = document.querySelector('[data-co-owner-selector-button]') as HTMLButtonElement
+                    if (selectorButton) selectorButton.click()
+                  }}
+                  role="button"
+                  tabIndex={(isCoOwner || isOwner) ? 0 : -1}
+                  onKeyDown={(e) => {
+                    if (!isCoOwner && !isOwner) return
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      const selectorButton = document.querySelector('[data-co-owner-selector-button]') as HTMLButtonElement
+                      if (selectorButton) selectorButton.click()
+                    }
+                  }}
+                >
+                  {formData.co_owner_id ? (
+                    <div className="space-y-1">
+                      <UsersAvatarGroup
+                        users={availableUsers
+                          .filter((user: User) => user.id === formData.co_owner_id)
+                          .map((user: User): UserAvatarData => ({
+                            id: user.id,
+                            name: user.name,
+                            email: user.email,
+                            role: user.role
+                          }))}
+                        maxDisplay={1}
+                        size="md"
+                        showLabel={true}
+                        labelText={"Co-Owner"}
+                        showAddButton={false}
+                      />
+                      <div className="flex items-center justify-between mt-1">
+                        <p className="text-xs text-muted-foreground">{t.errors.clickToChange}</p>
+                        {(isCoOwner || isOwner) && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleInputChange('co_owner_id', '') }}
+                            className="text-xs text-destructive hover:underline"
+                          >
+                            {"Remover"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-2">
+                      <p className="text-sm text-muted-foreground">
+                        {(isCoOwner || isOwner) ? "Click to select co-owner (optional)" : "—"}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="hidden">
+                  <UserMultiSelector
+                    availableUsers={availableUsers.filter((u: User) => u.id !== formData.owner_id)}
+                    selectedUsers={availableUsers.filter((user: User) => user.id === formData.co_owner_id)}
+                    onUsersChange={(users: User[]) => {
+                      handleInputChange('co_owner_id', users.length > 0 ? users[0].id : "")
+                    }}
+                    buttonLabel={formData.co_owner_id ? "Change Co-Owner" : "Select Co-Owner"}
+                    dialogTitle="Select Project Co-Owner"
+                    searchPlaceholder="Search users..."
+                    disabled={updateLoading || (!isCoOwner && !isOwner)}
+                    maxSelections={1}
+                    activityName={formData.title}
+                    activityType="Project"
+                    buttonDataAttribute="data-co-owner-selector-button"
+                  />
+                </div>
+              </div>
+
+              {errors.owner_id && (
+                <p className="text-sm text-red-500">{String(errors.owner_id)}</p>
+              )}
               </div>
             </div>
           </div>
@@ -749,7 +876,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
             {t.editModalTitle}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            {t.editProjectInfo}: {project.title}
+            {t.editProjectInfo}: {projectDetail?.title || project.title}
           </DialogDescription>
           
           
@@ -765,9 +892,16 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
 
         {/* Conteúdo dos Steps - Scrollable */}
         <div className="flex-1 overflow-y-auto min-h-0">
-          <div className="space-y-6 p-1">
-            {renderStepContent()}
-          </div>
+          {isLoadingDetails ? (
+            <div className="flex flex-col items-center justify-center h-40 gap-3">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-muted-foreground">Carregando dados do projeto...</p>
+            </div>
+          ) : (
+            <div className="space-y-6 p-1">
+              {renderStepContent()}
+            </div>
+          )}
         </div>
 
         {/* Botões de Navegação - Fixos no rodapé */}
@@ -779,7 +913,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                   type="button"
                   variant="outline" 
                   onClick={handlePrevious} 
-                  disabled={updateLoading}
+                  disabled={updateLoading || isLoadingDetails}
                   size="sm"
                   className="flex items-center gap-1 text-xs"
                 >
@@ -804,7 +938,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                 <Button 
                   type="button"
                   onClick={handleNext} 
-                  disabled={updateLoading}
+                  disabled={updateLoading || isLoadingDetails}
                   size="sm"
                   className="flex items-center gap-1 text-xs bg-gray-900 hover:bg-gray-800 text-white"
                 >
@@ -815,7 +949,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                 <Button 
                   type="button"
                   onClick={handleSubmit}
-                  disabled={updateLoading}
+                  disabled={updateLoading || isLoadingDetails}
                   size="sm"
                   className="min-w-[100px] text-xs bg-gray-900 hover:bg-gray-800 text-white"
                 >

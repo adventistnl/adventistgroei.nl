@@ -128,7 +128,8 @@ const navSections: NavSection[] = [
         icon: DollarSign,
         items: [
           { title: "Annual Budget", url: "/finance/annual-budget", permissions: [PermissionResolverName.AnnualBudgets], translationKey: "sidebar.annualBudget" },
-          { title: "Subsidy Request", url: "/finance/subsidy-request", permissions: [PermissionResolverName.SubsidyRequests], translationKey: "sidebar.subsidyApprovals" },
+          { title: "Ledger History", url: "/finance/ledger-history", permissions: [PermissionResolverName.LedgerHistory], translationKey: "sidebar.ledgerHistory" },
+          { title: "Subsidy Request", url: "/finance/subsidy-request", permissions: [PermissionResolverName.LedgerHistory, PermissionResolverName.SubsidyRequests], translationKey: "sidebar.subsidyApprovals" },
         ],
         permissions: [],
         translationKey: "sidebar.financeManagement"
@@ -149,46 +150,21 @@ const navSections: NavSection[] = [
 ]
 
 /**
- * Coleta todas as permissões de um item e seus subitems recursivamente
- * @param item - Item de navegação
- * @returns Array com todas as permissões encontradas
- */
-function collectItemPermissions(item: NavItem): PermissionResolverName[] {
-  const permissions: PermissionResolverName[] = [...item.permissions]
-  
-  if (item.items && item.items.length > 0) {
-    item.items.forEach(subItem => {
-      permissions.push(...collectItemPermissions(subItem))
-    })
-  }
-  
-  return permissions
-}
-
-/**
- * Verifica se o usuário possui pelo menos uma das permissões necessárias
- * Para items sem URL (url: "#"), verifica as permissões dos subitems
- * @param item - Item de navegação
- * @param userPermissions - Array com as permissões do usuário
- * @returns true se o usuário tiver pelo menos uma permissão necessária
+ * Verifica se o usuário possui as permissões necessárias para visualizar o item.
+ * Para items folha: exige TODAS as permissões do array.
+ * Para items com subitems: exige que ao menos um subitem seja visível.
  */
 export function shouldShowNavItem(item: NavItem, userPermissions: PermissionResolverName[]): boolean {
   // Se o item não tem subitems, verifica suas próprias permissões
   if (!item.items || item.items.length === 0) {
     // Se não tem permissões requeridas, mostra sempre
     if (item.permissions.length === 0) return true
-    // Verifica se tem pelo menos uma permissão
-    return item.permissions.some(permission => userPermissions.includes(permission))
+    // Verifica se tem TODAS as permissões necessárias
+    return item.permissions.every(permission => userPermissions.includes(permission))
   }
   
-  // Para items com subitems (url: "#"), coleta todas as permissões dos filhos
-  const allChildPermissions = collectItemPermissions(item)
-  
-  // Se não tem permissões requeridas nos filhos, mostra sempre
-  if (allChildPermissions.length === 0) return true
-  
-  // Verifica se o usuário tem pelo menos uma das permissões dos filhos
-  return allChildPermissions.some(permission => userPermissions.includes(permission))
+  // Para items com subitems (url: "#"), verifica recursivamente se ao menos um subitem é visível
+  return item.items.some(subItem => shouldShowNavItem(subItem, userPermissions))
 }
 
 // Manter compatibilidade - flatten all sections into single array
@@ -212,7 +188,7 @@ const _legacyNavMainBase: NavItem[] = [
     icon: Building2,
     items: [
       { title: "Institutions", url: "/institutions", permissions: [PermissionResolverName.Institutions], translationKey: "sidebar.institutions" },
-      { title: "Inst. Departments", url: "/institutional-departments", permissions: [PermissionResolverName.Departments], translationKey: "sidebar.instDepartments" },
+      { title: "Inst. Departments", url: "/institutional-departments", permissions: [PermissionResolverName.Departments, PermissionResolverName.Institutions], translationKey: "sidebar.instDepartments" },
       { title: "Regions", url: "/regions", permissions: [PermissionResolverName.Regions], translationKey: "sidebar.regions" },
       // { title: "Regions Example", url: "/regions-example", permissions: [PermissionResolverName.Regions] },
       { title: "Churches", url: "/churches", permissions: [PermissionResolverName.Churches], translationKey: "sidebar.churches" },
@@ -228,7 +204,7 @@ const _legacyNavMainBase: NavItem[] = [
     items: [
       { title: "Annual Budget", url: "/finance/annual-budget", permissions: [PermissionResolverName.Settings], translationKey: "sidebar.annualBudget" },
       // { title: "Funding Rules", url: "/finance/funding-rules", permissions: [PermissionResolverName.Institutions] },
-      { title: "Subsidy Request", url: "/finance/subsidy-request", permissions: [PermissionResolverName.Institutions], translationKey: "sidebar.subsidyApprovals" },
+      { title: "Subsidy Request", url: "/finance/subsidy-request", permissions: [PermissionResolverName.Settings, PermissionResolverName.Institutions], translationKey: "sidebar.subsidyApprovals" },
     ],
     permissions: [],
     translationKey: "sidebar.financeManagement"
@@ -292,6 +268,18 @@ const _legacyNavMainBase: NavItem[] = [
     // }
 ]
 
+// Rotas cujos sub-paths são gerenciados por itens dedicados na sidebar
+// (ex: /projects/[id] tem item próprio em NavProjects → o item /projects NÃO deve ficar ativo)
+const EXACT_MATCH_ONLY_ROUTES = ["/projects"]
+
+function isNavItemActive(itemUrl: string, pathname: string): boolean {
+  if (itemUrl === "#") return false
+  if (pathname === itemUrl) return true
+  // Rotas em EXACT_MATCH_ONLY_ROUTES só ativam em match exato
+  if (EXACT_MATCH_ONLY_ROUTES.includes(itemUrl)) return false
+  return itemUrl !== "/" && pathname.startsWith(itemUrl + "/")
+}
+
 // Função estável para obter navegação com estado ativo
 export function getNavMainWithActiveState(
   pathname: string,
@@ -301,17 +289,10 @@ export function getNavMainWithActiveState(
   return navMainBase
     .filter(item => shouldShowNavItem(item, userPermissions))
     .map(item => {
-      // Verifica se é uma rota direta ou se o pathname começa com o URL do item
-      // Isso permite que /projects/123 ative o item /projects
-      const isDirectActive = item.url !== "#" && (
-        pathname === item.url || 
-        (item.url !== "/" && pathname.startsWith(item.url + "/"))
-      )
+      const isDirectActive = isNavItemActive(item.url, pathname)
       
-      // Verifica se algum subitem está ativo
-      const hasActiveChild = item.items?.some(subItem => 
-        pathname === subItem.url || 
-        (subItem.url !== "/" && pathname.startsWith(subItem.url + "/"))
+      const hasActiveChild = item.items?.some(subItem =>
+        isNavItemActive(subItem.url, pathname)
       ) || false
       
       const isItemActive = isDirectActive || hasActiveChild
@@ -326,8 +307,7 @@ export function getNavMainWithActiveState(
         isActive: isItemActive,
         items: filteredSubItems?.map(subItem => ({
           ...subItem,
-          isActive: pathname === subItem.url || 
-            (subItem.url !== "/" && pathname.startsWith(subItem.url + "/"))
+          isActive: isNavItemActive(subItem.url, pathname)
         }))
       }
     })
@@ -344,14 +324,10 @@ export function getNavSectionsWithActiveState(
       const filteredItems = section.items
         .filter(item => shouldShowNavItem(item, userPermissions))
         .map(item => {
-          const isDirectActive = item.url !== "#" && (
-            pathname === item.url || 
-            (item.url !== "/" && pathname.startsWith(item.url + "/"))
-          )
+          const isDirectActive = isNavItemActive(item.url, pathname)
           
-          const hasActiveChild = item.items?.some(subItem => 
-            pathname === subItem.url || 
-            (subItem.url !== "/" && pathname.startsWith(subItem.url + "/"))
+          const hasActiveChild = item.items?.some(subItem =>
+            isNavItemActive(subItem.url, pathname)
           ) || false
           
           const isItemActive = isDirectActive || hasActiveChild
@@ -366,8 +342,7 @@ export function getNavSectionsWithActiveState(
             isActive: isItemActive,
             items: filteredSubItems?.map(subItem => ({
               ...subItem,
-              isActive: pathname === subItem.url || 
-                (subItem.url !== "/" && pathname.startsWith(subItem.url + "/"))
+              isActive: isNavItemActive(subItem.url, pathname)
             }))
           }
         })

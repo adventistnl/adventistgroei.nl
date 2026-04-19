@@ -35,6 +35,12 @@ export enum ActivityTags {
   TRAVEL = "TRAVEL",
 }
 
+export enum AdjustmentStatus {
+  CLOSED = "CLOSED",
+  IN_PROGRESS = "IN_PROGRESS",
+  OPEN = "OPEN",
+}
+
 export enum AnnualBudgetCategory {
   EMERGENCY = "EMERGENCY",
   EXPANSION = "EXPANSION",
@@ -73,6 +79,17 @@ export enum ChurchType {
   STANDARD = "STANDARD",
 }
 
+/**
+ * Papel do colaborador no projeto
+ */
+export enum CollaboratorRole {
+  assignee = "assignee",
+  co_owner = "co_owner",
+  finance = "finance",
+  owner = "owner",
+  requester = "requester",
+}
+
 export enum EntityType {
   CHURCH = "CHURCH",
   CHURCH_DEPARTMENT = "CHURCH_DEPARTMENT",
@@ -93,7 +110,7 @@ export enum GenderType {
 }
 
 /**
- * Idioma preferencial da instituição
+ * Idioma preferencial do usuário
  */
 export enum LanguagePreference {
   en = "en",
@@ -115,18 +132,43 @@ export enum ProjectActivityLogAction {
   UPDATED = "UPDATED",
 }
 
+export enum ProjectHistoryType {
+  ADJUSTMENT_NEEDED = "ADJUSTMENT_NEEDED",
+  BUDGET_UPDATED = "BUDGET_UPDATED",
+  COMMENT = "COMMENT",
+  CO_OWNER_UPDATED = "CO_OWNER_UPDATED",
+  CREATED = "CREATED",
+  DEADLINE_UPDATED = "DEADLINE_UPDATED",
+  DELETED = "DELETED",
+  DEPARTMENT_CHANGED = "DEPARTMENT_CHANGED",
+  OWNER_CHANGED = "OWNER_CHANGED",
+  RESTORED = "RESTORED",
+  STATUS_CHANGED = "STATUS_CHANGED",
+  UPDATED = "UPDATED",
+}
+
 export enum ProjectStatus {
+  ADJUSTMENTS_NEEDED = "ADJUSTMENTS_NEEDED",
   CONCLUDED = "CONCLUDED",
   DRAFT = "DRAFT",
   EXPIRED = "EXPIRED",
   IN_PROGRESS = "IN_PROGRESS",
   IN_REVIEW = "IN_REVIEW",
   ON_HOLD = "ON_HOLD",
+  OPEN_REQUEST = "OPEN_REQUEST",
+  OVERDUE = "OVERDUE",
+  PENDING_RECEIPT = "PENDING_RECEIPT",
+  WAITING_REFUND = "WAITING_REFUND",
 }
 
 export enum ProjectType {
   Global = "Global",
   Local = "Local",
+}
+
+export enum RefundType {
+  PARTIAL = "PARTIAL",
+  TOTAL = "TOTAL",
 }
 
 export enum SubsidyHistoryType {
@@ -142,6 +184,12 @@ export enum SubsidyRequestPriority {
   MEDIUM = "MEDIUM",
 }
 
+export enum SubsidyRequestType {
+  ADVANCE = "ADVANCE",
+  WITHOUT_DOCUMENT = "WITHOUT_DOCUMENT",
+  WITH_DOCUMENT = "WITH_DOCUMENT",
+}
+
 export interface ActivityFundingCreateDto {
   entity_contribution_amount: number;
   entity_contribution_percent: number;
@@ -154,6 +202,17 @@ export interface ActivityFundingUpdateDto {
   entity_contribution_percent?: number | null;
   entity_type?: EntityType | null;
   entity_id?: string | null;
+}
+
+export interface AddAdjustmentTaskDto {
+  adjustment_id: string;
+  title: string;
+  position?: number | null;
+}
+
+export interface AdjustmentTaskInput {
+  title: string;
+  position?: number | null;
 }
 
 export interface ApproveAnnualBudgetDto {
@@ -176,6 +235,12 @@ export interface ContactUpdateDto {
   notes?: string | null;
   id: string;
   is_primary?: boolean | null;
+}
+
+export interface CreateAdjustmentDto {
+  project_id: string;
+  comment?: string | null;
+  tasks?: AdjustmentTaskInput[] | null;
 }
 
 export interface DepartmentBudgetCreateDto {
@@ -282,6 +347,16 @@ export interface ProjectActivityUpdateDto {
   activity_funding?: ActivityFundingUpdateDto | null;
 }
 
+export interface ProjectHistoryCreateDto {
+  project_id: string;
+  type: ProjectHistoryType;
+  comment?: string | null;
+  field_name?: string | null;
+  old_value?: string | null;
+  new_value?: string | null;
+  metadata?: any | null;
+}
+
 export interface RejectAnnualBudgetDto {
   reason: string;
 }
@@ -298,9 +373,11 @@ export interface SubsidyRequestCreateDto {
   department_id: string;
   church_id?: string | null;
   subsidy_status_id?: string | null;
-  items: SubsidyRequestItemInput[];
+  start_as_draft?: boolean | null;
+  items?: SubsidyRequestItemInput[] | null;
   project_id: string;
   notes?: string | null;
+  request_type?: SubsidyRequestType | null;
   is_for_advance?: boolean | null;
   advance_amount?: number | null;
 }
@@ -326,6 +403,16 @@ export interface SubsidyRequestUpdateDto {
   rejection_reason?: string | null;
   notes?: string | null;
   priority?: SubsidyRequestPriority | null;
+}
+
+export interface ToggleAdjustmentTaskDto {
+  task_id: string;
+  completed: boolean;
+}
+
+export interface UpdateAdjustmentStatusDto {
+  id: string;
+  status: AdjustmentStatus;
 }
 
 export interface UploadActivityDocumentDto {

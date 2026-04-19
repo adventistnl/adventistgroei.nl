@@ -104,7 +104,7 @@ interface SubsidyRequest {
   church_name?: string
   requested_amount: number
   approved_amount?: number
-  status: "pending" | "in_review" | "approved" | "closed" | "rejected" | "advanced_closed" | "waiting_refund"
+  status: "pending" | "in_review" | "approved" | "closed" | "rejected" | "advanced_closed" | "waiting_refund" | "waiting_documents"
   requested_at: string
   reviewed_at?: string
   reviewed_by?: string
@@ -368,26 +368,30 @@ export function SubsidyRequestManager({
       return translations.toasts?.refundNotRequested || "No refund has been requested for this subsidy"
     }
 
-    // Rule: To Closed is allowed from Approved or Rejected or Advanced Closed
+    // Rule: To Closed is allowed from Approved, Rejected, Advanced Closed or Waiting Documents
     if (to === 'closed') {
       if (from === 'in_review') return translations.toasts?.inReviewToClosed || "Cannot close In Review requests"
-      // Only allowed from approved, rejected or advanced_closed
-      if (from !== 'approved' && from !== 'rejected' && from !== 'advanced_closed') return translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close"
+      // Only allowed from approved, rejected, advanced_closed or waiting_documents
+      if (from !== 'approved' && from !== 'rejected' && from !== 'advanced_closed' && from !== 'waiting_documents') return translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close"
     }
 
     // Rule: Advance subsidies logic
     if (subsidy.is_for_advance) {
       if (from === 'approved') {
-        // Can go to advanced_closed
-        if (to === 'advanced_closed') return null
-        // Cannot go to closed directly (must go to advanced_closed first)
+        // Can go to waiting_documents (advance paid) or advanced_closed (legacy)
+        if (to === 'waiting_documents' || to === 'advanced_closed') return null
+        // Cannot go to closed directly
         if (to === 'closed') return translations.toasts?.mustBeAdvancedClosed || "Adv. Subsidies must be Advanced Closed first"
       }
       if (from === 'advanced_closed') {
-        // Can go to closed
-        if (to === 'closed') return null
-        // Cannot go back to approved
+        // Can go to waiting_documents or closed
+        if (to === 'waiting_documents' || to === 'closed') return null
         return translations.toasts?.finalState || "Advanced Closed can only change to Closed"
+      }
+      if (from === 'waiting_documents') {
+        // Can go to closed or waiting_refund
+        if (to === 'closed' || to === 'waiting_refund') return null
+        return translations.toasts?.finalState || "Waiting Documents can only change to Closed or Waiting Refund"
       }
     }
 
@@ -419,7 +423,8 @@ export function SubsidyRequestManager({
       'REJECTED': 'rejected',
       'CLOSED': 'closed',
       'ADVANCED_CLOSED': 'advanced_closed',
-      'WAITING_REFUND': 'waiting_refund'
+      'WAITING_REFUND': 'waiting_refund',
+      'WAITING_DOCUMENTS': 'waiting_documents'
     }
     return statusMap[statusName?.toUpperCase()] || 'pending'
   }
@@ -721,7 +726,8 @@ export function SubsidyRequestManager({
       'closed': '#059669',
       'rejected': '#ef4444',
       'advanced_closed': '#7c3aed',
-      'waiting_refund': '#f97316'
+      'waiting_refund': '#f97316',
+      'waiting_documents': '#ea580c'
     }
 
     const statusLabelMap: Record<string, string> = {
@@ -731,7 +737,8 @@ export function SubsidyRequestManager({
       'closed': 'Closed',
       'rejected': 'Rejected',
       'advanced_closed': 'Advanced Closed',
-      'waiting_refund': 'Waiting Refund'
+      'waiting_refund': 'Waiting Refund',
+      'waiting_documents': 'Waiting for Documents'
     }
 
     // Count requests by status from actual data
@@ -742,7 +749,8 @@ export function SubsidyRequestManager({
       'closed': 0,
       'rejected': 0,
       'advanced_closed': 0,
-      'waiting_refund': 0
+      'waiting_refund': 0,
+      'waiting_documents': 0
     }
 
     filteredSubsidyRequests.forEach(request => {
@@ -775,6 +783,7 @@ export function SubsidyRequestManager({
         rejected: 0,
         advanced_closed: 0,
         waiting_refund: 0,
+        waiting_documents: 0,
         quarter
       }
     })
@@ -784,7 +793,7 @@ export function SubsidyRequestManager({
       const date = new Date(request.requested_at)
       const monthName = monthNames[date.getMonth()]
       if (monthData[monthName] && request.status) {
-        const statusKey = request.status as 'pending' | 'in_review' | 'approved' | 'closed' | 'rejected' | 'advanced_closed' | 'waiting_refund'
+        const statusKey = request.status as 'pending' | 'in_review' | 'approved' | 'closed' | 'rejected' | 'advanced_closed' | 'waiting_refund' | 'waiting_documents'
         monthData[monthName][statusKey]++
       }
     })
@@ -968,6 +977,11 @@ export function SubsidyRequestManager({
       label: translations.status.waiting_refund || "Waiting Refund",
       variant: "warning",
       icon: DollarSign
+    },
+    waiting_documents: {
+      label: translations.status.waiting_documents || "Waiting for Documents",
+      variant: "warning",
+      icon: FileText
     }
   }
 
@@ -1109,7 +1123,8 @@ export function SubsidyRequestManager({
           closed: 'success',
           rejected: 'error',
           advanced_closed: 'neutral',
-          waiting_refund: 'warning'
+          waiting_refund: 'warning',
+          waiting_documents: 'warning'
         }
         const dotColorMap: Record<SubsidyRequest['status'], string> = {
           pending: 'bg-amber-500',
@@ -1118,7 +1133,8 @@ export function SubsidyRequestManager({
           closed: 'bg-emerald-600',
           rejected: 'bg-red-500',
           advanced_closed: 'bg-purple-600',
-          waiting_refund: 'bg-orange-500'
+          waiting_refund: 'bg-orange-500',
+          waiting_documents: 'bg-orange-700'
         }
         return (
           <StatusBadge
@@ -1230,6 +1246,7 @@ export function SubsidyRequestManager({
     { id: 'in_review', name: translations.kanban.groups.in_review, color: '#3b82f6', tooltip: translations.statusRules.in_review },
     { id: 'approved', name: translations.kanban.groups.approved, color: '#10b981', tooltip: translations.statusRules.approved },
     { id: 'advanced_closed', name: translations.kanban.groups.advanced_closed, color: '#7c3aed', tooltip: translations.statusRules.advanced_closed },
+    { id: 'waiting_documents', name: translations.kanban.groups.waiting_documents || 'Waiting for Documents', color: '#ea580c', tooltip: translations.statusRules.waiting_documents || 'Advance paid. Waiting for receipt documents.' },
     { id: 'waiting_refund', name: translations.kanban.groups.waiting_refund || 'Waiting Refund', color: '#f97316', tooltip: translations.statusRules.waiting_refund || 'Subsidies waiting for refund processing' },
     { id: 'closed', name: translations.kanban.groups.closed, color: '#059669', tooltip: translations.statusRules.closed },
     { id: 'rejected', name: translations.kanban.groups.rejected, color: '#ef4444', tooltip: translations.statusRules.rejected },

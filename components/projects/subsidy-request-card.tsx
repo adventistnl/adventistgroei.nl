@@ -34,6 +34,7 @@ export interface SubsidyRequestCardData {
   rejected_at?: Date
   archived?: boolean
   // Advance request fields
+  request_type?: string
   is_for_advance?: boolean
   advance_amount?: number
   // IDs for editing
@@ -75,6 +76,8 @@ export interface SubsidyRequestCardData {
   refund_amount?: number
   have_refund?: boolean
   refund_done?: boolean
+  refund_type?: string
+  refund_rejected?: boolean
 }
 
 interface SubsidyRequestCardProps {

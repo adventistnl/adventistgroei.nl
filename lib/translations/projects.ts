@@ -200,7 +200,9 @@ export const projectTranslations = {
       previous: "Previous",
       next: "Next",
       noResults: "No results found",
-      openMenu: "Open menu"
+      openMenu: "Open menu",
+      quickView: "Quick View",
+      noActivities: "No activities registered",
     },
     
     // Modal
@@ -554,6 +556,7 @@ export const projectTranslations = {
       documents: "Documents",
       noDocuments: "No documents attached",
       loadingDocuments: "Loading documents...",
+      documentUploaded: "Document Uploaded",
       documentApproved: "Document Approved",
       documentComment: "Comment",
       statusUpdate: "Status Update",
@@ -569,7 +572,8 @@ export const projectTranslations = {
         requester: "Requester",
         projectOwner: "Project Owner",
         departmentLeader: "Department Leader",
-        financeManager: "Finance Manager"
+        financeManager: "Finance Manager",
+        coOwner: "Co-Owner"
       },
       
       placeholders: {
@@ -689,7 +693,12 @@ export const projectTranslations = {
         rejectionReasonRequired: "Please provide a reason for rejection",
         onlyFinancialCanClose: "Only users with the Financial Manager role can close subsidy requests",
         statusUpdateFailed: "Failed to update subsidy status. Please try again.",
-        cannotSendMessageAfterError: "Cannot send message while status update has failed. Please fix the status first."
+        cannotSendMessageAfterError: "Cannot send message while status update has failed. Please fix the status first.",
+        invalidTransitionToAdvancedClosed: "Only APPROVED subsidies can transition to Advanced Closed.",
+        invalidTransitionFromAdvancedClosed: "Advanced Closed can only move to Closed or Waiting for Documents.",
+        advanceRequestOnly: "This status transition is only allowed for advance-type subsidy requests.",
+        invalidTransitionToWaitingDocuments: "Only APPROVED or ADVANCED_CLOSED subsidies can move to Waiting for Documents.",
+        invalidTransitionFromWaitingDocuments: "Waiting for Documents can only move to Closed or Waiting Refund."
       },
       
       // Success messages
@@ -799,6 +808,35 @@ export const projectTranslations = {
         documentValidationInfo: "Only the department leader can validate or reject documents. You can add comments.",
         statusEditInfo: "Only the department leader or finance users can change the request status.",
         departmentLeaderOnly: "Only department leader can approve"
+      },
+
+      // Request type
+      requestType: {
+        advance: "Advance request",
+        withDocument: "Request with documents",
+        withoutDocument: "Request without documents",
+        forProject: "for project",
+        info: {
+          advance: "Advance payment request — document upload is optional at this stage.",
+          withDocument: "This request requires activity documents to be linked and validated before approval.",
+          withoutDocument: "This request was submitted without supporting documents."
+        },
+        uploadDocument: "Add document",
+        uploadingDocument: "Uploading...",
+        documentUploadSuccess: "Document uploaded successfully",
+        documentUploadError: "Failed to upload document"
+      },
+
+      // Upload document amount dialog
+      uploadAmountDialog: {
+        title: "Document amount",
+        description: "Enter the amount for the document {{name}}.",
+        amountLabel: "Amount",
+        placeholder: "0.00",
+        cancel: "Cancel",
+        submit: "Upload document",
+        submitting: "Uploading...",
+        invalidAmount: "Please enter a valid amount for the document."
       }
     },
 
@@ -904,12 +942,18 @@ export const projectTranslations = {
       inReview: "In Review",
       onHold: "On Hold",
       expired: "Expired",
+      overdue: "Overdue",
       concluded: "Concluded",
+      openRequest: "Open Request",
+      submitRequest: "Submit Request",
+      adjustmentsNeeded: "Adjustments Needed",
+      pendingReceipt: "Pending Receipt",
+      waitingRefund: "Waiting Refund",
+      pending: "Pending",
       // Expired modal
       expiredModalTitle: "Project Expired",
       expiredModalDescription: "This project has passed its end date. Please extend the date or conclude the project.",
       extendDate: "Extend End Date",
-      concludeProject: "Conclude Project",
       // Status validation errors
       cannotSetExpired: "Cannot set project as expired before due date",
       cannotSetConcluded: "Cannot conclude project: all activities, documents and subsidies must be completed first",
@@ -918,13 +962,126 @@ export const projectTranslations = {
       statusUpdateError: "Status Update Error",
       cannotModifyConcluded: "Cannot modify a concluded project",
       incompleteActivities: "All activities must be completed before concluding the project",
+      cannotGoBackToDraft: "Projects that have passed Open Request cannot return to Draft",
       unvalidatedDocuments: "All documents must be validated before concluding the project",
       openSubsidies: "All subsidies must be closed before concluding the project",
       statusUpdated: "Status updated successfully",
+      approveProject: "Approve Project",
+      requestAdjustments: "Adjustment Needed",
+      // ── Conclude ──
+      concludeProject: "Conclude Project",
+      concludeWarning: "This action is irreversible. Once concluded, the project will be permanently locked and no further updates will be possible.",
+      concludeCheckbox: "I understand that this project will be permanently closed and cannot be reopened or modified.",
+      concludeConfirm: "Confirm & Conclude",
+      // ── Send Reminder (WAITING_REFUND) ──
+      sendReminder: "Send Reminder",
+      reminderMessage: "\uD83D\uDD14 Reminder: {{coOwner}}, please submit the pending refund documents so this project can be concluded.",
+      reminderSent: "Reminder sent to the team",
+      reminderError: "Failed to send reminder",
+      // ── Extend Deadline (OVERDUE) ──
+      extendDeadline: "Extend +7 days",
+      deadlineExtended: "Deadline extended by 7 days",
+      deadlineExtendedMsg: "\uD83D\uDCC5 Deadline extended by 7 days. New end date: {{date}}.",
+      deadlineExtendError: "Failed to extend deadline",
+      // ── Missing Receipts (PENDING_RECEIPT) ──
+      mentionMissingReceipts: "Mention Missing Receipts",
+      allActivitiesPending: "All activities are pending receipts.",
+      missingReceiptsMessage: "\u26A0\uFE0F The following activities are still missing receipts:\n{{activities}}\n\nPlease upload the required documents to proceed.",
+      receiptMentionSent: "Missing receipts mentioned in history",
+      receiptMentionError: "Failed to post message",
     },
-    
-    // Project types
-    public: "Public",
+    statusTransitions: {
+      modalTitle: "Confirm Status Change",
+      confirmCheckbox: "I understand the implications and want to proceed with this change",
+      cancel: "Cancel",
+      confirm: "Confirm Change",
+      from: "From",
+      to: "To",
+      transitions: {
+        IN_PROGRESS: {
+          title: "Approving the Project",
+          description: "This project will be officially approved and moved to active execution.",
+          consequence: "The total requested subsidy amount will be reserved from the department's annual budget, reflecting immediately in financial reports.",
+          warning: "Budget reservation is applied immediately and cannot be reversed without concluding or cancelling the project.",
+        },
+        CONCLUDED: {
+          title: "Concluding the Project",
+          description: "This project will be permanently closed. All pending activities will be automatically set to COMPLETED.",
+          consequence: "All linked activities will be auto-completed. All subsidy requests must be closed before this action is allowed.",
+          warning: "This action is irreversible. Once concluded, the project and all its activities are permanently locked and cannot be modified.",
+        },
+        OPEN_REQUEST: {
+          title: "Submitting for Review",
+          description: "This project will be submitted to the institution for official review.",
+          consequence: "Responsible reviewers will be notified and will evaluate the project details and budget.",
+          warning: "Ensure all project information is complete and accurate before submitting.",
+        },
+        ADJUSTMENTS_NEEDED: {
+          title: "Requesting Adjustments",
+          description: "The project will be returned to the owner indicating that changes are required.",
+          consequence: "The project owner will be notified to review and make the necessary adjustments.",
+          warning: "The project will not advance in the workflow until the required changes are made and resubmitted.",
+        },
+        IN_REVIEW: {
+          title: "Moving to Review",
+          description: "The project will enter the formal review stage.",
+          consequence: "Reviewers will assess the project budget, activities, and documentation before approval.",
+          warning: "No further edits can be made to the project while it is under review.",
+        },
+        PENDING_RECEIPT: {
+          title: "Pending Receipt",
+          description: "This project will be marked as pending the submission of receipts and documentation.",
+          consequence: "The project owner must upload all receipts and supporting documents within the required period.",
+          warning: "Failure to submit receipts on time may result in subsidy recovery procedures.",
+        },
+        WAITING_REFUND: {
+          title: "Waiting for Refund",
+          description: "This project will be marked as waiting for the refund to be processed and submitted.",
+          consequence: "The responsible party must submit the refund amount and required documentation to close this project.",
+          warning: "The project will not advance until the refund has been processed and confirmed.",
+        },
+      },
+      justificationLabel: "Justification",
+      justificationPlaceholder: "Describe what needs to be adjusted\u2026",
+      justificationHint: "This message will be logged in the project history and shown as a notification banner to the project owner.",
+      pendingReceiptActivitiesLabel: "Activities with pending receipts",
+      pendingReceiptActivitiesPlaceholder: "Type @ to mention activities with pending receipts\u2026",
+      pendingReceiptActivitiesHint: "Use @ to mention specific activities. This will be logged in the project history.",
+      refundAmountLabel: "Amount to be refunded",
+      refundAmountPlaceholder: "0.00",
+      refundAmountHint: "Enter the amount to be returned. This will be recorded in the project history.",
+      selectSubsidy: "Subsidy Request",
+      selectSubsidyPlaceholder: "Select a subsidy request\u2026",
+      refundAmount: "Refund Amount",
+      refundReason: "Reason",
+      refundReasonPlaceholder: "Describe the reason for the refund request\u2026",
+      confirmRefund: "Request Refund",
+      noSubsidiesFound: "No subsidy requests found for this project. Add a subsidy request before requesting a refund.",
+      noSubsidiesError: "This project has no subsidy requests. Add one before requesting a refund.",
+      amountExceedsMax: "Amount cannot exceed the subsidy budget",
+      loadingSubsidies: "Loading subsidy requests\u2026",
+    },
+    adjustments: {
+      bannerTitle: "Adjustment Required",
+      markResolved: "Mark as Resolved",
+      requestedBy: "Requested by",
+      multipleAdjustments: "{{count}} adjustments required",
+    },
+    receiptStatusBanner: {
+      pendingReceipt: {
+        title: "Receipts Required",
+        description: "Activities are awaiting receipt uploads before this project can move forward. Open each activity and upload the required receipts.",
+        actionNote: "Only receipt uploads are allowed in this status. Adding activities, editing the project, and creating subsidy requests are temporarily disabled.",
+      },
+      waitingRefund: {
+        title: "Refund Pending",
+        description: "This project is waiting for refund documentation to be submitted. Ensure the refund amount is processed and documented.",
+        actionNote: "Only receipt uploads are allowed in this status. Adding activities, editing the project, and creating subsidy requests are temporarily disabled.",
+      },
+      whatYouCanDo: "What you can do now:",
+      uploadReceiptsForActivities: "Upload receipts for each activity",
+      viewEditActivity: "View and edit activity details",
+    },
     private: "Private",
     
     // Actions
@@ -1090,6 +1247,28 @@ export const projectTranslations = {
       openingProject: "Opening {{title}}"
     },
 
+    // User List Modal
+    userListModal: {
+      title: "Project Members",
+      description: "All members involved in this project",
+      ownerBadge: "Owner",
+      coOwnerBadge: "Co-Owner",
+      noUsers: "No members in this project",
+    },
+
+    // Open Request Overlay
+    openRequestOverlay: {
+      title: "Open Request",
+      description: "This project has been submitted for review by the institution. Content will be available once evaluation is complete.",
+      projectLabel: "Project",
+      departmentLabel: "Department",
+      reviewerLabel: "Submitted by",
+      viewContact: "View Contact",
+      backToProjects: "Back to Projects",
+      statusBadge: "Under review by institution",
+      budgetLabel: "Budget",
+      subsidizedBudgetLabel: "Subsidy Request",
+    },
 
   },
   nl: {
@@ -1281,7 +1460,9 @@ export const projectTranslations = {
       previous: "Vorige",
       next: "Volgende",
       noResults: "Geen resultaten gevonden",
-      openMenu: "Menu openen"
+      openMenu: "Menu openen",
+      quickView: "Snel Bekijken",
+      noActivities: "Geen activiteiten geregistreerd",
     },
     
     // Modal
@@ -1638,12 +1819,14 @@ export const projectTranslations = {
         requester: "Aanvrager",
         projectOwner: "Projecteigenaar",
         departmentLeader: "Afdelingshoofd",
-        financeManager: "Financiële Manager"
+        financeManager: "Financiële Manager",
+        coOwner: "Co-eigenaar"
       },
       
       documents: "Documenten",
       noDocuments: "Geen documenten bijgevoegd",
       loadingDocuments: "Documenten laden...",
+      documentUploaded: "Document Geüpload",
       documentApproved: "Document Goedgekeurd",
       documentComment: "Opmerking",
       statusUpdate: "Statusupdate",
@@ -1769,7 +1952,13 @@ export const projectTranslations = {
         rejectionReasonRequired: "Geef een reden op voor afwijzing",
         onlyFinancialCanClose: "Alleen gebruikers met de rol Financieel Manager kunnen subsidieaanvragen sluiten",
         statusUpdateFailed: "Kan subsidiestatus niet bijwerken. Probeer het opnieuw.",
-        cannotSendMessageAfterError: "Kan geen bericht verzenden terwijl de statusupdate is mislukt. Herstel eerst de status."
+        cannotSendMessageAfterError: "Kan geen bericht sturen terwijl de statusupdate is mislukt. Los het status probleem eerst op.",
+        invalidTransitionToAdvancedClosed: "Alleen GOEDGEKEURDE subsidies kunnen naar Geavanceerd Gesloten.",
+        invalidTransitionFromAdvancedClosed: "Geavanceerd Gesloten kan alleen naar Gesloten of Wacht op Documenten.",
+        advanceRequestOnly: "Deze statusovergang is alleen toegestaan voor voorschot-type subsidieaanvragen.",
+        invalidTransitionToWaitingDocuments: "Alleen GOEDGEKEURDE of GEAVANCEERD_GESLOTEN subsidies kunnen naar Wacht op Documenten.",
+        invalidTransitionFromWaitingDocuments: "Wacht op Documenten kan alleen naar Gesloten of Wacht op Terugbetaling.",
+        cannotSendMessageAfterError: "Kan geen bericht sturen terwijl de statusupdate is mislukt. Los het status probleem eerst op."
       },
       
       // Success messages
@@ -1879,6 +2068,35 @@ export const projectTranslations = {
         documentValidationInfo: "Alleen de afdelingsleider kan documenten valideren of afwijzen. U kunt opmerkingen toevoegen.",
         statusEditInfo: "Alleen de afdelingsleider of financiële gebruikers kunnen de aanvraagstatus wijzigen.",
         departmentLeaderOnly: "Alleen afdelingsleider kan goedkeuren"
+      },
+
+      // Verzoektype
+      requestType: {
+        advance: "Vooruitbetalingsverzoek",
+        withDocument: "Verzoek met documenten",
+        withoutDocument: "Verzoek zonder documenten",
+        forProject: "voor project",
+        info: {
+          advance: "Vooruitbetalingsverzoek — document uploaden is optioneel in dit stadium.",
+          withDocument: "Dit verzoek vereist activiteitsdocumenten die gekoppeld en gevalideerd moeten worden voor goedkeuring.",
+          withoutDocument: "Dit verzoek is ingediend zonder ondersteunende documenten."
+        },
+        uploadDocument: "Document toevoegen",
+        uploadingDocument: "Uploaden...",
+        documentUploadSuccess: "Document succesvol geüpload",
+        documentUploadError: "Document uploaden mislukt"
+      },
+
+      // Upload document bedrag dialoog
+      uploadAmountDialog: {
+        title: "Documentbedrag",
+        description: "Voer het bedrag in voor het document {{name}}.",
+        amountLabel: "Bedrag",
+        placeholder: "0,00",
+        cancel: "Annuleren",
+        submit: "Document verzenden",
+        submitting: "Verzenden...",
+        invalidAmount: "Voer een geldig bedrag in voor het document."
       }
     },
     
@@ -1985,12 +2203,18 @@ export const projectTranslations = {
       inReview: "In Beoordeling",
       onHold: "In Wacht",
       expired: "Verlopen",
+      overdue: "Achterstallig",
       concluded: "Afgerond",
+      openRequest: "Open Aanvraag",
+      submitRequest: "Aanvraag Indienen",
+      adjustmentsNeeded: "Aanpassingen Nodig",
+      pendingReceipt: "Ontvangstbewijs Vereist",
+      waitingRefund: "Wachten op Terugbetaling",
+      pending: "In Behandeling",
       // Expired modal
       expiredModalTitle: "Project Verlopen",
       expiredModalDescription: "Dit project heeft de einddatum overschreden. Verleng de datum of sluit het project af.",
       extendDate: "Einddatum Verlengen",
-      concludeProject: "Project Afsluiten",
       // Status validation errors
       cannotSetExpired: "Kan project niet als verlopen markeren vóór einddatum",
       cannotSetConcluded: "Kan project niet afsluiten: alle activiteiten, documenten en subsidies moeten eerst voltooid zijn",
@@ -1999,14 +2223,130 @@ export const projectTranslations = {
       statusUpdateError: "Statusupdatefout",
       cannotModifyConcluded: "Kan een afgerond project niet wijzigen",
       incompleteActivities: "Alle activiteiten moeten voltooid zijn voordat het project kan worden afgerond",
+      cannotGoBackToDraft: "Projecten die de fase Open Aanvraag zijn gepasseerd, kunnen niet meer terugkeren naar Concept",
       unvalidatedDocuments: "Alle documenten moeten gevalideerd zijn voordat het project kan worden afgerond",
       openSubsidies: "Alle subsidies moeten afgesloten zijn voordat het project kan worden afgerond",
       statusUpdated: "Status succesvol bijgewerkt",
+      approveProject: "Project Goedkeuren",
+      requestAdjustments: "Aanpassing Nodig",
+      // ── Afsluiten ──
+      concludeProject: "Project Afsluiten",
+      concludeWarning: "Deze actie is onomkeerbaar. Zodra afgesloten wordt het project permanent vergrendeld en zijn geen verdere updates mogelijk.",
+      concludeCheckbox: "Ik begrijp dat dit project permanent wordt afgesloten en niet meer kan worden heropend of gewijzigd.",
+      concludeConfirm: "Bevestigen & Afsluiten",
+      // ── Herinnering sturen (WAITING_REFUND) ──
+      sendReminder: "Herinnering Sturen",
+      reminderMessage: "\uD83D\uDD14 Herinnering: {{coOwner}}, dien de openstaande terugbetalingsdocumenten in zodat dit project kan worden afgesloten.",
+      reminderSent: "Herinnering verstuurd aan het team",
+      reminderError: "Versturen van herinnering mislukt",
+      // ── Deadline verlengen (OVERDUE) ──
+      extendDeadline: "Verleng +7 dagen",
+      deadlineExtended: "Deadline verlengd met 7 dagen",
+      deadlineExtendedMsg: "\uD83D\uDCC5 Deadline verlengd met 7 dagen. Nieuwe einddatum: {{date}}.",
+      deadlineExtendError: "Verlengen van deadline mislukt",
+      // ── Ontbrekende bonnen (PENDING_RECEIPT) ──
+      mentionMissingReceipts: "Ontbrekende Bonnen Vermelden",
+      allActivitiesPending: "Alle activiteiten wachten op bonnen.",
+      missingReceiptsMessage: "\u26A0\uFE0F De volgende activiteiten missen nog bonnen:\n{{activities}}\n\nUpload de vereiste documenten om verder te gaan.",
+      receiptMentionSent: "Ontbrekende bonnen vermeld in geschiedenis",
+      receiptMentionError: "Plaatsen van bericht mislukt",
+    },
+    statusTransitions: {
+      modalTitle: "Statuswijziging Bevestigen",
+      confirmCheckbox: "Ik begrijp de gevolgen en wil doorgaan met deze wijziging",
+      cancel: "Annuleren",
+      confirm: "Wijziging Bevestigen",
+      from: "Van",
+      to: "Naar",
+      transitions: {
+        IN_PROGRESS: {
+          title: "Project Goedkeuren",
+          description: "Dit project wordt officieel goedgekeurd en overgezet naar actieve uitvoering.",
+          consequence: "Het totale aangevraagde subsidiebedrag wordt gereserveerd uit het jaarlijkse budget van de afdeling, wat direct zichtbaar is in de financiële rapporten.",
+          warning: "De budgetreservering wordt onmiddellijk toegepast en kan niet worden teruggedraaid zonder het project af te ronden of te annuleren.",
+        },
+        CONCLUDED: {
+          title: "Project Afsluiten",
+          description: "Dit project wordt permanent afgesloten. Alle openstaande activiteiten worden automatisch ingesteld op VOLTOOID.",
+          consequence: "Alle gekoppelde activiteiten worden automatisch voltooid. Alle subsidieaanvragen moeten zijn afgesloten voordat deze actie is toegestaan.",
+          warning: "Deze actie is onomkeerbaar. Zodra afgesloten zijn het project en alle activiteiten permanent vergrendeld en kunnen niet meer worden gewijzigd.",
+        },
+        OPEN_REQUEST: {
+          title: "Indienen ter Beoordeling",
+          description: "Dit project wordt ingediend bij de instelling voor officiële beoordeling.",
+          consequence: "Verantwoordelijke beoordelaars worden op de hoogte gesteld en zullen de projectdetails en het budget evalueren.",
+          warning: "Zorg ervoor dat alle projectinformatie volledig en nauwkeurig is vóór het indienen.",
+        },
+        ADJUSTMENTS_NEEDED: {
+          title: "Aanpassingen Aanvragen",
+          description: "Het project wordt teruggestuurd naar de eigenaar met een verzoek om wijzigingen.",
+          consequence: "De projecteigenaar wordt op de hoogte gesteld om de nodige aanpassingen te controleren en door te voeren.",
+          warning: "Het project zal het werkproces niet hervatten totdat de vereiste wijzigingen zijn aangebracht en opnieuw zijn ingediend.",
+        },
+        IN_REVIEW: {
+          title: "Naar Beoordeling",
+          description: "Het project gaat de formele beoordelingsfase in.",
+          consequence: "Beoordelaars beoordelen het projectbudget, de activiteiten en de documentatie vóór goedkeuring.",
+          warning: "Er kunnen geen verdere wijzigingen worden aangebracht aan het project terwijl het wordt beoordeeld.",
+        },
+        PENDING_RECEIPT: {
+          title: "Wachten op Bonnen",
+          description: "Dit project wordt gemarkeerd als afwachtend op de indiening van bonnen en documentatie.",
+          consequence: "De projecteigenaar moet alle bonnen en ondersteunende documenten binnen de vereiste periode uploaden.",
+          warning: "Het niet tijdig indienen van bonnen kan leiden tot procedures voor subsidie-terugvordering.",
+        },
+        WAITING_REFUND: {
+          title: "Wachten op Terugbetaling",
+          description: "Dit project wordt gemarkeerd als wachtend op de verwerking en indiening van de terugbetaling.",
+          consequence: "De verantwoordelijke partij moet het terugbetalingsbedrag en de vereiste documentatie indienen om dit project af te sluiten.",
+          warning: "Het project zal niet vorderen totdat de terugbetaling is verwerkt en bevestigd.",
+        },
+      },
+      justificationLabel: "Motivering",
+      justificationPlaceholder: "Beschrijf wat er aangepast moet worden\u2026",
+      justificationHint: "Dit bericht wordt gelogd in de projectgeschiedenis en getoond als bannerwaarschuwing aan de projecteigenaar.",
+      pendingReceiptActivitiesLabel: "Activiteiten met openstaande bonnen",
+      pendingReceiptActivitiesPlaceholder: "Typ @ om activiteiten met openstaande bonnen te vermelden\u2026",
+      pendingReceiptActivitiesHint: "Gebruik @ om specifieke activiteiten te vermelden. Dit wordt geregistreerd in de projectgeschiedenis.",
+      refundAmountLabel: "Te restitueren bedrag",
+      refundAmountPlaceholder: "0.00",
+      refundAmountHint: "Voer het te retourneren bedrag in. Dit wordt vastgelegd in de projectgeschiedenis.",
+      selectSubsidy: "Subsidieaanvraag",
+      selectSubsidyPlaceholder: "Selecteer een subsidieaanvraag\u2026",
+      refundAmount: "Terugbetalingsbedrag",
+      refundReason: "Reden",
+      refundReasonPlaceholder: "Beschrijf de reden voor de terugbetalingsaanvraag\u2026",
+      confirmRefund: "Terugbetaling Aanvragen",
+      noSubsidiesFound: "Geen subsidieaanvragen gevonden voor dit project. Voeg er een toe voordat u een terugbetaling aanvraagt.",
+      noSubsidiesError: "Dit project heeft geen subsidieaanvragen. Voeg er een toe voordat u terugbetaling aanvraagt.",
+      amountExceedsMax: "Bedrag mag het subsidiebudget niet overschrijden",
+      loadingSubsidies: "Subsidieaanvragen laden\u2026",
+    },
+    adjustments: {
+      bannerTitle: "Aanpassing Vereist",
+      markResolved: "Markeer als Opgelost",
+      requestedBy: "Aangevraagd door",
+      multipleAdjustments: "{{count}} aanpassingen vereist",
+    },
+    receiptStatusBanner: {
+      pendingReceipt: {
+        title: "Bonnen Vereist",
+        description: "Activiteiten wachten op het uploaden van bonnen voordat dit project verder kan. Open elke activiteit en upload de vereiste bonnen.",
+        actionNote: "In deze status zijn alleen bonnen uploaden toegestaan. Activiteiten toevoegen, het project bewerken en subsidieverzoeken aanmaken zijn tijdelijk uitgeschakeld.",
+      },
+      waitingRefund: {
+        title: "Terugbetaling Vereist",
+        description: "Dit project wacht op het indienen van terugbetalingsdocumentatie. Zorg ervoor dat het terugbetaalde bedrag wordt verwerkt en gedocumenteerd.",
+        actionNote: "In deze status zijn alleen bonnen uploaden toegestaan. Activiteiten toevoegen, het project bewerken en subsidieverzoeken aanmaken zijn tijdelijk uitgeschakeld.",
+      },
+      whatYouCanDo: "Wat u nu kunt doen:",
+      uploadReceiptsForActivities: "Upload bonnen voor elke activiteit",
+      viewEditActivity: "Activiteitsdetails bekijken en bewerken",
     },
     
     // Project types
     public: "Openbaar",
-    private: "Privé",
+    private: "Priv\u00e9",
     
     // Actions
     newProject: "Nieuw Project",
@@ -2172,6 +2512,29 @@ export const projectTranslations = {
       noPermission: "U heeft geen toestemming om projecten te maken.",
       contactAdmin: "Neem contact op met uw beheerder om toegang aan te vragen.",
       goBack: "Ga Terug"
+    },
+
+    // User List Modal
+    userListModal: {
+      title: "Projectleden",
+      description: "Alle leden die betrokken zijn bij dit project",
+      ownerBadge: "Eigenaar",
+      coOwnerBadge: "Mede-eigenaar",
+      noUsers: "Geen leden in dit project",
+    },
+
+    // Open Request Overlay
+    openRequestOverlay: {
+      title: "Open Aanvraag",
+      description: "Dit project is ingediend voor beoordeling door de instelling. Inhoud is beschikbaar zodra de evaluatie is voltooid.",
+      projectLabel: "Project",
+      departmentLabel: "Afdeling",
+      reviewerLabel: "Ingediend door",
+      viewContact: "Contact Bekijken",
+      backToProjects: "Terug naar Projecten",
+      statusBadge: "In beoordeling door instelling",
+      budgetLabel: "Budget",
+      subsidizedBudgetLabel: "Subsidieaanvraag",
     },
   },
   
@@ -2375,7 +2738,9 @@ export const projectTranslations = {
       previous: "Anterior",
       next: "Próximo",
       noResults: "Nenhum resultado encontrado",
-      openMenu: "Abrir menu"
+      openMenu: "Abrir menu",
+      quickView: "Visualização Rápida",
+      noActivities: "Nenhuma atividade cadastrada",
     },
     
     // Modal
@@ -2719,6 +3084,10 @@ export const projectTranslations = {
       reasonRejection: "Motivo da Rejeição",
       documentValidated: "Documento validado com sucesso",
       documentRejected: "Documento rejeitado",
+      documentUploaded: "Documento Enviado",
+      documentApproved: "Documento Aprovado",
+      documentComment: "Comentário",
+      statusUpdate: "Atualização de Status",
       addRejectionReason: "Adicione um motivo para a rejeição",
       messageSent: "Mensagem enviada",
       commentDeleted: "Comentário deletado",
@@ -2731,7 +3100,8 @@ export const projectTranslations = {
         requester: "Solicitante",
         projectOwner: "Proprietário do Projeto",
         departmentLeader: "Líder do Departamento",
-        financeManager: "Gerente Financeiro"
+        financeManager: "Gerente Financeiro",
+        coOwner: "Co-responsável"
       },
       // Delete Subsidy Request Modal
       deleteRequest: {
@@ -2814,7 +3184,13 @@ export const projectTranslations = {
         rejectionReasonRequired: "Por favor, forneça um motivo para a rejeição",
         onlyFinancialCanClose: "Apenas usuários com a função de Gerente Financeiro podem fechar solicitações de subsídio",
         statusUpdateFailed: "Falha ao atualizar o status do subsídio. Por favor, tente novamente.",
-        cannotSendMessageAfterError: "Não é possível enviar mensagem enquanto a atualização do status falhou. Por favor, corrija o status primeiro."
+        cannotSendMessageAfterError: "Não é possível enviar mensagem enquanto a atualização de status falhou. Corrija o status primeiro.",
+        invalidTransitionToAdvancedClosed: "Apenas subsídios APROVADOS podem ir para Adiantamento Encerrado.",
+        invalidTransitionFromAdvancedClosed: "Adiantamento Encerrado só pode ir para Encerrado ou Aguardando Documentos.",
+        advanceRequestOnly: "Esta transição de status só é permitida para solicitações de subsídio do tipo adiantamento.",
+        invalidTransitionToWaitingDocuments: "Apenas subsídios APROVADOS ou ADIANTAMENTO_ENCERRADO podem ir para Aguardando Documentos.",
+        invalidTransitionFromWaitingDocuments: "Aguardando Documentos só pode ir para Encerrado ou Aguardando Reembolso.",
+        cannotSendMessageAfterError: "Não é possível enviar mensagem enquanto a atualização de status falhou. Corrija o status primeiro."
       },
       
       // Mensagens de sucesso
@@ -2882,6 +3258,7 @@ export const projectTranslations = {
       
       // Tipos de mensagens no histórico
       messageTypes: {
+        documentUploaded: "Documento Enviado",
         documentApproved: "Documento aprovado",
         documentRejected: "Documento rejeitado",
         documentComment: "Comentário sobre documento",
@@ -2924,6 +3301,35 @@ export const projectTranslations = {
         documentValidationInfo: "Apenas o líder do departamento pode validar ou rejeitar documentos. Você pode adicionar comentários.",
         statusEditInfo: "Apenas o líder do departamento ou usuários financeiros podem alterar o status da solicitação.",
         departmentLeaderOnly: "Apenas líder do departamento pode aprovar"
+      },
+
+      // Tipo de solicitação
+      requestType: {
+        advance: "Solicitação de adiantamento",
+        withDocument: "Solicitação com documentos",
+        withoutDocument: "Solicitação sem documentos",
+        forProject: "para o projeto",
+        info: {
+          advance: "Solicitação de adiantamento — envio de documentos é opcional neste estágio.",
+          withDocument: "Esta solicitação requer documentos de atividade vinculados e validados antes da aprovação.",
+          withoutDocument: "Esta solicitação foi enviada sem documentos comprobatórios."
+        },
+        uploadDocument: "Adicionar documento",
+        uploadingDocument: "Enviando...",
+        documentUploadSuccess: "Documento enviado com sucesso",
+        documentUploadError: "Falha ao enviar documento"
+      },
+
+      // Diálogo de valor do documento
+      uploadAmountDialog: {
+        title: "Valor do documento",
+        description: "Informe o valor referente ao documento {{name}}.",
+        amountLabel: "Valor",
+        placeholder: "0,00",
+        cancel: "Cancelar",
+        submit: "Enviar documento",
+        submitting: "Enviando...",
+        invalidAmount: "Informe um valor válido para o documento."
       }
     },
 
@@ -3030,11 +3436,17 @@ export const projectTranslations = {
       inReview: "Em Revisão",
       onHold: "Em Espera",
       expired: "Expirado",
+      overdue: "Atrasado",
       concluded: "Concluído",
+      openRequest: "Solicitação Aberta",
+      submitRequest: "Enviar Solicitação",
+      adjustmentsNeeded: "Ajustes Necessários",
+      pendingReceipt: "Recibo Pendente",
+      waitingRefund: "Aguardando Reembolso",
+      pending: "Pendente",
       expiredModalTitle: "Projeto Expirado",
       expiredModalDescription: "Este projeto passou da data de término.",
       extendDate: "Estender Data de Fim",
-      concludeProject: "Concluir Projeto",
       // Status validation errors
       cannotSetExpired: "Não é possível marcar o projeto como expirado antes da data de vencimento",
       cannotSetConcluded: "Não é possível concluir o projeto: todas as atividades, documentos e subsídios devem ser concluídos primeiro",
@@ -3043,9 +3455,125 @@ export const projectTranslations = {
       statusUpdateError: "Erro ao Atualizar Status",
       cannotModifyConcluded: "Não é possível modificar um projeto concluído",
       incompleteActivities: "Todas as atividades devem ser concluídas antes de finalizar o projeto",
+      cannotGoBackToDraft: "Projetos que já passaram de Solicitação Aberta não podem retornar para Rascunho",
       unvalidatedDocuments: "Todos os documentos devem ser validados antes de finalizar o projeto",
       openSubsidies: "Todos os subsídios devem ser fechados antes de finalizar o projeto",
       statusUpdated: "Status atualizado com sucesso",
+      approveProject: "Aprovar Projeto",
+      requestAdjustments: "Ajuste Necessário",
+      // ── Concluir ──
+      concludeProject: "Concluir Projeto",
+      concludeWarning: "Esta ação é irreversível. Após concluído, o projeto será permanentemente bloqueado e nenhuma atualização será possível.",
+      concludeCheckbox: "Entendo que este projeto será permanentemente fechado e não poderá ser reaberto ou modificado.",
+      concludeConfirm: "Confirmar e Concluir",
+      // ── Enviar lembrete (WAITING_REFUND) ──
+      sendReminder: "Enviar Lembrete",
+      reminderMessage: "\uD83D\uDD14 Lembrete: {{coOwner}}, por favor envie os documentos de reembolso pendentes para que este projeto possa ser concluído.",
+      reminderSent: "Lembrete enviado para a equipe",
+      reminderError: "Falha ao enviar lembrete",
+      // ── Estender prazo (OVERDUE) ──
+      extendDeadline: "Estender +7 dias",
+      deadlineExtended: "Prazo estendido por 7 dias",
+      deadlineExtendedMsg: "\uD83D\uDCC5 Prazo estendido por 7 dias. Nova data de término: {{date}}.",
+      deadlineExtendError: "Falha ao estender o prazo",
+      // ── Recibos faltando (PENDING_RECEIPT) ──
+      mentionMissingReceipts: "Mencionar Recibos Faltando",
+      allActivitiesPending: "Todas as atividades aguardam recibos.",
+      missingReceiptsMessage: "\u26A0\uFE0F As seguintes atividades ainda estão sem recibos:\n{{activities}}\n\nPor favor, envie os documentos necessários para prosseguir.",
+      receiptMentionSent: "Recibos faltando mencionados no histórico",
+      receiptMentionError: "Falha ao publicar mensagem",
+    },
+    statusTransitions: {
+      modalTitle: "Confirmar Mudança de Status",
+      confirmCheckbox: "Entendo as implicações e desejo prosseguir com esta mudança",
+      cancel: "Cancelar",
+      confirm: "Confirmar Mudança",
+      from: "De",
+      to: "Para",
+      transitions: {
+        IN_PROGRESS: {
+          title: "Aprovando o Projeto",
+          description: "Este projeto será oficialmente aprovado e movido para execução ativa.",
+          consequence: "O valor total de subsídio solicitado será reservado do orçamento anual do departamento, refletindo imediatamente nos relatórios financeiros.",
+          warning: "A reserva de orçamento é aplicada imediatamente e não pode ser revertida sem concluir ou cancelar o projeto.",
+        },
+        CONCLUDED: {
+          title: "Concluindo o Projeto",
+          description: "Este projeto será encerrado permanentemente. Todas as atividades pendentes serão automaticamente definidas como CONCLUÍDAS.",
+          consequence: "Todas as atividades serão automaticamente concluídas. Todas as solicitações de subsídio precisam estar encerradas antes de prosseguir.",
+          warning: "Esta ação é irreversível. Uma vez concluído, o projeto e todas as suas atividades ficam permanentemente bloqueados e não podem ser modificados.",
+        },
+        OPEN_REQUEST: {
+          title: "Enviando para Análise",
+          description: "Este projeto será enviado à instituição para análise oficial.",
+          consequence: "Os revisores responsáveis serão notificados e avaliarão os detalhes e o orçamento do projeto.",
+          warning: "Certifique-se de que todas as informações do projeto estão completas e corretas antes de enviar.",
+        },
+        ADJUSTMENTS_NEEDED: {
+          title: "Solicitando Ajustes",
+          description: "O projeto será devolvido ao responsável indicando que alterações são necessárias.",
+          consequence: "O responsável pelo projeto será notificado para revisar e realizar os ajustes necessários.",
+          warning: "O projeto não avançará no fluxo até que as alterações exigidas sejam feitas e reenviadas.",
+        },
+        IN_REVIEW: {
+          title: "Movendo para Análise",
+          description: "O projeto entrará na etapa formal de análise.",
+          consequence: "Os revisores avaliarão o orçamento, as atividades e a documentação do projeto antes da aprovação.",
+          warning: "Nenhuma edição adicional poderá ser feita no projeto enquanto estiver em análise.",
+        },
+        PENDING_RECEIPT: {
+          title: "Aguardando Comprovantes",
+          description: "Este projeto será marcado como pendente de envio de comprovantes e documentação.",
+          consequence: "O responsável pelo projeto deve enviar todos os comprovantes e documentos de suporte dentro do prazo exigido.",
+          warning: "O não envio de comprovantes dentro do prazo pode resultar em procedimentos de recuperação de subsídio.",
+        },
+        WAITING_REFUND: {
+          title: "Aguardando Reembolso",
+          description: "Este projeto será marcado como aguardando o processamento e envio do reembolso.",
+          consequence: "O responsável deve enviar o valor do reembolso e a documentação necessária para encerrar este projeto.",
+          warning: "O projeto não avançará até que o reembolso seja processado e confirmado.",
+        },
+      },
+      justificationLabel: "Justificativa",
+      justificationPlaceholder: "Descreva o que precisa ser ajustado…",
+      justificationHint: "Esta mensagem será registrada no histórico do projeto e exibida como notificação ao responsável pelo projeto.",
+      pendingReceiptActivitiesLabel: "Atividades com comprovantes pendentes",
+      pendingReceiptActivitiesPlaceholder: "Digite @ para mencionar atividades com comprovantes pendentes…",
+      pendingReceiptActivitiesHint: "Use @ para mencionar atividades específicas. Isso será registrado no histórico do projeto.",
+      refundAmountLabel: "Valor a ser reembolsado",
+      refundAmountPlaceholder: "0.00",
+      refundAmountHint: "Informe o valor a ser devolvido. Isso será registrado no histórico do projeto.",
+      selectSubsidy: "Solicitação de Subsídio",
+      selectSubsidyPlaceholder: "Selecione uma solicitação de subsídio\u2026",
+      refundAmount: "Valor do Reembolso",
+      refundReason: "Motivo",
+      refundReasonPlaceholder: "Descreva o motivo da solicitação de reembolso\u2026",
+      confirmRefund: "Solicitar Reembolso",
+      noSubsidiesFound: "Nenhuma solicitação de subsídio encontrada para este projeto. Adicione uma antes de solicitar o reembolso.",
+      noSubsidiesError: "Este projeto não possui solicitações de subsídio. Adicione uma antes de solicitar reembolso.",
+      amountExceedsMax: "O valor não pode exceder o orçamento do subsídio",
+      loadingSubsidies: "Carregando solicitações de subsídio\u2026",
+    },
+    adjustments: {
+      bannerTitle: "Ajuste Necessário",
+      markResolved: "Marcar como Resolvido",
+      requestedBy: "Solicitado por",
+      multipleAdjustments: "{{count}} ajustes necessários",
+    },
+    receiptStatusBanner: {
+      pendingReceipt: {
+        title: "Recibos Necessários",
+        description: "As atividades aguardam o envio de recibos antes que o projeto possa avançar. Abra cada atividade e envie os recibos necessários.",
+        actionNote: "Apenas o envio de recibos é permitido neste status. Adicionar atividades, editar o projeto e criar solicitações de subsídio estão temporariamente desativados.",
+      },
+      waitingRefund: {
+        title: "Reembolso Pendente",
+        description: "Este projeto aguarda o envio da documentação de reembolso. Certifique-se de processar e documentar o valor a ser reembolsado.",
+        actionNote: "Apenas o envio de recibos é permitido neste status. Adicionar atividades, editar o projeto e criar solicitações de subsídio estão temporariamente desativados.",
+      },
+      whatYouCanDo: "O que você pode fazer agora:",
+      uploadReceiptsForActivities: "Enviar recibos para cada atividade",
+      viewEditActivity: "Visualizar e editar detalhes da atividade",
     },
     
     // Project types
@@ -3213,6 +3741,29 @@ export const projectTranslations = {
     
     navigation: {
       openingProject: "Abrindo {{title}}"
-    }
+    },
+
+    // User List Modal
+    userListModal: {
+      title: "Membros do Projeto",
+      description: "Todos os membros envolvidos neste projeto",
+      ownerBadge: "Responsável",
+      coOwnerBadge: "Co-Responsável",
+      noUsers: "Nenhum membro neste projeto",
+    },
+
+    // Open Request Overlay
+    openRequestOverlay: {
+      title: "Solicitação Aberta",
+      description: "Este projeto foi submetido para revisão pela instituição. O conteúdo ficará disponível após a conclusão da avaliação.",
+      projectLabel: "Projeto",
+      departmentLabel: "Departamento",
+      reviewerLabel: "Enviado por",
+      viewContact: "Ver Contato",
+      backToProjects: "Voltar aos Projetos",
+      statusBadge: "Em revisão pela instituição",
+      budgetLabel: "Orçamento",
+      subsidizedBudgetLabel: "Pedido de Subsídio",
+    },
   }
 }

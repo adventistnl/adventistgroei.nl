@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { SubsidyRequestCreateDto, LanguagePreference, ActivityStatus, ActivityPriority } from "./globalTypes";
+import { SubsidyRequestCreateDto, LanguagePreference, SubsidyRequestType, ActivityStatus, ActivityPriority } from "./globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: CreateSubsidyRequest
@@ -75,6 +75,9 @@ export interface CreateSubsidyRequest_createSubsidyRequest {
   department_id: string;
   church_id: string | null;
   project_id: string;
+  request_type: SubsidyRequestType;
+  is_for_advance: boolean;
+  advance_amount: any | null;
   refund_amount: any;
   have_refund: boolean;
   refund_done: boolean;

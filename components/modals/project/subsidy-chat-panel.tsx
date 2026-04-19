@@ -12,7 +12,8 @@ import {
   X, 
   Send, 
   Pencil, 
-  Ban 
+  Ban,
+  UploadCloud
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -59,6 +60,8 @@ interface StatusConfig {
 interface SubsidyChatPanelProps {
   // Visibilidade
   isSidebarOpen: boolean
+  isMobileChatOpen: boolean
+  onMobileChatClose: () => void
   
   // Tradução
   t: (key: string, params?: any) => string
@@ -118,6 +121,8 @@ interface SubsidyChatPanelProps {
 
 export function SubsidyChatPanel({
   isSidebarOpen,
+  isMobileChatOpen,
+  onMobileChatClose,
   t,
   newMessagesCount,
   filteredMessages,
@@ -144,32 +149,39 @@ export function SubsidyChatPanel({
   user,
   handleSendMessage
 }: SubsidyChatPanelProps) {
-  return (
-    <div className={cn(
-      "border-l border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/30 transition-all duration-300 flex",
-      isSidebarOpen ? "w-96" : "w-0"
-    )}>
-      {isSidebarOpen && (
-        <div className="w-96 flex flex-col h-full">
-          {/* Sidebar Header */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MessageCircle className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {t('subsidy.history')}
-                </h3>
-                {newMessagesCount > 0 && (
-                  <Badge variant="default" className="h-5 min-w-5 flex items-center justify-center text-[10px] bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900">
-                    {newMessagesCount}
-                  </Badge>
-                )}
-              </div>
-            </div>
+  // Inner content shared between desktop panel and mobile sheet
+  const chatInnerContent = (
+    <div className="flex flex-col h-full w-full min-h-0">
+      {/* Panel Header */}
+      <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+              {t('subsidy.history')}
+            </h3>
+            {newMessagesCount > 0 && (
+              <Badge variant="default" className="h-5 min-w-5 flex items-center justify-center text-[10px] bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900">
+                {newMessagesCount}
+              </Badge>
+            )}
           </div>
+          {/* Close button – visible only in mobile sheet */}
+          {isMobileChatOpen && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              onClick={onMobileChatClose}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+      </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {filteredMessages.map((item, index) => {
               // Check if this message is related to an activity
               const relatedActivity = activities.find(act => 
@@ -180,9 +192,21 @@ export function SubsidyChatPanel({
                 !filteredMessages[index - 1]?.reason.toLowerCase().includes(relatedActivity.name.toLowerCase())
               )
 
-              // Determinar tipo de mensagem e ícone apropriado usando o campo type
-              const isDocumentValidation = item.type === 'DOCUMENT_ACTION' && item.status !== 'rejected'
-              const isDocumentRejection = item.type === 'DOCUMENT_ACTION' && item.status === 'rejected'
+              // Determinar tipo de mensagem e ícone — para DOCUMENT_ACTION, usar o campo `reason`
+              // pois `item.status` reflete o status do SUBSÍDIO, não do documento.
+              const reasonLower = item.reason?.toLowerCase() || ''
+              const isDocumentRejection = item.type === 'DOCUMENT_ACTION' && (
+                reasonLower.includes('rejected') ||
+                reasonLower.includes('rejeitado') ||
+                reasonLower.includes('afgewezen')
+              )
+              const isDocumentValidation = item.type === 'DOCUMENT_ACTION' && !isDocumentRejection && (
+                reasonLower.includes('validated') ||
+                reasonLower.includes('approved') ||
+                reasonLower.includes('validado') ||
+                reasonLower.includes('goedgekeurd')
+              )
+              const isDocumentUpload = item.type === 'DOCUMENT_ACTION' && !isDocumentRejection && !isDocumentValidation
               const isDocumentComment = item.type === 'COMMENT'
               const isStatusChange = item.type === 'STATUS_CHANGE' || item.type === 'PRIORITY_CHANGE' || (!item.type)
               
@@ -191,6 +215,9 @@ export function SubsidyChatPanel({
               
               if (isDocumentValidation) {
                 MessageIcon = CheckCircle2
+                iconColor = "text-gray-600 dark:text-gray-400"
+              } else if (isDocumentUpload) {
+                MessageIcon = UploadCloud
                 iconColor = "text-gray-600 dark:text-gray-400"
               } else if (isDocumentRejection) {
                 MessageIcon = XCircle
@@ -232,7 +259,7 @@ export function SubsidyChatPanel({
                       </div>
                       
                       <div className={cn(
-                        "flex-1 pb-3 max-w-[75%]",
+                        "flex-1 min-w-0 pb-3 max-w-[75%]",
                         canEdit && "flex flex-col items-end"
                       )}>
                         <div className={cn(
@@ -248,6 +275,7 @@ export function SubsidyChatPanel({
                                 ? "text-gray-300 dark:text-gray-600" 
                                 : "text-gray-600 dark:text-gray-400"
                             )}>
+                              {isDocumentUpload && t('subsidy.documentUploaded')}
                               {isDocumentValidation && t('subsidy.documentApproved')}
                               {isDocumentRejection && t('subsidy.documentRejected')}
                               {isDocumentComment && t('subsidy.documentComment')}
@@ -261,7 +289,7 @@ export function SubsidyChatPanel({
                           </div>
                           
                           <p className={cn(
-                            "text-xs mb-0 leading-relaxed",
+                            "text-xs mb-0 leading-relaxed break-words overflow-wrap-anywhere",
                             canEdit 
                               ? "text-white dark:text-gray-900" 
                               : "text-gray-700 dark:text-gray-300"
@@ -449,8 +477,37 @@ export function SubsidyChatPanel({
               </Button>
             </div>
           </div>
+    </div>
+  )
+
+  return (
+    <>
+      {/* ── Desktop side panel (lg+) ──────────────────────────────────── */}
+      <div className={cn(
+        "hidden lg:flex flex-col border-l border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/30 transition-all duration-300 overflow-hidden",
+        isSidebarOpen ? "w-80 xl:w-96 min-w-[280px]" : "w-0 border-l-0"
+      )}>
+        {isSidebarOpen && chatInnerContent}
+      </div>
+
+      {/* ── Mobile bottom sheet (< lg) ────────────────────────────────── */}
+      {isMobileChatOpen && (
+        <div className="lg:hidden fixed inset-0 z-[150] flex flex-col justify-end">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={onMobileChatClose}
+          />
+          {/* Sheet */}
+          <div className="relative bg-white dark:bg-gray-900 rounded-t-2xl h-[80dvh] flex flex-col shadow-2xl border-t border-gray-200 dark:border-gray-800 animate-in slide-in-from-bottom duration-300">
+            {/* Drag handle */}
+            <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+              <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+            </div>
+            {chatInnerContent}
+          </div>
         </div>
       )}
-    </div>
+    </>
   )
 }

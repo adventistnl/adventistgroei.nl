@@ -117,7 +117,50 @@ interface ProjectModalsWrapperProps {
 
 const ModalFallback = () => <div className="fixed inset-0 bg-black/20 z-50" />
 
+// ─── Helper ────────────────────────────────────────────────────────────────────
+
+function findAnnualBudget(
+  annualBudgets: Array<{ year: number; allocated_amount: string; total_expenses: string }> | undefined,
+  year: number,
+) {
+  return annualBudgets?.find(b => b.year === year) ?? null
+}
+
+// ─── Component ─────────────────────────────────────────────────────────────────
+
 export function ProjectModalsWrapper(props: ProjectModalsWrapperProps) {
+  // ── Derived values for RequestSubsidyModal ─────────────────────────────────
+  const _proj        = props.projectData?.project
+  const _currentYear = new Date().getFullYear()
+
+  // IDs
+  const rsm_institutionId = _proj?.institution_id || props.currentInstitutionData?.id || ""
+  const rsm_departmentId  = _proj?.department_id  || _proj?.department?.id
+                          || _proj?.church_department_id || _proj?.church_department?.id || ""
+  const rsm_churchId      = _proj?.church_id || _proj?.Church?.id || _proj?.department?.church?.id || ""
+  const rsm_churchDeptId  = _proj?.church_department?.id || _proj?.church_department_id || ""
+
+  // Display names
+  const rsm_institutionName = _proj?.Institution?.name || props.currentInstitutionData?.name || ""
+  const rsm_departmentName  = _proj?.department?.name  || _proj?.church_department?.name  || ""
+  const rsm_churchName      = _proj?.church?.name  || _proj?.Church?.name  || _proj?.department?.church?.name || ""
+  const rsm_churchDeptName  = _proj?.church_department?.name || ""
+
+  // Department annual budget (institutional projects; parsed — GraphQL returns strings)
+  const rsm_annualBudget   = findAnnualBudget(_proj?.department?.annual_budgets, _currentYear)
+  const rsm_deptAllocated  = parseFloat(rsm_annualBudget?.allocated_amount ?? "0")
+  const rsm_deptUsed       = parseFloat(rsm_annualBudget?.total_expenses   ?? "0")
+  const rsm_deptBudgetYear = rsm_annualBudget ? _currentYear : undefined
+
+  // Available subsidy balance (excludes rejected requests & the item being edited)
+  const rsm_subsidizedBudget = _proj?.kpis?.subsidizedBudget || Number(_proj?.subsidized_budget || 0)
+  const rsm_totalRequested   = props.subsidyRequests?.reduce((sum, req) => {
+    if (req.status === "rejected") return sum
+    if (props.requestSubsidyMode === "edit" && req.id === props.selectedSubsidyCard?.id) return sum
+    return sum + req.requested_amount
+  }, 0) ?? 0
+  const rsm_availableBudget  = Math.max(0, rsm_subsidizedBudget - rsm_totalRequested)
+
   return (
     <>
       {/* Edit Project Modal */}
@@ -222,53 +265,34 @@ export function ProjectModalsWrapper(props: ProjectModalsWrapperProps) {
               props.setIsRequestSubsidyModalOpen(false)
               props.setSelectedActivities([])
             }}
-            selectedActivities={props.selectedActivities}
+            // ── Identity
             projectId={props.projectId}
-            institutionId={props.projectData?.project?.institution_id || props.currentInstitutionData?.id || ""}
-            departmentId={props.projectData?.project?.department_id}
-            institutionName={props.projectData?.project?.Institution?.name}
-            departmentName={props.projectData?.project?.department?.name}
-            churchId={props.projectData?.project?.Church?.id || props.projectData?.project?.department?.church?.id}
-            churchName={props.projectData?.project?.Church?.name || props.projectData?.project?.department?.church?.name}
-            churchDepartmentId={(() => {
-              const churchDeptId = props.projectData?.project?.church_department?.id || props.projectData?.project?.church_department_id || ""
-              console.log('🔍 [ProjectModalsWrapper] Church Department ID Debug:', {
-                fromChurchDepartmentObject: props.projectData?.project?.church_department?.id,
-                fromChurchDepartmentId: props.projectData?.project?.church_department_id,
-                finalValue: churchDeptId,
-                fullChurchDepartment: props.projectData?.project?.church_department,
-                projectData: props.projectData?.project
-              })
-              return churchDeptId
-            })()}
-            churchDepartmentName={props.projectData?.project?.church_department?.name || ""}
-            onSubmit={props.handleSubsidyRequestSubmit}
+            institutionId={rsm_institutionId}
+            departmentId={rsm_departmentId}
+            churchId={rsm_churchId}
+            churchDepartmentId={rsm_churchDeptId}
+            // ── Display names
+            institutionName={rsm_institutionName}
+            departmentName={rsm_departmentName}
+            churchName={rsm_churchName}
+            churchDepartmentName={rsm_churchDeptName}
+            // ── Department annual budget
+            departmentAllocatedBudget={rsm_deptAllocated}
+            departmentBudgetUsed={rsm_deptUsed}
+            departmentBudgetYear={rsm_deptBudgetYear}
+            // ── Activities & subsidies
+            selectedActivities={props.selectedActivities}
             allActivities={props.allProjectActivities}
             subsidizedActivityIds={props.subsidizedActivityIds}
+            subsidizedBudget={rsm_subsidizedBudget}
+            availableBudget={rsm_availableBudget}
+            totalAlreadyRequested={rsm_totalRequested}
+            // ── Modal mode
             mode={props.requestSubsidyMode}
             initialData={props.editSubsidyInitialData}
             subsidyRequestId={props.requestSubsidyMode === "edit" ? props.selectedSubsidyCard?.id : undefined}
-            availableBudget={(() => {
-              const totalBudget = props.allProjectActivities.reduce((sum, act) => sum + act.budget_amount, 0)
-              const subsidizedBudget = props.projectData?.project?.kpis?.subsidizedBudget || 0
-              const totalRequested = props.subsidyRequests?.reduce((sum, req) => {
-                if (req.status === 'rejected') return sum
-                // Don't subtract current subsidy's amount if we are editing it
-                if (props.requestSubsidyMode === "edit" && req.id === props.selectedSubsidyCard?.id) return sum
-                return sum + req.requested_amount
-              }, 0) || 0
-              const available = Math.max(0, subsidizedBudget - totalRequested)
-              
-              console.log('💰 [AvailableBudget Calculation]:', {
-                totalBudget,
-                subsidizedBudget,
-                totalRequested,
-                available,
-                subsidyRequestsCount: props.subsidyRequests?.length || 0
-              })
-              
-              return available
-            })()}
+            // ── Callbacks
+            onSubmit={props.handleSubsidyRequestSubmit}
           />
         </Suspense>
       )}

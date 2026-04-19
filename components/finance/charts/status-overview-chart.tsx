@@ -46,6 +46,7 @@ interface StatusOverviewChartProps {
       closed: string
       advanced_closed: string
       waiting_refund: string
+      waiting_documents: string
     }
   }
 }
@@ -61,7 +62,8 @@ export function StatusOverviewChart({ data, loading, translations }: StatusOverv
     { status: 'Rejected', fill: '#ef4444' },
     { status: 'Closed', fill: '#059669' },
     { status: 'Advanced Closed', fill: '#7c3aed' },
-    { status: 'Waiting Refund', fill: '#f97316' }
+    { status: 'Waiting Refund', fill: '#f97316' },
+    { status: 'Waiting for Documents', fill: '#ea580c' }
   ]
 
   // Merge backend data with all statuses, ensuring all statuses appear
@@ -75,7 +77,8 @@ export function StatusOverviewChart({ data, loading, translations }: StatusOverv
         { status: 'Closed', count: 0, fill: '#059669' },
         { status: 'Rejected', count: 0, fill: '#ef4444' },
         { status: 'Advanced Closed', count: 0, fill: '#7c3aed' },
-        { status: 'Waiting Refund', count: 0, fill: '#f97316' }
+        { status: 'Waiting Refund', count: 0, fill: '#f97316' },
+        { status: 'Waiting for Documents', count: 0, fill: '#ea580c' }
       ]
     }
 
@@ -105,7 +108,8 @@ export function StatusOverviewChart({ data, loading, translations }: StatusOverv
     'Closed': CheckCircle,
     'Rejected': XCircle,
     'Advanced Closed': CheckCircle,
-    'Waiting Refund': Clock
+    'Waiting Refund': Clock,
+    'Waiting for Documents': FileText
   }
 
   // Generate chart config dynamically

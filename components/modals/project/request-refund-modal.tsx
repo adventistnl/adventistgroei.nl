@@ -98,10 +98,14 @@ export function RequestRefundModal({
     }
 
     try {
+      // Determine refund type: TOTAL if the full amount, PARTIAL otherwise
+      const refundType = amount >= currentAmount ? 'TOTAL' : 'PARTIAL'
+
       await requestRefund({
         variables: {
           id: subsidyId,
           refundAmount: amount,
+          refundType,
           reason: reason.trim(),
           language: i18n.language as LanguagePreference
         }

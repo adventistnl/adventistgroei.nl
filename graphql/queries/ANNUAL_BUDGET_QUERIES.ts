@@ -194,3 +194,26 @@ export const GET_INSTITUTIONAL_DEPARTMENTS_KPIS = gql`
     }
   }
 `;
+export const GET_LEDGER_HISTORY = gql`
+  query GetLedgerHistory($filters: LedgerHistoryFilterInput!) {
+    ledgerHistory(filters: $filters) {
+      items {
+        id
+        date
+        description
+        amount
+        type
+        category
+        entityName
+        relatedEntity
+        createdBy
+      }
+      totalCount
+      pageInfo {
+        totalPages
+        hasNextPage
+        hasPreviousPage
+      }
+    }
+  }
+`;

@@ -209,9 +209,9 @@ export default function AnnualBudgetPage() {
           id: budget.id,
           year: budget.year,
           planned_budget: parseFloat(budget.planned_budget) || 0,
-          total_expenses: parseFloat(budget.total_expenses) || 0,
+          spentAmount: parseFloat(budget.spentAmount) || 0,
           allocated_amount: parseFloat(budget.allocated_amount) || 0,
-          balance: parseFloat(budget.balance) || 0,
+          remainingAmount: parseFloat(budget.remainingAmount) || 0,
           notes: budget.notes || undefined,
           approved_by: budget.reviewed_by || undefined,
           created_at: budget.created_at,
@@ -289,8 +289,8 @@ export default function AnnualBudgetPage() {
           id: annualBudget.id,
           year: annualBudget.year,
           planned_budget: parseFloat(annualBudget.planned_budget) || 0,
-          total_expenses: parseFloat(annualBudget.total_expenses) || 0,
-          balance: parseFloat(annualBudget.balance) || 0,
+          spentAmount: parseFloat(annualBudget.spentAmount) || 0,
+          remainingAmount: parseFloat(annualBudget.remainingAmount) || 0,
           status: annualBudget.status,
           priority: annualBudget.priority,
           category: annualBudget.category,
@@ -312,11 +312,11 @@ export default function AnnualBudgetPage() {
         } : null,
         hasBudgetRecord: annualBudget?.has_budget_record || false,
         isLocked: annualBudget?.is_locked || false,
-        spentAmount: annualBudget ? parseFloat(annualBudget.total_expenses) || 0 : 0,
-        remainingAmount: annualBudget ? parseFloat(annualBudget.balance) || 0 : 0,
+        spentAmount: annualBudget ? parseFloat(annualBudget.spentAmount) || 0 : 0,
+        remainingAmount: annualBudget ? parseFloat(annualBudget.remainingAmount) || 0 : 0,
         usagePercentage: annualBudget ? 
           (parseFloat(annualBudget.planned_budget) > 0 ? 
-            Math.round(((parseFloat(annualBudget.total_expenses) || 0) / parseFloat(annualBudget.planned_budget)) * 100) 
+            Math.round(((parseFloat(annualBudget.spentAmount) || 0) / parseFloat(annualBudget.planned_budget)) * 100) 
             : 0) 
           : 0
       }
@@ -659,143 +659,8 @@ export default function AnnualBudgetPage() {
       }))
       .filter((entity: any) => entity.amount > 0)
 
-    // Função auxiliar para encontrar a data real de aprovação usando o histórico
-    const findRealApprovalDate = (subsidyId: string, subsidyApprovedAt: string | null, subsidyUpdatedAt: string) => {
-      // Primeiro, tentar usar a data approved_at se existir
-      if (subsidyApprovedAt) {
-        
-        return subsidyApprovedAt
-      }
-
-      // Se tiver histórico de status, procurar pela data de aprovação
-      if (subsidyStatusHistoryData?.getSubsidyStatusHistory) {
-        const approvalHistory = subsidyStatusHistoryData.getSubsidyStatusHistory.find((history: any) => 
-          history.subsidy_request_id === subsidyId && 
-          ['APPROVED', 'CLOSED'].includes(history.status?.name?.toUpperCase())
-        )
-        
-        if (approvalHistory) {
-          
-          return approvalHistory.changed_at
-        }
-      }
-
-      // Fallback para updated_at
-      
-      return subsidyUpdatedAt
-    }
-
-    // Função para contabilizar subsidios aprovados por mês e departamento
-    const processSubsidySpendingByMonth = () => {
-
-      
-      if (!subsidyData?.subsidyRequests) {
-        return []
-      }
-
-      const allMonths = [
-        'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-        'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
-      ]
-
-      // Inicializar estrutura para todos os meses
-      const monthlySpending = new Map()
-      allMonths.forEach((month, index) => {
-        const date = new Date(selectedYear, index, 1)
-        monthlySpending.set(month, {
-          month: month,
-          date: format(date, 'yyyy-MM-dd'),
-          departments: []
-        })
-      })
-      // Filtrar subsidios aprovados e fechados
-      const approvedSubsidies = subsidyData.subsidyRequests
-        .filter((subsidy: any) => {
-          const statusMatch = ['APPROVED', 'CLOSED'].includes(subsidy.subsidy_status?.name)
-          const hasDepartment = subsidy.department_id
-        
-          
-          return statusMatch && hasDepartment
-        })
-
-
-      const departmentConnections = new Map()
-      
-      approvedSubsidies.forEach((subsidy: any) => {
-        const deptId = subsidy.department_id
-        const deptName = subsidy.department?.name
-        
-        if (!departmentConnections.has(deptId)) {
-          departmentConnections.set(deptId, {
-            id: deptId,
-            name: deptName,
-            subsidyIds: [],
-            totalAmount: 0
-          })
-        }
-        
-        const deptData = departmentConnections.get(deptId)
-        deptData.subsidyIds.push(subsidy.id)
-        deptData.totalAmount += parseFloat(subsidy.approved_amount) || parseFloat(subsidy.total_budget) || 0
-      })
-
-
-      // Processar subsidios aprovados e fechados
-      let processedCount = 0
-      approvedSubsidies.forEach((subsidy: any) => {
-        const deptId = subsidy.department_id
-        const deptName = subsidy.department?.name || `Departamento ${deptId}`
-        
-        // Usar função auxiliar para encontrar a data real de aprovação
-        const approvalDate = findRealApprovalDate(subsidy.id, subsidy.approved_at, subsidy.updated_at)
-        const approvedAmount = parseFloat(subsidy.approved_amount) || parseFloat(subsidy.total_budget) || 0
-
-        
-        if (approvalDate && new Date(approvalDate).getFullYear() === selectedYear) {
-          const monthKey = format(new Date(approvalDate), 'MMM', { locale: ptBR })
-          // Garantir que a primeira letra seja maiúscula para corresponder à estrutura
-          const normalizedMonthKey = monthKey.charAt(0).toUpperCase() + monthKey.slice(1)
-
-          if (monthlySpending.has(normalizedMonthKey)) {
-            const monthData = monthlySpending.get(normalizedMonthKey)
-            
-            // Buscar se departamento já existe neste mês
-            let deptIndex = monthData.departments.findIndex(
-              (d: any) => d.departmentId === deptId
-            )
-            
-            if (deptIndex === -1) {
-              // Adicionar novo departamento
-              monthData.departments.push({
-                departmentId: deptId,
-                departmentName: deptName,
-                amount: approvedAmount
-              })
-
-            } else {
-              // Somar ao departamento existente
-              const oldAmount = monthData.departments[deptIndex].amount
-              monthData.departments[deptIndex].amount += approvedAmount
-
-            }
-            processedCount++
-          }
-        } 
-      })
-
-
-      // Converter para array e manter ordem dos meses
-      const result = Array.from(monthlySpending.values())
-
-      return result
-    }
-
-    const processedSpendingOverTime = processSubsidySpendingByMonth()
-    
-    // Fallback para dados originais se não houver dados de subsidy
-    const finalSpendingOverTime = processedSpendingOverTime.length > 0 
-      ? processedSpendingOverTime 
-      : (kpisData?.spendingOverTime || [])
+    // Fetch spending over time strictly from the backend Ledger GraphQL query
+    const finalSpendingOverTime = kpisData?.spendingOverTime || []
 
 
     if (!kpisData) {

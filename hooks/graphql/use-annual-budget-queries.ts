@@ -3,7 +3,8 @@ import {
   GET_ANNUAL_BUDGET_BY_ID,
   GET_AVAILABLE_YEARS,
   GET_ANNUAL_BUDGET_KPIS,
-  GET_BUDGET_DASHBOARD_DATA
+  GET_BUDGET_DASHBOARD_DATA,
+  GET_LEDGER_HISTORY
 } from "@/graphql/queries/ANNUAL_BUDGET_QUERIES";
 import {
   GetAnnualBudgetById,
@@ -52,6 +53,15 @@ export function useBudgetDashboardData(year: number, options?: useQuery.Options<
     GET_BUDGET_DASHBOARD_DATA,
     {
       variables: { year },
+      ...options
+    }
+  );
+}
+export function useLedgerHistory(filters: any, options?: any) {
+  return useQuery<any, any>(
+    GET_LEDGER_HISTORY,
+    {
+      variables: { filters },
       ...options
     }
   );

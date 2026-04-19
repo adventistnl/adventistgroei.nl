@@ -38,6 +38,7 @@ export interface CreateProject_createProject {
   language_preference: LanguagePreference;
   department_id: string;
   owner_id: string;
+  co_owner_id: string | null;
   institution_id: string | null;
   event_id: string | null;
   created_at: any;
@@ -74,4 +75,5 @@ export interface CreateProjectVariables {
   special_budget?: number | null;
   church_id?: string | null;
   church_department_id?: string | null;
+  co_owner_id?: string | null;
 }

@@ -62,7 +62,6 @@ import { GET_INSTITUTIONS_LIGHT_QUERY } from "@/graphql/queries/INSTITUTIONS_QUE
 import { GET_REGIONS_QUERY } from "@/graphql/queries/REGIONS_QUERY"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
-import { GET_ALL_USERS_QUERY } from "@/graphql/queries/GET_USER_QUERY"
 import { GET_ALL_ROLES_QUERY } from "@/graphql/queries/GET_ROLES_QUERY"
 import { YearFilter } from "@/components/shared/year-filter"
 
@@ -114,43 +113,49 @@ export default function UsersPage() {
       status: ''
     })
   }
-  
+
+  // Use institution context users — already include user_roles via InstitutionById query
+  const allUsersWithRoles: User[] = (currentInstitutionData?.users || []) as User[]
+
   // Filter users by selected year based on created_at and page filters
-  const filteredUsers = React.useMemo(() => {
-    return users.filter(user => {
-      // Year filter
-      const createdYear = new Date(user.created_at).getFullYear()
-      if (createdYear !== selectedYear) return false
-      
-      // Church filter
-      if (pageFilters.church && pageFilters.church !== '') {
-        if (!user.church || user.church.name !== pageFilters.church) return false
-      }
-      
-      // Department Type filter
-      if (pageFilters.departmentType && pageFilters.departmentType !== '') {
-        const deptInfo = getDepartmentInfo(user)
-        if (deptInfo.type !== pageFilters.departmentType) return false
-      }
-      
-      // Status filter
-      if (pageFilters.status && pageFilters.status !== '') {
-        if (pageFilters.status === 'active' && user.is_deleted) return false
-        if (pageFilters.status === 'inactive' && !user.is_deleted) return false
-      }
-      
-      return true
-    })
-  }, [users, selectedYear, pageFilters])
+  // Sorted by created_at desc so newest/last-updated users appear first
+  const filteredUsers = React.useMemo<User[]>(() => {
+    return allUsersWithRoles
+      .filter((user) => {
+        // Year filter
+        const createdYear = new Date(user.created_at).getFullYear()
+        if (createdYear !== selectedYear) return false
+
+        // Church filter
+        if (pageFilters.church && pageFilters.church !== '') {
+          if (!user.church || user.church.name !== pageFilters.church) return false
+        }
+
+        // Department Type filter
+        if (pageFilters.departmentType && pageFilters.departmentType !== '') {
+          const deptInfo = getDepartmentInfo(user)
+          if (deptInfo.type !== pageFilters.departmentType) return false
+        }
+
+        // Status filter
+        if (pageFilters.status && pageFilters.status !== '') {
+          if (pageFilters.status === 'active' && user.is_deleted) return false
+          if (pageFilters.status === 'inactive' && !user.is_deleted) return false
+        }
+
+        return true
+      })
+      .sort((a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )
+  }, [allUsersWithRoles, selectedYear, pageFilters])
+
 
     // GraphQL Queries
     const { data: institutionsData, loading: institutionsLoading, refetch: refetchInstitutions } = useQuery(GET_INSTITUTIONS_LIGHT_QUERY)
     const { data: regionsData, loading: regionsLoading, refetch: refetchRegions } = useQuery(GET_REGIONS_QUERY)
     const { data: churchesData, loading: churchesLoading, refetch: refetchChurches } = useQuery(GET_CHURCHES_QUERY)
     const { data: departmentsData, loading: departmentsLoading, refetch: refetchDepartments } = useQuery(GET_DEPARTMENTS_QUERY, {
-      variables: { institution_id: currentInstitutionData?.id }
-    })
-    const { data: usersData, loading: usersLoading, refetch: refetchUsers } = useQuery(GET_ALL_USERS_QUERY, {
       variables: { institution_id: currentInstitutionData?.id }
     })
     const { data: rolesData, loading: rolesLoading, refetch: refetchRoles } = useQuery(GET_ALL_ROLES_QUERY)
@@ -163,7 +168,7 @@ export default function UsersPage() {
   const allRegions = regionsData?.regions || []
   const allChurches = churchesData?.churches || []
   const allDepartments = departmentsData?.departments || []
-  const allUsers = usersData?.users || []
+  const allUsers = allUsersWithRoles
   const allRoles = rolesData?.roles || []
 
   usePageTitle({

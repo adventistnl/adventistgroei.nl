@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { LanguagePreference, ActivityStatus, ActivityPriority } from "./globalTypes";
+import { LanguagePreference, ActivityStatus, ActivityPriority, CollaboratorRole } from "./globalTypes";
 
 // ====================================================
 // GraphQL query operation: GetAllSubsidyRequests
@@ -88,6 +88,19 @@ export interface GetAllSubsidyRequests_subsidyRequests_receipts {
   is_validated: boolean;
 }
 
+export interface GetAllSubsidyRequests_subsidyRequests_collaborators_user {
+  __typename: "User";
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface GetAllSubsidyRequests_subsidyRequests_collaborators {
+  __typename: "ProjectCollaborator";
+  role: CollaboratorRole;
+  user: GetAllSubsidyRequests_subsidyRequests_collaborators_user;
+}
+
 export interface GetAllSubsidyRequests_subsidyRequests {
   __typename: "SubsidyRequest";
   id: string;
@@ -118,6 +131,7 @@ export interface GetAllSubsidyRequests_subsidyRequests {
   project: GetAllSubsidyRequests_subsidyRequests_project;
   items: GetAllSubsidyRequests_subsidyRequests_items[] | null;
   receipts: GetAllSubsidyRequests_subsidyRequests_receipts[] | null;
+  collaborators: GetAllSubsidyRequests_subsidyRequests_collaborators[];
 }
 
 export interface GetAllSubsidyRequests {

@@ -133,6 +133,12 @@ interface UseTableProps<TData, TValue> {
     all?: string
     clearFilters?: string
   }
+  // Server-side pagination props
+  manualPagination?: boolean
+  pageCount?: number
+  onPaginationChange?: (pagination: { pageIndex: number; pageSize: number }) => void
+  paginationState?: { pageIndex: number; pageSize: number }
+  totalCount?: number
 }
 
 export function UseTable<TData, TValue>({
@@ -156,6 +162,11 @@ export function UseTable<TData, TValue>({
   translationNamespace = "projects", // Default namespace para projetos
   fillHeight = false,
   translations,
+  manualPagination,
+  pageCount,
+  onPaginationChange,
+  paginationState,
+  totalCount,
 }: UseTableProps<TData, TValue>) {
   const { t } = useTranslation()
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -219,22 +230,21 @@ export function UseTable<TData, TValue>({
     onGlobalFilterChange: setGlobalFilter,
     globalFilterFn: "includesString",
     enableRowSelection: enableRowSelection,
+    ...(onPaginationChange && { onPaginationChange }),
+    ...(pageCount !== undefined && { pageCount }),
+    manualPagination: manualPagination,
     state: {
       sorting,
       columnFilters,
-      columnVisibility: {
-        ...columnVisibility,
-        // Ocultar colunas progressivamente em telas menores
-        // Em mobile (sm): apenas primeira coluna + select + actions
-        // Em tablet (md): primeira + segunda coluna + select + actions
-        // Em desktop (lg+): todas as colunas
-      },
+      columnVisibility,
       rowSelection,
       globalFilter,
+      ...(paginationState && { pagination: paginationState }),
     },
     initialState: {
       pagination: {
         pageSize: 10,
+        pageIndex: 0,
       },
     },
   })
@@ -394,7 +404,7 @@ export function UseTable<TData, TValue>({
                       <SelectTrigger className={`w-[120px] h-8 border-2 ${isActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}>
                         <SelectValue placeholder={filter.title} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background border shadow-md">
                         <SelectItem value="all">{translations?.all || "All"} {filter.title}</SelectItem>
                         {filter.options.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
@@ -471,8 +481,8 @@ export function UseTable<TData, TValue>({
       )}
 
       {/* Table */}
-      <Card>
-        <ScrollArea className="h-[400px] w-full">
+      <Card className={fillHeight ? "flex-1 flex flex-col overflow-hidden" : ""}>
+        <ScrollArea className={`${fillHeight ? "flex-1" : "h-[400px]"} w-full`}>
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -651,7 +661,7 @@ export function UseTable<TData, TValue>({
             <SelectTrigger className="h-8 w-[70px]">
               <SelectValue placeholder={table.getState().pagination.pageSize} />
             </SelectTrigger>
-            <SelectContent side="top">
+            <SelectContent side="top" className="bg-background border shadow-md">
               {[5, 10, 20, 30, 50].map((pageSize) => (
                 <SelectItem key={pageSize} value={`${pageSize}`}>
                   {pageSize}
@@ -666,10 +676,10 @@ export function UseTable<TData, TValue>({
             table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1,
             Math.min(
               (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-              table.getFilteredRowModel().rows.length
+              totalCount ?? table.getFilteredRowModel().rows.length
             ),
-            table.getFilteredRowModel().rows.length
-          ) : `Showing ${table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to ${Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, table.getFilteredRowModel().rows.length)} of ${table.getFilteredRowModel().rows.length} results`}
+            totalCount ?? table.getFilteredRowModel().rows.length
+          ) : `Showing ${table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to ${Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, totalCount ?? table.getFilteredRowModel().rows.length)} of ${totalCount ?? table.getFilteredRowModel().rows.length} results`}
         </div>
 
         <div className="flex items-center space-x-2">

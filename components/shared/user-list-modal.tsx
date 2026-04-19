@@ -1,11 +1,13 @@
 "use client"
 
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog"
 import {
   Avatar,
@@ -14,13 +16,15 @@ import {
 } from "@/components/ui/avatar"
 import { UserAvatarData } from "./users-avatar-group"
 import { Badge } from "@/components/ui/badge"
-import { Mail, User, Crown } from "lucide-react"
+import { Crown, UserCheck, Users } from "lucide-react"
+import { projectTranslations } from "@/lib/translations/projects"
 
 interface UserListModalProps {
   isOpen: boolean
   onClose: () => void
   users: UserAvatarData[]
   ownerUserId?: string
+  coOwnerUserId?: string
 }
 
 const getInitials = (user: UserAvatarData) => {
@@ -33,83 +37,107 @@ const getInitials = (user: UserAvatarData) => {
     .slice(0, 2)
 }
 
-export function UserListModal({ isOpen, onClose, users, ownerUserId }: UserListModalProps) {
-  // Reorder users to show owner first
+export function UserListModal({ isOpen, onClose, users, ownerUserId, coOwnerUserId }: UserListModalProps) {
+  const { i18n } = useTranslation()
+  const t = (projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en).userListModal
+
+  // Reorder: owner first, co-owner second, then others
   const orderedUsers = React.useMemo(() => {
-    if (!ownerUserId) return users
-    const owner = users.find(user => user.id === ownerUserId)
-    const others = users.filter(user => user.id !== ownerUserId)
-    return owner ? [owner, ...others] : users
-  }, [users, ownerUserId])
+    const owner = users.find(u => u.id === ownerUserId)
+    const coOwner = users.find(u => u.id === coOwnerUserId && u.id !== ownerUserId)
+    const others = users.filter(u => u.id !== ownerUserId && u.id !== coOwnerUserId)
+    return [
+      ...(owner ? [owner] : []),
+      ...(coOwner ? [coOwner] : []),
+      ...others,
+    ]
+  }, [users, ownerUserId, coOwnerUserId])
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <User className="w-5 h-5" />
-            Usuários do Projeto ({users.length})
+      <DialogContent className="max-w-sm">
+        <DialogHeader className="space-y-1">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <Users className="w-4 h-4 text-muted-foreground" />
+            {t.title}
           </DialogTitle>
+          <DialogDescription className="text-xs">
+            {t.description}
+          </DialogDescription>
         </DialogHeader>
-        
-        <div className="space-y-2 max-h-[400px] overflow-y-auto">
-          {orderedUsers.map((user) => {
-            const isOwner = user.id === ownerUserId
-            
-            return (
-              <div
-                key={user.id}
-                className={`flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
-                  isOwner 
-                    ? "ring-2 ring-yellow-400 dark:ring-yellow-500 bg-yellow-50 dark:bg-yellow-900/20" 
-                    : ""
-                }`}
-              >
-                <Avatar className={`size-10 ${
-                  isOwner 
-                    ? "border-4 border-black dark:border-yellow-400 ring-2 ring-yellow-400 dark:ring-yellow-500" 
-                    : ""
-                }`}>
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className={`${
-                    isOwner 
-                      ? "bg-yellow-600 dark:bg-yellow-700 text-white" 
-                      : "bg-gray-600 dark:bg-gray-700 text-white"
-                  } font-semibold text-sm`}>
-                    {getInitials(user)}
-                  </AvatarFallback>
-                </Avatar>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                      {user.name}
-                    </p>
-                    {isOwner && (
-                      <Badge 
-                        variant="secondary" 
-                        className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100 flex items-center gap-1"
-                      >
-                        <Crown className="w-3 h-3" />
-                        Owner
-                      </Badge>
+
+        <div className="space-y-1 max-h-[360px] overflow-y-auto -mx-1 px-1">
+          {orderedUsers.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">{t.noUsers}</p>
+          ) : (
+            orderedUsers.map((user) => {
+              const isOwner = user.id === ownerUserId
+              const isCoOwner = !isOwner && user.id === coOwnerUserId
+
+              return (
+                <div
+                  key={user.id}
+                  className="flex items-center gap-3 px-2 py-2.5 rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  {/* Avatar with role indicator dot */}
+                  <div className="relative shrink-0">
+                    <Avatar className="size-8">
+                      <AvatarImage src={user.avatar} alt={user.name} />
+                      <AvatarFallback className={`text-xs font-medium text-white ${
+                        isOwner
+                          ? "bg-amber-500"
+                          : isCoOwner
+                          ? "bg-blue-500"
+                          : "bg-muted-foreground/60"
+                      }`}>
+                        {getInitials(user)}
+                      </AvatarFallback>
+                    </Avatar>
+                    {(isOwner || isCoOwner) && (
+                      <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-background flex items-center justify-center ${
+                        isOwner ? "bg-amber-500" : "bg-blue-500"
+                      }`}>
+                        {isOwner
+                          ? <Crown className="w-2 h-2 text-white" />
+                          : <UserCheck className="w-2 h-2 text-white" />
+                        }
+                      </span>
                     )}
                   </div>
-                  {user.email && (
-                    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                      <Mail className="w-3 h-3" />
-                      <span className="truncate">{user.email}</span>
-                    </div>
-                  )}
-                  {user.role && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                      {user.role}
+
+                  {/* Name + email */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium leading-tight truncate">
+                      {user.name}
                     </p>
+                    {user.email && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {user.email}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Compact role badge */}
+                  {isOwner && (
+                    <Badge
+                      variant="outline"
+                      className="shrink-0 text-[10px] px-1.5 py-0 h-5 border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-400"
+                    >
+                      {t.ownerBadge}
+                    </Badge>
+                  )}
+                  {isCoOwner && (
+                    <Badge
+                      variant="outline"
+                      className="shrink-0 text-[10px] px-1.5 py-0 h-5 border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-400"
+                    >
+                      {t.coOwnerBadge}
+                    </Badge>
                   )}
                 </div>
-              </div>
-            )
-          })}
+              )
+            })
+          )}
         </div>
       </DialogContent>
     </Dialog>

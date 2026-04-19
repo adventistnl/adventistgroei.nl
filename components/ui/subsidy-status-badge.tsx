@@ -11,7 +11,7 @@ const subsidyStatusBadgeVariants = cva(
     variants: {
       variant: {
         advance:
-          "bg-purple-50 text-purple-700 border-purple-300 dark:bg-purple-950/30 dark:text-purple-400 dark:border-purple-800",
+          "bg-amber-50 text-amber-700 border-amber-400 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-600",
         "refund-pending":
           "bg-red-50 text-red-700 border-red-300 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800",
         "refund-done":
