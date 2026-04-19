@@ -17,7 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { useNotifications } from "@/contexts/notifications-context"
 import { NotifCard } from "@/components/notifications/notif-card"
-import { QuickViewProjectModal } from "@/components/modals/project/quick-view-project-modal"
+import { DetailsViewProjectModal } from "@/components/modals/project/details-view-project-modal"
 import { type ProjectTableData } from "@/components/projects/projects-table"
 
 // ─── i18n ─────────────────────────────────────────────────────────────────────
@@ -171,7 +171,7 @@ export function NotificationsSidebar() {
 
       {/* QuickView modal — opens on history tab when triggered from a notification card */}
       {historyModal && (
-        <QuickViewProjectModal
+        <DetailsViewProjectModal
           isOpen={!!historyModal}
           onClose={() => setHistoryModal(null)}
           project={buildProjectStub(historyModal.projectId, historyModal.projectTitle)}

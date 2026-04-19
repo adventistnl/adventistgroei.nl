@@ -299,25 +299,14 @@ interface TeamMember {
 }
 
 interface TeamSectionProps {
-  owner: TeamMember | null
-  coOwner: TeamMember | null
-  collaborators: TeamMember[]
+  teamUsers: UserAvatarData[]
+  ownerUserId?: string
+  coOwnerUserId?: string
   loading: boolean
   t: any
 }
 
-function TeamSection({ owner, coOwner, collaborators, loading, t }: TeamSectionProps) {
-  const teamUsers: UserAvatarData[] = [
-    ...(owner
-      ? [{ id: owner.id, name: owner.name, email: owner.email, role: t.errors?.currentOwner ?? "Owner", isOwner: true }]
-      : []),
-    ...(coOwner && coOwner.id !== owner?.id
-      ? [{ id: coOwner.id, name: coOwner.name, email: coOwner.email, role: "Co-Owner" }]
-      : []),
-    ...collaborators
-      .filter((c) => c.id !== owner?.id && c.id !== coOwner?.id)
-      .map((c) => ({ id: c.id, name: c.name, email: c.email, role: t.table?.collaborator ?? "Collaborator" })),
-  ]
+function TeamSection({ teamUsers, ownerUserId, coOwnerUserId, loading, t }: TeamSectionProps) {
 
   return (
     <div className="space-y-2">
@@ -338,8 +327,8 @@ function TeamSection({ owner, coOwner, collaborators, loading, t }: TeamSectionP
           size="sm"
           showLabel={false}
           showAddButton={false}
-          ownerUserId={owner?.id}
-          coOwnerUserId={coOwner?.id !== owner?.id ? coOwner?.id : undefined}
+          ownerUserId={ownerUserId}
+          coOwnerUserId={coOwnerUserId}
         />
       )}
     </div>
@@ -461,21 +450,21 @@ interface ActionBarProps {
   saving: boolean
   kpis: any
   t: any
-  owner: TeamMember | null
-  coOwner: TeamMember | null
-  collaborators: TeamMember[]
+  teamUsers: UserAvatarData[]
+  ownerUserId?: string
+  coOwnerUserId?: string
   loading: boolean
 }
 
-function ActionBar({ isOwner, pendingStatus, onStatusChange, saving, kpis, t, owner, coOwner, collaborators, loading }: ActionBarProps) {
+function ActionBar({ isOwner, pendingStatus, onStatusChange, saving, kpis, t, teamUsers, ownerUserId, coOwnerUserId, loading }: ActionBarProps) {
   return (
     <div className="flex items-center justify-between gap-3 px-6 py-3 border-b flex-shrink-0 bg-muted/30">
       {/* Team avatars */}
       <div className="flex-shrink-0">
         <TeamSection
-          owner={owner}
-          coOwner={coOwner}
-          collaborators={collaborators}
+          teamUsers={teamUsers}
+          ownerUserId={ownerUserId}
+          coOwnerUserId={coOwnerUserId}
           loading={loading}
           t={t}
         />
@@ -914,7 +903,7 @@ function ModalFooter({
     <Button
       size="sm"
       variant="outline"
-      className="h-8 px-3 text-xs gap-1.5"
+      className="h-8 px-3 text-xs gap-1.5 border-orange-200 text-orange-700 hover:bg-orange-50 hover:text-orange-800 dark:border-orange-800 dark:text-orange-400 dark:hover:bg-orange-900/20"
       onClick={onRequestAdjustments}
       disabled={adjustmentLoading || approveLoading}
     >
@@ -956,7 +945,7 @@ function ModalFooter({
             <Button
               size="sm"
               variant="default"
-              className="h-8 px-3 text-xs gap-1.5"
+              className="h-8 px-3 text-xs gap-1.5 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white"
               onClick={onApproveProject}
               disabled={approveLoading || adjustmentLoading}
             >
@@ -1436,6 +1425,8 @@ export function DetailsViewProjectModal({
     [fullProject?.collaborators, (project as any)?.collaborators]
   )
 
+  const ownerUser: TeamMember | null = fullProject?.owner ?? null
+
   const coOwner: TeamMember | null = React.useMemo(
     () => apiCollaborators.find((c) => c.role === 'co_owner')?.user ?? null,
     [apiCollaborators]
@@ -1445,6 +1436,27 @@ export function DetailsViewProjectModal({
     () => apiCollaborators.filter((c) => c.role === 'assignee').map((c) => c.user),
     [apiCollaborators]
   )
+
+  // All collaborators as UserAvatarData — owner first, co-owner second, then assignees
+  const teamUsers: UserAvatarData[] = React.useMemo(() => {
+    const roleOrder: Record<string, number> = { owner: 0, co_owner: 1, assignee: 2 }
+    return [...apiCollaborators]
+      .sort((a, b) => (roleOrder[a.role] ?? 3) - (roleOrder[b.role] ?? 3))
+      .filter((c) => c.user?.id && c.user?.name)
+      .map((c) => ({
+        id: c.user.id,
+        name: c.user.name,
+        email: c.user.email,
+        role: c.role,
+        isFinance: c.role === 'finance_manager' || c.role === 'finance',
+        initials: c.user.name
+          .split(' ')
+          .map((n: string) => n[0])
+          .join('')
+          .toUpperCase()
+          .slice(0, 2),
+      }))
+  }, [apiCollaborators])
 
   // Can comment = owner, co-owner or any assignee collaborator
   const canComment =
@@ -1553,9 +1565,9 @@ export function DetailsViewProjectModal({
           saving={saving && actionType === 'select'}
           kpis={kpis}
           t={t}
-          owner={fullProject?.owner ?? null}
-          coOwner={coOwner}
-          collaborators={collaborators}
+          teamUsers={teamUsers}
+          ownerUserId={ownerUser?.id ?? project?.owner_id}
+          coOwnerUserId={coOwner?.id}
           loading={loading}
         />
 

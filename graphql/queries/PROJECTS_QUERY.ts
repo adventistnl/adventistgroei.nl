@@ -115,6 +115,7 @@ export const GET_PROJECT_BY_ID_QUERY = gql`
         id
         name
         description
+        leader_id
         church {
           id
           name

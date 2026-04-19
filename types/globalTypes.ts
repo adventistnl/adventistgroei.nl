@@ -109,6 +109,12 @@ export enum GenderType {
   MALE = "MALE",
 }
 
+export enum InstitutionPositionType {
+  FINANCE_MANAGER = "FINANCE_MANAGER",
+  PRESIDENT = "PRESIDENT",
+  SECRETARY = "SECRETARY",
+}
+
 /**
  * Idioma preferencial do usuário
  */
@@ -303,6 +309,31 @@ export interface InstitutionBudgetUpdateDto {
   documents?: string[] | null;
 }
 
+export interface InstitutionPositionCreateDto {
+  institution_id: string;
+  position_type: InstitutionPositionType;
+  user_id: string;
+}
+
+export interface InstitutionPositionUpdateDto {
+  position_type?: InstitutionPositionType | null;
+  user_id?: string | null;
+}
+
+export interface LedgerHistoryFilterInput {
+  institutionId?: string | null;
+  year: number;
+  departmentId?: string | null;
+  churchId?: string | null;
+  regionId?: string | null;
+  startDate?: any | null;
+  endDate?: any | null;
+  search?: string | null;
+  type?: string | null;
+  page?: number | null;
+  limit?: number | null;
+}
+
 export interface ProjectActivityCreateDto {
   name: string;
   description: string;
@@ -400,6 +431,7 @@ export interface SubsidyRequestUpdateDto {
   subsidy_status_id?: string | null;
   items?: SubsidyRequestItemInput[] | null;
   approved_amount?: number | null;
+  advance_amount?: number | null;
   rejection_reason?: string | null;
   notes?: string | null;
   priority?: SubsidyRequestPriority | null;

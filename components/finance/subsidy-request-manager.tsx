@@ -236,6 +236,34 @@ export function SubsidyRequestManager({
     )
   }, [user?.id, institutionUsers, financeRoleKeys])
 
+  // Helper: Check if current user is project owner for a specific subsidy
+  const isProjectOwner = (subsidy: SubsidyRequest | any): boolean => {
+    if (!user?.id) return false
+    // Check if user is the project owner (from raw backend data or transformed)
+    const projectOwnerId = subsidy.project?.owner_id || subsidy.project?.owner?.id
+    return projectOwnerId === user.id
+  }
+
+  // Helper: Check if current user is department leader for a specific subsidy
+  const isDepartmentLeader = (subsidy: SubsidyRequest | any): boolean => {
+    if (!user?.id) return false
+    // Check if user is the department leader
+    const leaderId = subsidy.department?.leader_id || subsidy.department?.leader?.id
+    return leaderId === user.id
+  }
+
+  // Helper: Check if user can approve (move to approved status)
+  // Project Owner OR Department Leader can approve
+  const canApproveSubsidy = (subsidy: SubsidyRequest | any): boolean => {
+    return isProjectOwner(subsidy) || isDepartmentLeader(subsidy) || isFinanceUser
+  }
+
+  // Helper: Check if user can manage post-approved statuses
+  // Only Finance users can manage after approved
+  const canManagePostApproved = (subsidy: SubsidyRequest | any): boolean => {
+    return isFinanceUser
+  }
+
   // Fetch all subsidy statuses for ID resolution
   const { data: statusesData } = useQuery(GET_ALL_SUBSIDY_STATUSES)
 
@@ -470,7 +498,7 @@ export function SubsidyRequestManager({
       }
     }
     
-    // 3. Add Department Leader
+    // 3. Add Department Leader (as Co-Owner - blue styling)
     const department = subsidy.department
     if (department) {
       let leader = department.leader
@@ -484,13 +512,34 @@ export function SubsidyRequestManager({
             id: leader.id,
             name: leader.name,
             email: leader.email || undefined,
-            role: t('subsidy.roles.departmentLeader') || 'Department Leader'
+            role: t('subsidy.roles.departmentLeader') || 'Department Leader',
+            isCoOwner: true // Department Leader has elevated permissions (blue styling)
           })
         }
       }
     }
     
-    // 4. Add Finance Users
+    // 4. Add Project Collaborators (from subsidy.collaborators)
+    const collaborators = subsidy.collaborators
+    if (collaborators && Array.isArray(collaborators)) {
+      collaborators.forEach((collab: any) => {
+        const collaboratorUser = collab.user
+        if (collaboratorUser) {
+          const isDuplicate = users.some(u => u.id === collaboratorUser.id)
+          if (!isDuplicate) {
+            users.push({
+              id: collaboratorUser.id,
+              name: collaboratorUser.name,
+              email: collaboratorUser.email || undefined,
+              role: collab.role || t('subsidy.roles.collaborator') || 'Collaborator',
+              isOwner: false
+            })
+          }
+        }
+      })
+    }
+    
+    // 5. Add Finance Users
     const financeUsers = activeUsers.filter((u: any) => 
       u.user_roles?.some((ur: any) => 
         financeRoleKeys.includes(ur.role?.key_code?.toUpperCase() || '')
@@ -504,7 +553,8 @@ export function SubsidyRequestManager({
           id: fu.id,
           name: fu.name,
           email: fu.email || undefined,
-          role: t('subsidy.roles.financeManager') || 'Finance Manager'
+          role: t('subsidy.roles.financeManager') || 'Finance Manager',
+          isFinance: true // Finance users have special permissions (orange styling)
         })
       }
     })
@@ -1180,6 +1230,7 @@ export function SubsidyRequestManager({
               size="sm"
               showAddButton={false}
               ownerUserId={users.find(u => u.isOwner)?.id}
+              coOwnerUserId={users.find(u => u.isCoOwner)?.id}
             />
           </div>
         )
@@ -1267,9 +1318,121 @@ export function SubsidyRequestManager({
       is_for_advance: request.is_for_advance,
       have_refund: request.have_refund,
       refund_done: request.refund_done,
-      refund_amount: request.refund_amount
+      refund_amount: request.refund_amount,
+      // Store subsidy data for permission checks in moveRules
+      subsidyData: request
     }
   }))
+
+  // Kanban move rules - Controls who can move subsidies to which statuses
+  const kanbanMoveRules = useMemo(() => ({
+    // Status groups after "approved" that only Finance can manage
+    disableDropTo: [] as string[], // Will be handled by canMove
+
+    canDragItem: (item: KanbanItem): boolean => {
+      const subsidy = item.metadata?.subsidyData
+      if (!subsidy) return true
+
+      const fromStatus = item.groupId
+      
+      // Pre-approved statuses (pending, in_review): Owner/DeptLeader/Finance can drag
+      if (['pending', 'in_review'].includes(fromStatus)) {
+        return canApproveSubsidy(subsidy)
+      }
+      
+      // Post-approved statuses: Only Finance can drag
+      if (['approved', 'advanced_closed', 'waiting_documents', 'waiting_refund', 'closed', 'rejected'].includes(fromStatus)) {
+        return canManagePostApproved(subsidy)
+      }
+      
+      return true
+    },
+
+    canMove: (itemId: string, fromGroupId: string, toGroupId: string, item?: KanbanItem): boolean => {
+      const subsidy = item?.metadata?.subsidyData
+      if (!subsidy) return true
+
+      // Pre-approved statuses: Owner/DeptLeader can move up to "approved"
+      const preApprovedStatuses = ['pending', 'in_review', 'approved']
+      const postApprovedStatuses = ['advanced_closed', 'waiting_documents', 'waiting_refund', 'closed']
+
+      // Moving FROM pre-approved status
+      if (['pending', 'in_review'].includes(fromGroupId)) {
+        // Can move to approved if user is owner/dept leader/finance
+        if (toGroupId === 'approved') {
+          return canApproveSubsidy(subsidy)
+        }
+        // Can move between pending/in_review
+        if (['pending', 'in_review'].includes(toGroupId)) {
+          return canApproveSubsidy(subsidy)
+        }
+        // Can reject if owner/dept leader/finance
+        if (toGroupId === 'rejected') {
+          return canApproveSubsidy(subsidy)
+        }
+        // Cannot move to post-approved statuses (except approved)
+        if (postApprovedStatuses.includes(toGroupId)) {
+          return false
+        }
+      }
+
+      // Moving FROM approved or post-approved status: Only Finance
+      if (['approved', ...postApprovedStatuses].includes(fromGroupId)) {
+        return canManagePostApproved(subsidy)
+      }
+
+      return true
+    },
+
+    getCanMoveErrorMessage: (itemId: string, fromGroupId: string, toGroupId: string, item?: KanbanItem): string | undefined => {
+      const subsidy = item?.metadata?.subsidyData
+      if (!subsidy) return undefined
+
+      const postApprovedStatuses = ['advanced_closed', 'waiting_documents', 'waiting_refund', 'closed']
+
+      // Check if trying to move to approved without permission
+      if (toGroupId === 'approved' && !canApproveSubsidy(subsidy)) {
+        return (translations.toasts as any)?.onlyOwnerOrLeaderCanApprove || 'Only the Project Owner or Department Leader can approve this subsidy'
+      }
+
+      // Check if trying to manage post-approved without being Finance
+      if (['approved', ...postApprovedStatuses].includes(fromGroupId) && !canManagePostApproved(subsidy)) {
+        return (translations.toasts as any)?.onlyFinancialCanManage || 'Only Finance users can manage subsidies after approval'
+      }
+
+      if (['pending', 'in_review'].includes(fromGroupId) && postApprovedStatuses.includes(toGroupId)) {
+        return (translations.toasts as any)?.mustBeApprovedFirst || 'Subsidy must be approved before moving to this status'
+      }
+
+      return undefined
+    },
+
+    getDisabledGroupsForItem: (item: KanbanItem): string[] => {
+      const subsidy = item.metadata?.subsidyData
+      if (!subsidy) return []
+
+      const fromStatus = item.groupId
+      const disabled: string[] = []
+      const postApprovedStatuses = ['advanced_closed', 'waiting_documents', 'waiting_refund', 'closed']
+
+      // If user is not owner/dept leader/finance, disable approved and rejected
+      if (!canApproveSubsidy(subsidy)) {
+        disabled.push('approved', 'rejected')
+      }
+
+      // If from pre-approved and user is not finance, disable post-approved statuses
+      if (['pending', 'in_review'].includes(fromStatus)) {
+        postApprovedStatuses.forEach(status => disabled.push(status))
+      }
+
+      // If from approved/post-approved and user is not finance, disable everything
+      if (['approved', ...postApprovedStatuses].includes(fromStatus) && !canManagePostApproved(subsidy)) {
+        return ['pending', 'in_review', 'approved', 'rejected', ...postApprovedStatuses]
+      }
+
+      return [...new Set(disabled)]
+    }
+  }), [canApproveSubsidy, canManagePostApproved, translations])
 
   const kanbanActions: KanbanAction[] = useMemo(() => {
     const baseActions: KanbanAction[] = [
@@ -1549,6 +1712,7 @@ export function SubsidyRequestManager({
               actions={kanbanActions}
               onItemMove={handleKanbanItemMove}
               renderItem={renderKanbanItem}
+              moveRules={kanbanMoveRules}
             />
           )}
         </CardContent>
@@ -1677,6 +1841,7 @@ export function SubsidyRequestManager({
               actions={kanbanActions}
               onItemMove={handleKanbanItemMove}
               renderItem={renderKanbanItem}
+              moveRules={kanbanMoveRules}
             />
           )}
         </div>

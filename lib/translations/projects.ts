@@ -202,6 +202,7 @@ export const projectTranslations = {
       noResults: "No results found",
       openMenu: "Open menu",
       quickView: "Quick View",
+      details: "Details",
       noActivities: "No activities registered",
     },
     
@@ -1268,6 +1269,10 @@ export const projectTranslations = {
       statusBadge: "Under review by institution",
       budgetLabel: "Budget",
       subsidizedBudgetLabel: "Subsidy Request",
+      approveProject: "Approve",
+      adjustmentsNeeded: "Adjustments Needed",
+      approveSuccess: "Project approved successfully",
+      adjustmentsSuccess: "Adjustments requested",
     },
 
   },
@@ -1462,6 +1467,7 @@ export const projectTranslations = {
       noResults: "Geen resultaten gevonden",
       openMenu: "Menu openen",
       quickView: "Snel Bekijken",
+      details: "Details",
       noActivities: "Geen activiteiten geregistreerd",
     },
     
@@ -2535,6 +2541,10 @@ export const projectTranslations = {
       statusBadge: "In beoordeling door instelling",
       budgetLabel: "Budget",
       subsidizedBudgetLabel: "Subsidieaanvraag",
+      approveProject: "Goedkeuren",
+      adjustmentsNeeded: "Aanpassingen Nodig",
+      approveSuccess: "Project goedgekeurd",
+      adjustmentsSuccess: "Aanpassingen aangevraagd",
     },
   },
   
@@ -2740,6 +2750,7 @@ export const projectTranslations = {
       noResults: "Nenhum resultado encontrado",
       openMenu: "Abrir menu",
       quickView: "Visualização Rápida",
+      details: "Detalhes",
       noActivities: "Nenhuma atividade cadastrada",
     },
     
@@ -3764,6 +3775,10 @@ export const projectTranslations = {
       statusBadge: "Em revisão pela instituição",
       budgetLabel: "Orçamento",
       subsidizedBudgetLabel: "Pedido de Subsídio",
+      approveProject: "Aprovar",
+      adjustmentsNeeded: "Ajustes Necessários",
+      approveSuccess: "Projeto aprovado com sucesso",
+      adjustmentsSuccess: "Ajustes solicitados",
     },
   }
 }

@@ -662,6 +662,30 @@ export default function AnnualBudgetPage() {
     // Fetch spending over time strictly from the backend Ledger GraphQL query
     const finalSpendingOverTime = kpisData?.spendingOverTime || []
 
+    // ── DEBUG ──────────────────────────────────────────────────────────────
+    if (process.env.NODE_ENV === 'development') {
+      console.group('%c[BudgetDistributionChart] Data Debug', 'color: #6366f1; font-weight: bold')
+      console.log('📡 kpisData?.budgetDistribution (raw from API):', kpisData?.budgetDistribution)
+      console.log('📊 kpiData (derived from budgetKPIs):', kpiData)
+      console.log('🏢 departmentBudgetData (table rows):', departmentBudgetData.map((d: any) => ({
+        name: d.departmentName,
+        hasBudget: d.hasBudgetRecord,
+        planned_budget: d.annualBudget?.planned_budget,
+        allocated_amount: d.annualBudget?.allocated_amount,
+        spentAmount: d.spentAmount,
+        status: d.annualBudget?.status,
+      })))
+      console.log('📦 entityDistribution (built from departments):', entityDistribution)
+      console.log('✅ Final chartData.budgetDistribution being passed to chart:', kpisData ? kpisData.budgetDistribution : {
+        total: kpiData.totalInstitutionBudget,
+        spent: kpiData.totalSpent,
+        allocated: kpiData.totalAllocated,
+        available: kpiData.budgetRemaining,
+        percentageUsed: kpiData.budgetUtilization
+      })
+      console.groupEnd()
+    }
+    // ── END DEBUG ──────────────────────────────────────────────────────────
 
     if (!kpisData) {
    
@@ -1531,7 +1555,6 @@ export default function AnnualBudgetPage() {
                 data={chartData.budgetDistribution}
                 year={selectedYear}
               />
-              
 
             </ResponsiveGridCarousel>
           </div>

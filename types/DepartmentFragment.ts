@@ -45,8 +45,8 @@ export interface DepartmentFragment_annual_budgets {
   id: string;
   year: number;
   planned_budget: any;
-  total_expenses: any;
-  balance: any;
+  total_expenses: number;
+  balance: number;
   status: AnnualBudgetStatus;
   priority: AnnualBudgetPriority;
   category: AnnualBudgetCategory;
@@ -62,7 +62,7 @@ export interface DepartmentFragment_annual_budgets {
   institution_id: string | null;
   church_id: string | null;
   department_id: string | null;
-  allocated_amount: any;
+  allocated_amount: number;
   approved_amount: any | null;
   reviewed_by: string | null;
   review_date: any | null;
@@ -74,6 +74,10 @@ export interface DepartmentFragment_annual_budgets {
   is_locked: boolean;
   has_budget_record: boolean;
   entity_type: AnnualBudgetEntityType;
+  approvedAmount: number;
+  spentAmount: number;
+  usagePercentage: number;
+  remainingAmount: number;
 }
 
 export interface DepartmentFragment_users_contact {

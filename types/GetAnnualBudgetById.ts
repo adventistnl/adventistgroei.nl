@@ -39,8 +39,8 @@ export interface GetAnnualBudgetById_annualBudget {
   id: string;
   year: number;
   planned_budget: any;
-  total_expenses: any;
-  balance: any;
+  total_expenses: number;
+  balance: number;
   notes: string | null;
   description: string | null;
   justification: string | null;
@@ -52,7 +52,7 @@ export interface GetAnnualBudgetById_annualBudget {
   institution_id: string | null;
   church_id: string | null;
   department_id: string | null;
-  allocated_amount: any;
+  allocated_amount: number;
   approved_amount: any | null;
   requested_by: string;
   reviewed_by: string | null;

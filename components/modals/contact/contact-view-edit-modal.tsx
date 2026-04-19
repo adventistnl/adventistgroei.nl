@@ -52,22 +52,71 @@ import {
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
 import { contactTranslations } from "@/lib/translations/contact"
-import { useMutation } from "@apollo/client/react"
 import { countries, states, cities } from "@/data/geographicData"
 
-import type { OperationVariables } from "@apollo/client"
+import type { MutationFunction, OperationVariables } from "@apollo/client"
 import { Contact } from "@/types/graphql-global-types"
+
+interface GeographicOption {
+  value: string
+  label: string
+}
+
+interface UserContactLike {
+  id?: string | null
+  name?: string | null
+  phone?: string | null
+  mobile?: string | null
+  email?: string | null
+  country?: string | null
+  city?: string | null
+  state?: string | null
+  address?: string | null
+  full_address?: string | null
+  postal_code?: string | null
+  website?: string | null
+  notes?: string | null
+  is_primary?: boolean | null
+  created_at?: string | null
+  updated_at?: string | null
+  created_by?: string | null
+  updated_by?: string | null
+  is_deleted?: boolean | null
+}
+
+interface UserDataLike {
+  id: string
+  name?: string | null
+  email?: string | null
+  phone?: string | null
+  mobile?: string | null
+  country?: string | null
+  city?: string | null
+  state?: string | null
+  address?: string | null
+  full_address?: string | null
+  postal_code?: string | null
+  website?: string | null
+  notes?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+  created_by?: string | null
+  updated_by?: string | null
+  is_deleted?: boolean | null
+  contact?: UserContactLike | null
+}
 
 
 export interface ContactViewEditModalProps<TMutationData, TMutationVariables extends OperationVariables> {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   contact: Contact | null
+  userData?: UserDataLike | null
   entityName?: string
   entityType?: string
   onSave?: (contact: TMutationData | undefined) => void
   readonly?: boolean
-  updateMutation: useMutation.MutationFunction<TMutationData, TMutationVariables>
+  updateMutation: MutationFunction<TMutationData, TMutationVariables>
   entityId: string
 }
 
@@ -75,6 +124,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
   isOpen,
   onOpenChange,
   contact,
+  userData,
   entityName,
   entityType = "Entity",
   onSave,
@@ -108,6 +158,29 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
   const currentLanguage = i18n?.language || 'en'
   const t_contact = contactTranslations[currentLanguage as keyof typeof contactTranslations] || contactTranslations.en
 
+  const resolvedContactData = {
+    id: userData?.contact?.id ?? contact?.id ?? userData?.id ?? "",
+    name: userData?.name ?? userData?.contact?.name ?? contact?.name ?? "",
+    phone: userData?.phone ?? userData?.contact?.phone ?? contact?.phone ?? "",
+    mobile: userData?.mobile ?? userData?.contact?.mobile ?? contact?.mobile ?? "",
+    email: userData?.email ?? userData?.contact?.email ?? contact?.email ?? "",
+    country: userData?.country ?? userData?.contact?.country ?? contact?.country ?? "",
+    city: userData?.city ?? userData?.contact?.city ?? contact?.city ?? "",
+    state: userData?.state ?? userData?.contact?.state ?? "",
+    address: userData?.address ?? userData?.contact?.address ?? contact?.address ?? "",
+    full_address: userData?.full_address ?? userData?.contact?.full_address ?? contact?.full_address ?? "",
+    postal_code: userData?.postal_code ?? userData?.contact?.postal_code ?? contact?.postal_code ?? "",
+    website: userData?.website ?? userData?.contact?.website ?? contact?.website ?? "",
+    notes: userData?.notes ?? userData?.contact?.notes ?? contact?.notes ?? "",
+    is_primary: userData?.contact?.is_primary ?? contact?.is_primary ?? false,
+    created_at: userData?.created_at ?? userData?.contact?.created_at ?? contact?.created_at ?? null,
+    updated_at: userData?.updated_at ?? userData?.contact?.updated_at ?? contact?.updated_at ?? null,
+    created_by: userData?.created_by ?? userData?.contact?.created_by ?? contact?.created_by ?? null,
+    updated_by: userData?.updated_by ?? userData?.contact?.updated_by ?? contact?.updated_by ?? null,
+    is_deleted: userData?.is_deleted ?? userData?.contact?.is_deleted ?? contact?.is_deleted ?? false,
+  }
+  const hasResolvedData = Boolean(contact || userData)
+
   // Geographic data options
   const countryOptions = countries.map(country => ({
     value: country.code,
@@ -116,7 +189,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
 
   // Get states for selected country
   const statesOptions = formData.country && states[formData.country as keyof typeof states] 
-    ? states[formData.country as keyof typeof states].map(state => ({
+    ? states[formData.country as keyof typeof states].map((state: { code: string; name: string }): GeographicOption => ({
         value: state.code,
         label: state.name
       }))
@@ -124,37 +197,37 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
 
   // Get cities for selected state
   const citiesOptions = selectedState && cities[selectedState as keyof typeof cities]
-    ? cities[selectedState as keyof typeof cities].map(city => ({
+    ? cities[selectedState as keyof typeof cities].map((city: { code: string; name: string }): GeographicOption => ({
         value: city.code,
         label: city.name
       }))
     : []
 
   useEffect(() => {
-    if (contact) {
+    if (hasResolvedData) {
       setFormData({
-        name: contact.name || '',
-        phone: contact.phone || '',
-        mobile: contact.mobile || '',
-        email: contact.email || '',
-        country: contact.country || '',
-        city: contact.city || '',
-        address: contact.address || '',
-        full_address: contact.full_address || '',
-        postal_code: contact.postal_code || '',
-        website: contact.website || '',
-        notes: contact.notes || '',
-        is_primary: contact.is_primary || false
+        name: resolvedContactData.name || '',
+        phone: resolvedContactData.phone || '',
+        mobile: resolvedContactData.mobile || '',
+        email: resolvedContactData.email || '',
+        country: resolvedContactData.country || '',
+        city: resolvedContactData.city || '',
+        address: resolvedContactData.address || '',
+        full_address: resolvedContactData.full_address || '',
+        postal_code: resolvedContactData.postal_code || '',
+        website: resolvedContactData.website || '',
+        notes: resolvedContactData.notes || '',
+        is_primary: resolvedContactData.is_primary || false
       })
 
       // Initialize selectedState based on existing data if available
       // Find state code from country and city combination
-      if (contact.country && contact.city) {
-        const countryStates = states[contact.country as keyof typeof states]
+      if (resolvedContactData.country && resolvedContactData.city) {
+        const countryStates = states[resolvedContactData.country as keyof typeof states]
         if (countryStates) {
           for (const state of countryStates) {
             const stateCities = cities[state.code as keyof typeof cities]
-            if (stateCities && stateCities.some(city => city.name === contact.city)) {
+            if (stateCities && stateCities.some((city: { code: string; name: string }) => city.name === resolvedContactData.city)) {
               setSelectedState(state.code)
               break
             }
@@ -179,16 +252,16 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
       })
       setSelectedState("")
     }
-  }, [contact])
+  }, [hasResolvedData, resolvedContactData.address, resolvedContactData.city, resolvedContactData.country, resolvedContactData.email, resolvedContactData.full_address, resolvedContactData.is_primary, resolvedContactData.mobile, resolvedContactData.name, resolvedContactData.notes, resolvedContactData.phone, resolvedContactData.postal_code, resolvedContactData.website])
 
   useEffect(() => {
     if (isOpen) {
       setCurrentStep(1)
       // Se não há contato existente, iniciar no modo de edição
-      setIsEditing(!contact)
+      setIsEditing(!hasResolvedData)
       setErrors({})
     }
-  }, [isOpen, contact])
+  }, [hasResolvedData, isOpen])
 
   const handleInputChange = (field: keyof Contact, value: string | boolean) => {
     setFormData(prev => ({
@@ -248,7 +321,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
     }
 
     setIsLoading(true)
-    const isCreating = !contact
+    const isCreating = !hasResolvedData
     const loadingMessage = isCreating ? (t_contact.creating || "Creating contact...") : (t_contact.updating || "Updating contact...")
     const loadingToast = toast.loading(loadingMessage)
 
@@ -257,8 +330,9 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
       await new Promise(resolve => setTimeout(resolve, 1000))
 
       const updateData: TMutationVariables = {
-        contactId: contact?.id || '',
         id: entityId,
+        contactId: resolvedContactData.id || '',
+        contact_id: resolvedContactData.id || '',
         ...formData,
       } as unknown as TMutationVariables
       const res = await updateMutation({ variables: updateData })
@@ -270,7 +344,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
       })
 
       if (onSave) {
-        onSave(res.data)
+        onSave(res.data ?? undefined)
       }
 
       setIsEditing(false)
@@ -283,21 +357,21 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
   }
 
   const handleCancel = () => {
-    if (contact) {
+    if (hasResolvedData) {
       setFormData({
-        name: contact.name || '',
-        phone: contact.phone || '',
-        mobile: contact.mobile || '',
-        email: contact.email || '',
-        country: contact.country || '',
-        city: contact.city || '',
-        address: contact.address || '',
-        full_address: contact.full_address || '',
-        postal_code: contact.postal_code || '',
-        website: contact.website || '',
-        notes: contact.notes || '',
-        is_primary: contact.is_primary || false,
-        id: contact.id
+        name: resolvedContactData.name || '',
+        phone: resolvedContactData.phone || '',
+        mobile: resolvedContactData.mobile || '',
+        email: resolvedContactData.email || '',
+        country: resolvedContactData.country || '',
+        city: resolvedContactData.city || '',
+        address: resolvedContactData.address || '',
+        full_address: resolvedContactData.full_address || '',
+        postal_code: resolvedContactData.postal_code || '',
+        website: resolvedContactData.website || '',
+        notes: resolvedContactData.notes || '',
+        is_primary: resolvedContactData.is_primary || false,
+        id: resolvedContactData.id || undefined
       })
     }
     setErrors({})
@@ -416,28 +490,28 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
               <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
                 {t_contact.contactName || "Contact Name"}
               </Label>
-              {renderCopyableField(contact?.name, 'name')}
+              {renderCopyableField(resolvedContactData.name, 'name')}
             </div>
             
             <div>
               <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
                 {t_contact.email || "Email"}
               </Label>
-              {renderCopyableField(contact?.email, 'email')}
+              {renderCopyableField(resolvedContactData.email, 'email')}
             </div>
             
             <div>
               <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
                 {t_contact.phone || "Phone"}
               </Label>
-              {renderCopyableField(contact?.phone, 'phone')}
+              {renderCopyableField(resolvedContactData.phone, 'phone')}
             </div>
             
             <div>
               <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
                 {t_contact.mobile || "Mobile"}
               </Label>
-              {renderCopyableField(contact?.mobile, 'mobile')}
+              {renderCopyableField(resolvedContactData.mobile, 'mobile')}
             </div>
           </div>
         )}
@@ -452,7 +526,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
               <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
                 {t_contact.address || "Address"}
               </Label>
-              {renderCopyableField(contact?.address, 'address')}
+              {renderCopyableField(resolvedContactData.address, 'address')}
             </div>
             
             <div className="grid grid-cols-2 gap-4">
@@ -460,14 +534,14 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
                 <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
                   {t_contact.city || "City"}
                 </Label>
-                {renderCopyableField(contact?.city, 'city')}
+                {renderCopyableField(resolvedContactData.city, 'city')}
               </div>
               
               <div>
                 <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
                   {t_contact.postalCode || "Postal Code"}
                 </Label>
-                {renderCopyableField(contact?.postal_code, 'postal_code')}
+                {renderCopyableField(resolvedContactData.postal_code, 'postal_code')}
               </div>
             </div>
             
@@ -476,14 +550,14 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
                 <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
                   {t_contact.fullAddress || "Full Address"}
                 </Label>
-                {renderCopyableField(contact?.full_address, 'full_address')}
+                {renderCopyableField(resolvedContactData.full_address, 'full_address')}
               </div>
               
               <div>
                 <Label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
                   {t_contact.country || "Country"}
                 </Label>
-                {renderCopyableField(contact?.country, 'country')}
+                {renderCopyableField(resolvedContactData.country, 'country')}
               </div>
             </div>
           </div>
@@ -501,25 +575,25 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
               </Label>
               <div className="flex items-center justify-between group">
                 <div className="flex-1 min-w-0">
-                  {contact?.website ? (
+                  {resolvedContactData.website ? (
                     <a
-                      href={contact.website.startsWith('http') ? contact.website : `https://${contact.website}`}
+                      href={resolvedContactData.website.startsWith('http') ? resolvedContactData.website : `https://${resolvedContactData.website}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm text-blue-600 hover:text-blue-800 underline break-all"
                     >
-                      {contact.website}
+                      {resolvedContactData.website}
                     </a>
                   ) : (
                     <span className="text-sm text-gray-500 italic">-</span>
                   )}
                 </div>
-                {contact?.website && (
+                {resolvedContactData.website && (
                   <Button
                     variant="ghost"
                     size="sm"
                     className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto ml-2"
-                    onClick={() => copyToClipboard(contact.website!, 'website')}
+                    onClick={() => copyToClipboard(resolvedContactData.website!, 'website')}
                   >
                     {copiedField === 'website' ? (
                       <Check className="w-3 h-3 text-green-600" />
@@ -538,15 +612,15 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
               <div className="flex items-start justify-between group">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-900 whitespace-pre-wrap break-words">
-                    {contact?.notes || <span className="text-gray-500 italic">-</span>}
+                    {resolvedContactData.notes || <span className="text-gray-500 italic">-</span>}
                   </p>
                 </div>
-                {contact?.notes && (
+                {resolvedContactData.notes && (
                   <Button
                     variant="ghost"
                     size="sm"
                     className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto ml-2"
-                    onClick={() => copyToClipboard(contact.notes!, 'notes')}
+                    onClick={() => copyToClipboard(resolvedContactData.notes!, 'notes')}
                   >
                     {copiedField === 'notes' ? (
                       <Check className="w-3 h-3 text-green-600" />
@@ -572,7 +646,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
                   {t_contact.createdAt || "Created At"}
                 </Label>
                 <p className="text-sm text-gray-900 mt-1">
-                  {contact ? formatDate(contact.created_at) : '-'}
+                  {resolvedContactData.created_at ? formatDate(resolvedContactData.created_at) : '-'}
                 </p>
               </div>
               
@@ -581,7 +655,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
                   {t_contact.updatedAt || "Updated At"}
                 </Label>
                 <p className="text-sm text-gray-900 mt-1">
-                  {contact ? formatDate(contact.updated_at) : '-'}
+                  {resolvedContactData.updated_at ? formatDate(resolvedContactData.updated_at) : '-'}
                 </p>
               </div>
             </div>
@@ -761,7 +835,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
                         disabled={isLoading}
                       >
                         {selectedState
-                          ? statesOptions.find(state => state.value === selectedState)?.label
+                          ? statesOptions.find((state: GeographicOption) => state.value === selectedState)?.label
                           : (t_contact.selectState || "Select state/province")}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
@@ -772,7 +846,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
                         <CommandList>
                           <CommandEmpty>{t_contact.noStateFound || "No state found."}</CommandEmpty>
                           <CommandGroup>
-                            {statesOptions.map((state) => (
+                            {statesOptions.map((state: GeographicOption) => (
                               <CommandItem
                                 key={state.value}
                                 value={state.value}
@@ -818,8 +892,8 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
                         disabled={isLoading || !selectedState}
                       >
                         {formData.city
-                          ? citiesOptions.find(city => city.value === formData.city)?.label ||
-                            citiesOptions.find(city => city.label === formData.city)?.label ||
+                          ? citiesOptions.find((city: GeographicOption) => city.value === formData.city)?.label ||
+                            citiesOptions.find((city: GeographicOption) => city.label === formData.city)?.label ||
                             formData.city
                           : (t_contact.cityPlaceholder || "Select city")}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -831,12 +905,12 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
                         <CommandList>
                           <CommandEmpty>{t_contact.noCityFound || "No city found."}</CommandEmpty>
                           <CommandGroup>
-                            {citiesOptions.map((city) => (
+                            {citiesOptions.map((city: GeographicOption) => (
                               <CommandItem
                                 key={city.value}
                                 value={city.value}
                                 onSelect={(currentValue) => {
-                                  const selectedCity = citiesOptions.find(c => c.value === currentValue)
+                                  const selectedCity = citiesOptions.find((c: GeographicOption) => c.value === currentValue)
                                   handleInputChange('city', selectedCity?.label || currentValue)
                                   setOpenCity(false)
                                 }}
@@ -985,19 +1059,19 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-muted-foreground">{t_contact.createdAt || "Created At"}</p>
-                    <p className="font-medium">{contact ? formatDate(contact.created_at) : '-'}</p>
+                    <p className="font-medium">{resolvedContactData.created_at ? formatDate(resolvedContactData.created_at) : '-'}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">{t_contact.updatedAt || "Updated At"}</p>
-                    <p className="font-medium">{contact ? formatDate(contact.updated_at) : '-'}</p>
+                    <p className="font-medium">{resolvedContactData.updated_at ? formatDate(resolvedContactData.updated_at) : '-'}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">{t_contact.createdBy || "Created By"}</p>
-                    <p className="font-medium">{contact?.created_by || '-'}</p>
+                    <p className="font-medium">{resolvedContactData.created_by || '-'}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">{t_contact.updatedBy || "Updated By"}</p>
-                    <p className="font-medium">{contact?.updated_by || '-'}</p>
+                    <p className="font-medium">{resolvedContactData.updated_by || '-'}</p>
                   </div>
                 </div>
               </div>
@@ -1016,7 +1090,7 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
         <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg text-gray-900">
             <ContactRound className="w-5 h-5 text-gray-600" />
-            {!contact ? (t_contact.newContact || "Create New Contact") : (t_contact.title || "Contact Information")}
+            {!hasResolvedData ? (t_contact.newContact || "Create New Contact") : (t_contact.title || "Contact Information")}
           </DialogTitle>
           <DialogDescription className="text-sm text-gray-600">
             {entityName ? (
@@ -1029,14 +1103,14 @@ export function ContactViewEditModal<TMutationData, TMutationVariables extends O
           {/* Contact Status and Edit Button */}
           <div className="flex items-center justify-between mt-4">
             <div className="flex items-center gap-2">
-              <Badge variant={(contact?.is_primary || formData.is_primary) ? "default" : "secondary"} className="bg-gray-100 text-gray-800 border-gray-300">
+              <Badge variant={(resolvedContactData.is_primary || formData.is_primary) ? "default" : "secondary"} className="bg-gray-100 text-gray-800 border-gray-300">
                 <ContactRound className="w-3 h-3 mr-1" />
-                {(contact?.is_primary || formData.is_primary) ? (t_contact.primaryContact || "Primary") : (t_contact.secondaryContact || "Secondary")}
+                {(resolvedContactData.is_primary || formData.is_primary) ? (t_contact.primaryContact || "Primary") : (t_contact.secondaryContact || "Secondary")}
               </Badge>
-              {contact?.is_deleted && (
+              {resolvedContactData.is_deleted && (
                 <Badge variant="destructive" className="bg-gray-800 text-white">{t_contact.deleted || "Deleted"}</Badge>
               )}
-              {!contact && (
+              {!hasResolvedData && (
                 <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
                   {t_contact.newContact || "New Contact"}
                 </Badge>

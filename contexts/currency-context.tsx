@@ -67,8 +67,6 @@ export interface Currency {
   symbol: string
   /** Locale code for number formatting (e.g., pt-BR, en-US) */
   locale: string
-  /** Flag emoji for visual representation */
-  flag: string
   /** Minimum fraction digits for display */
   minFractionDigits: number
   /** Maximum fraction digits for display */
@@ -85,7 +83,6 @@ export const SUPPORTED_CURRENCIES: Currency[] = [
     name: "Euro",
     symbol: "€",
     locale: "pt-PT",
-    flag: "🇪🇺",
     minFractionDigits: 2,
     maxFractionDigits: 2,
   },
@@ -94,7 +91,6 @@ export const SUPPORTED_CURRENCIES: Currency[] = [
     name: "US Dollar",
     symbol: "$",
     locale: "en-US",
-    flag: "🇺🇸",
     minFractionDigits: 2,
     maxFractionDigits: 2,
   },
@@ -103,7 +99,6 @@ export const SUPPORTED_CURRENCIES: Currency[] = [
     name: "British Pound",
     symbol: "£",
     locale: "en-GB",
-    flag: "🇬🇧",
     minFractionDigits: 2,
     maxFractionDigits: 2,
   },
@@ -112,7 +107,6 @@ export const SUPPORTED_CURRENCIES: Currency[] = [
     name: "Brazilian Real",
     symbol: "R$",
     locale: "pt-BR",
-    flag: "🇧🇷",
     minFractionDigits: 2,
     maxFractionDigits: 2,
   },

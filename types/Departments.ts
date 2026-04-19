@@ -12,8 +12,8 @@ export interface Departments_departments_annual_budgets {
   id: string;
   year: number;
   is_locked: boolean;
-  allocated_amount: any;
-  total_expenses: any;
+  allocated_amount: number;
+  total_expenses: number;
 }
 
 export interface Departments_departments_users {

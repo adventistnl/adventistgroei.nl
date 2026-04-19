@@ -1128,10 +1128,10 @@ export default function InstitutionsPage() {
                 id: "institution-leaders-card-top",
                 component: (
                   <InstitutionLeadersCard
-                    users={currentInstitutionData?.users || []}
+                    institutionId={currentInstitutionData?.id || ''}
                     institutionName={currentInstitutionData?.name || ''}
+                    institutionUsers={currentInstitutionData?.users || []}
                     loading={isLoading}
-                    selectedYear={selectedYear}
                   />
                 ),
                 colSpan: "col-span-12 lg:col-span-4",

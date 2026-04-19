@@ -13,9 +13,9 @@ export interface CreateDepartmentBudget_createDepartmentBudget {
   __typename: "AnnualBudget";
   year: number;
   planned_budget: any;
-  total_expenses: any;
-  allocated_amount: any;
-  balance: any;
+  total_expenses: number;
+  allocated_amount: number;
+  balance: number;
   status: AnnualBudgetStatus;
   priority: AnnualBudgetPriority;
   category: AnnualBudgetCategory;

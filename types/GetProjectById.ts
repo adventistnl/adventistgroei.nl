@@ -40,8 +40,8 @@ export interface GetProjectById_project_department_annual_budgets {
   id: string;
   year: number;
   is_locked: boolean;
-  allocated_amount: any;
-  total_expenses: any;
+  allocated_amount: number;
+  total_expenses: number;
 }
 
 export interface GetProjectById_project_department {
@@ -49,6 +49,7 @@ export interface GetProjectById_project_department {
   id: string;
   name: string;
   description: string;
+  leader_id: string;
   church: GetProjectById_project_department_church | null;
   annual_budgets: GetProjectById_project_department_annual_budgets[];
 }

@@ -176,11 +176,33 @@ export const institutionTranslations = {
     },
     leadershipCard: {
       title: "Institution Leaders",
-      description: "Leaders managing this institution",
+      description: "Formal positions assigned to this institution",
       no_leaders: "No institutional leaders found",
+      no_permission: "You don't have permission to view this content",
       leadership_roles: "Leadership Roles",
       no_roles: "No leadership roles assigned",
-      view_contact: "View Contact"
+      view_contact: "View Contact",
+      assign: "Assign",
+      replace: "Replace",
+      remove: "Remove",
+      unassigned: "Not assigned",
+      select_user: "Select user...",
+      search_user: "Search user...",
+      no_users_available: "No users available",
+      confirm_remove: "Remove position?",
+      positions: {
+        PRESIDENT: "President",
+        SECRETARY: "Secretary",
+        FINANCE_MANAGER: "Finance Manager"
+      },
+      toasts: {
+        assigned: "Position assigned successfully",
+        updated: "Position updated successfully",
+        removed: "Position removed successfully",
+        error_assign: "Error assigning position",
+        error_update: "Error updating position",
+        error_remove: "Error removing position"
+      }
     },
     activityHeatmap: {
       title: "Activity Heatmap",
@@ -368,11 +390,33 @@ export const institutionTranslations = {
     },
     leadershipCard: {
       title: "Institutionele Leiders",
-      description: "Leiders die deze instelling beheren",
+      description: "Formele functies toegewezen aan deze instelling",
       no_leaders: "Geen institutionele leiders gevonden",
+      no_permission: "U heeft geen toestemming om deze inhoud te bekijken",
       leadership_roles: "Leiderschapsrollen",
       no_roles: "Geen leiderschapsrollen toegewezen",
-      view_contact: "Contact Bekijken"
+      view_contact: "Contact Bekijken",
+      assign: "Toewijzen",
+      replace: "Vervangen",
+      remove: "Verwijderen",
+      unassigned: "Niet toegewezen",
+      select_user: "Selecteer gebruiker...",
+      search_user: "Zoek gebruiker...",
+      no_users_available: "Geen gebruikers beschikbaar",
+      confirm_remove: "Functie verwijderen?",
+      positions: {
+        PRESIDENT: "President",
+        SECRETARY: "Secretaris",
+        FINANCE_MANAGER: "Financieel Manager"
+      },
+      toasts: {
+        assigned: "Functie succesvol toegewezen",
+        updated: "Functie succesvol bijgewerkt",
+        removed: "Functie succesvol verwijderd",
+        error_assign: "Fout bij toewijzen van functie",
+        error_update: "Fout bij bijwerken van functie",
+        error_remove: "Fout bij verwijderen van functie"
+      }
     },
     activityHeatmap: {
       title: "Activiteit Heatmap",
@@ -560,11 +604,33 @@ export const institutionTranslations = {
     },
     leadershipCard: {
       title: "Líderes da Instituição",
-      description: "Líderes que gerenciam esta instituição",
+      description: "Cargos formais atribuídos a esta instituição",
       no_leaders: "Nenhum líder institucional encontrado",
+      no_permission: "Você não tem permissão para visualizar este conteúdo",
       leadership_roles: "Funções de Liderança",
       no_roles: "Nenhuma função de liderança atribuída",
-      view_contact: "Ver Contato"
+      view_contact: "Ver Contato",
+      assign: "Atribuir",
+      replace: "Substituir",
+      remove: "Remover",
+      unassigned: "Não atribuído",
+      select_user: "Selecionar usuário...",
+      search_user: "Buscar usuário...",
+      no_users_available: "Nenhum usuário disponível",
+      confirm_remove: "Remover cargo?",
+      positions: {
+        PRESIDENT: "Presidente",
+        SECRETARY: "Secretário",
+        FINANCE_MANAGER: "Gestor Financeiro"
+      },
+      toasts: {
+        assigned: "Cargo atribuído com sucesso",
+        updated: "Cargo atualizado com sucesso",
+        removed: "Cargo removido com sucesso",
+        error_assign: "Erro ao atribuir cargo",
+        error_update: "Erro ao atualizar cargo",
+        error_remove: "Erro ao remover cargo"
+      }
     },
     activityHeatmap: {
       title: "Mapa de Calor de Atividades",

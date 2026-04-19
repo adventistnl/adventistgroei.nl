@@ -129,7 +129,7 @@ const navSections: NavSection[] = [
         items: [
           { title: "Annual Budget", url: "/finance/annual-budget", permissions: [PermissionResolverName.AnnualBudgets], translationKey: "sidebar.annualBudget" },
           { title: "Ledger History", url: "/finance/ledger-history", permissions: [PermissionResolverName.LedgerHistory], translationKey: "sidebar.ledgerHistory" },
-          { title: "Subsidy Request", url: "/finance/subsidy-request", permissions: [PermissionResolverName.LedgerHistory, PermissionResolverName.SubsidyRequests], translationKey: "sidebar.subsidyApprovals" },
+          { title: "Subsidy Request", url: "/finance/subsidy-request", permissions: [PermissionResolverName.SubsidyRequests], translationKey: "sidebar.subsidyApprovals" },
         ],
         permissions: [],
         translationKey: "sidebar.financeManagement"
