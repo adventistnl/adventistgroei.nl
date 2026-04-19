@@ -568,6 +568,7 @@ export function ProjectKanbanView({
     const isExpired = daysLeft < 0
     const isUrgent = daysLeft >= 0 && daysLeft <= 7
     const isUserMember = !!item.metadata?.isUserMember
+    const isUserOwner = !!item.metadata?.isUserOwner
     const avatarUsers: UserAvatarData[] = (item.metadata?.avatarUsers as UserAvatarData[]) ?? []
     const ownerId = item.metadata?.ownerId as string | undefined
     const coOwnerId = item.metadata?.coOwnerId as string | undefined
@@ -627,7 +628,8 @@ export function ProjectKanbanView({
             </p>
           </div>
 
-          {/* Actions dropdown */}
+          {/* Actions dropdown — visible only to members */}
+          {isUserMember && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button
@@ -663,6 +665,7 @@ export function ProjectKanbanView({
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
+          )}
         </div>
 
         {/* Department */}
@@ -692,12 +695,18 @@ export function ProjectKanbanView({
 
         {/* Footer row: budget + activities + days left */}
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/50">
-          {/* Budget */}
+          {/* Budget — visible only to the project owner */}
           <div className="flex items-center gap-1">
             <DollarSign className="w-3 h-3 text-muted-foreground" />
-            <span className="text-xs font-medium text-foreground">
-              {item.metadata?.budget as string}
-            </span>
+            {isUserOwner ? (
+              <span className="text-xs font-medium text-foreground">
+                {item.metadata?.budget as string}
+              </span>
+            ) : (
+              <span className="text-xs font-medium text-muted-foreground select-none blur-sm">
+                ••••
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-3">

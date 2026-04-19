@@ -31,7 +31,7 @@ import { projectTranslations } from "@/lib/translations/projects"
 import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { DELETE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
-import { Globe, Plus, RefreshCw, Building, MoreHorizontal, Eye, Edit, Activity, TrendingUp, Users, DollarSign, Folder, ArrowRight, Calendar, Building2, Clock, CheckCircle2, ListChecks, LayoutGrid, List, ExternalLink, ScanEye } from "lucide-react"
+import { Globe, Plus, RefreshCw, Building, MoreHorizontal, Eye, Edit, Activity, TrendingUp, Users, DollarSign, Folder, ArrowRight, Calendar, Building2, Clock, CheckCircle2, ListChecks, LayoutGrid, List, ExternalLink, ScanEye, ShieldAlert } from "lucide-react"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
@@ -621,10 +621,24 @@ function ProjectsPageContent() {
       header: t_project.table.actions,
       cell: ({ row }) => {
         const project = row.original
-        
-        // Validate ownership: only project owner can edit/delete
-        const isProjectOwner = user?.id === project.owner_id || user?.id === project.owner?.id
-        
+
+        // Determine membership and ownership from collaborators array
+        const projectCollaborators: Array<{ role: string; user: { id: string } }> =
+          (project.collaborators as any[]) ?? []
+        const isProjectMember =
+          projectCollaborators.some((c) => c.user?.id === user?.id) ||
+          user?.id === project.owner_id ||
+          user?.id === project.owner?.id
+        const isOwnerOrCoOwner =
+          projectCollaborators.some(
+            (c) => c.user?.id === user?.id && (c.role === 'owner' || c.role === 'co_owner')
+          ) ||
+          user?.id === project.owner_id ||
+          user?.id === project.owner?.id
+
+        // Non-members have no action buttons at all
+        if (!isProjectMember) return null
+
         return (
           <div data-action-button>
             <DropdownMenu>
@@ -655,9 +669,9 @@ function ProjectsPageContent() {
                   <ExternalLink className="mr-2 h-4 w-4" />
                   {t_project.viewProject}
                 </DropdownMenuItem>
-                
-                {/* Only show Edit option if user is the project owner */}
-                {isProjectOwner && (
+
+                {/* Edit: only for owner / co-owner */}
+                {isOwnerOrCoOwner && (
                   <WithPermission requiredPermissions={[PermissionResolverName.UpdateProject]}>
                     <DropdownMenuItem
                       onClick={(e) => {
@@ -1088,16 +1102,45 @@ function ProjectsPageContent() {
 
 // Main export with Suspense boundary for useSearchParams
 export default function ProjectsPage() {
+  const { i18n } = useTranslation()
+  const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
+
   return (
-    <Suspense fallback={
-      <LoadingSpinner
-        text="Loading projects..."
-        icon={Building2}
-        size="lg"
-        fullScreen
-      />
-    }>
-      <ProjectsPageContent />
-    </Suspense>
+    <WithPermission
+      requiredPermissions={[PermissionResolverName.Projects]}
+      fallback={
+        <AppLayout>
+          <div className="flex items-center justify-center min-h-[60vh] px-4">
+            <div className="text-card-foreground flex flex-col sm:flex-row items-center gap-4 sm:gap-6 rounded-xl border p-6 sm:p-8 shadow-sm w-full max-w-md backdrop-blur-sm">
+              <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-muted">
+                <ShieldAlert className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <div className="flex flex-col text-center sm:text-left">
+                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {t_project.accessDenied.title}
+                </span>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {t_project.accessDenied.message}
+                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                  {t_project.accessDenied.contactAdmin}
+                </p>
+              </div>
+            </div>
+          </div>
+        </AppLayout>
+      }
+    >
+      <Suspense fallback={
+        <LoadingSpinner
+          text="Loading projects..."
+          icon={Building2}
+          size="lg"
+          fullScreen
+        />
+      }>
+        <ProjectsPageContent />
+      </Suspense>
+    </WithPermission>
   )
 }

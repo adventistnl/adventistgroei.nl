@@ -129,7 +129,7 @@ const navSections: NavSection[] = [
         items: [
           { title: "Annual Budget", url: "/finance/annual-budget", permissions: [PermissionResolverName.AnnualBudgets], translationKey: "sidebar.annualBudget" },
           { title: "Ledger History", url: "/finance/ledger-history", permissions: [PermissionResolverName.LedgerHistory], translationKey: "sidebar.ledgerHistory" },
-          { title: "Subsidy Request", url: "/finance/subsidy-request", permissions: [PermissionResolverName.SubsidyRequests], translationKey: "sidebar.subsidyApprovals" },
+          { title: "Subsidy Request", url: "/finance/subsidy-request", permissions: [PermissionResolverName.LedgerHistory, PermissionResolverName.SubsidyRequests], translationKey: "sidebar.subsidyApprovals" },
         ],
         permissions: [],
         translationKey: "sidebar.financeManagement"
@@ -150,46 +150,21 @@ const navSections: NavSection[] = [
 ]
 
 /**
- * Coleta todas as permissões de um item e seus subitems recursivamente
- * @param item - Item de navegação
- * @returns Array com todas as permissões encontradas
- */
-function collectItemPermissions(item: NavItem): PermissionResolverName[] {
-  const permissions: PermissionResolverName[] = [...item.permissions]
-  
-  if (item.items && item.items.length > 0) {
-    item.items.forEach(subItem => {
-      permissions.push(...collectItemPermissions(subItem))
-    })
-  }
-  
-  return permissions
-}
-
-/**
- * Verifica se o usuário possui pelo menos uma das permissões necessárias
- * Para items sem URL (url: "#"), verifica as permissões dos subitems
- * @param item - Item de navegação
- * @param userPermissions - Array com as permissões do usuário
- * @returns true se o usuário tiver pelo menos uma permissão necessária
+ * Verifica se o usuário possui as permissões necessárias para visualizar o item.
+ * Para items folha: exige TODAS as permissões do array.
+ * Para items com subitems: exige que ao menos um subitem seja visível.
  */
 export function shouldShowNavItem(item: NavItem, userPermissions: PermissionResolverName[]): boolean {
   // Se o item não tem subitems, verifica suas próprias permissões
   if (!item.items || item.items.length === 0) {
     // Se não tem permissões requeridas, mostra sempre
     if (item.permissions.length === 0) return true
-    // Verifica se tem pelo menos uma permissão
-    return item.permissions.some(permission => userPermissions.includes(permission))
+    // Verifica se tem TODAS as permissões necessárias
+    return item.permissions.every(permission => userPermissions.includes(permission))
   }
   
-  // Para items com subitems (url: "#"), coleta todas as permissões dos filhos
-  const allChildPermissions = collectItemPermissions(item)
-  
-  // Se não tem permissões requeridas nos filhos, mostra sempre
-  if (allChildPermissions.length === 0) return true
-  
-  // Verifica se o usuário tem pelo menos uma das permissões dos filhos
-  return allChildPermissions.some(permission => userPermissions.includes(permission))
+  // Para items com subitems (url: "#"), verifica recursivamente se ao menos um subitem é visível
+  return item.items.some(subItem => shouldShowNavItem(subItem, userPermissions))
 }
 
 // Manter compatibilidade - flatten all sections into single array
@@ -213,7 +188,7 @@ const _legacyNavMainBase: NavItem[] = [
     icon: Building2,
     items: [
       { title: "Institutions", url: "/institutions", permissions: [PermissionResolverName.Institutions], translationKey: "sidebar.institutions" },
-      { title: "Inst. Departments", url: "/institutional-departments", permissions: [PermissionResolverName.Departments], translationKey: "sidebar.instDepartments" },
+      { title: "Inst. Departments", url: "/institutional-departments", permissions: [PermissionResolverName.Departments, PermissionResolverName.Institutions], translationKey: "sidebar.instDepartments" },
       { title: "Regions", url: "/regions", permissions: [PermissionResolverName.Regions], translationKey: "sidebar.regions" },
       // { title: "Regions Example", url: "/regions-example", permissions: [PermissionResolverName.Regions] },
       { title: "Churches", url: "/churches", permissions: [PermissionResolverName.Churches], translationKey: "sidebar.churches" },
@@ -229,7 +204,7 @@ const _legacyNavMainBase: NavItem[] = [
     items: [
       { title: "Annual Budget", url: "/finance/annual-budget", permissions: [PermissionResolverName.Settings], translationKey: "sidebar.annualBudget" },
       // { title: "Funding Rules", url: "/finance/funding-rules", permissions: [PermissionResolverName.Institutions] },
-      { title: "Subsidy Request", url: "/finance/subsidy-request", permissions: [PermissionResolverName.Institutions], translationKey: "sidebar.subsidyApprovals" },
+      { title: "Subsidy Request", url: "/finance/subsidy-request", permissions: [PermissionResolverName.Settings, PermissionResolverName.Institutions], translationKey: "sidebar.subsidyApprovals" },
     ],
     permissions: [],
     translationKey: "sidebar.financeManagement"

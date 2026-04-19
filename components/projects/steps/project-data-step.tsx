@@ -30,6 +30,8 @@ interface ProjectDataStepProps {
   departments: Array<{ id: string; name: string; annual_budget?: number; leader_id?: string | null }>
   users: Array<{ id: string; name: string; email: string }>
   churches: Array<{ id: string; name: string }>
+  /** Whether departments are still loading from the API */
+  loading?: boolean
   onChange: (data: Partial<ProjectFormData>) => void
 }
 
@@ -42,9 +44,10 @@ const TYPE_ICONS = {
   department: Settings
 }
 
-export function ProjectDataStep({ formData, errors, departments, users, churches, onChange }: ProjectDataStepProps) {
+export function ProjectDataStep({ formData, errors, departments, users, churches, loading = false, onChange }: ProjectDataStepProps) {
   const { t } = useTranslation()
   const { user: authUser } = useAuth()
+
   const [openDepartment, setOpenDepartment] = useState(false)
   const [openChurch, setOpenChurch] = useState(false)
   const [openChurchDepartment, setOpenChurchDepartment] = useState(false)
@@ -111,8 +114,23 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.department_id])
 
-  // Check if there are departments available
   const hasDepartments = departments && departments.length > 0
+
+  // Debug: log in effect to avoid running on every render
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development' || loading) return
+    console.group('🏢 [ProjectDataStep] Departments received (locked budget filter already applied)')
+    console.log(`Count: ${departments.length}`)
+    if (departments.length > 0) {
+      departments.forEach(dept => {
+        console.log(`  ✅ ${dept.name}`, { id: dept.id, leader_id: dept.leader_id, annual_budget: dept.annual_budget })
+      })
+    } else {
+      console.warn('  ⚠️ No departments — user will see "no departments" warning')
+    }
+    console.groupEnd()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, departments.length])
 
   // Resetar church_department_id quando church_id mudar
   useEffect(() => {
@@ -145,17 +163,17 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
     onChange({ _isStepValid: isStepValid })
   }, [isStepValid]) // Remove onChange from dependencies to prevent infinite loop
 
-  // Auto-show modal when no departments are available and modal hasn't been shown yet
+  // Auto-show modal only after API finishes loading and departments are still unavailable
   useEffect(() => {
-    if (!hasDepartments && !autoModalShown) {
-      const timer = setTimeout(() => {
-        setShowDepartmentInfoModal(true)
-        setAutoModalShown(true)
-      }, 1000) // Show after 1 second to let the page load
+    if (loading || hasDepartments || autoModalShown) return
 
-      return () => clearTimeout(timer)
-    }
-  }, [hasDepartments, autoModalShown])
+    const timer = setTimeout(() => {
+      setShowDepartmentInfoModal(true)
+      setAutoModalShown(true)
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [loading, hasDepartments, autoModalShown])
 
   const ResponsibilityTypeButton = ({
     type,
@@ -486,11 +504,6 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
                                   </div>
                                   <div className="flex-1">
                                     <span className="font-medium">{dept.name}</span>
-                                    {dept.annual_budget !== undefined && (
-                                      <Badge variant="outline" className="ml-2 text-xs">
-                                        € {dept.annual_budget.toLocaleString()}
-                                      </Badge>
-                                    )}
                                   </div>
                                   {formData.department_id === dept.id && (
                                     <Check className="ml-auto h-4 w-4" />
@@ -507,8 +520,8 @@ export function ProjectDataStep({ formData, errors, departments, users, churches
                 </div>
               )}
 
-              {/* Department Unavailable Warning */}
-              {!hasDepartments && (
+              {/* Department Unavailable Warning — only shown after data has fully loaded */}
+              {!loading && !hasDepartments && (
                 <div className="flex-1 space-y-4">
                   <Label htmlFor="department" className="flex items-center gap-2 text-base font-medium">
                     <Building className="w-4 h-4 text-muted-foreground" />

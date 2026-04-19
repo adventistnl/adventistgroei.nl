@@ -68,6 +68,7 @@ import {
   Building,
   Home,
   FileText,
+  ShieldAlert,
 } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
@@ -2009,6 +2010,32 @@ export default function ProjectDetailsPage() {
     )
   }
 
+  // Access denied: user is not a collaborator of this project
+  if (!isProjectMember) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-[60vh] px-4">
+          <div className="text-card-foreground flex flex-col sm:flex-row items-center gap-4 sm:gap-6 rounded-xl border p-6 sm:p-8 shadow-sm w-full max-w-md backdrop-blur-sm">
+            <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-muted">
+              <ShieldAlert className="w-6 h-6 text-muted-foreground" />
+            </div>
+            <div className="flex flex-col text-center sm:text-left">
+              <span className="text-sm font-semibold">
+                {pt.accessDenied?.title ?? 'Access Denied'}
+              </span>
+              <p className="text-xs text-gray-500 mt-1">
+                {pt.accessDenied?.message ?? 'You are not a member of this project.'}
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {pt.accessDenied?.contactAdmin ?? 'Contact the project owner to request access.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    )
+  }
+
 
 
   const handleLinkActivity = (id: string) => {
@@ -2102,8 +2129,8 @@ export default function ProjectDetailsPage() {
                 <SubsidyRequestsContainer
                   subsidies={subsidyRequests}
                   onAddSubsidy={(isProjectMember && !isReceiptPending && !isProjectConcluded) ? handleAddSubsidyFromContainer : undefined}
-                  onEditSubsidy={!isProjectConcluded ? handleEditSubsidyCard : undefined}
-                  onDeleteSubsidy={!isProjectConcluded ? handleDeleteSubsidyCard : undefined}
+                  onEditSubsidy={(isOwnerOrCoOwner && !isProjectConcluded) ? handleEditSubsidyCard : undefined}
+                  onDeleteSubsidy={(isOwnerOrCoOwner && !isProjectConcluded) ? handleDeleteSubsidyCard : undefined}
                   onDuplicateSubsidy={(isOwnerOrCoOwner && !isProjectConcluded) ? handleDuplicateSubsidyCard : undefined}
                   onUpdateSubsidy={(isOwnerOrCoOwner && !isProjectConcluded) ? handleUpdateSubsidyCard : undefined}
                   onLinkActivity={handleLinkActivity}

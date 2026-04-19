@@ -82,7 +82,8 @@ import {
   Banknote,
   PieChart,
   Sprout,
-  Star
+  Star,
+  ShieldAlert
 } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -135,6 +136,7 @@ import "@/lib/i18n"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { LoadingSpinner } from "@/components/shared/loading-spinner"
+import { useHasPermission } from "@/hooks/use-has-permission"
 
 // Predefined activities with translation keys
 // The 'key' field is used to fetch translations, tagKeys are database keys
@@ -242,6 +244,7 @@ function ProjectRegisterContent() {
   // Get current user and institution context
   const { user: currentUser } = useAuth()
   const { currentInstitutionData } = useInstitution()
+  const canReadProjects = useHasPermission([PermissionResolverName.Projects])
   const institutionId = currentInstitutionData?.id
 
   // One-shot mutation for logging project creation event
@@ -312,9 +315,41 @@ function ProjectRegisterContent() {
 
   // Extract data with fallback to empty arrays and filter by current year budget
   const currentYear = new Date().getFullYear()
-  const departments = (departmentsData?.departments || []).filter((dept: any) =>
-    dept.annual_budgets?.some((budget: any) => budget.year === currentYear && budget.is_locked === true)
-  )
+
+  const allDepartments = departmentsData?.departments || []
+  const departments = allDepartments
+    .filter((dept: any) =>
+      dept.annual_budgets?.some((budget: any) => budget.year === currentYear && budget.is_locked === true)
+    )
+    .map((dept: any) => {
+      const lockedBudget = dept.annual_budgets?.find((b: any) => b.year === currentYear && b.is_locked === true)
+      return {
+        ...dept,
+        annual_budget: lockedBudget?.allocated_amount ?? undefined
+      }
+    })
+
+  // Debug: log department budget filtering
+  if (process.env.NODE_ENV === 'development' && allDepartments.length > 0 && !loadingDepartments) {
+    console.group(`📦 [new-project] Departments from API — year: ${currentYear}`)
+    console.log(`Total from API: ${allDepartments.length} | Passed filter (locked budget): ${departments.length}`)
+    allDepartments.forEach((dept: any) => {
+      const budgets = dept.annual_budgets || []
+      const currentBudget = budgets.find((b: any) => b.year === currentYear)
+      const passed = !!currentBudget && currentBudget.is_locked === true
+      console.log(
+        `%c${passed ? '✅' : '❌'} ${dept.name}`,
+        `color: ${passed ? 'green' : 'red'}`,
+        {
+          id: dept.id,
+          budgets: budgets.map((b: any) => ({ year: b.year, is_locked: b.is_locked, allocated: b.allocated_amount })),
+          currentYearBudget: currentBudget ?? '⚠️ none',
+          passedFilter: passed,
+        }
+      )
+    })
+    console.groupEnd()
+  }
   // Filter only active (non-deleted) users
   const users = (usersData?.users || []).filter((user: any) => !user.is_deleted) as Array<{ id: string; name: string; email: string }>
   const churches = churchesData?.churches || []
@@ -1118,13 +1153,14 @@ function ProjectRegisterContent() {
       }
 
       // Navigate only after role assignments complete
-      router.push('/projects')
+      // If user lacks permission to read the projects list, redirect to dashboard
+      router.push(canReadProjects ? '/projects' : '/dashboard')
 
     } catch (error: any) {
       toast.dismiss(loadingToast)
-    } finally {
       setIsLoading(false)
     }
+    // Note: isLoading stays true during navigation so the overlay persists until the page unmounts
   }
 
   const renderStepContent = () => {
@@ -1143,6 +1179,7 @@ function ProjectRegisterContent() {
             departments={departments}
             users={users}
             churches={churches}
+            loading={loadingDepartments}
             onChange={(updates) => setFormData(prev => ({ ...prev, ...updates }))}
           />
         )
@@ -3146,15 +3183,22 @@ export default function ProjectRegisterPage() {
       requiredPermissions={[PermissionResolverName.CreateProject]}
       fallback={
         <AppLayout>
-          <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-foreground mb-2">{t.accessDenied.title}</h2>
-              <p className="text-muted-foreground mb-4">
-                {t.accessDenied.noPermission}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {t.accessDenied.contactAdmin}
-              </p>
+          <div className="flex items-center justify-center min-h-[60vh] px-4">
+            <div className="text-card-foreground flex flex-col sm:flex-row items-center gap-4 sm:gap-6 rounded-xl border p-6 sm:p-8 shadow-sm w-full max-w-md backdrop-blur-sm">
+              <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-muted">
+                <ShieldAlert className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <div className="flex flex-col text-center sm:text-left">
+                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {t.accessDenied.title}
+                </span>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {t.accessDenied.noPermission}
+                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                  {t.accessDenied.contactAdmin}
+                </p>
+              </div>
             </div>
           </div>
         </AppLayout>
