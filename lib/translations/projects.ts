@@ -343,7 +343,9 @@ export const projectTranslations = {
       budgetPositive: "Budget must be greater than 0",
       endDateAfterStart: "End date must be after start date",
       currentOwner: "Current Owner",
-      clickToChange: "Click to change owner"
+      clickToChange: "Click to change owner",
+      cannotEditProjectNotDraft: "Members can only edit project details while it is in Draft status.",
+      cannotChangeBudget: "Cannot change the subsidized budget after project approval."
     },
     
     // Steps
@@ -671,7 +673,15 @@ export const projectTranslations = {
           delete: "Delete Request",
           deleting: "Deleting..."
         }
-      }
+      },
+
+      // Refund banner in view-subsidy-modal
+      refundRequested: "Refund Requested",
+      refundAmountText: "A refund of {{amount}} was requested.",
+      rejectRefund: "Reject",
+      confirmProcessed: "Confirm Processed",
+      refundProcessedMsg: "Refund of {{amount}} was successfully processed.",
+      refundRejectedMsg: "Refund of {{amount}} was rejected."
     },
 
     // View Subsidy Modal
@@ -1608,7 +1618,9 @@ export const projectTranslations = {
       budgetPositive: "Budget moet groter zijn dan 0",
       endDateAfterStart: "Einddatum moet na startdatum liggen",
       currentOwner: "Huidige eigenaar",
-      clickToChange: "Klik om eigenaar te wijzigen"
+      clickToChange: "Klik om eigenaar te wijzigen",
+      cannotEditProjectNotDraft: "Leden kunnen projectdetails alleen bewerken als het project de status Concept heeft.",
+      cannotChangeBudget: "Het gesubsidieerde budget kan niet worden gewijzigd na goedkeuring van het project."
     },
     
     // Steps
@@ -1935,7 +1947,15 @@ export const projectTranslations = {
           delete: "Aanvraag Verwijderen",
           deleting: "Verwijderen..."
         }
-      }
+      },
+
+      // Restitutie banner in view-subsidy-modal
+      refundRequested: "Terugbetaling Aangevraagd",
+      refundAmountText: "Er is een terugbetaling van {{amount}} aangevraagd.",
+      rejectRefund: "Afwijzen",
+      confirmProcessed: "Verwerking Bevestigen",
+      refundProcessedMsg: "Terugbetaling van {{amount}} is succesvol verwerkt.",
+      refundRejectedMsg: "Terugbetaling van {{amount}} is afgewezen."
     },
 
     // View Subsidy Modal
@@ -2891,7 +2911,9 @@ export const projectTranslations = {
       budgetPositive: "O orçamento deve ser maior que 0",
       endDateAfterStart: "A data de término deve ser após a data de início",
       currentOwner: "Proprietário atual",
-      clickToChange: "Clique para alterar o proprietário"
+      clickToChange: "Clique para alterar o proprietário",
+      cannotEditProjectNotDraft: "Membros só podem editar os detalhes do projeto enquanto estiver em Rascunho.",
+      cannotChangeBudget: "Não é possível alterar o valor do subsídio após o projeto ser aprovado."
     },
     
     // Steps
@@ -3172,7 +3194,15 @@ export const projectTranslations = {
           delete: "Excluir Solicitação",
           deleting: "Excluindo..."
         }
-      }
+      },
+
+      // Banner de reembolso no view-subsidy-modal
+      refundRequested: "Reembolso Solicitado",
+      refundAmountText: "Um reembolso de {{amount}} foi solicitado.",
+      rejectRefund: "Rejeitar",
+      confirmProcessed: "Confirmar Processado",
+      refundProcessedMsg: "Reembolso de {{amount}} foi processado com sucesso.",
+      refundRejectedMsg: "Reembolso de {{amount}} foi rejeitado."
     },
 
     // View Subsidy Modal

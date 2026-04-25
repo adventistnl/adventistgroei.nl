@@ -331,11 +331,14 @@ export function ProjectKanbanView({
         const daysLeft = Math.ceil(
           (new Date(p.end_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
         )
-        const isUserOwner =
-          user?.id === p.owner_id || user?.id === p.owner?.id
-
         const collaborators: Array<{ role: string; user: { id: string; name: string; email?: string } }> =
           (p.collaborators as any[]) ?? []
+
+        const isUserOwner =
+          user?.id === p.owner_id ||
+          user?.id === p.owner?.id ||
+          user?.id === p.co_owner_id ||
+          collaborators.some((c) => c.user?.id === user?.id && (c.role === 'owner' || c.role === 'co_owner'))
 
         const isUserMember =
           isUserOwner || collaborators.some((c) => c.user?.id === user?.id)

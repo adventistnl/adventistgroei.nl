@@ -66,6 +66,8 @@ interface SubsidyRequestsContainerProps {
   churchDepartmentName?: string
   /** When true, hides Add and Request Advance buttons (project is still in Draft state) */
   isDraft?: boolean
+  /** Whether the current user is an owner or co-owner of the project */
+  isOwnerOrCoOwner?: boolean
 }
 
 export function SubsidyRequestsContainer({
@@ -97,6 +99,7 @@ export function SubsidyRequestsContainer({
   churchDepartmentId = "",
   churchDepartmentName = "",
   isDraft = false,
+  isOwnerOrCoOwner = false,
 }: SubsidyRequestsContainerProps) {
   const { t } = useTranslation()
   const { formatCurrency } = useCurrency()
@@ -178,7 +181,7 @@ export function SubsidyRequestsContainer({
             <div className="h-full max-h-[480px] flex flex-col gap-3 overflow-y-auto pr-2">
               {displaySubsidies.map((subsidy) => {
                 const isRequester = subsidy.requester_id === user?.id
-                const isEditable = isRequester && ["pending", "in_review", "rejected", "adjustments_needed"].includes(subsidy.status)
+                const isEditable = (isRequester || isOwnerOrCoOwner) && ["pending", "in_review", "rejected", "adjustments_needed"].includes(subsidy.status)
 
                 return <SubsidyRequestCard
                   key={subsidy.id}

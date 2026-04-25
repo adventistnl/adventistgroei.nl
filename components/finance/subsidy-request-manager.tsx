@@ -138,6 +138,8 @@ interface SubsidyRequest {
   church_id?: string
   institution_id?: string
   requester_id?: string
+  project_owner_id?: string
+  department_leader_id?: string
   // Responsible users (computed from backend data)
   responsibleUsers?: UserAvatarData[]
 }
@@ -239,16 +241,16 @@ export function SubsidyRequestManager({
   // Helper: Check if current user is project owner for a specific subsidy
   const isProjectOwner = (subsidy: SubsidyRequest | any): boolean => {
     if (!user?.id) return false
-    // Check if user is the project owner (from raw backend data or transformed)
-    const projectOwnerId = subsidy.project?.owner_id || subsidy.project?.owner?.id
-    return projectOwnerId === user.id
+    // project_owner_id is the flattened field set during transformation
+    const ownerId = subsidy.project_owner_id || subsidy.project?.owner_id || subsidy.project?.owner?.id
+    return ownerId === user.id
   }
 
   // Helper: Check if current user is department leader for a specific subsidy
   const isDepartmentLeader = (subsidy: SubsidyRequest | any): boolean => {
     if (!user?.id) return false
-    // Check if user is the department leader
-    const leaderId = subsidy.department?.leader_id || subsidy.department?.leader?.id
+    // department_leader_id is the flattened field set during transformation
+    const leaderId = subsidy.department_leader_id || subsidy.department?.leader_id || subsidy.department?.leader?.id
     return leaderId === user.id
   }
 
@@ -618,6 +620,8 @@ export function SubsidyRequestManager({
         church_id: request.church_id,
         institution_id: request.institution_id,
         requester_id: request.created_by,
+        project_owner_id: request.project?.owner_id || request.project?.owner?.id || null,
+        department_leader_id: request.department?.leader_id || request.department?.leader?.id || null,
         // Compute responsible users (with owner marked)
         responsibleUsers: responsibleUsers
       }

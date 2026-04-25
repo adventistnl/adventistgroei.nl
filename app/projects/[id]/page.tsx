@@ -311,8 +311,20 @@ export default function ProjectDetailsPage() {
       refetchProject()
       setIsRegisterActivityModalOpen(false)
     },
-    onError: (error) => {
-      toast.error(`${t('errors.updateError')}: ${error.message}`)
+    onError: (error: any) => {
+      let graphQLError = error?.graphQLErrors?.[0]
+      if (!graphQLError && error?.networkError?.result?.errors) {
+        graphQLError = error.networkError.result.errors[0]
+      }
+      const errorCode = graphQLError?.extensions?.context?.additional?.errorCode
+      
+      if (errorCode === 'EDIT_LOCKED_NOT_DRAFT') {
+        toast.error(t('errors.cannotEditActivityNotDraft') || 'Members can only create activities while the project is in Draft status.', { duration: 4000 })
+      } else if (graphQLError?.message) {
+        toast.error(`${t('errors.updateError') || 'Erro'}: ${graphQLError.message}`)
+      } else {
+        toast.error(`${t('errors.updateError') || 'Erro'}: ${error.message}`)
+      }
     }
   })
 
@@ -325,8 +337,20 @@ export default function ProjectDetailsPage() {
       setIsEditActivityModalOpen(false)
       setSelectedActivity(undefined)
     },
-    onError: (error) => {
-      toast.error(`${t('errors.updateError')}: ${error.message}`)
+    onError: (error: any) => {
+      let graphQLError = error?.graphQLErrors?.[0]
+      if (!graphQLError && error?.networkError?.result?.errors) {
+        graphQLError = error.networkError.result.errors[0]
+      }
+      const errorCode = graphQLError?.extensions?.context?.additional?.errorCode
+      
+      if (errorCode === 'EDIT_LOCKED_NOT_DRAFT') {
+        toast.error(t('errors.cannotEditActivityNotDraft') || 'Members can only edit activities while the project is in Draft status.', { duration: 4000 })
+      } else if (graphQLError?.message) {
+        toast.error(`${t('errors.updateError') || 'Erro'}: ${graphQLError.message}`)
+      } else {
+        toast.error(`${t('errors.updateError') || 'Erro'}: ${error.message}`)
+      }
     }
   })
 
@@ -412,8 +436,22 @@ export default function ProjectDetailsPage() {
       refetchProject()
       setIsFundingDistributionModalOpen(false)
     },
-    onError: (error) => {
-      toast.error(`${t('errors.updateError')}: ${error.message}`)
+    onError: (error: any) => {
+      let graphQLError = error?.graphQLErrors?.[0]
+      if (!graphQLError && error?.networkError?.result?.errors) {
+        graphQLError = error.networkError.result.errors[0]
+      }
+      const errorCode = graphQLError?.extensions?.context?.additional?.errorCode
+      
+      if (errorCode === 'EDIT_LOCKED_NOT_DRAFT') {
+        toast.error(t('errors.cannotEditProjectNotDraft') || 'Members can only edit project details while it is in Draft status.', { duration: 4000 })
+      } else if (errorCode === 'BUDGET_LOCKED_AFTER_APPROVAL') {
+        toast.error(t('errors.cannotChangeBudget') || 'Cannot change the subsidized budget after project approval.', { duration: 4000 })
+      } else if (graphQLError?.message) {
+        toast.error(`${t('errors.updateError') || 'Erro'}: ${graphQLError.message}`)
+      } else {
+        toast.error(`${t('errors.updateError') || 'Erro'}: ${error.message}`)
+      }
     }
   })
 
@@ -1910,7 +1948,8 @@ export default function ProjectDetailsPage() {
         variables: { input }
       })
     } catch (error) {
-      toast.error("Erro ao atualizar atividade")
+      console.error("Error in handleEditActivitySubmit:", error)
+      // The specific error is already handled by the onError callback of updateProjectActivity
     }
   }
 
@@ -2241,6 +2280,7 @@ export default function ProjectDetailsPage() {
                   allActivities={projectData.project.activities || []}
                   subsidizedActivityIds={[...subsidizedActivityIds, ...linkedActivityIdsForModal]}
                   onRefresh={async () => { await refetchProject() }}
+                  isOwnerOrCoOwner={isOwnerOrCoOwner}
                   projectSubsidizedBudget={Number(projectData.project.subsidized_budget || 0)}
                   projectId={projectId}
                   projectName={project.title}
