@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useEffect } from "react"
+import React, { useState, useMemo, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
@@ -132,20 +132,38 @@ export default function LedgerHistoryPage() {
     skip: !currentInstitutionData?.id,
   })
 
+  const loadingToastRef = useRef<string | undefined>(undefined)
+  const wasLoadingRef = useRef(false)
+  const successShownRef = useRef(false)
+
   // Frontend caching to prevent table skeleton flicker while typing/paginating
-  const [cachedData, setCachedData] = useState<{ items: LedgerHistoryEntry[], totalCount: number, pageCount: number }>({
+  const [cachedData, setCachedData] = useState<{ items: any[], totalCount: number, pageCount: number }>({
     items: [],
     totalCount: 0,
     pageCount: 0
   })
 
+  // Track loading→loaded transition and update cache
   useEffect(() => {
+    if (loading && !wasLoadingRef.current && !successShownRef.current) {
+      // Loading started
+      wasLoadingRef.current = true
+      loadingToastRef.current = toast.loading(t('budget.messages.refreshing', 'Loading data...'))
+    }
+
     if (data?.ledgerHistory && !loading) {
       setCachedData({
         items: data.ledgerHistory.items || [],
         totalCount: data.ledgerHistory.totalCount || 0,
         pageCount: data.ledgerHistory.pageInfo?.totalPages || 0
       })
+      // Show success only on first completed load
+      if (wasLoadingRef.current && loadingToastRef.current !== undefined && !successShownRef.current) {
+        successShownRef.current = true
+        toast.dismiss(loadingToastRef.current)
+        loadingToastRef.current = undefined
+        toast.success(t('budget.messages.refresh_success', 'Data loaded successfully'), { duration: 3000 })
+      }
     }
   }, [data, loading])
 

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useEffect } from "react"
+import React, { useState, useMemo, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { useQuery } from "@apollo/client"
@@ -745,9 +745,13 @@ export default function AnnualBudgetPage() {
     }
   }
 
+  const hasShownLoadingToast = useRef(false)
+
   // Refetch data when page is opened
   useEffect(() => {
-    handleRefresh()
+    if (hasShownLoadingToast.current) return
+    hasShownLoadingToast.current = true
+    handleRefresh(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

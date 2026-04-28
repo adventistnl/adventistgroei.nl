@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useEffect } from "react"
+import React, { useState, useMemo, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@apollo/client"
 import { AppLayout } from "@/components/layouts/app-layout"
@@ -133,6 +133,25 @@ export default function SubsidyRequestPage() {
 
   // Combined loading state
   const isLoading = institutionLoading || subsidyLoading || analyticsLoading
+
+  // Show loading/success toast: track true→false transition of isLoading
+  const loadingToastRef = useRef<string | undefined>(undefined)
+  const wasLoadingRef = useRef(false)
+  const successShownRef = useRef(false)
+
+  useEffect(() => {
+    if (successShownRef.current) return
+
+    if (isLoading && !wasLoadingRef.current) {
+      wasLoadingRef.current = true
+      loadingToastRef.current = toast.loading(translations.toasts.refreshing || 'Loading subsidy requests...')
+    } else if (!isLoading && wasLoadingRef.current && loadingToastRef.current !== undefined) {
+      successShownRef.current = true
+      toast.dismiss(loadingToastRef.current)
+      loadingToastRef.current = undefined
+      toast.success(translations.toasts.refreshSuccess || 'Data loaded successfully', { duration: 3000 })
+    }
+  }, [isLoading])
 
   // 🔍 DEBUG: Log props being passed to SubsidyRequestManager
   useEffect(() => {

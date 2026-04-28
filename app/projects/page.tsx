@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, Suspense } from "react"
+import React, { useState, useEffect, useMemo, Suspense, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@apollo/client"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -138,6 +138,27 @@ function ProjectsPageContent() {
     title: t_project.projectsPage,
     breadcrumbs
   })
+
+  // Show loading/success toast: track true→false transition of isLoading
+  const loadingToastRef = useRef<string | undefined>(undefined)
+  const wasLoadingRef = useRef(false)
+  const successShownRef = useRef(false)
+
+  useEffect(() => {
+    if (successShownRef.current) return
+
+    if (isLoading && !wasLoadingRef.current) {
+      // Loading started — show loading toast
+      wasLoadingRef.current = true
+      loadingToastRef.current = toast.loading(t_project.toasts?.loadingData || 'Loading projects...')
+    } else if (!isLoading && wasLoadingRef.current && loadingToastRef.current !== undefined) {
+      // Loading finished — show success
+      successShownRef.current = true
+      toast.dismiss(loadingToastRef.current)
+      loadingToastRef.current = undefined
+      toast.success(t_project.toasts?.dataRefreshed || 'Projects loaded successfully', { duration: 3000 })
+    }
+  }, [isLoading])
 
   // Transform backend data to table format
   const transformProjectsData = (backendProjects: any[]): ProjectTableData[] => {

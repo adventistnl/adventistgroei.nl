@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@apollo/client"
 import { AppLayout } from "@/components/layouts/app-layout"
@@ -171,16 +171,35 @@ export default function DashboardPage() {
   // Track initial page load - only show full loading on first load
   const [isInitialLoad, setIsInitialLoad] = useState(true)
   
+  const loadingToastId = useRef<string | number | undefined>(undefined)
+  const wasLoadingRef = useRef(false)
+  const successShownRef = useRef(false)
+
   // Mark initial load as complete once all data is loaded
   React.useEffect(() => {
     if (!isLoadingData && isInitialLoad) {
-      // Small delay to ensure smooth transition
       const timer = setTimeout(() => {
         setIsInitialLoad(false)
       }, 300)
       return () => clearTimeout(timer)
     }
   }, [isLoadingData, isInitialLoad])
+
+  // Show loading/success toast tracking isLoadingData transition true→false
+  React.useEffect(() => {
+    if (successShownRef.current) return
+
+    if (isLoadingData && !wasLoadingRef.current) {
+      wasLoadingRef.current = true
+      loadingToastId.current = toast.loading(dt.loadingData || 'Loading dashboard...')
+    } else if (!isLoadingData && wasLoadingRef.current && loadingToastId.current !== undefined) {
+      successShownRef.current = true
+      toast.dismiss(loadingToastId.current)
+      loadingToastId.current = undefined
+      toast.success(dt.dataLoaded || 'Dashboard loaded successfully', { duration: 3000 })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoadingData])
 
   const isLoading = institutionsLoading || regionsLoading || churchesLoading || departmentsLoading || rolesLoading
 

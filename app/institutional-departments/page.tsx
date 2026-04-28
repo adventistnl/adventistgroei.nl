@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { useQuery, useMutation } from "@apollo/client"
@@ -447,10 +447,15 @@ export default function DepartmentsPage() {
     };
   }, [departments, selectedYear]);
 
+  const hasShownLoadingToast = useRef(false)
+
   /**
    * Carregamento inicial dos dados
    */
   useEffect(() => {
+    if (hasShownLoadingToast.current) return
+    hasShownLoadingToast.current = true
+
     const loadData = async () => {
       const loadingToast = toast.loading(tDept.common?.loading || "Loading...")
       
@@ -469,7 +474,7 @@ export default function DepartmentsPage() {
     }
 
     loadData()
-  }, [tDept])
+  }, [])
 
   /**
    * Handlers para ações

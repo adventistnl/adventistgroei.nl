@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { AppLayout } from "@/components/layouts/app-layout"
@@ -248,8 +248,13 @@ export default function AccessManagementPage() {
     ]
   }, [permissions])
 
+  const hasShownLoadingToast = useRef(false)
+
   // Load data
   useEffect(() => {
+    if (hasShownLoadingToast.current) return
+    hasShownLoadingToast.current = true
+
     const loadData = async () => {
       const loadingToast = toast.loading("Loading access data...")
       

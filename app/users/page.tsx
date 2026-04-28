@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, Suspense } from "react"
+import React, { useState, useEffect, Suspense, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
 import { AppLayout } from "@/components/layouts/app-layout"
@@ -175,8 +175,13 @@ export default function UsersPage() {
     title: t('users.title')
   })
   
+  const hasShownLoadingToast = useRef(false)
+
   // Load data
   useEffect(() => {
+    if (hasShownLoadingToast.current) return
+    hasShownLoadingToast.current = true
+
     const loadData = async () => {
       const loadingToast = toast.loading(t('users.loading'))
       

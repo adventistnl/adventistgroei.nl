@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { AppLayout } from "@/components/layouts/app-layout"
@@ -474,10 +474,15 @@ export default function ChurchDepartmentsPage() {
     };
   }, [departments]);
 
+  const hasShownLoadingToast = useRef(false)
+
   /**
    * Carregamento inicial dos dados
    */
   useEffect(() => {
+    if (hasShownLoadingToast.current) return
+    hasShownLoadingToast.current = true
+
     const loadData = async () => {
       const loadingToast = toast.loading(t.common?.loading || "Loading...")
       
