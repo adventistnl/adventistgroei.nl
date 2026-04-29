@@ -64,7 +64,6 @@ import { cn } from "@/lib/utils"
 // Extended interface to include new field locally
 interface ExtendedDepartmentVariables extends CreateDepartmentVariables {
   responsibleUsers?: string[]
-  leader_id: string
 }
 
 
@@ -154,7 +153,7 @@ export function AddDepartmentModal({
     church: '',
     name: '',
     description: '',
-    leader_id: '',
+    leader_id: undefined,
     contactName: '',
     phone: '',
     email: '',
@@ -175,7 +174,7 @@ export function AddDepartmentModal({
         church: '',
         name: '',
         description: '',
-        leader_id: '',
+        leader_id: undefined,
         contactName: '',
         phone: '',
         email: '',
@@ -222,8 +221,8 @@ export function AddDepartmentModal({
         newErrors.church = t.validation.church_required
       }
 
-      // Validate leader (required for all departments)
-      if (!formData.leader_id) {
+      // Validate leader (required only for church departments)
+      if (departmentType === 'church' && !formData.leader_id) {
         newErrors.leader_id = t.validation.leader_required
       }
     }
@@ -242,7 +241,8 @@ export function AddDepartmentModal({
       if (departmentType === 'church' && !formData.church) {
         newErrors.church = t.validation.church_required
       }
-      if (!formData.leader_id) {
+      // Leader required only for church departments
+      if (departmentType === 'church' && !formData.leader_id) {
         newErrors.leader_id = t.validation.leader_required
       }
     }
@@ -281,7 +281,7 @@ export function AddDepartmentModal({
         name: formData.name,
         description: formData.description,
         institution: formData.institution,
-        leader_id: formData.leader_id,
+        leader_id: formData.leader_id || undefined,
         church: departmentType === 'institutional' ? '' : formData.church,
         contactName: formData.contactName,
         email: formData.email,
@@ -318,7 +318,7 @@ export function AddDepartmentModal({
       church: '',
       name: '',
       description: '',
-      leader_id: '',
+      leader_id: undefined,
       contactName: '',
       phone: '',
       email: '',
@@ -448,11 +448,17 @@ export function AddDepartmentModal({
                 </div>
               )}
 
-              {/* Leader selection - REQUIRED for all departments */}
+              {/* Leader selection - optional for institutional, required for church */}
               <div className="space-y-2">
                 <Label htmlFor="leader" className="text-sm font-medium">
-                  {t.fields.leader} *
+                  {t.fields.leader}{departmentType === 'church' ? ' *' : ''}
                 </Label>
+                {departmentType === 'institutional' && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Info className="w-3 h-3" />
+                    {t.fields.leader_optional_hint || 'Optional — you can assign a leader after creating the department.'}
+                  </p>
+                )}
                 <Popover open={openLeader} onOpenChange={setOpenLeader}>
                   <PopoverTrigger asChild>
                     <Button

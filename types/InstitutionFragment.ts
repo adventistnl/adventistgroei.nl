@@ -359,7 +359,7 @@ export interface InstitutionFragment_churches_departments {
   name: string;
   description: string;
   contact_id: string | null;
-  leader_id: string;
+  leader_id: string | null;
   created_at: any;
   updated_at: any;
   created_by: string;
@@ -682,7 +682,7 @@ export interface InstitutionFragment_departments {
   name: string;
   description: string;
   contact_id: string | null;
-  leader_id: string;
+  leader_id: string | null;
   created_at: any;
   updated_at: any;
   created_by: string;

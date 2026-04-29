@@ -34,7 +34,7 @@ export interface GetSubsidyRequestById_subsidyRequest_department {
   __typename: "Department";
   id: string;
   name: string;
-  leader: GetSubsidyRequestById_subsidyRequest_department_leader;
+  leader: GetSubsidyRequestById_subsidyRequest_department_leader | null;
 }
 
 export interface GetSubsidyRequestById_subsidyRequest_church {

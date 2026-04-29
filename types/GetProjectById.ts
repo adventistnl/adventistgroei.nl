@@ -49,7 +49,7 @@ export interface GetProjectById_project_department {
   id: string;
   name: string;
   description: string;
-  leader_id: string;
+  leader_id: string | null;
   church: GetProjectById_project_department_church | null;
   annual_budgets: GetProjectById_project_department_annual_budgets[];
 }

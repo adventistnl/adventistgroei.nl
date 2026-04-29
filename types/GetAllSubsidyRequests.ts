@@ -34,7 +34,7 @@ export interface GetAllSubsidyRequests_subsidyRequests_department {
   __typename: "Department";
   id: string;
   name: string;
-  leader: GetAllSubsidyRequests_subsidyRequests_department_leader;
+  leader: GetAllSubsidyRequests_subsidyRequests_department_leader | null;
 }
 
 export interface GetAllSubsidyRequests_subsidyRequests_church {

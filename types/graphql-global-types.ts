@@ -738,7 +738,7 @@ export type ChurchCreateDto = {
   contact?: InputMaybe<ContactCreateDto>;
   house_number?: InputMaybe<Scalars['Int']['input']>;
   institution_id: Scalars['String']['input'];
-  leader_id: Scalars['String']['input'];
+  leader_id?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
   type?: InputMaybe<ChurchType>;
   zip_code?: InputMaybe<Scalars['String']['input']>;
@@ -1250,8 +1250,8 @@ export type Department = {
   institution: Institution;
   institution_id: Scalars['String']['output'];
   is_deleted: Scalars['Boolean']['output'];
-  leader: User;
-  leader_id: Scalars['String']['output'];
+  leader?: Maybe<User>;
+  leader_id?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   projects?: Maybe<Array<Project>>;
   subsidy_requests?: Maybe<Array<SubsidyRequest>>;
@@ -1324,7 +1324,7 @@ export type DepartmentCreateDto = {
   contact?: InputMaybe<ContactCreateDto>;
   description: Scalars['String']['input'];
   institution: Scalars['String']['input'];
-  leader_id: Scalars['String']['input'];
+  leader_id?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
 };
 
@@ -1383,7 +1383,7 @@ export type DepartmentOrderByWithRelationInput = {
   institution_id?: InputMaybe<SortOrder>;
   is_deleted?: InputMaybe<SortOrder>;
   leader?: InputMaybe<UserOrderByWithRelationInput>;
-  leader_id?: InputMaybe<SortOrder>;
+  leader_id?: InputMaybe<SortOrderInput>;
   name?: InputMaybe<SortOrder>;
   projects?: InputMaybe<ProjectOrderByRelationAggregateInput>;
   subsidy_requests?: InputMaybe<SubsidyRequestOrderByRelationAggregateInput>;
@@ -1438,8 +1438,8 @@ export type DepartmentWhereInput = {
   institution?: InputMaybe<InstitutionScalarRelationFilter>;
   institution_id?: InputMaybe<StringFilter>;
   is_deleted?: InputMaybe<BoolFilter>;
-  leader?: InputMaybe<UserScalarRelationFilter>;
-  leader_id?: InputMaybe<StringFilter>;
+  leader?: InputMaybe<UserNullableScalarRelationFilter>;
+  leader_id?: InputMaybe<StringNullableFilter>;
   name?: InputMaybe<StringFilter>;
   projects?: InputMaybe<ProjectListRelationFilter>;
   subsidy_requests?: InputMaybe<SubsidyRequestListRelationFilter>;

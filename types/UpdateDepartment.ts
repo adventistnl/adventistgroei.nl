@@ -21,7 +21,7 @@ export interface UpdateDepartment_updateDepartment {
   name: string;
   description: string;
   church_id: string | null;
-  leader_id: string;
+  leader_id: string | null;
   contact: UpdateDepartment_updateDepartment_contact | null;
 }
 
@@ -33,7 +33,7 @@ export interface UpdateDepartmentVariables {
   id: string;
   name: string;
   description: string;
-  leader_id: string;
+  leader_id?: string | null;
   church?: string | null;
   contactName?: string | null;
   email?: string | null;

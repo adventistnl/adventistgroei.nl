@@ -145,7 +145,7 @@ export interface DepartmentFragment {
   name: string;
   description: string;
   contact_id: string | null;
-  leader_id: string;
+  leader_id: string | null;
   created_at: any;
   updated_at: any;
   created_by: string;
