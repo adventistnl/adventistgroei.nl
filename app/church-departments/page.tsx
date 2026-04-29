@@ -669,7 +669,6 @@ export default function ChurchDepartmentsPage() {
   };
 
   const handleDepartmentSaved = (department: CreateDepartment) => {
-    toast.success(t.toasts?.created || "Church department created successfully")
     handleRefresh()
   }
   

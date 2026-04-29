@@ -76,7 +76,8 @@ export const departmentTranslations = {
       search_church: "Search church...",
       no_church_found: "No church found.",
       search_leader: "Search leader...",
-      no_leader_found: "No users found."
+      no_leader_found: "No users found.",
+      leader_optional_hint: "Optional — you can assign a leader after creating the department."
     },
     
     // Placeholders
@@ -368,6 +369,7 @@ export const departmentTranslations = {
       all_departments: "See All Church Departments"
     },
     create_department: "Create Church Department",
+    create_institutional_department: "Create Institutional Department",
     messages: {
       created_success: "Department created successfully",
       updated_success: "Department updated successfully",
@@ -549,7 +551,8 @@ export const departmentTranslations = {
       search_church: "Zoek kerk...",
       no_church_found: "Geen kerk gevonden.",
       search_leader: "Zoek leider...",
-      no_leader_found: "Geen gebruikers gevonden."
+      no_leader_found: "Geen gebruikers gevonden.",
+      leader_optional_hint: "Optioneel — u kunt een leider toewijzen na het aanmaken van de afdeling."
     },
 
     // Department Type
@@ -868,6 +871,7 @@ export const departmentTranslations = {
       all_departments: "Alle Kerkafdelingen Zien"
     },
     create_department: "Kerkafdeling Aanmaken",
+    create_institutional_department: "Institutionele Afdeling Aanmaken",
     messages: {
       created_success: "Afdeling succesvol aangemaakt",
       updated_success: "Afdeling succesvol bijgewerkt",
@@ -1037,7 +1041,8 @@ export const departmentTranslations = {
       search_church: "Buscar igreja...",
       no_church_found: "Nenhuma igreja encontrada.",
       search_leader: "Buscar líder...",
-      no_leader_found: "Nenhum usuário encontrado."
+      no_leader_found: "Nenhum usuário encontrado.",
+      leader_optional_hint: "Opcional — você pode atribuir um líder após criar o departamento."
     },
     
     // Department Type
@@ -1357,6 +1362,7 @@ export const departmentTranslations = {
       all_departments: "Ver Todos os Departamentos da Igreja"
     },
     create_department: "Criar Departamento da Igreja",
+    create_institutional_department: "Criar Departamento Institucional",
     messages: {
       created_success: "Departamento criado com sucesso",
       updated_success: "Departamento atualizado com sucesso",

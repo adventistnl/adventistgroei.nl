@@ -1,6 +1,31 @@
 import { gql } from "@apollo/client";
 import { INSTITUTION_FRAGMENT, INSTITUTION_FRAGMENT_LIGHT } from "../fragments/INSTITUTIONS_FRAGMENTS";
 
+/**
+ * Query leve para o modal de convite.
+ * Traz apenas id/name das instituições, seus departamentos e igrejas (com departamentos).
+ */
+export const GET_INSTITUTIONS_FOR_INVITE_QUERY = gql`
+  query InstitutionsForInvite {
+    institutions {
+      id
+      name
+      departments {
+        id
+        name
+      }
+      churches {
+        id
+        name
+        departments {
+          id
+          name
+        }
+      }
+    }
+  }
+`;
+
 export const GET_INSTITUTIONS_LIGHT_QUERY = gql`
   query InstitutionsLight {
     institutions {

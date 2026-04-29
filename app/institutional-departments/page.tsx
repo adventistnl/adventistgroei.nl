@@ -614,7 +614,6 @@ export default function DepartmentsPage() {
   };
 
   const handleDepartmentSaved = (department: CreateDepartment) => {
-    toast.success(tDept.messages?.created_success || "Department created successfully")
     handleRefresh()
   }
   
@@ -1133,7 +1132,7 @@ export default function DepartmentsPage() {
               <WithPermission requiredPermissions={[PermissionResolverName.CreateDepartment]}>
                 <Button onClick={handleCreate}>
                   <Plus className="w-4 h-4 mr-2" />
-                  {tDept.create_department || "Create Department"}
+                  {tDept.create_institutional_department || "Create Institutional Department"}
                 </Button>
               </WithPermission>
             )}
