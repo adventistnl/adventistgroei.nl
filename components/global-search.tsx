@@ -3,8 +3,7 @@
 import * as React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Search, Command as CommandIcon, ArrowRight, BarChart3, Users, Calendar, DollarSign, Building, File, MessageSquare, Settings, User, MapPin, Folder, Lock, SearchCheck } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { Search, Folder, Lock } from "lucide-react"
 import {
   Command,
   CommandEmpty,
@@ -16,32 +15,21 @@ import {
   CommandShortcut,
 } from "@/components/ui/command"
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useTranslation } from "react-i18next"
 import { searchTranslations } from "@/lib/translations/search"
+import { structureTranslations } from "@/lib/translations/structure"
 import toast from "react-hot-toast"
 import { useQuery } from "@apollo/client"
 import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { useAuth } from "@/contexts/auth-context"
 import { useInstitution } from "@/contexts/institution-context"
-import { shouldShowNavItem, NavItem } from "@/config/navigation"
+import { shouldShowNavItem, navigationSections, NavItem } from "@/config/navigation"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 
-// Extended interface for search items with additional fields
-interface SearchNavItem extends NavItem {
-  description?: string
-  shortcut?: string
-  items?: SearchNavItem[]
-}
 
 /**
  * Filters projects to show only those where the user is registered in activities
@@ -75,49 +63,38 @@ function filterUserProjects(projects: any[], userId: string | undefined): any[] 
   })
 }
 
-// Navigation structure with icons and permissions
-const getNavStructure = (t: any): SearchNavItem[] => [
-  { 
-    title: t.pages.dashboard, 
-    url: "/dashboard", 
-    icon: BarChart3,
-    description: t.descriptions.dashboard,
-    shortcut: t.shortcuts.dashboard,
-    permissions: [],
-    translationKey: "sidebar.dashboard"
-  },
-  { 
-    title: t.structure, 
-    url: "#", 
-    icon: Building,
-    permissions: [],
-    items: [
-      { title: t.pages.institutions, url: "/institutions", icon: Building, description: t.descriptions.institutions, permissions: [PermissionResolverName.Institutions] },
-      { title: t.pages.departments, url: "/institutional-departments", icon: Building, description: t.descriptions.departments, permissions: [PermissionResolverName.Departments, PermissionResolverName.Institutions] },
-      { title: t.pages.regions, url: "/regions", icon: MapPin, description: t.descriptions.regions, permissions: [PermissionResolverName.Regions] },
-      { title: t.pages.churches, url: "/churches", icon: Building, description: t.descriptions.churches, permissions: [PermissionResolverName.Churches] },
-    ]
-  },
-  { 
-    title: t.usersAccess, 
-    url: "#", 
-    icon: Users,
-    permissions: [],
-    items: [
-      { title: t.pages.users, url: "/users", icon: User, description: t.descriptions.users, permissions: [PermissionResolverName.Users] },
-      { title: t.pages.access, url: "/access", icon: Settings, description: t.descriptions.access, permissions: [PermissionResolverName.Roles] },
-    ]
-  },
-  { 
-    title: t.reportsProjects, 
-    url: "#", 
-    icon: File,
-    permissions: [],
-    items: [
-      { title: t.pages.projects, url: "/projects", icon: File, description: t.descriptions.projects, shortcut: t.shortcuts.projects, permissions: [PermissionResolverName.Projects] },
-    ]
+/**
+ * Resolve the translated title for a nav item using its translationKey.
+ * Falls back to item.title if no key is found.
+ */
+function resolveNavItemTitle(item: NavItem, sidebarT: any): string {
+  if (item.translationKey?.startsWith('sidebar.')) {
+    const key = item.translationKey.split('.')[1] as keyof typeof sidebarT.sidebar
+    return sidebarT.sidebar[key] || item.title
   }
-]
+  return item.title
+}
+
+/**
+ * Resolve the translated section label using its translationKey.
+ */
+function resolveSectionLabel(translationKey: string | undefined, label: string, sidebarT: any): string {
+  if (translationKey?.startsWith('sidebar.')) {
+    const key = translationKey.split('.')[1] as keyof typeof sidebarT.sidebar
+    return sidebarT.sidebar[key] || label
+  }
+  return label
+}
+
+/**
+ * Resolve search description for a nav item.
+ * Maps translationKey to searchTranslations.descriptions.
+ */
+function resolveNavItemDescription(item: NavItem, searchT: any): string | undefined {
+  if (!item.translationKey) return undefined
+  const key = item.translationKey.split('.')[1] as keyof typeof searchT.descriptions
+  return searchT.descriptions[key]
+}
 
 // Shared state for modal - only one instance should be open
 let globalSearchOpen = false
@@ -235,6 +212,7 @@ export function GlobalSearch({ isMobile = false, isOpen: externalIsOpen, onOpenC
   
   // Get translations
   const t = searchTranslations[i18n.language as keyof typeof searchTranslations] || searchTranslations.en
+  const sidebarT = structureTranslations[i18n.language as keyof typeof structureTranslations] || structureTranslations.en
   
   // Convert permissions to PermissionResolverName array
   const userPermissions = permissions as unknown as PermissionResolverName[]
@@ -257,22 +235,24 @@ export function GlobalSearch({ isMobile = false, isOpen: externalIsOpen, onOpenC
     return filterUserProjects(allProjects, user?.id)
   }, [projectsData, user?.id])
 
-  // Get navigation structure with translations and filter by permissions
+  // Get navigation structure directly from navigationSections (single source of truth with sidebar)
+  // This ensures all pages in the sidebar are also searchable
   const navStructure = React.useMemo(() => {
-    const allItems = getNavStructure(t) as SearchNavItem[]
-    return allItems
-      .filter(item => shouldShowNavItem(item as NavItem, userPermissions))
-      .map(item => {
-        if (item.items) {
-          return {
+    return navigationSections
+      .map(section => ({
+        ...section,
+        items: section.items
+          .filter(item => shouldShowNavItem(item as NavItem, userPermissions))
+          .map(item => ({
             ...item,
-            items: item.items.filter(subItem => shouldShowNavItem(subItem as NavItem, userPermissions))
-          }
-        }
-        return item
-      })
-      .filter(item => !item.items || item.items.length > 0) // Remove grupos vazios
-  }, [t, userPermissions])
+            items: item.items
+              ? item.items.filter(sub => shouldShowNavItem(sub as NavItem, userPermissions))
+              : undefined
+          }))
+          .filter(item => !item.items || item.items.length > 0)
+      }))
+      .filter(section => section.items.length > 0)
+  }, [userPermissions])
 
   const handleNavigation = (href: string, name: string) => {
     setIsOpen(false)
@@ -289,46 +269,60 @@ export function GlobalSearch({ isMobile = false, isOpen: externalIsOpen, onOpenC
           <CommandList className="max-h-[400px]">
             <CommandEmpty>{t.noResults}</CommandEmpty>
             
-            {/* Main Pages */}
-            <CommandGroup heading={t.suggestions}>
-              {navStructure.filter(item => !item.items).map((item) => {
-                const Icon = item.icon
-                return (
-                  <CommandItem
-                    key={item.url}
-                    onSelect={() => handleNavigation(item.url, item.title)}
-                    className="flex items-center gap-3 px-3 py-2"
-                  >
-                    <Icon className="w-4 h-4" />
-                    <div className="flex-1">
-                      <span className="font-medium">{item.title}</span>
-                      {item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}
-                    </div>
-                    {item.shortcut && <CommandShortcut>{item.shortcut}</CommandShortcut>}
-                  </CommandItem>
-                )
-              })}
-            </CommandGroup>
+            {/* Navigation Sections — derived directly from sidebar config */}
+            {navStructure.map((section, sectionIndex) => (
+              <React.Fragment key={section.label}>
+                {sectionIndex > 0 && <CommandSeparator />}
+                <CommandGroup heading={resolveSectionLabel(section.translationKey, section.label, sidebarT)}>
+                  {section.items.map((item) => {
+                    // Items WITH sub-items (e.g. Finance Management): flatten and render each sub-item
+                    if (item.items && item.items.length > 0) {
+                      return (
+                        <React.Fragment key={`group-${item.url}`}>
+                          {item.items.map((subItem) => {
+                            const Icon = subItem.icon || item.icon
+                            const title = resolveNavItemTitle(subItem, sidebarT)
+                            const description = resolveNavItemDescription(subItem, t)
+                            return (
+                              <CommandItem
+                                key={subItem.url}
+                                onSelect={() => handleNavigation(subItem.url, title)}
+                                className="flex items-center gap-3 px-3 py-2"
+                              >
+                                {Icon && <Icon className="w-4 h-4" />}
+                                <div className="flex-1">
+                                  <span className="font-medium">{title}</span>
+                                  {description && <p className="text-xs text-muted-foreground">{description}</p>}
+                                </div>
+                              </CommandItem>
+                            )
+                          })}
+                        </React.Fragment>
+                      )
+                    }
 
-            {/* Structure */}
-            {navStructure.filter(item => item.items).map((group) => (
-              <React.Fragment key={group.title}>
-                <CommandSeparator />
-                <CommandGroup heading={group.title}>
-                  {group.items?.map((item: any) => {
+                    // Leaf items (no sub-items)
                     const Icon = item.icon
+                    const title = resolveNavItemTitle(item, sidebarT)
+                    const description = resolveNavItemDescription(item, t)
+                    const shortcutKey = item.translationKey === 'sidebar.dashboard'
+                      ? t.shortcuts.dashboard
+                      : item.translationKey === 'sidebar.projects'
+                      ? t.shortcuts.projects
+                      : undefined
+
                     return (
                       <CommandItem
                         key={item.url}
-                        onSelect={() => handleNavigation(item.url, item.title)}
+                        onSelect={() => handleNavigation(item.url, title)}
                         className="flex items-center gap-3 px-3 py-2"
                       >
-                        <Icon className="w-4 h-4" />
+                        {Icon && <Icon className="w-4 h-4" />}
                         <div className="flex-1">
-                          <span className="font-medium">{item.title}</span>
-                          {item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}
+                          <span className="font-medium">{title}</span>
+                          {description && <p className="text-xs text-muted-foreground">{description}</p>}
                         </div>
-                        {item.shortcut && <CommandShortcut>{item.shortcut}</CommandShortcut>}
+                        {shortcutKey && <CommandShortcut>{shortcutKey}</CommandShortcut>}
                       </CommandItem>
                     )
                   })}
@@ -395,12 +389,6 @@ export function useGlobalSearch() {
         // Dispatch custom event to open search modal
         const event = new CustomEvent('open-global-search')
         window.dispatchEvent(event)
-        
-        // Show toast feedback only once
-        toast('Search opened (Cmd+K)', { 
-          duration: 1500,
-          icon: <SearchCheck className="w-3 h-3" />
-        })
         
         // Reset flag after a short delay
         setTimeout(() => {
