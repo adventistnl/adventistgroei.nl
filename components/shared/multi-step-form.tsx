@@ -59,32 +59,18 @@ export function MultiStepForm({
   const currentStepData = steps[currentStep - 1]
   const isLastStep = currentStep === totalSteps
 
-  // Handle Enter key press for auto-advance
-  const handleKeyPress = async (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      
-      if (isLastStep) {
-        onSubmit()
-      } else {
-        // Validate current step if validation function exists
-        if (currentStepData.validation) {
-          const isValid = await currentStepData.validation()
-          if (isValid) {
-            onStepChange(currentStep + 1)
-          }
-        } else {
-          onStepChange(currentStep + 1)
-        }
-      }
-    }
-  }
+  // Prevents double-clicks from triggering multiple validation/API calls
+  const [isValidating, setIsValidating] = React.useState(false)
 
-  const handleNext = async () => {
-    if (isLastStep) {
-      onSubmit()
-    } else {
-      // Validate current step if validation function exists
+  // Reset validating state whenever the step changes
+  React.useEffect(() => {
+    setIsValidating(false)
+  }, [currentStep])
+
+  const runValidationAndAdvance = async () => {
+    if (isValidating || isSubmitting) return
+    setIsValidating(true)
+    try {
       if (currentStepData.validation) {
         const isValid = await currentStepData.validation()
         if (isValid) {
@@ -93,6 +79,28 @@ export function MultiStepForm({
       } else {
         onStepChange(currentStep + 1)
       }
+    } finally {
+      setIsValidating(false)
+    }
+  }
+
+  // Handle Enter key press for auto-advance
+  const handleKeyPress = async (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      if (isLastStep) {
+        onSubmit()
+      } else {
+        await runValidationAndAdvance()
+      }
+    }
+  }
+
+  const handleNext = async () => {
+    if (isLastStep) {
+      onSubmit()
+    } else {
+      await runValidationAndAdvance()
     }
   }
 
@@ -143,6 +151,7 @@ export function MultiStepForm({
         onPrevious={handlePrevious}
         onNext={handleNext}
         isSubmitting={isSubmitting}
+        isValidating={isValidating}
         previousLabel={previousLabel}
         nextLabel={nextLabel}
         submitLabel={submitLabel}

@@ -15,6 +15,8 @@ import { ValidateInviteToken } from "@/types/ValidateInviteToken"
 import { LanguagePreference } from "@/types/graphql-global-types"
 import { registerTranslations } from "@/lib/translations/register"
 import { loginTranslations } from "@/lib/translations/login"
+import { useSendEmailVerificationCodeMutation, useVerifyEmailRegistrationCodeMutation } from "./graphql/use-email-verification-mutation"
+
 // Schema de validação para o formulário de registro
 const registrationSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -44,13 +46,15 @@ interface UseRegistrationProps {
 
 /**
  * Hook customizado para gerenciar toda a lógica de registro
- * Centraliza validação de convites, formulário e submissão
+ * Centraliza validação de convites, formulário, verificação de email e submissão
  */
 export function useRegistration({ language }: UseRegistrationProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [ createUser ] = useCreateUserMutation();
   const [ validateInviteToken ] = useValidateInviteTokenMutation();
+  const [ sendEmailVerificationCode ] = useSendEmailVerificationCodeMutation();
+  const [ verifyEmailRegistrationCode ] = useVerifyEmailRegistrationCodeMutation();
   const {login} = useAuth();
   // Busca o objeto de traduções correto
   // @ts-ignore
@@ -68,6 +72,11 @@ export function useRegistration({ language }: UseRegistrationProps) {
   const [inviteToken, setInviteToken] = useState<string | null>(null)
   const [isTokenValidated, setIsTokenValidated] = useState(false); // New state for token validation
   const [isRedirecting, setIsRedirecting] = useState(false); // Estado para redirecionamento
+
+  // Email verification state
+  const [isEmailVerified, setIsEmailVerified] = useState(false)
+  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false)
+
 
   // Função para carregar dados salvos do localStorage
   const loadSavedData = (): Partial<RegistrationForm> => {
@@ -228,6 +237,67 @@ export function useRegistration({ language }: UseRegistrationProps) {
       toast.error(translations.fillRequiredFields, { duration: 4000 })
       return false
     }
+    // Trigger sending the verification code when step 1 is complete
+    await sendVerificationCode()
+    toast.success(translations.stepCompleted, { duration: 1500 })
+    return true
+  }
+
+  /**
+   * Envia o código de verificação para o email do usuário.
+   * Retorna true se o código foi enviado, false se bloqueado por rate-limit ou erro.
+   */
+  const sendVerificationCode = async (): Promise<boolean> => {
+    const email = form.getValues('email')
+    const name = form.getValues('name')
+    if (!email) return false
+    try {
+      const { data } = await sendEmailVerificationCode({
+        variables: {
+          email,
+          userName: name || undefined,
+          language: language || 'en',
+        },
+      })
+      return data?.sendEmailVerificationCode?.success ?? false
+    } catch (err) {
+      // Silently fail — the OTP step UI will allow the user to resend
+      console.warn('Failed to send verification code:', err)
+      return false
+    }
+  }
+
+  /**
+   * Verifica o código OTP digitado pelo usuário
+   * Retorna true se o código for válido
+   */
+  const handleVerifyEmailCode = async (code: string): Promise<boolean> => {
+    const email = form.getValues('email')
+    setIsVerifyingEmail(true)
+    try {
+      const { data } = await verifyEmailRegistrationCode({
+        variables: { email, code },
+      })
+      const success = data?.verifyEmailRegistrationCode?.success ?? false
+      if (success) {
+        setIsEmailVerified(true)
+      }
+      return success
+    } catch {
+      return false
+    } finally {
+      setIsVerifyingEmail(false)
+    }
+  }
+
+  /**
+   * Validação do Step de verificação de email
+   */
+  const validateEmailVerification = async (): Promise<boolean> => {
+    if (!isEmailVerified) {
+      toast.error(translations.emailVerificationRequired, { duration: 4000 })
+      return false
+    }
     toast.success(translations.stepCompleted, { duration: 1500 })
     return true
   }
@@ -380,6 +450,10 @@ export function useRegistration({ language }: UseRegistrationProps) {
     showContent,
     isRedirecting,
     
+    // Email verification state
+    isEmailVerified,
+    isVerifyingEmail,
+    
     // Setters
     setCurrentStep,
     setShowPassword,
@@ -390,7 +464,12 @@ export function useRegistration({ language }: UseRegistrationProps) {
     
     // Validações
     validateStep1,
+    validateEmailVerification,
     validateStep2,
+    
+    // Email verification actions
+    handleVerifyEmailCode,
+    sendVerificationCode,
     
     // Submissão
     onSubmit,
