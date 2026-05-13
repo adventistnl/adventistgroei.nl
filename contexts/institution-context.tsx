@@ -88,14 +88,24 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }));
   }, [rawInstitutions]);
 
+  const STORAGE_KEY = 'active_institution_id';
+
+  // Helper SSR-safe para ler localStorage
+  const readStoredInstitutionId = (): string | undefined => {
+    if (typeof window === 'undefined') return undefined;
+    return localStorage.getItem(STORAGE_KEY) || undefined;
+  };
+
   // Definir activeInstitutionId com fallback inteligente
+  // Prioridade: localStorage salvo → institution_id do user logado → undefined (useEffect resolve)
   const [activeInstitutionId, setActiveInstitutionId] = useState<string | undefined>(() => {
-    // Priorizar authUser.institution_id, depois user.institution_id, depois primeiro da lista
+    const stored = readStoredInstitutionId();
+    if (stored) return stored;
     if (authUser?.institution_id) return authUser.institution_id;
     if (user?.institution_id) return user.institution_id;
-    return undefined; // Será definido pelo useEffect quando institutions carregar
+    return undefined;
   });
-  
+
   // Agora buscar dados da instituição específica
   const {
     currentInstitutionData: specificInstitutionData,
@@ -103,10 +113,13 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     refetchInstitutionById: refetchSpecificInstitution
   } = useInstitutions(activeInstitutionId);
 
-  // Atualizar activeInstitutionId quando necessário
+  // Atualizar activeInstitutionId quando necessário (apenas se ainda não foi definido)
   useEffect(() => {
     if (!activeInstitutionId) {
-      if (authUser?.institution_id) {
+      const stored = readStoredInstitutionId();
+      if (stored) {
+        setActiveInstitutionId(stored);
+      } else if (authUser?.institution_id) {
         setActiveInstitutionId(authUser.institution_id);
       } else if (user?.institution_id) {
         setActiveInstitutionId(user.institution_id);
@@ -118,11 +131,16 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
   
 
 
-  // Troca de instituição
+  // Troca de instituição — persiste no localStorage
   const switchInstitution = useCallback(async (institutionId: string) => {
     const institution = institutions.find(inst => inst.id === institutionId);
     if (institution && institution.id !== activeInstitutionId) {
       setActiveInstitutionId(institution.id);
+
+      // Persistir para sobreviver a reloads
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, institution.id);
+      }
 
       toast.success(
         `Switched to ${institution.name}\n📊 Loading institution data...`,

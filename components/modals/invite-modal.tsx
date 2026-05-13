@@ -114,8 +114,13 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
   const { i18n } = useTranslation();
   const { currentInstitutionData } = useInstitution();
   const { data: inviteData } = useGetInstitutionsForInviteQuery();
-  const institutions: InstitutionForInvite[] = inviteData?.institutions || [];
-  // Lista flat de todas as igrejas disponíveis (usada para roles de igreja)
+  // Filtrar apenas a instituição ativa no contexto atual
+  const institutions: InstitutionForInvite[] = useMemo(() => {
+    const all = inviteData?.institutions || [];
+    if (!currentInstitutionData?.id) return all;
+    return all.filter(inst => inst.id === currentInstitutionData.id);
+  }, [inviteData, currentInstitutionData?.id]);
+  // Lista flat de igrejas apenas da instituição ativa
   const churches = useMemo(() => institutions.flatMap(inst => inst.churches || []), [institutions]);
 
   const [open, setOpen] = useState(false);
