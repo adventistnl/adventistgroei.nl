@@ -7,6 +7,7 @@ import { profileTranslations } from "@/lib/translations/profile"
 import { ProfileHeader } from "@/components/profile/profile-header"
 import { PersonalInfoSection } from "@/components/profile/personal-info-section"
 import { ChurchInfoSection } from "@/components/profile/church-info-section"
+import { EmailPreferencesSection } from "@/components/profile/email-preferences-section"
 import { ProfileStatusAlert } from "@/components/profile/profile-status-alert"
 import { useProfileEditor, ExtendedProfile } from "@/hooks/use-profile-editor"
 import { useRouter } from "next/navigation"
@@ -113,6 +114,7 @@ export default function ProfilePage() {
       institution_name: currentInstitutionData?.name || user?.institution?.name || "",
       church_name: user?.church?.name || "",
       role: userRoles,
+      recieve_emails: user?.recieve_emails !== undefined ? user.recieve_emails : true,
     }
 
     return profile
@@ -247,6 +249,20 @@ export default function ProfilePage() {
               onSave={() => handleSave("church")}
               onCancel={handleCancel}
               onChurchChange={(value) => handleFieldChange("church_id", value)}
+            />
+
+            {/* Email Preferences Section */}
+            <EmailPreferencesSection
+              recieveEmails={editingSection === "email_preferences"
+                ? (editData.recieve_emails ?? true)
+                : (profile.recieve_emails ?? true)
+              }
+              isEditing={editingSection === "email_preferences"}
+              isSaving={updateLoading}
+              onEdit={() => handleEdit("email_preferences")}
+              onSave={() => handleSave("email_preferences")}
+              onCancel={handleCancel}
+              onToggle={(value) => handleFieldChange("recieve_emails", value as any)}
             />
 
           </div>

@@ -18,6 +18,7 @@ export interface ExtendedProfile {
   institution_name?: string
   church_name?: string
   role?: string
+  recieve_emails?: boolean
 }
 
 export function useProfileEditor(initialProfile: ExtendedProfile, refetchUser?: () => void) {
@@ -65,6 +66,9 @@ export function useProfileEditor(initialProfile: ExtendedProfile, refetchUser?: 
       if (editData.church_id && editData.church_id !== profile.church_id) {
         updateData.church_id = editData.church_id
       }
+      if (editData.recieve_emails !== undefined && editData.recieve_emails !== profile.recieve_emails) {
+        updateData.recieve_emails = editData.recieve_emails
+      }
 
       // Only proceed if there are changes
       if (Object.keys(updateData).length === 0) {
@@ -98,6 +102,7 @@ export function useProfileEditor(initialProfile: ExtendedProfile, refetchUser?: 
           church_id: updatedUser.church_id || '',
           institution_name: updatedUser.institution?.name || '',
           church_name: updatedUser.church?.name || '',
+          recieve_emails: updatedUser.recieve_emails ?? profile.recieve_emails ?? true,
         }
         
         setProfile(newProfile)
@@ -145,7 +150,7 @@ export function useProfileEditor(initialProfile: ExtendedProfile, refetchUser?: 
     setEditingSection(null)
   }, [profile])
 
-  const handleFieldChange = useCallback((field: keyof ExtendedProfile, value: string) => {
+  const handleFieldChange = useCallback((field: keyof ExtendedProfile, value: string | boolean) => {
     setEditData((prev) => ({ ...prev, [field]: value }))
   }, [])
 
