@@ -65,6 +65,22 @@ export const registerTranslations = {
       pt: "Português"
     },
     
+    // Email Verification Step
+    emailVerification: "Email Verification",
+    emailVerificationDesc: "Enter the code sent to your email",
+    emailVerificationTitle: "Check your inbox",
+    emailVerificationDescription: "We sent a 6-digit verification code to your email address.",
+    codeSentTo: "Code sent to",
+    enterCode: "Enter the 6-digit code",
+    resendCode: "Resend code",
+    resendIn: "Resend in",
+    verifying: "Verifying...",
+    verified: "Email verified!",
+    invalidCode: "Invalid or expired code. Please try again.",
+    sending: "Sending...",
+    codeSent: "New code sent!",
+    emailVerificationRequired: "Please verify your email before continuing.",
+
     // Buttons
     previous: "Previous",
     next: "Next",
@@ -165,6 +181,22 @@ export const registerTranslations = {
       pt: "Português"
     },
     
+    // Email Verification Step
+    emailVerification: "E-mailverificatie",
+    emailVerificationDesc: "Voer de code in die naar uw e-mail is gestuurd",
+    emailVerificationTitle: "Controleer uw inbox",
+    emailVerificationDescription: "We hebben een 6-cijferige verificatiecode naar uw e-mailadres gestuurd.",
+    codeSentTo: "Code verzonden naar",
+    enterCode: "Voer de 6-cijferige code in",
+    resendCode: "Code opnieuw verzenden",
+    resendIn: "Opnieuw verzenden in",
+    verifying: "Verifiëren...",
+    verified: "E-mail geverifieerd!",
+    invalidCode: "Ongeldige of verlopen code. Probeer het opnieuw.",
+    sending: "Verzenden...",
+    codeSent: "Nieuwe code verzonden!",
+    emailVerificationRequired: "Verifieer uw e-mail voordat u doorgaat.",
+
     // Buttons
     previous: "Vorige",
     next: "Volgende",
@@ -263,6 +295,22 @@ export const registerTranslations = {
       pt: "Português"
     },
     
+    // Email Verification Step
+    emailVerification: "Verificação de E-mail",
+    emailVerificationDesc: "Digite o código enviado para o seu e-mail",
+    emailVerificationTitle: "Verifique sua caixa de entrada",
+    emailVerificationDescription: "Enviamos um código de verificação de 6 dígitos para o seu endereço de e-mail.",
+    codeSentTo: "Código enviado para",
+    enterCode: "Digite o código de 6 dígitos",
+    resendCode: "Reenviar código",
+    resendIn: "Reenviar em",
+    verifying: "Verificando...",
+    verified: "E-mail verificado!",
+    invalidCode: "Código inválido ou expirado. Por favor, tente novamente.",
+    sending: "Enviando...",
+    codeSent: "Novo código enviado!",
+    emailVerificationRequired: "Por favor, verifique seu e-mail antes de continuar.",
+
     // Buttons
     previous: "Anterior",
     next: "Próximo",

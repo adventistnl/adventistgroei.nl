@@ -31,12 +31,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
-import { 
-  Layers, 
-  Plus, 
-  Save, 
-  X, 
-  Globe, 
+import {
+  Layers,
+  Plus,
+  Save,
+  X,
+  Globe,
   Calendar,
   Building,
   User,
@@ -64,7 +64,6 @@ import { cn } from "@/lib/utils"
 // Extended interface to include new field locally
 interface ExtendedDepartmentVariables extends CreateDepartmentVariables {
   responsibleUsers?: string[]
-  leader_id: string
 }
 
 
@@ -133,14 +132,14 @@ export function AddDepartmentModal({
   departmentType = 'church'
 }: AddDepartmentModalProps) {
   const { t: tCommon, i18n } = useTranslation();
-  const { createDepartment} = useDepartments()
+  const { createDepartment } = useDepartments()
 
   // Fetch users for leader selection
   const { data: usersData, loading: usersLoading } = useGetAllUsersQuery({
     variables: { institution_id: institutionId },
     skip: !institutionId
   })
-  
+
   const users = usersData?.users || []
 
   // Get translations for current language
@@ -154,7 +153,7 @@ export function AddDepartmentModal({
     church: '',
     name: '',
     description: '',
-    leader_id: '',
+    leader_id: undefined,
     contactName: '',
     phone: '',
     email: '',
@@ -175,7 +174,7 @@ export function AddDepartmentModal({
         church: '',
         name: '',
         description: '',
-        leader_id: '',
+        leader_id: undefined,
         contactName: '',
         phone: '',
         email: '',
@@ -221,15 +220,10 @@ export function AddDepartmentModal({
       if (departmentType === 'church' && !formData.church) {
         newErrors.church = t.validation.church_required
       }
-
-      // Validate leader (required for all departments)
-      if (!formData.leader_id) {
-        newErrors.leader_id = t.validation.leader_required
-      }
     }
 
     // Step 2 (contact) is optional - no validation
-    
+
     // Step 3 (review) - final validation before save
     if (step === 3) {
       // Re-validate step 1 fields
@@ -241,9 +235,6 @@ export function AddDepartmentModal({
       }
       if (departmentType === 'church' && !formData.church) {
         newErrors.church = t.validation.church_required
-      }
-      if (!formData.leader_id) {
-        newErrors.leader_id = t.validation.leader_required
       }
     }
 
@@ -281,7 +272,7 @@ export function AddDepartmentModal({
         name: formData.name,
         description: formData.description,
         institution: formData.institution,
-        leader_id: formData.leader_id,
+        leader_id: formData.leader_id || undefined,
         church: departmentType === 'institutional' ? '' : formData.church,
         contactName: formData.contactName,
         email: formData.email,
@@ -297,7 +288,7 @@ export function AddDepartmentModal({
       })
 
       if (!res || !res.data) throw new Error("Failed to create department")
-        
+
       if (onSave) {
         onSave(res.data)
       }
@@ -318,7 +309,7 @@ export function AddDepartmentModal({
       church: '',
       name: '',
       description: '',
-      leader_id: '',
+      leader_id: undefined,
       contactName: '',
       phone: '',
       email: '',
@@ -352,7 +343,7 @@ export function AddDepartmentModal({
               <h3 className="text-lg font-semibold text-foreground">{t.steps.step_1_title}</h3>
               <p className="text-sm text-muted-foreground">{t.steps.step_1_description}</p>
             </div>
-            
+
             <div className="space-y-6 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm font-medium">
@@ -448,11 +439,15 @@ export function AddDepartmentModal({
                 </div>
               )}
 
-              {/* Leader selection - REQUIRED for all departments */}
+              {/* Leader selection - optional for institutional, required for church */}
               <div className="space-y-2">
                 <Label htmlFor="leader" className="text-sm font-medium">
-                  {t.fields.leader} *
+                  {t.fields.leader}
                 </Label>
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Info className="w-3 h-3" />
+                  {t.fields.leader_optional_hint}
+                </p>
                 <Popover open={openLeader} onOpenChange={setOpenLeader}>
                   <PopoverTrigger asChild>
                     <Button
@@ -520,7 +515,7 @@ export function AddDepartmentModal({
               <h3 className="text-lg font-semibold text-foreground">{t.steps.step_2_title}</h3>
               <p className="text-sm text-muted-foreground">{t.steps.step_2_description}</p>
             </div>
-            
+
             <div className="space-y-6 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="contact_name" className="text-sm font-medium">
@@ -573,7 +568,7 @@ export function AddDepartmentModal({
               <h3 className="text-lg font-semibold text-foreground">{t.steps.step_3_title}</h3>
               <p className="text-sm text-muted-foreground">{t.steps.step_3_description}</p>
             </div>
-            
+
             <div className="space-y-6 max-w-lg mx-auto">
               {/* Basic Information */}
               <div className="space-y-3">
@@ -650,12 +645,12 @@ export function AddDepartmentModal({
             {departmentType === 'institutional' ? t.modals.create.title_institutional : t.modals.create.title}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            {departmentType === 'institutional' 
+            {departmentType === 'institutional'
               ? t.modals.create.description_institutional
               : t.modals.create.description
             }
           </DialogDescription>
-          
+
           {/* Progress Bar */}
           <div className="mt-4 space-y-2">
             <div className="flex justify-between items-center text-xs text-muted-foreground">
@@ -679,9 +674,9 @@ export function AddDepartmentModal({
           <div className="flex justify-between items-center">
             <div className="flex gap-2">
               {currentStep > 1 && (
-                <Button 
-                  variant="outline" 
-                  onClick={handlePrevious} 
+                <Button
+                  variant="outline"
+                  onClick={handlePrevious}
                   disabled={isLoading}
                   size="sm"
                   className="flex items-center gap-1"
@@ -690,9 +685,9 @@ export function AddDepartmentModal({
                   {t.buttons.previous}
                 </Button>
               )}
-              <Button 
-                variant="ghost" 
-                onClick={handleCancel} 
+              <Button
+                variant="ghost"
+                onClick={handleCancel}
                 disabled={isLoading}
                 size="sm"
               >
@@ -702,9 +697,9 @@ export function AddDepartmentModal({
 
             <div className="flex gap-2">
               {currentStep === 2 && (
-                <Button 
+                <Button
                   variant="ghost"
-                  onClick={handleSkipContacts} 
+                  onClick={handleSkipContacts}
                   disabled={isLoading}
                   size="sm"
                   className="text-muted-foreground"
@@ -713,8 +708,8 @@ export function AddDepartmentModal({
                 </Button>
               )}
               {currentStep < totalSteps ? (
-                <Button 
-                  onClick={handleNext} 
+                <Button
+                  onClick={handleNext}
                   disabled={isLoading}
                   size="sm"
                   className="flex items-center gap-1"
@@ -723,8 +718,8 @@ export function AddDepartmentModal({
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               ) : (
-                <Button 
-                  onClick={handleSave} 
+                <Button
+                  onClick={handleSave}
                   disabled={isLoading}
                   size="sm"
                   className="min-w-[120px]"

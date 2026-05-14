@@ -10,6 +10,7 @@ export interface UpdateOwnUserVariables {
     language_preference?: string
     institution_id?: string
     church_id?: string
+    recieve_emails?: boolean
   }
 }
 
@@ -18,6 +19,7 @@ export interface UpdateOwnUserResponse {
     id: string
     name: string
     email: string
+    recieve_emails?: boolean
     contact?: {
       phone?: string
       address?: string

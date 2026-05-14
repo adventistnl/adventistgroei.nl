@@ -175,7 +175,7 @@ export function UsersAvatarGroup({
                           : isCoOwner
                             ? "bg-gray-700 dark:bg-gray-700 border-[3px] ring-2 ring-blue-300 dark:ring-blue-500"
                             : isFinance
-                              ? "border-[3px] ring-2 ring-purple-400 dark:ring-purple-500"
+                              ? "border-[3px] ring-2 ring-orange-300 dark:ring-orange-400"
                               : "border-background"
                       )}
                     >
@@ -187,7 +187,7 @@ export function UsersAvatarGroup({
                           : isCoOwner
                             ? "bg-blue-500 dark:bg-blue-600 text-white font-bold"
                             : isFinance
-                              ? "bg-purple-600 dark:bg-purple-700 text-white font-bold"
+                              ? "bg-orange-400 dark:bg-orange-500 text-white font-bold"
                               : "bg-gray-600 dark:bg-gray-700 text-white font-semibold"
                       )}>
                         {getInitials(user)}
@@ -209,7 +209,7 @@ export function UsersAvatarGroup({
                           </span>
                         )}
                         {isFinance && (
-                          <span className="bg-purple-600 text-white text-[8px] px-1.5 py-0.5 rounded font-bold uppercase">
+                          <span className="bg-orange-400 text-white text-[8px] px-1.5 py-0.5 rounded font-bold uppercase">
                             Finance
                           </span>
                         )}
@@ -268,7 +268,7 @@ export function UsersAvatarGroup({
                                   : isCoOwner
                                     ? "bg-blue-500 dark:bg-blue-600 text-white font-bold"
                                     : isFinance
-                                      ? "bg-purple-600 dark:bg-purple-700 text-white font-bold"
+                                      ? "bg-orange-400 dark:bg-orange-500 text-white font-bold"
                                       : "bg-gray-600 dark:bg-gray-700 text-white"
                               )}>
                                 {getInitials(user)}
@@ -288,7 +288,7 @@ export function UsersAvatarGroup({
                                   </span>
                                 )}
                                 {isFinance && (
-                                  <span className="bg-purple-600 text-white text-[7px] px-1 py-0.5 rounded font-bold uppercase flex-shrink-0">
+                                  <span className="bg-orange-400 text-white text-[7px] px-1 py-0.5 rounded font-bold uppercase flex-shrink-0">
                                     Finance
                                   </span>
                                 )}

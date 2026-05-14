@@ -14,6 +14,7 @@ import { ProjectSubsidiesTable, SubsidyRequestData, ActivityData } from "@/compo
 import { SubsidyRequestsContainer } from "@/components/projects/subsidy-requests-container"
 import { SubsidyRequestCardData } from "@/components/projects/subsidy-request-card"
 import { OpenRequestOverlay } from "@/components/projects/open-request-overlay"
+import { KanbanStatusTransitionModal } from "@/components/modals/project/kanban-status-transition-modal"
 import { SubsidyActivityChart } from "@/components/projects/charts/subsidy-activity-chart"
 import { CommunicationCardData } from "@/components/projects/communication-card"
 import { GridContainer } from "@/components/shared/grid-container"
@@ -86,6 +87,7 @@ import { GET_ALL_USERS_QUERY } from "@/graphql/queries/GET_USER_QUERY"
 import { BATCH_UPDATE_PROJECT_ACTIVITIES, CREATE_PROJECT_ACTIVITY, UPDATE_PROJECT_ACTIVITY } from "@/graphql/mutations/PROJECT_ACTIVITY_MUTATIONS"
 import { CREATE_SUBSIDY_REQUEST, UPDATE_SUBSIDY_REQUEST, APPROVE_SUBSIDY_REQUEST, REJECT_SUBSIDY_REQUEST, DELETE_SUBSIDY_REQUEST } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
 import { UPDATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
+import { CREATE_ADJUSTMENT } from "@/graphql/mutations/PROJECT_ADJUSTMENT_MUTATIONS"
 import { useProjectHistory } from "@/hooks/graphql/use-project-history"
 import { ProjectHistoryType } from "@/types/project-history"
 import { useAuth } from "@/contexts/auth-context"
@@ -234,6 +236,9 @@ export default function ProjectDetailsPage() {
   // Owner contact modal
   const [isOwnerContactModalOpen, setIsOwnerContactModalOpen] = useState(false)
 
+  // Adjustments review modal (triggered from OpenRequestOverlay)
+  const [isAdjustmentsModalOpen, setIsAdjustmentsModalOpen] = useState(false)
+
   // Funding Distribution Modal
   const [isFundingDistributionModalOpen, setIsFundingDistributionModalOpen] = useState(false)
 
@@ -306,8 +311,20 @@ export default function ProjectDetailsPage() {
       refetchProject()
       setIsRegisterActivityModalOpen(false)
     },
-    onError: (error) => {
-      toast.error(`${t('errors.updateError')}: ${error.message}`)
+    onError: (error: any) => {
+      let graphQLError = error?.graphQLErrors?.[0]
+      if (!graphQLError && error?.networkError?.result?.errors) {
+        graphQLError = error.networkError.result.errors[0]
+      }
+      const errorCode = graphQLError?.extensions?.context?.additional?.errorCode
+      
+      if (errorCode === 'EDIT_LOCKED_NOT_DRAFT') {
+        toast.error(t('errors.cannotEditActivityNotDraft') || 'Members can only create activities while the project is in Draft status.', { duration: 4000 })
+      } else if (graphQLError?.message) {
+        toast.error(`${t('errors.updateError') || 'Erro'}: ${graphQLError.message}`)
+      } else {
+        toast.error(`${t('errors.updateError') || 'Erro'}: ${error.message}`)
+      }
     }
   })
 
@@ -320,8 +337,20 @@ export default function ProjectDetailsPage() {
       setIsEditActivityModalOpen(false)
       setSelectedActivity(undefined)
     },
-    onError: (error) => {
-      toast.error(`${t('errors.updateError')}: ${error.message}`)
+    onError: (error: any) => {
+      let graphQLError = error?.graphQLErrors?.[0]
+      if (!graphQLError && error?.networkError?.result?.errors) {
+        graphQLError = error.networkError.result.errors[0]
+      }
+      const errorCode = graphQLError?.extensions?.context?.additional?.errorCode
+      
+      if (errorCode === 'EDIT_LOCKED_NOT_DRAFT') {
+        toast.error(t('errors.cannotEditActivityNotDraft') || 'Members can only edit activities while the project is in Draft status.', { duration: 4000 })
+      } else if (graphQLError?.message) {
+        toast.error(`${t('errors.updateError') || 'Erro'}: ${graphQLError.message}`)
+      } else {
+        toast.error(`${t('errors.updateError') || 'Erro'}: ${error.message}`)
+      }
     }
   })
 
@@ -407,8 +436,22 @@ export default function ProjectDetailsPage() {
       refetchProject()
       setIsFundingDistributionModalOpen(false)
     },
-    onError: (error) => {
-      toast.error(`${t('errors.updateError')}: ${error.message}`)
+    onError: (error: any) => {
+      let graphQLError = error?.graphQLErrors?.[0]
+      if (!graphQLError && error?.networkError?.result?.errors) {
+        graphQLError = error.networkError.result.errors[0]
+      }
+      const errorCode = graphQLError?.extensions?.context?.additional?.errorCode
+      
+      if (errorCode === 'EDIT_LOCKED_NOT_DRAFT') {
+        toast.error(t('errors.cannotEditProjectNotDraft') || 'Members can only edit project details while it is in Draft status.', { duration: 4000 })
+      } else if (errorCode === 'BUDGET_LOCKED_AFTER_APPROVAL') {
+        toast.error(t('errors.cannotChangeBudget') || 'Cannot change the subsidized budget after project approval.', { duration: 4000 })
+      } else if (graphQLError?.message) {
+        toast.error(`${t('errors.updateError') || 'Erro'}: ${graphQLError.message}`)
+      } else {
+        toast.error(`${t('errors.updateError') || 'Erro'}: ${error.message}`)
+      }
     }
   })
 
@@ -424,6 +467,53 @@ export default function ProjectDetailsPage() {
 
   const handleOpenFundingDistributionModal = () => {
     setIsFundingDistributionModalOpen(true)
+  }
+
+  // Reviewer actions: approve project (IN_PROGRESS) or request adjustments (ADJUSTMENTS_NEEDED)
+  const [reviewUpdateProject, { loading: reviewUpdateLoading }] = useMutation(UPDATE_PROJECT_MUTATION, {
+    onError: (error) => {
+      toast.error(`${t('errors.updateError')}: ${error.message}`)
+    }
+  })
+
+  const [createAdjustmentMutation] = useMutation(CREATE_ADJUSTMENT, {
+    onError: (err) => {
+      console.error('[ProjectDetail] createAdjustment error:', err)
+    }
+  })
+
+  const handleApproveProject = async () => {
+    await reviewUpdateProject({
+      variables: { id: projectId, status: 'IN_PROGRESS' },
+      onCompleted: () => {
+        toast.success(pt.openRequestOverlay?.approveSuccess ?? 'Project approved successfully', { duration: 3000 })
+        logHistory({ type: ProjectHistoryType.UPDATED, comment: 'Project approved → IN_PROGRESS' })
+        refetchProject()
+      }
+    })
+  }
+
+  // Opens the adjustments modal — actual mutation is fired via handleAdjustmentsConfirm
+  const handleRequestAdjustments = async () => {
+    setIsAdjustmentsModalOpen(true)
+  }
+
+  // Called when reviewer confirms the adjustments modal with a justification
+  const handleAdjustmentsConfirm = async (justification?: string) => {
+    setIsAdjustmentsModalOpen(false)
+    await reviewUpdateProject({
+      variables: { id: projectId, status: 'ADJUSTMENTS_NEEDED' },
+      onCompleted: () => {
+        toast.success(pt.openRequestOverlay?.adjustmentsSuccess ?? 'Adjustments requested', { duration: 3000 })
+        logHistory({ type: ProjectHistoryType.UPDATED, comment: 'Adjustments requested → ADJUSTMENTS_NEEDED' })
+        if (justification) {
+          createAdjustmentMutation({
+            variables: { data: { project_id: projectId, comment: justification } },
+          })
+        }
+        refetchProject()
+      }
+    })
   }
 
   const [deleteSubsidyRequest, { loading: deleteSubsidyLoading }] = useMutation(DELETE_SUBSIDY_REQUEST, {
@@ -690,12 +780,23 @@ export default function ProjectDetailsPage() {
     )
   }, [user?.id, projectData?.project?.collaborators])
 
+  // Department leader can approve or request adjustments when project is OPEN_REQUEST or IN_REVIEW
+  const isDepartmentLeaderReviewer = useMemo(() => {
+    if (!user?.id) return false
+    const leaderId = projectData?.project?.department?.leader_id
+    return !!leaderId && user.id === leaderId
+  }, [user?.id, projectData?.project?.department?.leader_id])
+
   // Locks editing/adding when project requires only receipt uploads
   const isReceiptPending =
     project?.status === 'PENDING_RECEIPT' || project?.status === 'WAITING_REFUND'
 
   // Locks all editing when project is concluded
   const isProjectConcluded = project?.status === 'CONCLUDED'
+
+  // Project is under institutional review — content is hidden, overlay is shown
+  const isUnderReview =
+    project?.status === 'OPEN_REQUEST' || project?.status === 'IN_REVIEW'
 
   // Build a Contact-shaped object from the project owner, used for the readonly contact modal
   const ownerAsContact = useMemo((): Contact | null => {
@@ -768,7 +869,7 @@ export default function ProjectDetailsPage() {
           label: t('details.subsidizedBudgetSubtitle') || "of total budget"
         },
         icon: TrendingUp,
-        headerAction: project?.status === 'DRAFT' ? (
+        headerAction: (isOwnerOrCoOwner && (project?.status === 'DRAFT' || project?.status === 'ADJUSTMENTS_NEEDED')) ? (
           <button
             onClick={(e) => { e.stopPropagation(); handleOpenFundingDistributionModal() }}
             className="relative group z-10 cursor-pointer"
@@ -828,7 +929,7 @@ export default function ProjectDetailsPage() {
         icon: Calendar,
       },
     ]
-  }, [projectData, subsidyRequests, formatCurrency, t, i18n.language])
+  }, [projectData, subsidyRequests, formatCurrency, t, i18n.language, isOwnerOrCoOwner])
 
 
   usePageTitle({
@@ -1847,7 +1948,8 @@ export default function ProjectDetailsPage() {
         variables: { input }
       })
     } catch (error) {
-      toast.error("Erro ao atualizar atividade")
+      console.error("Error in handleEditActivitySubmit:", error)
+      // The specific error is already handled by the onError callback of updateProjectActivity
     }
   }
 
@@ -2095,10 +2197,51 @@ export default function ProjectDetailsPage() {
         {/* Receipt / Refund status banner — shown when project is locked for editing */}
         <ReceiptStatusBanner projectStatus={project?.status} />
 
-        {/* ── OPEN REQUEST OVERLAY + Content wrapper ─────────────────────────────────
-             Wrapper is relative so the absolute overlay covers KPI cards too.
-        ─────────────────────────────────────────────────────────────────── */}
-        <div className="relative space-y-6">
+        {/* OPEN REQUEST OVERLAY — inline card rendered below the header when project is under review */}
+        {isUnderReview && (
+          <OpenRequestOverlay
+            visible={true}
+            projectTitle={project.title}
+            departmentName={project.departmentName}
+            ownerName={projectData?.project?.owner?.name}
+            formattedBudget={
+              project.budget != null
+                ? formatCurrency(Number(project.budget))
+                : undefined
+            }
+            subsidizedBudget={
+              projectData?.project?.kpis?.subsidizedBudget != null
+                ? formatCurrency(Number(projectData.project.kpis.subsidizedBudget))
+                : undefined
+            }
+            users={projectUsers}
+            ownerUserId={projectData?.project?.owner_id ?? projectData?.project?.owner?.id}
+            coOwnerUserId={projectData?.project?.co_owner_id ?? projectData?.project?.co_owner?.id}
+            isReviewer={isDepartmentLeaderReviewer}
+            onApprove={isDepartmentLeaderReviewer ? handleApproveProject : undefined}
+            onRequestAdjustments={isDepartmentLeaderReviewer ? handleRequestAdjustments : undefined}
+            isReviewLoading={reviewUpdateLoading}
+            translations={{
+              title: pt.openRequestOverlay?.title ?? 'Open Request',
+              description: pt.openRequestOverlay?.description ?? '',
+              projectLabel: pt.openRequestOverlay?.projectLabel ?? 'Project',
+              departmentLabel: pt.openRequestOverlay?.departmentLabel,
+              reviewerLabel: pt.openRequestOverlay?.reviewerLabel ?? 'Submitted by',
+              viewContact: pt.openRequestOverlay?.viewContact ?? 'View Contact',
+              backToProjects: pt.openRequestOverlay?.backToProjects ?? 'Back to Projects',
+              statusBadge: pt.openRequestOverlay?.statusBadge ?? 'Under review',
+              budgetLabel: pt.openRequestOverlay?.budgetLabel ?? 'Budget',
+              subsidizedBudgetLabel: pt.openRequestOverlay?.subsidizedBudgetLabel,
+              approveProject: pt.openRequestOverlay?.approveProject ?? 'Approve',
+              adjustmentsNeeded: pt.openRequestOverlay?.adjustmentsNeeded ?? 'Adjustments Needed',
+            }}
+            onViewContact={projectData?.project?.owner ? () => setIsOwnerContactModalOpen(true) : undefined}
+            onBackToProjects={() => router.back()}
+          />
+        )}
+
+        {/* ── MAIN CONTENT (hidden when under review) ── */}
+        {!isUnderReview && (<div className="space-y-6">
 
         {/* KPI Cards */}
         {projectKPIs && (
@@ -2128,7 +2271,7 @@ export default function ProjectDetailsPage() {
               component: (
                 <SubsidyRequestsContainer
                   subsidies={subsidyRequests}
-                  onAddSubsidy={(isProjectMember && !isReceiptPending && !isProjectConcluded) ? handleAddSubsidyFromContainer : undefined}
+                  onAddSubsidy={(isProjectMember && !isReceiptPending && !isProjectConcluded && !isUnderReview && project.status !== 'ADJUSTMENTS_NEEDED') ? handleAddSubsidyFromContainer : undefined}
                   onEditSubsidy={(isOwnerOrCoOwner && !isProjectConcluded) ? handleEditSubsidyCard : undefined}
                   onDeleteSubsidy={(isOwnerOrCoOwner && !isProjectConcluded) ? handleDeleteSubsidyCard : undefined}
                   onDuplicateSubsidy={(isOwnerOrCoOwner && !isProjectConcluded) ? handleDuplicateSubsidyCard : undefined}
@@ -2137,6 +2280,7 @@ export default function ProjectDetailsPage() {
                   allActivities={projectData.project.activities || []}
                   subsidizedActivityIds={[...subsidizedActivityIds, ...linkedActivityIdsForModal]}
                   onRefresh={async () => { await refetchProject() }}
+                  isOwnerOrCoOwner={isOwnerOrCoOwner}
                   projectSubsidizedBudget={Number(projectData.project.subsidized_budget || 0)}
                   projectId={projectId}
                   projectName={project.title}
@@ -2183,7 +2327,7 @@ export default function ProjectDetailsPage() {
                 onSearchChange={setSearchQuery}
                 onClearFilters={clearFilters}
                 onAddActivity={handleAddActivity}
-                canAddActivity={isProjectMember && !isReceiptPending && !isProjectConcluded}
+                canAddActivity={isProjectMember && !isReceiptPending && !isProjectConcluded && !isUnderReview}
               />
             </div>
 
@@ -2259,41 +2403,7 @@ export default function ProjectDetailsPage() {
           </div> */}
           </div>
 
-          {/* OPEN REQUEST OVERLAY — reusable component, absolute inside relative wrapper */}
-          <OpenRequestOverlay
-            visible={project.status === 'OPEN_REQUEST' || project.status === 'IN_REVIEW'}
-            projectTitle={project.title}
-            departmentName={project.departmentName}
-            ownerName={projectData?.project?.owner?.name}
-            formattedBudget={
-              project.budget != null
-                ? formatCurrency(Number(project.budget))
-                : undefined
-            }
-            subsidizedBudget={
-              projectData?.project?.kpis?.subsidizedBudget != null
-                ? formatCurrency(Number(projectData.project.kpis.subsidizedBudget))
-                : undefined
-            }
-            users={projectUsers}
-            ownerUserId={projectData?.project?.owner_id ?? projectData?.project?.owner?.id}
-            coOwnerUserId={projectData?.project?.co_owner_id ?? projectData?.project?.co_owner?.id}
-            translations={{
-              title: pt.openRequestOverlay?.title ?? 'Open Request',
-              description: pt.openRequestOverlay?.description ?? '',
-              projectLabel: pt.openRequestOverlay?.projectLabel ?? 'Project',
-              departmentLabel: pt.openRequestOverlay?.departmentLabel,
-              reviewerLabel: pt.openRequestOverlay?.reviewerLabel ?? 'Submitted by',
-              viewContact: pt.openRequestOverlay?.viewContact ?? 'View Contact',
-              backToProjects: pt.openRequestOverlay?.backToProjects ?? 'Back to Projects',
-              statusBadge: pt.openRequestOverlay?.statusBadge ?? 'Under review',
-              budgetLabel: pt.openRequestOverlay?.budgetLabel ?? 'Budget',
-              subsidizedBudgetLabel: pt.openRequestOverlay?.subsidizedBudgetLabel,
-            }}
-            onViewContact={projectData?.project?.owner ? () => setIsOwnerContactModalOpen(true) : undefined}
-            onBackToProjects={() => router.back()}
-          />
-        </div>{/* end relative wrapper */}
+        </div>)}{/* end content guard */}
 
         {/* Project Modals */}
         <ProjectModalsWrapper
@@ -2383,6 +2493,17 @@ export default function ProjectDetailsPage() {
 
       </div>
     </AppLayout>
+
+    {/* Adjustments review modal — opened from OpenRequestOverlay by department leader */}
+    <KanbanStatusTransitionModal
+      isOpen={isAdjustmentsModalOpen}
+      fromStatus={project?.status ?? 'OPEN_REQUEST'}
+      toStatus="ADJUSTMENTS_NEEDED"
+      projectTitle={project?.title}
+      activities={[]}
+      onConfirm={handleAdjustmentsConfirm}
+      onCancel={() => setIsAdjustmentsModalOpen(false)}
+    />
 
     {/* Mini Funding Distribution Modal */}
     <FundingDistributionModal

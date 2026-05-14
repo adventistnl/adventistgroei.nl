@@ -13,7 +13,8 @@ export const profileTranslations = {
       church_information: "Church Information", 
       account_data: "Account Data",
       preferences: "Preferences",
-      security: "Security"
+      security: "Security",
+      email_preferences: "Email Notifications"
     },
     
     // Personal Information
@@ -53,6 +54,7 @@ export const profileTranslations = {
     actions: {
       edit: "Edit",
       save: "Save",
+      saving: "Saving...",
       cancel: "Cancel",
       loading: "Loading..."
     },
@@ -94,6 +96,13 @@ export const profileTranslations = {
       pt: "Portuguese", 
       es: "Spanish",
       nl: "Dutch"
+    },
+
+    // Email Preferences
+    email_preferences: {
+      receive_emails_label: "Receive email notifications",
+      receive_emails_description: "Get notified by email about project updates, subsidy changes and refund activity.",
+      opted_out_note: "You will only receive essential emails (e.g. password reset, verification codes, invitations)."
     }
   },
   
@@ -111,7 +120,8 @@ export const profileTranslations = {
       church_information: "Informações da Igreja",
       account_data: "Dados da Conta", 
       preferences: "Preferências",
-      security: "Segurança"
+      security: "Segurança",
+      email_preferences: "Notificações por E-mail"
     },
     
     // Personal Information
@@ -149,6 +159,7 @@ export const profileTranslations = {
     actions: {
       edit: "Editar",
       save: "Salvar",
+      saving: "Salvando...",
       cancel: "Cancelar",
       loading: "Carregando..."
     },
@@ -190,6 +201,13 @@ export const profileTranslations = {
       pt: "Português",
       es: "Espanhol", 
       nl: "Holandês"
+    },
+
+    // Email Preferences
+    email_preferences: {
+      receive_emails_label: "Receber notificações por e-mail",
+      receive_emails_description: "Receba e-mails sobre atualizações de projetos, mudanças em subsídios e atividades de reembolso.",
+      opted_out_note: "Você receberá apenas e-mails essenciais (ex: redefinição de senha, códigos de verificação, convites)."
     }
   },
   
@@ -207,7 +225,8 @@ export const profileTranslations = {
       church_information: "Información de la Iglesia",
       account_data: "Datos de la Cuenta",
       preferences: "Preferencias", 
-      security: "Seguridad"
+      security: "Seguridad",
+      email_preferences: "Notificaciones por Correo"
     },
     
     // Personal Information
@@ -247,6 +266,7 @@ export const profileTranslations = {
     actions: {
       edit: "Editar",
       save: "Guardar",
+      saving: "Guardando...",
       cancel: "Cancelar", 
       loading: "Cargando..."
     },
@@ -288,6 +308,13 @@ export const profileTranslations = {
       pt: "Portugués",
       es: "Español",
       nl: "Holandés"
+    },
+
+    // Email Preferences
+    email_preferences: {
+      receive_emails_label: "Recibir notificaciones por correo",
+      receive_emails_description: "Recibe correos sobre actualizaciones de proyectos, cambios en subsidios y actividad de reembolsos.",
+      opted_out_note: "Solo recibirás correos esenciales (ej: restablecimiento de contraseña, códigos de verificación, invitaciones)."
     }
   },
   
@@ -305,7 +332,8 @@ export const profileTranslations = {
       church_information: "Kerk Informatie",
       account_data: "Account Gegevens",
       preferences: "Voorkeuren",
-      security: "Beveiliging"
+      security: "Beveiliging",
+      email_preferences: "E-mailmeldingen"
     },
     
     // Personal Information  
@@ -345,6 +373,7 @@ export const profileTranslations = {
     actions: {
       edit: "Bewerken",
       save: "Opslaan",
+      saving: "Opslaan...",
       cancel: "Annuleren",
       loading: "Laden..."
     },
@@ -386,6 +415,13 @@ export const profileTranslations = {
       pt: "Portugees",
       es: "Spaans",
       nl: "Nederlands"
+    },
+
+    // Email Preferences
+    email_preferences: {
+      receive_emails_label: "E-mailmeldingen ontvangen",
+      receive_emails_description: "Ontvang e-mails over projectupdates, subsidiewijzigingen en terugbetalingsactiviteiten.",
+      opted_out_note: "Je ontvangt alleen essentiële e-mails (bijv. wachtwoord reset, verificatiecodes, uitnodigingen)."
     }
   }
 }

@@ -40,7 +40,7 @@ import { useRoles } from "@/hooks/use-roles"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { InviteUserVariables } from "@/types/InviteUser"
-import { useInstitutions } from "@/hooks/use-institutions"
+import { useGetInstitutionsForInviteQuery, InstitutionForInvite } from "@/hooks/graphql/use-get-institutions-for-invite-query"
 import { RoleExtraFields } from "./RoleExtraFields"
 import { FilterTags, FilterTag } from "@/components/shared/filter-tags"
 
@@ -113,9 +113,16 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
   const [sendInviteEmail] = useSendInviteEmailMutation();
   const { i18n } = useTranslation();
   const { currentInstitutionData } = useInstitution();
-  const  churches = currentInstitutionData?.churches || []
-  const departments = currentInstitutionData?.departments || []
-  const { institutions } = useInstitutions();
+  const { data: inviteData } = useGetInstitutionsForInviteQuery();
+  // Filtrar apenas a instituição ativa no contexto atual
+  const institutions: InstitutionForInvite[] = useMemo(() => {
+    const all = inviteData?.institutions || [];
+    if (!currentInstitutionData?.id) return all;
+    return all.filter(inst => inst.id === currentInstitutionData.id);
+  }, [inviteData, currentInstitutionData?.id]);
+  // Lista flat de igrejas apenas da instituição ativa
+  const churches = useMemo(() => institutions.flatMap(inst => inst.churches || []), [institutions]);
+
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generatedLink, setGeneratedLink] = useState("");
@@ -293,10 +300,6 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
   };
 
   const handleOpenModal = () => {
-    if (churches.length === 0 || departments.length === 0) {
-      toast.error(t["missingChurchOrDepartment"]);
-      return;
-    }
     setOpen(true);
   };
 
@@ -396,6 +399,7 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
                       setSelectedChurchDepartment={setSelectedChurchDepartment}
                       selectedInstitutionDepartment={selectedInstitutionDepartment}
                       setSelectedInstitutionDepartment={setSelectedInstitutionDepartment}
+                      t={t.roleExtraFields}
                     />
 
                     {/* Personal Message */}
@@ -491,6 +495,7 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
                       selectedInstitutionDepartment={selectedInstitutionDepartment}
                       setSelectedInstitutionDepartment={setSelectedInstitutionDepartment}
                       showErrors={!extraFieldsValid}
+                      t={t.roleExtraFields}
                     />
                     {/* Generated Link Display */}
                     <Card>

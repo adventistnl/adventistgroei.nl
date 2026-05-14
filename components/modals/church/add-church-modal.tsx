@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
-import { 
-  Home, 
-  Save, 
+import {
+  Home,
+  Save,
   User,
   Phone,
   Mail,
@@ -123,11 +123,6 @@ export function AddChurchModal({
         newErrors.name = tChurch.validation.name_min_length
       }
 
-      // Leader is required
-      if (!formData.leader_id) {
-        newErrors.leader_id = tChurch.validation.leader_required
-      }
-
       // Type is only required if it's a special church
       if (isSpecialChurch && !formData.type) {
         newErrors.type = tChurch.validation.type_required
@@ -157,10 +152,7 @@ export function AddChurchModal({
       if (!formData.name?.trim()) {
         newErrors.name = tChurch.validation.name_required
       }
-      // Leader is required
-      if (!formData.leader_id) {
-        newErrors.leader_id = tChurch.validation.leader_required
-      }
+
       // Type is required if it's a special church
       if (isSpecialChurch && !formData.type) {
         newErrors.type = tChurch.validation.type_required
@@ -267,7 +259,7 @@ export function AddChurchModal({
               <h3 className="text-lg font-medium text-foreground">{tChurch.steps.step_1_title}</h3>
               <p className="text-sm text-muted-foreground">{tChurch.steps.step_1_description}</p>
             </div>
-            
+
             <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="name" className="flex items-center gap-2 text-sm">
@@ -287,15 +279,19 @@ export function AddChurchModal({
                 )}
               </div>
 
-              {/* Leader Selector */}
+              {/* Leader Selector - optional, can be assigned after creation */}
               <LeaderSelector
                 value={formData.leader_id || ''}
                 onValueChange={(value) => handleInputChange('leader_id', value)}
                 users={currentInstitutionData?.users || []}
                 isLoading={isLoading}
                 error={errors.leader_id}
-                required
+                required={false}
               />
+              <p className="text-xs text-muted-foreground -mt-1 flex items-center gap-1">
+                <span className="inline-block w-3 h-3 text-muted-foreground">ℹ</span>
+                {tChurch.fields?.leader_optional_hint || 'Optional — you can assign a leader after creating the church.'}
+              </p>
 
               <ChurchTypeSelector
                 isSpecialChurch={isSpecialChurch}
@@ -317,7 +313,7 @@ export function AddChurchModal({
               <h3 className="text-lg font-medium text-foreground">{tChurch.steps.step_2_title}</h3>
               <p className="text-sm text-muted-foreground">Enter house number and ZIP code to automatically fill city and province</p>
             </div>
-            
+
             <div className="max-w-md mx-auto space-y-4">
               {/* House Number Input */}
               <div className="space-y-2">
@@ -364,7 +360,7 @@ export function AddChurchModal({
               <h3 className="text-lg font-medium text-foreground">{tChurch.steps.step_3_title}</h3>
               <p className="text-sm text-muted-foreground">{tChurch.steps.step_3_description}</p>
             </div>
-            
+
             <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="contact_name" className="flex items-center gap-2 text-sm">
@@ -440,7 +436,7 @@ export function AddChurchModal({
           <DialogDescription className="text-sm text-muted-foreground">
             {tChurch.modals.create.description}
           </DialogDescription>
-          
+
           {/* Progress Bar */}
           <div className="mt-4 space-y-2">
             <div className="flex justify-between items-center text-xs text-muted-foreground">
@@ -464,9 +460,9 @@ export function AddChurchModal({
           <div className="flex justify-between items-center">
             <div className="flex gap-2">
               {currentStep > 1 && (
-                <Button 
-                  variant="outline" 
-                  onClick={handlePrevious} 
+                <Button
+                  variant="outline"
+                  onClick={handlePrevious}
                   disabled={isLoading}
                   size="sm"
                   className="flex items-center gap-1 text-xs"
@@ -475,9 +471,9 @@ export function AddChurchModal({
                   {tChurch.buttons.previous}
                 </Button>
               )}
-              <Button 
-                variant="outline" 
-                onClick={handleCancel} 
+              <Button
+                variant="outline"
+                onClick={handleCancel}
                 disabled={isLoading}
                 size="sm"
                 className="text-xs"
@@ -488,9 +484,9 @@ export function AddChurchModal({
 
             <div className="flex gap-2">
               {currentStep === 3 && (
-                <Button 
+                <Button
                   variant="ghost"
-                  onClick={handleSkipContacts} 
+                  onClick={handleSkipContacts}
                   disabled={isLoading}
                   size="sm"
                   className="text-muted-foreground"
@@ -499,8 +495,8 @@ export function AddChurchModal({
                 </Button>
               )}
               {currentStep < totalSteps ? (
-                <Button 
-                  onClick={handleNext} 
+                <Button
+                  onClick={handleNext}
                   disabled={isLoading}
                   size="sm"
                   className="flex items-center gap-1 text-xs"
@@ -509,8 +505,8 @@ export function AddChurchModal({
                   <ChevronRight className="w-3 h-3" />
                 </Button>
               ) : (
-                <Button 
-                  onClick={handleSave} 
+                <Button
+                  onClick={handleSave}
                   disabled={isLoading}
                   size="sm"
                   className="min-w-[100px] text-xs"

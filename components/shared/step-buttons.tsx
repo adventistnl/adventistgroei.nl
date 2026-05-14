@@ -11,6 +11,7 @@ interface StepButtonsProps {
   onPrevious: () => void
   onNext: () => void
   isSubmitting?: boolean
+  isValidating?: boolean
   previousLabel?: string
   nextLabel?: string
   submitLabel?: string
@@ -25,6 +26,7 @@ export function StepButtons({
   onPrevious,
   onNext,
   isSubmitting = false,
+  isValidating = false,
   previousLabel = "Previous",
   nextLabel = "Next",
   submitLabel = "Submit",
@@ -81,12 +83,12 @@ export function StepButtons({
       <Button
         type="button"
         onClick={onNext}
-        disabled={isSubmitting}
+        disabled={isSubmitting || isValidating}
         className={cn(
           "flex items-center gap-0.75rem transition-all duration-200",
           classes.next,
           "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl",
-          isSubmitting && "opacity-75 cursor-not-allowed"
+          (isSubmitting || isValidating) && "opacity-75 cursor-not-allowed"
         )}
       >
         {isSubmitting ? (
@@ -94,6 +96,11 @@ export function StepButtons({
             <Loader2 className="w-1.125rem h-1.125rem animate-spin" />
             <span className="hidden sm:inline">{submittingLabel}</span>
             <span className="sm:hidden">...</span>
+          </>
+        ) : isValidating ? (
+          <>
+            <Loader2 className="w-1.125rem h-1.125rem animate-spin" />
+            <span className="hidden sm:inline">...</span>
           </>
         ) : isLastStep ? (
           <>

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, Suspense } from "react"
+import React, { useState, useEffect, useMemo, Suspense, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@apollo/client"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -31,7 +31,7 @@ import { projectTranslations } from "@/lib/translations/projects"
 import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { DELETE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
-import { Globe, Plus, RefreshCw, Building, MoreHorizontal, Eye, Edit, Activity, TrendingUp, Users, DollarSign, Folder, ArrowRight, Calendar, Building2, Clock, CheckCircle2, ListChecks, LayoutGrid, List, ExternalLink, ScanEye, ShieldAlert } from "lucide-react"
+import { Globe, Plus, RefreshCw, Building, MoreHorizontal, Eye, Edit, Activity, TrendingUp, Users, DollarSign, Folder, ArrowRight, Calendar, Building2, Clock, CheckCircle2, ListChecks, LayoutGrid, List, ExternalLink, Info, ShieldAlert } from "lucide-react"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
@@ -44,7 +44,7 @@ import { UseTable } from "@/components/ui/use-table"
 import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
 import { createProjectColumns } from "@/components/projects/projects-table-columns"
 import { EditProjectModal } from "@/components/modals/project/edit-project-modal"
-import { QuickViewProjectModal } from "@/components/modals/project/quick-view-project-modal"
+import { DetailsViewProjectModal } from "@/components/modals/project/details-view-project-modal"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
 import { MyProjectsFilter } from "@/components/shared/my-projects-filter"
 import { YearFilter } from "@/components/shared/year-filter"
@@ -138,6 +138,27 @@ function ProjectsPageContent() {
     title: t_project.projectsPage,
     breadcrumbs
   })
+
+  // Show loading/success toast: track true→false transition of isLoading
+  const loadingToastRef = useRef<string | undefined>(undefined)
+  const wasLoadingRef = useRef(false)
+  const successShownRef = useRef(false)
+
+  useEffect(() => {
+    if (successShownRef.current) return
+
+    if (isLoading && !wasLoadingRef.current) {
+      // Loading started — show loading toast
+      wasLoadingRef.current = true
+      loadingToastRef.current = toast.loading(t_project.toasts?.loadingData || 'Loading projects...')
+    } else if (!isLoading && wasLoadingRef.current && loadingToastRef.current !== undefined) {
+      // Loading finished — show success
+      successShownRef.current = true
+      toast.dismiss(loadingToastRef.current)
+      loadingToastRef.current = undefined
+      toast.success(t_project.toasts?.dataRefreshed || 'Projects loaded successfully', { duration: 3000 })
+    }
+  }, [isLoading])
 
   // Transform backend data to table format
   const transformProjectsData = (backendProjects: any[]): ProjectTableData[] => {
@@ -656,8 +677,8 @@ function ProjectsPageContent() {
                   }}
                   className="cursor-pointer"
                 >
-                  <ScanEye className="mr-2 h-4 w-4" />
-                  {t_project.table?.quickView ?? "Quick View"}
+                  <Info className="mr-2 h-4 w-4" />
+                  {t_project.table?.details ?? "Details"}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={(e) => {
@@ -1084,7 +1105,7 @@ function ProjectsPageContent() {
           />
 
           {/* Quick View Project Modal */}
-          <QuickViewProjectModal
+          <DetailsViewProjectModal
             isOpen={isQuickViewOpen}
             onClose={() => {
               setIsQuickViewOpen(false)

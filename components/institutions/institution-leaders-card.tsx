@@ -1,167 +1,295 @@
 "use client"
 
-import React, { useMemo, useState, useEffect } from "react"
+import React, { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { Crown, ChevronDown, ChevronUp, AlertCircle, Building2 } from "lucide-react"
+import { Crown, AlertCircle, UserPlus, Trash2, Eye, RefreshCw, MoreVertical, UserCheck, Wallet, ChevronDown } from "lucide-react"
 import { institutionTranslations } from "@/lib/translations/institutions"
 import { Button } from "@/components/ui/button"
+import { PermissionResolverName } from "@/types/graphql-global-types"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { ContactViewEditModal } from "@/components/modals/contact/contact-view-edit-modal"
 import { useUpdateUserMutation } from "@/hooks/graphql/use-user-mutation"
-
-interface UserRole {
-  id: string
-  role: {
-    id: string
-    name: string
-    key_code: string
-    description?: string
-  }
-}
+import { useHasPermission } from "@/hooks/use-has-permission"
+import {
+  useGetInstitutionPositionsQuery,
+  useCreateInstitutionPositionMutation,
+  useUpdateInstitutionPositionMutation,
+  useDeleteInstitutionPositionMutation,
+} from "@/hooks/graphql/use-institution-positions"
+import { InstitutionPositionType } from "@/types/globalTypes"
+import { toast } from "sonner"
 
 interface InstitutionUser {
   id: string
   name: string
   email: string
-  language_preference?: string
-  user_roles?: UserRole[] | null
-  is_deleted?: boolean
 }
 
-interface InstitutionLeadersCardProps {
-  users: InstitutionUser[]
+export interface InstitutionLeadersCardProps {
+  institutionId: string
   institutionName: string
+  institutionUsers?: InstitutionUser[]
   loading?: boolean
-  selectedYear?: number
 }
 
-/**
- * COMPONENTE DE CARD DE LÍDERES DA INSTITUIÇÃO
- * Exibe os líderes da instituição baseado em seus roles
- * 
- * Lógica:
- * - Identifica líderes através dos roles específicos de liderança institucional
- * - Roles de liderança: president, director, administrator, manager, coordinator, etc.
- * - Mostra detalhes de contato ao expandir o card
- * - Ordena alfabeticamente por nome do líder
- */
+const MANAGER_ROLES = ["INSTITUTION_MANAGER", "ADMIN", "DEV"]
+
+const ALL_POSITIONS: InstitutionPositionType[] = [
+  InstitutionPositionType.PRESIDENT,
+  InstitutionPositionType.SECRETARY,
+  InstitutionPositionType.FINANCE_MANAGER,
+]
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2)
+}
+
+function getPositionIcon(positionType: InstitutionPositionType) {
+  switch (positionType) {
+    case InstitutionPositionType.PRESIDENT:
+      return Crown
+    case InstitutionPositionType.SECRETARY:
+      return UserCheck
+    case InstitutionPositionType.FINANCE_MANAGER:
+      return Wallet
+    default:
+      return Crown
+  }
+}
+
+interface UserSelectorProps {
+  users: InstitutionUser[]
+  onSelect: (userId: string) => void
+  placeholder: string
+  searchPlaceholder: string
+  emptyLabel: string
+}
+
+function UserSelector({ users, onSelect, placeholder, searchPlaceholder, emptyLabel }: UserSelectorProps) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="w-full justify-between text-xs">
+          {placeholder}
+          <ChevronDown className="w-3 h-3 ml-1 opacity-60" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 p-0" align="start">
+        <Command>
+          <CommandInput placeholder={searchPlaceholder} className="h-8 text-xs" />
+          <CommandList>
+            <CommandEmpty className="py-3 text-center text-xs text-muted-foreground">
+              {emptyLabel}
+            </CommandEmpty>
+            <CommandGroup>
+              {users.map((user) => (
+                <CommandItem
+                  key={user.id}
+                  value={`${user.name} ${user.email}`}
+                  onSelect={() => {
+                    onSelect(user.id)
+                    setOpen(false)
+                  }}
+                  className="text-xs"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Avatar className="w-5 h-5 flex-shrink-0">
+                      <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                        {getInitials(user.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{user.name}</p>
+                      <p className="text-muted-foreground truncate">{user.email}</p>
+                    </div>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 export function InstitutionLeadersCard({ 
-  users = [], 
+  institutionId,
   institutionName,
-  loading = false,
-  selectedYear
+  institutionUsers = [],
+  loading: externalLoading = false,
 }: InstitutionLeadersCardProps) {
   const { i18n } = useTranslation()
-  const currentLanguage = i18n?.language || 'en'
+  const currentLanguage = i18n?.language || "en"
   const t = institutionTranslations[currentLanguage as keyof typeof institutionTranslations] || institutionTranslations.en
-
-  // Filter users by selected year if provided
-  const filteredUsersByYear = useMemo(() => {
-    if (!selectedYear) return users
-    
-    return users.filter(user => {
-      if (!user?.id) return false
-      // Assuming users have a created_at field; adjust if needed
-      const userCreatedAt = (user as any).created_at
-      if (!userCreatedAt) return true // Include if no date available
-      const userYear = new Date(userCreatedAt).getFullYear()
-      return userYear <= selectedYear
-    })
-  }, [users, selectedYear])
-
-
-  /**
-   * Identificar líderes institucionais baseado em roles específicos
-   * Roles de liderança institucional: president, director, administrator, manager, coordinator
-   * OTIMIZADO: Usa Set para busca O(1) de roles de liderança
-   */
-  const leaders = useMemo(() => {
-
-    
-    // 1. Definir roles que indicam liderança institucional
-    const leadershipRoles = new Set([
-      'president',
-      'vice_president', 
-      'director',
-      'vice_director',
-      'administrator',
-      'manager',
-      'coordinator',
-      'executive_secretary',
-      'treasurer',
-      'superintendent',
-      'institutional_leader',
-      'institutional_admin',
-      'institutional_manager'
-    ])
-    
-    // 2. Filtrar usuários ativos (já filtrados por ano)
-    const activeUsers = filteredUsersByYear.filter(user => !user.is_deleted)
-    
-    // 3. Identificar líderes: usuários com pelo menos um role de liderança
-    const institutionLeaders = activeUsers
-      .map(user => {
-        // Buscar roles de liderança do usuário
-        const userLeadershipRoles = (user.user_roles || []).filter(ur => 
-          leadershipRoles.has(ur.role.key_code.toLowerCase())
-        )
-        
-        if (userLeadershipRoles.length > 0) {
-          
-          return {
-            user,
-            leadershipRoles: userLeadershipRoles
-          }
-        }
-        
-        return null
-      })
-      .filter((item): item is NonNullable<typeof item> => item !== null)
-      .sort((a, b) => a.user.name.localeCompare(b.user.name))
-    
-
-    return institutionLeaders
-  }, [filteredUsersByYear, selectedYear])
-
-  // Gerar iniciais para o avatar
-  const getInitials = (name: string): string => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
-  }
-
-  // Estado para controlar quais líderes estão expandidos
-  const [expandedLeaders, setExpandedLeaders] = useState<Set<string>>(new Set())
+  const leadershipCard = t.leadershipCard as any
+  const { data, loading: positionsLoading, refetch } = useGetInstitutionPositionsQuery(
+    { institution_id: institutionId },
+    { skip: !institutionId }
+  )
   
-  // Estado para controlar o modal de contato
   const [selectedUserForContact, setSelectedUserForContact] = useState<InstitutionUser | null>(null)
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
+  const [assigningFor, setAssigningFor] = useState<InstitutionPositionType | null>(null)
+  const [replacingFor, setReplacingFor] = useState<InstitutionPositionType | null>(null)
   
+  const [createPosition, { loading: creating }] = useCreateInstitutionPositionMutation()
+  const [updatePosition, { loading: updating }] = useUpdateInstitutionPositionMutation()
+  const [deletePosition, { loading: deleting }] = useDeleteInstitutionPositionMutation()
   const [updateUserMutation] = useUpdateUserMutation()
 
-  const toggleLeader = (userId: string) => {
-    setExpandedLeaders(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(userId)) {
-        newSet.delete(userId)
-      } else {
-        newSet.add(userId)
+  const canListPositions = useHasPermission([PermissionResolverName.InstitutionPositions])
+  const canViewPosition = useHasPermission([PermissionResolverName.InstitutionPosition])
+  const canCreatePosition = useHasPermission(
+    [PermissionResolverName.CreateInstitutionPosition],
+    MANAGER_ROLES,
+    false,
+    true
+  )
+  const canUpdatePosition = useHasPermission(
+    [PermissionResolverName.UpdateInstitutionPosition],
+    MANAGER_ROLES,
+    false,
+    true
+  )
+  const canDeletePosition = useHasPermission(
+    [PermissionResolverName.DeleteInstitutionPosition],
+    MANAGER_ROLES,
+    false,
+    true
+  )
+
+  const isLoading = externalLoading || positionsLoading
+  const isMutating = creating || updating || deleting
+
+  const positionsMap = useMemo(() => {
+    const positions = data?.institutionPositions ?? []
+    const map: Record<string, (typeof positions)[number] | undefined> = {}
+    for (const position of positions) {
+      map[position.position_type] = position
+    }
+    return map
+  }, [data])
+
+  const assignedUserIds = useMemo(() => {
+    return new Set(Object.values(positionsMap).filter(Boolean).map((position) => position!.user_id))
+  }, [positionsMap])
+
+  const availableUsers = useMemo(() => {
+    return institutionUsers.filter((user) => !assignedUserIds.has(user.id))
+  }, [institutionUsers, assignedUserIds])
+
+  const assignedCount = useMemo(() => {
+    return ALL_POSITIONS.filter((positionType) => positionsMap[positionType]).length
+  }, [positionsMap])
+
+  const canManageRecord = canViewPosition || canUpdatePosition || canDeletePosition
+
+  async function handleAssign(positionType: InstitutionPositionType, userId: string) {
+    if (!institutionId) {
+      toast.error(leadershipCard?.toasts?.error_assign || "Erro ao atribuir cargo")
+      return
+    }
+
+    setAssigningFor(null)
+    try {
+      const result = await createPosition({
+        variables: {
+          data: {
+            institution_id: institutionId,
+            position_type: positionType,
+            user_id: userId,
+          },
+        },
+        awaitRefetchQueries: true,
+      })
+
+      if (!result.data?.createInstitutionPosition?.id) {
+        throw new Error(leadershipCard?.toasts?.error_assign || "Erro ao atribuir cargo")
       }
-      return newSet
-    })
+
+      await refetch()
+      const positionLabel = leadershipCard?.positions?.[positionType] ?? positionType
+      toast.success(`${positionLabel}: ${leadershipCard?.toasts?.assigned || "Cargo atribuído com sucesso"}`)
+    } catch (error: any) {
+      toast.error(error?.message ?? (leadershipCard?.toasts?.error_assign || "Erro ao atribuir cargo"))
+    }
   }
-  
+
+  async function handleReplace(positionId: string, positionType: InstitutionPositionType, userId: string) {
+    setReplacingFor(null)
+    try {
+      const result = await updatePosition({
+        variables: {
+          id: positionId,
+          data: { user_id: userId },
+        },
+        awaitRefetchQueries: true,
+      })
+
+      if (!result.data?.updateInstitutionPosition?.id) {
+        throw new Error(leadershipCard?.toasts?.error_update || "Erro ao atualizar cargo")
+      }
+
+      await refetch()
+      const positionLabel = leadershipCard?.positions?.[positionType] ?? positionType
+      toast.success(`${positionLabel}: ${leadershipCard?.toasts?.updated || "Cargo atualizado com sucesso"}`)
+    } catch (error: any) {
+      toast.error(error?.message ?? (leadershipCard?.toasts?.error_update || "Erro ao atualizar cargo"))
+    }
+  }
+
+  async function handleRemove(positionId: string, positionType: InstitutionPositionType) {
+    try {
+      const result = await deletePosition({ variables: { id: positionId }, awaitRefetchQueries: true })
+
+      if (!result.data?.deleteInstitutionPosition?.id) {
+        throw new Error(leadershipCard?.toasts?.error_remove || "Erro ao remover cargo")
+      }
+
+      await refetch()
+      const positionLabel = leadershipCard?.positions?.[positionType] ?? positionType
+      toast.success(`${positionLabel}: ${leadershipCard?.toasts?.removed || "Cargo removido com sucesso"}`)
+    } catch (error: any) {
+      toast.error(error?.message ?? (leadershipCard?.toasts?.error_remove || "Erro ao remover cargo"))
+    }
+  }
+
   const handleViewContact = (user: InstitutionUser) => {
     setSelectedUserForContact(user)
     setIsContactModalOpen(true)
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Card className="h-full flex flex-col">
         <CardHeader className="pb-3 space-y-2">
@@ -173,9 +301,9 @@ export function InstitutionLeadersCard({
             <div className="h-5 bg-muted rounded w-8 animate-pulse"></div>
           </div>
         </CardHeader>
-        <CardContent className="flex-1 overflow-y-auto space-y-2">
-          {[...Array(2)].map((_, i) => (
-            <div key={i} className="flex items-center gap-3 p-3 rounded border animate-pulse">
+        <CardContent className="flex-1 space-y-2">
+          {ALL_POSITIONS.map((positionType) => (
+            <div key={positionType} className="flex items-center gap-3 p-3 rounded border animate-pulse">
               <div className="w-8 h-8 bg-muted rounded-full"></div>
               <div className="flex-1 space-y-1">
                 <div className="h-4 bg-muted rounded w-24"></div>
@@ -183,6 +311,34 @@ export function InstitutionLeadersCard({
               </div>
             </div>
           ))}
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!canListPositions) {
+    return (
+      <Card className="h-full flex flex-col bg-card/50">
+        <CardHeader className="pb-3 space-y-1 border-b flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Crown className="w-4 h-4 text-muted-foreground" />
+                {leadershipCard?.title || "Institution Leaders"}
+              </CardTitle>
+              <CardDescription className="text-xs mt-1">
+                {leadershipCard?.description || "Formal positions assigned to this institution"}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center py-8">
+          <div className="text-center">
+            <AlertCircle className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">
+              {leadershipCard?.no_permission || "You don't have permission to view this content"}
+            </p>
+          </div>
         </CardContent>
       </Card>
     )
@@ -196,106 +352,173 @@ export function InstitutionLeadersCard({
             <div className="flex-1">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <Crown className="w-4 h-4 text-muted-foreground" />
-                {t.leadershipCard?.title || "Institution Leaders"}
+                {leadershipCard?.title || "Institution Leaders"}
               </CardTitle>
               <CardDescription className="text-xs mt-1">
-                {t.leadershipCard?.description || "Leaders managing this institution"}
+                {leadershipCard?.description || "Formal positions assigned to this institution"}
               </CardDescription>
             </div>
-            <StatusBadge
-              label={leaders.length.toString()}
-              variant="neutral"
-              size="sm"
-            />
+            <div className="flex items-center gap-2">
+              <StatusBadge label={`${assignedCount} / ${ALL_POSITIONS.length}`} variant="neutral" size="sm" />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => refetch()}
+                disabled={isMutating}
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${positionsLoading ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
           </div>
         </CardHeader>
-        <CardContent className="flex-1 overflow-y-auto space-y-1 pr-2">
-          {leaders.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <AlertCircle className="w-8 h-8 text-muted-foreground/30 mb-2" />
-              <p className="text-xs text-muted-foreground">
-                {t.leadershipCard?.no_leaders || "No institutional leaders found"}
-              </p>
-            </div>
-          ) : (
-            leaders.map(({ user, leadershipRoles }) => {
-              const isExpanded = expandedLeaders.has(user.id)
+        <CardContent className="flex-1 overflow-y-auto space-y-2 pt-3 pr-2">
+          {ALL_POSITIONS.map((positionType) => {
+            const record = positionsMap[positionType]
+            const positionLabel = leadershipCard?.positions?.[positionType] ?? positionType
+            const isAssigning = assigningFor === positionType
+            const isReplacing = replacingFor === positionType
+            const PositionIcon = getPositionIcon(positionType)
 
-              return (
-                <div key={user.id} className="border border-border/50 rounded-lg overflow-hidden bg-card hover:border-border transition-colors">
-                  {/* Header colapsável */}
-                  <div className="flex items-center gap-2 p-3">
-                    <Button
-                      variant="ghost"
-                      className="flex-1 justify-start h-auto p-0 hover:bg-transparent"
-                      onClick={() => toggleLeader(user.id)}
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <Avatar className="w-8 h-8 flex-shrink-0">
-                          <AvatarFallback className="text-xs border font-medium bg-primary/10 text-primary dark:bg-primary/20">
-                            {getInitials(user.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 text-left min-w-0">
-                          <p className="text-sm font-medium truncate">{user.name}</p>
-                          <p className="text-xs text-muted-foreground truncate mt-0.5">{user.email}</p>
-                        </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          {isExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                          )}
-                        </div>
-                      </div>
-                    </Button>
+            return (
+              <div
+                key={positionType}
+                className="border border-border/50 rounded-lg bg-card overflow-hidden hover:border-border transition-colors"
+              >
+                <div className="flex items-center justify-between px-3 py-2 gap-2">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <PositionIcon className="w-3.5 h-3.5 text-primary/70" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide truncate">
+                        {positionLabel}
+                      </p>
+                      {record ? (
+                        <>
+                          <p className="text-sm font-medium truncate">{record.user.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{record.user.email}</p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">
+                          {leadershipCard?.unassigned || "Not assigned"}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Conteúdo expandido - Roles e Botão de Contato */}
-                  {isExpanded && (
-                    <div className="px-3 pb-3 space-y-2 bg-muted/5 border-t">
-                      <div className="pt-2">
-                        <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
-                          <Building2 className="w-3 h-3" />
-                          {t.leadershipCard?.leadership_roles || "Leadership Roles"} ({leadershipRoles.length})
-                        </p>
-                        {leadershipRoles.length > 0 ? (
-                          <div className="space-y-1.5">
-                            {leadershipRoles.map(roleData => (
-                              <div 
-                                key={roleData.id}
-                                className="flex items-center justify-between px-2 py-1.5 rounded bg-background text-xs border border-border/50"
-                              >
-                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                  <Crown className="w-3 h-3 text-primary/70 flex-shrink-0" />
-                                  <span className="font-medium truncate">{roleData.role.name}</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-xs text-muted-foreground italic px-2">
-                            {t.leadershipCard?.no_roles || "No leadership roles assigned"}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Botão Ver Contato */}
-                      <div className="pt-2 border-t">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="w-full text-xs"
-                          onClick={() => handleViewContact(user)}
-                        >
-                          {t.leadershipCard?.view_contact || "View Contact"}
-                        </Button>
-                      </div>
-                    </div>
+                  {record ? (
+                    canManageRecord ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" disabled={isMutating}>
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          {canViewPosition ? (
+                            <DropdownMenuItem className="text-xs" onClick={() => handleViewContact(record.user)}>
+                              <Eye className="w-3.5 h-3.5 mr-2" />
+                              {leadershipCard?.view_contact || "View Contact"}
+                            </DropdownMenuItem>
+                          ) : null}
+                          {canUpdatePosition ? (
+                            <DropdownMenuItem
+                              className="text-xs"
+                              onClick={() => {
+                                setAssigningFor(null)
+                                setReplacingFor(positionType)
+                              }}
+                            >
+                              <UserPlus className="w-3.5 h-3.5 mr-2" />
+                              {leadershipCard?.replace || "Replace"}
+                            </DropdownMenuItem>
+                          ) : null}
+                          {canDeletePosition ? (
+                            <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-xs text-destructive focus:text-destructive"
+                              onClick={() => handleRemove(record.id, positionType)}
+                              disabled={isMutating}
+                            >
+                              <Trash2 className="w-3.5 h-3.5 mr-2" />
+                              {leadershipCard?.remove || "Remove"}
+                            </DropdownMenuItem>
+                            </>
+                          ) : null}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : null
+                  ) : (
+                    canCreatePosition ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-7 px-2 flex-shrink-0"
+                        onClick={() => {
+                          setReplacingFor(null)
+                          setAssigningFor(positionType)
+                        }}
+                        disabled={isMutating}
+                      >
+                        <UserPlus className="w-3 h-3 mr-1" />
+                        {leadershipCard?.assign || "Assign"}
+                      </Button>
+                    ) : null
                   )}
                 </div>
-              )
-            })
+
+                {isAssigning && (
+                  canCreatePosition ? (
+                    <div className="px-3 pb-3 pt-1 border-t bg-muted/20 space-y-1.5">
+                      <p className="text-xs text-muted-foreground font-medium">
+                        {leadershipCard?.select_user || "Select user..."}
+                      </p>
+                      <UserSelector
+                        users={availableUsers}
+                        onSelect={(userId) => handleAssign(positionType, userId)}
+                        placeholder={leadershipCard?.select_user || "Select user..."}
+                        searchPlaceholder={leadershipCard?.search_user || "Search user..."}
+                        emptyLabel={leadershipCard?.no_users_available || "No users available"}
+                      />
+                      <Button variant="ghost" size="sm" className="text-xs h-7 w-full" onClick={() => setAssigningFor(null)}>
+                        {t.cancel || "Cancel"}
+                      </Button>
+                    </div>
+                  ) : null
+                )}
+
+                {isReplacing && record && (
+                  canUpdatePosition ? (
+                    <div className="px-3 pb-3 pt-1 border-t bg-muted/20 space-y-1.5">
+                      <p className="text-xs text-muted-foreground font-medium">
+                        {leadershipCard?.select_user || "Select user..."}
+                      </p>
+                      <UserSelector
+                        users={availableUsers}
+                        onSelect={(userId) => handleReplace(record.id, positionType, userId)}
+                        placeholder={leadershipCard?.select_user || "Select user..."}
+                        searchPlaceholder={leadershipCard?.search_user || "Search user..."}
+                        emptyLabel={leadershipCard?.no_users_available || "No users available"}
+                      />
+                      <Button variant="ghost" size="sm" className="text-xs h-7 w-full" onClick={() => setReplacingFor(null)}>
+                        {t.cancel || "Cancel"}
+                      </Button>
+                    </div>
+                  ) : null
+                )}
+              </div>
+            )
+          })}
+
+          {assignedCount === 0 && !positionsLoading && (
+            <div className="flex flex-col items-center justify-center py-4 text-center">
+              <AlertCircle className="w-6 h-6 text-muted-foreground/30 mb-1" />
+              <p className="text-xs text-muted-foreground">
+                {leadershipCard?.no_leaders || "No institutional leaders found"}
+              </p>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -331,6 +554,7 @@ export function InstitutionLeadersCard({
               User: 0
             }
           }}
+          userData={selectedUserForContact}
           entityName={selectedUserForContact.name}
           entityType="User"
           readonly={true}

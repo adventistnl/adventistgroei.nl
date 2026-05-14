@@ -105,6 +105,8 @@ export const dashboardTranslations = {
     
     // Loading
     loading: "Loading...",
+    loadingData: "Loading dashboard...",
+    dataLoaded: "Dashboard loaded successfully",
   },
   
   pt: {
@@ -213,6 +215,8 @@ export const dashboardTranslations = {
     
     // Loading
     loading: "Carregando...",
+    loadingData: "Carregando dashboard...",
+    dataLoaded: "Dashboard carregado com sucesso",
   },
   
   nl: {
@@ -321,5 +325,7 @@ export const dashboardTranslations = {
     
     // Loading
     loading: "Laden...",
+    loadingData: "Dashboard laden...",
+    dataLoaded: "Dashboard succesvol geladen",
   }
 }

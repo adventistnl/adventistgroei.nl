@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeft, Phone } from "lucide-react"
+import { Phone, CheckCircle2, AlertCircle, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
 import {
@@ -21,6 +21,10 @@ export interface OpenRequestOverlayTranslations {
   statusBadge: string
   budgetLabel: string
   subsidizedBudgetLabel?: string
+  approveProject?: string
+  adjustmentsNeeded?: string
+  approveSuccess?: string
+  adjustmentsSuccess?: string
 }
 
 export interface OpenRequestOverlayProps {
@@ -40,15 +44,23 @@ export interface OpenRequestOverlayProps {
   /** ID of co-owner for avatar highlight */
   coOwnerUserId?: string
   translations: OpenRequestOverlayTranslations
-  /** Called when "View Contact" is clicked */
+  /** Called when "View Contact" is clicked (non-reviewer) */
   onViewContact?: () => void
   /** Called when "Back to Projects" is clicked */
   onBackToProjects?: () => void
+  /** When true, shows Approve + Adjustments Needed buttons instead of View Contact */
+  isReviewer?: boolean
+  /** Called when reviewer clicks "Approve" */
+  onApprove?: () => Promise<void>
+  /** Called when reviewer clicks "Adjustments Needed" */
+  onRequestAdjustments?: () => Promise<void>
+  /** Whether an approval/adjustment action is in progress */
+  isReviewLoading?: boolean
 }
 
 /**
- * Reusable full-area overlay shown when a project is in OPEN_REQUEST status.
- * Mount this inside a `position: relative` wrapper — the overlay uses `absolute inset-0`.
+ * Inline card shown when a project is in OPEN_REQUEST / IN_REVIEW status.
+ * Rendered in the page flow, below the Project Header.
  */
 export function OpenRequestOverlay({
   visible,
@@ -63,18 +75,18 @@ export function OpenRequestOverlay({
   translations: t,
   onViewContact,
   onBackToProjects,
+  isReviewer = false,
+  onApprove,
+  onRequestAdjustments,
+  isReviewLoading = false,
 }: OpenRequestOverlayProps) {
   if (!visible) return null
 
   return (
     <TooltipProvider>
-      <div className="absolute inset-0 z-30 rounded-xl overflow-hidden">
-        {/* Frosted backdrop */}
-        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
-
-        {/* Centred card */}
-        <div className="absolute inset-0 flex items-start justify-center pt-12 p-4">
-          <div className="relative z-10 w-full max-w-xs bg-card border rounded-2xl shadow-xl overflow-hidden">
+      {/* Centred card — inline in the page layout */}
+      <div className="flex items-start justify-center py-10 px-4">
+        <div className="w-full max-w-sm bg-card border rounded-2xl shadow-xl overflow-hidden">
 
             {/* ── Header ─── */}
             <div className="px-4 pt-4 pb-3 flex items-center justify-between gap-2">
@@ -149,42 +161,64 @@ export function OpenRequestOverlay({
               )}
             </div>
 
-            {/* ── Footer — space-between ─── */}
-            <div className="border-t px-4 py-3 flex items-center justify-between gap-2 bg-muted/20">
-              {/* Back to Projects */}
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
-                onClick={onBackToProjects}
-              >
-                <ArrowLeft className="w-3 h-3" />
-                <span className="hidden sm:inline">{t.backToProjects}</span>
-                <span className="sm:hidden">{t.backToProjects}</span>
-              </Button>
-
-              {/* View Contact — Tooltip on mobile */}
-              {onViewContact && ownerName && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 text-xs gap-1.5"
-                      onClick={onViewContact}
-                    >
-                      <Phone className="w-3 h-3" />
-                      <span className="hidden sm:inline">{t.viewContact}</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="sm:hidden">
-                    <p className="text-xs">{t.viewContact} · {ownerName}</p>
-                  </TooltipContent>
-                </Tooltip>
+            {/* ── Footer ─── */}
+            <div className="border-t px-4 py-3 bg-muted/20">
+              {isReviewer ? (
+                /* Reviewer actions: Approve + Adjustments Needed */
+                <div className="flex items-center gap-2 w-full">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 h-8 text-xs gap-1.5 border-orange-200 text-orange-700 hover:bg-orange-50 dark:border-orange-800 dark:text-orange-400 dark:hover:bg-orange-900/20"
+                    onClick={onRequestAdjustments}
+                    disabled={isReviewLoading}
+                  >
+                    {isReviewLoading ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                    )}
+                    <span className="truncate">{t.adjustmentsNeeded ?? 'Adjustments Needed'}</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1 h-8 text-xs gap-1.5 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white"
+                    onClick={onApprove}
+                    disabled={isReviewLoading}
+                  >
+                    {isReviewLoading ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="w-3 h-3 shrink-0" />
+                    )}
+                    <span className="truncate">{t.approveProject ?? 'Approve'}</span>
+                  </Button>
+                </div>
+              ) : (
+                /* Non-reviewer: View Contact button only */
+                <div className="flex items-center justify-end">
+                  {onViewContact && ownerName && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs gap-1.5"
+                          onClick={onViewContact}
+                        >
+                          <Phone className="w-3 h-3" />
+                          <span>{t.viewContact}</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p className="text-xs">{t.viewContact} · {ownerName}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
               )}
             </div>
 
-          </div>
         </div>
       </div>
     </TooltipProvider>

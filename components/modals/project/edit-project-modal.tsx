@@ -96,7 +96,7 @@ interface EditProjectModalProps {
 export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditProjectModalProps) {
   const { i18n } = useTranslation()
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
-  
+
   const dateLocale = React.useMemo(() => {
     switch (i18n.language) {
       case 'pt': return ptBR
@@ -104,7 +104,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
       default: return enUS
     }
   }, [i18n.language])
-  
+
   const { currentInstitutionData, refetchInstitutionById } = useInstitution()
   const { user: currentUser } = useAuth()
 
@@ -160,7 +160,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
 
   // Filter departments: only show those with locked annual budget for current year
   const currentYear = new Date().getFullYear()
-  const departments = (departmentsData?.departments || []).filter((dept: any) => 
+  const departments = (departmentsData?.departments || []).filter((dept: any) =>
     dept.annual_budgets?.some((budget: any) => budget.year === currentYear && budget.is_locked === true)
   )
 
@@ -178,8 +178,22 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
         onSuccess()
       }
     },
-    onError: (error) => {
-      toast.error(`${t.errors.updateError}: ${error.message}`)
+    onError: (error: any) => {
+      let graphQLError = error?.graphQLErrors?.[0]
+      if (!graphQLError && error?.networkError?.result?.errors) {
+        graphQLError = error.networkError.result.errors[0]
+      }
+      const errorCode = graphQLError?.extensions?.context?.additional?.errorCode
+
+      if (errorCode === 'EDIT_LOCKED_NOT_DRAFT') {
+        toast.error(t.errors.cannotEditProjectNotDraft, { duration: 4000 })
+      } else if (errorCode === 'BUDGET_LOCKED_AFTER_APPROVAL') {
+        toast.error(t.errors.cannotChangeBudget, { duration: 4000 })
+      } else if (graphQLError?.message) {
+        toast.error(`${t.errors.updateError}: ${graphQLError.message}`)
+      } else {
+        toast.error(`${t.errors.updateError}: ${error.message}`)
+      }
       console.error("Error updating project:", error)
     }
   })
@@ -213,7 +227,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
   const [openDepartment, setOpenDepartment] = useState(false)
   const [openLanguage, setOpenLanguage] = useState(false)
   const [openType, setOpenType] = useState(false)
-  
+
   const totalSteps = 2
 
   // Populate form when API data loads — uses projectDetail (from GET_PROJECT_BY_ID_QUERY) for accuracy
@@ -250,7 +264,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
       ...prev,
       [field]: value
     }))
-    
+
     // Clear error when user starts typing
     setErrors(prev => {
       if (prev[field]) {
@@ -368,7 +382,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
         if (projectOwnerRole) {
           // Find the selected owner user to check their current roles
           const ownerUser = institutionUsers.find((u: any) => u.id === formData.owner_id)
-          
+
           if (ownerUser) {
             // Check if user already has PROJECT_OWNER role
             const hasProjectOwnerRole = ownerUser.user_roles?.some(
@@ -448,7 +462,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
               <h3 className="text-lg font-medium text-foreground">{t.basicInformation}</h3>
               <p className="text-sm text-muted-foreground">{t.basicInformationDesc}</p>
             </div>
-            
+
             <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-2">
                 <Label htmlFor="title" className="flex items-center gap-2 text-sm">
@@ -550,9 +564,9 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                   <Settings className="w-4 h-4 text-muted-foreground" />
                   {t.errors.currentOwner} <span className="text-red-500">*</span>
                 </Label>
-                
+
                 {/* Clickable only for the project owner */}
-                <div 
+                <div
                   className={cn(
                     "p-3 border rounded-lg bg-muted/30 transition-all",
                     isOwner
@@ -593,10 +607,10 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                         labelText={t.errors.currentOwner}
                         showAddButton={false}
                       />
-                     { isOwner && 
-                     <p className="text-xs text-muted-foreground mt-1">
-                        {t.errors.clickToChange}
-                      </p>}
+                      {isOwner &&
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {t.errors.clickToChange}
+                        </p>}
                     </div>
                   ) : (
                     <div className="text-center py-2">
@@ -606,7 +620,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                     </div>
                   )}
                 </div>
-                
+
                 {/* Hidden owner selector — only rendered/active for the owner */}
                 <div className="hidden">
                   <UserMultiSelector
@@ -626,101 +640,101 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                     buttonDataAttribute="data-owner-selector-button"
                   />
                 </div>
-                
-              {/* Co-Owner Selection */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-sm">
-                  <Settings className="w-4 h-4 text-muted-foreground" />
-                  {"Co-Owner"}
-                  <span className="text-xs text-muted-foreground font-normal">(opcional)</span>
-                </Label>
-                
-                {/* Clickable for the co-owner OR for the owner (when no co-owner exists or to manage it) */}
-                <div 
-                  className={cn(
-                    "p-3 border rounded-lg bg-muted/30 transition-all",
-                    (isCoOwner || isOwner)
-                      ? "cursor-pointer hover:bg-muted/50 hover:border-primary/50"
-                      : "cursor-not-allowed opacity-70",
-                    !formData.co_owner_id && "border-dashed"
-                  )}
-                  onClick={() => {
-                    if (!isCoOwner && !isOwner) return
-                    const selectorButton = document.querySelector('[data-co-owner-selector-button]') as HTMLButtonElement
-                    if (selectorButton) selectorButton.click()
-                  }}
-                  role="button"
-                  tabIndex={(isCoOwner || isOwner) ? 0 : -1}
-                  onKeyDown={(e) => {
-                    if (!isCoOwner && !isOwner) return
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
+
+                {/* Co-Owner Selection */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 text-sm">
+                    <Settings className="w-4 h-4 text-muted-foreground" />
+                    {"Co-Owner"}
+                    <span className="text-xs text-muted-foreground font-normal">(opcional)</span>
+                  </Label>
+
+                  {/* Clickable for the co-owner OR for the owner (when no co-owner exists or to manage it) */}
+                  <div
+                    className={cn(
+                      "p-3 border rounded-lg bg-muted/30 transition-all",
+                      (isCoOwner || isOwner)
+                        ? "cursor-pointer hover:bg-muted/50 hover:border-primary/50"
+                        : "cursor-not-allowed opacity-70",
+                      !formData.co_owner_id && "border-dashed"
+                    )}
+                    onClick={() => {
+                      if (!isCoOwner && !isOwner) return
                       const selectorButton = document.querySelector('[data-co-owner-selector-button]') as HTMLButtonElement
                       if (selectorButton) selectorButton.click()
-                    }
-                  }}
-                >
-                  {formData.co_owner_id ? (
-                    <div className="space-y-1">
-                      <UsersAvatarGroup
-                        users={availableUsers
-                          .filter((user: User) => user.id === formData.co_owner_id)
-                          .map((user: User): UserAvatarData => ({
-                            id: user.id,
-                            name: user.name,
-                            email: user.email,
-                            role: user.role
-                          }))}
-                        maxDisplay={1}
-                        size="md"
-                        showLabel={true}
-                        labelText={"Co-Owner"}
-                        showAddButton={false}
-                      />
-                      <div className="flex items-center justify-between mt-1">
-                        <p className="text-xs text-muted-foreground">{t.errors.clickToChange}</p>
-                        {(isCoOwner || isOwner) && (
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); handleInputChange('co_owner_id', '') }}
-                            className="text-xs text-destructive hover:underline"
-                          >
-                            {"Remover"}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-2">
-                      <p className="text-sm text-muted-foreground">
-                        {(isCoOwner || isOwner) ? "Click to select co-owner (optional)" : "—"}
-                      </p>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="hidden">
-                  <UserMultiSelector
-                    availableUsers={availableUsers.filter((u: User) => u.id !== formData.owner_id)}
-                    selectedUsers={availableUsers.filter((user: User) => user.id === formData.co_owner_id)}
-                    onUsersChange={(users: User[]) => {
-                      handleInputChange('co_owner_id', users.length > 0 ? users[0].id : "")
                     }}
-                    buttonLabel={formData.co_owner_id ? "Change Co-Owner" : "Select Co-Owner"}
-                    dialogTitle="Select Project Co-Owner"
-                    searchPlaceholder="Search users..."
-                    disabled={updateLoading || (!isCoOwner && !isOwner)}
-                    maxSelections={1}
-                    activityName={formData.title}
-                    activityType="Project"
-                    buttonDataAttribute="data-co-owner-selector-button"
-                  />
-                </div>
-              </div>
+                    role="button"
+                    tabIndex={(isCoOwner || isOwner) ? 0 : -1}
+                    onKeyDown={(e) => {
+                      if (!isCoOwner && !isOwner) return
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        const selectorButton = document.querySelector('[data-co-owner-selector-button]') as HTMLButtonElement
+                        if (selectorButton) selectorButton.click()
+                      }
+                    }}
+                  >
+                    {formData.co_owner_id ? (
+                      <div className="space-y-1">
+                        <UsersAvatarGroup
+                          users={availableUsers
+                            .filter((user: User) => user.id === formData.co_owner_id)
+                            .map((user: User): UserAvatarData => ({
+                              id: user.id,
+                              name: user.name,
+                              email: user.email,
+                              role: user.role
+                            }))}
+                          maxDisplay={1}
+                          size="md"
+                          showLabel={true}
+                          labelText={"Co-Owner"}
+                          showAddButton={false}
+                        />
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-xs text-muted-foreground">{t.errors.clickToChange}</p>
+                          {(isCoOwner || isOwner) && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); handleInputChange('co_owner_id', '') }}
+                              className="text-xs text-destructive hover:underline"
+                            >
+                              {"Remover"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-2">
+                        <p className="text-sm text-muted-foreground">
+                          {(isCoOwner || isOwner) ? "Click to select co-owner (optional)" : "—"}
+                        </p>
+                      </div>
+                    )}
+                  </div>
 
-              {errors.owner_id && (
-                <p className="text-sm text-red-500">{String(errors.owner_id)}</p>
-              )}
+                  <div className="hidden">
+                    <UserMultiSelector
+                      availableUsers={availableUsers.filter((u: User) => u.id !== formData.owner_id)}
+                      selectedUsers={availableUsers.filter((user: User) => user.id === formData.co_owner_id)}
+                      onUsersChange={(users: User[]) => {
+                        handleInputChange('co_owner_id', users.length > 0 ? users[0].id : "")
+                      }}
+                      buttonLabel={formData.co_owner_id ? "Change Co-Owner" : "Select Co-Owner"}
+                      dialogTitle="Select Project Co-Owner"
+                      searchPlaceholder="Search users..."
+                      disabled={updateLoading || (!isCoOwner && !isOwner)}
+                      maxSelections={1}
+                      activityName={formData.title}
+                      activityType="Project"
+                      buttonDataAttribute="data-co-owner-selector-button"
+                    />
+                  </div>
+                </div>
+
+                {errors.owner_id && (
+                  <p className="text-sm text-red-500">{String(errors.owner_id)}</p>
+                )}
               </div>
             </div>
           </div>
@@ -733,7 +747,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
               <h3 className="text-lg font-medium text-foreground">{t.projectPeriod}</h3>
               <p className="text-sm text-muted-foreground">{t.projectPeriodDesc}</p>
             </div>
-            
+
             <div className="space-y-4 max-w-md mx-auto">
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -878,8 +892,8 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
           <DialogDescription className="text-sm text-muted-foreground">
             {t.editProjectInfo}: {projectDetail?.title || project.title}
           </DialogDescription>
-          
-          
+
+
           {/* Progress Bar */}
           <div className="mt-4 space-y-2">
             <div className="flex justify-between items-center text-xs text-muted-foreground">
@@ -909,10 +923,10 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
           <div className="flex justify-between items-center">
             <div className="flex gap-2">
               {currentStep > 1 && (
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
-                  onClick={handlePrevious} 
+                  variant="outline"
+                  onClick={handlePrevious}
                   disabled={updateLoading || isLoadingDetails}
                   size="sm"
                   className="flex items-center gap-1 text-xs"
@@ -921,10 +935,10 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                   {t.previous}
                 </Button>
               )}
-              <Button 
+              <Button
                 type="button"
-                variant="outline" 
-                onClick={handleClose} 
+                variant="outline"
+                onClick={handleClose}
                 disabled={updateLoading}
                 size="sm"
                 className="text-xs"
@@ -935,9 +949,9 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
 
             <div className="flex gap-2">
               {currentStep < totalSteps ? (
-                <Button 
+                <Button
                   type="button"
-                  onClick={handleNext} 
+                  onClick={handleNext}
                   disabled={updateLoading || isLoadingDetails}
                   size="sm"
                   className="flex items-center gap-1 text-xs bg-gray-900 hover:bg-gray-800 text-white"
@@ -946,7 +960,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                   <ChevronRight className="w-3 h-3" />
                 </Button>
               ) : (
-                <Button 
+                <Button
                   type="button"
                   onClick={handleSubmit}
                   disabled={updateLoading || isLoadingDetails}

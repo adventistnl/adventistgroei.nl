@@ -1061,7 +1061,7 @@ function ModalFooter({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function QuickViewProjectModal({
+export function DetailsViewProjectModal({
   isOpen,
   onClose,
   project,

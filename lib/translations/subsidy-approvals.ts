@@ -27,7 +27,10 @@ export const subsidyRequestTranslations = {
       mustBeAdvancedClosed: "Advance subsidies must be Advanced Closed first.",
       documentsRejected: "Cannot approve subsidy with rejected documents",
       onlyFinancialCanClose: "Only users with the Financial Manager role can close subsidy requests",
-      refundNotRequested: "No refund has been requested for this subsidy"
+      refundNotRequested: "No refund has been requested for this subsidy",
+      onlyOwnerOrLeaderCanApprove: "Only the Project Owner or Department Leader can approve this subsidy",
+      onlyFinancialCanManage: "Only Finance users can manage subsidies after approval",
+      mustBeApprovedFirst: "Subsidy must be approved before moving to this status"
     },
     
     // Default values
@@ -263,7 +266,10 @@ export const subsidyRequestTranslations = {
       mustBeAdvancedClosed: "Subsídios de adiantamento devem ser Adiantamento Fechado primeiro.",
       documentsRejected: "Não é possível aprovar subsídio com documentos rejeitados",
       onlyFinancialCanClose: "Apenas usuários com a função de Gerente Financeiro podem fechar solicitações de subsídio",
-      refundNotRequested: "Nenhum reembolso foi solicitado para este subsídio"
+      refundNotRequested: "Nenhum reembolso foi solicitado para este subsídio",
+      onlyOwnerOrLeaderCanApprove: "Apenas o Proprietário do Projeto ou Líder do Departamento pode aprovar este subsídio",
+      onlyFinancialCanManage: "Apenas usuários Financeiros podem gerenciar subsídios após aprovação",
+      mustBeApprovedFirst: "O subsídio deve ser aprovado antes de mover para este status"
     },
     
     // Default values
@@ -497,7 +503,10 @@ export const subsidyRequestTranslations = {
       mustBeAdvancedClosed: "Voorschotsubsidies moeten eerst Geavanceerd Gesloten zijn.",
       documentsRejected: "Kan subsidie met afgewezen documenten niet goedkeuren",
       onlyFinancialCanClose: "Alleen gebruikers met de rol Financieel Manager kunnen subsidieaanvragen sluiten",
-      refundNotRequested: "Er is geen terugbetaling aangevraagd voor deze subsidie"
+      refundNotRequested: "Er is geen terugbetaling aangevraagd voor deze subsidie",
+      onlyOwnerOrLeaderCanApprove: "Alleen de Projecteigenaar of Afdelingsleider kan deze subsidie goedkeuren",
+      onlyFinancialCanManage: "Alleen Financiële gebruikers kunnen subsidies na goedkeuring beheren",
+      mustBeApprovedFirst: "Subsidie moet eerst worden goedgekeurd voordat deze naar deze status kan worden verplaatst"
     },
     
     // Default values

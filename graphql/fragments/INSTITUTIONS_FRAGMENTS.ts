@@ -100,6 +100,7 @@ export const USER_MODEL_FRAGMENT = gql`
     email
     language_preference
     contact_id
+    recieve_emails
     created_at
     updated_at
     created_by
@@ -131,6 +132,7 @@ export const USER_FRAGMENT = gql`
     name
     email
     language_preference
+    recieve_emails
     created_at
     updated_at
     created_by

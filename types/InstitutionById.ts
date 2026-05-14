@@ -39,8 +39,8 @@ export interface InstitutionById_institution_annual_budgets {
   id: string;
   year: number;
   planned_budget: any;
-  total_expenses: any;
-  balance: any;
+  total_expenses: number;
+  balance: number;
   status: AnnualBudgetStatus;
   priority: AnnualBudgetPriority;
   category: AnnualBudgetCategory;
@@ -56,7 +56,7 @@ export interface InstitutionById_institution_annual_budgets {
   institution_id: string | null;
   church_id: string | null;
   department_id: string | null;
-  allocated_amount: any;
+  allocated_amount: number;
   approved_amount: any | null;
   reviewed_by: string | null;
   review_date: any | null;
@@ -68,6 +68,10 @@ export interface InstitutionById_institution_annual_budgets {
   is_locked: boolean;
   has_budget_record: boolean;
   entity_type: AnnualBudgetEntityType;
+  approvedAmount: number;
+  spentAmount: number;
+  usagePercentage: number;
+  remainingAmount: number;
 }
 
 export interface InstitutionById_institution_subsidy_requests {
@@ -255,8 +259,8 @@ export interface InstitutionById_institution_churches_departments_annual_budgets
   id: string;
   year: number;
   planned_budget: any;
-  total_expenses: any;
-  balance: any;
+  total_expenses: number;
+  balance: number;
   status: AnnualBudgetStatus;
   priority: AnnualBudgetPriority;
   category: AnnualBudgetCategory;
@@ -272,7 +276,7 @@ export interface InstitutionById_institution_churches_departments_annual_budgets
   institution_id: string | null;
   church_id: string | null;
   department_id: string | null;
-  allocated_amount: any;
+  allocated_amount: number;
   approved_amount: any | null;
   reviewed_by: string | null;
   review_date: any | null;
@@ -284,6 +288,10 @@ export interface InstitutionById_institution_churches_departments_annual_budgets
   is_locked: boolean;
   has_budget_record: boolean;
   entity_type: AnnualBudgetEntityType;
+  approvedAmount: number;
+  spentAmount: number;
+  usagePercentage: number;
+  remainingAmount: number;
 }
 
 export interface InstitutionById_institution_churches_departments_users_contact {
@@ -351,7 +359,7 @@ export interface InstitutionById_institution_churches_departments {
   name: string;
   description: string;
   contact_id: string | null;
-  leader_id: string;
+  leader_id: string | null;
   created_at: any;
   updated_at: any;
   created_by: string;
@@ -453,8 +461,8 @@ export interface InstitutionById_institution_churches_annual_budgets {
   id: string;
   year: number;
   planned_budget: any;
-  total_expenses: any;
-  balance: any;
+  total_expenses: number;
+  balance: number;
   status: AnnualBudgetStatus;
   priority: AnnualBudgetPriority;
   category: AnnualBudgetCategory;
@@ -470,7 +478,7 @@ export interface InstitutionById_institution_churches_annual_budgets {
   institution_id: string | null;
   church_id: string | null;
   department_id: string | null;
-  allocated_amount: any;
+  allocated_amount: number;
   approved_amount: any | null;
   reviewed_by: string | null;
   review_date: any | null;
@@ -482,6 +490,10 @@ export interface InstitutionById_institution_churches_annual_budgets {
   is_locked: boolean;
   has_budget_record: boolean;
   entity_type: AnnualBudgetEntityType;
+  approvedAmount: number;
+  spentAmount: number;
+  usagePercentage: number;
+  remainingAmount: number;
 }
 
 export interface InstitutionById_institution_churches_projects {
@@ -570,8 +582,8 @@ export interface InstitutionById_institution_departments_annual_budgets {
   id: string;
   year: number;
   planned_budget: any;
-  total_expenses: any;
-  balance: any;
+  total_expenses: number;
+  balance: number;
   status: AnnualBudgetStatus;
   priority: AnnualBudgetPriority;
   category: AnnualBudgetCategory;
@@ -587,7 +599,7 @@ export interface InstitutionById_institution_departments_annual_budgets {
   institution_id: string | null;
   church_id: string | null;
   department_id: string | null;
-  allocated_amount: any;
+  allocated_amount: number;
   approved_amount: any | null;
   reviewed_by: string | null;
   review_date: any | null;
@@ -599,6 +611,10 @@ export interface InstitutionById_institution_departments_annual_budgets {
   is_locked: boolean;
   has_budget_record: boolean;
   entity_type: AnnualBudgetEntityType;
+  approvedAmount: number;
+  spentAmount: number;
+  usagePercentage: number;
+  remainingAmount: number;
 }
 
 export interface InstitutionById_institution_departments_users_contact {
@@ -666,7 +682,7 @@ export interface InstitutionById_institution_departments {
   name: string;
   description: string;
   contact_id: string | null;
-  leader_id: string;
+  leader_id: string | null;
   created_at: any;
   updated_at: any;
   created_by: string;

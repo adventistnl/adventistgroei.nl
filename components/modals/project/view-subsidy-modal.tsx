@@ -2244,10 +2244,10 @@ export function ViewSubsidyModal({
                   <DollarSign className="w-5 h-5 text-orange-600 dark:text-orange-400 mt-0.5 sm:mt-0" />
                   <div>
                     <h4 className="text-sm font-semibold text-orange-900 dark:text-orange-100">
-                      {t('subsidy.refundRequested') || 'Refund Requested'}
+                      {t('subsidy.refundRequested')}
                     </h4>
                     <p className="text-xs text-orange-700 dark:text-orange-300 mt-0.5 max-w-[400px]">
-                      {(t('subsidy.refundAmountText') || 'A refund of {{amount}} was requested.').replace('{{amount}}', formatCurrency(activeSubsidy.refund_amount || 0))}
+                      {t('subsidy.refundAmountText', { amount: formatCurrency(activeSubsidy.refund_amount || 0) })}
                       {activeSubsidy.refund_type === 'PARTIAL' ? ' (Parcial)' : ' (Total)'}
                     </p>
                   </div>
@@ -2261,14 +2261,14 @@ export function ViewSubsidyModal({
                       size="sm"
                       className="border-orange-300 text-orange-700 hover:bg-orange-100 hover:text-orange-800 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-900"
                     >
-                      {t('subsidy.rejectRefund') || 'Reject'}
+                      {t('subsidy.rejectRefund')}
                     </Button>
                     <Button
                       onClick={() => setShowConfirmRefundModal(true)}
                       size="sm"
                       className="bg-orange-600 hover:bg-orange-700 text-white dark:bg-orange-600 dark:hover:bg-orange-500"
                     >
-                      {t('subsidy.confirmProcessed') || 'Confirm'}
+                      {t('subsidy.confirmProcessed')}
                     </Button>
                   </div>
                 )}
@@ -2280,7 +2280,7 @@ export function ViewSubsidyModal({
               <div className="flex items-start gap-2 px-3 py-2 rounded-md bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 text-xs text-green-700 dark:text-green-400">
                 <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-600 dark:text-green-500" />
                 <span>
-                  {(t('subsidy.refundProcessedMsg') || 'Refund of {{amount}} was successfully processed.').replace('{{amount}}', formatCurrency(activeSubsidy.refund_amount || 0))}
+                  {t('subsidy.refundProcessedMsg', { amount: formatCurrency(activeSubsidy.refund_amount || 0) })}
                   {activeSubsidy.refund_type === 'PARTIAL' ? ' (Parcial)' : ' (Total)'}
                 </span>
               </div>
@@ -2291,7 +2291,7 @@ export function ViewSubsidyModal({
               <div className="flex items-start gap-2 px-3 py-2 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-400">
                 <Ban className="w-4 h-4 mt-0.5 flex-shrink-0 text-red-600 dark:text-red-500" />
                 <span>
-                  {(t('subsidy.refundRejectedMsg') || 'Refund of {{amount}} was rejected.').replace('{{amount}}', formatCurrency(activeSubsidy.refund_amount || 0))}
+                  {t('subsidy.refundRejectedMsg', { amount: formatCurrency(activeSubsidy.refund_amount || 0) })}
                   {activeSubsidy.refund_type === 'PARTIAL' ? ' (Parcial)' : ' (Total)'}
                 </span>
               </div>

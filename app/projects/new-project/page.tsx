@@ -290,9 +290,12 @@ function ProjectRegisterContent() {
   })
 
   // Fetch departments from database filtered by institution
+  // fetchPolicy: 'network-only' ensures fresh data after creating new departments
+  // (Apollo cache merge after department creation can lose annual_budgets from existing depts)
   const { data: departmentsData, loading: loadingDepartments } = useQuery(GET_DEPARTMENTS_QUERY, {
     variables: { institution_id: institutionId },
-    skip: !institutionId
+    skip: !institutionId,
+    fetchPolicy: 'network-only'
   })
 
   // Fetch users from database filtered by institution

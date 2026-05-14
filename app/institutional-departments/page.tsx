@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { useQuery, useMutation } from "@apollo/client"
@@ -447,10 +447,15 @@ export default function DepartmentsPage() {
     };
   }, [departments, selectedYear]);
 
+  const hasShownLoadingToast = useRef(false)
+
   /**
    * Carregamento inicial dos dados
    */
   useEffect(() => {
+    if (hasShownLoadingToast.current) return
+    hasShownLoadingToast.current = true
+
     const loadData = async () => {
       const loadingToast = toast.loading(tDept.common?.loading || "Loading...")
       
@@ -469,7 +474,7 @@ export default function DepartmentsPage() {
     }
 
     loadData()
-  }, [tDept])
+  }, [])
 
   /**
    * Handlers para ações
@@ -609,7 +614,6 @@ export default function DepartmentsPage() {
   };
 
   const handleDepartmentSaved = (department: CreateDepartment) => {
-    toast.success(tDept.messages?.created_success || "Department created successfully")
     handleRefresh()
   }
   
@@ -1128,7 +1132,7 @@ export default function DepartmentsPage() {
               <WithPermission requiredPermissions={[PermissionResolverName.CreateDepartment]}>
                 <Button onClick={handleCreate}>
                   <Plus className="w-4 h-4 mr-2" />
-                  {tDept.create_department || "Create Department"}
+                  {tDept.create_institutional_department || "Create Institutional Department"}
                 </Button>
               </WithPermission>
             )}

@@ -213,13 +213,13 @@ export type AdjustmentTaskWhereInput = {
 export type AnnualBudget = {
   __typename?: 'AnnualBudget';
   _count: AnnualBudgetCount;
-  allocated_amount: Scalars['Decimal']['output'];
+  allocated_amount: Scalars['Float']['output'];
   approval_date?: Maybe<Scalars['DateTime']['output']>;
   approvedAmount: Scalars['Float']['output'];
   approved_amount?: Maybe<Scalars['Decimal']['output']>;
   approved_by?: Maybe<Scalars['String']['output']>;
   approved_user?: Maybe<User>;
-  balance: Scalars['Decimal']['output'];
+  balance: Scalars['Float']['output'];
   category: AnnualBudgetCategory;
   church?: Maybe<Church>;
   church_id?: Maybe<Scalars['String']['output']>;
@@ -249,8 +249,10 @@ export type AnnualBudget = {
   spentAmount: Scalars['Float']['output'];
   status: AnnualBudgetStatus;
   submitted_date: Scalars['DateTime']['output'];
-  total_expenses: Scalars['Decimal']['output'];
+  total_expenses: Scalars['Float']['output'];
   transactions?: Maybe<Array<BudgetTransaction>>;
+  transfers_in?: Maybe<Array<BudgetTransfer>>;
+  transfers_out?: Maybe<Array<BudgetTransfer>>;
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
   usagePercentage: Scalars['Float']['output'];
@@ -268,6 +270,8 @@ export enum AnnualBudgetCategory {
 export type AnnualBudgetCount = {
   __typename?: 'AnnualBudgetCount';
   transactions: Scalars['Int']['output'];
+  transfers_in: Scalars['Int']['output'];
+  transfers_out: Scalars['Int']['output'];
 };
 
 export enum AnnualBudgetEntityType {
@@ -283,17 +287,20 @@ export type AnnualBudgetListRelationFilter = {
   some?: InputMaybe<AnnualBudgetWhereInput>;
 };
 
+export type AnnualBudgetNullableScalarRelationFilter = {
+  is?: InputMaybe<AnnualBudgetWhereInput>;
+  isNot?: InputMaybe<AnnualBudgetWhereInput>;
+};
+
 export type AnnualBudgetOrderByRelationAggregateInput = {
   _count?: InputMaybe<SortOrder>;
 };
 
 export type AnnualBudgetOrderByWithRelationInput = {
-  allocated_amount?: InputMaybe<SortOrder>;
   approval_date?: InputMaybe<SortOrderInput>;
   approved_amount?: InputMaybe<SortOrderInput>;
   approved_by?: InputMaybe<SortOrderInput>;
   approved_user?: InputMaybe<UserOrderByWithRelationInput>;
-  balance?: InputMaybe<SortOrder>;
   category?: InputMaybe<SortOrder>;
   church?: InputMaybe<ChurchOrderByWithRelationInput>;
   church_id?: InputMaybe<SortOrderInput>;
@@ -321,8 +328,9 @@ export type AnnualBudgetOrderByWithRelationInput = {
   reviewed_by?: InputMaybe<SortOrderInput>;
   status?: InputMaybe<SortOrder>;
   submitted_date?: InputMaybe<SortOrder>;
-  total_expenses?: InputMaybe<SortOrder>;
   transactions?: InputMaybe<BudgetTransactionOrderByRelationAggregateInput>;
+  transfers_in?: InputMaybe<BudgetTransferOrderByRelationAggregateInput>;
+  transfers_out?: InputMaybe<BudgetTransferOrderByRelationAggregateInput>;
   updated_at?: InputMaybe<SortOrder>;
   updated_by?: InputMaybe<SortOrder>;
   year?: InputMaybe<SortOrder>;
@@ -336,11 +344,9 @@ export enum AnnualBudgetPriority {
 }
 
 export enum AnnualBudgetScalarFieldEnum {
-  AllocatedAmount = 'allocated_amount',
   ApprovalDate = 'approval_date',
   ApprovedAmount = 'approved_amount',
   ApprovedBy = 'approved_by',
-  Balance = 'balance',
   Category = 'category',
   ChurchId = 'church_id',
   CreatedAt = 'created_at',
@@ -365,7 +371,6 @@ export enum AnnualBudgetScalarFieldEnum {
   ReviewedBy = 'reviewed_by',
   Status = 'status',
   SubmittedDate = 'submitted_date',
-  TotalExpenses = 'total_expenses',
   UpdatedAt = 'updated_at',
   UpdatedBy = 'updated_by',
   Year = 'year'
@@ -390,12 +395,10 @@ export type AnnualBudgetWhereInput = {
   AND?: InputMaybe<Array<AnnualBudgetWhereInput>>;
   NOT?: InputMaybe<Array<AnnualBudgetWhereInput>>;
   OR?: InputMaybe<Array<AnnualBudgetWhereInput>>;
-  allocated_amount?: InputMaybe<DecimalFilter>;
   approval_date?: InputMaybe<DateTimeNullableFilter>;
   approved_amount?: InputMaybe<DecimalNullableFilter>;
   approved_by?: InputMaybe<StringNullableFilter>;
   approved_user?: InputMaybe<UserNullableScalarRelationFilter>;
-  balance?: InputMaybe<DecimalFilter>;
   category?: InputMaybe<EnumAnnualBudgetCategoryFilter>;
   church?: InputMaybe<ChurchNullableScalarRelationFilter>;
   church_id?: InputMaybe<StringNullableFilter>;
@@ -423,8 +426,9 @@ export type AnnualBudgetWhereInput = {
   reviewed_by?: InputMaybe<StringNullableFilter>;
   status?: InputMaybe<EnumAnnualBudgetStatusFilter>;
   submitted_date?: InputMaybe<DateTimeFilter>;
-  total_expenses?: InputMaybe<DecimalFilter>;
   transactions?: InputMaybe<BudgetTransactionListRelationFilter>;
+  transfers_in?: InputMaybe<BudgetTransferListRelationFilter>;
+  transfers_out?: InputMaybe<BudgetTransferListRelationFilter>;
   updated_at?: InputMaybe<DateTimeFilter>;
   updated_by?: InputMaybe<StringFilter>;
   year?: InputMaybe<IntFilter>;
@@ -434,12 +438,10 @@ export type AnnualBudgetWhereUniqueInput = {
   AND?: InputMaybe<Array<AnnualBudgetWhereInput>>;
   NOT?: InputMaybe<Array<AnnualBudgetWhereInput>>;
   OR?: InputMaybe<Array<AnnualBudgetWhereInput>>;
-  allocated_amount?: InputMaybe<DecimalFilter>;
   approval_date?: InputMaybe<DateTimeNullableFilter>;
   approved_amount?: InputMaybe<DecimalNullableFilter>;
   approved_by?: InputMaybe<StringNullableFilter>;
   approved_user?: InputMaybe<UserNullableScalarRelationFilter>;
-  balance?: InputMaybe<DecimalFilter>;
   category?: InputMaybe<EnumAnnualBudgetCategoryFilter>;
   church?: InputMaybe<ChurchNullableScalarRelationFilter>;
   church_id?: InputMaybe<StringNullableFilter>;
@@ -467,8 +469,9 @@ export type AnnualBudgetWhereUniqueInput = {
   reviewed_by?: InputMaybe<StringNullableFilter>;
   status?: InputMaybe<EnumAnnualBudgetStatusFilter>;
   submitted_date?: InputMaybe<DateTimeFilter>;
-  total_expenses?: InputMaybe<DecimalFilter>;
   transactions?: InputMaybe<BudgetTransactionListRelationFilter>;
+  transfers_in?: InputMaybe<BudgetTransferListRelationFilter>;
+  transfers_out?: InputMaybe<BudgetTransferListRelationFilter>;
   updated_at?: InputMaybe<DateTimeFilter>;
   updated_by?: InputMaybe<StringFilter>;
   year?: InputMaybe<IntFilter>;
@@ -599,6 +602,7 @@ export enum BudgetTransactionType {
   AllocationReleased = 'ALLOCATION_RELEASED',
   AllocationReserved = 'ALLOCATION_RESERVED',
   ExpenseApproved = 'EXPENSE_APPROVED',
+  InitialBalance = 'INITIAL_BALANCE',
   ManualAdjustment = 'MANUAL_ADJUSTMENT',
   RefundPartial = 'REFUND_PARTIAL',
   RefundTotal = 'REFUND_TOTAL'
@@ -621,6 +625,46 @@ export type BudgetTransactionWhereInput = {
   subsidy_request?: InputMaybe<SubsidyRequestNullableScalarRelationFilter>;
   subsidy_request_id?: InputMaybe<StringNullableFilter>;
   type?: InputMaybe<EnumBudgetTransactionTypeFilter>;
+};
+
+export type BudgetTransfer = {
+  __typename?: 'BudgetTransfer';
+  amount: Scalars['Decimal']['output'];
+  created_at: Scalars['DateTime']['output'];
+  created_by: Scalars['String']['output'];
+  description: Scalars['String']['output'];
+  from_budget?: Maybe<AnnualBudget>;
+  from_budget_id?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  to_budget?: Maybe<AnnualBudget>;
+  to_budget_id?: Maybe<Scalars['String']['output']>;
+  type: TransferType;
+};
+
+export type BudgetTransferListRelationFilter = {
+  every?: InputMaybe<BudgetTransferWhereInput>;
+  none?: InputMaybe<BudgetTransferWhereInput>;
+  some?: InputMaybe<BudgetTransferWhereInput>;
+};
+
+export type BudgetTransferOrderByRelationAggregateInput = {
+  _count?: InputMaybe<SortOrder>;
+};
+
+export type BudgetTransferWhereInput = {
+  AND?: InputMaybe<Array<BudgetTransferWhereInput>>;
+  NOT?: InputMaybe<Array<BudgetTransferWhereInput>>;
+  OR?: InputMaybe<Array<BudgetTransferWhereInput>>;
+  amount?: InputMaybe<DecimalFilter>;
+  created_at?: InputMaybe<DateTimeFilter>;
+  created_by?: InputMaybe<StringFilter>;
+  description?: InputMaybe<StringFilter>;
+  from_budget?: InputMaybe<AnnualBudgetNullableScalarRelationFilter>;
+  from_budget_id?: InputMaybe<StringNullableFilter>;
+  id?: InputMaybe<StringFilter>;
+  to_budget?: InputMaybe<AnnualBudgetNullableScalarRelationFilter>;
+  to_budget_id?: InputMaybe<StringNullableFilter>;
+  type?: InputMaybe<EnumTransferTypeFilter>;
 };
 
 export type Church = {
@@ -694,7 +738,7 @@ export type ChurchCreateDto = {
   contact?: InputMaybe<ContactCreateDto>;
   house_number?: InputMaybe<Scalars['Int']['input']>;
   institution_id: Scalars['String']['input'];
-  leader_id: Scalars['String']['input'];
+  leader_id?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
   type?: InputMaybe<ChurchType>;
   zip_code?: InputMaybe<Scalars['String']['input']>;
@@ -1206,8 +1250,8 @@ export type Department = {
   institution: Institution;
   institution_id: Scalars['String']['output'];
   is_deleted: Scalars['Boolean']['output'];
-  leader: User;
-  leader_id: Scalars['String']['output'];
+  leader?: Maybe<User>;
+  leader_id?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   projects?: Maybe<Array<Project>>;
   subsidy_requests?: Maybe<Array<SubsidyRequest>>;
@@ -1280,7 +1324,7 @@ export type DepartmentCreateDto = {
   contact?: InputMaybe<ContactCreateDto>;
   description: Scalars['String']['input'];
   institution: Scalars['String']['input'];
-  leader_id: Scalars['String']['input'];
+  leader_id?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
 };
 
@@ -1339,7 +1383,7 @@ export type DepartmentOrderByWithRelationInput = {
   institution_id?: InputMaybe<SortOrder>;
   is_deleted?: InputMaybe<SortOrder>;
   leader?: InputMaybe<UserOrderByWithRelationInput>;
-  leader_id?: InputMaybe<SortOrder>;
+  leader_id?: InputMaybe<SortOrderInput>;
   name?: InputMaybe<SortOrder>;
   projects?: InputMaybe<ProjectOrderByRelationAggregateInput>;
   subsidy_requests?: InputMaybe<SubsidyRequestOrderByRelationAggregateInput>;
@@ -1394,8 +1438,8 @@ export type DepartmentWhereInput = {
   institution?: InputMaybe<InstitutionScalarRelationFilter>;
   institution_id?: InputMaybe<StringFilter>;
   is_deleted?: InputMaybe<BoolFilter>;
-  leader?: InputMaybe<UserScalarRelationFilter>;
-  leader_id?: InputMaybe<StringFilter>;
+  leader?: InputMaybe<UserNullableScalarRelationFilter>;
+  leader_id?: InputMaybe<StringNullableFilter>;
   name?: InputMaybe<StringFilter>;
   projects?: InputMaybe<ProjectListRelationFilter>;
   subsidy_requests?: InputMaybe<SubsidyRequestListRelationFilter>;
@@ -1659,6 +1703,13 @@ export type EnumGenderTypeNullableFilter = {
   notIn?: InputMaybe<Array<GenderType>>;
 };
 
+export type EnumInstitutionPositionTypeFilter = {
+  equals?: InputMaybe<InstitutionPositionType>;
+  in?: InputMaybe<Array<InstitutionPositionType>>;
+  not?: InputMaybe<NestedEnumInstitutionPositionTypeFilter>;
+  notIn?: InputMaybe<Array<InstitutionPositionType>>;
+};
+
 export type EnumLanguagePreferenceFilter = {
   equals?: InputMaybe<LanguagePreference>;
   in?: InputMaybe<Array<LanguagePreference>>;
@@ -1734,6 +1785,13 @@ export type EnumSubsidyRequestTypeFilter = {
   in?: InputMaybe<Array<SubsidyRequestType>>;
   not?: InputMaybe<NestedEnumSubsidyRequestTypeFilter>;
   notIn?: InputMaybe<Array<SubsidyRequestType>>;
+};
+
+export type EnumTransferTypeFilter = {
+  equals?: InputMaybe<TransferType>;
+  in?: InputMaybe<Array<TransferType>>;
+  not?: InputMaybe<NestedEnumTransferTypeFilter>;
+  notIn?: InputMaybe<Array<TransferType>>;
 };
 
 export type Event = {
@@ -2012,6 +2070,7 @@ export type Institution = {
   language_preference: LanguagePreference;
   name: Scalars['String']['output'];
   notifications?: Maybe<Array<Notification>>;
+  positions?: Maybe<Array<InstitutionPosition>>;
   projects?: Maybe<Array<Project>>;
   settings?: Maybe<Array<Setting>>;
   subsidy_requests: Array<SubsidyRequest>;
@@ -2062,6 +2121,7 @@ export type InstitutionCount = {
   departments: Scalars['Int']['output'];
   direct_messages: Scalars['Int']['output'];
   notifications: Scalars['Int']['output'];
+  positions: Scalars['Int']['output'];
   projects: Scalars['Int']['output'];
   settings: Scalars['Int']['output'];
   subsidy_requests: Scalars['Int']['output'];
@@ -2100,12 +2160,76 @@ export type InstitutionOrderByWithRelationInput = {
   language_preference?: InputMaybe<SortOrder>;
   name?: InputMaybe<SortOrder>;
   notifications?: InputMaybe<NotificationOrderByRelationAggregateInput>;
+  positions?: InputMaybe<InstitutionPositionOrderByRelationAggregateInput>;
   projects?: InputMaybe<ProjectOrderByRelationAggregateInput>;
   settings?: InputMaybe<SettingOrderByRelationAggregateInput>;
   subsidy_requests?: InputMaybe<SubsidyRequestOrderByRelationAggregateInput>;
   updated_at?: InputMaybe<SortOrder>;
   updated_by?: InputMaybe<SortOrder>;
   users?: InputMaybe<UserOrderByRelationAggregateInput>;
+};
+
+export type InstitutionPosition = {
+  __typename?: 'InstitutionPosition';
+  created_at: Scalars['DateTime']['output'];
+  created_by: Scalars['String']['output'];
+  deleted_at?: Maybe<Scalars['DateTime']['output']>;
+  deleted_by?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  institution: Institution;
+  institution_id: Scalars['String']['output'];
+  is_deleted: Scalars['Boolean']['output'];
+  position_type: InstitutionPositionType;
+  updated_at: Scalars['DateTime']['output'];
+  updated_by: Scalars['String']['output'];
+  user: User;
+  user_id: Scalars['String']['output'];
+};
+
+export type InstitutionPositionCreateDto = {
+  institution_id: Scalars['String']['input'];
+  position_type: InstitutionPositionType;
+  user_id: Scalars['String']['input'];
+};
+
+export type InstitutionPositionListRelationFilter = {
+  every?: InputMaybe<InstitutionPositionWhereInput>;
+  none?: InputMaybe<InstitutionPositionWhereInput>;
+  some?: InputMaybe<InstitutionPositionWhereInput>;
+};
+
+export type InstitutionPositionOrderByRelationAggregateInput = {
+  _count?: InputMaybe<SortOrder>;
+};
+
+export enum InstitutionPositionType {
+  FinanceManager = 'FINANCE_MANAGER',
+  President = 'PRESIDENT',
+  Secretary = 'SECRETARY'
+}
+
+export type InstitutionPositionUpdateDto = {
+  position_type?: InputMaybe<InstitutionPositionType>;
+  user_id?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type InstitutionPositionWhereInput = {
+  AND?: InputMaybe<Array<InstitutionPositionWhereInput>>;
+  NOT?: InputMaybe<Array<InstitutionPositionWhereInput>>;
+  OR?: InputMaybe<Array<InstitutionPositionWhereInput>>;
+  created_at?: InputMaybe<DateTimeFilter>;
+  created_by?: InputMaybe<StringFilter>;
+  deleted_at?: InputMaybe<DateTimeNullableFilter>;
+  deleted_by?: InputMaybe<StringNullableFilter>;
+  id?: InputMaybe<StringFilter>;
+  institution?: InputMaybe<InstitutionScalarRelationFilter>;
+  institution_id?: InputMaybe<StringFilter>;
+  is_deleted?: InputMaybe<BoolFilter>;
+  position_type?: InputMaybe<EnumInstitutionPositionTypeFilter>;
+  updated_at?: InputMaybe<DateTimeFilter>;
+  updated_by?: InputMaybe<StringFilter>;
+  user?: InputMaybe<UserScalarRelationFilter>;
+  user_id?: InputMaybe<StringFilter>;
 };
 
 export type InstitutionScalarRelationFilter = {
@@ -2143,6 +2267,7 @@ export type InstitutionWhereInput = {
   language_preference?: InputMaybe<EnumLanguagePreferenceFilter>;
   name?: InputMaybe<StringFilter>;
   notifications?: InputMaybe<NotificationListRelationFilter>;
+  positions?: InputMaybe<InstitutionPositionListRelationFilter>;
   projects?: InputMaybe<ProjectListRelationFilter>;
   settings?: InputMaybe<SettingListRelationFilter>;
   subsidy_requests?: InputMaybe<SubsidyRequestListRelationFilter>;
@@ -2231,6 +2356,50 @@ export enum LanguagePreference {
   Nl = 'nl'
 }
 
+export type LedgerHistoryEntry = {
+  __typename?: 'LedgerHistoryEntry';
+  amount: Scalars['Float']['output'];
+  balanceAfter?: Maybe<Scalars['Float']['output']>;
+  category: Scalars['String']['output'];
+  createdBy?: Maybe<Scalars['String']['output']>;
+  date: Scalars['DateTime']['output'];
+  description: Scalars['String']['output'];
+  entityName?: Maybe<Scalars['String']['output']>;
+  id: Scalars['String']['output'];
+  impactType: Scalars['String']['output'];
+  label: Scalars['String']['output'];
+  relatedEntity?: Maybe<Scalars['String']['output']>;
+  type: Scalars['String']['output'];
+};
+
+export type LedgerHistoryFilterInput = {
+  churchId?: InputMaybe<Scalars['String']['input']>;
+  departmentId?: InputMaybe<Scalars['String']['input']>;
+  endDate?: InputMaybe<Scalars['DateTime']['input']>;
+  institutionId?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  regionId?: InputMaybe<Scalars['String']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  startDate?: InputMaybe<Scalars['DateTime']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  year: Scalars['Int']['input'];
+};
+
+export type LedgerHistoryPageInfo = {
+  __typename?: 'LedgerHistoryPageInfo';
+  hasNextPage: Scalars['Boolean']['output'];
+  hasPreviousPage: Scalars['Boolean']['output'];
+  totalPages: Scalars['Int']['output'];
+};
+
+export type LedgerHistoryPaginatedResponse = {
+  __typename?: 'LedgerHistoryPaginatedResponse';
+  items: Array<LedgerHistoryEntry>;
+  pageInfo: LedgerHistoryPageInfo;
+  totalCount: Scalars['Int']['output'];
+};
+
 export type LinkContactDto = {
   contact_id: Scalars['String']['input'];
   target: Scalars['String']['input'];
@@ -2268,6 +2437,7 @@ export type Mutation = {
   createDirectMessage: DirectMessage;
   createInstitution: Institution;
   createInstitutionBudget: AnnualBudget;
+  createInstitutionPosition: InstitutionPosition;
   createNotification: Notification;
   createProject: Project;
   createProjectActivity: ProjectActivity;
@@ -2287,6 +2457,7 @@ export type Mutation = {
   deleteDepartment: Department;
   deleteDirectMessage: DirectMessage;
   deleteInstitution: Institution;
+  deleteInstitutionPosition: InstitutionPosition;
   deleteNotification: Notification;
   deleteProject: Project;
   deleteProjectActivity: ProjectActivity;
@@ -2328,6 +2499,7 @@ export type Mutation = {
   updateDirectMessage: DirectMessage;
   updateInstitution: Institution;
   updateInstitutionBudget: AnnualBudget;
+  updateInstitutionPosition: InstitutionPosition;
   updateNotification: Notification;
   updateOwnUser: UserModel;
   updateProject: Project;
@@ -2450,6 +2622,11 @@ export type MutationCreateInstitutionBudgetArgs = {
 };
 
 
+export type MutationCreateInstitutionPositionArgs = {
+  data: InstitutionPositionCreateDto;
+};
+
+
 export type MutationCreateNotificationArgs = {
   data: NotificationCreateDto;
 };
@@ -2544,6 +2721,11 @@ export type MutationDeleteDirectMessageArgs = {
 
 
 export type MutationDeleteInstitutionArgs = {
+  id: Scalars['String']['input'];
+};
+
+
+export type MutationDeleteInstitutionPositionArgs = {
   id: Scalars['String']['input'];
 };
 
@@ -2760,6 +2942,12 @@ export type MutationUpdateInstitutionArgs = {
 
 export type MutationUpdateInstitutionBudgetArgs = {
   data: InstitutionBudgetUpdateDto;
+  id: Scalars['String']['input'];
+};
+
+
+export type MutationUpdateInstitutionPositionArgs = {
+  data: InstitutionPositionUpdateDto;
   id: Scalars['String']['input'];
 };
 
@@ -3018,6 +3206,13 @@ export type NestedEnumGenderTypeNullableFilter = {
   notIn?: InputMaybe<Array<GenderType>>;
 };
 
+export type NestedEnumInstitutionPositionTypeFilter = {
+  equals?: InputMaybe<InstitutionPositionType>;
+  in?: InputMaybe<Array<InstitutionPositionType>>;
+  not?: InputMaybe<NestedEnumInstitutionPositionTypeFilter>;
+  notIn?: InputMaybe<Array<InstitutionPositionType>>;
+};
+
 export type NestedEnumLanguagePreferenceFilter = {
   equals?: InputMaybe<LanguagePreference>;
   in?: InputMaybe<Array<LanguagePreference>>;
@@ -3093,6 +3288,13 @@ export type NestedEnumSubsidyRequestTypeFilter = {
   in?: InputMaybe<Array<SubsidyRequestType>>;
   not?: InputMaybe<NestedEnumSubsidyRequestTypeFilter>;
   notIn?: InputMaybe<Array<SubsidyRequestType>>;
+};
+
+export type NestedEnumTransferTypeFilter = {
+  equals?: InputMaybe<TransferType>;
+  in?: InputMaybe<Array<TransferType>>;
+  not?: InputMaybe<NestedEnumTransferTypeFilter>;
+  notIn?: InputMaybe<Array<TransferType>>;
 };
 
 export type NestedFloatFilter = {
@@ -3263,6 +3465,7 @@ export enum PermissionGroup {
   DirectMessage = 'DIRECT_MESSAGE',
   EmailSend = 'EMAIL_SEND',
   Institution = 'INSTITUTION',
+  InstitutionPosition = 'INSTITUTION_POSITION',
   Invite = 'INVITE',
   Notification = 'NOTIFICATION',
   Permission = 'PERMISSION',
@@ -3323,6 +3526,7 @@ export enum PermissionResolverName {
   CreateDirectMessage = 'createDirectMessage',
   CreateInstitution = 'createInstitution',
   CreateInstitutionBudget = 'createInstitutionBudget',
+  CreateInstitutionPosition = 'createInstitutionPosition',
   CreateNotification = 'createNotification',
   CreateProject = 'createProject',
   CreateProjectActivity = 'createProjectActivity',
@@ -3341,6 +3545,7 @@ export enum PermissionResolverName {
   DeleteDepartment = 'deleteDepartment',
   DeleteDirectMessage = 'deleteDirectMessage',
   DeleteInstitution = 'deleteInstitution',
+  DeleteInstitutionPosition = 'deleteInstitutionPosition',
   DeleteNotification = 'deleteNotification',
   DeleteProject = 'deleteProject',
   DeleteProjectActivity = 'deleteProjectActivity',
@@ -3369,6 +3574,8 @@ export enum PermissionResolverName {
   GetSubsidyReceipts = 'getSubsidyReceipts',
   GetSubsidyStatusHistory = 'getSubsidyStatusHistory',
   Institution = 'institution',
+  InstitutionPosition = 'institutionPosition',
+  InstitutionPositions = 'institutionPositions',
   InstitutionalDepartmentsKpIs = 'institutionalDepartmentsKPIs',
   Institutions = 'institutions',
   InviteUser = 'inviteUser',
@@ -3425,6 +3632,7 @@ export enum PermissionResolverName {
   UpdateDirectMessage = 'updateDirectMessage',
   UpdateInstitution = 'updateInstitution',
   UpdateInstitutionBudget = 'updateInstitutionBudget',
+  UpdateInstitutionPosition = 'updateInstitutionPosition',
   UpdateNotification = 'updateNotification',
   UpdateOwnUser = 'updateOwnUser',
   UpdateProject = 'updateProject',
@@ -4114,8 +4322,11 @@ export type Query = {
   /** Get city and province information for a Dutch postal code (ZIP code) and house number */
   getZipInfo: ZipInfo;
   institution?: Maybe<Institution>;
+  institutionPosition?: Maybe<InstitutionPosition>;
+  institutionPositions: Array<InstitutionPosition>;
   institutionalDepartmentsKPIs: InstitutionalDepartmentsKpIs;
   institutions: Array<Institution>;
+  ledgerHistory: LedgerHistoryPaginatedResponse;
   myProjects: Array<Project>;
   notification?: Maybe<Notification>;
   notifications: Array<Notification>;
@@ -4304,9 +4515,24 @@ export type QueryInstitutionArgs = {
 };
 
 
+export type QueryInstitutionPositionArgs = {
+  id: Scalars['String']['input'];
+};
+
+
+export type QueryInstitutionPositionsArgs = {
+  institution_id: Scalars['String']['input'];
+};
+
+
 export type QueryInstitutionalDepartmentsKpIsArgs = {
   institutionId: Scalars['String']['input'];
   year: Scalars['Int']['input'];
+};
+
+
+export type QueryLedgerHistoryArgs = {
+  filters: LedgerHistoryFilterInput;
 };
 
 
@@ -5189,6 +5415,7 @@ export enum SubsidyRequestType {
 }
 
 export type SubsidyRequestUpdateDto = {
+  advance_amount?: InputMaybe<Scalars['Float']['input']>;
   approved_amount?: InputMaybe<Scalars['Float']['input']>;
   church_id?: InputMaybe<Scalars['String']['input']>;
   department_id?: InputMaybe<Scalars['String']['input']>;
@@ -5398,6 +5625,13 @@ export type ToggleLockBudgetResponse = {
   updated_at: Scalars['DateTime']['output'];
 };
 
+export enum TransferType {
+  Distribution = 'DISTRIBUTION',
+  InitialFunding = 'INITIAL_FUNDING',
+  Reallocation = 'REALLOCATION',
+  Reduction = 'REDUCTION'
+}
+
 export type UpdateAdjustmentStatusDto = {
   id: Scalars['String']['input'];
   status: AdjustmentStatus;
@@ -5466,6 +5700,7 @@ export type User = {
   id: Scalars['ID']['output'];
   institution: Institution;
   institution_id: Scalars['String']['output'];
+  institution_positions?: Maybe<Array<InstitutionPosition>>;
   is_deleted: Scalars['Boolean']['output'];
   language_preference: LanguagePreference;
   led_church?: Maybe<Church>;
@@ -5495,6 +5730,7 @@ export type UserCount = {
   direct_messages: Scalars['Int']['output'];
   event_recipients: Scalars['Int']['output'];
   event_registrations: Scalars['Int']['output'];
+  institution_positions: Scalars['Int']['output'];
   led_departments: Scalars['Int']['output'];
   notifications: Scalars['Int']['output'];
   project_activity_logs: Scalars['Int']['output'];
@@ -5584,6 +5820,7 @@ export type UserOrderByWithRelationInput = {
   id?: InputMaybe<SortOrder>;
   institution?: InputMaybe<InstitutionOrderByWithRelationInput>;
   institution_id?: InputMaybe<SortOrder>;
+  institution_positions?: InputMaybe<InstitutionPositionOrderByRelationAggregateInput>;
   is_deleted?: InputMaybe<SortOrder>;
   language_preference?: InputMaybe<SortOrder>;
   led_church?: InputMaybe<ChurchOrderByWithRelationInput>;
@@ -5694,6 +5931,7 @@ export type UserWhereInput = {
   id?: InputMaybe<StringFilter>;
   institution?: InputMaybe<InstitutionScalarRelationFilter>;
   institution_id?: InputMaybe<StringFilter>;
+  institution_positions?: InputMaybe<InstitutionPositionListRelationFilter>;
   is_deleted?: InputMaybe<BoolFilter>;
   language_preference?: InputMaybe<EnumLanguagePreferenceFilter>;
   led_church?: InputMaybe<ChurchNullableScalarRelationFilter>;

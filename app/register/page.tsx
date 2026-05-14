@@ -17,6 +17,7 @@ import { LoadingState, ValidatingInviteState, InvalidInviteState, SuccessRegistr
 // Steps do formulário
 import { PersonalInfoStep } from "@/components/registration/steps/personal-info-step"
 import { PasswordSetupStep } from "@/components/registration/steps/password-setup-step"
+import { EmailVerificationStep } from "@/components/registration/steps/email-verification-step"
 
 // Hook customizado para lógica de registro
 import { useRegistration } from "@/hooks/use-registration"
@@ -47,12 +48,17 @@ function RegisterPageContent() {
     isLoading,
     showContent,
     isRedirecting,
+    isEmailVerified,
+    isVerifyingEmail,
     setCurrentStep,
     setShowPassword,
     setShowConfirmPassword,
     form,
     validateStep1,
+    validateEmailVerification,
     validateStep2,
+    handleVerifyEmailCode,
+    sendVerificationCode,
     onSubmit,
     goToLogin,
   } = useRegistration({
@@ -65,6 +71,9 @@ function RegisterPageContent() {
   const institutionDepartment = currentInstitutionData?.departments ? currentInstitutionData.departments.find(department => department.id === inviteData?.institution_department_id) : undefined
   const church = currentInstitutionData?.churches ? currentInstitutionData.churches.find(church => church.id === inviteData?.church_id) : undefined
   const churchDepartment = church?.departments ? church.departments.find(department => department.id === inviteData?.church_department_id) : undefined
+
+  // Email currently entered in the form (used by the OTP step)
+  const emailValue = form.watch("email")
 
   /**
    * CONFIGURAÇÃO DOS STEPS DO FORMULÁRIO
@@ -104,6 +113,34 @@ function RegisterPageContent() {
           churchDepartment={churchDepartment?.name}
           institution={currentInstitutionData?.name || ""}
           institutionDepartment={institutionDepartment?.name}
+        />
+      )
+    },
+    {
+      id: "email-verification",
+      title: t.emailVerification,
+      description: t.emailVerificationDesc,
+      validation: validateEmailVerification,
+      fields: (
+        <EmailVerificationStep
+          email={emailValue || inviteData?.email || ""}
+          translations={{
+            title: t.emailVerificationTitle,
+            description: t.emailVerificationDescription,
+            codeSentTo: t.codeSentTo,
+            enterCode: t.enterCode,
+            resendCode: t.resendCode,
+            resendIn: t.resendIn,
+            verifying: t.verifying,
+            verified: t.verified,
+            invalidCode: t.invalidCode,
+            sending: t.sending,
+            codeSent: t.codeSent,
+          }}
+          onVerify={handleVerifyEmailCode}
+          onResend={sendVerificationCode}
+          isVerified={isEmailVerified}
+          isLoading={isVerifyingEmail}
         />
       )
     },
@@ -234,28 +271,19 @@ export default function RegisterPage() {
  *    - Preenche email se fornecido no convite
  * 
  * 2. STEPS DO FORMULÁRIO:
- *    - Step 1: Informações pessoais (nome, email)
- *    - Step 2: Configuração de senha (senha, confirmação)
- *    - Step 3: Dados institucionais (departamento, igreja)
+ *    - Step 1: Informações pessoais (nome, email, gênero)
+ *    - Step 2: Verificação de email (OTP de 6 dígitos)
+ *    - Step 3: Configuração de senha (senha, confirmação)
  * 
- * 3. VALIDAÇÃO POR STEP:
- *    - Cada step tem validação específica
- *    - Avanço automático ao pressionar Enter
- *    - Feedback visual com toasts
+ * 3. VERIFICAÇÃO DE EMAIL (Step 2):
+ *    - Ao avançar do Step 1, o código é enviado automaticamente
+ *    - O usuário insere o código de 6 dígitos recebido por email
+ *    - Auto-submit ao completar todos os 6 dígitos
+ *    - Suporte a colar (paste), retroceder (backspace) e reenviar
+ *    - Countdown de 60s antes de permitir reenvio
  * 
  * 4. SUBMISSÃO:
  *    - Coleta todos os dados do formulário
  *    - Adiciona dados automáticos (institution_id, language_preference)
- *    - Simula API call com loading
- *    - Redireciona para login após sucesso
- * 
- * 5. COMPONENTES UTILIZADOS:
- *    - RegistrationLayout: Layout 7 colunas com sidebar
- *    - RegistrationHeader: Cabeçalho com controles
- *    - RoleBadge: Badge do role do convite
- *    - PersonalInfoStep: Campos pessoais
- *    - PasswordSetupStep: Configuração de senha
- *    - InstitutionDataStep: Seleção departamento/igreja
- *    - MultiStepForm: Formulário multi-step reutilizável
- *    - LoadingState/ValidatingInviteState/InvalidInviteState: Estados de UI
+ *    - Redireciona para dashboard após login automático
  */

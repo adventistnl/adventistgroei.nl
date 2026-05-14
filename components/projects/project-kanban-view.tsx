@@ -12,7 +12,7 @@ import {
   Building2,
   DollarSign,
   ExternalLink,
-  ScanEye,
+  Info,
 } from "lucide-react"
 
 import { KanbanBoard, KanbanGroup, KanbanItem, KanbanAction, KanbanMoveRule } from "@/components/ui/kanban-board"
@@ -331,11 +331,14 @@ export function ProjectKanbanView({
         const daysLeft = Math.ceil(
           (new Date(p.end_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
         )
-        const isUserOwner =
-          user?.id === p.owner_id || user?.id === p.owner?.id
-
         const collaborators: Array<{ role: string; user: { id: string; name: string; email?: string } }> =
           (p.collaborators as any[]) ?? []
+
+        const isUserOwner =
+          user?.id === p.owner_id ||
+          user?.id === p.owner?.id ||
+          user?.id === p.co_owner_id ||
+          collaborators.some((c) => c.user?.id === user?.id && (c.role === 'owner' || c.role === 'co_owner'))
 
         const isUserMember =
           isUserOwner || collaborators.some((c) => c.user?.id === user?.id)
@@ -373,7 +376,7 @@ export function ProjectKanbanView({
           title: p.title,
           description: dept?.name ?? "",
           metadata: {
-            budget: formatCurrency(p.subsidyAmount || 0),
+            budget: formatCurrency(p.budget || 0),
             activities: p.activities ?? 0,
             daysLeft,
             isUserOwner,
@@ -530,8 +533,8 @@ export function ProjectKanbanView({
     () => [
       {
         id: "quick-view",
-        label: t.table?.quickView ?? "Quick View",
-        icon: ScanEye,
+        label: t.table?.details ?? "Details",
+        icon: Info,
         showInItem: true,
         onClick: (_group, item) => {
           if (!item) return

@@ -6,6 +6,7 @@ export const UPDATE_OWN_USER = gql`
       id
       name
       email
+      recieve_emails
       contact {
         phone
         address
