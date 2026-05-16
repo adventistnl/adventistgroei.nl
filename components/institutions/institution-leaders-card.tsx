@@ -29,6 +29,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { ContactViewEditModal } from "@/components/modals/contact/contact-view-edit-modal"
 import { useUpdateUserMutation } from "@/hooks/graphql/use-user-mutation"
 import { useHasPermission } from "@/hooks/use-has-permission"
@@ -161,6 +171,13 @@ export function InstitutionLeadersCard({
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
   const [assigningFor, setAssigningFor] = useState<InstitutionPositionType | null>(null)
   const [replacingFor, setReplacingFor] = useState<InstitutionPositionType | null>(null)
+
+  // Confirmation dialog state
+  type ConfirmAction =
+    | { type: "assign"; positionType: InstitutionPositionType; userId: string }
+    | { type: "replace"; positionId: string; positionType: InstitutionPositionType; userId: string }
+    | { type: "remove"; positionId: string; positionType: InstitutionPositionType }
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
   
   const [createPosition, { loading: creating }] = useCreateInstitutionPositionMutation()
   const [updatePosition, { loading: updating }] = useUpdateInstitutionPositionMutation()
@@ -214,13 +231,19 @@ export function InstitutionLeadersCard({
 
   const canManageRecord = canViewPosition || canUpdatePosition || canDeletePosition
 
+  // Request confirmation before assigning
+  function requestAssign(positionType: InstitutionPositionType, userId: string) {
+    setAssigningFor(null)
+    setConfirmAction({ type: "assign", positionType, userId })
+  }
+
   async function handleAssign(positionType: InstitutionPositionType, userId: string) {
     if (!institutionId) {
       toast.error(leadershipCard?.toasts?.error_assign || "Erro ao atribuir cargo")
       return
     }
 
-    setAssigningFor(null)
+    setConfirmAction(null)
     try {
       const result = await createPosition({
         variables: {
@@ -245,8 +268,14 @@ export function InstitutionLeadersCard({
     }
   }
 
-  async function handleReplace(positionId: string, positionType: InstitutionPositionType, userId: string) {
+  // Request confirmation before replacing
+  function requestReplace(positionId: string, positionType: InstitutionPositionType, userId: string) {
     setReplacingFor(null)
+    setConfirmAction({ type: "replace", positionId, positionType, userId })
+  }
+
+  async function handleReplace(positionId: string, positionType: InstitutionPositionType, userId: string) {
+    setConfirmAction(null)
     try {
       const result = await updatePosition({
         variables: {
@@ -268,7 +297,13 @@ export function InstitutionLeadersCard({
     }
   }
 
+  // Request confirmation before removing
+  function requestRemove(positionId: string, positionType: InstitutionPositionType) {
+    setConfirmAction({ type: "remove", positionId, positionType })
+  }
+
   async function handleRemove(positionId: string, positionType: InstitutionPositionType) {
+    setConfirmAction(null)
     try {
       const result = await deletePosition({ variables: { id: positionId }, awaitRefetchQueries: true })
 
@@ -281,6 +316,17 @@ export function InstitutionLeadersCard({
       toast.success(`${positionLabel}: ${leadershipCard?.toasts?.removed || "Cargo removido com sucesso"}`)
     } catch (error: any) {
       toast.error(error?.message ?? (leadershipCard?.toasts?.error_remove || "Erro ao remover cargo"))
+    }
+  }
+
+  async function executeConfirmedAction() {
+    if (!confirmAction) return
+    if (confirmAction.type === "assign") {
+      await handleAssign(confirmAction.positionType, confirmAction.userId)
+    } else if (confirmAction.type === "replace") {
+      await handleReplace(confirmAction.positionId, confirmAction.positionType, confirmAction.userId)
+    } else {
+      await handleRemove(confirmAction.positionId, confirmAction.positionType)
     }
   }
 
@@ -439,7 +485,7 @@ export function InstitutionLeadersCard({
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-xs text-destructive focus:text-destructive"
-                              onClick={() => handleRemove(record.id, positionType)}
+                              onClick={() => requestRemove(record.id, positionType)}
                               disabled={isMutating}
                             >
                               <Trash2 className="w-3.5 h-3.5 mr-2" />
@@ -477,7 +523,7 @@ export function InstitutionLeadersCard({
                       </p>
                       <UserSelector
                         users={availableUsers}
-                        onSelect={(userId) => handleAssign(positionType, userId)}
+                        onSelect={(userId) => requestAssign(positionType, userId)}
                         placeholder={leadershipCard?.select_user || "Select user..."}
                         searchPlaceholder={leadershipCard?.search_user || "Search user..."}
                         emptyLabel={leadershipCard?.no_users_available || "No users available"}
@@ -497,7 +543,7 @@ export function InstitutionLeadersCard({
                       </p>
                       <UserSelector
                         users={availableUsers}
-                        onSelect={(userId) => handleReplace(record.id, positionType, userId)}
+                        onSelect={(userId) => requestReplace(record.id, positionType, userId)}
                         placeholder={leadershipCard?.select_user || "Select user..."}
                         searchPlaceholder={leadershipCard?.search_user || "Search user..."}
                         emptyLabel={leadershipCard?.no_users_available || "No users available"}
@@ -522,8 +568,7 @@ export function InstitutionLeadersCard({
           )}
         </CardContent>
       </Card>
-      
-      {/* Contact Modal */}
+            {/* Contact Modal */}
       {selectedUserForContact && (
         <ContactViewEditModal
           isOpen={isContactModalOpen}
@@ -562,6 +607,56 @@ export function InstitutionLeadersCard({
           entityId={selectedUserForContact.id}
         />
       )}
+
+      {/* Confirmation Dialog */}
+      <AlertDialog
+        open={!!confirmAction}
+        onOpenChange={(open) => {
+          if (!open) {
+            setConfirmAction(null)
+            setPendingReplaceUserId(null)
+          }
+        }}
+      >
+        <AlertDialogContent className="sm:max-w-[400px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction?.type === "assign"
+                ? leadershipCard?.confirm?.assign_title || "Assign Leader"
+                : confirmAction?.type === "replace"
+                ? leadershipCard?.confirm?.replace_title || "Replace Leader"
+                : leadershipCard?.confirm?.remove_title || "Remove Leader"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction?.type === "assign"
+                ? leadershipCard?.confirm?.assign_description ||
+                  "Are you sure you want to assign this person to the position?"
+                : confirmAction?.type === "replace"
+                ? leadershipCard?.confirm?.replace_description ||
+                  "Are you sure you want to replace the current leader of this position?"
+                : leadershipCard?.confirm?.remove_description ||
+                  "Are you sure you want to remove this leader from the position?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setConfirmAction(null)
+                setPendingReplaceUserId(null)
+              }}
+            >
+              {leadershipCard?.confirm?.cancel_btn || "Cancel"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={executeConfirmedAction}
+              className={confirmAction?.type === "remove" ? "bg-destructive hover:bg-destructive/90" : undefined}
+              disabled={isMutating}
+            >
+              {leadershipCard?.confirm?.confirm_btn || "Confirm"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

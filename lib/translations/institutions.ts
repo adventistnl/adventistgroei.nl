@@ -190,6 +190,16 @@ export const institutionTranslations = {
       search_user: "Search user...",
       no_users_available: "No users available",
       confirm_remove: "Remove position?",
+      confirm: {
+        assign_title: "Assign Leader",
+        assign_description: "Are you sure you want to assign this person to the position?",
+        replace_title: "Replace Leader",
+        replace_description: "Are you sure you want to replace the current leader of this position? This action will assign a new person to the role.",
+        remove_title: "Remove Leader",
+        remove_description: "Are you sure you want to remove this leader from the position? The position will become unassigned.",
+        confirm_btn: "Confirm",
+        cancel_btn: "Cancel"
+      },
       positions: {
         PRESIDENT: "President",
         SECRETARY: "Secretary",
@@ -404,6 +414,16 @@ export const institutionTranslations = {
       search_user: "Zoek gebruiker...",
       no_users_available: "Geen gebruikers beschikbaar",
       confirm_remove: "Functie verwijderen?",
+      confirm: {
+        assign_title: "Leider Toewijzen",
+        assign_description: "Weet u zeker dat u deze persoon aan de functie wilt toewijzen?",
+        replace_title: "Leider Vervangen",
+        replace_description: "Weet u zeker dat u de huidige leider van deze functie wilt vervangen? Deze actie wijst een nieuwe persoon toe aan de rol.",
+        remove_title: "Leider Verwijderen",
+        remove_description: "Weet u zeker dat u deze leider uit de functie wilt verwijderen? De functie wordt dan niet toegewezen.",
+        confirm_btn: "Bevestigen",
+        cancel_btn: "Annuleren"
+      },
       positions: {
         PRESIDENT: "President",
         SECRETARY: "Secretaris",
@@ -618,6 +638,16 @@ export const institutionTranslations = {
       search_user: "Buscar usuário...",
       no_users_available: "Nenhum usuário disponível",
       confirm_remove: "Remover cargo?",
+      confirm: {
+        assign_title: "Atribuir Líder",
+        assign_description: "Tem certeza que deseja atribuir esta pessoa ao cargo?",
+        replace_title: "Substituir Líder",
+        replace_description: "Tem certeza que deseja substituir o líder atual deste cargo? Esta ação atribuirá uma nova pessoa à função.",
+        remove_title: "Remover Líder",
+        remove_description: "Tem certeza que deseja remover este líder do cargo? O cargo ficará sem atribuição.",
+        confirm_btn: "Confirmar",
+        cancel_btn: "Cancelar"
+      },
       positions: {
         PRESIDENT: "Presidente",
         SECRETARY: "Secretário",
