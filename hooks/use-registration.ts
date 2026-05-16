@@ -15,7 +15,8 @@ import { ValidateInviteToken } from "@/types/ValidateInviteToken"
 import { LanguagePreference } from "@/types/graphql-global-types"
 import { registerTranslations } from "@/lib/translations/register"
 import { loginTranslations } from "@/lib/translations/login"
-import { useSendEmailVerificationCodeMutation, useVerifyEmailRegistrationCodeMutation } from "./graphql/use-email-verification-mutation"
+import { useSendEmailVerificationCodeMutation, useVerifyEmailRegistrationCodeMutation, useCheckEmailAvailability } from "./graphql/use-email-verification-mutation"
+import { classifySmtpError } from "@/lib/classify-smtp-error"
 
 // Schema de validação para o formulário de registro
 const registrationSchema = z.object({
@@ -55,6 +56,7 @@ export function useRegistration({ language }: UseRegistrationProps) {
   const [ validateInviteToken ] = useValidateInviteTokenMutation();
   const [ sendEmailVerificationCode ] = useSendEmailVerificationCodeMutation();
   const [ verifyEmailRegistrationCode ] = useVerifyEmailRegistrationCodeMutation();
+  const [ checkEmailAvailability ] = useCheckEmailAvailability();
   const {login} = useAuth();
   // Busca o objeto de traduções correto
   // @ts-ignore
@@ -237,20 +239,39 @@ export function useRegistration({ language }: UseRegistrationProps) {
       toast.error(translations.fillRequiredFields, { duration: 4000 })
       return false
     }
-    // Trigger sending the verification code when step 1 is complete
-    await sendVerificationCode()
+
+    // Check for duplicate email before sending the verification code
+    const email = form.getValues('email')
+    try {
+      const { data: checkData } = await checkEmailAvailability({ variables: { email } })
+      if (checkData?.checkEmailAvailability?.success === false) {
+        form.setError('email', { type: 'manual', message: translations.emailAlreadyExists })
+        toast.error(translations.emailAlreadyExists, { duration: 4000 })
+        return false
+      }
+    } catch {
+      // If check fails, let the flow continue — server will catch duplicate on submit
+    }
+
+    // Send verification code and show error if it fails
+    const { success: sent, errorMessage } = await sendVerificationCode()
+    if (!sent) {
+      toast.error(errorMessage || translations.emailSendError, { duration: 5000 })
+      return false
+    }
+
     toast.success(translations.stepCompleted, { duration: 1500 })
     return true
   }
 
   /**
    * Envia o código de verificação para o email do usuário.
-   * Retorna true se o código foi enviado, false se bloqueado por rate-limit ou erro.
+   * Retorna { success, errorMessage } para permitir mensagens de erro específicas.
    */
-  const sendVerificationCode = async (): Promise<boolean> => {
+  const sendVerificationCode = async (): Promise<{ success: boolean; errorMessage?: string }> => {
     const email = form.getValues('email')
     const name = form.getValues('name')
-    if (!email) return false
+    if (!email) return { success: false, errorMessage: translations.emailSendError }
     try {
       const { data } = await sendEmailVerificationCode({
         variables: {
@@ -259,11 +280,28 @@ export function useRegistration({ language }: UseRegistrationProps) {
           language: language || 'en',
         },
       })
-      return data?.sendEmailVerificationCode?.success ?? false
-    } catch (err) {
-      // Silently fail — the OTP step UI will allow the user to resend
+      const result = data?.sendEmailVerificationCode
+      if (!result?.success) {
+        const rawError = result?.error || ''
+        const smtpMessages = {
+          smtpAuthFailed: translations.smtpAuthFailed,
+          smtpConnectionFailed: translations.smtpConnectionFailed,
+          smtpInvalidAddress: translations.smtpInvalidAddress,
+          smtpRateLimited: translations.smtpRateLimited,
+          smtpTlsFailed: translations.smtpTlsFailed,
+          fallback: translations.emailSendError,
+        }
+        const friendlyError = classifySmtpError(rawError, smtpMessages)
+        console.warn('Verification code send failed:', rawError)
+        return { success: false, errorMessage: friendlyError }
+      }
+      return { success: true }
+    } catch (err: any) {
+      const networkMsg = err?.networkError
+        ? translations.emailSendError + ' (Network error — check your connection.)'
+        : translations.emailSendError
       console.warn('Failed to send verification code:', err)
-      return false
+      return { success: false, errorMessage: networkMsg }
     }
   }
 

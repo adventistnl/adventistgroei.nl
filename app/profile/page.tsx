@@ -9,6 +9,7 @@ import { PersonalInfoSection } from "@/components/profile/personal-info-section"
 import { ChurchInfoSection } from "@/components/profile/church-info-section"
 import { EmailPreferencesSection } from "@/components/profile/email-preferences-section"
 import { ProfileStatusAlert } from "@/components/profile/profile-status-alert"
+import { EmailChangeVerificationDialog } from "@/components/profile/email-change-verification-dialog"
 import { useProfileEditor, ExtendedProfile } from "@/hooks/use-profile-editor"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo } from "react"
@@ -48,8 +49,11 @@ export default function ProfilePage() {
   const { currentInstitutionData } = useInstitution()
   const router = useRouter()
 
-  // Buscar o user completo do contexto de instituição (que tem user_roles)
-  const user = useMemo(() => {
+  // Buscar dados completos do usuário logado diretamente (não depende da lista de users da instituição)
+  const { user: fullUser, loading: userLoading } = useUser({})
+
+  // Enriquecer com dados do InstitutionContext se disponível (roles, etc.)
+  const institutionUser = useMemo(() => {
     if (!currentInstitutionData?.users || !authUser?.id) return null
     return currentInstitutionData.users.find((u: any) => u.id === authUser.id) || null
   }, [currentInstitutionData?.users, authUser?.id])
@@ -94,31 +98,30 @@ export default function ProfilePage() {
       }))
   }, [churchesData])
 
-  // Create profile from auth user data
+  // Create profile — use fullUser as primary source, enrich with institution context when available
   const userProfile: ExtendedProfile = useMemo(() => {
-    // Get roles from user_roles - agora funciona porque user vem do InstitutionContext (tipo User)
-    const userRoles = (user as any)?.user_roles?.map((ur: any) => {
-      return ur.role?.name
-    }).filter(Boolean).join(", ") || t('profile.church.no_role')
-    
-    const profile = {
-      id: user?.id || "",
-      name: user?.name || "",
-      email: user?.email || "",
-      phone: formatPhoneDisplay(user?.contact?.phone || ""),
-      address: "", // Contact em users não tem address, precisará ser carregado separadamente
-      institution_id: currentInstitutionData?.id || user?.institution?.id || "",
-      church_id: user?.church?.id || "",
-      language_preference: user?.language_preference || "PT",
-      // Additional fields for display
-      institution_name: currentInstitutionData?.name || user?.institution?.name || "",
-      church_name: user?.church?.name || "",
-      role: userRoles,
-      recieve_emails: user?.recieve_emails !== undefined ? user.recieve_emails : true,
-    }
+    // Source: direct user query (always available)
+    const baseUser = fullUser || authUser
 
-    return profile
-  }, [user, currentInstitutionData, t])
+    // Roles: from institutionUser (has user_roles) or empty
+    const userRoles = (institutionUser as any)?.user_roles?.map((ur: any) => ur.role?.name)
+      .filter(Boolean).join(", ") || t('profile.church.no_role')
+
+    return {
+      id: baseUser?.id || "",
+      name: baseUser?.name || "",
+      email: baseUser?.email || "",
+      phone: formatPhoneDisplay((baseUser as any)?.contact?.phone || ""),
+      address: "",
+      institution_id: currentInstitutionData?.id || (baseUser as any)?.institution_id || "",
+      church_id: (baseUser as any)?.church_id || (institutionUser as any)?.church?.id || "",
+      language_preference: (baseUser as any)?.language_preference || "PT",
+      institution_name: currentInstitutionData?.name || (baseUser as any)?.institution?.name || "",
+      church_name: (institutionUser as any)?.church?.name || "",
+      role: userRoles,
+      recieve_emails: (baseUser as any)?.recieve_emails !== undefined ? (baseUser as any).recieve_emails : true,
+    }
+  }, [fullUser, authUser, institutionUser, currentInstitutionData, t])
 
   // Função para refetch - agora usa o contexto de instituição
   const refetchUser = async () => {
@@ -135,13 +138,23 @@ export default function ProfilePage() {
     handleCancel,
     handleFieldChange,
     updateLoading,
+    isEmailVerificationOpen,
+    pendingEmailSave,
+    isEmailVerified,
+    isVerifyingEmail,
+    isSendingCode,
+    otpSendError,
+    verifyEmailForSave,
+    resendVerificationCode,
+    cancelEmailChange,
+    retryEmailSend,
   } = useProfileEditor(userProfile, refetchUser)
 
 
 
 
   // Show loading state
-  if (isLoading) {
+  if (isLoading || userLoading) {
     return (
       <LoadingSpinner
         text={t('profile.loading')}
@@ -153,8 +166,8 @@ export default function ProfilePage() {
     )
   }
 
-  // Don't render if no user
-  if (!user || !userProfile) {
+  // Don't render if no authenticated user at all
+  if (!authUser) {
     return null
   }
 
@@ -268,6 +281,20 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Email change verification dialog */}
+      <EmailChangeVerificationDialog
+        open={isEmailVerificationOpen}
+        newEmail={pendingEmailSave || ""}
+        isVerified={isEmailVerified}
+        isLoading={isVerifyingEmail}
+        isSendingCode={isSendingCode}
+        sendError={otpSendError}
+        onVerify={verifyEmailForSave}
+        onResend={resendVerificationCode}
+        onCancel={cancelEmailChange}
+        onRetry={retryEmailSend}
+      />
     </AppLayout>
   )
 }
