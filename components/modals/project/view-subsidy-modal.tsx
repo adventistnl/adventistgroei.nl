@@ -103,6 +103,7 @@ function extractSubsidyError(
     DOCUMENTS_REJECTED:                        modalT.errors?.documentsRejected,
     EDIT_NOT_ALLOWED_FOR_STATUS:               modalT.errors?.statusChangeNotAllowed,
     ONLY_FINANCIAL_CAN_CLOSE:                  modalT.errors?.onlyFinancialCanClose,
+    FINANCIAL_CANNOT_ACT_BEFORE_APPROVAL:      modalT.errors?.financialCannotActBeforeApproval || 'Financial managers can only change the status of subsidies that have already been approved',
   }
 
   // 4. Priority: mapped translation → raw API message (readable) → generic fallback
@@ -202,7 +203,7 @@ export function ViewSubsidyModal({
   // Subsidy prop received - no debug logs in production
 
   const { formatCurrency, selectedCurrency } = useCurrency()
-  const { user } = useAuth()
+  const { user, roles: authRoles } = useAuth()
   const { currentInstitutionData } = useInstitution()
   const { t, i18n } = useTranslation()
 
@@ -443,13 +444,15 @@ export function ViewSubsidyModal({
 
   const isFinanceUser = React.useMemo(() => {
     const financeRoleKeys = ['FINANCE_MANAGER', 'FINANCE_ADMIN', 'FINANCIAL_MANAGER', 'CFO', 'FINANCIAL_OFFICER', 'FINANCE']
+    // Primary: auth context roles (set at login, always reliable)
+    if (authRoles?.some((r: string) => financeRoleKeys.includes(r?.toUpperCase() || ''))) return true
+    // Fallback: institution users (may lag on first load)
     const institutionUsers = currentInstitutionData?.users || []
     const currentUser = institutionUsers.find((u: any) => u.id === user?.id)
-
     return currentUser?.user_roles?.some((ur: any) =>
       financeRoleKeys.includes(ur.role?.key_code?.toUpperCase() || '')
     ) || false
-  }, [user?.id, currentInstitutionData])
+  }, [user?.id, authRoles, currentInstitutionData])
 
   const isProjectOwner = React.useMemo(() => {
     // Primary: check via collaborators (most reliable — populated by backend for every role)
@@ -485,6 +488,14 @@ export function ViewSubsidyModal({
     // If refund is pending, ALWAYS allow status editing (bypass permission checks)
     if (activeSubsidy.have_refund && !activeSubsidy.refund_done) {
       return true
+    }
+
+    const currentStatus = (activeSubsidy.status || '').toLowerCase()
+    const preApprovedStatuses = ['pending', 'in_review']
+
+    // Finance can ONLY act when subsidy is already APPROVED or later
+    if (isFinanceUser && preApprovedStatuses.includes(currentStatus)) {
+      return false
     }
 
     // Normal rule: Only Department Leader OR Finance User can edit status
