@@ -402,10 +402,12 @@ export default function LedgerHistoryPage() {
             </Button>
           </div>
         </div>
-        {/* Filters Bar - Styled as Card for better consistency */}
+        {/* Filters Bar */}
         <Card className="p-4 border-2 text-foreground bg-background">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="relative w-full md:w-96">
+          <div className="flex flex-col gap-3">
+
+            {/* Search — always full width */}
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder={t('budget.history.table.search_placeholder', 'Search description, entity or user...')}
@@ -415,28 +417,31 @@ export default function LedgerHistoryPage() {
               />
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            {/* Filter fields — responsive grid, each field fills its cell */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-center">
+
+              {/* Date range */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-[260px] h-10 justify-start text-left font-normal border-slate-200 bg-background text-foreground",
+                      "w-full h-10 justify-start text-left font-normal border-slate-200 bg-background text-foreground",
                       !filters.dateRange && "text-muted-foreground"
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.dateRange?.from ? (
-                      filters.dateRange.to ? (
-                        <>
-                          {format(filters.dateRange.from, "dd/MM/yy")} - {format(filters.dateRange.to, "dd/MM/yy")}
-                        </>
+                    <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">
+                      {filters.dateRange?.from ? (
+                        filters.dateRange.to ? (
+                          <>{format(filters.dateRange.from, "dd/MM/yy")} – {format(filters.dateRange.to, "dd/MM/yy")}</>
+                        ) : (
+                          format(filters.dateRange.from, "dd/MM/yy")
+                        )
                       ) : (
-                        format(filters.dateRange.from, "dd/MM/yy")
-                      )
-                    ) : (
-                      <span>{t('budget.history.filter_date', 'Filter by date')}</span>
-                    )}
+                        t('budget.history.filter_date', 'Filter by date')
+                      )}
+                    </span>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 bg-background" align="start">
@@ -446,18 +451,19 @@ export default function LedgerHistoryPage() {
                     defaultMonth={filters.dateRange?.from}
                     selected={filters.dateRange}
                     onSelect={(v) => setFilters(prev => ({ ...prev, dateRange: v }))}
-                    numberOfMonths={2}
+                    numberOfMonths={typeof window !== 'undefined' && window.innerWidth < 640 ? 1 : 2}
                   />
                 </PopoverContent>
               </Popover>
 
+              {/* Entity */}
               <Select
                 value={filters.departmentName}
                 onValueChange={(v) => setFilters(prev => ({ ...prev, departmentName: v }))}
               >
-                <SelectTrigger className="w-[300px] h-10 border-slate-200 bg-background text-foreground">
-                  <div className="flex items-center gap-2">
-                    <Building className="w-4 h-4 text-muted-foreground" />
+                <SelectTrigger className="w-full h-10 border-slate-200 bg-background text-foreground">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Building className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     <SelectValue placeholder={t('budget.history.table.entity', 'Entity')} />
                   </div>
                 </SelectTrigger>
@@ -469,13 +475,14 @@ export default function LedgerHistoryPage() {
                 </SelectContent>
               </Select>
 
+              {/* Type */}
               <Select
                 value={filters.type}
                 onValueChange={(v) => setFilters(prev => ({ ...prev, type: v }))}
               >
-                <SelectTrigger className="w-[300px] h-10 border-slate-200 bg-background text-foreground">
-                  <div className="flex items-center gap-2">
-                    <ArrowRightLeft className="w-4 h-4 text-muted-foreground" />
+                <SelectTrigger className="w-full h-10 border-slate-200 bg-background text-foreground">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <ArrowRightLeft className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     <SelectValue placeholder={t('budget.history.filter_type', 'Type')} />
                   </div>
                 </SelectTrigger>
@@ -486,6 +493,7 @@ export default function LedgerHistoryPage() {
                 </SelectContent>
               </Select>
 
+              {/* Clear filters */}
               {(filters.departmentName !== "all" || filters.type !== "all" || localSearch || filters.dateRange) && (
                 <Button
                   variant="ghost"
@@ -494,7 +502,7 @@ export default function LedgerHistoryPage() {
                     setFilters({ departmentName: "all", type: "all", dateRange: undefined })
                     setLocalSearch("")
                   }}
-                  className="h-10 px-3 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+                  className="w-full h-10 px-3 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
                 >
                   <X className="w-4 h-4 mr-2" />
                   {t('budget.history.clear_filters', 'Clear')}
@@ -503,6 +511,8 @@ export default function LedgerHistoryPage() {
             </div>
           </div>
         </Card>
+
+
 
         {/* Main Ledger Table */}
         <Card>
