@@ -204,7 +204,8 @@ export default function LedgerHistoryPage() {
         t('budget.history.table.type', 'Type'),
         t('budget.history.table.entity', 'Entity'),
         t('budget.history.table.description', 'Description'),
-        t('budget.history.table.created_by', 'Created By'),
+        t('budget.history.table.created_by_name', 'Created By'),
+        t('budget.history.table.created_by', 'Email'),
         t('budget.history.table.amount', 'Amount')
       ]
 
@@ -213,10 +214,11 @@ export default function LedgerHistoryPage() {
         const type = t(`budget.history.types.${entry.type.toLowerCase()}`, entry.type.replace(/_/g, ' '))
         const entity = entry.entityName || ''
         const description = `"${(entry.description || '').replace(/"/g, '""')}"`
-        const creator = entry.createdBy || ''
+        const creatorName = entry.createdByName || ''
+        const creatorEmail = entry.createdBy || ''
         const amount = entry.amount.toString().replace('.', ',')
 
-        return [date, type, entity, description, creator, amount].join(',')
+        return [date, type, entity, description, creatorName, creatorEmail, amount].join(',')
       })
 
       const csvContent = [headers.join(','), ...rows].join('\n')
@@ -292,25 +294,44 @@ export default function LedgerHistoryPage() {
     {
       accessorKey: "entityName",
       header: t('budget.history.table.entity', 'Entity'),
-      cell: ({ row }) => (
-        <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-1.5">
-            <Building className="w-3 h-3 text-muted-foreground" />
-            <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
-              {row.original.entityName}
-            </span>
-          </div>
-          {row.original.relatedEntity && (
-            <div className="flex items-center gap-1 opacity-70">
-              <ExternalLink className="w-3 h-3 flex-shrink-0" />
-              <span className="text-xs italic">
-                {row.original.relatedEntity}
+      cell: ({ row }) => {
+        // Parse KEY|value format from backend (e.g. "PROJECT|My Campaign")
+        const formatRelatedEntity = (raw: string | null | undefined) => {
+          if (!raw) return null
+          const sep = raw.indexOf('|')
+          if (sep === -1) return raw // legacy plain string fallback
+          const key = raw.substring(0, sep)
+          const value = raw.substring(sep + 1)
+          const keyMap: Record<string, string> = {
+            PROJECT:     t('budget.history.table.related_project', 'Project'),
+            SUBSIDY:     t('budget.history.table.related_subsidy', 'Subsidy'),
+            DESTINATION: t('budget.history.table.related_destination', 'Destination'),
+            ORIGIN:      t('budget.history.table.related_origin', 'Origin'),
+          }
+          return `${keyMap[key] ?? key}: ${value}`
+        }
+
+        return (
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5">
+              <Building className="w-3 h-3 text-muted-foreground" />
+              <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                {row.original.entityName}
               </span>
             </div>
-          )}
-        </div>
-      )
+            {row.original.relatedEntity && (
+              <div className="flex items-center gap-1 opacity-70">
+                <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                <span className="text-xs italic">
+                  {formatRelatedEntity(row.original.relatedEntity)}
+                </span>
+              </div>
+            )}
+          </div>
+        )
+      }
     },
+
     {
       accessorKey: "description",
       header: t('budget.history.table.description', 'Description'),
@@ -319,10 +340,13 @@ export default function LedgerHistoryPage() {
           <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed whitespace-normal min-w-[200px]" title={row.original.description}>
             {row.original.description}
           </p>
-          <div className="flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1 mt-1">
             <User className="w-2.5 h-2.5 text-muted-foreground flex-shrink-0" />
-            <span className="text-[10px] text-muted-foreground italic break-all">
-              {t('budget.history.table.by', 'By')}: {row.original.createdBy}
+            <span className="text-[10px] text-muted-foreground break-all">
+              {row.original.createdByName
+                ? <>{row.original.createdByName} <span className="opacity-60">({row.original.createdBy})</span></>
+                : row.original.createdBy
+              }
             </span>
           </div>
         </div>

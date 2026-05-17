@@ -207,6 +207,7 @@ export const GET_LEDGER_HISTORY = gql`
         entityName
         relatedEntity
         createdBy
+        createdByName
       }
       totalCount
       pageInfo {

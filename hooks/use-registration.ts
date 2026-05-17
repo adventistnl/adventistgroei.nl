@@ -82,6 +82,7 @@ export function useRegistration({ language }: UseRegistrationProps) {
 
   // Função para carregar dados salvos do localStorage
   const loadSavedData = (): Partial<RegistrationForm> => {
+    if (typeof window === 'undefined') return {}
     try {
       const savedData = localStorage.getItem('registration-form-data')
       if (savedData) {
@@ -98,6 +99,7 @@ export function useRegistration({ language }: UseRegistrationProps) {
 
   // Função para salvar dados no localStorage (exceto senhas)
   const saveToLocalStorage = (data: Partial<RegistrationForm>) => {
+    if (typeof window === 'undefined') return
     try {
       // Remove senhas antes de salvar
       const { password, confirmPassword, ...safeData } = data
@@ -109,6 +111,7 @@ export function useRegistration({ language }: UseRegistrationProps) {
 
   // Função para limpar dados salvos
   const clearSavedData = () => {
+    if (typeof window === 'undefined') return
     try {
       localStorage.removeItem('registration-form-data')
     } catch (error) {

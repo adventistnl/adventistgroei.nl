@@ -2362,6 +2362,7 @@ export type LedgerHistoryEntry = {
   balanceAfter?: Maybe<Scalars['Float']['output']>;
   category: Scalars['String']['output'];
   createdBy?: Maybe<Scalars['String']['output']>;
+  createdByName?: Maybe<Scalars['String']['output']>;
   date: Scalars['DateTime']['output'];
   description: Scalars['String']['output'];
   entityName?: Maybe<Scalars['String']['output']>;
