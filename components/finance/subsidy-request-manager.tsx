@@ -54,6 +54,7 @@ import { ViewSubsidyModal } from "@/components/modals/project/view-subsidy-modal
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { ExpandedViewModal } from "@/components/shared/expanded-view-modal"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
+import { useSubsidyStatusRules } from "@/hooks/use-subsidy-status-rules"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { useCurrency } from "@/contexts/currency-context"
@@ -243,6 +244,8 @@ export function SubsidyRequestManager({
     ) ?? false
   }, [user?.id, authRoles, institutionUsers])
 
+  const { getStatusChangeError: getStatusError, canChangeStatus } = useSubsidyStatusRules()
+
   // Helper: Check if current user is project owner for a specific subsidy
   const isProjectOwner = (subsidy: SubsidyRequest | any): boolean => {
     if (!user?.id) return false
@@ -385,78 +388,25 @@ export function SubsidyRequestManager({
     itemId: string;
     reason: string
   }>({ isOpen: false, itemId: '', reason: '' })
+  const getStatusChangeError = (subsidy: SubsidyRequest | any, to: string): string | null => {
+    const hasPending = (subsidy.receipts || []).some((r: any) => !r.is_validated && !r.is_deleted);
+    const hasRejected = (subsidy.receipts || []).some((r: any) => r.is_validated && !r.approved && !r.is_deleted);
 
-  const getStatusChangeError = (subsidy: SubsidyRequest, to: string): string | null => {
-    const from = subsidy.status
-
-    // Rule: Finance users can ONLY act on subsidies that are already APPROVED or later
-    if (isFinanceUser && !canApproveSubsidy(subsidy)) {
-      const postApprovedStatuses = ['approved', 'advanced_closed', 'waiting_documents', 'waiting_refund', 'closed', 'rejected']
-      if (!postApprovedStatuses.includes(from)) {
-        return (translations.toasts as any)?.financialCannotActBeforeApproval ||
-          'Financial managers can only act on subsidies that have already been approved'
+    return getStatusError(
+      subsidy.status || '',
+      to || '',
+      {
+        is_for_advance: subsidy.is_for_advance,
+        have_refund: subsidy.have_refund,
+        refund_done: subsidy.refund_done,
+        hasPendingDocuments: hasPending,
+        hasRejectedDocuments: hasRejected
+      },
+      {
+        isFinanceUser,
+        isOwnerOrLeader: canApproveSubsidy(subsidy)
       }
-    }
-
-    // Rule: If refund is pending (requested but not done), allow ANY status change
-    // This bypasses normal validation rules for subsidies in refund workflow
-    if (subsidy.have_refund && !subsidy.refund_done) {
-      return null // Allow any transition when refund is pending
-    }
-
-    // Rule: Closed status cannot be changed to anything else
-    if (from === 'closed') return translations.toasts?.statusClosed || "Status Closed cannot be changed"
-
-    // Rule: If changing to waiting_refund, must have refund requested
-    if (to === 'waiting_refund') {
-      return translations.toasts?.refundNotRequested || "No refund has been requested for this subsidy"
-    }
-
-    // Rule: To Closed is allowed from Approved, Rejected, Advanced Closed or Waiting Documents
-    if (to === 'closed') {
-      if (from === 'in_review') return translations.toasts?.inReviewToClosed || "Cannot close In Review requests"
-      // Only allowed from approved, rejected, advanced_closed or waiting_documents
-      if (from !== 'approved' && from !== 'rejected' && from !== 'advanced_closed' && from !== 'waiting_documents') return translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close"
-    }
-
-    // Rule: Advance subsidies logic
-    if (subsidy.is_for_advance) {
-      if (from === 'approved') {
-        // Can go to waiting_documents (advance paid) or advanced_closed (legacy)
-        if (to === 'waiting_documents' || to === 'advanced_closed') return null
-        // Cannot go to closed directly
-        if (to === 'closed') return translations.toasts?.mustBeAdvancedClosed || "Adv. Subsidies must be Advanced Closed first"
-      }
-      if (from === 'advanced_closed') {
-        // Can go to waiting_documents or closed
-        if (to === 'waiting_documents' || to === 'closed') return null
-        return translations.toasts?.finalState || "Advanced Closed can only change to Closed"
-      }
-      if (from === 'waiting_documents') {
-        // Can go to closed or waiting_refund
-        if (to === 'closed' || to === 'waiting_refund') return null
-        return translations.toasts?.finalState || "Waiting Documents can only change to Closed or Waiting Refund"
-      }
-    }
-
-    // Rule: If Approved or Rejected, can ONLY go to Closed (for normal subsidies)
-    // Bypassed for Finance users so they can manage post-approval statuses freely
-    if ((from === 'approved' || from === 'rejected') && !isFinanceUser) {
-      if (to !== 'closed') return translations.toasts?.finalState || "Can only change to Closed"
-    }
-
-    // Rule: Cannot change to Approved, Closed, Rejected unless all documents are validated
-    // Note: Advance subsidies don't have documents usually, but if they did, we'd check them.
-    // However, for ADVANCE request creation, no docs required.
-    // If user added docs later, we might want to validate.
-    if (['approved', 'closed', 'rejected', 'advanced_closed'].includes(to)) {
-      const hasPending = (subsidy.receipts || []).some(r => !r.is_validated);
-      if (hasPending) {
-        return translations.toasts?.documentsPending || "All documents must be validated first"
-      }
-    }
-
-    return null
+    )
   }
 
   // Transform backend data to component format
@@ -1345,28 +1295,17 @@ export function SubsidyRequestManager({
 
   // Kanban move rules - Controls who can move subsidies to which statuses
   const kanbanMoveRules = useMemo(() => ({
-    // Status groups after "approved" that only Finance can manage
-    disableDropTo: [] as string[], // Will be handled by canMove
+    disableDropTo: [] as string[],
 
     canDragItem: (item: KanbanItem): boolean => {
       const subsidy = item.metadata?.subsidyData
       if (!subsidy) return true
-
       const fromStatus = item.groupId
-
-      // Finance can ALWAYS pick up a card — restriction is enforced at drop level via canMove
+      
+      // Basic rule for starting a drag
       if (isFinanceUser) return true
-
-      // Pre-approved statuses (pending, in_review): Only Owner/DeptLeader can drag
-      if (['pending', 'in_review'].includes(fromStatus)) {
-        return canApproveSubsidy(subsidy)
-      }
-
-      // Post-approved statuses: Only Finance can drag (non-finance users can't move from here)
-      if (['approved', 'advanced_closed', 'waiting_documents', 'waiting_refund', 'closed', 'rejected'].includes(fromStatus)) {
-        return canManagePostApproved(subsidy)
-      }
-
+      if (['pending', 'in_review'].includes(fromStatus)) return canApproveSubsidy(subsidy)
+      if (['approved', 'advanced_closed', 'waiting_documents', 'waiting_refund', 'closed', 'rejected'].includes(fromStatus)) return canManagePostApproved(subsidy)
       return true
     },
 
@@ -1374,119 +1313,88 @@ export function SubsidyRequestManager({
       const subsidy = item?.metadata?.subsidyData
       if (!subsidy) return true
 
-      const preApprovedStatuses = ['pending', 'in_review']
-      const postApprovedStatuses = ['advanced_closed', 'waiting_documents', 'waiting_refund', 'closed']
+      const hasPending = (subsidy.receipts || []).some((r: any) => !r.is_validated && !r.is_deleted)
+      const hasRejected = (subsidy.receipts || []).some((r: any) => r.is_validated && !r.approved && !r.is_deleted)
 
-      // Finance users cannot touch pre-approved subsidies at all
-      if (isFinanceUser && preApprovedStatuses.includes(fromGroupId)) {
-        return false
-      }
-
-      // Moving FROM pre-approved status (Owner/DeptLeader only)
-      if (preApprovedStatuses.includes(fromGroupId)) {
-        // Can move to approved if user is owner/dept leader
-        if (toGroupId === 'approved') {
-          return canApproveSubsidy(subsidy)
+      return canChangeStatus(
+        fromGroupId || '',
+        toGroupId || '',
+        {
+          is_for_advance: subsidy.is_for_advance,
+          have_refund: subsidy.have_refund,
+          refund_done: subsidy.refund_done,
+          hasPendingDocuments: hasPending,
+          hasRejectedDocuments: hasRejected
+        },
+        {
+          isFinanceUser,
+          isOwnerOrLeader: canApproveSubsidy(subsidy)
         }
-        // Can move between pending/in_review
-        if (preApprovedStatuses.includes(toGroupId)) {
-          return canApproveSubsidy(subsidy)
-        }
-        // Can reject if owner/dept leader
-        if (toGroupId === 'rejected') {
-          return canApproveSubsidy(subsidy)
-        }
-        // Cannot move to post-approved statuses directly
-        if (postApprovedStatuses.includes(toGroupId)) {
-          return false
-        }
-      }
-
-      // Moving FROM approved or post-approved status: Only Finance
-      if (['approved', ...postApprovedStatuses].includes(fromGroupId)) {
-        // No one can move a post-approved subsidy back to pending or in_review
-        if (preApprovedStatuses.includes(toGroupId)) {
-          return false
-        }
-        return canManagePostApproved(subsidy)
-      }
-
-      return true
+      )
     },
 
     getCanMoveErrorMessage: (itemId: string, fromGroupId: string, toGroupId: string, item?: KanbanItem): string | undefined => {
       const subsidy = item?.metadata?.subsidyData
       if (!subsidy) return undefined
 
-      const postApprovedStatuses = ['advanced_closed', 'waiting_documents', 'waiting_refund', 'closed']
+      const hasPending = (subsidy.receipts || []).some((r: any) => !r.is_validated && !r.is_deleted)
+      const hasRejected = (subsidy.receipts || []).some((r: any) => r.is_validated && !r.approved && !r.is_deleted)
 
-      // Check if Finance is trying to act before approved
-      if (isFinanceUser && !['approved', 'advanced_closed', 'waiting_documents', 'waiting_refund', 'closed', 'rejected'].includes(fromGroupId)) {
-        return (translations.toasts as any)?.financialCannotActBeforeApproval || 'Financial managers can only act on subsidies that have already been approved'
-      }
-
-      // Check if trying to move to approved without permission
-      if (toGroupId === 'approved' && !canApproveSubsidy(subsidy)) {
-        return (translations.toasts as any)?.onlyOwnerOrLeaderCanApprove || 'Only the Project Owner or Department Leader can approve this subsidy'
-      }
-
-      // Check if trying to manage post-approved without being Finance
-      if (['approved', ...postApprovedStatuses].includes(fromGroupId)) {
-        if (['pending', 'in_review'].includes(toGroupId)) {
-          return (translations.toasts as any)?.cannotRevertToPreApproved || 'Cannot move approved subsidies back to Pending or In Review'
+      return getStatusError(
+        fromGroupId || '',
+        toGroupId || '',
+        {
+          is_for_advance: subsidy.is_for_advance,
+          have_refund: subsidy.have_refund,
+          refund_done: subsidy.refund_done,
+          hasPendingDocuments: hasPending,
+          hasRejectedDocuments: hasRejected
+        },
+        {
+          isFinanceUser,
+          isOwnerOrLeader: canApproveSubsidy(subsidy)
         }
-        if (!canManagePostApproved(subsidy)) {
-          return (translations.toasts as any)?.onlyFinancialCanManage || 'Only Finance users can manage subsidies after approval'
-        }
-      }
-
-      if (['pending', 'in_review'].includes(fromGroupId) && postApprovedStatuses.includes(toGroupId)) {
-        return (translations.toasts as any)?.mustBeApprovedFirst || 'Subsidy must be approved before moving to this status'
-      }
-
-      return undefined
+      ) || undefined
     },
 
     getDisabledGroupsForItem: (item: KanbanItem): string[] => {
       const subsidy = item.metadata?.subsidyData
       if (!subsidy) return []
 
-      const fromStatus = item.groupId
-      const disabled: string[] = []
+      const hasPending = (subsidy.receipts || []).some((r: any) => !r.is_validated && !r.is_deleted)
+      const hasRejected = (subsidy.receipts || []).some((r: any) => r.is_validated && !r.approved && !r.is_deleted)
+
       const allStatuses = ['pending', 'in_review', 'approved', 'rejected', 'advanced_closed', 'waiting_documents', 'waiting_refund', 'closed']
-      const postApprovedStatuses = ['advanced_closed', 'waiting_documents', 'waiting_refund', 'closed']
+      const disabled: string[] = []
 
-      // Finance dragging from pre-approved: can only drop back in the same column
-      // All OTHER columns are disabled so the card bounces back
-      if (isFinanceUser && ['pending', 'in_review'].includes(fromStatus)) {
-        return allStatuses.filter(s => s !== fromStatus)
-      }
+      allStatuses.forEach(status => {
+        if (status === item.groupId) return // Current group is inherently available
 
-      // If user is not owner/dept leader AND not finance, disable approved and rejected
-      // Finance users are allowed to manage these statuses if they are moving from a post-approved state
-      if (!canApproveSubsidy(subsidy) && !isFinanceUser) {
-        disabled.push('approved', 'rejected')
-      }
+        const isAllowed = canChangeStatus(
+          item.groupId || '',
+          status || '',
+          {
+            is_for_advance: subsidy.is_for_advance,
+            have_refund: subsidy.have_refund,
+            refund_done: subsidy.refund_done,
+            hasPendingDocuments: hasPending,
+            hasRejectedDocuments: hasRejected
+          },
+          {
+            isFinanceUser,
+            isOwnerOrLeader: canApproveSubsidy(subsidy)
+          }
+        )
 
-      // If from pre-approved and user is not finance, disable post-approved statuses
-      if (['pending', 'in_review'].includes(fromStatus)) {
-        postApprovedStatuses.forEach(status => disabled.push(status))
-      }
+        if (!isAllowed) {
+          disabled.push(status)
+        }
+      })
 
-      // If dragging from a post-approved state, no one can move it back to pending/in_review
-      if (['approved', ...postApprovedStatuses].includes(fromStatus)) {
-        disabled.push('pending', 'in_review')
-      }
-
-      // If from approved/post-approved and user is not finance, disable everything
-      if (['approved', ...postApprovedStatuses].includes(fromStatus) && !canManagePostApproved(subsidy)) {
-        return allStatuses
-      }
-
-      return [...new Set(disabled)]
+      return disabled
     }
 
-  }), [canApproveSubsidy, canManagePostApproved, isFinanceUser, translations])
+  }), [canApproveSubsidy, canManagePostApproved, isFinanceUser, canChangeStatus, getStatusError])
 
   const kanbanActions: KanbanAction[] = useMemo(() => {
     const baseActions: KanbanAction[] = [

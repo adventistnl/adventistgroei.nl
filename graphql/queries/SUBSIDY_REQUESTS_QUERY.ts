@@ -84,6 +84,8 @@ export const GET_ALL_SUBSIDY_REQUESTS = gql`
       receipts: subsidy_receipts {
          id
          is_validated
+         approved
+         is_deleted
       }
       collaborators {
         role
@@ -235,6 +237,8 @@ export const GET_SUBSIDY_REQUEST_BY_ID = gql`
       receipts: subsidy_receipts {
          id
          is_validated
+         approved
+         is_deleted
       }
       collaborators {
         role

@@ -46,6 +46,7 @@ import { RequestRefundModal } from "@/components/modals/project/request-refund-m
 import { ConfirmRefundDoneModal } from "@/components/modals/confirm-refund-done-modal"
 import { subsidyRequestTranslations } from "@/lib/translations/subsidy-request"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
+import { useSubsidyStatusRules } from "@/hooks/use-subsidy-status-rules"
 import { SelectActivitiesModal } from "@/components/modals/project/select-activities-modal"
 import { ProjectActivityData } from "@/components/projects/project-activities-table"
 import { ApolloError } from "@apollo/client"
@@ -463,6 +464,20 @@ export function ViewSubsidyModal({
     return !!user?.id && user.id === ownerId
   }, [user?.id, subsidyData])
 
+  const isOwnerOrLeader = React.useMemo(() => {
+    if (!user?.id) return false
+    if (isProjectOwner) return true
+    
+    // PRIMARY: check via collaborators
+    const collaborators: Array<{ role: string; user: { id: string } }> = subsidyData?.subsidyRequest?.collaborators || []
+    if (collaborators.some(c => ['owner', 'leader'].includes(c.role) && c.user?.id === user?.id)) return true
+
+    // FALLBACK: match department leader by ID
+    const subsidyDepartment = subsidyData?.subsidyRequest?.department
+    const leaderId = subsidyDepartment?.leader?.id || subsidyDepartment?.leader_id
+    return !!leaderId && user.id === leaderId
+  }, [user?.id, isProjectOwner, subsidyData])
+
   const canValidateDocuments = React.useMemo(() => {
     if (!user?.id) return false
 
@@ -704,57 +719,25 @@ export function ViewSubsidyModal({
     )
   }
 
-  // Validate status transition
+  // Validate status transition using the centralized rules
   const canChangeStatus = (to: string) => {
-    const from = currentSubsidyStatus
-
-    // Rule: If refund is pending (requested but not done), allow ANY status change
-    // This bypasses normal validation rules for subsidies in refund workflow
-    if (activeSubsidy.have_refund && !activeSubsidy.refund_done) {
-      return true // Allow any transition when refund is pending
-    }
-
-    // Rule: Closed status cannot be changed to anything else
-    if (from === 'closed') return false
-
-    // Rule: waiting_refund is triggered via the "Request Refund" button (not the status dropdown)
-    if (to === 'waiting_refund') {
-      return false
-    }
-
-    // Rule: Waiting Refund can ONLY go to Closed
-    if (from === 'waiting_refund') {
-      return to === 'closed'
-    }
-
-    // Rule: Cannot approve if there are rejected documents
-    if (to === 'approved' && hasRejectedDocuments()) {
-      return false
-    }
-
-    // Rule: Advance subsidies logic
-    if (activeSubsidy?.is_for_advance) {
-      if (from === 'approved') return to === 'waiting_documents' || to === 'advanced_closed'
-      if (from === 'advanced_closed') return to === 'waiting_documents' || to === 'closed'
-      if (from === 'waiting_documents') return to === 'closed' || to === 'waiting_refund'
-      // pending/in_review follow standard flow to approved/rejected
-    } else {
-      // Normal subsidies: Cannot go to advanced_closed or waiting_documents
-      if (to === 'advanced_closed' || to === 'waiting_documents') return false
-    }
-
-    // Rule: To Closed is allowed from Approved, Rejected, Waiting Documents (not In Review directly)
-    if (to === 'closed') {
-      if (from === 'in_review') return false
-      return from === 'approved' || from === 'rejected' || from === 'waiting_documents'
-    }
-
-    // Rule: If Approved or Rejected, can ONLY go to Closed (for normal subsidies)
-    if (from === 'approved' || from === 'rejected') {
-      return to === 'closed'
-    }
-
-    return true
+    const hasPending = (receipts || []).some((r: any) => !r.is_validated && !r.is_deleted);
+    
+    return canChangeStatusRules(
+      currentSubsidyStatus || '',
+      to,
+      {
+        is_for_advance: activeSubsidy?.is_for_advance || false,
+        have_refund: activeSubsidy?.have_refund || false,
+        refund_done: activeSubsidy?.refund_done || false,
+        hasPendingDocuments: hasPending,
+        hasRejectedDocuments: hasRejectedDocuments()
+      },
+      {
+        isFinanceUser,
+        isOwnerOrLeader
+      }
+    )
   }
 
   // Handle status change request
@@ -1508,6 +1491,9 @@ export function ViewSubsidyModal({
     }
     return url
   }
+
+  // Centralized subsidy status rules
+  const { canChangeStatus: canChangeStatusRules } = useSubsidyStatusRules()
 
   const handleDownload = async (document: DocumentItem) => {
     try {

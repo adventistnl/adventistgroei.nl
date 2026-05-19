@@ -21,7 +21,6 @@ export interface GetLedgerHistory_ledgerHistory_items {
   relatedEntity: string | null;
   createdBy: string | null;
   createdByName: string | null;
-
 }
 
 export interface GetLedgerHistory_ledgerHistory_pageInfo {

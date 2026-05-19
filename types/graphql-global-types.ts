@@ -1580,6 +1580,13 @@ export type DirectMessageWhereInput = {
   updated_by?: InputMaybe<StringFilter>;
 };
 
+export type EmailVerificationResponse = {
+  __typename?: 'EmailVerificationResponse';
+  error?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
 export type EntityDistribution = {
   __typename?: 'EntityDistribution';
   amount: Scalars['Float']['output'];
@@ -2485,6 +2492,7 @@ export type Mutation = {
   requestRevisionAnnualBudget: RequestRevisionBudgetResponse;
   requestSubsidyRefund: SubsidyRequest;
   resetPassword: ForgotPasswordResponse;
+  sendEmailVerificationCode: EmailVerificationResponse;
   sendForgotPasswordCode: ForgotPasswordResponse;
   /** Send an invitation email */
   sendInviteEmail: Scalars['Boolean']['output'];
@@ -2519,6 +2527,7 @@ export type Mutation = {
   validateActivityDocument: ActivityDocuments;
   validateInviteToken: ValidateOutputModel;
   validateSubsidyReceipt: SubsidyReceipt;
+  verifyEmailRegistrationCode: EmailVerificationResponse;
   verifyForgotPasswordCode: ForgotPasswordResponse;
 };
 
@@ -2869,6 +2878,11 @@ export type MutationResetPasswordArgs = {
 };
 
 
+export type MutationSendEmailVerificationCodeArgs = {
+  input: SendEmailVerificationCodeInput;
+};
+
+
 export type MutationSendForgotPasswordCodeArgs = {
   input: SendCodeInput;
 };
@@ -3053,6 +3067,11 @@ export type MutationValidateInviteTokenArgs = {
 export type MutationValidateSubsidyReceiptArgs = {
   id: Scalars['ID']['input'];
   note?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationVerifyEmailRegistrationCodeArgs = {
+  input: VerifyEmailCodeInput;
 };
 
 
@@ -4296,6 +4315,7 @@ export type Query = {
   annualBudgets: Array<AnnualBudget>;
   budgetDistribution: BudgetDistribution;
   budgetKPIs: BudgetKpIs;
+  checkEmailAvailability: EmailVerificationResponse;
   church?: Maybe<Church>;
   churchActivityTimeline: Array<Scalars['JSON']['output']>;
   churches: Array<Church>;
@@ -4389,6 +4409,11 @@ export type QueryBudgetDistributionArgs = {
 export type QueryBudgetKpIsArgs = {
   institutionId: Scalars['String']['input'];
   year: Scalars['Int']['input'];
+};
+
+
+export type QueryCheckEmailAvailabilityArgs = {
+  email: Scalars['String']['input'];
 };
 
 
@@ -4952,6 +4977,12 @@ export type RoleWhereInput = {
 
 export type SendCodeInput = {
   email: Scalars['String']['input'];
+};
+
+export type SendEmailVerificationCodeInput = {
+  email: Scalars['String']['input'];
+  language?: InputMaybe<Scalars['String']['input']>;
+  userName?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type Setting = {
@@ -5711,6 +5742,7 @@ export type User = {
   password: Scalars['String']['output'];
   project_activity_logs?: Maybe<Array<ProjectActivityLog>>;
   project_history?: Maybe<Array<ProjectHistory>>;
+  recieve_emails: Scalars['Boolean']['output'];
   subsidy_status_history?: Maybe<Array<SubsidyStatusHistory>>;
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
@@ -5781,6 +5813,7 @@ export type UserModel = {
   language_preference: Scalars['String']['output'];
   name: Scalars['String']['output'];
   password?: Maybe<Scalars['String']['output']>;
+  recieve_emails: Scalars['Boolean']['output'];
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
 };
@@ -5831,6 +5864,7 @@ export type UserOrderByWithRelationInput = {
   password?: InputMaybe<SortOrder>;
   project_activity_logs?: InputMaybe<ProjectActivityLogOrderByRelationAggregateInput>;
   project_history?: InputMaybe<ProjectHistoryOrderByRelationAggregateInput>;
+  recieve_emails?: InputMaybe<SortOrder>;
   subsidy_status_history?: InputMaybe<SubsidyStatusHistoryOrderByRelationAggregateInput>;
   updated_at?: InputMaybe<SortOrder>;
   updated_by?: InputMaybe<SortOrder>;
@@ -5900,6 +5934,7 @@ export type UserUpdateDto = {
   language_preference?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   phone?: InputMaybe<Scalars['String']['input']>;
+  recieve_emails?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type UserWhereInput = {
@@ -5942,6 +5977,7 @@ export type UserWhereInput = {
   password?: InputMaybe<StringFilter>;
   project_activity_logs?: InputMaybe<ProjectActivityLogListRelationFilter>;
   project_history?: InputMaybe<ProjectHistoryListRelationFilter>;
+  recieve_emails?: InputMaybe<BoolFilter>;
   subsidy_status_history?: InputMaybe<SubsidyStatusHistoryListRelationFilter>;
   updated_at?: InputMaybe<DateTimeFilter>;
   updated_by?: InputMaybe<StringFilter>;
@@ -5968,6 +6004,7 @@ export type UserWithRoles = {
   language_preference: Scalars['String']['output'];
   name: Scalars['String']['output'];
   password?: Maybe<Scalars['String']['output']>;
+  recieve_emails: Scalars['Boolean']['output'];
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
   user_roles: Array<RoleModel>;
@@ -5994,6 +6031,11 @@ export type ValidateOutputModel = {
 };
 
 export type VerifyCodeInput = {
+  code: Scalars['String']['input'];
+  email: Scalars['String']['input'];
+};
+
+export type VerifyEmailCodeInput = {
   code: Scalars['String']['input'];
   email: Scalars['String']['input'];
 };

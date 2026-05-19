@@ -122,6 +122,7 @@ export interface DepartmentFragment_users {
   name: string;
   email: string;
   language_preference: LanguagePreference;
+  recieve_emails: boolean;
   created_at: any;
   updated_at: any;
   created_by: string;

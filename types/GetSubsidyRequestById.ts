@@ -96,6 +96,8 @@ export interface GetSubsidyRequestById_subsidyRequest_receipts {
   __typename: "SubsidyReceipt";
   id: string;
   is_validated: boolean;
+  approved: boolean;
+  is_deleted: boolean;
 }
 
 export interface GetSubsidyRequestById_subsidyRequest_collaborators_user {

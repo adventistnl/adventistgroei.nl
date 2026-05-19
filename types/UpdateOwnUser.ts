@@ -32,6 +32,7 @@ export interface UpdateOwnUser_updateOwnUser {
   id: string;
   name: string;
   email: string;
+  recieve_emails: boolean;
   contact: UpdateOwnUser_updateOwnUser_contact | null;
   language_preference: string;
   institution_id: string;
