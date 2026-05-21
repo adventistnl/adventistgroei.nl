@@ -289,13 +289,7 @@ export function KanbanBoard({
         if (onSaveChanges) {
           try {
             await onSaveChanges([{ itemId, fromGroupId, toGroupId }])
-            toast.success('Status updated successfully', {
-              duration: 2000,
-            })
           } catch (error) {
-            toast.error('Failed to update status', {
-              duration: 2000,
-            })
             // Revert the visual change on error
             if (onItemMove) {
               onItemMove(itemId, toGroupId, fromGroupId)

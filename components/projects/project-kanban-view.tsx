@@ -112,6 +112,9 @@ export function ProjectKanbanView({
           noRegressionPastOpenRequest:
             t.status?.cannotGoBackToDraft ??
             "Projects that have passed Open Request cannot return to Draft.",
+          invalidTransition:
+            t.statusTransitions?.invalidTransition ??
+            "Invalid status transition.",
         }
 
         return errorMessages[rule.reason]
@@ -225,11 +228,9 @@ export function ProjectKanbanView({
 
   const logStatusChange = useCallback(
     (projectId: string, fromStatus: string, toStatus: string, justification?: string) => {
-      // 1. Log the status change entry (always)
-      const statusPayload = buildStatusChangedPayload(fromStatus, toStatus)
-      createHistory({
-        variables: { data: { project_id: projectId, ...statusPayload } },
-      })
+      // 1. Log the status change entry
+      // REMOVED: The backend (ProjectService) now automatically logs STATUS_CHANGED events 
+      // and broadcasts them via WebSockets when updateProjectStatus succeeds.
 
       // 2. For ADJUSTMENTS_NEEDED, create a real ProjectAdjustment entity
       //    (not a raw history entry) so it has its own lifecycle + tasks.
@@ -424,7 +425,10 @@ export function ProjectKanbanView({
     pendingTransitionRef.current = null
     setPendingTransition(null)
     try {
-      await updateProjectStatus({ variables: { id: pending.itemId, status: pending.toGroupId } })
+      const res = await updateProjectStatus({ variables: { id: pending.itemId, status: pending.toGroupId } })
+      if (!res || !res.data) {
+        throw new Error("Invalid transition")
+      }
       logStatusChange(pending.itemId, pending.fromGroupId, pending.toGroupId, justification)
       // If project is being concluded, auto-complete all its activities
       if (pending.toGroupId === 'CONCLUDED') {
@@ -513,9 +517,12 @@ export function ProjectKanbanView({
         }
 
         try {
-          await updateProjectStatus({
+          const res = await updateProjectStatus({
             variables: { id: itemId, status: toGroupId },
           })
+          if (!res || !res.data) {
+            throw new Error("Invalid transition")
+          }
           logStatusChange(itemId, fromGroupId, toGroupId)
         } catch {
           // Revert on error

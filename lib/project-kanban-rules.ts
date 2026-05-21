@@ -55,9 +55,23 @@ export const STATUS_ORDER = [
   "PENDING_RECEIPT",
   "WAITING_REFUND",
   "CONCLUDED",
+  "OVERDUE",
 ] as const
 
 export type ProjectStatus = typeof STATUS_ORDER[number]
+
+// ─── Allowed Transitions (Synced with Backend) ───────────────────────────────
+export const PROJECT_TRANSITIONS: Record<string, string[]> = {
+  DRAFT: ['OPEN_REQUEST'],
+  OPEN_REQUEST: ['IN_REVIEW', 'ADJUSTMENTS_NEEDED', 'IN_PROGRESS'],
+  IN_REVIEW: ['IN_PROGRESS', 'ADJUSTMENTS_NEEDED'],
+  ADJUSTMENTS_NEEDED: ['OPEN_REQUEST', 'IN_REVIEW'],
+  IN_PROGRESS: ['PENDING_RECEIPT', 'WAITING_REFUND', 'OVERDUE', 'CONCLUDED'],
+  PENDING_RECEIPT: ['WAITING_REFUND', 'OVERDUE', 'CONCLUDED'],
+  WAITING_REFUND: ['CONCLUDED', 'OVERDUE'],
+  OVERDUE: ['CONCLUDED'],
+  CONCLUDED: []
+};
 
 // ─── Rule table ───────────────────────────────────────────────────────────────
 
@@ -129,9 +143,26 @@ export const STATUS_TRANSITION_RULES: StatusTransitionRule[] = [
  * const invalid = getProjectInvalidGroups(project)  // ["DRAFT", "CONCLUDED"]
  */
 export function getProjectInvalidGroups(proj: ProjectTableData): string[] {
-  return STATUS_TRANSITION_RULES
-    .filter((rule) => rule.isBlocked(proj))
-    .map((rule) => rule.blocksGroup)
+  const currentStatus = (proj.status || "DRAFT") as string;
+  const allowed = PROJECT_TRANSITIONS[currentStatus] || [];
+  
+  const invalidGroups = new Set<string>();
+
+  // Block states not allowed by the backend state machine
+  STATUS_ORDER.forEach(status => {
+    if (status !== currentStatus && !allowed.includes(status)) {
+      invalidGroups.add(status);
+    }
+  });
+
+  // Block states disallowed by specific business rules
+  STATUS_TRANSITION_RULES.forEach((rule) => {
+    if (rule.isBlocked(proj)) {
+      invalidGroups.add(rule.blocksGroup);
+    }
+  });
+
+  return Array.from(invalidGroups);
 }
 
 /**
@@ -147,6 +178,17 @@ export function getProjectBlockedRule(
   proj: ProjectTableData,
   toGroupId: string
 ): StatusTransitionRule | undefined {
+  const currentStatus = (proj.status || "DRAFT") as string;
+  const allowed = PROJECT_TRANSITIONS[currentStatus] || [];
+  
+  if (toGroupId !== currentStatus && !allowed.includes(toGroupId)) {
+    return {
+      blocksGroup: toGroupId,
+      reason: "invalidTransition",
+      isBlocked: () => true
+    }
+  }
+
   return STATUS_TRANSITION_RULES.find(
     (rule) => rule.blocksGroup === toGroupId && rule.isBlocked(proj)
   )
