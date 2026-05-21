@@ -46,6 +46,7 @@ import { createProjectColumns } from "@/components/projects/projects-table-colum
 import { EditProjectModal } from "@/components/modals/project/edit-project-modal"
 import { DetailsViewProjectModal } from "@/components/modals/project/details-view-project-modal"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
+import { SpecialProjectBadge, getSpecialProjectColors } from "@/components/projects/special-project-badge"
 import { MyProjectsFilter } from "@/components/shared/my-projects-filter"
 import { YearFilter } from "@/components/shared/year-filter"
 import { ProjectKanbanView } from "@/components/projects/project-kanban-view"
@@ -182,9 +183,13 @@ function ProjectsPageContent() {
         status: project.status || 'DRAFT', // Use status from backend
         subsidyRequests: project.subsidies?.length || 0,
         subsidyAmount: project.subsidies?.reduce((sum: number, s: any) => sum + Number(s.requested_amount || 0), 0) || 0,
-        activities: project.activities?.length || 0,
         is_event: !!project.event_id,
         type: project.type as "Local" | "Global" | undefined,
+        specialType: project.special_projects?.some((sp: any) => sp.type === "CHURCH_PLANTING") 
+          ? "Church Planting" 
+          : project.special_projects?.some((sp: any) => sp.type === "SPECIAL") 
+            ? "Projeto Especial" 
+            : null,
         eventId: project.event_id || null,
         // Preserve activities data with owners for user avatar display
         activitiesData: project.activities || [],
@@ -368,16 +373,28 @@ function ProjectsPageContent() {
           <span>{t_project.table.projectTitle}</span>
         </div>
       ),
-      cell: ({ row }) => (
-        <div className="flex items-center justify-between gap-3 pl-0">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Folder className="w-4 h-4 text-primary" />
+      cell: ({ row }) => {
+        const specialColors = row.original.specialType 
+          ? getSpecialProjectColors(row.original.specialType as any) 
+          : null;
+        
+        return (
+          <div className={`flex items-center justify-between gap-3 -ml-4 pl-4 py-1 border-l-4 ${specialColors ? specialColors.border : 'border-transparent'}`}>
+            <div className="flex items-center gap-3">
+              {row.original.specialType ? (
+                <SpecialProjectBadge type={row.original.specialType as any} iconOnly />
+              ) : (
+                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Folder className="w-4 h-4 text-primary" />
+                </div>
+              )}
+              <div className="flex flex-col gap-1">
+                <span className="font-medium">{row.original.title}</span>
+              </div>
             </div>
-            <div className="font-medium">{row.original.title}</div>
           </div>
-        </div>
-      ),
+        )
+      },
       meta: {
         className: "pl-0"
       }

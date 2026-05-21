@@ -56,9 +56,15 @@ export const GET_PROJECTS_QUERY = gql`
         id
         name
         status
+        tags
+        custom_tags
       }
       subsidies {
         id
+      }
+      special_projects {
+        id
+        type
       }
     }
   }

@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ProjectType, LanguagePreference, ProjectStatus, CollaboratorRole, ActivityStatus } from "./globalTypes";
+import { ProjectType, LanguagePreference, ProjectStatus, CollaboratorRole, ActivityStatus, ActivityTags } from "./globalTypes";
 
 // ====================================================
 // GraphQL query operation: Projects
@@ -54,11 +54,19 @@ export interface Projects_projects_activities {
   id: string;
   name: string;
   status: ActivityStatus;
+  tags: ActivityTags[] | null;
+  custom_tags: string[] | null;
 }
 
 export interface Projects_projects_subsidies {
   __typename: "SubsidyRequest";
   id: string;
+}
+
+export interface Projects_projects_special_projects {
+  __typename: "SpecialProjects";
+  id: string;
+  type: string;
 }
 
 export interface Projects_projects {
@@ -92,6 +100,7 @@ export interface Projects_projects {
   department: Projects_projects_department;
   activities: Projects_projects_activities[] | null;
   subsidies: Projects_projects_subsidies[] | null;
+  special_projects: Projects_projects_special_projects[] | null;
 }
 
 export interface Projects {

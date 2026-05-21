@@ -36,6 +36,7 @@ import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
 import { format } from "date-fns"
 import { ptBR, enUS, nl } from "date-fns/locale"
+import { SpecialProjectBadge } from "./special-project-badge"
 
 export interface ProjectTableData {
   id: string
@@ -63,6 +64,7 @@ export interface ProjectTableData {
   activities?: number
   is_event?: boolean
   type?: "Local" | "Global"
+  specialType?: 'Church Planting' | 'Projeto Especial' | null
   eventId?: string | null
   // Relations
   Institution?: {
@@ -221,8 +223,11 @@ export function ProjectsTable({
             )}
           </div>
           <div>
-            <div className="font-medium text-sm">{row.original.title}</div>
-            <div className="text-xs text-muted-foreground max-w-xs truncate line-clamp-2">
+            <div className="font-medium text-sm flex items-center gap-2">
+              {row.original.title}
+              <SpecialProjectBadge type={row.original.specialType as any} />
+            </div>
+            <div className="text-xs text-muted-foreground max-w-xs truncate line-clamp-2 mt-1">
               {row.original.description}
             </div>
           </div>

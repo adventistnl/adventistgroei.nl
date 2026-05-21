@@ -40,6 +40,7 @@ import {
 import { useCurrency } from "@/contexts/currency-context"
 import { useAuth } from "@/contexts/auth-context"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
+import { SpecialProjectBadge, getSpecialProjectColors } from "./special-project-badge"
 import { createProjectKanbanMoveRules, getProjectInvalidGroups, getProjectBlockedRule } from "@/lib/project-kanban-rules"
 import {
   KanbanStatusTransitionModal,
@@ -386,6 +387,7 @@ export function ProjectKanbanView({
             avatarUsers,
             end_at: p.end_at,
             start_at: p.start_at,
+            specialType: p.specialType,
           },
         }
       }),
@@ -599,8 +601,9 @@ export function ProjectKanbanView({
       <div
         {...dragHandlers}
         className={[
-          "bg-card border border-l-4 border-border rounded-lg p-3 shadow-sm hover:shadow-md transition-all cursor-pointer mb-2 last:mb-0 group",
+          "bg-card border border-l-4 rounded-lg p-3 shadow-sm hover:shadow-md transition-all cursor-pointer mb-2 last:mb-0 group",
           !isUserMember ? "opacity-50" : "",
+          item.metadata?.specialType ? getSpecialProjectColors(item.metadata.specialType as any)?.border : "border-border",
         ].join(" ").trim()}
         style={{ borderLeftColor: group.color }}
         onClick={(e) => {
@@ -619,16 +622,21 @@ export function ProjectKanbanView({
       >
         {/* Title row */}
         <div className="flex items-start justify-between gap-2 mb-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <div
-              className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: group.color + "22" }}
-            >
-              <Folder className="w-3 h-3" style={{ color: group.color }} />
+          <div className="flex items-start gap-2 min-w-0">
+            {item.metadata?.specialType ? (
+              <SpecialProjectBadge type={item.metadata.specialType as any} iconOnly size="sm" className="mt-0.5" />
+            ) : (
+              <div
+                className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 mt-0.5 bg-primary/10"
+              >
+                <Folder className="w-3 h-3 text-primary" />
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              <p className="text-sm font-semibold leading-tight line-clamp-2">
+                {item.title}
+              </p>
             </div>
-            <p className="text-sm font-semibold leading-tight line-clamp-2">
-              {item.title}
-            </p>
           </div>
 
           {/* Actions dropdown — visible only to members */}

@@ -84,6 +84,7 @@ export const CREATE_PROJECT_MUTATION = gql`
         budget_amount
         deadline
         tags
+        custom_tags
         created_at
         updated_at
       }

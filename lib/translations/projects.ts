@@ -151,6 +151,12 @@ export const projectTranslations = {
       activities: "Activities"
     },
 
+    // Special Types
+    specialTypes: {
+      churchPlanting: "Church Planting",
+      specialProject: "Special Project"
+    },
+
     // Activity Tags
     activityTags: {
       REFORM: "Reform",
@@ -1424,6 +1430,12 @@ export const projectTranslations = {
       top10Activities: "Top 10 projecten op basis van aantal geregistreerde activiteiten",
       projects: "Projecten",
       activities: "Activiteiten"
+    },
+
+    // Special Types
+    specialTypes: {
+      churchPlanting: "Church Planting",
+      specialProject: "Speciaal Project"
     },
 
     // Activity Tags
@@ -2717,6 +2729,12 @@ export const projectTranslations = {
       top10Activities: "Top 10 projetos por número de atividades registradas",
       projects: "Projetos",
       activities: "Atividades"
+    },
+
+    // Special Types
+    specialTypes: {
+      churchPlanting: "Church Planting",
+      specialProject: "Projeto Especial"
     },
 
     // Activity Tags
