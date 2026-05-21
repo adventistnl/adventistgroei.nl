@@ -890,11 +890,13 @@ export default function ProjectDetailsPage() {
         id: "total-subsidy-requested",
         title: t('details.totalSubsidyRequestedTitle') || "Total Subsidy Requested",
         value: formatCurrency(
-          subsidyRequests.reduce((sum, s) => sum + (Number(s.requested_amount) || 0), 0),
+          subsidyRequests
+            .filter(s => s.status !== 'rejected')
+            .reduce((sum, s) => sum + (Number(s.requested_amount) || 0), 0),
           { compact: true }
         ),
         subtitle: (t('details.totalSubsidyRequestedSubtitle') || "{{count}} request(s)")
-          .replace('{{count}}', subsidyRequests.length.toString()),
+          .replace("{{count}}", String(subsidyRequests.filter(s => s.status !== 'rejected').length)),
         icon: FileText,
       },
       {

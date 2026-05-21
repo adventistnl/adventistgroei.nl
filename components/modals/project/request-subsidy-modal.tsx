@@ -162,7 +162,8 @@ export function RequestSubsidyModal({
   const [advanceAmount, setAdvanceAmount] = useState<string>("")
   const [advanceConfirmed, setAdvanceConfirmed] = useState(false)
   const [advanceError, setAdvanceError] = useState<string | null>(null)
-  const maxAdvance = subsidizedBudget * 0.5
+  const maxAdvanceAllowed = subsidizedBudget * 0.5
+  const maxAdvance = Math.min(maxAdvanceAllowed, availableBudget)
 
   // without_document: awareness checkbox
   const [withoutDocConfirmed, setWithoutDocConfirmed] = useState(false)
@@ -626,12 +627,19 @@ export function RequestSubsidyModal({
         return
       }
       if (numValue > maxAdvance) {
+        const isLimitedByBalance = maxAdvance === availableBudget && maxAdvance < maxAdvanceAllowed;
         setAdvanceError(
           i18n.language === 'pt'
-            ? `O valor excede 50% do orçamento subsidiado (máx: ${formatCurrency(maxAdvance)})`
+            ? (isLimitedByBalance 
+                ? `O valor excede o saldo disponível do projeto (máx: ${formatCurrency(maxAdvance)})`
+                : `O valor excede 50% do orçamento subsidiado (máx: ${formatCurrency(maxAdvance)})`)
             : i18n.language === 'nl'
-            ? `Bedrag overschrijdt 50% van het gesubsidieerde budget (max: ${formatCurrency(maxAdvance)})`
-            : `Amount exceeds 50% of the subsidized budget (max: ${formatCurrency(maxAdvance)})`
+            ? (isLimitedByBalance
+                ? `Bedrag overschrijdt het beschikbare saldo (max: ${formatCurrency(maxAdvance)})`
+                : `Bedrag overschrijdt 50% van het gesubsidieerde budget (max: ${formatCurrency(maxAdvance)})`)
+            : (isLimitedByBalance
+                ? `Amount exceeds the available balance (max: ${formatCurrency(maxAdvance)})`
+                : `Amount exceeds 50% of the subsidized budget (max: ${formatCurrency(maxAdvance)})`)
         )
         return
       }
