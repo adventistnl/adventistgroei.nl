@@ -176,6 +176,7 @@ export interface Institutions_institutions_users {
   name: string;
   email: string;
   language_preference: LanguagePreference;
+  recieve_emails: boolean;
   created_at: any;
   updated_at: any;
   created_by: string;
@@ -336,6 +337,7 @@ export interface Institutions_institutions_churches_departments_users {
   name: string;
   email: string;
   language_preference: LanguagePreference;
+  recieve_emails: boolean;
   created_at: any;
   updated_at: any;
   created_by: string;
@@ -421,6 +423,7 @@ export interface Institutions_institutions_churches_users {
   name: string;
   email: string;
   language_preference: LanguagePreference;
+  recieve_emails: boolean;
   created_at: any;
   updated_at: any;
   created_by: string;
@@ -659,6 +662,7 @@ export interface Institutions_institutions_departments_users {
   name: string;
   email: string;
   language_preference: LanguagePreference;
+  recieve_emails: boolean;
   created_at: any;
   updated_at: any;
   created_by: string;

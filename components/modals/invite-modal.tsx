@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useState, useMemo } from "react"
-import { UserPlus, Mail, Link as LinkIcon, Copy } from "lucide-react"
+import { UserPlus, Mail, Link as LinkIcon, Copy, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -37,6 +37,7 @@ import { useInviteUserMutation } from "@/hooks/graphql/use-invite-user-mutation"
 import { useSendInviteEmailMutation } from "@/hooks/graphql/use-send-invite-email-mutation"
 import { useUser } from "@/hooks/use-user"
 import { useRoles } from "@/hooks/use-roles"
+import { useCheckEmailAvailability } from "@/hooks/graphql/use-email-verification-mutation"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { InviteUserVariables } from "@/types/InviteUser"
@@ -126,6 +127,7 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generatedLink, setGeneratedLink] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [selectedInstitution, setSelectedInstitution] = useState<string | undefined>(undefined);
   const [selectedChurch, setSelectedChurch] = useState<string | undefined>(undefined);
   const [selectedChurchDepartment, setSelectedChurchDepartment] = useState<string | undefined>(undefined);
@@ -133,6 +135,7 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
   const [selectedCategory, setSelectedCategory] = useState<RoleCategory>("all");
   const currentLanguage = i18n?.language || "en";
   const t = inviteTranslations[currentLanguage as keyof typeof inviteTranslations] || inviteTranslations.en;
+  const [checkEmailAvailability] = useCheckEmailAvailability();
 
   // Filter roles by selected category
   const filteredRoles = useMemo(() => {
@@ -189,6 +192,28 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
   React.useEffect(() => {
     setGeneratedLink("");
   }, [selectedRole, selectedChurch, selectedInstitution, selectedChurchDepartment, selectedInstitutionDepartment]);
+
+  // Debounce email duplicate check
+  const emailValue = form.watch("email");
+  React.useEffect(() => {
+    if (!emailValue || inviteType !== "email") {
+      setEmailError(null);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const { data } = await checkEmailAvailability({ variables: { email: emailValue } });
+        if (data?.checkEmailAvailability?.success === false) {
+          setEmailError(t.emailInUse);
+        } else {
+          setEmailError(null);
+        }
+      } catch {
+        setEmailError(null);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [emailValue, inviteType]);
 
   const generateLinkForRole = async (variables: InviteUserVariables): Promise<{ inviteToken: string, generatedLink: string } | undefined> => {
     if (!selectedRole) return;
@@ -377,10 +402,18 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
                             <Input 
                               placeholder={t.emailPlaceholder} 
                               type="email"
+                              className={emailError ? "border-destructive focus-visible:ring-destructive/30" : ""}
                               {...field} 
                             />
                           </FormControl>
-                          <FormMessage />
+                          {emailError ? (
+                            <div className="flex items-center gap-2 rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-sm font-medium text-destructive">
+                              <AlertCircle className="w-4 h-4 shrink-0" />
+                              <span>{emailError}</span>
+                            </div>
+                          ) : (
+                            <FormMessage />
+                          )}
                         </FormItem>
                       )}
                     />
@@ -434,7 +467,7 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
                       >
                         {t.cancel}
                       </Button>
-                      <Button type="submit" disabled={isSubmitting || !extraFieldsValid}>
+                      <Button type="submit" disabled={isSubmitting || !extraFieldsValid || !!emailError}>
                         {isSubmitting ? (
                           <>
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />

@@ -19,3 +19,13 @@ export const VERIFY_EMAIL_REGISTRATION_CODE = gql`
     }
   }
 `;
+
+export const CHECK_EMAIL_AVAILABILITY = gql`
+  query CheckEmailAvailability($email: String!) {
+    checkEmailAvailability(email: $email) {
+      success
+      message
+      error
+    }
+  }
+`;

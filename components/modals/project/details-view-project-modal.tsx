@@ -81,6 +81,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useCurrency } from "@/contexts/currency-context"
 import { ProjectHistoryPanel } from "@/components/projects/project-history-panel"
 import { projectHistoryTranslations } from "@/lib/translations/project-history"
+import { SpecialProjectBadge } from "@/components/projects/special-project-badge"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -428,15 +429,21 @@ function StatusSelector({
 
 interface ModalHeaderProps {
   title: string
+  specialType?: any
 }
 
-function ModalHeader({ title }: ModalHeaderProps) {
+function ModalHeader({ title, specialType }: ModalHeaderProps) {
   return (
     <div className="flex items-center gap-2 px-6 pt-5 pb-4 border-b flex-shrink-0">
-      <Folder className="w-5 h-5 flex-shrink-0" />
-      <DialogTitle className="text-base font-semibold leading-tight line-clamp-2">
-        {title}
-      </DialogTitle>
+      <Folder className="w-5 h-5 flex-shrink-0 text-muted-foreground" />
+      <div className="flex items-center gap-3">
+        <DialogTitle className="text-base font-semibold leading-tight line-clamp-2">
+          {title}
+        </DialogTitle>
+        {specialType && (
+          <SpecialProjectBadge type={specialType} className="flex-shrink-0" />
+        )}
+      </div>
     </div>
   )
 }
@@ -1555,7 +1562,7 @@ export function DetailsViewProjectModal({
         onInteractOutside={handleCancel}
       >
         {/* ── Header ─────────────────────────────────────────────────── */}
-        <ModalHeader title={project.title} />
+        <ModalHeader title={project.title} specialType={project.specialType} />
 
         {/* ── Action Bar ──────────────────────────────────────────────── */}
         <ActionBar

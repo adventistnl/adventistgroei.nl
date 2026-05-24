@@ -50,6 +50,7 @@ export interface User_user {
   email: string;
   language_preference: string;
   contact_id: string | null;
+  recieve_emails: boolean;
   created_at: any;
   updated_at: any;
   created_by: string;

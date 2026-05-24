@@ -462,6 +462,7 @@ export interface UserUpdateDto {
   department_id?: string | null;
   contact_id?: string | null;
   is_deleted?: boolean | null;
+  recieve_emails?: boolean | null;
   contact?: ContactUpdateDto | null;
   gender?: GenderType | null;
   phone?: string | null;

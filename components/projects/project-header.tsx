@@ -44,6 +44,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { projectTranslations } from "@/lib/translations/projects"
 import { ProjectTableData } from "@/components/projects/projects-table"
+import { SpecialProjectBadge } from "@/components/projects/special-project-badge"
 import { mockDepartments } from "@/data/mockData"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
 import { UserListModal } from "@/components/shared/user-list-modal"
@@ -519,7 +520,10 @@ export function ProjectHeader({
           {/* Title Row - Stack on mobile, partial stack on tablet */}
           <div className="space-y-3 md:space-y-2">
             <div className="flex flex-col sm:flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">
-              <h1 className="text-2xl sm:text-2xl md:text-3xl font-bold leading-tight">{project.title}</h1>
+              <div className="flex flex-col gap-2">
+                <h1 className="text-2xl sm:text-2xl md:text-3xl font-bold leading-tight">{project.title}</h1>
+                <SpecialProjectBadge type={project.specialType as any} className="w-fit" />
+              </div>
               
               {/* Users and Status - Stack on mobile, inline on tablet */}
               <div className="flex flex-col sm:flex-row sm:items-center md:flex-row md:items-center gap-2 sm:gap-2 md:gap-3">

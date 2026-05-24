@@ -564,6 +564,11 @@ export default function ProjectDetailsPage() {
       subsidyRequests: 0, // Will be calculated from subsidies
       subsidyAmount: 0, // Will be calculated from subsidies
       activities: backendProject.activities?.length || 0,
+      specialType: backendProject.special_projects?.some((sp: any) => sp.type === "CHURCH_PLANTING") 
+        ? "Church Planting" 
+        : backendProject.special_projects?.some((sp: any) => sp.type === "SPECIAL") 
+          ? "Projeto Especial" 
+          : null,
       // Owner data - include both approaches for compatibility
       owner: backendProject.owner ? {
         id: backendProject.owner.id,
@@ -885,11 +890,13 @@ export default function ProjectDetailsPage() {
         id: "total-subsidy-requested",
         title: t('details.totalSubsidyRequestedTitle') || "Total Subsidy Requested",
         value: formatCurrency(
-          subsidyRequests.reduce((sum, s) => sum + (Number(s.requested_amount) || 0), 0),
+          subsidyRequests
+            .filter(s => s.status !== 'rejected')
+            .reduce((sum, s) => sum + (Number(s.requested_amount) || 0), 0),
           { compact: true }
         ),
         subtitle: (t('details.totalSubsidyRequestedSubtitle') || "{{count}} request(s)")
-          .replace('{{count}}', subsidyRequests.length.toString()),
+          .replace("{{count}}", String(subsidyRequests.filter(s => s.status !== 'rejected').length)),
         icon: FileText,
       },
       {

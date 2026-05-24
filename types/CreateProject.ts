@@ -17,6 +17,7 @@ export interface CreateProject_createProject_activities {
   budget_amount: any;
   deadline: any;
   tags: ActivityTags[] | null;
+  custom_tags: string[] | null;
   created_at: any;
   updated_at: any;
 }

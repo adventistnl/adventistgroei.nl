@@ -40,6 +40,7 @@ import {
 import { useCurrency } from "@/contexts/currency-context"
 import { useAuth } from "@/contexts/auth-context"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
+import { SpecialProjectBadge, getSpecialProjectColors } from "./special-project-badge"
 import { createProjectKanbanMoveRules, getProjectInvalidGroups, getProjectBlockedRule } from "@/lib/project-kanban-rules"
 import {
   KanbanStatusTransitionModal,
@@ -111,6 +112,9 @@ export function ProjectKanbanView({
           noRegressionPastOpenRequest:
             t.status?.cannotGoBackToDraft ??
             "Projects that have passed Open Request cannot return to Draft.",
+          invalidTransition:
+            t.statusTransitions?.invalidTransition ??
+            "Invalid status transition.",
         }
 
         return errorMessages[rule.reason]
@@ -224,11 +228,9 @@ export function ProjectKanbanView({
 
   const logStatusChange = useCallback(
     (projectId: string, fromStatus: string, toStatus: string, justification?: string) => {
-      // 1. Log the status change entry (always)
-      const statusPayload = buildStatusChangedPayload(fromStatus, toStatus)
-      createHistory({
-        variables: { data: { project_id: projectId, ...statusPayload } },
-      })
+      // 1. Log the status change entry
+      // REMOVED: The backend (ProjectService) now automatically logs STATUS_CHANGED events 
+      // and broadcasts them via WebSockets when updateProjectStatus succeeds.
 
       // 2. For ADJUSTMENTS_NEEDED, create a real ProjectAdjustment entity
       //    (not a raw history entry) so it has its own lifecycle + tasks.
@@ -386,6 +388,7 @@ export function ProjectKanbanView({
             avatarUsers,
             end_at: p.end_at,
             start_at: p.start_at,
+            specialType: p.specialType,
           },
         }
       }),
@@ -422,7 +425,10 @@ export function ProjectKanbanView({
     pendingTransitionRef.current = null
     setPendingTransition(null)
     try {
-      await updateProjectStatus({ variables: { id: pending.itemId, status: pending.toGroupId } })
+      const res = await updateProjectStatus({ variables: { id: pending.itemId, status: pending.toGroupId } })
+      if (!res || !res.data) {
+        throw new Error("Invalid transition")
+      }
       logStatusChange(pending.itemId, pending.fromGroupId, pending.toGroupId, justification)
       // If project is being concluded, auto-complete all its activities
       if (pending.toGroupId === 'CONCLUDED') {
@@ -511,9 +517,12 @@ export function ProjectKanbanView({
         }
 
         try {
-          await updateProjectStatus({
+          const res = await updateProjectStatus({
             variables: { id: itemId, status: toGroupId },
           })
+          if (!res || !res.data) {
+            throw new Error("Invalid transition")
+          }
           logStatusChange(itemId, fromGroupId, toGroupId)
         } catch {
           // Revert on error
@@ -599,8 +608,9 @@ export function ProjectKanbanView({
       <div
         {...dragHandlers}
         className={[
-          "bg-card border border-l-4 border-border rounded-lg p-3 shadow-sm hover:shadow-md transition-all cursor-pointer mb-2 last:mb-0 group",
+          "bg-card border border-l-4 rounded-lg p-3 shadow-sm hover:shadow-md transition-all cursor-pointer mb-2 last:mb-0 group",
           !isUserMember ? "opacity-50" : "",
+          item.metadata?.specialType ? getSpecialProjectColors(item.metadata.specialType as any)?.border : "border-border",
         ].join(" ").trim()}
         style={{ borderLeftColor: group.color }}
         onClick={(e) => {
@@ -619,16 +629,21 @@ export function ProjectKanbanView({
       >
         {/* Title row */}
         <div className="flex items-start justify-between gap-2 mb-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <div
-              className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: group.color + "22" }}
-            >
-              <Folder className="w-3 h-3" style={{ color: group.color }} />
+          <div className="flex items-start gap-2 min-w-0">
+            {item.metadata?.specialType ? (
+              <SpecialProjectBadge type={item.metadata.specialType as any} iconOnly size="sm" className="mt-0.5" />
+            ) : (
+              <div
+                className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 mt-0.5 bg-primary/10"
+              >
+                <Folder className="w-3 h-3 text-primary" />
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              <p className="text-sm font-semibold leading-tight line-clamp-2">
+                {item.title}
+              </p>
             </div>
-            <p className="text-sm font-semibold leading-tight line-clamp-2">
-              {item.title}
-            </p>
           </div>
 
           {/* Actions dropdown — visible only to members */}

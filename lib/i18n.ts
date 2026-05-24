@@ -370,6 +370,16 @@ const resources = {
         item: "item",
         items: "items"
       },
+      notifications: {
+        status_change_title: "Update in {{projectTitle}}",
+        status_change_message: "{{actor}} changed the project status to \"{{status}}\"",
+        subsidy_change_title: "Subsidy update in {{projectTitle}}",
+        subsidy_change_message: "Subsidy \"{{subsidy}}\" changed to \"{{status}}\"",
+        new_message_title: "New message in {{projectTitle}}",
+        new_message_body: "{{actor}}: {{message}}",
+        fallback_project: "project",
+        fallback_actor: "Someone"
+      },
       actions: {
         ...projectTranslations.pt.actions,
         add_member: "Adicionar Membro",
@@ -2381,6 +2391,16 @@ const resources = {
         groupColor: "Kleur",
         item: "item",
         items: "items"
+      },
+      notifications: {
+        status_change_title: "Update in {{projectTitle}}",
+        status_change_message: "{{actor}} heeft de projectstatus gewijzigd naar \"{{status}}\"",
+        subsidy_change_title: "Subsidie-update in {{projectTitle}}",
+        subsidy_change_message: "Subsidie \"{{subsidy}}\" gewijzigd naar \"{{status}}\"",
+        new_message_title: "Nieuw bericht in {{projectTitle}}",
+        new_message_body: "{{actor}}: {{message}}",
+        fallback_project: "project",
+        fallback_actor: "Iemand"
       },
       actions: {
         ...projectTranslations.nl.actions,

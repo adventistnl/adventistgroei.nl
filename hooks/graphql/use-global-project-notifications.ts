@@ -2,6 +2,7 @@
 
 import { useContext } from "react"
 import { useSubscription, useApolloClient } from "@apollo/client"
+import { useTranslation } from "react-i18next"
 import { ON_USER_PROJECT_HISTORY_ADDED } from "@/graphql/subscriptions/USER_NOTIFICATIONS_SUBSCRIPTION"
 import { NotificationsContext } from "@/contexts/notifications-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -28,14 +29,18 @@ import { GET_PROJECT_BY_ID_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
  *   user: { id, name }
  * }
  *
- * Backend publishes `user_notifications:${userId}` for every collaborator
- * (owner + co_owner + voluntários) on each `createProjectHistory` call.
+ * For subsidy-related entries, `metadata` will contain:
+ *   { subsidyDescription: string, newStatus: string }
+ *
+ * Backend publishes `userProjectHistoryAdded` event for every collaborator
+ * (owner + co_owner + voluntários) on each `ProjectHistoryService.logEvent()` call.
  * ────────────────────────────────────────────────────────────────────────────
  */
 export function useGlobalProjectNotifications() {
   const { user } = useAuth()
   const notificationsCtx = useContext(NotificationsContext)
   const apolloClient = useApolloClient()
+  const { t } = useTranslation()
 
   const userId = user?.id ?? null
 
@@ -53,7 +58,8 @@ export function useGlobalProjectNotifications() {
       const projectId: string | undefined = entry.project_id ?? undefined
 
       // Try to resolve the project title from Apollo cache (avoids extra request)
-      let projectTitle = "projeto"
+      const fallbackProject = t("notifications.fallback_project", "project")
+      let projectTitle = fallbackProject
       if (projectId) {
         try {
           const cached = apolloClient.readQuery<{ project: { title: string } }>({
@@ -66,20 +72,51 @@ export function useGlobalProjectNotifications() {
         }
       }
 
+      const actorName = entry.user?.name ?? t("notifications.fallback_actor", "Someone")
       const isComment = entry.type === ProjectHistoryType.COMMENT
+      // Subsidy-related history entries carry subsidyDescription in metadata
+      const subsidyDescription: string | undefined = (entry.metadata as any)?.subsidyDescription
+      const newStatus: string | undefined = (entry.metadata as any)?.newStatus
 
-      notificationsCtx.addNotification({
-        type: isComment ? "project_message" : "status_change",
-        title: isComment
-          ? `Nova mensagem em ${projectTitle}`
-          : `Atualização em ${projectTitle}`,
-        message: isComment
-          ? `${entry.user?.name ?? "Alguém"}: ${entry.comment ?? ""}`
-          : `${entry.user?.name ?? "Alguém"} alterou o status`,
-        projectId,
-        projectTitle,
-        actorName: entry.user?.name,
-      })
+      if (isComment) {
+        notificationsCtx.addNotification({
+          type: "project_message",
+          title: t("notifications.new_message_title", "New message in {{projectTitle}}", { projectTitle }),
+          message: t("notifications.new_message_body", "{{actor}}: {{message}}", {
+            actor: actorName,
+            message: entry.comment ?? "",
+          }),
+          projectId,
+          projectTitle,
+          actorName,
+        })
+      } else if (subsidyDescription) {
+        // Subsidy status change notification
+        notificationsCtx.addNotification({
+          type: "status_change",
+          title: t("notifications.subsidy_change_title", "Subsidy update in {{projectTitle}}", { projectTitle }),
+          message: t("notifications.subsidy_change_message", "Subsidy \"{{subsidy}}\" changed to \"{{status}}\"", {
+            subsidy: subsidyDescription,
+            status: newStatus ?? entry.new_value ?? "",
+          }),
+          projectId,
+          projectTitle,
+          actorName,
+        })
+      } else {
+        // Project status change or generic update
+        notificationsCtx.addNotification({
+          type: "status_change",
+          title: t("notifications.status_change_title", "Update in {{projectTitle}}", { projectTitle }),
+          message: t("notifications.status_change_message", "{{actor}} changed the project status to \"{{status}}\"", {
+            actor: actorName,
+            status: newStatus ?? entry.new_value ?? "",
+          }),
+          projectId,
+          projectTitle,
+          actorName,
+        })
+      }
     },
   })
 }

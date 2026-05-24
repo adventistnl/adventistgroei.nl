@@ -138,7 +138,7 @@ function RegisterPageContent() {
             codeSent: t.codeSent,
           }}
           onVerify={handleVerifyEmailCode}
-          onResend={sendVerificationCode}
+          onResend={async () => { const r = await sendVerificationCode(); return r.success }}
           isVerified={isEmailVerified}
           isLoading={isVerifyingEmail}
         />
