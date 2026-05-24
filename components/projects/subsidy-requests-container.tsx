@@ -186,7 +186,7 @@ export function SubsidyRequestsContainer({
                 return <SubsidyRequestCard
                   key={subsidy.id}
                   data={subsidy}
-                  onEdit={onEditSubsidy}
+                  onEdit={!isEditable ? undefined : onEditSubsidy}
                   onDelete={!isEditable ? undefined : onDeleteSubsidy}
                   onView={handleViewSubsidy}
                   onDuplicate={onDuplicateSubsidy}

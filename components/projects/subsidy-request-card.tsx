@@ -135,6 +135,10 @@ export function SubsidyRequestCard({
     className: "bg-gray-50 text-gray-700 border-gray-200"
   }
 
+  // Check view permission
+  const hasViewPermission = useHasPermission([PermissionResolverName.SubsidyRequest])
+  const isClickable = onView && hasViewPermission
+
   const formattedDate = React.useMemo(() => {
     const date = typeof data.requested_at === "string" ? new Date(data.requested_at) : data.requested_at
     const locale = i18n.language === 'en' ? enUS : i18n.language === 'nl' ? nl : ptBR
@@ -149,7 +153,7 @@ export function SubsidyRequestCard({
     <div
       className={cn(
         "group relative flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-3 transition-all hover:border-gray-300 hover:shadow-sm",
-        onView ? "cursor-pointer" : "",
+        isClickable ? "cursor-pointer" : "",
         className
       )}
       onClick={(e) => {
@@ -157,7 +161,7 @@ export function SubsidyRequestCard({
         if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('[role="button"]')) {
           return
         }
-        if (onView) onView(data.id)
+        if (isClickable && onView) onView(data.id)
       }}
     >
       {/* Header: Icon + Title + Menu */}
