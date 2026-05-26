@@ -103,8 +103,7 @@ export function ProjectsOverTimeChart({
     }
 
     activeGroups.forEach((group, index) => {
-      const groupKey = group.name.toLowerCase().replace(/\s+/g, '_')
-      config[groupKey] = {
+      config[group.id] = {
         label: group.name,
         color: getProjectColor(index)
       }
@@ -164,8 +163,7 @@ export function ProjectsOverTimeChart({
       if (!dailyCounts.has(dateKey)) {
         const dateData: any = { date: dateKey }
         activeGroups.forEach(group => {
-          const groupKey = group.name.toLowerCase().replace(/\s+/g, '_')
-          dateData[groupKey] = 0
+          dateData[group.id] = 0
         })
         dailyCounts.set(dateKey, dateData)
       }
@@ -179,9 +177,8 @@ export function ProjectsOverTimeChart({
       }
       
       if (group) {
-        const groupKey = group.name.toLowerCase().replace(/\s+/g, '_')
         const dateData = dailyCounts.get(dateKey)!
-        dateData[groupKey] += 1
+        dateData[group.id] += 1
       }
     })
 
@@ -279,15 +276,14 @@ export function ProjectsOverTimeChart({
         if (!monthlyData.has(monthKey)) {
           const monthData: any = { date: `${monthKey}-15` } // Usar dia 15 para melhor centralização
           activeGroups.forEach(group => {
-            monthData[group.name.toLowerCase().replace(/\s+/g, '_')] = 0
+            monthData[group.id] = 0
           })
           monthlyData.set(monthKey, monthData)
         }
         
         const monthData = monthlyData.get(monthKey)!
         activeGroups.forEach(group => {
-          const key = group.name.toLowerCase().replace(/\s+/g, '_')
-          monthData[key] += (item[key] || 0)
+          monthData[group.id] += (item[group.id] || 0)
         })
       })
       
@@ -308,7 +304,7 @@ export function ProjectsOverTimeChart({
         } else {
           const emptyMonth: any = { date: dateKey }
           activeGroups.forEach(group => {
-            emptyMonth[group.name.toLowerCase().replace(/\s+/g, '_')] = 0
+            emptyMonth[group.id] = 0
           })
           allMonths.push(emptyMonth)
         }
@@ -333,7 +329,7 @@ export function ProjectsOverTimeChart({
       } else {
         const emptyDay: any = { date: dateKey }
         activeGroups.forEach(group => {
-          emptyDay[group.name.toLowerCase().replace(/\s+/g, '_')] = 0
+          emptyDay[group.id] = 0
         })
         allDays.push(emptyDay)
       }
@@ -342,10 +338,7 @@ export function ProjectsOverTimeChart({
     }
     
     const daysWithData = allDays.filter(d => {
-      return activeGroups.some(group => {
-        const key = group.name.toLowerCase().replace(/\s+/g, '_')
-        return d[key] > 0
-      })
+      return activeGroups.some(group => d[group.id] > 0)
     })
     
     
@@ -358,14 +351,13 @@ export function ProjectsOverTimeChart({
     
     // Initialize all groups with 0
     activeGroups.forEach(group => {
-      totals[group.name.toLowerCase().replace(/\s+/g, '_')] = 0
+      totals[group.id] = 0
     })
     
     // Sum all values from filteredData
     filteredData.forEach(day => {
       activeGroups.forEach(group => {
-        const key = group.name.toLowerCase().replace(/\s+/g, '_')
-        totals[key] += (day[key] || 0)
+        totals[group.id] += (day[group.id] || 0)
       })
     })
     
@@ -568,23 +560,20 @@ export function ProjectsOverTimeChart({
           {chartType === "area" ? (
             <AreaChart data={filteredData}>
               <defs>
-                {activeGroups.map((group) => {
-                  const groupKey = group.name.toLowerCase().replace(/\s+/g, '_')
-                  return (
-                    <linearGradient key={group.id} id={`fill${groupKey}`} x1="0" y1="0" x2="0" y2="1">
+                {activeGroups.map((group) => (
+                    <linearGradient key={group.id} id={`fill_${group.id}`} x1="0" y1="0" x2="0" y2="1">
                       <stop
                         offset="5%"
-                        stopColor={chartConfig[groupKey]?.color}
+                        stopColor={chartConfig[group.id]?.color}
                         stopOpacity={0.8}
                       />
                       <stop
                         offset="95%"
-                        stopColor={chartConfig[groupKey]?.color}
+                        stopColor={chartConfig[group.id]?.color}
                         stopOpacity={0.1}
                       />
                     </linearGradient>
-                  )
-                })}
+                ))}
               </defs>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis
@@ -634,21 +623,17 @@ export function ProjectsOverTimeChart({
                   />
                 }
               />
-              {activeGroups.map((group) => {
-                const groupKey = group.name.toLowerCase().replace(/\s+/g, '_')
-                
-                return (
+              {activeGroups.map((group) => (
                   <Area
                     key={group.id}
-                    dataKey={groupKey}
+                    dataKey={group.id}
                     type="natural"
-                    fill={`url(#fill${groupKey})`}
-                    stroke={chartConfig[groupKey]?.color}
+                    fill={`url(#fill_${group.id})`}
+                    stroke={chartConfig[group.id]?.color}
                     strokeWidth={2}
                     stackId="a"
                   />
-                )
-              })}
+              ))}
               <ChartLegend content={<ChartLegendContent />} />
             </AreaChart>
           ) : (
@@ -702,15 +687,13 @@ export function ProjectsOverTimeChart({
               />
               <ChartLegend content={<ChartLegendContent />} />
               {activeGroups.map((group, index) => {
-                const groupKey = group.name.toLowerCase().replace(/\s+/g, '_')
                 const isLast = index === activeGroups.length - 1
-                
                 return (
                   <Bar
                     key={group.id}
-                    dataKey={groupKey}
+                    dataKey={group.id}
                     stackId="a"
-                    fill={chartConfig[groupKey]?.color}
+                    fill={chartConfig[group.id]?.color}
                     radius={isLast ? [4, 4, 0, 0] : [0, 0, 0, 0]}
                   />
                 )

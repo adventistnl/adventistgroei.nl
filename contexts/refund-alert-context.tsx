@@ -9,7 +9,8 @@ import { RefundAlertModal } from '@/components/modals/refund-alert-modal'
 interface RefundSubsidy {
   id: string
   description: string
-  requested_amount: number
+  total_budget: number
+  approved_amount: number
   refund_amount: number
   have_refund: boolean
   refund_done: boolean
@@ -21,12 +22,7 @@ interface RefundSubsidy {
   }
   project: {
     id: string
-    name: string
-    owner: {
-      id: string
-      name: string
-      email: string
-    }
+    title: string
   }
   institution: {
     id: string

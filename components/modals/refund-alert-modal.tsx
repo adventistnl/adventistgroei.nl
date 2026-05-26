@@ -18,16 +18,12 @@ import { useCurrency } from '@/contexts/currency-context'
 interface RefundSubsidy {
   id: string
   description: string
-  requested_amount: number
+  total_budget: number
+  approved_amount: number
   refund_amount: number
   project: {
     id: string
-    name: string
-    owner: {
-      id: string
-      name: string
-      email: string
-    }
+    title: string
   }
   institution: {
     id: string
@@ -63,8 +59,13 @@ export const RefundAlertModal: React.FC<RefundAlertModalProps> = ({
     onClose()
   }
 
-  const totalRequestedAmount = refunds.reduce((sum, refund) => sum + Number(refund.requested_amount), 0)
-  const totalRefundAmount = refunds.reduce((sum, refund) => sum + Number(refund.refund_amount), 0)
+  const totalRequestedAmount = refunds.reduce((sum, refund) => sum + Number(refund.approved_amount ?? refund.total_budget ?? 0), 0)
+  const totalRefundAmount = refunds.reduce((sum, refund) => sum + Number(refund.refund_amount ?? 0), 0)
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[RefundAlertModal] refunds raw:', refunds)
+    console.log('[RefundAlertModal] totalRequestedAmount:', totalRequestedAmount, '| totalRefundAmount:', totalRefundAmount)
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -111,7 +112,7 @@ export const RefundAlertModal: React.FC<RefundAlertModalProps> = ({
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-gray-900 dark:text-gray-100 truncate">
-                      {refund.project?.name || refund.description || t('refund.alert.untitledSubsidy')}
+                      {refund.project?.title || refund.description || t('refund.alert.untitledSubsidy')}
                     </p>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                       {refund.department.name}

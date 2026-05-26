@@ -32,7 +32,9 @@ export const subsidyRequestTranslations = {
       ofTotal: "{{current}} of {{total}}",
       documents: "doc",
       documents_plural: "docs",
-      addMore: "Add more activities"
+      addMore: "Add more activities",
+      emptyState: "No activity linked yet. Click + to add an activity to this request.",
+      remove: "Remove activity"
     },
     
     // Budget distribution
@@ -79,7 +81,9 @@ export const subsidyRequestTranslations = {
       percentOfTotal: "{{percent}}% of total budget",
       totalBudgetLabel: "Total Budget",
       selfFundedLabel: "Remainder (Self-funded)",
-      selfRemainderLabel: "Self Remainder"
+      selfRemainderLabel: "Self Remainder",
+      maxAvailable: "Max. available: {{amount}}",
+      percentOfBudget: " of budget"
     },
     
     // Activity notes
@@ -120,7 +124,12 @@ export const subsidyRequestTranslations = {
       
       // Warning
       warningNoDocuments: "It is necessary to attach at least one supporting document for each activity",
-      amountCannotBeEdited: "Amount cannot be edited"
+      amountCannotBeEdited: "Amount cannot be edited",
+      exceeds: {
+        title: "Document values exceed requested amount",
+        totalLabel: "Total documents",
+        requestedLabel: "Requested"
+      }
     },
     
     // General notes
@@ -137,13 +146,21 @@ export const subsidyRequestTranslations = {
     footer: {
       totalRequested: "Total Requested",
       activities: "Activities",
-      documents: "Documents"
+      documents: "Documents",
+      activitiesComplete: "activities complete",
+      documentsPending: "Documents and amounts required",
+      noBalance: "No available balance. All subsidized budget has already been committed.",
+      budgetExceeded: "Requested amount ({{requested}}) exceeds available balance ({{available}})."
     },
     
     // Buttons
     buttons: {
       cancel: "Cancel",
-      submit: "Submit Request"
+      submit: "Submit Request",
+      noPermissionCreate: "You do not have permission to create subsidy requests.",
+      noPermissionUpdate: "You do not have permission to update subsidy requests.",
+      noBalance: "No available balance for a new request.",
+      exceedsBalance: "Amount exceeds available balance ({{amount}})."
     },
     
     // Validation messages
@@ -173,6 +190,7 @@ export const subsidyRequestTranslations = {
     toasts: {
       filesAdded: "{{count}} file(s) added",
       documentRemoved: "Document removed",
+      activityRemoved: "Activity removed",
       activitiesAdded: "{{count}} activityies added",
       budgetExceeded: "The requested amount ({{requested}}) exceeds the available budget ({{available}})",
       documentAmountMismatch: "{{activity}}: Requested amount ({{requested}}) must equal the total of documents ({{total}})",
@@ -219,9 +237,90 @@ export const subsidyRequestTranslations = {
     // Modal titles
     modals: {
       addActivitiesTitle: "Add Subsidized Activities",
-      addActivitiesDescription: "Select subsidized activities from the project to add to the subsidy request."
+      addActivitiesDescription: "Select subsidized activities from the project to add to the subsidy request.",
+      selectAllAvailable: "Select all available",
+      noActivities: "No activities available",
+      noActivitiesSubsidized: "There are no subsidized activities available for selection.",
+      noActivitiesGeneral: "There are no activities available for selection.",
+      available: "Available",
+      alreadyRequested: "Already in a subsidy request",
+      requestedLabel: "Requested",
+      subsidizedLabel: "Subsidized",
+      notSubsidizedLabel: "Not subsidized",
+      selectedSection: "Selected",
+      availableSection: "Available to add",
+      budgetAllocated: "Allocated",
+      budgetAvailable: "Available",
+      subsidyCount_one: "1 subsidy",
+      subsidyCount_other: "{{count}} subsidies",
+      fullyAllocated: "Fully allocated",
+      allocationSummary: "{{allocated}} of {{budget}}",
+      loadingAllocation: "Loading allocations...",
+      allocationError: "Could not load allocation data",
+      deleteRequestButton: "Delete request",
+      deleteConfirmTitle: "Delete subsidy request?",
+      deleteConfirmDesc: "This action cannot be undone. All associated items and documents will be permanently removed.",
+      deleteConfirmAction: "Yes, delete",
+      deleteSuccess: "Subsidy request deleted successfully",
+      deleteError: "Failed to delete the subsidy request",
+      statusLabels: {
+        pending: "Pending",
+        in_review: "In Review",
+        approved: "Approved",
+        rejected: "Rejected",
+        closed: "Closed",
+        advanced_closed: "Advance Closed",
+        waiting_refund: "Waiting Refund",
+        waiting_documents: "Waiting Documents",
+      }
     },
-    
+
+    // Request type selector
+    requestType: {
+      sectionTitle: "Request type",
+      advance: {
+        label: "Advance Request",
+        description: "50% of subsidized budget upfront",
+        tooltip: "Request up to 50% of the subsidized budget upfront, without receipts. Accountability must be submitted within the stipulated deadline.",
+      },
+      withoutDocument: {
+        label: "Without Document",
+        description: "Link activity without receipt",
+        tooltip: "Link an activity without attaching a receipt now. The receipt can be submitted later. If not submitted on time, a refund of the amount may be requested.",
+      },
+      withDocument: {
+        label: "With Document",
+        description: "Link activity and attach receipt",
+        tooltip: "Link an activity and attach expense receipts now. Document amounts must match the requested amount for the activity.",
+      },
+    },
+
+    // Without document section
+    withoutDocument: {
+      sectionTitle: "Request without document",
+      description: "You are linking an activity without attaching a receipt. If a receipt is not submitted later within the deadline, a refund of the amount may be requested from the church or department that submitted this request.",
+      confirmationLabel: "I understand and accept that if the receipt is not submitted on time, I may be held responsible for returning the requested amount.",
+    },
+
+    // With document awareness
+    withDocumentAwareness: {
+      sectionTitle: "Supporting documents required",
+      description: "For this request type, each activity must have supporting documents (invoices, receipts or contracts). Document amounts must match the requested value for the activity.",
+      confirmationLabel: "I understand that all activities must have supporting documents with amounts matching the requested value.",
+    },
+
+    // Footer validation checks
+    checks: {
+      activitiesWithValue: "Activities with value",
+      notesFilled: "General notes filled",
+      withoutDocConfirmed: "Aware of potential refund",
+      advanceAmountFilled: "Amount filled",
+      advanceWithinLimit: "Within allowed limit",
+      advanceConfirmed: "Terms confirmed",
+      withDocDocuments: "Documents uploaded",
+      withDocAmountsValid: "Amounts valid",
+    },
+
     // Advance request
     advance: {
       title: "Request Advance Payment",
@@ -245,8 +344,12 @@ export const subsidyRequestTranslations = {
       noActivitiesStatus: "No activities registered.",
       maxButton: "MAX",
       confirmationRequired: "Please confirm that you understand the terms",
-      confirmationLabel: "I understand the advance payment terms",
-      confirmationText: "I understand that I am requesting 50% of the subsidized budget value before full subsidy processing. If the advance amount is not justified for project use, a refund of the unjustified amount may be requested."
+      confirmationText: "I understand that I am requesting 50% of the subsidized budget value before full subsidy processing. If the advance amount is not justified for project use, a refund of the unjustified amount may be requested.",
+      formTitle: "Subsidy Advance",
+      maxHint: "Maximum allowed (50%): {{amount}}",
+      noticeTitle: "Important Notice",
+      noticeText: "You are requesting 50% of the subsidized budget before providing receipts. If the amount is not justified, a refund may be requested.",
+      confirmationLabel: "I understand I am requesting an advance and commit to submitting expense receipts within the stipulated deadline."
     },
 
     // Refund
@@ -335,8 +438,7 @@ export const subsidyRequestTranslations = {
       validateRefundReceipt: "Validate",
       validateNoteLabel: "Optional validation note:",
       validateNotePlaceholder: "e.g. Receipt accepted",
-      noRefundReceiptYet: "No proof of payment uploaded yet.",
-      cancel: "Cancel"
+      noRefundReceiptYet: "No proof of payment uploaded yet."
     },
 
     // Receipt hook messages
@@ -394,7 +496,9 @@ export const subsidyRequestTranslations = {
       ofTotal: "{{current}} de {{total}}",
       documents: "doc",
       documents_plural: "docs",
-      addMore: "Adicionar mais atividades"
+      addMore: "Adicionar mais atividades",
+      emptyState: "Nenhuma atividade vinculada. Clique no + para adicionar uma atividade a esta solicitação.",
+      remove: "Remover atividade"
     },
     
     // Budget distribution
@@ -439,7 +543,9 @@ export const subsidyRequestTranslations = {
       percentOfTotal: "{{percent}}% do orçamento total",
       totalBudgetLabel: "Orçamento Total",
       selfFundedLabel: "Restante (Igreja)",
-      selfRemainderLabel: "Restante da Igreja"
+      selfRemainderLabel: "Restante da Igreja",
+      maxAvailable: "Máx. disponível: {{amount}}",
+      percentOfBudget: " do orçamento"
     },
     
     // Activity notes
@@ -480,7 +586,12 @@ export const subsidyRequestTranslations = {
       
       // Warning
       warningNoDocuments: "É necessário anexar pelo menos um documento comprobatório para cada atividade",
-      amountCannotBeEdited: "Valor não pode ser editado"
+      amountCannotBeEdited: "Valor não pode ser editado",
+      exceeds: {
+        title: "Valor dos documentos excede o solicitado",
+        totalLabel: "Total dos documentos",
+        requestedLabel: "Solicitado"
+      }
     },
     
     // General notes
@@ -497,13 +608,21 @@ export const subsidyRequestTranslations = {
     footer: {
       totalRequested: "Total Solicitado",
       activities: "Atividades",
-      documents: "Documentos"
+      documents: "Documentos",
+      activitiesComplete: "atividades completas",
+      documentsPending: "Documentos e valores pendentes",
+      noBalance: "Não há saldo disponível. Todo o orçamento subsidiado já foi comprometido.",
+      budgetExceeded: "Valor solicitado ({{requested}}) excede o saldo disponível ({{available}})."
     },
     
     // Buttons
     buttons: {
       cancel: "Cancelar",
-      submit: "Enviar Solicitação"
+      submit: "Enviar Solicitação",
+      noPermissionCreate: "Você não tem permissão para criar solicitações de subsídio.",
+      noPermissionUpdate: "Você não tem permissão para atualizar solicitações de subsídio.",
+      noBalance: "Sem saldo disponível para nova solicitação.",
+      exceedsBalance: "Valor excede o saldo disponível ({{amount}})."
     },
     
     // Validation messages
@@ -533,6 +652,7 @@ export const subsidyRequestTranslations = {
     toasts: {
       filesAdded: "{{count}} arquivo(s) adicionado(s)",
       documentRemoved: "Documento removido",
+      activityRemoved: "Atividade removida",
       activitiesAdded: "{{count}} atividade(s) adicionada(s)",
       budgetExceeded: "O valor solicitado ({{requested}}) excede o orçamento disponível ({{available}})",
       documentAmountMismatch: "{{activity}}: Valor solicitado ({{requested}}) deve ser igual ao total dos documentos ({{total}})",
@@ -579,9 +699,90 @@ export const subsidyRequestTranslations = {
     // Modal titles
     modals: {
       addActivitiesTitle: "Adicionar Atividades Subsidiadas",
-      addActivitiesDescription: "Selecione atividades subsidiadas do projeto para adicionar à solicitação de subsídio."
+      addActivitiesDescription: "Selecione atividades subsidiadas do projeto para adicionar à solicitação de subsídio.",
+      selectAllAvailable: "Selecionar todas disponíveis",
+      noActivities: "Nenhuma atividade disponível",
+      noActivitiesSubsidized: "Não há atividades subsidiadas disponíveis para seleção.",
+      noActivitiesGeneral: "Não há atividades disponíveis para seleção.",
+      available: "Disponíveis",
+      alreadyRequested: "Já em uma solicitação",
+      requestedLabel: "Solicitado",
+      subsidizedLabel: "Subsidiada",
+      notSubsidizedLabel: "Não subsidiada",
+      selectedSection: "Selecionadas",
+      availableSection: "Disponíveis para adicionar",
+      budgetAllocated: "Alocado",
+      budgetAvailable: "Disponível",
+      subsidyCount_one: "1 subsídio",
+      subsidyCount_other: "{{count}} subsídios",
+      fullyAllocated: "Totalmente alocado",
+      allocationSummary: "{{allocated}} de {{budget}}",
+      loadingAllocation: "Carregando alocações...",
+      allocationError: "Não foi possível carregar os dados de alocação",
+      deleteRequestButton: "Excluir solicitação",
+      deleteConfirmTitle: "Excluir solicitação de subsídio?",
+      deleteConfirmDesc: "Esta ação não pode ser desfeita. Todos os itens e documentos associados serão removidos permanentemente.",
+      deleteConfirmAction: "Sim, excluir",
+      deleteSuccess: "Solicitação de subsídio excluída com sucesso",
+      deleteError: "Falha ao excluir a solicitação de subsídio",
+      statusLabels: {
+        pending: "Pendente",
+        in_review: "Em revisão",
+        approved: "Aprovado",
+        rejected: "Rejeitado",
+        closed: "Encerrado",
+        advanced_closed: "Adiantamento Fechado",
+        waiting_refund: "Aguardando Reembolso",
+        waiting_documents: "Aguardando Documentos",
+      }
     },
-    
+
+    // Seletor de tipo de solicitação
+    requestType: {
+      sectionTitle: "Tipo de solicitação",
+      advance: {
+        label: "Adiantamento",
+        description: "50% do orçamento subsidiado antes dos documentos",
+        tooltip: "Solicite até 50% do orçamento subsidiado antecipadamente, sem precisar de comprovantes. A prestação de contas deverá ser feita dentro do prazo estipulado.",
+      },
+      withoutDocument: {
+        label: "Sem Comprovante",
+        description: "Vincula atividade sem anexar comprovante",
+        tooltip: "Vincule uma atividade sem anexar comprovante agora. O comprovante poderá ser enviado posteriormente. Se não for enviado no prazo, pode ser solicitada a devolução do valor.",
+      },
+      withDocument: {
+        label: "Com Comprovante",
+        description: "Vincula atividade e anexa comprovante",
+        tooltip: "Vincule uma atividade e anexe os comprovantes de gastos agora. Os valores dos documentos devem corresponder ao valor solicitado para a atividade.",
+      },
+    },
+
+    // Seção sem comprovante
+    withoutDocument: {
+      sectionTitle: "Solicitação sem comprovante",
+      description: "Você está vinculando uma atividade sem anexar comprovante. Se um comprovante não for enviado posteriormente dentro do prazo, pode ser solicitada a devolução do valor à igreja ou departamento que realizou a solicitação.",
+      confirmationLabel: "Estou ciente e aceito que, se o comprovante não for enviado no prazo, poderei ser responsabilizado pela devolução do valor solicitado.",
+    },
+
+    // Aviso com comprovante
+    withDocumentAwareness: {
+      sectionTitle: "Documentos de suporte obrigatórios",
+      description: "Para este tipo de solicitação, cada atividade deve ter documentos de suporte (notas fiscais, recibos ou contratos). Os valores dos documentos devem corresponder ao valor solicitado para a atividade.",
+      confirmationLabel: "Estou ciente de que todas as atividades devem ter documentos de suporte com valores correspondentes ao valor solicitado.",
+    },
+
+    // Verificações do rodapé
+    checks: {
+      activitiesWithValue: "Atividades com valor definido",
+      notesFilled: "Justificativa geral preenchida",
+      withoutDocConfirmed: "Ciente sobre possível devolução",
+      advanceAmountFilled: "Valor preenchido",
+      advanceWithinLimit: "Dentro do limite permitido",
+      advanceConfirmed: "Termos confirmados",
+      withDocDocuments: "Documentos enviados",
+      withDocAmountsValid: "Valores válidos",
+    },
+
     // Advance request
     advance: {
       title: "Solicitar Adiantamento",
@@ -605,8 +806,12 @@ export const subsidyRequestTranslations = {
       noActivitiesStatus: "Nenhuma atividade registrada.",
       maxButton: "MÁXIMO",
       confirmationRequired: "Por favor, confirme que você entende os termos",
-      confirmationLabel: "Compreendo os termos do pagamento antecipado",
-      confirmationText: "Compreendo que estou solicitando 50% do valor do orçamento subsidiado antes do processamento completo do subsídio. Caso o valor do adiantamento não seja justificado para uso no projeto, poderá ser solicitado o reembolso do valor não justificado."
+      confirmationText: "Compreendo que estou solicitando 50% do valor do orçamento subsidiado antes do processamento completo do subsídio. Caso o valor do adiantamento não seja justificado para uso no projeto, poderá ser solicitado o reembolso do valor não justificado.",
+      formTitle: "Adiantamento de subsídio",
+      maxHint: "Máximo permitido (50%): {{amount}}",
+      noticeTitle: "Aviso importante",
+      noticeText: "Você está solicitando 50% do valor subsidiado antes da prestação de contas. Se o valor não for justificado, a devolução poderá ser solicitada.",
+      confirmationLabel: "Entendo que estou solicitando um adiantamento e me comprometo a enviar os comprovantes de gastos no prazo estipulado."
     },
 
     // Refund
@@ -695,8 +900,7 @@ export const subsidyRequestTranslations = {
       validateRefundReceipt: "Validar",
       validateNoteLabel: "Nota de validação (opcional):",
       validateNotePlaceholder: "ex.: Comprovante aceito",
-      noRefundReceiptYet: "Nenhum comprovante de pagamento enviado ainda.",
-      cancel: "Cancelar"
+      noRefundReceiptYet: "Nenhum comprovante de pagamento enviado ainda."
     },
 
     // Mensagens do hook de recibos
@@ -753,7 +957,9 @@ export const subsidyRequestTranslations = {
       next: "Volgende",
       ofTotal: "{{current}} van {{total}}",
       documents: "doc",
-      documents_plural: "docs"
+      documents_plural: "docs",
+      emptyState: "Geen activiteit gekoppeld. Klik op + om een activiteit aan deze aanvraag toe te voegen.",
+      remove: "Activiteit verwijderen"
     },
     
     // Budget distribution
@@ -800,7 +1006,9 @@ export const subsidyRequestTranslations = {
       percentOfTotal: "{{percent}}% van totaal budget",
       totalBudgetLabel: "Totaal Budget",
       selfFundedLabel: "Restant (Kerk)",
-      selfRemainderLabel: "Restant Kerk"
+      selfRemainderLabel: "Restant Kerk",
+      maxAvailable: "Max. beschikbaar: {{amount}}",
+      percentOfBudget: " van budget"
     },
     
     // Activity notes
@@ -841,7 +1049,12 @@ export const subsidyRequestTranslations = {
       
       // Warning
       warningNoDocuments: "Het is noodzakelijk om minimaal één ondersteunend document voor elke activiteit toe te voegen",
-      amountCannotBeEdited: "Bedrag kan niet worden bewerkt"
+      amountCannotBeEdited: "Bedrag kan niet worden bewerkt",
+      exceeds: {
+        title: "Documentwaarden overschrijden aangevraagd bedrag",
+        totalLabel: "Totaal documenten",
+        requestedLabel: "Aangevraagd"
+      }
     },
     
     // General notes
@@ -858,13 +1071,21 @@ export const subsidyRequestTranslations = {
     footer: {
       totalRequested: "Totaal Aangevraagd",
       activities: "Activiteiten",
-      documents: "Documenten"
+      documents: "Documenten",
+      activitiesComplete: "activiteiten compleet",
+      documentsPending: "Documenten en bedragen vereist",
+      noBalance: "Geen beschikbaar saldo. Alle gesubsidieerde budget is al toegewezen.",
+      budgetExceeded: "Aangevraagd bedrag ({{requested}}) overschrijdt beschikbaar saldo ({{available}})."
     },
     
     // Buttons
     buttons: {
       cancel: "Annuleren",
-      submit: "Aanvraag Indienen"
+      submit: "Aanvraag Indienen",
+      noPermissionCreate: "U heeft geen toestemming om subsidieaanvragen aan te maken.",
+      noPermissionUpdate: "U heeft geen toestemming om subsidieaanvragen bij te werken.",
+      noBalance: "Geen beschikbaar saldo.",
+      exceedsBalance: "Bedrag overschrijdt beschikbaar saldo ({{amount}})."
     },
     
     // Validation messages
@@ -894,6 +1115,7 @@ export const subsidyRequestTranslations = {
     toasts: {
       filesAdded: "{{count}} bestand(en) toegevoegd",
       documentRemoved: "Document verwijderd",
+      activityRemoved: "Activiteit verwijderd",
       activitiesAdded: "{{count}} activiteit(en) toegevoegd",
       budgetExceeded: "Het aangevraagde bedrag ({{requested}}) overschrijdt het beschikbare budget ({{available}})",
       documentAmountMismatch: "{{activity}}: Aangevraagd bedrag ({{requested}}) moet gelijk zijn aan het totaal van documenten ({{total}})",
@@ -940,9 +1162,90 @@ export const subsidyRequestTranslations = {
     // Modal titles
     modals: {
       addActivitiesTitle: "Gesubsidieerde Activiteiten Toevoegen",
-      addActivitiesDescription: "Selecteer gesubsidieerde activiteiten uit het project om toe te voegen aan de subsidieaanvraag."
+      addActivitiesDescription: "Selecteer gesubsidieerde activiteiten uit het project om toe te voegen aan de subsidieaanvraag.",
+      selectAllAvailable: "Alle beschikbare selecteren",
+      noActivities: "Geen activiteiten beschikbaar",
+      noActivitiesSubsidized: "Er zijn geen gesubsidieerde activiteiten beschikbaar voor selectie.",
+      noActivitiesGeneral: "Er zijn geen activiteiten beschikbaar voor selectie.",
+      available: "Beschikbaar",
+      alreadyRequested: "Al in een subsidieaanvraag",
+      requestedLabel: "Aangevraagd",
+      subsidizedLabel: "Gesubsidieerd",
+      notSubsidizedLabel: "Niet gesubsidieerd",
+      selectedSection: "Geselecteerd",
+      availableSection: "Beschikbaar om toe te voegen",
+      budgetAllocated: "Toegewezen",
+      budgetAvailable: "Beschikbaar",
+      subsidyCount_one: "1 subsidie",
+      subsidyCount_other: "{{count}} subsidies",
+      fullyAllocated: "Volledig toegewezen",
+      allocationSummary: "{{allocated}} van {{budget}}",
+      loadingAllocation: "Allocaties laden...",
+      allocationError: "Kan allocatiegegevens niet laden",
+      deleteRequestButton: "Aanvraag verwijderen",
+      deleteConfirmTitle: "Subsidieaanvraag verwijderen?",
+      deleteConfirmDesc: "Deze actie kan niet ongedaan worden gemaakt. Alle gekoppelde items en documenten worden permanent verwijderd.",
+      deleteConfirmAction: "Ja, verwijderen",
+      deleteSuccess: "Subsidieaanvraag succesvol verwijderd",
+      deleteError: "Verwijderen van subsidieaanvraag mislukt",
+      statusLabels: {
+        pending: "In behandeling",
+        in_review: "In beoordeling",
+        approved: "Goedgekeurd",
+        rejected: "Afgewezen",
+        closed: "Gesloten",
+        advanced_closed: "Voorschot gesloten",
+        waiting_refund: "Wacht op terugbetaling",
+        waiting_documents: "Wacht op documenten",
+      }
     },
-    
+
+    // Aanvraagselectie
+    requestType: {
+      sectionTitle: "Type aanvraag",
+      advance: {
+        label: "Voorschot",
+        description: "50% van gesubsidieerd budget vooraf",
+        tooltip: "Vraag tot 50% van het gesubsidieerde budget op voorhand aan, zonder bewijsstukken. Verantwoording moet binnen de gestelde termijn worden ingediend.",
+      },
+      withoutDocument: {
+        label: "Zonder document",
+        description: "Koppel activiteit zonder document",
+        tooltip: "Koppel een activiteit zonder nu een bewijsstuk toe te voegen. Het bewijsstuk kan later worden ingediend. Bij niet-indiening op tijd kan terugbetaling worden gevraagd.",
+      },
+      withDocument: {
+        label: "Met document",
+        description: "Koppel activiteit en voeg document toe",
+        tooltip: "Koppel een activiteit en voeg nu de bewijsstukken toe. De bedragen van de documenten moeten overeenkomen met het aangevraagde bedrag voor de activiteit.",
+      },
+    },
+
+    // Sectie zonder document
+    withoutDocument: {
+      sectionTitle: "Aanvraag zonder document",
+      description: "U koppelt een activiteit zonder bewijsstuk. Als er later geen bewijsstuk wordt ingediend binnen de deadline, kan terugbetaling worden gevraagd aan de kerk of het departement.",
+      confirmationLabel: "Ik begrijp dit en accepteer dat ik verantwoordelijk kan worden gehouden voor terugbetaling als het bewijsstuk niet tijdig wordt ingediend.",
+    },
+
+    // Met document bewustwording
+    withDocumentAwareness: {
+      sectionTitle: "Ondersteunende documenten vereist",
+      description: "Voor dit type aanvraag moet elke activiteit ondersteunende documenten hebben (facturen, bonnen of contracten). De bedragen van de documenten moeten overeenkomen met het aangevraagde bedrag voor de activiteit.",
+      confirmationLabel: "Ik begrijp dat alle activiteiten ondersteunende documenten moeten hebben waarvan de bedragen overeenkomen met het aangevraagde bedrag.",
+    },
+
+    // Voettekst validatiechecks
+    checks: {
+      activitiesWithValue: "Activiteiten met waarde",
+      notesFilled: "Toelichting ingevuld",
+      withoutDocConfirmed: "Bewust van mogelijke terugbetaling",
+      advanceAmountFilled: "Bedrag ingevuld",
+      advanceWithinLimit: "Binnen het toegestane limiet",
+      advanceConfirmed: "Voorwaarden bevestigd",
+      withDocDocuments: "Documenten geüpload",
+      withDocAmountsValid: "Bedragen geldig",
+    },
+
     // Advance request
     advance: {
       title: "Voorschot Aanvragen",
@@ -966,8 +1269,12 @@ export const subsidyRequestTranslations = {
       advanceStatus: "Voorschotstatus",
       maxButton: "MAX",
       confirmationRequired: "Bevestig alstublieft dat u de voorwaarden begrijpt",
-      confirmationLabel: "Ik begrijp de voorschotbetalingsvoorwaarden",
-      confirmationText: "Ik begrijp dat ik 50% van het gesubsidieerde budgetbedrag aanvraag vóór volledige subsidieafhandeling. Als het voorschotbedrag niet gerechtvaardigd is voor projectgebruik, kan terugbetaling van het niet-gerechtvaardigde bedrag worden gevraagd."
+      confirmationText: "Ik begrijp dat ik 50% van het gesubsidieerde budgetbedrag aanvraag vóór volledige subsidieafhandeling. Als het voorschotbedrag niet gerechtvaardigd is voor projectgebruik, kan terugbetaling van het niet-gerechtvaardigde bedrag worden gevraagd.",
+      formTitle: "Subsidievoorschot",
+      maxHint: "Maximum toegestaan (50%): {{amount}}",
+      noticeTitle: "Belangrijk bericht",
+      noticeText: "U vraagt 50% van het gesubsidieerde bedrag op voorhand aan. Als het bedrag niet kan worden verantwoord, kan terugbetaling worden gevraagd.",
+      confirmationLabel: "Ik begrijp dat ik een voorschot aanvraag en verplicht me de bewijsstukken tijdig in te dienen."
     },
 
     // Refund
@@ -1056,8 +1363,7 @@ export const subsidyRequestTranslations = {
       validateRefundReceipt: "Valideren",
       validateNoteLabel: "Optionele validatienotitie:",
       validateNotePlaceholder: "bijv. Bewijs geaccepteerd",
-      noRefundReceiptYet: "Nog geen betalingsbewijs geüpload.",
-      cancel: "Annuleren"
+      noRefundReceiptYet: "Nog geen betalingsbewijs geüpload."
     },
 
     // Berichten van de ontvangstbewijshaak

@@ -72,7 +72,7 @@ export function NotifCard({
         </div>
 
         {/* History button — only for project notifications */}
-        {isProjectNotification && (
+        {/* {isProjectNotification && (
           <Button
             variant="outline"
             size="sm"
@@ -82,7 +82,7 @@ export function NotifCard({
             <History className="w-3 h-3" />
             {labelViewHistory}
           </Button>
-        )}
+        )} */}
       </div>
 
       {/* Hover actions — top-right corner */}
