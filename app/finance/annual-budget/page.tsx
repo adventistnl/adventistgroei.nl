@@ -477,21 +477,29 @@ export default function AnnualBudgetPage() {
 
   // KPI Data from GraphQL - use backend data from institution budget
   const kpiData = useMemo(() => {
-    // Use data from backend (kpisData.budgetKPIs) which comes from institution budget
+    // Use spentAmount from the institution-level annual budget record (source of truth)
+    const institutionBudgetRecord = filteredBudgetRequests.find(
+      (b: any) => b.entity_type === 'INSTITUTION'
+    )
+    const totalSpentFromRecord = Number(institutionBudgetRecord?.spentAmount) || 0
+
     if (kpisData?.budgetKPIs) {
-      return kpisData.budgetKPIs
+      return {
+        ...kpisData.budgetKPIs,
+        totalSpent: totalSpentFromRecord
+      }
     }
 
     // Fallback to zeros if no data from backend
     return {
       totalInstitutionBudget: 0,
       totalAllocated: 0,
-      totalSpent: 0,
+      totalSpent: totalSpentFromRecord,
       budgetRemaining: 0,
       budgetUtilization: 0,
       activeDepartments: 0
     }
-  }, [kpisData])
+  }, [kpisData, filteredBudgetRequests])
 
   const kpiCardsData: KPICardData[] = useMemo(() => {
     const institutionBudget = institutionAnnualBudgets[selectedYear]
@@ -687,16 +695,33 @@ export default function AnnualBudgetPage() {
     }
     // ── END DEBUG ──────────────────────────────────────────────────────────
 
+    // ── Compute total spent from departmentSpending (same source as DepartmentSpendingChart)
+    // This ensures BudgetDistributionChart.spent matches the sum shown per-department
+    const deptSpendingList = kpisData?.departmentSpending || []
+    const totalSpentFromDepts = deptSpendingList.reduce(
+      (sum: number, dept: any) => sum + (Number(dept.spent) || 0), 0
+    )
+
+    const rawDist = kpisData?.budgetDistribution
+    const totalBudget = Number(rawDist?.total ?? kpiData.totalInstitutionBudget) || 0
+    const totalAllocated = Number(rawDist?.allocated ?? kpiData.totalAllocated) || 0
+    const correctedSpent = totalSpentFromDepts
+    const correctedAvailable = Math.max(0, totalBudget - correctedSpent - totalAllocated)
+    const correctedPercentage = totalBudget > 0
+      ? Math.round(((correctedSpent + totalAllocated) / totalBudget) * 100)
+      : 0
+
+    const budgetDistribution = {
+      total: totalBudget,
+      spent: correctedSpent,
+      allocated: totalAllocated,
+      available: correctedAvailable,
+      percentageUsed: correctedPercentage
+    }
+
     if (!kpisData) {
-   
       return {
-        budgetDistribution: {
-          total: kpiData.totalInstitutionBudget,
-          spent: kpiData.totalSpent,
-          allocated: kpiData.totalAllocated,
-          available: kpiData.budgetRemaining,
-          percentageUsed: kpiData.budgetUtilization
-        },
+        budgetDistribution,
         departmentSpending: [],
         spendingOverTime: finalSpendingOverTime,
         entityDistribution
@@ -704,7 +729,7 @@ export default function AnnualBudgetPage() {
     }
 
     return {
-      budgetDistribution: kpisData.budgetDistribution,
+      budgetDistribution,
       departmentSpending: kpisData.departmentSpending || [],
       spendingOverTime: finalSpendingOverTime,
       entityDistribution
