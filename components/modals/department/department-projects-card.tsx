@@ -80,7 +80,7 @@ export function DepartmentProjectsCard({
   const [expandedStatus, setExpandedStatus] = useState<string | null>('IN_PROGRESS')
 
   const handleCreateProject = () => {
-    router.push('/projects/new')
+    router.push('/projects/new-project')
   }
 
   const getInitials = (name: string) => {

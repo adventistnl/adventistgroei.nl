@@ -1,28 +1,18 @@
 "use client"
 
 import * as React from "react"
-import { 
-  AlertTriangle,
-  Trash2,
-  CheckCircle,
-  XCircle,
-  Info
-} from "lucide-react"
-
+import { AlertTriangle, Info } from "lucide-react"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
-
+import { Badge } from "@/components/ui/badge"
 import { useTranslation } from "react-i18next"
 import { projectTranslations } from "@/lib/translations/projects"
 
@@ -35,20 +25,20 @@ export interface ConfirmationDialogProps {
   confirmText?: string
   cancelText?: string
   severity?: "low" | "medium" | "high"
-  titleIcon?: React.ComponentType<any>
-  actionIcon?: React.ComponentType<any>
+  titleIcon?: React.ComponentType<{ className?: string }>
+  actionIcon?: React.ComponentType<{ className?: string }>
   itemSummary?: {
     title: string
     subtitle?: string
     badge?: string
   }
   warnings?: Array<{
-    icon: React.ComponentType<any>
+    icon: React.ComponentType<{ className?: string }>
     text: string
     badge?: string
   }>
   effects?: Array<{
-    icon: React.ComponentType<any>
+    icon: React.ComponentType<{ className?: string }>
     text: string
   }>
   additionalWarning?: {
@@ -68,114 +58,180 @@ export function ConfirmationDialog({
   cancelText,
   severity = "medium",
   titleIcon: TitleIcon,
-  actionIcon: ActionIcon,
   itemSummary,
   warnings = [],
   effects = [],
-  additionalWarning
+  additionalWarning,
 }: ConfirmationDialogProps) {
   const { i18n } = useTranslation()
   const [isConfirmed, setIsConfirmed] = React.useState(false)
-  
-  // Get translations from project translations based on current language
-  const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
-  
-  const finalConfirmText = confirmText || t.common.confirm || 'Confirm'
-  const finalCancelText = cancelText || t.common.cancel || 'Cancel'
 
-  // Reset confirmation when dialog opens/closes
+  const t =
+    projectTranslations[i18n.language as keyof typeof projectTranslations] ||
+    projectTranslations.en
+
+  const finalConfirmText = confirmText || t.common.confirm || "Confirm"
+  const finalCancelText = cancelText || t.common.cancel || "Cancel"
+
   React.useEffect(() => {
-    if (isOpen) {
-      setIsConfirmed(false)
-    }
+    if (isOpen) setIsConfirmed(false)
   }, [isOpen])
 
   const handleConfirm = () => {
-    if (isConfirmed) {
-      onConfirm()
-      setIsConfirmed(false)
-    }
+    if (!isConfirmed) return
+    onConfirm()
+    setIsConfirmed(false)
   }
 
-  const getSeverityColor = () => {
-    switch (severity) {
-      case "high": return "border-red-500 bg-red-50 dark:bg-red-900/20"
-      case "medium": return "border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20"
-      default: return "border-gray-500 bg-gray-50 dark:bg-gray-900/20"
-    }
-  }
+  const DefaultIcon = severity === "low" ? Info : AlertTriangle
+  const FinalIcon = TitleIcon ?? DefaultIcon
 
-  const getSeverityIcon = () => {
-    switch (severity) {
-      case "high": return <AlertTriangle className="w-5 h-5 text-red-600" />
-      case "medium": return <AlertTriangle className="w-5 h-5 text-yellow-600" />
-      default: return <Info className="w-5 h-5 text-gray-600" />
-    }
-  }
-  
-  const DefaultTitleIcon = severity === 'high' ? AlertTriangle : (severity === 'medium' ? AlertTriangle : Info)
-  const FinalTitleIcon = TitleIcon || DefaultTitleIcon
-  
-  const DefaultActionIcon = severity === 'high' ? AlertTriangle : CheckCircle
-  const FinalActionIcon = ActionIcon || DefaultActionIcon
+  const iconColorClass =
+    severity === "high"
+      ? "text-red-500"
+      : severity === "medium"
+      ? "text-orange-500"
+      : "text-muted-foreground"
 
-  const titleIconClass = severity === 'high' ? "text-red-600" : (severity === 'medium' ? "text-yellow-600" : "text-gray-600")
-
-  const getConfirmButtonClass = () => {
-    switch (severity) {
-      case "high": return "bg-red-600 hover:bg-red-700 text-white"
-      case "medium": return "bg-yellow-600 hover:bg-yellow-700 text-white"
-      default: return "bg-gray-600 hover:bg-gray-700 text-white"
-    }
-  }
+  const confirmButtonClass =
+    severity === "high"
+      ? "bg-red-600 hover:bg-red-700 text-white"
+      : severity === "medium"
+      ? "bg-orange-500 hover:bg-orange-600 text-white"
+      : "bg-foreground hover:bg-foreground/90 text-background"
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent className="sm:max-w-[400px]">
-        <AlertDialogHeader className="flex-row items-center gap-2">
-          <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
-            <AlertTriangle className="w-6 h-6 text-yellow-600" />
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose() }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          {/* Icon + title */}
+          <div className="flex items-start gap-3 mb-1">
+            <div className="mt-0.5 flex-shrink-0 rounded-md border border-border bg-muted p-2">
+              <FinalIcon className={`h-4 w-4 ${iconColorClass}`} />
+            </div>
+            <div className="min-w-0">
+              <DialogTitle className="text-base font-semibold leading-snug">
+                {title}
+              </DialogTitle>
+            </div>
           </div>
-          <AlertDialogTitle className="text-gray-900">
-            {title}
-          </AlertDialogTitle>
-        </AlertDialogHeader>
+        </DialogHeader>
 
-        <AlertDialogDescription className="text-gray-600 text-sm">
-          {description}
-        </AlertDialogDescription>
-        
+        {/* Body */}
+        <div className="space-y-3 py-1 text-sm">
+          {/* Description */}
+          <p className="text-muted-foreground leading-relaxed">{description}</p>
+
+          {/* Item summary — styled as the "consequence" block in kanban modal */}
+          {itemSummary && (
+            <div className="rounded-md border border-border bg-muted/40 px-3 py-2.5">
+              <p className="font-semibold text-foreground">{itemSummary.title}</p>
+              {itemSummary.subtitle && (
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {itemSummary.subtitle}
+                </p>
+              )}
+              {itemSummary.badge && (
+                <Badge variant="outline" className="mt-1.5 text-xs">
+                  {itemSummary.badge}
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* Effects list — inside a muted block */}
+          {effects.length > 0 && (
+            <div className="rounded-md border border-border bg-muted/40 px-3 py-2.5 space-y-1.5">
+              {effects.map((effect, i) => (
+                <div key={i} className="flex items-center gap-2 text-foreground">
+                  <effect.icon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+                  <span>{effect.text}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Warnings — each as the "warning" row block in kanban modal */}
+          {warnings.map((w, i) => (
+            <div
+              key={i}
+              className="flex items-start gap-2.5 rounded-md border border-border bg-background px-3 py-2.5"
+            >
+              <w.icon className={`mt-0.5 h-3.5 w-3.5 flex-shrink-0 ${iconColorClass}`} />
+              <div className="flex-1 min-w-0">
+                <p className="text-foreground leading-relaxed font-medium">{w.text}</p>
+              </div>
+              {w.badge && (
+                <Badge variant="outline" className="text-xs flex-shrink-0">
+                  {w.badge}
+                </Badge>
+              )}
+            </div>
+          ))}
+
+          {/* Additional warning block */}
+          {additionalWarning && (
+            <div className="flex items-start gap-2.5 rounded-md border border-border bg-background px-3 py-2.5">
+              <AlertTriangle className={`mt-0.5 h-3.5 w-3.5 flex-shrink-0 ${iconColorClass}`} />
+              <div className="min-w-0">
+                <p className="font-semibold text-foreground leading-snug">
+                  {additionalWarning.title}
+                </p>
+                <ul className="mt-1 space-y-0.5 list-disc list-inside text-muted-foreground text-xs">
+                  {additionalWarning.items.map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+                {additionalWarning.recommendation && (
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    {additionalWarning.recommendation}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <Separator />
+
         {/* Confirmation checkbox */}
-        <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-md border border-gray-200 dark:border-gray-700">
-          <input
-            type="checkbox"
+        <div
+          className="flex cursor-pointer items-start gap-3 rounded-md border border-border px-3 py-2.5 transition-colors hover:bg-muted/40"
+          onClick={() => setIsConfirmed((v) => !v)}
+        >
+          <Checkbox
             id="confirm-action"
             checked={isConfirmed}
-            onChange={(e) => setIsConfirmed(e.target.checked)}
-            className="w-4 h-4 mt-0.5 text-gray-900 bg-white border-gray-300 rounded focus:ring-gray-500 dark:focus:ring-gray-600 dark:bg-gray-700 dark:border-gray-600"
+            onCheckedChange={(v) => setIsConfirmed(!!v)}
+            className="mt-0.5 flex-shrink-0"
+            onClick={(e) => e.stopPropagation()}
           />
-          <label htmlFor="confirm-action" className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed cursor-pointer">
-            {t.common.confirmAction || 'Confirmo que desejo executar esta ação e entendo as consequências.'}
+          <label
+            htmlFor="confirm-action"
+            className="cursor-pointer text-sm text-foreground leading-relaxed select-none"
+          >
+            {t.common.confirmAction ||
+              "Confirmo que desejo executar esta ação e entendo as consequências."}
           </label>
         </div>
-        
-        <AlertDialogFooter className="flex gap-3 pt-6">
-          <AlertDialogCancel 
-            onClick={onClose} 
-            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200"
+
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="flex-1 sm:flex-none"
           >
             {finalCancelText}
-          </AlertDialogCancel>
-          
-          <AlertDialogAction
+          </Button>
+          <Button
             onClick={handleConfirm}
             disabled={!isConfirmed}
-            className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`flex-1 sm:flex-none ${confirmButtonClass}`}
           >
             {finalConfirmText}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

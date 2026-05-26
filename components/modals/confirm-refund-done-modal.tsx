@@ -220,7 +220,7 @@ export const ConfirmRefundDoneModal: React.FC<ConfirmRefundDoneModalProps> = ({
               />
               <Label
                 htmlFor="confirm-awareness"
-                className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed cursor-pointer flex-1"
+                className="flex flex-col items-start text-xs text-gray-700 dark:text-gray-300 leading-relaxed cursor-pointer flex-1"
               >
                 <span className="font-bold">
                   {t.confirmAwarenessLabel.replace('{{amount}}', formatCurrency(refundAmount))}

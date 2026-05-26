@@ -6,7 +6,6 @@ import {
   AlertCircle, Edit2, Check, Zap, ChevronRight, Plus, ChevronsUpDown, Loader2, Layers,
   CreditCard, FileX, FileCheck, Lock,
 } from "lucide-react"
-import { useMutation } from "@apollo/client"
 import { SubsidyValidationInfo } from "./subsidy-validation-info"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -17,10 +16,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { useTranslation } from "react-i18next"
 import toast from "react-hot-toast"
 import type { ProjectActivityData } from "@/components/projects/project-activities-table"
@@ -28,9 +23,6 @@ import { SelectActivitiesModal } from "./select-activities-modal"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { useSubsidyModal } from "@/hooks/use-subsidy-modal"
-import { useHasPermission } from "@/hooks/use-has-permission"
-import { DELETE_SUBSIDY_REQUEST, GET_SUBSIDY_REQUESTS_BY_PROJECT } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
-import { useAuth } from "@/contexts/auth-context"
 import type { SubsidyRequestData, RequestType, RequestSubsidyModalProps } from "@/types/subsidy-request-modal.types"
 
 // ─── Re-export types for backward compatibility ────────────────────────────────
@@ -65,27 +57,8 @@ export function RequestSubsidyModal({
   onAdvanceSubmit,
   totalAlreadyRequested = 0,
   subsidyRequestStatus,
-  onDeleteRequest,
-  projectOwnerId,
-  projectCoOwnerId,
 }: RequestSubsidyModalProps) {
   const { i18n } = useTranslation()
-  const { user } = useAuth()
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false)
-  const [isDeleting, setIsDeleting] = React.useState(false)
-  const canDelete = useHasPermission([PermissionResolverName.DeleteSubsidyRequest])
-  const [deleteSubsidyRequest] = useMutation(DELETE_SUBSIDY_REQUEST, {
-    refetchQueries: projectId
-      ? [{ query: GET_SUBSIDY_REQUESTS_BY_PROJECT, variables: { project_id: projectId } }]
-      : [],
-  })
-
-  // Delete eligibility: API only blocks APPROVED and CLOSED statuses
-  const BLOCKED_DELETE_STATUSES = new Set(['approved', 'closed'])
-  const canDeleteByStatus = !subsidyRequestStatus || !BLOCKED_DELETE_STATUSES.has(subsidyRequestStatus)
-  const isRequester = !!(user?.id && initialData?.requester_id && user.id === initialData.requester_id)
-  const isProjectOwnerOrCoOwner = !!(user?.id && (user.id === projectOwnerId || user.id === projectCoOwnerId))
-  const showDeleteButton = mode === 'edit' && !!subsidyRequestId && canDeleteByStatus && (canDelete || isRequester || isProjectOwnerOrCoOwner)
 
   const {
     formData,
@@ -898,8 +871,8 @@ export function RequestSubsidyModal({
             </div>
           </div>}{/* end currentItem details */}
 
-          {/* Documents Section — shown for "with_document" type, OR always in edit mode to let users manage existing receipts */}
-          {(requestType === 'with_document' || mode === 'edit') && currentItem && <div className="space-y-4">
+          {/* Documents Section — only shown for "with_document" type AND when an activity is selected */}
+          {requestType === 'with_document' && currentItem && <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-semibold text-gray-900">{translations.documents.title}</h3>
@@ -1340,21 +1313,6 @@ export function RequestSubsidyModal({
             
               {/* Action Buttons */}
               <div className="flex gap-2 w-full sm:w-auto sm:flex-shrink-0">
-                {/* Delete button — visible when user has ownership/requester rights and status allows deletion */}
-                {showDeleteButton && (
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsDeleteDialogOpen(true)}
-                    size="sm"
-                    disabled={isDeleting}
-                    className="h-8 sm:h-9 px-3 sm:px-4 text-xs sm:text-sm text-red-600 border-red-200 hover:bg-red-50 hover:border-red-400 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/30 flex-shrink-0"
-                  >
-                    <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                    <span className="hidden sm:inline">
-                      {i18n.language === 'pt' ? 'Excluir' : i18n.language === 'nl' ? 'Verwijderen' : 'Delete'}
-                    </span>
-                  </Button>
-                )}
                 <Button
                   variant="outline"
                   onClick={onClose}
@@ -1417,95 +1375,7 @@ export function RequestSubsidyModal({
         description={translations.modals.addActivitiesDescription}
         filterSubsidized={false}
         subsidizedActivityIds={subsidizedActivityIds}
-        projectId={projectId}
       />
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {i18n.language === 'pt'
-                ? 'Excluir solicitação de subsídio?'
-                : i18n.language === 'nl'
-                ? 'Subsidieaanvraag verwijderen?'
-                : 'Delete subsidy request?'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {i18n.language === 'pt'
-                ? 'Esta ação não pode ser desfeita. Todos os itens e documentos associados serão removidos permanentemente.'
-                : i18n.language === 'nl'
-                ? 'Deze actie kan niet ongedaan worden gemaakt. Alle gekoppelde items en documenten worden permanent verwijderd.'
-                : 'This action cannot be undone. All associated items and documents will be permanently removed.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>
-              {translations.buttons.cancel}
-            </AlertDialogCancel>
-            <AlertDialogAction
-              disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-              onClick={async (e) => {
-                e.preventDefault()
-                if (!subsidyRequestId) return
-                try {
-                  setIsDeleting(true)
-                  const lang = (i18n.language === 'nl' ? 'nl' : 'en').toUpperCase()
-                  await deleteSubsidyRequest({ variables: { id: subsidyRequestId, language: lang } })
-                  toast.success(
-                    i18n.language === 'pt'
-                      ? 'Solicitação excluída com sucesso'
-                      : i18n.language === 'nl'
-                      ? 'Aanvraag succesvol verwijderd'
-                      : 'Request deleted successfully'
-                  )
-                  setIsDeleteDialogOpen(false)
-                  onDeleteRequest?.()
-                  onClose()
-                } catch (err: unknown) {
-                  const graphQLError = (err as any)?.graphQLErrors?.[0]
-                  const errorCode = graphQLError?.extensions?.context?.additional?.errorCode
-                  const httpStatus = graphQLError?.extensions?.status
-                  if (errorCode === 'SUBSIDY_IS_APPROVED_OR_CLOSED') {
-                    toast.error(
-                      i18n.language === 'pt'
-                        ? 'Subsídios aprovados ou fechados não podem ser excluídos.'
-                        : i18n.language === 'nl'
-                        ? 'Goedgekeurde of gesloten subsidies kunnen niet worden verwijderd.'
-                        : 'Approved or closed subsidy requests cannot be deleted.'
-                    )
-                  } else if (httpStatus === 403) {
-                    toast.error(
-                      i18n.language === 'pt'
-                        ? 'Você não tem permissão para excluir esta solicitação.'
-                        : i18n.language === 'nl'
-                        ? 'U heeft geen toestemming om deze aanvraag te verwijderen.'
-                        : 'You do not have permission to delete this request.'
-                    )
-                  } else {
-                    toast.error(
-                      graphQLError?.message ||
-                      (i18n.language === 'pt'
-                        ? 'Falha ao excluir a solicitação'
-                        : i18n.language === 'nl'
-                        ? 'Verwijderen mislukt'
-                        : 'Failed to delete the request')
-                    )
-                  }
-                } finally {
-                  setIsDeleting(false)
-                }
-              }}
-            >
-              {isDeleting ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-1" />
-              ) : null}
-              {i18n.language === 'pt' ? 'Sim, excluir' : i18n.language === 'nl' ? 'Ja, verwijderen' : 'Yes, delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

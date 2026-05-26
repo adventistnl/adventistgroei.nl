@@ -822,9 +822,11 @@ export const projectTranslations = {
         requesterRole: "You are the requester",
         financeUserRole: "Finance User",
         noPermissionRole: "No permission",
-        documentValidationInfo: "Only the department leader can validate or reject documents. You can add comments.",
-        statusEditInfo: "Only the department leader or finance users can change the request status.",
-        departmentLeaderOnly: "Only department leader can approve"
+        ownerLeaderRole: "Project Owner / Department Leader",
+        documentValidationInfo: "Only Finance Managers can validate or reject documents. You can add comments.",
+        statusEditInfo: "Only the project owner, department leader or finance users can change the request status.",
+        departmentLeaderOnly: "Only project owner or department leader can approve",
+        financeValidatesDocuments: "Documents are validated by the Finance team"
       },
 
       // Request type
@@ -2103,9 +2105,11 @@ export const projectTranslations = {
         requesterRole: "U bent de aanvrager",
         financeUserRole: "Financiële Gebruiker",
         noPermissionRole: "Geen toestemming",
-        documentValidationInfo: "Alleen de afdelingsleider kan documenten valideren of afwijzen. U kunt opmerkingen toevoegen.",
-        statusEditInfo: "Alleen de afdelingsleider of financiële gebruikers kunnen de aanvraagstatus wijzigen.",
-        departmentLeaderOnly: "Alleen afdelingsleider kan goedkeuren"
+        ownerLeaderRole: "Projecteigenaar / Afdelingsleider",
+        documentValidationInfo: "Alleen Financieel Managers kunnen documenten valideren of afwijzen. U kunt opmerkingen toevoegen.",
+        statusEditInfo: "Alleen de projecteigenaar, afdelingsleider of financiële gebruikers kunnen de aanvraagstatus wijzigen.",
+        departmentLeaderOnly: "Alleen projecteigenaar of afdelingsleider kan goedkeuren",
+        financeValidatesDocuments: "Documenten worden gevalideerd door het Financiële team"
       },
 
       // Verzoektype
@@ -3357,9 +3361,11 @@ export const projectTranslations = {
         requesterRole: "Você é o solicitante",
         financeUserRole: "Usuário Financeiro",
         noPermissionRole: "Sem permissão",
-        documentValidationInfo: "Apenas o líder do departamento pode validar ou rejeitar documentos. Você pode adicionar comentários.",
-        statusEditInfo: "Apenas o líder do departamento ou usuários financeiros podem alterar o status da solicitação.",
-        departmentLeaderOnly: "Apenas líder do departamento pode aprovar"
+        ownerLeaderRole: "Proprietário do Projeto / Líder do Departamento",
+        documentValidationInfo: "Apenas Gerentes Financeiros podem validar ou rejeitar documentos. Você pode adicionar comentários.",
+        statusEditInfo: "Apenas o proprietário do projeto, líder do departamento ou usuários financeiros podem alterar o status.",
+        departmentLeaderOnly: "Apenas proprietário do projeto ou líder do departamento pode aprovar",
+        financeValidatesDocuments: "Documentos são validados pela equipe Financeira"
       },
 
       // Tipo de solicitação

@@ -59,8 +59,8 @@ export function SubsidyStatusBadge({
       className={cn(subsidyStatusBadgeVariants({ variant }), className)}
       {...props}
     >
-      {Icon && <Icon className="w-3 h-3" />}
-      <span>{text}</span>
+      {Icon && <Icon className="w-2 h-2" />}
+      <span className="text-[10px] font-medium">{text}</span>
     </span>
   )
 }

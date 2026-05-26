@@ -263,6 +263,34 @@ export function UsersRegistrationOverTimeChart({
     return Object.values(totalByInstitution).reduce((sum, val) => sum + val, 0)
   }, [totalByInstitution])
 
+  const xAxisTickGap = React.useMemo(() => {
+    switch (timeRange) {
+      case "7d": return 18
+      case "30d": return 26
+      case "90d": return 34
+      case "180d": return 44
+      case "365d": return 54
+      default: return 32
+    }
+  }, [timeRange])
+
+  const formatXAxisTick = React.useCallback((value: string) => {
+    const [y, m, d] = value.split('-').map(Number)
+    const date = new Date(y, m - 1, d)
+    const locale = i18n.language === 'pt' ? 'pt-BR' : i18n.language === 'nl' ? 'nl-NL' : 'en-US'
+    if (timeRange === "365d") {
+      return date.toLocaleDateString(locale, { month: "short", year: "2-digit" })
+    }
+    return date.toLocaleDateString(locale, { day: "numeric", month: "short" })
+  }, [timeRange, i18n.language])
+
+  const formatTooltipLabel = React.useCallback((value: string) => {
+    const [y, m, d] = value.split('-').map(Number)
+    const date = new Date(y, m - 1, d)
+    const locale = i18n.language === 'pt' ? 'pt-BR' : i18n.language === 'nl' ? 'nl-NL' : 'en-US'
+    return date.toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric" })
+  }, [i18n.language])
+
   // Helper function to get time range label
   const getTimeRangeLabel = (range: string) => {
     switch (range) {
@@ -395,20 +423,8 @@ export function UsersRegistrationOverTimeChart({
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                minTickGap={32}
-                tickFormatter={(value) => {
-                  const date = new Date(value)
-                  if (timeRange === "7d" || timeRange === "30d") {
-                    return date.toLocaleDateString(i18n.language === 'pt' ? 'pt-BR' : i18n.language === 'nl' ? 'nl-NL' : 'en-US', {
-                      day: "numeric",
-                      month: "short",
-                    })
-                  }
-                  return date.toLocaleDateString(i18n.language === 'pt' ? 'pt-BR' : i18n.language === 'nl' ? 'nl-NL' : 'en-US', {
-                    month: "short",
-                    year: timeRange === "365d" ? "2-digit" : undefined,
-                  })
-                }}
+                minTickGap={xAxisTickGap}
+                tickFormatter={formatXAxisTick}
               />
               <YAxis
                 tickLine={false}
@@ -424,13 +440,7 @@ export function UsersRegistrationOverTimeChart({
                 cursor={false}
                 content={
                   <ChartTooltipContent
-                    labelFormatter={(value) => {
-                      return new Date(value).toLocaleDateString(i18n.language === 'pt' ? 'pt-BR' : i18n.language === 'nl' ? 'nl-NL' : 'en-US', {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric"
-                      })
-                    }}
+                    labelFormatter={formatTooltipLabel}
                     indicator="dot"
                   />
                 }
@@ -460,20 +470,8 @@ export function UsersRegistrationOverTimeChart({
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                minTickGap={32}
-                tickFormatter={(value) => {
-                  const date = new Date(value)
-                  if (timeRange === "7d" || timeRange === "30d") {
-                    return date.toLocaleDateString(i18n.language === 'pt' ? 'pt-BR' : i18n.language === 'nl' ? 'nl-NL' : 'en-US', {
-                      day: "numeric",
-                      month: "short",
-                    })
-                  }
-                  return date.toLocaleDateString(i18n.language === 'pt' ? 'pt-BR' : i18n.language === 'nl' ? 'nl-NL' : 'en-US', {
-                    month: "short",
-                    year: timeRange === "365d" ? "2-digit" : undefined,
-                  })
-                }}
+                minTickGap={xAxisTickGap}
+                tickFormatter={formatXAxisTick}
               />
               <YAxis
                 tickLine={false}
@@ -488,13 +486,7 @@ export function UsersRegistrationOverTimeChart({
               <ChartTooltip
                 content={
                   <ChartTooltipContent
-                    labelFormatter={(value) => {
-                      return new Date(value).toLocaleDateString(i18n.language === 'pt' ? 'pt-BR' : i18n.language === 'nl' ? 'nl-NL' : 'en-US', {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric"
-                      })
-                    }}
+                    labelFormatter={formatTooltipLabel}
                     hideLabel={false}
                   />
                 }

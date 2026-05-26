@@ -110,6 +110,13 @@ export const subsidyRequestTranslations = {
       manageSubsidy: "Manage Subsidy",
       approve: "Approve",
       reject: "Reject",
+      markInReview: "Mark as In Review",
+      sendBackPending: "Send Back to Pending",
+      close: "Close",
+      reopen: "Reopen",
+      markAdvancedClosed: "Mark as Advance Closed",
+      markWaitingDocuments: "Mark Waiting for Documents",
+      markWaitingRefund: "Mark Waiting for Refund",
       viewToggle: {
         table: "Table",
         kanban: "Kanban"
@@ -349,6 +356,13 @@ export const subsidyRequestTranslations = {
       manageSubsidy: "Gerenciar Subsídio",
       approve: "Aprovar",
       reject: "Rejeitar",
+      markInReview: "Marcar como Em Revisão",
+      sendBackPending: "Enviar de Volta para Pendente",
+      close: "Fechar",
+      reopen: "Reabrir",
+      markAdvancedClosed: "Marcar como Adiantamento Fechado",
+      markWaitingDocuments: "Marcar Aguardando Comprovantes",
+      markWaitingRefund: "Marcar Aguardando Reembolso",
       viewToggle: {
         table: "Tabela",
         kanban: "Kanban"
@@ -586,6 +600,13 @@ export const subsidyRequestTranslations = {
       manageSubsidy: "Subsidie Beheren",
       approve: "Goedkeuren",
       reject: "Afwijzen",
+      markInReview: "Markeer als In Beoordeling",
+      sendBackPending: "Terug naar In Behandeling",
+      close: "Sluiten",
+      reopen: "Heropenen",
+      markAdvancedClosed: "Markeer als Geavanceerd Gesloten",
+      markWaitingDocuments: "Markeer Wacht op Documenten",
+      markWaitingRefund: "Markeer Wacht op Terugbetaling",
       viewToggle: {
         table: "Tabel",
         kanban: "Kanban"

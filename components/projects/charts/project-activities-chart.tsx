@@ -57,7 +57,12 @@ export function ProjectActivitiesChart({
     // Encontrar top 5 projetos com mais atividades
     const projectActivityCounts = data.reduce((acc: Record<string, number>, project) => {
       const key = project.title || 'Unknown'
-      acc[key] = (acc[key] || 0) + (project.activities || 0)
+      // transformProjectsData renames `activities` (array) to `activitiesData`;
+      // fall back to project.activities for raw API objects
+      const count = Array.isArray(project.activitiesData)
+        ? project.activitiesData.length
+        : (project.activities || 0)
+      acc[key] = (acc[key] || 0) + count
       return acc
     }, {})
 
@@ -92,7 +97,10 @@ export function ProjectActivitiesChart({
       
       // Apenas incluir projetos do ano selecionado
       if (projectYear === selectedYear) {
-        monthlyData[projectMonth][projectName] += (project.activities || 0)
+        const count = Array.isArray(project.activitiesData)
+          ? project.activitiesData.length
+          : (project.activities || 0)
+        monthlyData[projectMonth][projectName] += count
       }
     })
 

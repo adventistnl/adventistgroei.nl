@@ -1004,7 +1004,7 @@ function ProjectsPageContent() {
         <Separator />
 
         {/* Subsidy Refund Requests Card */}
-        <ProjectRefundRequestsCard />
+        {/* <ProjectRefundRequestsCard /> */}
 
         {/* Projects Table / Kanban */}
         <Card>

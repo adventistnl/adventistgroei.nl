@@ -1242,9 +1242,18 @@ export default function ProjectDetailsPage() {
         }
       })
 
+      // For ADVANCE requests the API enforces: advance_amount <= total_budget * 0.5
+      // total_budget must therefore be the project's subsidized budget — NOT the advance amount.
+      // Sending total_budget = advance_amount makes the check always fail (X <= X*0.5 → false).
+      const projectSubsidizedBudget =
+        (projectData?.project as any)?.kpis?.subsidizedBudget ||
+        Number((projectData?.project as any)?.subsidized_budget || 0)
+
       const createVars = {
         description,
-        total_budget: data.requested_amount,
+        total_budget: requestType === 'ADVANCE'
+          ? projectSubsidizedBudget || data.requested_amount
+          : data.requested_amount,
         project_id: data.project_id,
         requester_id: user.id,
         department_id: resolvedDeptId,

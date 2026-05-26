@@ -25,6 +25,7 @@ import {
 import { ChartHeader } from "@/components/shared/chart-header"
 import { SubsidyRequestCardData } from "../subsidy-request-card"
 import { ChartColumnBig, ChartLine } from "lucide-react"
+import { useSubsidyStatuses } from "@/hooks/use-subsidy-statuses"
 
 interface SubsidyActivityChartProps {
   data: SubsidyRequestCardData[]
@@ -40,143 +41,101 @@ export function SubsidyActivityChart({
   const [timeRange, setTimeRange] = React.useState("12m")
   const [chartType, setChartType] = React.useState<"area" | "bar">("area")
   const { i18n } = useTranslation()
-  const { formatCurrency, selectedCurrency } = useCurrency()
+  const { formatCurrency } = useCurrency()
   const currentLanguage = i18n?.language || 'en'
   const t = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en
 
-  // Processar dados de subsídios por mês
-  const chartData = React.useMemo(() => {
-    // Usar nomes dos meses baseados no idioma
-    const getMonthNames = (lang: string) => {
-      const months = {
-        'pt': ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-        'en': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-        'nl': ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
-      }
-      return months[lang as keyof typeof months] || months.en
-    }
-    
-    const months = getMonthNames(currentLanguage)
-    
-    // Inicializar estrutura com zeros
-    const monthlyData = months.map((month, index) => ({
-      month,
-      date: `${selectedYear}-${String(index + 1).padStart(2, '0')}-01`,
-      total: 0,
-      approved: 0,
-      pending: 0,
-      in_review: 0,
-      rejected: 0,
-      closed: 0,
-      count: 0,
-    }))
+  // ── Centralised status metadata (labels, colors, etc.) ──────────────────────
+  const { statuses, chartConfig } = useSubsidyStatuses()
 
-    // Agregar dados reais usando a estrutura correta do SubsidyRequestCardData
+  // ── Chart data — dynamically built from all known statuses ──────────────────
+  const chartData = React.useMemo(() => {
+    const getMonthNames = (lang: string) => {
+      const months: Record<string, string[]> = {
+        pt: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+        en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        nl: ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'],
+      }
+      return months[lang] ?? months.en
+    }
+
+    const months = getMonthNames(currentLanguage)
+
+    // Initialise one entry per month — zero for each known status
+    const monthlyData: Array<Record<string, number>> = months.map((month, index) => {
+      const entry: Record<string, number> = {
+        month: month as unknown as number, // stored as string but typed as number for Record
+        date: `${selectedYear}-${String(index + 1).padStart(2, '0')}-01` as unknown as number,
+        total: 0,
+        count: 0,
+      }
+      statuses.forEach((s) => { entry[s.id] = 0 })
+      return entry
+    })
+
+    // Aggregate real data
     data.forEach((subsidy) => {
       const date = new Date(subsidy.requested_at)
-      const subsidyYear = date.getFullYear()
+      if (date.getFullYear() !== selectedYear) return
       const monthIndex = date.getMonth()
+      if (monthIndex < 0 || monthIndex > 11) return
 
-      // Apenas incluir se for do ano selecionado
-      if (subsidyYear === selectedYear && monthIndex >= 0 && monthIndex < 12) {
-        const amount = subsidy.requested_amount / 1000 // Converter para K
+      const amount = subsidy.requested_amount / 1000
+      monthlyData[monthIndex].total += amount
+      monthlyData[monthIndex].count += 1
 
-        monthlyData[monthIndex].total += amount
-        monthlyData[monthIndex].count += 1
-
-        // Categorizar por status usando os mesmos status do container
-        switch (subsidy.status) {
-          case "approved":
-            monthlyData[monthIndex].approved += amount
-            break
-          case "pending":
-            monthlyData[monthIndex].pending += amount
-            break
-          case "in_review":
-            monthlyData[monthIndex].in_review += amount
-            break
-          case "rejected":
-            monthlyData[monthIndex].rejected += amount
-            break
-          case "closed":
-            monthlyData[monthIndex].closed += amount
-            break
-          default:
-            // Status desconhecido, adicionar ao pending como fallback
-            monthlyData[monthIndex].pending += amount
-            break
-        }
+      const key = subsidy.status
+      if (key in monthlyData[monthIndex]) {
+        monthlyData[monthIndex][key] += amount
+      } else {
+        monthlyData[monthIndex].pending += amount // fallback for unknown statuses
       }
     })
 
     return monthlyData
-  }, [data, selectedYear, currentLanguage])
+  }, [data, selectedYear, currentLanguage, statuses])
 
   const filteredData = React.useMemo(() => {
-    if (timeRange === "6m") {
-      return chartData.slice(-6)
-    } else if (timeRange === "3m") {
-      return chartData.slice(-3)
-    }
+    if (timeRange === "6m") return chartData.slice(-6)
+    if (timeRange === "3m") return chartData.slice(-3)
     return chartData
   }, [timeRange, chartData])
 
-  const chartConfig = {
-    total: {
-      label: t.charts?.subsidyActivity?.totalRequested || "Total Requested",
-      color: "hsl(var(--primary))",
-    },
-    approved: {
-      label: t.subsidy?.deleteRequest?.statusLabels?.approved || t.subsidy?.approvedLower || "Approved",
-      color: "hsl(142, 76%, 36%)", // Verde - aprovado
-    },
-    pending: {
-      label: t.subsidy?.deleteRequest?.statusLabels?.pending || t.charts?.legend?.pending || t.subsidy?.pending || "Pending", 
-      color: "hsl(45, 93%, 47%)", // Amarelo - pendente
-    },
-    in_review: {
-      label: t.subsidy?.deleteRequest?.statusLabels?.in_review || t.charts?.legend?.inReview || "In Review",
-      color: "hsl(217, 91%, 60%)", // Azul - em revisão
-    },
-    rejected: {
-      label: t.subsidy?.deleteRequest?.statusLabels?.rejected || t.charts?.legend?.rejected || t.subsidy?.rejected || "Rejected",
-      color: "hsl(0, 84%, 60%)", // Vermelho - rejeitado
-    },
-    closed: {
-      label: t.subsidy?.deleteRequest?.statusLabels?.closed || "Closed",
-      color: "hsl(240, 5%, 41%)", // Cinza - fechado
-    },
-  }
-
-  // Calcular totais para o período
+  // ── Totals — dynamic across all statuses ────────────────────────────────────
   const totals = React.useMemo(() => {
-    return filteredData.reduce(
-      (acc, month) => ({
-        total: acc.total + month.total,
-        approved: acc.approved + month.approved,
-        pending: acc.pending + month.pending,
-        in_review: acc.in_review + month.in_review,
-        rejected: acc.rejected + month.rejected,
-        closed: acc.closed + month.closed,
-        count: acc.count + month.count,
-      }),
-      { total: 0, approved: 0, pending: 0, in_review: 0, rejected: 0, closed: 0, count: 0 }
-    )
-  }, [filteredData])
+    const init: Record<string, number> = { total: 0, count: 0 }
+    statuses.forEach((s) => { init[s.id] = 0 })
+    return filteredData.reduce((acc, month) => {
+      acc.total += month.total ?? 0
+      acc.count += month.count ?? 0
+      statuses.forEach((s) => { acc[s.id] = (acc[s.id] ?? 0) + (month[s.id] ?? 0) })
+      return acc
+    }, init)
+  }, [filteredData, statuses])
 
   if (loading) {
     return (
       <Card className="h-full flex flex-col">
-        <ChartHeader
-          title=""
-          description=""
-          className="border-b py-5"
-        />
+        <ChartHeader title="" description="" className="border-b py-5" />
         <CardContent className="flex-1">
           <div className="h-[300px] bg-muted rounded animate-pulse" />
         </CardContent>
       </Card>
     )
+  }
+
+  // ── Shared tooltip formatter ─────────────────────────────────────────────────
+  const tooltipFormatter = (value: unknown, name: string | number) => [
+    formatCurrency(Number(value) * 1000, { compact: true }),
+    chartConfig[String(name) as keyof typeof chartConfig]?.label ?? String(name),
+  ]
+
+  const tooltipLabelFormatter = (value: string, payload: any[]) => {
+    if (payload?.[0]) {
+      const d = payload[0].payload
+      return `${d.month} - ${d.count} ${t.charts?.tooltip?.requests || "requests"}`
+    }
+    return value
   }
 
   return (
@@ -210,10 +169,7 @@ export function SubsidyActivityChart({
               </Button>
             </div>
             <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger
-                className="w-[160px] rounded-lg"
-                aria-label="Selecionar período"
-              >
+              <SelectTrigger className="w-[160px] rounded-lg" aria-label="Selecionar período">
                 <SelectValue placeholder={t.charts.subsidyActivity.last12Months} />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
@@ -232,113 +188,47 @@ export function SubsidyActivityChart({
         }
       />
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6 flex-1">
-        <ChartContainer
-          config={chartConfig}
-          className="aspect-auto h-[300px] w-full"
-        >
+        <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
           {chartType === "area" ? (
             <AreaChart data={filteredData}>
+              {/* Gradient fills — generated for every status */}
               <defs>
-                <linearGradient id="fillApproved" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="fillPending" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-pending)" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="var(--color-pending)" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="fillInReview" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-in_review)" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="var(--color-in_review)" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="fillRejected" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-rejected)" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="var(--color-rejected)" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="fillClosed" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-closed)" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="var(--color-closed)" stopOpacity={0.1} />
-                </linearGradient>
+                {statuses.map((s) => (
+                  <linearGradient key={s.id} id={`fill_${s.id}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor={s.chartColor} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={s.chartColor} stopOpacity={0}   />
+                  </linearGradient>
+                ))}
               </defs>
               <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="month"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                minTickGap={32}
-              />
+              <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={32} />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 tickMargin={4}
-                tickFormatter={(value) => formatCurrency(value * 1000, { compact: true })}
+                tickFormatter={(v) => formatCurrency(v * 1000, { compact: true })}
               />
               <ChartTooltip
                 cursor={false}
                 content={
                   <ChartTooltipContent
                     indicator="dot"
-                    labelFormatter={(value, payload) => {
-                      if (payload && payload[0]) {
-                        const data = payload[0].payload
-                        return `${data.month} - ${data.count} ${t.charts?.tooltip?.requests || "requests"}`
-                      }
-                      return value
-                    }}
-                    formatter={(value, name) => {
-                      const labels: Record<string, string> = {
-                        total: t.charts?.subsidyActivity?.totalRequested || "Total Requested",
-                        approved: t.subsidy?.deleteRequest?.statusLabels?.approved || t.subsidy?.approvedLower || "Approved",
-                        pending: t.subsidy?.deleteRequest?.statusLabels?.pending || t.subsidy?.pending || "Pending",
-                        in_review: t.subsidy?.deleteRequest?.statusLabels?.in_review || "In Review",
-                        rejected: t.subsidy?.deleteRequest?.statusLabels?.rejected || t.subsidy?.rejected || "Rejected",
-                        closed: t.subsidy?.deleteRequest?.statusLabels?.closed || "Closed",
-                      }
-                      return [
-                        formatCurrency(Number(value) * 1000, { compact: true }),
-                        labels[name as string] || name
-                      ]
-                    }}
+                    labelFormatter={tooltipLabelFormatter}
+                    formatter={tooltipFormatter}
                   />
                 }
               />
-              <Area
-                dataKey="approved"
-                type="monotone"
-                fill="url(#fillApproved)"
-                stroke="#22c55e"
-                strokeWidth={2}
-              />
-              <Area
-                dataKey="in_review"
-                type="monotone"
-                fill="url(#fillInReview)"
-                stroke="var(--color-in_review)"
-                strokeWidth={2}
-              />
-              <Area
-                dataKey="pending"
-                type="monotone"
-                fill="url(#fillPending)"
-                stroke="var(--color-pending)"
-                strokeWidth={2}
-              />
-              <Area
-                dataKey="rejected"
-                type="monotone"
-                fill="url(#fillRejected)"
-                stroke="var(--color-rejected)"
-                strokeWidth={2}
-              />
-              <Area
-                dataKey="closed"
-                type="monotone"
-                fill="url(#fillClosed)"
-                stroke="#22c55e"
-                strokeWidth={2}
-
-              />
+              {/* Area series — one per status, in workflow order */}
+              {statuses.map((s) => (
+                <Area
+                  key={s.id}
+                  dataKey={s.id}
+                  type="monotone"
+                  fill={`url(#fill_${s.id})`}
+                  stroke={s.chartColor}
+                  strokeWidth={2}
+                />
+              ))}
             </AreaChart>
           ) : (
             <BarChart accessibilityLayer data={filteredData}>
@@ -347,86 +237,44 @@ export function SubsidyActivityChart({
                 tickLine={false}
                 axisLine={false}
                 tickMargin={4}
-                tickFormatter={(value) => formatCurrency(value * 1000, { compact: true })}
+                tickFormatter={(v) => formatCurrency(v * 1000, { compact: true })}
               />
               <XAxis
                 dataKey="month"
                 tickLine={false}
                 tickMargin={10}
                 axisLine={false}
-                tickFormatter={(value) => value.slice(0, 3)}
+                tickFormatter={(v) => String(v).slice(0, 3)}
               />
               <ChartTooltip
                 cursor={false}
                 content={
                   <ChartTooltipContent
                     indicator="dashed"
-                    labelFormatter={(value, payload) => {
-                      if (payload && payload[0]) {
-                        const data = payload[0].payload
-                        return `${data.month} - ${data.count} ${t.charts?.tooltip?.requests || "requests"}`
-                      }
-                      return value
-                    }}
-                    formatter={(value, name) => {
-                      const labels: Record<string, string> = {
-                        approved: t.subsidy?.deleteRequest?.statusLabels?.approved || t.subsidy?.approvedLower || "Approved",
-                        pending: t.subsidy?.deleteRequest?.statusLabels?.pending || t.subsidy?.pending || "Pending",
-                        in_review: t.subsidy?.deleteRequest?.statusLabels?.in_review || "In Review",
-                        rejected: t.subsidy?.deleteRequest?.statusLabels?.rejected || t.subsidy?.rejected || "Rejected",
-                        closed: t.subsidy?.deleteRequest?.statusLabels?.closed || "Closed",
-                      }
-                      return [
-                        formatCurrency(Number(value) * 1000, { compact: true }),
-                        labels[name as string] || name
-                      ]
-                    }}
+                    labelFormatter={tooltipLabelFormatter}
+                    formatter={tooltipFormatter}
                   />
                 }
               />
-              <Bar dataKey="approved" fill="var(--color-approved)" radius={4} />
-              <Bar dataKey="in_review" fill="var(--color-in_review)" radius={4} />
-              <Bar dataKey="pending" fill="var(--color-pending)" radius={4} />
-              <Bar dataKey="rejected" fill="var(--color-rejected)" radius={4} />
-              <Bar dataKey="closed" fill="var(--color-closed)" radius={4} />
+              {/* Bar series — one per status, in workflow order */}
+              {statuses.map((s) => (
+                <Bar key={s.id} dataKey={s.id} fill={s.chartColor} radius={4} />
+              ))}
             </BarChart>
           )}
         </ChartContainer>
 
-        {/* Legend */}
+        {/* Legend — generated for every status */}
         <div className="flex flex-wrap gap-4 justify-center mt-4 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-600 dark:bg-green-500" />
-            <span className="text-gray-600 dark:text-gray-300">
-              {t.subsidy?.deleteRequest?.statusLabels?.approved || t.subsidy?.approvedLower || "Approved"}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-500" />
-            <span className="text-gray-600 dark:text-gray-300">
-              {t.charts?.legend?.inReview || "In Review"}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-amber-500 dark:bg-amber-400" />
-            <span className="text-gray-600 dark:text-gray-300">
-              {t.charts?.legend?.pending || "Pending"}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-red-500 dark:bg-red-400" />
-            <span className="text-gray-600 dark:text-gray-300">
-              {t.charts?.legend?.rejected || "Rejected"}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-gray-500 dark:bg-gray-400" />
-            <span className="text-gray-600 dark:text-gray-300">
-              Closed
-            </span>
-          </div>
+          {statuses.map((s) => (
+            <div key={s.id} className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${s.dotClass}`} />
+              <span className="text-gray-600 dark:text-gray-300">{s.label}</span>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>
   )
 }
+

@@ -166,10 +166,6 @@ export const projectRegisterTranslations = {
       shared: "Shared Funding",
       fullChurch: "Full Church Coverage"
     },
-    quickActivities: {
-      title: "Quick Activities",
-      select: "Select"
-    },
     warnings: {
       noDepartmentsTitle: "Departments Not Available",
       noDepartmentsDescription: "Departments are not available at the moment. Check if the budget has already been finalized and closed, contact your admin or finance directly.",
@@ -378,6 +374,8 @@ export const projectRegisterTranslations = {
       quickActivitySelected: "Quick Activity selected: \"{{name}}\""
     },
     quickActivities: {
+      title: "Quick Activities",
+      select: "Select",
       templeRenovation: {
         name: "Temple Renovation",
         description: "General temple renovation including painting, flooring and lighting"
@@ -653,10 +651,6 @@ export const projectRegisterTranslations = {
       shared: "Financiamento Compartilhado",
       fullChurch: "Cobertura Total da Igreja"
     },
-    quickActivities: {
-      title: "Atividades Rápidas",
-      select: "Selecionar"
-    },
     warnings: {
       noDepartmentsTitle: "Departamentos Não Disponíveis",
       noDepartmentsDescription: "Os departamentos não estão disponíveis no momento. Verifique se o orçamento já foi finalizado e fechado, contate diretamente o seu admin ou financeiro.",
@@ -865,6 +859,8 @@ export const projectRegisterTranslations = {
       quickActivitySelected: "Quick Activity selecionada: \"{{name}}\""
     },
     quickActivities: {
+      title: "Atividades Rápidas",
+      select: "Selecionar",
       templeRenovation: {
         name: "Reforma do Templo",
         description: "Reforma geral do templo incluindo pintura, piso e iluminação"
@@ -1085,10 +1081,6 @@ export const projectRegisterTranslations = {
       shared: "Gedeelde Financiering",
       fullChurch: "Volledige Kerkdekking"
     },
-    quickActivities: {
-      title: "Snelle Activiteiten",
-      select: "Selecteren"
-    },
     warnings: {
       noDepartmentsTitle: "Afdelingen Niet Beschikbaar",
       noDepartmentsDescription: "Afdelingen zijn op dit moment niet beschikbaar. Controleer of de begroting al is gefinaliseerd en gesloten, neem direct contact op met uw beheerder of financiële afdeling.",
@@ -1255,6 +1247,8 @@ export const projectRegisterTranslations = {
       quickActivitySelected: "Snelle activiteit geselecteerd: \"{{name}}\""
     },
     quickActivities: {
+      title: "Snelle Activiteiten",
+      select: "Selecteren",
       templeRenovation: {
         name: "Tempelrenovatie",
         description: "Algemene tempelrenovatie inclusief schilderwerk, vloeren en verlichting"

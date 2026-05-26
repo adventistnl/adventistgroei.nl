@@ -1,0 +1,718 @@
+"use client"
+
+import * as React from "react"
+import { useState } from "react"
+import { Plus, AlertCircle, CheckCircle2, Lock, Loader2, TrendingUp, Layers, DollarSign, WifiOff } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useCurrency } from "@/contexts/currency-context"
+import { ProjectActivityData } from "@/components/projects/project-activities-table"
+import type { SubsidyRequestCardData } from "@/components/projects/subsidy-request-card"
+import { subsidyRequestTranslations } from "@/lib/translations/subsidy-request"
+import { useActivityAllocation, type ActivityBudgetSummary } from "@/hooks/graphql/use-activity-allocation"
+import { cn } from "@/lib/utils"
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface ActivitySubsidyRef {
+  subsidyId: string
+  subsidyTitle: string
+  requestedAmount: number
+  status: SubsidyRequestCardData["status"]
+}
+
+interface SelectActivitiesModalProps {
+  isOpen: boolean
+  onClose: () => void
+  activities: ProjectActivityData[]
+  onConfirm: (selectedActivities: ProjectActivityData[]) => void
+  title?: string
+  description?: string
+  filterSubsidized?: boolean
+  subsidizedActivityIds?: string[]
+  /** All subsidy requests for the project — enriches activities with "already linked" info */
+  subsidyRequests?: SubsidyRequestCardData[]
+  /** ID of the subsidy currently being edited — its linked activities stay selectable */
+  currentSubsidyId?: string
+  /** Project ID — enables API fetch for budget allocation data when subsidyRequests is not provided */
+  projectId?: string
+}
+
+// ─── Status badge config ──────────────────────────────────────────────────────
+
+const STATUS_STYLES: Record<string, string> = {
+  pending:           "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
+  in_review:         "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800",
+  approved:          "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-300 dark:border-green-800",
+  rejected:          "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800",
+  closed:            "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700",
+  advanced_closed:   "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800",
+  waiting_refund:    "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800",
+  waiting_documents: "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/40 dark:text-yellow-300 dark:border-yellow-800",
+}
+
+// ─── Budget allocation bar ────────────────────────────────────────────────────
+
+function AllocationBar({ summary, formatCurrency, t }: {
+  summary: ActivityBudgetSummary | undefined
+  formatCurrency: (v: number) => string
+  t: any
+}) {
+  if (!summary || summary.budget <= 0) return null
+
+  const pct = Math.min(100, (summary.allocated / summary.budget) * 100)
+  const isFull = summary.available <= 0
+  const isPartial = summary.allocated > 0 && !isFull
+
+  const countLabel = summary.subsidyCount === 1
+    ? t.subsidyCount_one.replace("{{count}}", "1")
+    : t.subsidyCount_other.replace("{{count}}", String(summary.subsidyCount))
+
+  if (process.env.NODE_ENV === "development") {
+    console.debug("[AllocationBar]", {
+      activityId: summary.activityId,
+      budget: summary.budget,
+      allocated: summary.allocated,
+      available: summary.available,
+      subsidyCount: summary.subsidyCount,
+      pct,
+    })
+  }
+
+  return (
+    <div className="mt-2 space-y-1">
+      {/* Progress bar */}
+      <div className="relative h-1.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+        <div
+          className={cn(
+            "absolute left-0 top-0 h-full rounded-full transition-all",
+            isFull ? "bg-red-500" : isPartial ? "bg-amber-400" : "bg-green-400"
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      {/* Stats row */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Subsidy count pill */}
+        {summary.subsidyCount > 0 && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 cursor-default">
+                  <Layers className="w-2.5 h-2.5" />
+                  {countLabel}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs max-w-[200px]">
+                <p className="font-semibold mb-1">{t.budgetAllocated}: {formatCurrency(summary.allocated)}</p>
+                {summary.subsidyRefs.map((ref, i) => (
+                  <p key={i} className="text-gray-300 truncate">• {ref.subsidyTitle}: {formatCurrency(ref.requestedAmount)}</p>
+                ))}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+
+        {/* Allocated / budget */}
+        <span className="text-[10px] text-gray-400 dark:text-gray-500">
+          {t.allocationSummary
+            .replace("{{allocated}}", formatCurrency(summary.allocated))
+            .replace("{{budget}}", formatCurrency(summary.budget))}
+        </span>
+
+        {/* Available badge */}
+        <span className={cn(
+          "ml-auto text-[10px] font-medium",
+          isFull ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"
+        )}>
+          {isFull
+            ? t.fullyAllocated
+            : `${t.budgetAvailable}: ${formatCurrency(summary.available)}`}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+// ─── Selectable activity row ──────────────────────────────────────────────────
+
+function SelectableActivityRow({
+  activity,
+  isSelected,
+  onToggle,
+  summary,
+  formatCurrency,
+  t,
+  selectedCurrencySymbol,
+}: {
+  activity: ProjectActivityData
+  isSelected: boolean
+  onToggle: (id: string) => void
+  summary: ActivityBudgetSummary | undefined
+  formatCurrency: (v: number) => string
+  t: any
+  selectedCurrencySymbol: string
+}) {
+  const isFull = !!summary && summary.available <= 0
+  const isDisabledByBudget = isFull
+
+  const handleClick = () => {
+    if (!isDisabledByBudget) onToggle(activity.id)
+  }
+
+  return (
+    <div
+      onClick={handleClick}
+      className={cn(
+        "flex items-start gap-3 p-3 border rounded-lg transition-all",
+        isDisabledByBudget
+          ? "border-red-100 dark:border-red-900/30 bg-red-50/50 dark:bg-red-950/10 cursor-not-allowed"
+          : isSelected
+            ? "border-gray-900 dark:border-gray-100 bg-gray-50 dark:bg-gray-800/50 cursor-pointer shadow-sm"
+            : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50/80 dark:hover:bg-gray-800/30 cursor-pointer"
+      )}
+    >
+      {/* Subsidized indicator */}
+      <div className="flex-shrink-0 mt-0.5">
+        <div className={cn(
+          "w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0",
+          activity.is_subsidized
+            ? "bg-green-100 border-2 border-green-300 dark:bg-green-950 dark:border-green-800"
+            : "bg-gray-100 border-2 border-gray-300 dark:bg-gray-800 dark:border-gray-600"
+        )}>
+          <span className={cn(
+            "text-xs font-bold",
+            activity.is_subsidized ? "text-green-600 dark:text-green-400" : "text-gray-400 dark:text-gray-500"
+          )}>
+            {selectedCurrencySymbol}
+          </span>
+        </div>
+      </div>
+
+      {/* Checkbox */}
+      <div className="flex-shrink-0 mt-0.5">
+        <Checkbox
+          checked={isSelected}
+          onCheckedChange={() => !isDisabledByBudget && onToggle(activity.id)}
+          disabled={isDisabledByBudget}
+          className="border-gray-400 dark:border-gray-500 data-[state=checked]:bg-gray-900 dark:data-[state=checked]:bg-gray-100 data-[state=checked]:border-gray-900 dark:data-[state=checked]:border-gray-100"
+        />
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className={cn(
+              "text-sm font-medium truncate",
+              isDisabledByBudget ? "text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-gray-100"
+            )}>
+              {activity.name}
+            </p>
+            {/* Subsidized label */}
+            <span className={cn(
+              "text-[10px] font-medium",
+              activity.is_subsidized ? "text-green-600 dark:text-green-400" : "text-gray-400 dark:text-gray-500"
+            )}>
+              {activity.is_subsidized ? dict.subsidizedLabel : dict.notSubsidizedLabel}
+            </span>
+          </div>
+          <div className="text-right flex-shrink-0">
+            <p className={cn(
+              "text-sm font-semibold",
+              isDisabledByBudget ? "text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-gray-100"
+            )}>
+              {formatCurrency(activity.budget_amount)}
+            </p>
+          </div>
+        </div>
+
+        {/* Allocation bar */}
+        <AllocationBar
+          summary={summary}
+          formatCurrency={formatCurrency}
+          t={t}
+        />
+      </div>
+    </div>
+  )
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function SelectActivitiesModal({
+  isOpen,
+  onClose,
+  activities,
+  onConfirm,
+  title,
+  description,
+  filterSubsidized = true,
+  subsidizedActivityIds = [],
+  subsidyRequests,
+  currentSubsidyId,
+  projectId,
+}: SelectActivitiesModalProps) {
+  const { formatCurrency, selectedCurrency } = useCurrency()
+  const { i18n } = useTranslation()
+  const dict = t as any;
+  const t = subsidyRequestTranslations[i18n.language as keyof typeof subsidyRequestTranslations]?.modals
+    ?? subsidyRequestTranslations.pt.modals
+
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  // ─── Filter activities by filterSubsidized ──────────────────────────────────
+  const filteredActivities = React.useMemo(
+    () => filterSubsidized ? activities.filter(a => a.is_subsidized) : activities,
+    [activities, filterSubsidized]
+  )
+
+  // ─── Activity budget map (activityId → budget_amount) ───────────────────────
+  const activityBudgets = React.useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const a of filteredActivities) map[a.id] = a.budget_amount ?? 0
+    return map
+  }, [filteredActivities])
+
+  // ─── Budget allocation from API (or from provided subsidyRequests prop) ──────
+  const { summaries: allocationSummaries, loading: allocationLoading, error: allocationError } = useActivityAllocation({
+    projectId,
+    existingRequests: subsidyRequests as Parameters<typeof useActivityAllocation>[0]["existingRequests"],
+    currentSubsidyId,
+    activityBudgets,
+  })
+
+  if (process.env.NODE_ENV === "development") {
+    console.debug("[SelectActivitiesModal] allocationSummaries:", Object.fromEntries(allocationSummaries))
+    console.debug("[SelectActivitiesModal] allocationLoading:", allocationLoading, "error:", allocationError?.message)
+  }
+
+  // ─── Build map: activityId → subsidy refs (from provided data, for locked section) ─
+  const activitySubsidyMap = React.useMemo(() => {
+    const map = new Map<string, ActivitySubsidyRef[]>()
+    if (!subsidyRequests?.length) return map
+    for (const subsidy of subsidyRequests) {
+      if (subsidy.id === currentSubsidyId) continue
+      for (const item of (subsidy.items ?? [])) {
+        if (!item.activity_id) continue
+        const existing = map.get(item.activity_id) ?? []
+        map.set(item.activity_id, [
+          ...existing,
+          {
+            subsidyId:       subsidy.id,
+            subsidyTitle:    subsidy.title,
+            requestedAmount: item.requested_amount,
+            status:          subsidy.status,
+          },
+        ])
+      }
+    }
+    return map
+  }, [subsidyRequests, currentSubsidyId])
+
+  // ─── Split activities into selectable vs already-locked ─────────────────────
+  const { selectableActivities, requestedActivities } = React.useMemo(() => {
+    const selectable: ProjectActivityData[] = []
+    const requested: ProjectActivityData[] = []
+    for (const activity of filteredActivities) {
+      if (activitySubsidyMap.has(activity.id)) {
+        requested.push(activity)
+      } else {
+        selectable.push(activity)
+      }
+    }
+    return { selectableActivities: selectable, requestedActivities: requested }
+  }, [filteredActivities, activitySubsidyMap])
+
+  const freeActivities     = selectableActivities.filter(a => !subsidizedActivityIds.includes(a.id))
+  const disabledActivities = selectableActivities.filter(a =>  subsidizedActivityIds.includes(a.id))
+
+  const selectableCount = freeActivities.length
+
+  // ─── Derived selection groups ──────────────────────────────────────────────
+  const selectedActivities   = freeActivities.filter(a =>  selectedIds.has(a.id))
+  const unselectedActivities = freeActivities.filter(a => !selectedIds.has(a.id))
+
+  // ─── Reset on close ────────────────────────────────────────────────────────
+  React.useEffect(() => {
+    if (!isOpen) setSelectedIds(new Set())
+  }, [isOpen])
+
+  // ─── Toggle ────────────────────────────────────────────────────────────────
+  const toggleActivity = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  const toggleAll = () => {
+    const selectableFree = freeActivities.filter(a => {
+      const s = allocationSummaries.get(a.id)
+      return !s || s.available > 0
+    })
+    const allSelectableIds = new Set(selectableFree.map(a => a.id))
+    const allSelected = selectableFree.every(a => selectedIds.has(a.id)) && selectableFree.length > 0
+    setSelectedIds(allSelected ? new Set() : allSelectableIds)
+  }
+
+  // ─── Confirm / Close ───────────────────────────────────────────────────────
+  const handleConfirm = () => {
+    onConfirm(freeActivities.filter(a => selectedIds.has(a.id)))
+    if (process.env.NODE_ENV === "development") {
+      console.debug("[SelectActivitiesModal] confirmed activities:", freeActivities.filter(a => selectedIds.has(a.id)).map(a => a.name))
+    }
+    setSelectedIds(new Set())
+  }
+
+  const handleClose = () => {
+    setSelectedIds(new Set())
+    onClose()
+  }
+
+  // ─── Footer totals ─────────────────────────────────────────────────────────
+  const selectedTotal = React.useMemo(
+    () => freeActivities
+      .filter(a => selectedIds.has(a.id))
+      .reduce((sum, a) => sum + (a.institution_requested_amount || 0), 0),
+    [freeActivities, selectedIds]
+  )
+
+  const allEmpty = filteredActivities.length === 0
+  const modalTitle = title ?? t.addActivitiesTitle
+  const modalDescription = description ?? t.addActivitiesDescription
+
+  // ─── Check if all free selectable (non-full-budget) activities are selected ─
+  const nonFullFree = freeActivities.filter(a => {
+    const s = allocationSummaries.get(a.id)
+    return !s || s.available > 0
+  })
+  const allNonFullSelected = nonFullFree.length > 0 && nonFullFree.every(a => selectedIds.has(a.id))
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="w-[90vw] max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <Plus className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+            {modalTitle}
+          </DialogTitle>
+          <DialogDescription className="text-sm">{modalDescription}</DialogDescription>
+        </DialogHeader>
+
+        {/* ── Allocation loading / error indicator ─────────────────────────── */}
+        {allocationLoading && (
+          <div className="flex items-center gap-2 px-1 py-1.5 text-xs text-gray-400 dark:text-gray-500">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            {t.loadingAllocation}
+          </div>
+        )}
+        {allocationError && !allocationLoading && (
+          <div className="flex items-center gap-2 px-1 py-1 text-xs text-amber-600 dark:text-amber-400">
+            <WifiOff className="w-3 h-3" />
+            {t.allocationError}
+          </div>
+        )}
+
+        {/* ── Scrollable body ───────────────────────────────────────────────── */}
+        <div className="flex-1 overflow-y-auto min-h-0 space-y-4">
+
+          {allEmpty ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <AlertCircle className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                {t.noActivities}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {filterSubsidized ? t.noActivitiesSubsidized : t.noActivitiesGeneral}
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* ── Section 1: Already selected ─────────────────────────────── */}
+              {selectedActivities.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3 h-3 text-green-600 dark:text-green-500" />
+                    <p className="text-xs font-semibold uppercase tracking-wide text-green-700 dark:text-green-400">
+                      {t.selectedSection}
+                      <span className="ml-1.5 font-normal normal-case text-green-600 dark:text-green-500">
+                        ({selectedActivities.length})
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {selectedActivities.map(activity => (
+                      <SelectableActivityRow
+                        key={activity.id}
+                        activity={activity}
+                        isSelected
+                        onToggle={toggleActivity}
+                        summary={allocationSummaries.get(activity.id)}
+                        formatCurrency={formatCurrency}
+                        t={t}
+                        selectedCurrencySymbol={selectedCurrency.symbol}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Divider */}
+                  {(unselectedActivities.length > 0 || disabledActivities.length > 0 || requestedActivities.length > 0) && (
+                    <div className="border-t border-gray-100 dark:border-gray-800" />
+                  )}
+                </div>
+              )}
+
+              {/* ── Section 2: Available to add ──────────────────────────────── */}
+              {selectableActivities.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      {t.availableSection ?? t.available}
+                      <span className="ml-1.5 font-normal normal-case text-gray-400 dark:text-gray-500">
+                        ({unselectedActivities.length + disabledActivities.length})
+                      </span>
+                    </p>
+                  </div>
+
+                  {/* Select All row */}
+                  {freeActivities.length > 0 && (
+                    <div className="flex items-center justify-between py-2 px-3 rounded-md bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={allNonFullSelected}
+                          onCheckedChange={toggleAll}
+                          disabled={nonFullFree.length === 0}
+                          className="border-gray-400 dark:border-gray-500 data-[state=checked]:bg-gray-900 dark:data-[state=checked]:bg-gray-100 data-[state=checked]:border-gray-900 dark:data-[state=checked]:border-gray-100"
+                        />
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t.selectAllAvailable}
+                          <span className="ml-1.5 text-xs font-normal text-gray-500 dark:text-gray-400">
+                            ({selectedIds.size}/{selectableCount})
+                          </span>
+                        </span>
+                      </div>
+                      {selectedIds.size > 0 && (
+                        <Badge variant="secondary" className="text-xs">
+                          {formatCurrency(selectedTotal)}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Unselected free activities */}
+                  {unselectedActivities.length > 0 && (
+                    <div className="space-y-1.5">
+                      {unselectedActivities.map(activity => (
+                        <SelectableActivityRow
+                          key={activity.id}
+                          activity={activity}
+                          isSelected={false}
+                          onToggle={toggleActivity}
+                          summary={allocationSummaries.get(activity.id)}
+                          formatCurrency={formatCurrency}
+                          t={t}
+                          selectedCurrencySymbol={selectedCurrency.symbol}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Disabled (already in subsidizedActivityIds) */}
+                  {disabledActivities.length > 0 && (
+                    <div className="space-y-1.5">
+                      {disabledActivities.map(activity => (
+                        <div
+                          key={activity.id}
+                          className="flex items-start gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-100/60 dark:bg-gray-800/20 cursor-not-allowed opacity-60"
+                        >
+                          <div className={cn(
+                            "w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
+                            activity.is_subsidized
+                              ? "bg-green-100 border-2 border-green-300 dark:bg-green-950 dark:border-green-800"
+                              : "bg-gray-100 border-2 border-gray-300 dark:bg-gray-800 dark:border-gray-600"
+                          )}>
+                            <span className={cn(
+                              "text-xs font-bold",
+                              activity.is_subsidized ? "text-green-600 dark:text-green-400" : "text-gray-400 dark:text-gray-500"
+                            )}>
+                              {selectedCurrency.symbol}
+                            </span>
+                          </div>
+                          <Checkbox disabled checked={false} className="flex-shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-sm font-medium text-gray-400 dark:text-gray-500 truncate">{activity.name}</p>
+                              <p className="text-sm font-semibold text-gray-400 dark:text-gray-500 flex-shrink-0">{formatCurrency(activity.budget_amount)}</p>
+                            </div>
+                            <Badge variant="secondary" className="text-[10px] mt-1">{t.alreadyRequested}</Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Section 3: Locked (already in another request) ───────────── */}
+              {requestedActivities.length > 0 && (
+                <div className="space-y-2">
+                  {(selectableActivities.length > 0) && (
+                    <div className="border-t border-gray-100 dark:border-gray-800" />
+                  )}
+
+                  <div className="flex items-center gap-1.5">
+                    <Lock className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                      {t.alreadyRequested}
+                      <span className="ml-1.5 font-normal normal-case">
+                        ({requestedActivities.length})
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {requestedActivities.map(activity => {
+                      const subsidyRefs = activitySubsidyMap.get(activity.id) ?? []
+                      const summary = allocationSummaries.get(activity.id)
+                      return (
+                        <div
+                          key={activity.id}
+                          className="flex items-start gap-3 p-3 border border-gray-100 dark:border-gray-800 rounded-lg bg-gray-50/60 dark:bg-gray-900/40"
+                        >
+                          {/* Subsidized indicator */}
+                          <div className="flex-shrink-0 mt-0.5">
+                            <div className={cn(
+                              "w-7 h-7 rounded-full flex items-center justify-center",
+                              activity.is_subsidized
+                                ? "bg-green-100 border-2 border-green-300 dark:bg-green-950 dark:border-green-800"
+                                : "bg-gray-100 border-2 border-gray-300 dark:bg-gray-800 dark:border-gray-600"
+                            )}>
+                              <span className={cn(
+                                "text-xs font-bold",
+                                activity.is_subsidized
+                                  ? "text-green-600 dark:text-green-400"
+                                  : "text-gray-400 dark:text-gray-500"
+                              )}>
+                                {selectedCurrency.symbol}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            {/* Name + budget */}
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{activity.name}</p>
+                                <span className={cn(
+                                  "text-[10px] font-medium",
+                                  activity.is_subsidized ? "text-green-600 dark:text-green-400" : "text-gray-400 dark:text-gray-500"
+                                )}>
+                                  {activity.is_subsidized ? t.subsidizedLabel : t.notSubsidizedLabel}
+                                </span>
+                              </div>
+                              <p className="text-sm font-semibold text-gray-500 dark:text-gray-500 flex-shrink-0">
+                                {formatCurrency(activity.budget_amount)}
+                              </p>
+                            </div>
+
+                            {/* Allocation bar */}
+                            {summary && (
+                              <AllocationBar
+                                summary={summary}
+                                formatCurrency={formatCurrency}
+                                t={t}
+                              />
+                            )}
+
+                            {/* Subsidy refs */}
+                            {subsidyRefs.length > 0 && (
+                              <div className="mt-1.5 space-y-1">
+                                {subsidyRefs.map((ref, idx) => (
+                                  <div key={idx} className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-xs text-gray-500 dark:text-gray-500 truncate max-w-[160px]" title={ref.subsidyTitle}>
+                                      {ref.subsidyTitle}
+                                    </span>
+                                    <span className={cn(
+                                      "inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded border",
+                                      STATUS_STYLES[ref.status] ?? STATUS_STYLES.pending
+                                    )}>
+                                      {(t.statusLabels as Record<string, string>)[ref.status] ?? ref.status}
+                                    </span>
+                                    <span className="text-xs text-gray-400 dark:text-gray-500 ml-auto flex-shrink-0">
+                                      {t.requestedLabel}: <span className="font-medium text-gray-600 dark:text-gray-400">{formatCurrency(ref.requestedAmount)}</span>
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* ── Footer ────────────────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+            {selectedIds.size > 0 && (
+              <>
+                <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-500" />
+                <span className="text-sm font-medium">
+                  {selectedIds.size} {selectedIds.size === 1
+                    ? dict.selectedSection?.replace("{{count}}", "")?.trim() ?? "selecionada"
+                    : dict.selectedSection?.replace("{{count}}", "")?.trim() ?? "selecionadas"}
+                </span>
+                {selectedTotal > 0 && (
+                  <Badge variant="secondary" className="text-xs font-semibold">
+                    <DollarSign className="w-3 h-3 mr-0.5" />
+                    {formatCurrency(selectedTotal)}
+                  </Badge>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleClose} size="sm">
+              {dict.cancel ?? "Cancelar"}
+            </Button>
+            <Button
+              onClick={handleConfirm}
+              disabled={selectedIds.size === 0}
+              className="bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 dark:text-gray-900"
+              size="sm"
+            >
+              {allocationLoading ? (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4 mr-1" />
+              )}
+              {dict.selectAllAvailable?.replace("todas disponíveis", "").replace("all available", "").replace("alle beschikbare", "").trim() || "Confirmar"} ({selectedIds.size})
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+
