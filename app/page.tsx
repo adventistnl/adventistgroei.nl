@@ -3,8 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
-import { LoadingSpinner } from '@/components/shared/loading-spinner'
-import { Building2 } from 'lucide-react'
+import { AppLoader } from '@/components/shared/app-loader'
 import { useTranslation } from 'react-i18next'
 import { loginTranslations } from '@/lib/translations/login'
 
@@ -30,12 +29,10 @@ export default function HomePage() {
 
   // Mostrar loading enquanto verifica autenticação
   return (
-    <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
-      <LoadingSpinner 
-        text={t.validatingAccount} 
-        icon={Building2}
-        size="md"
-      />
-    </div>
+    <AppLoader
+      fullScreen
+      message={t.validatingAccount}
+    />
   )
 }
+

@@ -96,7 +96,7 @@ import { useSubsidyReceipts } from "@/hooks/use-subsidy-receipts"
 import { useCurrency } from "@/contexts/currency-context"
 import { ActivityTags, EntityType, ActivityPriority, ActivityStatus, PermissionResolverName } from "@/types/graphql-global-types"
 import type { Contact } from "@/types/graphql-global-types"
-import { LoadingSpinner } from "@/components/shared/loading-spinner"
+import { AppLoader } from "@/components/shared/app-loader"
 import { CardDescription, CardTitle } from "@/components/ui/card"
 import { WithPermission } from "@/hocs/with-permission"
 import { ContactViewEditModal } from "@/components/modals/contact/contact-view-edit-modal"
@@ -2149,15 +2149,7 @@ export default function ProjectDetailsPage() {
   if (projectLoading) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
-            <LoadingSpinner
-              text="Loading project..."
-              icon={Church}
-              size="lg"
-            />
-          </div>
-        </div>
+        <AppLoader fullScreen message="Loading project..." />
       </AppLayout>
     )
   }

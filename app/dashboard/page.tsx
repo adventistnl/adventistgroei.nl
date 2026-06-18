@@ -67,7 +67,7 @@ import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-caro
 import { DateTimeDisplay } from "@/components/shared/date-time-display"
 import { CalendarCard } from "@/components/shared/calendar-card"
 import { CalendarHeatmap } from "@/components/shared/calendar-heatmap"
-import { LoadingSpinner } from "@/components/shared/loading-spinner"
+import { AppLoader } from "@/components/shared/app-loader"
 import { RoleDistributionChart, PermissionsByGroupChart, UserActivityChart } from "@/components/access/access-charts"
 import { BudgetOverviewCard } from "@/components/budget"
 import { SpendingOverTimeChart } from "@/components/charts/annual-budget/spending-over-time-chart"
@@ -1038,13 +1038,10 @@ export default function DashboardPage() {
   // Show full-screen loading on initial page load
   if (isInitialLoad || isLoadingData) {
     return (
-      <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
-        <LoadingSpinner 
-          text={dt.loadingDashboard || "Loading dashboard data..."}
-          icon={Building2}
-          size="lg"
-        />
-      </div>
+      <AppLoader
+        fullScreen
+        message={dt.loadingDashboard || "Loading dashboard data..."}
+      />
     )
   }
 

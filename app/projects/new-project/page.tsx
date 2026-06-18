@@ -135,7 +135,7 @@ import { ProjectType, LanguagePreference, EventType } from "@/types/globalTypes"
 import "@/lib/i18n"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
-import { LoadingSpinner } from "@/components/shared/loading-spinner"
+import { AppLoader } from "@/components/shared/app-loader"
 import { useHasPermission } from "@/hooks/use-has-permission"
 
 // Predefined activities with translation keys
@@ -2997,7 +2997,7 @@ function ProjectRegisterContent() {
       {/* Full-page loading overlay during project creation and role assignment */}
       {isLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-            <LoadingSpinner />
+          <AppLoader />
         </div>
       )}
       <AppLayout>

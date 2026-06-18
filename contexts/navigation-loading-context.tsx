@@ -2,7 +2,7 @@
 
 import { usePathname, useSearchParams } from "next/navigation"
 import React, { createContext, useContext, useState, useEffect, Suspense } from "react"
-import { LoadingState } from "@/components/registration/registration-states"
+import { AppLoader } from "@/components/shared/app-loader"
 
 interface NavigationLoadingContextType {
   isNavigating: boolean
@@ -74,10 +74,10 @@ function NavigationLoadingProviderInner({
       */}
       <div 
         id="navigation-loading-container" 
-        className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-[2px]"
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-background"
         style={{ display: 'none' }}
       >
-        <LoadingState message={navigationMessage} className="bg-transparent min-h-0" />
+        <AppLoader message={navigationMessage} />
       </div>
     </>
   )

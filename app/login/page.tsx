@@ -15,7 +15,7 @@ import { LoginSplash } from '@/components/auth/login-splash'
 import { LoginHeader } from '@/components/auth/login-header'
 import { AdventistLogo } from '@/components/ui/adventist-logo'
 import { loginTranslations } from '@/lib/translations/login'
-import { LoadingSpinner } from '@/components/shared/loading-spinner'
+import { AppLoader } from '@/components/shared/app-loader'
 
 // Idiomas suportados pelo sistema
 const LANGUAGES = [
@@ -153,15 +153,7 @@ function LoginPageContent() {
 
   // Mostrar loading enquanto verifica autenticação
   if (isLoading) {
-    return (
-      <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
-    <LoadingSpinner 
-        text="Loading institutions..." 
-        icon={Building2}
-        size="md"
-      />
-      </div>
-    )
+    return <AppLoader fullScreen />  
   }
 
   // Se já estiver autenticado, não mostrar nada (redirecionamento está acontecendo)
@@ -388,11 +380,7 @@ function LoginPageContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <LoadingSpinner
-        text="Loading..."
-        size="lg"
-        fullScreen
-      />
+      <AppLoader fullScreen />
     }>
       <LoginPageContent />
     </Suspense>

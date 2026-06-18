@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, Suspense, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@apollo/client"
 import { useRouter, useSearchParams } from "next/navigation"
-import { LoadingSpinner } from "@/components/shared/loading-spinner"
+import { AppLoader } from "@/components/shared/app-loader"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -1170,11 +1170,9 @@ export default function ProjectsPage() {
       }
     >
       <Suspense fallback={
-        <LoadingSpinner
-          text="Loading projects..."
-          icon={Building2}
-          size="lg"
+        <AppLoader
           fullScreen
+          message="Loading projects..."
         />
       }>
         <ProjectsPageContent />

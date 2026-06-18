@@ -17,7 +17,7 @@ import { AdventistLogo } from "@/components/ui/adventist-logo"
 import { useUser } from "@/hooks/use-user"
 import { UpdateUserVariables } from "@/types/UpdateUser"
 import { usePageTitle } from "@/hooks/use-page-title"
-import { LoadingSpinner } from "@/components/shared/loading-spinner"
+import { AppLoader } from "@/components/shared/app-loader"
 import { useInstitution } from "@/contexts/institution-context"
 import { useQuery } from "@apollo/client"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
@@ -156,12 +156,9 @@ export default function ProfilePage() {
   // Show loading state
   if (isLoading || userLoading) {
     return (
-      <LoadingSpinner
-        text={t('profile.loading')}
-        customIcon={Building2}
-        size="lg"
+      <AppLoader
         fullScreen
-        className="space-y-6 max-w-sm mx-auto px-8"
+        message={t('profile.loading')}
       />
     )
   }

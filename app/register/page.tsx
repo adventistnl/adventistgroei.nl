@@ -6,13 +6,12 @@ import { useTranslation } from "react-i18next"
 import { Form } from "@/components/ui/form"
 import { registerTranslations } from "@/lib/translations/register"
 import { MultiStepForm } from "@/components/shared/multi-step-form"
-import { LoadingSpinner } from "@/components/shared/loading-spinner"
-import { Building2 } from "lucide-react"
+import { AppLoader } from "@/components/shared/app-loader"
 
 // Componentes organizados
 import { RegistrationLayout } from "@/components/registration/registration-layout"
 import { RegistrationHeader } from "@/components/registration/registration-header"
-import { LoadingState, ValidatingInviteState, InvalidInviteState, SuccessRegistrationState } from "@/components/registration/registration-states"
+import { InvalidInviteState, SuccessRegistrationState } from "@/components/registration/registration-states"
 
 // Steps do formulário
 import { PersonalInfoStep } from "@/components/registration/steps/personal-info-step"
@@ -174,12 +173,12 @@ function RegisterPageContent() {
 
   // Estado de loading inicial
   if (isLoading) {
-    return <LoadingState message={t.loading} />
+    return <AppLoader fullScreen message={t.loading} />
   }
 
   // Estado de validação do convite
   if (isValidInvite === null) {
-    return <ValidatingInviteState message={t.validatingInvite} />
+    return <AppLoader fullScreen message={t.validatingInvite} />
   }
 
   // Estado de convite inválido
@@ -248,15 +247,7 @@ function RegisterPageContent() {
  */
 export default function RegisterPage() {
   return (
-    <Suspense fallback={
-      <LoadingSpinner
-        text="Loading..."
-        customIcon={Building2}
-        size="lg"
-        fullScreen
-        className="space-y-6 max-w-sm mx-auto px-8"
-      />
-    }>
+    <Suspense fallback={<AppLoader fullScreen />}>
       <RegisterPageContent />
     </Suspense>
   )

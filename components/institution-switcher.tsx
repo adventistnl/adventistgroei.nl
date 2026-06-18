@@ -4,7 +4,7 @@ import * as React from "react"
 import { Plus, Building2, RefreshCw } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { useInstitution } from "@/contexts/institution-context"
-import { LoadingSpinner } from "@/components/shared/loading-spinner"
+import { AppLoader } from "@/components/shared/app-loader"
 import {
   Select,
   SelectContent,
@@ -110,8 +110,7 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
           <div className="institution-switcher flex items-center gap-2 p-2 bg-sidebar">
             {/* Loading Spinner */}
             <div className="institution-logo text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg bg-muted animate-pulse shrink-0">
-              <LoadingSpinner 
-                icon={Building2}
+              <AppLoader
                 size="sm"
               />
             </div>
