@@ -55,14 +55,16 @@ export function makeClient() {
           createClient({
             url: config.graphqlApiUrl.replace(/^http/, "ws"),
             connectionParams: () => {
-              const token =
-                (typeof window !== "undefined" && localStorage.getItem("auth-token")) || "";
+              // T13: Read token from cookie (auth-context.tsx stores it as cookie "auth-token")
+              // Previously was reading from localStorage which is always empty.
+              const token = getCookiesSync()["auth-token"] || "";
               return {
                 headers: {
                   Authorization: token ? `Bearer ${token}` : "",
                 },
               };
-            },            retryAttempts: Infinity,
+            },
+            retryAttempts: Infinity,
             shouldRetry: () => true,
             on: {
               connecting: () => console.log("[WS] connecting to", config.graphqlApiUrl.replace(/^http/, "ws")),
@@ -70,7 +72,8 @@ export function makeClient() {
               reconnecting: () => console.warn("[WS] reconnecting..."),
               closed: (e) => console.warn("[WS] closed", e),
               error: (e) => console.error("[WS] error", e),
-            },          })
+            },
+          })
         )
       : null;
 

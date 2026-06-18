@@ -50,11 +50,25 @@ export const useInstitution = () => {
 }
 
 export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Estado para instituição ativa
   const { user: authUser } = useAuth();
-  const { user  } = useUser({});
-  
-  // Calcular institutions ANTES de tudo
+  const { user } = useUser({});
+
+  const STORAGE_KEY = 'active_institution_id';
+
+  // T8: Read localStorage synchronously in the initializer — SSR-safe via typeof window guard.
+  // Using useEffect to set this caused an extra render cycle (undefined → id → data loaded)
+  // which produced a blank screen flash between spinners post-login.
+  const [activeInstitutionId, setActiveInstitutionId] = React.useState<string | undefined>(() => {
+    if (typeof window === 'undefined') return undefined;
+    return localStorage.getItem('active_institution_id') || undefined;
+  });
+
+
+
+  // T6/T7: Single useInstitutions() call — pass activeInstitutionId directly.
+  // Previously there were TWO calls (one with undefined, one with activeInstitutionId)
+  // which caused two simultaneous GraphQL queries and a combined loading state
+  // that rendered double loading overlays post-login.
   const {
     institutions: rawInstitutions,
     currentInstitutionData,
@@ -78,8 +92,8 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     updateContactLoading,
     updateInstitutionContact,
     updatedInstitutionContact
-  } = useInstitutions(undefined); // Passar undefined inicialmente para carregar lista
-  
+  } = useInstitutions(activeInstitutionId); // single call — list + specific institution together
+
   // Mapear institutions com logo
   const institutions = React.useMemo(() => {
     return (rawInstitutions || []).map(inst => ({
@@ -88,48 +102,27 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }));
   }, [rawInstitutions]);
 
-  const STORAGE_KEY = 'active_institution_id';
-
-  // Helper SSR-safe para ler localStorage
-  const readStoredInstitutionId = (): string | undefined => {
-    if (typeof window === 'undefined') return undefined;
-    return localStorage.getItem(STORAGE_KEY) || undefined;
-  };
-
-  // Definir activeInstitutionId com fallback inteligente
-  // Prioridade: localStorage salvo → institution_id do user logado → undefined (useEffect resolve)
-  const [activeInstitutionId, setActiveInstitutionId] = useState<string | undefined>(() => {
-    const stored = readStoredInstitutionId();
-    if (stored) return stored;
-    if (authUser?.institution_id) return authUser.institution_id;
-    if (user?.institution_id) return user.institution_id;
-    return undefined;
-  });
-
-  // Agora buscar dados da instituição específica
-  const {
-    currentInstitutionData: specificInstitutionData,
-    loading: specificLoading,
-    refetchInstitutionById: refetchSpecificInstitution
-  } = useInstitutions(activeInstitutionId);
-
-  // Atualizar activeInstitutionId quando necessário (apenas se ainda não foi definido)
+  // T8: Resolve activeInstitutionId on first client-side render only.
+  // Priority: localStorage → authUser.institution_id → user.institution_id → first institution in list
   useEffect(() => {
-    if (!activeInstitutionId) {
-      const stored = readStoredInstitutionId();
+    if (activeInstitutionId) return; // already set, do nothing
+
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         setActiveInstitutionId(stored);
-      } else if (authUser?.institution_id) {
-        setActiveInstitutionId(authUser.institution_id);
-      } else if (user?.institution_id) {
-        setActiveInstitutionId(user.institution_id);
-      } else if (institutions.length > 0) {
-        setActiveInstitutionId(institutions[0].id);
+        return;
       }
     }
-  }, [authUser, user, institutions, activeInstitutionId]);
-  
 
+    if (authUser?.institution_id) {
+      setActiveInstitutionId(authUser.institution_id);
+    } else if (user?.institution_id) {
+      setActiveInstitutionId(user.institution_id);
+    } else if (institutions.length > 0) {
+      setActiveInstitutionId(institutions[0].id);
+    }
+  }, [authUser, user, institutions, activeInstitutionId]);
 
   // Troca de instituição — persiste no localStorage
   const switchInstitution = useCallback(async (institutionId: string) => {
@@ -164,7 +157,7 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     institutions,
     switchInstitution,
     addInstitution,
-    loading: loading || specificLoading,
+    loading, // T7: single loading state — no more combined loading || specificLoading
     error,
     createInstitution,
     createLoading,
@@ -179,8 +172,8 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     updateError,
     updatedInstitution,
     refetchInstitutions,
-    refetchInstitutionById: refetchSpecificInstitution,
-    currentInstitutionData: specificInstitutionData || currentInstitutionData,
+    refetchInstitutionById,
+    currentInstitutionData,
     updateInstitutionContact,
     updatedInstitutionContact,
     updateContactLoading,
@@ -190,7 +183,6 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     switchInstitution,
     addInstitution,
     loading,
-    specificLoading,
     error,
     createInstitution,
     createLoading,
@@ -205,14 +197,14 @@ export const InstitutionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     updateError,
     updatedInstitution,
     refetchInstitutions,
-    refetchSpecificInstitution,
-    specificInstitutionData,
+    refetchInstitutionById,
     currentInstitutionData,
     updateInstitutionContact,
     updatedInstitutionContact,
     updateContactLoading,
     updateContactError
   ]);
+
 
   return (
     <InstitutionContext.Provider value={value}>

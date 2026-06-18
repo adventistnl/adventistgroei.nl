@@ -32,6 +32,9 @@ export interface UserMultiSelectorProps {
   /** Lista de usuários disponíveis */
   availableUsers: User[]
 
+  /** T22: Membros do projeto (owner, co_owner, collaborators) — exibidos com prioridade */
+  projectMembers?: User[]
+
   /** Usuários atualmente selecionados */
   selectedUsers: User[]
 
@@ -65,6 +68,7 @@ export interface UserMultiSelectorProps {
 
 export const UserMultiSelector = forwardRef<HTMLButtonElement, UserMultiSelectorProps>(({
   availableUsers,
+  projectMembers,
   selectedUsers,
   onUsersChange,
   buttonLabel,
@@ -90,14 +94,24 @@ export const UserMultiSelector = forwardRef<HTMLButtonElement, UserMultiSelector
       .slice(0, 2)
   }
 
-  const filteredUsers = availableUsers.filter((user) => {
+  // T23: Filter both sections simultaneously with the same search query
+  const filterUsers = (users: User[]) => {
+    if (!searchQuery) return users
     const query = searchQuery.toLowerCase()
-    return (
+    return users.filter((user) =>
       user.name.toLowerCase().includes(query) ||
       user.email?.toLowerCase().includes(query) ||
       user.role?.toLowerCase().includes(query)
     )
-  })
+  }
+
+  // T22: Separate project members from other users (exclude duplicates in otherUsers)
+  const projectMemberIds = new Set((projectMembers || []).map(u => u.id))
+  const filteredProjectMembers = filterUsers(projectMembers || [])
+  const otherUsers = availableUsers.filter(u => !projectMemberIds.has(u.id))
+  const filteredOtherUsers = filterUsers(otherUsers)
+  // Fallback: if no projectMembers provided, show all in a single list
+  const filteredUsers = projectMembers ? [] : filterUsers(availableUsers)
 
   const handleUserToggle = (user: User) => {
     const isSelected = tempSelectedUsers.some(u => u.id === user.id)
@@ -248,71 +262,176 @@ export const UserMultiSelector = forwardRef<HTMLButtonElement, UserMultiSelector
             </div>
           </div>
 
-          {/* Users List */}
+          {/* T22/T23: Users List — two sections when projectMembers are provided */}
           <div className="space-y-1.5">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              {t('activities.user_selector.available_users')}
-            </p>
-            <div className="max-h-[280px] overflow-y-auto space-y-1 p-2 border rounded-lg">
-              {filteredUsers.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-sm text-muted-foreground">
-                    {searchQuery
-                      ? t('activities.user_selector.no_user_found')
-                      : t('activities.user_selector.no_user_available')}
-                  </p>
+            {projectMembers ? (
+              <>
+                {/* Section 1: Project Members */}
+                {filteredProjectMembers.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary"></span>
+                      {t('activities.user_selector.project_members', { defaultValue: 'Project Members' })}
+                    </p>
+                    <div className="max-h-[180px] overflow-y-auto space-y-1 p-2 border rounded-lg bg-primary/5">
+                      {filteredProjectMembers.map((user) => {
+                        const isSelected = tempSelectedUsers.some(u => u.id === user.id)
+                        const canSelect = !maxSelections || tempSelectedUsers.length < maxSelections || isSelected
+                        return (
+                          <button
+                            key={user.id}
+                            type="button"
+                            onClick={() => handleUserToggle(user)}
+                            disabled={!canSelect}
+                            className={cn(
+                              "w-full flex items-center gap-3 p-2.5 rounded-md transition-all",
+                              "hover:bg-muted",
+                              isSelected && "bg-muted border border-border",
+                              !canSelect && "opacity-40 cursor-not-allowed"
+                            )}
+                          >
+                            <Avatar className="h-9 w-9 border">
+                              <AvatarImage src={user.avatar} alt={user.name} />
+                              <AvatarFallback className="text-xs bg-muted text-foreground font-medium">
+                                {getInitials(user.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 text-left min-w-0">
+                              <p className="text-sm font-medium truncate">{user.name}</p>
+                              {(user.email || user.role) && (
+                                <p className="text-xs text-muted-foreground truncate">{user.role || user.email}</p>
+                              )}
+                            </div>
+                            <div className={cn(
+                              "w-4 h-4 rounded-sm border flex items-center justify-center flex-shrink-0 transition-colors",
+                              isSelected ? "bg-foreground border-foreground" : "border-muted-foreground/30"
+                            )}>
+                              {isSelected && <Check className="w-3 h-3 text-background" strokeWidth={3} />}
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Section 2: Other Users */}
+                {filteredOtherUsers.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      {t('activities.user_selector.other_users', { defaultValue: 'Other Users' })}
+                    </p>
+                    <div className="max-h-[180px] overflow-y-auto space-y-1 p-2 border rounded-lg">
+                      {filteredOtherUsers.map((user) => {
+                        const isSelected = tempSelectedUsers.some(u => u.id === user.id)
+                        const canSelect = !maxSelections || tempSelectedUsers.length < maxSelections || isSelected
+                        return (
+                          <button
+                            key={user.id}
+                            type="button"
+                            onClick={() => handleUserToggle(user)}
+                            disabled={!canSelect}
+                            className={cn(
+                              "w-full flex items-center gap-3 p-2.5 rounded-md transition-all",
+                              "hover:bg-muted",
+                              isSelected && "bg-muted border border-border",
+                              !canSelect && "opacity-40 cursor-not-allowed"
+                            )}
+                          >
+                            <Avatar className="h-9 w-9 border">
+                              <AvatarImage src={user.avatar} alt={user.name} />
+                              <AvatarFallback className="text-xs bg-muted text-foreground font-medium">
+                                {getInitials(user.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 text-left min-w-0">
+                              <p className="text-sm font-medium truncate">{user.name}</p>
+                              {(user.email || user.role) && (
+                                <p className="text-xs text-muted-foreground truncate">{user.role || user.email}</p>
+                              )}
+                            </div>
+                            <div className={cn(
+                              "w-4 h-4 rounded-sm border flex items-center justify-center flex-shrink-0 transition-colors",
+                              isSelected ? "bg-foreground border-foreground" : "border-muted-foreground/30"
+                            )}>
+                              {isSelected && <Check className="w-3 h-3 text-background" strokeWidth={3} />}
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {filteredProjectMembers.length === 0 && filteredOtherUsers.length === 0 && (
+                  <div className="text-center py-12">
+                    <p className="text-sm text-muted-foreground">
+                      {t('activities.user_selector.no_user_found')}
+                    </p>
+                  </div>
+                )}
+              </>
+            ) : (
+              /* Original flat list — no projectMembers provided */
+              <>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  {t('activities.user_selector.available_users')}
+                </p>
+                <div className="max-h-[280px] overflow-y-auto space-y-1 p-2 border rounded-lg">
+                  {filteredUsers.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-sm text-muted-foreground">
+                        {searchQuery
+                          ? t('activities.user_selector.no_user_found')
+                          : t('activities.user_selector.no_user_available')}
+                      </p>
+                    </div>
+                  ) : (
+                    filteredUsers.map((user) => {
+                      const isSelected = tempSelectedUsers.some(u => u.id === user.id)
+                      const canSelect = !maxSelections || tempSelectedUsers.length < maxSelections || isSelected
+                      return (
+                        <button
+                          key={user.id}
+                          type="button"
+                          onClick={() => handleUserToggle(user)}
+                          disabled={!canSelect}
+                          className={cn(
+                            "w-full flex items-center gap-3 p-2.5 rounded-md transition-all",
+                            "hover:bg-muted",
+                            isSelected && "bg-muted border border-border",
+                            !canSelect && "opacity-40 cursor-not-allowed"
+                          )}
+                        >
+                          <Avatar className="h-9 w-9 border">
+                            <AvatarImage src={user.avatar} alt={user.name} />
+                            <AvatarFallback className="text-xs bg-muted text-foreground font-medium">
+                              {getInitials(user.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 text-left min-w-0">
+                            <p className="text-sm font-medium truncate">{user.name}</p>
+                            {(user.email || user.role) && (
+                              <p className="text-xs text-muted-foreground truncate">{user.role || user.email}</p>
+                            )}
+                          </div>
+                          <div className={cn(
+                            "w-4 h-4 rounded-sm border flex items-center justify-center flex-shrink-0 transition-colors",
+                            isSelected
+                              ? "bg-foreground border-foreground"
+                              : "border-muted-foreground/30"
+                          )}>
+                            {isSelected && (
+                              <Check className="w-3 h-3 text-background" strokeWidth={3} />
+                            )}
+                          </div>
+                        </button>
+                      )
+                    })
+                  )}
                 </div>
-              ) : (
-                filteredUsers.map((user) => {
-                  const isSelected = tempSelectedUsers.some(u => u.id === user.id)
-                  const canSelect = !maxSelections || tempSelectedUsers.length < maxSelections || isSelected
-
-                  return (
-                    <button
-                      key={user.id}
-                      type="button"
-                      onClick={() => handleUserToggle(user)}
-                      disabled={!canSelect}
-                      className={cn(
-                        "w-full flex items-center gap-3 p-2.5 rounded-md transition-all",
-                        "hover:bg-muted",
-                        isSelected && "bg-muted border border-border",
-                        !canSelect && "opacity-40 cursor-not-allowed"
-                      )}
-                    >
-                      <Avatar className="h-9 w-9 border">
-                        <AvatarImage src={user.avatar} alt={user.name} />
-                        <AvatarFallback className="text-xs bg-muted text-foreground font-medium">
-                          {getInitials(user.name)}
-                        </AvatarFallback>
-                      </Avatar>
-
-                      <div className="flex-1 text-left min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {user.name}
-                        </p>
-                        {(user.email || user.role) && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {user.role || user.email}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className={cn(
-                        "w-4 h-4 rounded-sm border flex items-center justify-center flex-shrink-0 transition-colors",
-                        isSelected 
-                          ? "bg-foreground border-foreground" 
-                          : "border-muted-foreground/30"
-                      )}>
-                        {isSelected && (
-                          <Check className="w-3 h-3 text-background" strokeWidth={3} />
-                        )}
-                      </div>
-                    </button>
-                  )
-                })
-              )}
-            </div>
+              </>
+            )}
           </div>
 
           {/* Selection count and validation */}

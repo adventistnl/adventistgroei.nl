@@ -143,7 +143,30 @@ const getActivityTagVariant = (tag: ActivityTags): string => {
   return variants[tag] || 'gray'
 }
 
+/** Builds a localized, user-friendly error message for the ADVANCE_EXCEEDS_LIMIT backend error. */
+function _buildAdvanceLimitMessage(
+  extra: { requested: number; max: number; existing: number; subsidizedBudget: number },
+  lang: string,
+  fmt: (n: number) => string,
+): string {
+  const { requested, max, existing } = extra
+  if (lang === 'pt') {
+    return existing > 0
+      ? `O valor solicitado (${fmt(requested)}) mais o valor já adiantado (${fmt(existing)}) excedem o limite de 50% do orçamento subsidiado. Máximo disponível: ${fmt(max - existing)}.`
+      : `O valor solicitado (${fmt(requested)}) excede o limite de adiantamento de 50% do orçamento subsidiado. Máximo permitido: ${fmt(max)}.`
+  }
+  if (lang === 'nl') {
+    return existing > 0
+      ? `Het gevraagde bedrag (${fmt(requested)}) plus het al vooruitbetaalde bedrag (${fmt(existing)}) overschrijden het limiet van 50% van het gesubsidieerde budget. Beschikbaar maximum: ${fmt(max - existing)}.`
+      : `Het gevraagde bedrag (${fmt(requested)}) overschrijdt het voorschotlimiet van 50% van het gesubsidieerde budget. Maximaal toegestaan: ${fmt(max)}.`
+  }
+  return existing > 0
+    ? `The requested amount (${fmt(requested)}) plus already advanced (${fmt(existing)}) exceeds the 50% limit of the subsidized budget. Available maximum: ${fmt(max - existing)}.`
+    : `The requested amount (${fmt(requested)}) exceeds the 50% advance limit of the subsidized budget. Maximum allowed: ${fmt(max)}.`
+}
+
 export default function ProjectDetailsPage() {
+
   const params = useParams()
   const router = useRouter()
   const { i18n } = useTranslation()
@@ -355,22 +378,19 @@ export default function ProjectDetailsPage() {
   })
 
   // Subsidy Request Mutations
-  // errorPolicy: 'all' ensures GraphQL errors are returned in result.errors
-  // instead of being swallowed by onError (Apollo Client 3 behavior)
+  // NOTE: errorPolicy:'all' was removed — with onError present, Apollo 3 fires onError
+  // and leaves result.errors empty, bypassing our structured error handling.
+  // Without errorPolicy, Apollo throws ApolloError on GraphQL errors, which is caught
+  // by the try/catch in handleSubsidyRequestSubmit where ADVANCE_EXCEEDS_LIMIT is handled.
   const [createSubsidyRequest, { loading: createSubsidyLoading }] = useMutation(CREATE_SUBSIDY_REQUEST, {
-    errorPolicy: 'all',
     onCompleted: () => {
       // Don't show toast here - let the modal handle success message
       // Don't close the modal here either — the modal closes itself AFTER file uploads complete
       logHistory({ type: ProjectHistoryType.SUBSIDY_CREATED })
       refetchProject()
     },
-    onError: (error) => {
-      const errorMessage = error.graphQLErrors?.[0]?.message || error.message || 'Erro desconhecido'
-      console.error('❌ [createSubsidyRequest] onError fired:', { message: errorMessage, graphQLErrors: error.graphQLErrors, networkError: error.networkError })
-      // Note: with errorPolicy:'all', we do NOT show toast here — handleSubsidyRequestSubmit will read result.errors and throw
-    }
   })
+
 
   const [updateSubsidyRequest, { loading: updateSubsidyLoading }] = useMutation(UPDATE_SUBSIDY_REQUEST, {
     onCompleted: () => {
@@ -1242,18 +1262,13 @@ export default function ProjectDetailsPage() {
         }
       })
 
-      // For ADVANCE requests the API enforces: advance_amount <= total_budget * 0.5
-      // total_budget must therefore be the project's subsidized budget — NOT the advance amount.
-      // Sending total_budget = advance_amount makes the check always fail (X <= X*0.5 → false).
-      const projectSubsidizedBudget =
-        (projectData?.project as any)?.kpis?.subsidizedBudget ||
-        Number((projectData?.project as any)?.subsidized_budget || 0)
-
+      // For ADVANCE requests: total_budget = the amount actually requested (advance_amount).
+      // The backend T1-T5 fix now validates the 50% limit using advance_amount directly,
+      // so total_budget no longer needs to equal the full subsidized_budget.
+      // Sending the full subsidized_budget caused the subsidy to display with the wrong value.
       const createVars = {
         description,
-        total_budget: requestType === 'ADVANCE'
-          ? projectSubsidizedBudget || data.requested_amount
-          : data.requested_amount,
+        total_budget: data.requested_amount,
         project_id: data.project_id,
         requester_id: user.id,
         department_id: resolvedDeptId,
@@ -1268,6 +1283,7 @@ export default function ProjectDetailsPage() {
         ...(data.notes?.trim() ? { notes: data.notes.trim() } : {}),
         items: createItems,
       }
+
 
       console.group(`🚀 [handleSubsidyRequestSubmit] CREATE — ${requestType}`)
       console.log('variables.data:', JSON.stringify(createVars, null, 2))
@@ -1286,25 +1302,56 @@ export default function ProjectDetailsPage() {
       })
 
       if (result.errors && result.errors.length > 0) {
-        const errMsg = result.errors[0]?.message || 'Erro GraphQL'
-        console.error(`❌ [handleSubsidyRequestSubmit] CREATE (${requestType}) GraphQL errors:`, result.errors)
-        throw new Error(errMsg)
+        const gqlErr = result.errors[0]
+        const errCode = (gqlErr as any)?.extensions?.context?.additional?.errorCode
+        if (errCode === 'ADVANCE_EXCEEDS_LIMIT') {
+          const extra = (gqlErr as any).extensions.context.additional
+          throw new Error(_buildAdvanceLimitMessage(extra, i18n.language, formatCurrency))
+        }
+        throw new Error(gqlErr?.message || 'Erro GraphQL')
       }
 
       const resultId = result.data?.createSubsidyRequest?.id
       if (!resultId) {
+        // True fallback: Apollo resolved without data and without errors.
+        // GraphQL errors should be caught by the catch block above (ApolloError.graphQLErrors).
         console.error(`❌ [handleSubsidyRequestSubmit] CREATE (${requestType}): resultId falsy, sem erros. Full result:`, result)
-        throw new Error(`createSubsidyRequest (${requestType}) retornou nulo sem erros. Verifique o Network tab.`)
+        throw new Error(
+          i18n.language === 'pt'
+            ? 'Erro ao criar solicitação. Verifique o console para detalhes.'
+            : i18n.language === 'nl'
+              ? 'Fout bij het aanmaken van de aanvraag. Controleer de console voor details.'
+              : 'Error creating request. Check the console for details.'
+        )
       }
+
 
       console.log(`✅ [handleSubsidyRequestSubmit] CREATE OK (${requestType}) — id:`, resultId)
       return resultId
 
-    } catch (error) {
+    } catch (error: any) {
+      // When the backend returns HTTP 400, Apollo treats the response as a networkError.
+      // The actual GraphQL errors are in error.networkError.result.errors — same pattern
+      // used throughout this codebase (edit-project-modal, delete-activity-modal, etc.)
+      let gqlErr = error?.graphQLErrors?.[0]
+      if (!gqlErr && error?.networkError?.result?.errors) {
+        gqlErr = error.networkError.result.errors[0]
+      }
+
+      const errCode = gqlErr?.extensions?.context?.additional?.errorCode
+      if (errCode === 'ADVANCE_EXCEEDS_LIMIT') {
+        const extra = gqlErr.extensions.context.additional
+        const msg = _buildAdvanceLimitMessage(extra, i18n.language, formatCurrency)
+        console.error('❌ [handleSubsidyRequestSubmit] ADVANCE_EXCEEDS_LIMIT:', extra)
+        throw new Error(msg)
+      }
+
       console.error('❌ [handleSubsidyRequestSubmit] CATCH:', error)
       throw error
     }
   }
+
+
 
   // Handler to update a subsidy request
   const handleUpdateSubsidyCard = async (id: string, data: SubsidyRequestFormData) => {

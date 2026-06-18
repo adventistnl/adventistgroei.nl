@@ -56,7 +56,10 @@ export function useInstitutions(id?: string): iInstitutions & {
     { id: id || '' },
     {
       skip: !id, // Só buscar se tiver ID válido
-      fetchPolicy: 'cache-and-network', // Usar cache enquanto busca dados atualizados
+      // T9: Use cache-first to avoid re-fetching on every navigation.
+      // cache-and-network was causing unnecessary network requests even when
+      // the institution data was already in the Apollo cache.
+      fetchPolicy: 'cache-first',
     }
   );
 

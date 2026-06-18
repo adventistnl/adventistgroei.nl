@@ -67,10 +67,14 @@ function NavigationLoadingProviderInner({
       {/* 
         Render always but hidden by default using display: none.
         We use direct DOM manipulation to toggle display for zero-latency feedback.
+        
+        T17/T18: z-[100] keeps the overlay BELOW Dialog modals (z-[200]).
+        Using bg-background/95 (more opaque) prevents bleed-through transparency artifacts
+        when the overlay and a modal are simultaneously visible during navigation.
       */}
       <div 
         id="navigation-loading-container" 
-        className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm"
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-[2px]"
         style={{ display: 'none' }}
       >
         <LoadingState message={navigationMessage} className="bg-transparent min-h-0" />

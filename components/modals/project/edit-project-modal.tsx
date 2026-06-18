@@ -158,6 +158,27 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
     return users
   }, [institutionUsers, projectDetail])
 
+  // T22: Project members = owner + co_owner + collaborators — displayed first in selectors
+  const projectMembers = React.useMemo((): User[] => {
+    const members: User[] = []
+    const seen = new Set<string>()
+
+    const addMember = (u: any, role: string) => {
+      if (!u?.id || seen.has(u.id)) return
+      seen.add(u.id)
+      members.push({ id: u.id, name: u.name, email: u.email, role })
+    }
+
+    if (projectDetail?.owner) addMember(projectDetail.owner, 'Owner')
+    if (projectDetail?.co_owner) addMember(projectDetail.co_owner, 'Co-Owner')
+    ;(projectDetail?.collaborators || []).forEach((c: any) =>
+      addMember(c.user, c.role || 'Collaborator')
+    )
+
+    return members
+  }, [projectDetail])
+
+
   // Filter departments: only show those with locked annual budget for current year
   const currentYear = new Date().getFullYear()
   const departments = (departmentsData?.departments || []).filter((dept: any) =>
@@ -625,6 +646,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                 <div className="hidden">
                   <UserMultiSelector
                     availableUsers={availableUsers}
+                    projectMembers={projectMembers}
                     selectedUsers={availableUsers.filter((user: User) => user.id === formData.owner_id)}
                     onUsersChange={(users: User[]) => {
                       const ownerId = users.length > 0 ? users[0].id : ""
@@ -640,6 +662,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                     buttonDataAttribute="data-owner-selector-button"
                   />
                 </div>
+
 
                 {/* Co-Owner Selection */}
                 <div className="space-y-2">
@@ -716,6 +739,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                   <div className="hidden">
                     <UserMultiSelector
                       availableUsers={availableUsers.filter((u: User) => u.id !== formData.owner_id)}
+                      projectMembers={projectMembers.filter((u: User) => u.id !== formData.owner_id)}
                       selectedUsers={availableUsers.filter((user: User) => user.id === formData.co_owner_id)}
                       onUsersChange={(users: User[]) => {
                         handleInputChange('co_owner_id', users.length > 0 ? users[0].id : "")
@@ -730,6 +754,7 @@ export function EditProjectModal({ isOpen, onClose, onSuccess, project }: EditPr
                       buttonDataAttribute="data-co-owner-selector-button"
                     />
                   </div>
+
                 </div>
 
                 {errors.owner_id && (
