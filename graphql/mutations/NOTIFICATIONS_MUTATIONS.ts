@@ -24,3 +24,15 @@ export const MARK_ALL_NOTIFICATIONS_READ_MUTATION = gql`
     }
   }
 `
+
+/**
+ * Deletes a single notification for the authenticated user.
+ * Called when the user clicks the delete/remove button on a notification.
+ */
+export const DELETE_NOTIFICATION_MUTATION = gql`
+  mutation DeleteNotification($id: String!) {
+    deleteNotification(id: $id) {
+      id
+    }
+  }
+`

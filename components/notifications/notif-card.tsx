@@ -57,10 +57,10 @@ export function NotifCard({
 
       {/* Content */}
       <div className="flex-1 min-w-0 pr-10">
-        <p className="text-xs font-semibold text-foreground leading-snug truncate">
+        <p className="text-xs font-semibold text-foreground leading-snug line-clamp-2">
           {notification.title}
         </p>
-        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-3">
           {notification.message}
         </p>
 

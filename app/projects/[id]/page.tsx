@@ -387,7 +387,6 @@ export default function ProjectDetailsPage() {
     onCompleted: () => {
       // Don't show toast here - let the modal handle success message
       // Don't close the modal here either — the modal closes itself AFTER file uploads complete
-      logHistory({ type: ProjectHistoryType.SUBSIDY_CREATED })
       refetchProject()
     },
   })
@@ -416,7 +415,6 @@ export default function ProjectDetailsPage() {
   const [approveSubsidyRequest, { loading: approveSubsidyLoading }] = useMutation(APPROVE_SUBSIDY_REQUEST, {
     onCompleted: () => {
       toast.success(t('subsidy.subsidyApproved'), { duration: 3000 })
-      logHistory({ type: ProjectHistoryType.SUBSIDY_APPROVED })
       refetchProject()
     },
     onError: (error) => {
@@ -436,7 +434,6 @@ export default function ProjectDetailsPage() {
   const [rejectSubsidyRequest, { loading: rejectSubsidyLoading }] = useMutation(REJECT_SUBSIDY_REQUEST, {
     onCompleted: () => {
       toast.success(t('subsidy.subsidyRejected'), { duration: 3000 })
-      logHistory({ type: ProjectHistoryType.SUBSIDY_REJECTED })
       refetchProject()
     },
     onError: (error) => {
@@ -508,7 +505,6 @@ export default function ProjectDetailsPage() {
       variables: { id: projectId, status: 'IN_PROGRESS' },
       onCompleted: () => {
         toast.success(pt.openRequestOverlay?.approveSuccess ?? 'Project approved successfully', { duration: 3000 })
-        logHistory({ type: ProjectHistoryType.UPDATED, comment: 'Project approved → IN_PROGRESS' })
         refetchProject()
       }
     })
@@ -526,7 +522,6 @@ export default function ProjectDetailsPage() {
       variables: { id: projectId, status: 'ADJUSTMENTS_NEEDED' },
       onCompleted: () => {
         toast.success(pt.openRequestOverlay?.adjustmentsSuccess ?? 'Adjustments requested', { duration: 3000 })
-        logHistory({ type: ProjectHistoryType.UPDATED, comment: 'Adjustments requested → ADJUSTMENTS_NEEDED' })
         if (justification) {
           createAdjustmentMutation({
             variables: { data: { project_id: projectId, comment: justification } },
@@ -540,7 +535,6 @@ export default function ProjectDetailsPage() {
   const [deleteSubsidyRequest, { loading: deleteSubsidyLoading }] = useMutation(DELETE_SUBSIDY_REQUEST, {
     onCompleted: () => {
       toast.success(t('subsidy.subsidyDeleted'), { duration: 3000 })
-      logHistory({ type: ProjectHistoryType.SUBSIDY_DELETED })
       refetchProject()
       setIsDeleteSubsidyRequestModalOpen(false)
       setSelectedSubsidyCard(null)

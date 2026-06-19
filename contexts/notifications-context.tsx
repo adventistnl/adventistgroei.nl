@@ -6,6 +6,7 @@ import { MY_NOTIFICATIONS_QUERY } from "@/graphql/queries/NOTIFICATIONS_QUERY"
 import {
   MARK_NOTIFICATION_READ_MUTATION,
   MARK_ALL_NOTIFICATIONS_READ_MUTATION,
+  DELETE_NOTIFICATION_MUTATION,
 } from "@/graphql/mutations/NOTIFICATIONS_MUTATIONS"
 import { useAuth } from "@/contexts/auth-context"
 
@@ -36,7 +37,6 @@ interface NotificationsState {
 
 type NotificationsAction =
   | { type: "HYDRATE"; payload: AppNotification[] }
-  | { type: "ADD"; payload: AppNotification }
   | { type: "MARK_READ"; id: string }
   | { type: "MARK_ALL_READ" }
   | { type: "REMOVE"; id: string }
@@ -45,10 +45,18 @@ interface NotificationsContextValue {
   notifications: AppNotification[]
   unreadCount: number
   hydrated: boolean
-  addNotification: (n: Omit<AppNotification, "id" | "timestamp" | "read">) => void
+  /**
+   * Called by the WebSocket hook when a real-time event arrives.
+   * Triggers a refetch of myNotifications from the DB so the list
+   * always uses real UUIDs — preventing duplicates between the
+   * WebSocket temp-ID item and the DB-persisted item.
+   */
+  refetchFromDB: () => void
   markRead: (id: string) => void
   markAllRead: () => void
   remove: (id: string) => void
+  /** @deprecated kept for backward compat — use refetchFromDB for real-time events */
+  addNotification: (n: Omit<AppNotification, "id" | "timestamp" | "read">) => void
 }
 
 // ─── Reducer ──────────────────────────────────────────────────────────────────
@@ -56,17 +64,10 @@ interface NotificationsContextValue {
 function reducer(state: NotificationsState, action: NotificationsAction): NotificationsState {
   switch (action.type) {
     case "HYDRATE":
-      // Merge backend items with any real-time items already received, deduplicating by id
-      const existingIds = new Set(action.payload.map((n) => n.id))
-      const realTimeOnly = state.items.filter((n) => !existingIds.has(n.id))
       return {
-        items: [...action.payload, ...realTimeOnly].slice(0, 50),
+        items: action.payload.slice(0, 50),
         hydrated: true,
       }
-    case "ADD":
-      // Prevent duplicates by notification id
-      if (state.items.some((n) => n.id === action.payload.id)) return state
-      return { ...state, items: [action.payload, ...state.items].slice(0, 50) }
     case "MARK_READ":
       return { ...state, items: state.items.map((n) => n.id === action.id ? { ...n, read: true } : n) }
     case "MARK_ALL_READ":
@@ -87,8 +88,8 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const [state, dispatch] = useReducer(reducer, { items: [], hydrated: false })
   const { user } = useAuth()
 
-  // ── Backend fetch: hydrate on mount ────────────────────────────────────────
-  const { data: backendData } = useQuery(MY_NOTIFICATIONS_QUERY, {
+  // ── Backend fetch: hydrate on mount + re-hydrate on demand ──────────────────
+  const { data: backendData, refetch } = useQuery(MY_NOTIFICATIONS_QUERY, {
     skip: !user,
     fetchPolicy: "network-only",
   })
@@ -110,32 +111,27 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   // ── Mutations ───────────────────────────────────────────────────────────────
   const [markNotificationReadMutation] = useMutation(MARK_NOTIFICATION_READ_MUTATION)
   const [markAllNotificationsReadMutation] = useMutation(MARK_ALL_NOTIFICATIONS_READ_MUTATION)
+  const [deleteNotificationMutation] = useMutation(DELETE_NOTIFICATION_MUTATION)
 
   // ── Actions ─────────────────────────────────────────────────────────────────
 
-  /** Adds a real-time WebSocket notification (won't duplicate if id already exists). */
-  const addNotification = useCallback(
-    (n: Omit<AppNotification, "id" | "timestamp" | "read">) => {
-      dispatch({
-        type: "ADD",
-        payload: {
-          ...n,
-          id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-          timestamp: new Date().toISOString(),
-          read: false,
-        },
-      })
-    },
-    []
-  )
+  /**
+   * Called by the WebSocket hook on each real-time event.
+   * Re-fetches myNotifications from DB — the notification is already persisted
+   * by the backend before the WebSocket event fires, so we always get the real UUID.
+   * This eliminates the temp-ID vs DB-UUID duplicate problem.
+   */
+  const refetchFromDB = useCallback(() => {
+    refetch().catch(() => {/* no-op */})
+  }, [refetch])
+
+  /** @deprecated kept for backward compat. Prefer refetchFromDB for WebSocket events. */
+  const addNotification = useCallback(refetchFromDB, [refetchFromDB])
 
   /** Marks a single notification as read locally and syncs to backend. */
   const markRead = useCallback((id: string) => {
     dispatch({ type: "MARK_READ", id })
-    markNotificationReadMutation({ variables: { id } }).catch(() => {
-      // If the notification was created via WebSocket (temp id) the backend mutation
-      // will fail gracefully — local state is still updated.
-    })
+    markNotificationReadMutation({ variables: { id } }).catch(() => {/* no-op */})
   }, [markNotificationReadMutation])
 
   /** Marks all notifications as read locally and syncs to backend. */
@@ -144,7 +140,13 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     markAllNotificationsReadMutation().catch(() => {/* no-op */})
   }, [markAllNotificationsReadMutation])
 
-  const remove = useCallback((id: string) => dispatch({ type: "REMOVE", id }), [])
+  /** Removes a notification locally and deletes it from the backend. */
+  const remove = useCallback((id: string) => {
+    dispatch({ type: "REMOVE", id })
+    deleteNotificationMutation({ variables: { id } }).catch((err) => {
+      console.error("Failed to delete notification", err)
+    })
+  }, [deleteNotificationMutation])
 
   return (
     <NotificationsContext.Provider
@@ -152,6 +154,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         notifications: state.items,
         unreadCount: state.items.filter((n) => !n.read).length,
         hydrated: state.hydrated,
+        refetchFromDB,
         addNotification,
         markRead,
         markAllRead,
@@ -168,4 +171,3 @@ export function useNotifications() {
   if (!ctx) throw new Error("useNotifications must be used inside NotificationsProvider")
   return ctx
 }
-
