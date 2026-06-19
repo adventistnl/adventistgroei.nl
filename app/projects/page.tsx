@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@apollo/client"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AppLoader } from "@/components/shared/app-loader"
+import { ProjectsPageSkeleton } from "@/components/shared/page-skeleton"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -1169,12 +1170,7 @@ export default function ProjectsPage() {
         </AppLayout>
       }
     >
-      <Suspense fallback={
-        <AppLoader
-          fullScreen
-          message="Loading projects..."
-        />
-      }>
+      <Suspense fallback={<ProjectsPageSkeleton />}>
         <ProjectsPageContent />
       </Suspense>
     </WithPermission>

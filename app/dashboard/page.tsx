@@ -68,6 +68,7 @@ import { DateTimeDisplay } from "@/components/shared/date-time-display"
 import { CalendarCard } from "@/components/shared/calendar-card"
 import { CalendarHeatmap } from "@/components/shared/calendar-heatmap"
 import { AppLoader } from "@/components/shared/app-loader"
+import { DashboardPageSkeleton } from "@/components/shared/page-skeleton"
 import { RoleDistributionChart, PermissionsByGroupChart, UserActivityChart } from "@/components/access/access-charts"
 import { BudgetOverviewCard } from "@/components/budget"
 import { SpendingOverTimeChart } from "@/components/charts/annual-budget/spending-over-time-chart"
@@ -1035,14 +1036,9 @@ export default function DashboardPage() {
     },
   ]
 
-  // Show full-screen loading on initial page load
+  // Show skeleton layout while data loads — keeps the page visible
   if (isInitialLoad || isLoadingData) {
-    return (
-      <AppLoader
-        fullScreen
-        message={dt.loadingDashboard || "Loading dashboard data..."}
-      />
-    )
+    return <DashboardPageSkeleton />
   }
 
   return (

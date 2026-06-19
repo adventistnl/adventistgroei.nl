@@ -9,7 +9,7 @@ export function useGetUserQuery(variables: UserVariables, options?: any) {
   const result = useQuery<User, UserVariables>(GET_USER_QUERY, {
     variables,
     skip: !variables.id,
-    fetchPolicy: 'network-only', // Sempre busca dados frescos do servidor
+    fetchPolicy: 'cache-and-network', // Mostra cache instantaneamente, atualiza em background
     errorPolicy: 'all', // Retorna dados parciais mesmo com erros
     notifyOnNetworkStatusChange: true, // Notifica mudanças no status da rede
     ...options,

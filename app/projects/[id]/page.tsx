@@ -97,6 +97,7 @@ import { useCurrency } from "@/contexts/currency-context"
 import { ActivityTags, EntityType, ActivityPriority, ActivityStatus, PermissionResolverName } from "@/types/graphql-global-types"
 import type { Contact } from "@/types/graphql-global-types"
 import { AppLoader } from "@/components/shared/app-loader"
+import { ProjectDetailSkeleton } from "@/components/shared/page-skeleton"
 import { CardDescription, CardTitle } from "@/components/ui/card"
 import { WithPermission } from "@/hocs/with-permission"
 import { ContactViewEditModal } from "@/components/modals/contact/contact-view-edit-modal"
@@ -278,7 +279,7 @@ export default function ProjectDetailsPage() {
   const { data: projectData, loading: projectLoading, error: projectError, refetch: refetchProject } = useQuery(GET_PROJECT_BY_ID_QUERY, {
     variables: { id: projectId },
     skip: !projectId,
-    fetchPolicy: 'network-only', // Sempre buscar do servidor para garantir dados atualizados
+    fetchPolicy: 'cache-and-network', // Mostra cache imediatamente, atualiza em background
     onCompleted: () => {
       toast.success(t('toasts.projectDetailsLoaded'), {
         duration: 3000
@@ -2147,11 +2148,7 @@ export default function ProjectDetailsPage() {
   ], [batchEditData, t])
 
   if (projectLoading) {
-    return (
-      <AppLayout>
-        <AppLoader fullScreen message="Loading project..." />
-      </AppLayout>
-    )
+    return <ProjectDetailSkeleton />
   }
 
   if (projectError || !project) {

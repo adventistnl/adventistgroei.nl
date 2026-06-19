@@ -17,7 +17,7 @@ import { AdventistLogo } from "@/components/ui/adventist-logo"
 import { useUser } from "@/hooks/use-user"
 import { UpdateUserVariables } from "@/types/UpdateUser"
 import { usePageTitle } from "@/hooks/use-page-title"
-import { AppLoader } from "@/components/shared/app-loader"
+import { ProfilePageSkeleton } from "@/components/shared/page-skeleton"
 import { useInstitution } from "@/contexts/institution-context"
 import { useQuery } from "@apollo/client"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
@@ -153,14 +153,9 @@ export default function ProfilePage() {
 
 
 
-  // Show loading state
+  // Show skeleton while auth or user data is loading
   if (isLoading || userLoading) {
-    return (
-      <AppLoader
-        fullScreen
-        message={t('profile.loading')}
-      />
-    )
+    return <ProfilePageSkeleton />
   }
 
   // Don't render if no authenticated user at all

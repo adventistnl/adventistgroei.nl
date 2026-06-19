@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { AppLayout } from "@/components/layouts/app-layout"
+import { GenericPageSkeleton } from "@/components/shared/page-skeleton"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
 import { ColorBadge } from "@/components/ui/color-badge"
@@ -706,26 +707,7 @@ export default function RegionsPage() {
   ]
   
   if (isLoading) {
-    return (
-      <AppLayout>
-        <div className="space-y-8">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-muted rounded w-1/3"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-6">
-                    <div className="h-4 bg-muted rounded w-2/3 mb-2"></div>
-                    <div className="h-8 bg-muted rounded w-1/2 mb-2"></div>
-                    <div className="h-3 bg-muted rounded w-3/4"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </div>
-      </AppLayout>
-    )
+    return <GenericPageSkeleton />
   }
 
   return (
