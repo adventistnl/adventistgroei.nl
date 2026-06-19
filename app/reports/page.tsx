@@ -130,7 +130,7 @@ const statusChartConfig = {
 export default function ReportsPage() {
   const { t, i18n } = useTranslation()
   const { currentInstitutionData } = useInstitution()
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [reports, setReports] = useState<ReportTableData[]>([])
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -224,33 +224,10 @@ export default function ReportsPage() {
     }
   }, [filteredData])
 
-  // Simulate data loading
+  // Reports data loaded synchronously from mockData — no async needed
   useEffect(() => {
-    const loadReportsData = async () => {
-      const loadingToast = toast.loading(t_reports.toasts.loadingData)
-      
-      try {
-        // Simulate API delay
-        // Dados carregados do InstitutionContext
-        
-        setReports(transformReportsData(mockReports))
-        
-        toast.dismiss(loadingToast)
-        toast.success("📊 Reports data loaded successfully!", {
-          duration: 3000
-        })
-        
-        setIsLoading(false)
-        
-      } catch (error) {
-        toast.dismiss(loadingToast)
-        toast.error(t_reports.toasts.errorLoading)
-        setIsLoading(false)
-      }
-    }
-
-    loadReportsData()
-  }, [t_reports])
+    setReports(transformReportsData(mockReports))
+  }, [])
 
   const handleRefresh = async () => {
     setRefreshing(true)

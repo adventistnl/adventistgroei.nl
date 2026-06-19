@@ -114,7 +114,7 @@ export default function UserProfilePage() {
   const router = useRouter()
   const userId = params.id as string
   
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -128,36 +128,16 @@ export default function UserProfilePage() {
   const [reportPeriod, setReportPeriod] = useState(12)
   const [communicationPeriod, setCommunicationPeriod] = useState(12)
 
-  // Load user data
+  // Load user data synchronously from mockData — no async needed
   useEffect(() => {
-    const loadUserData = async () => {
-      const loadingToast = toast.loading("Loading user profile...")
-      
-      try {
-        await new Promise(resolve => setTimeout(resolve, 800))
-        
-        const userData = getUserById(userId)
-        if (!userData) {
-          toast.dismiss(loadingToast)
-          toast.error("User not found")
-          router.push('/users')
-          return
-        }
-        
-        setUser(userData)
-        toast.dismiss(loadingToast)
-        setIsLoading(false)
-        
-      } catch (error) {
-        toast.dismiss(loadingToast)
-        toast.error("Failed to load user profile")
-        setIsLoading(false)
-      }
+    if (!userId) return
+    const userData = getUserById(userId)
+    if (!userData) {
+      toast.error("User not found")
+      router.push('/users')
+      return
     }
-
-    if (userId) {
-      loadUserData()
-    }
+    setUser(userData)
   }, [userId, router])
 
   const breadcrumbs = useMemo(() => [

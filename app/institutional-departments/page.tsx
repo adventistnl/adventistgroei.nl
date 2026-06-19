@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, useRef } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { useQuery, useMutation } from "@apollo/client"
@@ -102,7 +102,6 @@ export default function DepartmentsPage() {
   const { currentInstitutionData, refetchInstitutionById } = useInstitution();
   const { formatCurrency } = useCurrency();
   const { t, i18n } = useTranslation()
-  const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const [availableYears, setAvailableYears] = useState<number[]>(() => {
@@ -282,6 +281,9 @@ export default function DepartmentsPage() {
     skip: !currentInstitutionData?.id
   })
 
+  // isLoading = aguardando KPIs do backend (não há delay artificial)
+  const isLoading = kpisLoading && !kpisData
+
   // Filtrar projetos pelo ano selecionado baseado no created_at
   const allProjects = useMemo(() => {
     const projects = projectsData?.projects || []
@@ -448,34 +450,7 @@ export default function DepartmentsPage() {
     };
   }, [departments, selectedYear]);
 
-  const hasShownLoadingToast = useRef(false)
-
-  /**
-   * Carregamento inicial dos dados
-   */
-  useEffect(() => {
-    if (hasShownLoadingToast.current) return
-    hasShownLoadingToast.current = true
-
-    const loadData = async () => {
-      const loadingToast = toast.loading(tDept.common?.loading || "Loading...")
-      
-      try {
-        // Dados carregados do InstitutionContext
-        
-        toast.dismiss(loadingToast)
-        toast.success(tDept.common?.data_loaded || "Data loaded successfully", { duration: 3000 })
-        setIsLoading(false)
-        
-      } catch (error) {
-        toast.dismiss(loadingToast)
-        toast.error(tDept.common?.error || "An error occurred")
-        setIsLoading(false)
-      }
-    }
-
-    loadData()
-  }, [])
+  // Data is loaded from InstitutionContext + Apollo cache — no artificial delay needed
 
   /**
    * Handlers para ações
