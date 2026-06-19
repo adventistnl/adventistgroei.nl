@@ -128,7 +128,7 @@ import { ProjectHistoryType } from "@/types/project-history"
 import { ADD_ROLE_TO_USER } from "@/graphql/mutations/USER_MUTATIONS"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
 import { GET_ALL_USERS_QUERY } from "@/graphql/queries/GET_USER_QUERY"
-import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
+import { GET_PROJECTS_QUERY, GET_MY_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
 import { GET_ALL_ROLES_QUERY } from "@/graphql/queries/GET_ROLES_QUERY"
 import { ProjectType, LanguagePreference, EventType } from "@/types/globalTypes"
@@ -256,7 +256,8 @@ function ProjectRegisterContent() {
       {
         query: GET_PROJECTS_QUERY,
         variables: { institutionId }
-      }
+      },
+      { query: GET_MY_PROJECTS_QUERY }
     ],
     onCompleted: (data) => {
       // Clear draft from sessionStorage on success
