@@ -109,6 +109,7 @@ function LoginPageContent() {
         router.push('/dashboard')
       }, 100)
     } catch (error) {
+      setIsSubmitting(false)
       if (error instanceof Error) {
         if (error.message === 'User not found') {
           setError(t.invalidCredentials)
@@ -130,8 +131,6 @@ function LoginPageContent() {
         setError(t.loginError)
         return
       }
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
@@ -156,9 +155,9 @@ function LoginPageContent() {
     return <AppLoader fullScreen />  
   }
 
-  // Se já estiver autenticado, não mostrar nada (redirecionamento está acontecendo)
+  // Se já estiver autenticado, mostrar loader de tela cheia (redirecionamento está acontecendo)
   if (isAuthenticated) {
-    return null
+    return <AppLoader fullScreen message={t.loading} />
   }
 
   return (
