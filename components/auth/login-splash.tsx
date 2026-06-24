@@ -4,8 +4,7 @@ import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { AdventistLogo } from "@/components/ui/adventist-logo"
 import { loginTranslations } from "@/lib/translations/login"
-import { LoadingSpinner } from "@/components/shared/loading-spinner"
-import { Church } from "lucide-react"
+import { AppLoader } from "@/components/shared/app-loader"
 
 interface LoginSplashProps {
   onComplete: () => void
@@ -32,10 +31,8 @@ export function LoginSplash({ onComplete }: LoginSplashProps) {
   }, [])
 
   return (
-    <LoadingSpinner
-      text={t.splash.loading}
-      customIcon={Church}
-      size="lg"
+    <AppLoader
+      message={t.splash.loading}
       fullScreen
       isExiting={isExiting}
       onExitComplete={onComplete}

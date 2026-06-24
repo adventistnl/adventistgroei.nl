@@ -3,11 +3,9 @@
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { Building2, Church } from 'lucide-react'
-
 import { useTranslation } from 'react-i18next'
 import { loginTranslations } from '@/lib/translations/login'
-import { LoadingSpinner } from '@/components/shared/loading-spinner'
+import { AppLoader } from '@/components/shared/app-loader'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -31,12 +29,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   // Mostrar loading enquanto verifica autenticação
   if (isLoading) {
     return (
-      <LoadingSpinner
-        text={t.validatingAccount}
-        customIcon={Church}
-        size="lg"
+      <AppLoader
+        message={t.validatingAccount}
         fullScreen
-        className="space-y-6 max-w-sm mx-auto px-8"
       />
     )
   }

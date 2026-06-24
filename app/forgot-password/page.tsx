@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Mail, ArrowLeft, Building2 } from 'lucide-react'
 import { AdventistLogo } from '@/components/ui/adventist-logo'
-import { LoadingSpinner } from '@/components/shared/loading-spinner'
+import { AppLoader } from '@/components/shared/app-loader'
 import { useSendForgotPasswordCodeMutation } from '@/hooks/graphql/use-forgot-password-mutation'
 
 function ForgotPasswordPageContent() {
@@ -196,15 +196,7 @@ function ForgotPasswordPageContent() {
 
 export default function ForgotPasswordPage() {
   return (
-    <Suspense fallback={
-      <LoadingSpinner
-        text="Loading..."
-        icon={Building2}
-        size="lg"
-        fullScreen
-        className="space-y-6 max-w-sm mx-auto px-8"
-      />
-    }>
+    <Suspense fallback={<AppLoader fullScreen />}>
       <ForgotPasswordPageContent />
     </Suspense>
   )

@@ -24,7 +24,8 @@ export interface ActivityBudgetSummary {
 
 interface SubsidyItemShape {
   project_activity_id?: string
-  requested_amount?: number
+  activity_id?: string
+  requested_amount?: number | string
 }
 
 interface SubsidyRequestShape {
@@ -59,11 +60,11 @@ function computeSummaries(
     if (isRejected(request.subsidy_status?.name)) continue
 
     for (const item of request.items ?? []) {
-      const actId = item.project_activity_id
+      const actId = item.project_activity_id || item.activity_id
       if (!actId) continue
 
-      const amount = item.requested_amount ?? 0
-      const budget = activityBudgets[actId] ?? 0
+      const amount = Number(item.requested_amount ?? 0)
+      const budget = Number(activityBudgets[actId] ?? 0)
       const ref: ActivityAllocationRef = {
         subsidyId: request.id,
         subsidyTitle: request.description ?? request.id,

@@ -1134,7 +1134,7 @@ export function DetailsViewProjectModal({
     onCompleted: () => {
       // Log status change in history
       if (pendingStatusRef.current) {
-        logHistory(buildStatusChangedPayload(pendingStatusRef.current.old, pendingStatusRef.current.new))
+        // REMOVED: logHistory(buildStatusChangedPayload(pendingStatusRef.current.old, pendingStatusRef.current.new))
         // If the transition was to ADJUSTMENTS_NEEDED, create a real ProjectAdjustment entity
         if (
           pendingStatusRef.current.new === 'ADJUSTMENTS_NEEDED' &&

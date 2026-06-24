@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, useRef } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { useQuery, useMutation } from "@apollo/client"
@@ -12,6 +12,7 @@ import {
   GetInstitutionalDepartmentsKPIsVariables
 } from "@/types/GetInstitutionalDepartmentsKPIs"
 import { AppLayout } from "@/components/layouts/app-layout"
+import { GenericPageSkeleton } from "@/components/shared/page-skeleton"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -101,7 +102,6 @@ export default function DepartmentsPage() {
   const { currentInstitutionData, refetchInstitutionById } = useInstitution();
   const { formatCurrency } = useCurrency();
   const { t, i18n } = useTranslation()
-  const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const [availableYears, setAvailableYears] = useState<number[]>(() => {
@@ -281,6 +281,9 @@ export default function DepartmentsPage() {
     skip: !currentInstitutionData?.id
   })
 
+  // isLoading = aguardando KPIs do backend (não há delay artificial)
+  const isLoading = kpisLoading && !kpisData
+
   // Filtrar projetos pelo ano selecionado baseado no created_at
   const allProjects = useMemo(() => {
     const projects = projectsData?.projects || []
@@ -447,34 +450,7 @@ export default function DepartmentsPage() {
     };
   }, [departments, selectedYear]);
 
-  const hasShownLoadingToast = useRef(false)
-
-  /**
-   * Carregamento inicial dos dados
-   */
-  useEffect(() => {
-    if (hasShownLoadingToast.current) return
-    hasShownLoadingToast.current = true
-
-    const loadData = async () => {
-      const loadingToast = toast.loading(tDept.common?.loading || "Loading...")
-      
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        
-        toast.dismiss(loadingToast)
-        toast.success(tDept.common?.data_loaded || "Data loaded successfully", { duration: 3000 })
-        setIsLoading(false)
-        
-      } catch (error) {
-        toast.dismiss(loadingToast)
-        toast.error(tDept.common?.error || "An error occurred")
-        setIsLoading(false)
-      }
-    }
-
-    loadData()
-  }, [])
+  // Data is loaded from InstitutionContext + Apollo cache — no artificial delay needed
 
   /**
    * Handlers para ações
@@ -1007,26 +983,7 @@ export default function DepartmentsPage() {
   ]
 
   if (isLoading) {
-    return (
-      <AppLayout>
-        <div className="space-y-8">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-muted rounded w-1/3"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-6">
-                    <div className="h-4 bg-muted rounded w-2/3 mb-2"></div>
-                    <div className="h-8 bg-muted rounded w-1/2 mb-2"></div>
-                    <div className="h-3 bg-muted rounded w-3/4"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </div>
-      </AppLayout>
-    )
+    return <GenericPageSkeleton />
   }
 
   return (

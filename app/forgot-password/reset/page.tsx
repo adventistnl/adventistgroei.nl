@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Eye, EyeOff, CheckCircle, Lock, Building2 } from 'lucide-react'
-import { LoadingSpinner } from '@/components/shared/loading-spinner'
+import { AppLoader } from '@/components/shared/app-loader'
 import { AdventistLogo } from '@/components/ui/adventist-logo'
 import { useResetPasswordMutation } from '@/hooks/graphql/use-forgot-password-mutation'
 
@@ -265,15 +265,7 @@ function ResetPasswordPageContent() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={
-      <LoadingSpinner
-        text="Loading..."
-        customIcon={Building2}
-        size="lg"
-        fullScreen
-        className="space-y-6 max-w-sm mx-auto px-8"
-      />
-    }>
+    <Suspense fallback={<AppLoader fullScreen />}>
       <ResetPasswordPageContent />
     </Suspense>
   )

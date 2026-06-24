@@ -118,8 +118,7 @@ export function AdjustmentNotificationBanner({
       await updateProjectStatus({ variables: { id: projectId, status: "IN_REVIEW" } })
       // 2) Log ADJUSTMENT_RESOLVED history entry
       await logHistory(buildAdjustmentResolvedPayload(latestAdjustment.id))
-      // 3) Log the STATUS_CHANGED history entry
-      await logHistory(buildStatusChangedPayload("ADJUSTMENTS_NEEDED", "IN_REVIEW"))
+      // 3) REMOVED: logHistory(buildStatusChangedPayload("ADJUSTMENTS_NEEDED", "IN_REVIEW"))
     } finally {
       setResolving(false)
     }

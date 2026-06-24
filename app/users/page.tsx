@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, Suspense, useRef } from "react"
+import React, { useState, Suspense } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
 import { AppLayout } from "@/components/layouts/app-layout"
@@ -63,6 +63,7 @@ import { GET_REGIONS_QUERY } from "@/graphql/queries/REGIONS_QUERY"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
 import { GET_ALL_ROLES_QUERY } from "@/graphql/queries/GET_ROLES_QUERY"
+import { UsersPageSkeleton } from "@/components/shared/page-skeleton"
 import { YearFilter } from "@/components/shared/year-filter"
 
 export default function UsersPage() {
@@ -77,7 +78,7 @@ export default function UsersPage() {
   const departments = currentInstitutionData?.departments || []
   const users = currentInstitutionData?.users || []
   
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isUserDetailsOpen, setIsUserDetailsOpen] = useState(false)
@@ -175,35 +176,8 @@ export default function UsersPage() {
     title: t('users.title')
   })
   
-  const hasShownLoadingToast = useRef(false)
-
-  // Load data
-  useEffect(() => {
-    if (hasShownLoadingToast.current) return
-    hasShownLoadingToast.current = true
-
-    const loadData = async () => {
-      const loadingToast = toast.loading(t('users.loading'))
-      
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        
-        toast.dismiss(loadingToast)
-        toast.success(t('users.loaded'), {
-          duration: 3000
-        })
-        
-        setIsLoading(false)
-        
-      } catch (error) {
-        toast.dismiss(loadingToast)
-        toast.error(t('users.load_error'))
-        setIsLoading(false)
-      }
-    }
-
-    loadData()
-  }, [])
+  // Data is loaded from InstitutionContext — no artificial delay needed
+  // setIsLoading is kept for future use (e.g. manual refresh gates)
 
     // Handle add year
   const handleAddYearCallback = (newYear: number) => {
@@ -524,26 +498,7 @@ export default function UsersPage() {
   ]
 
   if (isLoading) {
-    return (
-      <AppLayout>
-        <div className="space-y-8">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-muted rounded w-1/3"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-6">
-                    <div className="h-4 bg-muted rounded w-2/3 mb-2"></div>
-                    <div className="h-8 bg-muted rounded w-1/2 mb-2"></div>
-                    <div className="h-3 bg-muted rounded w-3/4"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </div>
-      </AppLayout>
-    )
+    return <UsersPageSkeleton />
   }
 
   return (

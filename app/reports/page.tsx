@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { AppLayout } from "@/components/layouts/app-layout"
+import { GenericPageSkeleton } from "@/components/shared/page-skeleton"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { LanguageSelector } from "@/components/shared/language-selector"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -129,7 +130,7 @@ const statusChartConfig = {
 export default function ReportsPage() {
   const { t, i18n } = useTranslation()
   const { currentInstitutionData } = useInstitution()
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [reports, setReports] = useState<ReportTableData[]>([])
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -223,33 +224,10 @@ export default function ReportsPage() {
     }
   }, [filteredData])
 
-  // Simulate data loading
+  // Reports data loaded synchronously from mockData — no async needed
   useEffect(() => {
-    const loadReportsData = async () => {
-      const loadingToast = toast.loading(t_reports.toasts.loadingData)
-      
-      try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        
-        setReports(transformReportsData(mockReports))
-        
-        toast.dismiss(loadingToast)
-        toast.success("📊 Reports data loaded successfully!", {
-          duration: 3000
-        })
-        
-        setIsLoading(false)
-        
-      } catch (error) {
-        toast.dismiss(loadingToast)
-        toast.error(t_reports.toasts.errorLoading)
-        setIsLoading(false)
-      }
-    }
-
-    loadReportsData()
-  }, [t_reports])
+    setReports(transformReportsData(mockReports))
+  }, [])
 
   const handleRefresh = async () => {
     setRefreshing(true)
@@ -384,26 +362,7 @@ export default function ReportsPage() {
   )
 
   if (isLoading) {
-    return (
-      <AppLayout>
-        <div className="space-y-8">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-muted rounded w-1/3"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-6">
-                    <div className="h-4 bg-muted rounded w-2/3 mb-2"></div>
-                    <div className="h-8 bg-muted rounded w-1/2 mb-2"></div>
-                    <div className="h-3 bg-muted rounded w-3/4"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </div>
-      </AppLayout>
-    )
+    return <GenericPageSkeleton />
   }
 
   return (

@@ -70,8 +70,37 @@ export function middleware(req: NextRequest) {
     });
   }
 
-  // Permitir acesso às rotas na whitelist sem verificar cookies
+  // Redirecionar root baseado no token — feito aqui no middleware para evitar
+  // o ciclo de loading extra que app/page.tsx causava no cliente
+  if (pathname === '/') {
+    const rootToken = req.cookies.get('auth-token');
+    if (rootToken) {
+      try {
+        const isTokenValid = validateToken(rootToken.value);
+        if (isTokenValid) {
+          return NextResponse.redirect(new URL('/dashboard', req.url));
+        }
+      } catch {
+        // Token inválido — cai no redirect para login abaixo
+      }
+    }
+    return NextResponse.redirect(new URL('/login', req.url));
+  }
+
+  // Rotas de autenticação — se o usuário já tiver token válido, redirecionar para /dashboard
+  // (evita que usuário logado veja a tela de login)
   if (whitelist.includes(pathname)) {
+    const authToken = req.cookies.get('auth-token');
+    if (authToken) {
+      try {
+        const isTokenValid = validateToken(authToken.value);
+        if (isTokenValid) {
+          return NextResponse.redirect(new URL('/dashboard', req.url));
+        }
+      } catch {
+        // Token inválido — deixar o usuário na página de auth normalmente
+      }
+    }
     return NextResponse.next();
   }
 
@@ -127,23 +156,6 @@ export function middleware(req: NextRequest) {
     pathname.endsWith('.json')
   ) {
     return NextResponse.next();
-  }
-
-  // Redirecionar root baseado no status de autenticação
-  if (pathname === '/') {
-    const token = req.cookies.get('auth-token');
-    if (token) {
-      try {
-        const isTokenValid = validateToken(token.value);
-        if (isTokenValid) {
-          return NextResponse.redirect(new URL('/dashboard', req.url));
-        }
-      } catch {
-        // Token inválido, redirecionar para login
-        return NextResponse.redirect(new URL('/login', req.url));
-      }
-    }
-    return NextResponse.redirect(new URL('/login', req.url));
   }
 
   // Permitir todas as outras rotas

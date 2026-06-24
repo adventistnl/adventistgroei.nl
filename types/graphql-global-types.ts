@@ -19,6 +19,15 @@ export type Scalars = {
   Upload: { input: any; output: any; }
 };
 
+export type ActivityBudgetSummary = {
+  __typename?: 'ActivityBudgetSummary';
+  activity_id: Scalars['ID']['output'];
+  activity_name: Scalars['String']['output'];
+  allocated: Scalars['Float']['output'];
+  available: Scalars['Float']['output'];
+  budget: Scalars['Float']['output'];
+};
+
 export type ActivityDocuments = {
   __typename?: 'ActivityDocuments';
   activity_id: Scalars['String']['output'];
@@ -2425,6 +2434,11 @@ export type LoginInput = {
   password: Scalars['String']['input'];
 };
 
+export type MarkAllReadResult = {
+  __typename?: 'MarkAllReadResult';
+  count: Scalars['Int']['output'];
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   addAdjustmentTask: AdjustmentTask;
@@ -2481,6 +2495,8 @@ export type Mutation = {
   inviteUser: InviteModel;
   linkContact: LinkContactResult;
   login: AuthModel;
+  markAllNotificationsRead: MarkAllReadResult;
+  markNotificationRead: Notification;
   recalculateInstitutionAllocatedAmounts: RecalculateAllocatedAmountsResponse;
   rejectAnnualBudget: RejectBudgetResponse;
   rejectSubsidyReceipt: SubsidyReceipt;
@@ -2813,6 +2829,11 @@ export type MutationLinkContactArgs = {
 
 export type MutationLoginArgs = {
   input: LoginInput;
+};
+
+
+export type MutationMarkNotificationReadArgs = {
+  id: Scalars['String']['input'];
 };
 
 
@@ -3389,7 +3410,10 @@ export type Notification = {
   institution_id: Scalars['String']['output'];
   is_deleted: Scalars['Boolean']['output'];
   message: Scalars['String']['output'];
+  project?: Maybe<Project>;
+  project_id?: Maybe<Scalars['String']['output']>;
   read_status: Scalars['Boolean']['output'];
+  title?: Maybe<Scalars['String']['output']>;
   type: Scalars['String']['output'];
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
@@ -3436,7 +3460,10 @@ export type NotificationWhereInput = {
   institution_id?: InputMaybe<StringFilter>;
   is_deleted?: InputMaybe<BoolFilter>;
   message?: InputMaybe<StringFilter>;
+  project?: InputMaybe<ProjectNullableScalarRelationFilter>;
+  project_id?: InputMaybe<StringNullableFilter>;
   read_status?: InputMaybe<BoolFilter>;
+  title?: InputMaybe<StringNullableFilter>;
   type?: InputMaybe<StringFilter>;
   updated_at?: InputMaybe<DateTimeFilter>;
   updated_by?: InputMaybe<StringFilter>;
@@ -3735,6 +3762,7 @@ export type Project = {
   is_private: Scalars['Boolean']['output'];
   kpis: ProjectKpIsDto;
   language_preference: LanguagePreference;
+  notifications?: Maybe<Array<Notification>>;
   owner: User;
   owner_id: Scalars['String']['output'];
   required_volunteers: Scalars['Boolean']['output'];
@@ -4034,6 +4062,7 @@ export type ProjectCount = {
   activities: Scalars['Int']['output'];
   budget_transactions: Scalars['Int']['output'];
   history: Scalars['Int']['output'];
+  notifications: Scalars['Int']['output'];
   special_projects: Scalars['Int']['output'];
   subsidies: Scalars['Int']['output'];
   voluntary_users: Scalars['Int']['output'];
@@ -4110,6 +4139,9 @@ export type ProjectHistoryScalarRelationFilter = {
 };
 
 export enum ProjectHistoryType {
+  ActivityCreated = 'ACTIVITY_CREATED',
+  ActivityDeleted = 'ACTIVITY_DELETED',
+  ActivityUpdated = 'ACTIVITY_UPDATED',
   AdjustmentNeeded = 'ADJUSTMENT_NEEDED',
   BudgetUpdated = 'BUDGET_UPDATED',
   Comment = 'COMMENT',
@@ -4121,6 +4153,11 @@ export enum ProjectHistoryType {
   OwnerChanged = 'OWNER_CHANGED',
   Restored = 'RESTORED',
   StatusChanged = 'STATUS_CHANGED',
+  SubsidyApproved = 'SUBSIDY_APPROVED',
+  SubsidyCreated = 'SUBSIDY_CREATED',
+  SubsidyDeleted = 'SUBSIDY_DELETED',
+  SubsidyRejected = 'SUBSIDY_REJECTED',
+  SubsidyUpdated = 'SUBSIDY_UPDATED',
   Updated = 'UPDATED'
 }
 
@@ -4277,6 +4314,7 @@ export type ProjectWhereInput = {
   is_deleted?: InputMaybe<BoolFilter>;
   is_private?: InputMaybe<BoolFilter>;
   language_preference?: InputMaybe<EnumLanguagePreferenceFilter>;
+  notifications?: InputMaybe<NotificationListRelationFilter>;
   owner?: InputMaybe<UserScalarRelationFilter>;
   owner_id?: InputMaybe<StringFilter>;
   required_volunteers?: InputMaybe<BoolFilter>;
@@ -4348,6 +4386,7 @@ export type Query = {
   institutionalDepartmentsKPIs: InstitutionalDepartmentsKpIs;
   institutions: Array<Institution>;
   ledgerHistory: LedgerHistoryPaginatedResponse;
+  myNotifications: Array<Notification>;
   myProjects: Array<Project>;
   notification?: Maybe<Notification>;
   notifications: Array<Notification>;
@@ -4355,6 +4394,7 @@ export type Query = {
   project?: Maybe<Project>;
   projectActivities: Array<ProjectActivity>;
   projectActivity: ProjectActivity;
+  projectActivityBudgetSummaries: Array<ActivityBudgetSummary>;
   projectActivityLogs: Array<ProjectActivityLog>;
   projectAdjustment: ProjectAdjustment;
   projectAdjustments: Array<ProjectAdjustment>;
@@ -4579,6 +4619,11 @@ export type QueryProjectActivitiesArgs = {
 
 export type QueryProjectActivityArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryProjectActivityBudgetSummariesArgs = {
+  projectId: Scalars['ID']['input'];
 };
 
 

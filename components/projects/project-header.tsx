@@ -331,14 +331,15 @@ export function ProjectHeader({
     }
     
     try {
-      const oldStatus = project.status
       await updateProjectStatus({
         variables: {
           id: project.id,
           status: newStatus,
         },
       })
-      logHistory(buildStatusChangedPayload(oldStatus, newStatus))
+      // REMOVED: logHistory(buildStatusChangedPayload(oldStatus, newStatus)) 
+      // The backend (ProjectService) automatically logs STATUS_CHANGED events 
+      // when updateProjectStatus succeeds.
     } catch (e) {
       // Error handled by onError callback
     }

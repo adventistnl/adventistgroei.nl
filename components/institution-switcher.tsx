@@ -4,7 +4,7 @@ import * as React from "react"
 import { Plus, Building2, RefreshCw } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { useInstitution } from "@/contexts/institution-context"
-import { LoadingSpinner } from "@/components/shared/loading-spinner"
+import { AppLoader } from "@/components/shared/app-loader"
 import {
   Select,
   SelectContent,
@@ -99,12 +99,9 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
     }
   }, [refetchInstitutions, refetchInstitutionById]);
 
-  React.useEffect(() => {
-    if (!institutions && !currentInstitutionData) {
-      fetchInstitutionData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [institutions, currentInstitutionData]);
+  // T12: Removed the proactive refetch useEffect — the InstitutionProvider now handles
+  // loading and SSR-safe resolution via a single useInstitutions() call.
+  // The skeleton below handles the null/loading case gracefully.
   
   if (!institutions || !currentInstitutionData) {
     return (
@@ -112,9 +109,8 @@ export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
         <SidebarMenuItem>
           <div className="institution-switcher flex items-center gap-2 p-2 bg-sidebar">
             {/* Loading Spinner */}
-            <div className="institution-logo text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg bg-muted animate-pulse shrink-0r">
-              <LoadingSpinner 
-                icon={Building2}
+            <div className="institution-logo text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg bg-muted animate-pulse shrink-0">
+              <AppLoader
                 size="sm"
               />
             </div>

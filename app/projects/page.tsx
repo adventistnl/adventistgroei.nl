@@ -4,7 +4,8 @@ import React, { useState, useEffect, useMemo, Suspense, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@apollo/client"
 import { useRouter, useSearchParams } from "next/navigation"
-import { LoadingSpinner } from "@/components/shared/loading-spinner"
+import { AppLoader } from "@/components/shared/app-loader"
+import { ProjectsPageSkeleton } from "@/components/shared/page-skeleton"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,7 +29,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { ProjectTableData } from "@/components/projects/projects-table"
 import { useNavigateWithLoading } from "@/hooks/use-navigation-loading"
 import { projectTranslations } from "@/lib/translations/projects"
-import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
+import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY, GET_MY_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { DELETE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
 import { Globe, Plus, RefreshCw, Building, MoreHorizontal, Eye, Edit, Activity, TrendingUp, Users, DollarSign, Folder, ArrowRight, Calendar, Building2, Clock, CheckCircle2, ListChecks, LayoutGrid, List, ExternalLink, Info, ShieldAlert } from "lucide-react"
@@ -109,7 +110,7 @@ function ProjectsPageContent() {
 
   // Delete project mutation
   const [deleteProjectMutation] = useMutation(DELETE_PROJECT_MUTATION, {
-    refetchQueries: [{ query: GET_PROJECTS_QUERY }, { query: GET_PROJECT_KPIS_QUERY }]
+    refetchQueries: [{ query: GET_PROJECTS_QUERY }, { query: GET_PROJECT_KPIS_QUERY }, { query: GET_MY_PROJECTS_QUERY }]
   })
 
   // Filter states - usando objeto para PageFilters
@@ -1169,14 +1170,7 @@ export default function ProjectsPage() {
         </AppLayout>
       }
     >
-      <Suspense fallback={
-        <LoadingSpinner
-          text="Loading projects..."
-          icon={Building2}
-          size="lg"
-          fullScreen
-        />
-      }>
+      <Suspense fallback={<ProjectsPageSkeleton />}>
         <ProjectsPageContent />
       </Suspense>
     </WithPermission>

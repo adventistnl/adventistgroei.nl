@@ -128,14 +128,14 @@ import { ProjectHistoryType } from "@/types/project-history"
 import { ADD_ROLE_TO_USER } from "@/graphql/mutations/USER_MUTATIONS"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
 import { GET_ALL_USERS_QUERY } from "@/graphql/queries/GET_USER_QUERY"
-import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
+import { GET_PROJECTS_QUERY, GET_MY_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
 import { GET_ALL_ROLES_QUERY } from "@/graphql/queries/GET_ROLES_QUERY"
 import { ProjectType, LanguagePreference, EventType } from "@/types/globalTypes"
 import "@/lib/i18n"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
-import { LoadingSpinner } from "@/components/shared/loading-spinner"
+import { AppLoader } from "@/components/shared/app-loader"
 import { useHasPermission } from "@/hooks/use-has-permission"
 
 // Predefined activities with translation keys
@@ -256,7 +256,8 @@ function ProjectRegisterContent() {
       {
         query: GET_PROJECTS_QUERY,
         variables: { institutionId }
-      }
+      },
+      { query: GET_MY_PROJECTS_QUERY }
     ],
     onCompleted: (data) => {
       // Clear draft from sessionStorage on success
@@ -290,12 +291,12 @@ function ProjectRegisterContent() {
   })
 
   // Fetch departments from database filtered by institution
-  // fetchPolicy: 'network-only' ensures fresh data after creating new departments
+  // fetchPolicy: 'cache-and-network' ensures fresh data after creating new departments
   // (Apollo cache merge after department creation can lose annual_budgets from existing depts)
   const { data: departmentsData, loading: loadingDepartments } = useQuery(GET_DEPARTMENTS_QUERY, {
     variables: { institution_id: institutionId },
     skip: !institutionId,
-    fetchPolicy: 'network-only'
+    fetchPolicy: 'cache-and-network'
   })
 
   // Fetch users from database filtered by institution
@@ -2997,7 +2998,7 @@ function ProjectRegisterContent() {
       {/* Full-page loading overlay during project creation and role assignment */}
       {isLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-            <LoadingSpinner />
+          <AppLoader />
         </div>
       )}
       <AppLayout>
