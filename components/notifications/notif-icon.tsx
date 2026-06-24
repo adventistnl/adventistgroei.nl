@@ -16,8 +16,17 @@ export function NotifIcon({ type, className }: NotifIconProps) {
       return <Activity className={className ?? "w-4 h-4 text-blue-500 shrink-0"} />
     case "SUBSIDY_STATUS_CHANGED":
       return <BadgeDollarSign className={className ?? "w-4 h-4 text-green-500 shrink-0"} />
+    case "SUBSIDY_DOCUMENT_UPDATED":
     case "DOCUMENT_ADDED":
       return <FileText className={className ?? "w-4 h-4 text-slate-500 shrink-0"} />
+    case "SUBSIDY_DOCUMENT_VALIDATED":
+      return <FileText className={className ?? "w-4 h-4 text-green-500 shrink-0"} />
+    case "SUBSIDY_DOCUMENT_REJECTED":
+      return <FileText className={className ?? "w-4 h-4 text-red-500 shrink-0"} />
+    case "ANNUAL_BUDGET_CREATED":
+      return <BadgeDollarSign className={className ?? "w-4 h-4 text-emerald-500 shrink-0"} />
+    case "ANNUAL_BUDGET_CLOSED":
+      return <BadgeDollarSign className={className ?? "w-4 h-4 text-slate-500 shrink-0"} />
     case "PROJECT_MEMBER_ADDED":
       return <UserPlus className={className ?? "w-4 h-4 text-indigo-500 shrink-0"} />
     case "PROJECT_MEMBER_REMOVED":
