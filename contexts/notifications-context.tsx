@@ -12,13 +12,22 @@ import { useAuth } from "@/contexts/auth-context"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type NotificationType = "project_message" | "status_change" | "info"
+export type NotificationType = 
+  | "PROJECT_MESSAGE" 
+  | "PROJECT_STATUS_CHANGED" 
+  | "SUBSIDY_STATUS_CHANGED" 
+  | "DOCUMENT_ADDED" 
+  | "PROJECT_MEMBER_ADDED"
+  | "PROJECT_MEMBER_REMOVED"
+  | "SYSTEM_ALERT"
+  | "INFO"
 
 export interface AppNotification {
   id: string
-  type: NotificationType
-  title: string
+  type: NotificationType | string // Fallback to string for old notifications
+  title?: string
   message: string
+  metadata?: any
   /** ISO string */
   timestamp: string
   read: boolean
@@ -101,6 +110,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       type: (n.type as NotificationType) ?? "info",
       title: n.title ?? "",
       message: n.message ?? "",
+      metadata: n.metadata,
       timestamp: n.created_at,
       read: n.read_status,
       projectId: n.project_id ?? undefined,

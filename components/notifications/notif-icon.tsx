@@ -1,6 +1,6 @@
 "use client"
 
-import { MessageCircle, GitBranch, Info } from "lucide-react"
+import { MessageCircle, Activity, BadgeDollarSign, FileText, UserPlus, UserMinus, AlertTriangle, Info } from "lucide-react"
 import { type AppNotification } from "@/contexts/notifications-context"
 
 interface NotifIconProps {
@@ -9,9 +9,22 @@ interface NotifIconProps {
 }
 
 export function NotifIcon({ type, className }: NotifIconProps) {
-  if (type === "project_message")
-    return <MessageCircle className={className ?? "w-4 h-4 text-blue-500 shrink-0"} />
-  if (type === "status_change")
-    return <GitBranch className={className ?? "w-4 h-4 text-orange-500 shrink-0"} />
-  return <Info className={className ?? "w-4 h-4 text-muted-foreground shrink-0"} />
+  switch (type) {
+    case "PROJECT_MESSAGE":
+      return <MessageCircle className={className ?? "w-4 h-4 text-purple-500 shrink-0"} />
+    case "PROJECT_STATUS_CHANGED":
+      return <Activity className={className ?? "w-4 h-4 text-blue-500 shrink-0"} />
+    case "SUBSIDY_STATUS_CHANGED":
+      return <BadgeDollarSign className={className ?? "w-4 h-4 text-green-500 shrink-0"} />
+    case "DOCUMENT_ADDED":
+      return <FileText className={className ?? "w-4 h-4 text-slate-500 shrink-0"} />
+    case "PROJECT_MEMBER_ADDED":
+      return <UserPlus className={className ?? "w-4 h-4 text-indigo-500 shrink-0"} />
+    case "PROJECT_MEMBER_REMOVED":
+      return <UserMinus className={className ?? "w-4 h-4 text-red-500 shrink-0"} />
+    case "SYSTEM_ALERT":
+      return <AlertTriangle className={className ?? "w-4 h-4 text-amber-500 shrink-0"} />
+    default:
+      return <Info className={className ?? "w-4 h-4 text-muted-foreground shrink-0"} />
+  }
 }

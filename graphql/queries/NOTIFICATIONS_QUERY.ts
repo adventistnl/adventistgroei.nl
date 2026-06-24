@@ -12,6 +12,7 @@ export const MY_NOTIFICATIONS_QUERY = gql`
       type
       title
       message
+      metadata
       read_status
       project_id
       created_at

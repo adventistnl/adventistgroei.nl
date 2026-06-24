@@ -1998,19 +1998,17 @@ export function ViewSubsidyModal({
                                 </DropdownMenuItem>
                               )}
 
-                              {/* Waiting for Documents - Only for advance subsidies (new preferred path) */}
-                              {activeSubsidy?.is_for_advance && (
-                                <DropdownMenuItem
-                                  onClick={() => handleStatusChangeRequest('WAITING_DOCUMENTS')}
-                                  disabled={!canChangeStatus('waiting_documents')}
-                                >
-                                  <FileText className="mr-2 h-4 w-4 text-orange-700" />
-                                  <div className="flex flex-col">
-                                    <span>{t('subsidy.status.waitingDocuments') || 'Waiting for Documents'}</span>
-                                    <span className="text-xs text-muted-foreground">Advance paid — awaiting receipts</span>
-                                  </div>
-                                </DropdownMenuItem>
-                              )}
+                              {/* Waiting for Documents - Preferred path for documents collection */}
+                              <DropdownMenuItem
+                                onClick={() => handleStatusChangeRequest('WAITING_DOCUMENTS')}
+                                disabled={!canChangeStatus('waiting_documents')}
+                              >
+                                <FileText className="mr-2 h-4 w-4 text-orange-700" />
+                                <div className="flex flex-col">
+                                  <span>{t('subsidy.status.waitingDocuments') || 'Waiting for Documents'}</span>
+                                  <span className="text-xs text-muted-foreground">Awaiting receipts / documents</span>
+                                </div>
+                              </DropdownMenuItem>
 
                               {/* Request Refund - Available from APPROVED, ADVANCED_CLOSED or WAITING_DOCUMENTS */}
                               {(currentSubsidyStatus === 'approved' || currentSubsidyStatus === 'advanced_closed' || currentSubsidyStatus === 'waiting_documents') &&

@@ -1113,30 +1113,15 @@ export default function ProjectDetailsPage() {
     return subsidizedActivityIds.includes(activityId)
   }, [subsidizedActivityIds])
 
-  // True when at least one activity is selected and none of them already have a subsidy
-  const canRequestSubsidy = selectedActivities.length > 0 &&
-    !selectedActivities.some(a => activityHasSubsidy(a.id))
+  // True when at least one activity is selected
+  const canRequestSubsidy = selectedActivities.length > 0
 
 
 
 
   const handleBatchSubsidyRequest = useCallback(() => {
-    // Check if any selected activity already has a subsidy
-    const activitiesWithSubsidy = selectedActivities.filter(activity =>
-      activityHasSubsidy(activity.id)
-    )
-
-    if (activitiesWithSubsidy.length > 0) {
-      const activityNames = activitiesWithSubsidy.map(a => a.name).join(', ')
-      toast.error(
-        pt.errors.activitiesHaveSubsidy.replace('{{names}}', activityNames),
-        { duration: 5000 }
-      )
-      return
-    }
-
     setIsRequestSubsidyModalOpen(true)
-  }, [selectedActivities, activityHasSubsidy])
+  }, [selectedActivities])
 
   const handleSubsidyRequestSubmit = async (data: SubsidyRequestFormData & { id?: string }): Promise<string | void> => {
     // ── Resolve request type ────────────────────────────────────────────────

@@ -3,6 +3,7 @@
 import { Check, Trash2, History } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR, enUS, nl, type Locale } from "date-fns/locale"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { type AppNotification } from "@/contexts/notifications-context"
 import { NotifIcon } from "@/components/notifications/notif-icon"
@@ -32,6 +33,7 @@ export function NotifCard({
   onRemove,
   onOpenHistory,
 }: NotifCardProps) {
+  const { t } = useTranslation()
   const locale = dateFnsLocale[lang] ?? enUS
   const timeAgo = formatDistanceToNow(new Date(notification.timestamp), {
     addSuffix: true,
@@ -40,7 +42,11 @@ export function NotifCard({
 
   const isProjectNotification =
     !!notification.projectId &&
-    (notification.type === "project_message" || notification.type === "status_change")
+    (notification.type === "PROJECT_MESSAGE" || notification.type === "PROJECT_STATUS_CHANGED" || notification.type === "SUBSIDY_STATUS_CHANGED")
+
+  // Handle translation if metadata exists, otherwise fallback to standard text (for legacy notifications)
+  const displayTitle = notification.metadata ? t(notification.title || "", notification.metadata) : notification.title;
+  const displayMessage = notification.metadata ? t(notification.message, notification.metadata) : notification.message;
 
   return (
     <div
@@ -58,10 +64,10 @@ export function NotifCard({
       {/* Content */}
       <div className="flex-1 min-w-0 pr-10">
         <p className="text-xs font-semibold text-foreground leading-snug line-clamp-2">
-          {notification.title}
+          {displayTitle}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-3">
-          {notification.message}
+          {displayMessage}
         </p>
 
         <div className="flex items-center gap-2 mt-1.5">

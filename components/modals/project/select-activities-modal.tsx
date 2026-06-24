@@ -142,10 +142,16 @@ export function SelectActivitiesModal({
   }, [filteredActivities, activitySubsidyMap])
 
   // ─── Selectable = not in subsidizedActivityIds either ──────────────────────
-  const freeActivities   = selectableActivities.filter(a => !subsidizedActivityIds.includes(a.id))
-  const disabledActivities = selectableActivities.filter(a => subsidizedActivityIds.includes(a.id))
+  // We no longer block activities that are in subsidizedActivityIds
+  const freeActivities   = selectableActivities
+  const disabledActivities: ProjectActivityData[] = []
 
-  const selectableCount = freeActivities.length
+  const availableActivitiesToSelect = filteredActivities.filter(a => {
+    const summary = allocationSummaries.get(a.id)
+    return !summary || summary.available > 0
+  })
+
+  const selectableCount = availableActivitiesToSelect.length
 
   // ─── Reset on close ────────────────────────────────────────────────────────
   React.useEffect(() => {
@@ -165,13 +171,13 @@ export function SelectActivitiesModal({
     if (selectedIds.size === selectableCount && selectableCount > 0) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(freeActivities.map(a => a.id)))
+      setSelectedIds(new Set(availableActivitiesToSelect.map(a => a.id)))
     }
   }
 
   // ─── Confirm / Close ───────────────────────────────────────────────────────
   const handleConfirm = () => {
-    onConfirm(freeActivities.filter(a => selectedIds.has(a.id)))
+    onConfirm(filteredActivities.filter(a => selectedIds.has(a.id)))
     setSelectedIds(new Set())
   }
 
@@ -326,21 +332,7 @@ export function SelectActivitiesModal({
                   </div>
 
                   {/* Disabled activities (in subsidizedActivityIds but no subsidyRequests data) */}
-                  {disabledActivities.length > 0 && (
-                    <div className="space-y-1.5">
-                      {disabledActivities.map(activity => (
-                        <ActivityCard
-                          key={activity.id}
-                          activity={activity}
-                          isSelected={false}
-                          showCheckbox
-                          compact
-                          isDisabled
-                          disabledReason={t.alreadyRequested}
-                        />
-                      ))}
-                    </div>
-                  )}
+                  {/* Removed: We no longer disable activities just because they are in subsidizedActivityIds */}
                 </div>
               )}
 
@@ -366,22 +358,41 @@ export function SelectActivitiesModal({
                   {/* Already-requested activity cards */}
                   <div className="space-y-1.5">
                     {requestedActivities.map(activity => {
+                      const summary = allocationSummaries.get(activity.id)
+                      const isFull = !!summary && summary.available <= 0
                       const subsidyRefs = activitySubsidyMap.get(activity.id) ?? []
+                      const isSelected = selectedIds.has(activity.id)
                       return (
                         <div
                           key={activity.id}
-                          className="flex items-start gap-3 p-3 border border-gray-100 dark:border-gray-800 rounded-md bg-gray-50/60 dark:bg-gray-900/40 opacity-75"
+                          onClick={() => {
+                            if (!isFull) toggleActivity(activity.id)
+                          }}
+                          className={cn(
+                            "flex items-start gap-3 p-3 border rounded-md transition-all cursor-pointer",
+                            isSelected 
+                              ? "border-gray-900 bg-gray-50 dark:border-gray-100 dark:bg-gray-800" 
+                              : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900",
+                            isFull && "opacity-60 cursor-not-allowed bg-gray-50/60 dark:bg-gray-900/40"
+                          )}
                         >
-                          {/* Subsidized indicator */}
+                          <div className="flex-shrink-0 mt-0.5">
+                            <Checkbox
+                              checked={isSelected}
+                              disabled={isFull}
+                              className="pointer-events-none border-gray-300 dark:border-gray-600 data-[state=checked]:bg-gray-900 dark:data-[state=checked]:bg-gray-100 data-[state=checked]:border-gray-900 dark:data-[state=checked]:border-gray-100"
+                            />
+                          </div>
+                          
                           <div className="flex-shrink-0 mt-0.5">
                             <div className={cn(
-                              "w-7 h-7 rounded-full flex items-center justify-center",
+                              "w-5 h-5 rounded-full flex items-center justify-center",
                               activity.is_subsidized
-                                ? "bg-green-100 border-2 border-green-300 dark:bg-green-950 dark:border-green-800"
-                                : "bg-gray-100 border-2 border-gray-300 dark:bg-gray-800 dark:border-gray-600"
+                                ? "bg-green-100 border border-green-300 dark:bg-green-950 dark:border-green-800"
+                                : "bg-gray-100 border border-gray-300 dark:bg-gray-800 dark:border-gray-600"
                             )}>
                               <span className={cn(
-                                "text-xs font-bold",
+                                "text-[10px] font-bold",
                                 activity.is_subsidized
                                   ? "text-green-600 dark:text-green-400"
                                   : "text-gray-400 dark:text-gray-500"

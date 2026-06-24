@@ -30,17 +30,17 @@ export const SUBSIDY_TRANSITIONS: Record<'normal' | 'advance', Record<SubsidySta
   normal: {
     pending: ['in_review', 'approved', 'rejected'],
     in_review: ['pending', 'approved', 'rejected'],
-    approved: ['closed'],
+    approved: ['waiting_documents', 'closed'],
     rejected: ['approved'],
     waiting_refund: ['closed'],
     advanced_closed: [], // Not applicable for normal subsidies
-    waiting_documents: [], // Not applicable for normal subsidies
+    waiting_documents: ['closed', 'waiting_refund'],
     closed: [] // Final state
   },
   advance: {
     pending: ['in_review', 'approved', 'rejected'],
     in_review: ['pending', 'approved', 'rejected'],
-    approved: ['waiting_documents', 'advanced_closed'],
+    approved: ['waiting_documents', 'closed', 'advanced_closed'],
     rejected: ['approved'],
     advanced_closed: ['waiting_documents', 'closed'],
     waiting_documents: ['closed', 'waiting_refund'],
@@ -114,12 +114,12 @@ export const useSubsidyStatusRules = () => {
       }
       
       if (context.is_for_advance) {
-         if (fromStatus === 'approved') return t('subsidy.errors.invalidAdvanceTransition', 'Can only change to Waiting Documents or Advanced Closed')
+         if (fromStatus === 'approved') return t('subsidy.errors.invalidAdvanceTransition', 'Can only change to Waiting Documents, Advanced Closed or Closed')
          if (fromStatus === 'advanced_closed') return t('subsidy.errors.finalState', 'Advanced Closed can only change to Closed or Waiting Documents')
          if (fromStatus === 'waiting_documents') return t('subsidy.errors.finalState', 'Waiting Documents can only change to Closed or Waiting Refund')
       } else {
-         if (toStatus === 'advanced_closed' || toStatus === 'waiting_documents') {
-           return t('subsidy.errors.invalidNormalTransition', 'Normal subsidies cannot go to Advanced Closed or Waiting Documents')
+         if (toStatus === 'advanced_closed') {
+           return t('subsidy.errors.invalidNormalTransition', 'Normal subsidies cannot go to Advanced Closed')
          }
       }
 
