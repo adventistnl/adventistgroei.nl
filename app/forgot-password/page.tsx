@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Mail, ArrowLeft, Building2 } from 'lucide-react'
 import { AdventistLogo } from '@/components/ui/adventist-logo'
+import { AuthSidebar } from '@/components/auth/auth-sidebar'
 import { AppLoader } from '@/components/shared/app-loader'
 import { useSendForgotPasswordCodeMutation } from '@/hooks/graphql/use-forgot-password-mutation'
 
@@ -167,28 +168,7 @@ function ForgotPasswordPageContent() {
         </div>
         
         {/* Coluna 7: Sidebar decorativa */}
-        <div className="col-span-1 bg-gray-900 dark:bg-gray-950 relative overflow-hidden">
-          {/* Logo centralizado no topo */}
-          <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-20">
-            <div className="flex items-center justify-center" style={{ width: 'clamp(3rem, 8vw, 5rem)', height: 'clamp(3rem, 8vw, 5rem)' }}>
-              <AdventistLogo className="w-full h-full text-white" />
-            </div>
-          </div>
-          
-          {/* Elementos decorativos */}
-          <div className="absolute inset-0 opacity-5">
-            <div className="absolute top-32 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-white rounded-full"></div>
-            <div className="absolute top-48 left-1/4 w-8 h-8 bg-white/60 rounded-full"></div>
-            <div className="absolute top-64 right-1/4 w-12 h-12 bg-white/40 rounded-full"></div>
-            <div className="absolute bottom-32 left-1/2 transform -translate-x-1/2 w-20 h-20 bg-white/80 rounded-full"></div>
-          </div>
-          
-          {/* Linhas decorativas sutis */}
-          <div className="absolute inset-0">
-            <div className="absolute top-1/3 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-            <div className="absolute top-2/3 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
-          </div>
-        </div>
+        <AuthSidebar />
       </div>
     </div>
   )

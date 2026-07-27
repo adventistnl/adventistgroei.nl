@@ -40,6 +40,19 @@ export const loginTranslations = {
     invalidCredentials: "Invalid email or password. Please try again.",
     loginError: "Error signing in. Please try again.",
     noActiveRoles: "Your account has no active roles. Please contact the administrator.",
+    emailRequired: "Email is required.",
+    emailInvalid: "Enter a valid email address.",
+    passwordRequired: "Password is required.",
+    credentialsInvalidEmail: "Invalid email or password.",
+    credentialsInvalidPassword: "Invalid email or password.",
+    credentialsInvalid: "Email or password invalid, try again.",
+
+    // Header / footer
+    titleBold: "Seventh-day",
+    titleLight: "Adventist Church",
+    changeLanguage: "Change language",
+    toggleTheme: "Toggle theme",
+    allRightsReserved: "Adventist Church — All rights reserved.",
 
     // Languages
     languages: {
@@ -89,6 +102,19 @@ export const loginTranslations = {
     invalidCredentials: "Ongeldig e-mailadres of wachtwoord. Probeer opnieuw.",
     loginError: "Fout bij inloggen. Probeer opnieuw.",
     noActiveRoles: "Uw account heeft geen actieve rollen. Neem contact op met de beheerder.",
+    emailRequired: "E-mail is verplicht.",
+    emailInvalid: "Voer een geldig e-mailadres in.",
+    passwordRequired: "Wachtwoord is verplicht.",
+    credentialsInvalidEmail: "Ongeldig e-mailadres of wachtwoord.",
+    credentialsInvalidPassword: "Ongeldig e-mailadres of wachtwoord.",
+    credentialsInvalid: "E-mail of wachtwoord ongeldig, probeer het opnieuw.",
+
+    // Header / footer
+    titleBold: "Zevende-dags",
+    titleLight: "Adventistenkerk",
+    changeLanguage: "Taal wijzigen",
+    toggleTheme: "Thema wisselen",
+    allRightsReserved: "Adventistenkerk — Alle rechten voorbehouden.",
 
     // Languages
     languages: {
@@ -138,6 +164,19 @@ export const loginTranslations = {
     invalidCredentials: "Email ou senha inválidos. Tente novamente.",
     loginError: "Erro ao fazer login. Tente novamente.",
     noActiveRoles: "Sua conta não possui funções ativas. Por favor, contate o administrador.",
+    emailRequired: "Email é obrigatório.",
+    emailInvalid: "Digite um endereço de email válido.",
+    passwordRequired: "Senha é obrigatória.",
+    credentialsInvalidEmail: "Email ou senha inválidos.",
+    credentialsInvalidPassword: "Email ou senha inválidos.",
+    credentialsInvalid: "Email ou senha inválidos, tente novamente.",
+
+    // Header / footer
+    titleBold: "Igreja Adventista",
+    titleLight: "do Sétimo Dia",
+    changeLanguage: "Alterar idioma",
+    toggleTheme: "Alternar tema",
+    allRightsReserved: "Igreja Adventista — Todos os direitos reservados.",
     
     // Languages
     languages: {

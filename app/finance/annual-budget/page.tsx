@@ -30,6 +30,7 @@ import {
   TrendingUp,
   Eye,
   Coins,
+  Download,
 } from "lucide-react"
 import {
   Select,
@@ -70,6 +71,13 @@ import { AccessDenied } from "@/components/access/access-denied"
 import { WithPermission } from "@/hocs/with-permission"
 import { InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
 import { createPrivacyConfig } from "@/config/privacy-roles.config"
+import {
+  generateAnnualBudgetCsv,
+  downloadCsv,
+  generateCsvFilename,
+  type AnnualBudgetExportData,
+  type ExportTranslations,
+} from "@/utils/export-annual-budget-csv"
 
 // Chart Components
 import { DepartmentSpendingChart } from "@/components/charts/annual-budget/department-spending-chart"
@@ -132,6 +140,7 @@ export default function AnnualBudgetPage() {
   
   const [isLoading, setIsLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [operationInProgress, setOperationInProgress] = useState(false)
 
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
@@ -1464,6 +1473,114 @@ export default function AnnualBudgetPage() {
     },
   ], [departmentBudgetData, t, currentInstitutionData])
 
+  const handleExportCsv = async () => {
+    setExporting(true)
+    try {
+      // Montar traduções do export na língua atual
+      const exportTranslations: ExportTranslations = {
+        section_summary: t('annual_budget.export.section_summary', 'SUMMARY'),
+        section_department_budgets: t('annual_budget.export.section_department_budgets', 'DEPARTMENT BUDGETS'),
+        section_budget_distribution: t('annual_budget.export.section_budget_distribution', 'BUDGET DISTRIBUTION'),
+        section_department_spending: t('annual_budget.export.section_department_spending', 'DEPARTMENT SPENDING'),
+        institution: t('annual_budget.export.institution', 'Institution'),
+        year: t('annual_budget.export.year', 'Year'),
+        total_budget: t('annual_budget.export.total_budget', 'Total Budget'),
+        total_allocated: t('annual_budget.export.total_allocated', 'Total Allocated'),
+        total_spent: t('annual_budget.export.total_spent', 'Total Spent'),
+        budget_remaining: t('annual_budget.export.budget_remaining', 'Budget Remaining'),
+        budget_utilization: t('annual_budget.export.budget_utilization', 'Budget Utilization'),
+        active_departments: t('annual_budget.export.active_departments', 'Active Departments'),
+        department_name: t('annual_budget.export.department_name', 'Department Name'),
+        description: t('annual_budget.export.description', 'Description'),
+        planned_budget: t('annual_budget.export.planned_budget', 'Planned Budget'),
+        allocated_amount: t('annual_budget.export.allocated_amount', 'Allocated Amount'),
+        spent_amount: t('annual_budget.export.spent_amount', 'Spent Amount'),
+        remaining_amount: t('annual_budget.export.remaining_amount', 'Remaining Amount'),
+        usage_percentage: t('annual_budget.export.usage_percentage', 'Usage %'),
+        balance_status: t('annual_budget.export.balance_status', 'Balance Status'),
+        lock_status: t('annual_budget.export.lock_status', 'Lock Status'),
+        budget_status: t('annual_budget.export.budget_status', 'Budget Status'),
+        total: t('annual_budget.export.total', 'Total'),
+        spent: t('annual_budget.export.spent', 'Spent'),
+        allocated: t('annual_budget.export.allocated', 'Allocated'),
+        available: t('annual_budget.export.available', 'Available'),
+        percentage_used: t('annual_budget.export.percentage_used', '% Used'),
+        reserved: t('annual_budget.export.reserved', 'Reserved'),
+        locked: t('annual_budget.export.locked', 'Locked'),
+        unlocked: t('annual_budget.export.unlocked', 'Unlocked'),
+        completed: t('annual_budget.export.completed', 'Completed'),
+        missing: t('annual_budget.export.missing', 'Missing'),
+      }
+
+      // Calcular balance status para cada departamento
+      const getBalanceStatus = (dept: any): string => {
+        const planned = dept.annualBudget?.planned_budget || 0
+        const allocated = dept.annualBudget?.allocated_amount || 0
+        const spent = dept.spentAmount || 0
+        const balance = planned - (allocated + spent)
+        const utilization = planned > 0 ? ((allocated + spent) / planned) * 100 : 0
+        if (balance < 0) return `Over Budget`
+        if (utilization >= 90) return `At Risk`
+        if (utilization >= 75) return `Good`
+        return `Healthy`
+      }
+
+      const exportData: AnnualBudgetExportData = {
+        institutionName: currentInstitutionData?.name || 'Institution',
+        year: selectedYear,
+        kpi: {
+          totalBudget: kpiData.totalInstitutionBudget || 0,
+          totalAllocated: kpiData.totalAllocated || 0,
+          totalSpent: kpiData.totalSpent || 0,
+          budgetRemaining: kpiData.budgetRemaining || 0,
+          budgetUtilization: kpiData.budgetUtilization || 0,
+          activeDepartments: kpiData.activeDepartments || 0,
+        },
+        departmentBudgets: departmentBudgetData.map((dept: any) => ({
+          departmentName: dept.departmentName,
+          departmentDescription: dept.departmentDescription,
+          plannedBudget: dept.annualBudget?.planned_budget || 0,
+          allocatedAmount: dept.annualBudget?.allocated_amount || 0,
+          spentAmount: dept.spentAmount || 0,
+          remainingAmount: dept.remainingAmount || 0,
+          usagePercentage: dept.usagePercentage || 0,
+          balanceStatus: dept.hasBudgetRecord ? getBalanceStatus(dept) : '-',
+          lockStatus: !dept.hasBudgetRecord ? '-' : dept.isLocked
+            ? exportTranslations.locked
+            : exportTranslations.unlocked,
+          budgetStatus: dept.hasBudgetRecord
+            ? exportTranslations.completed
+            : exportTranslations.missing,
+        })),
+        budgetDistribution: {
+          total: chartData.budgetDistribution.total,
+          spent: chartData.budgetDistribution.spent,
+          allocated: chartData.budgetDistribution.allocated,
+          available: chartData.budgetDistribution.available,
+          percentageUsed: chartData.budgetDistribution.percentageUsed,
+        },
+        departmentSpending: (chartData.departmentSpending || []).map((dept: any) => ({
+          name: dept.name || dept.department || '',
+          planned: dept.planned || 0,
+          spent: dept.spent || 0,
+          reserved: dept.reserved || 0,
+          available: dept.available || 0,
+        })),
+      }
+
+      const csvContent = generateAnnualBudgetCsv(exportData, exportTranslations, selectedCurrency?.code || 'EUR')
+      const filename = generateCsvFilename(exportData.institutionName, selectedYear)
+      downloadCsv(csvContent, filename)
+
+      toast.success(t('annual_budget.export.success', 'Annual budget exported successfully'))
+    } catch (error) {
+      console.error('Error exporting CSV:', error)
+      toast.error(t('annual_budget.export.error', 'Failed to export budget data'))
+    } finally {
+      setExporting(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -1529,6 +1646,21 @@ export default function AnnualBudgetPage() {
                 title={t('annual_budget.buttons.refresh', 'Refresh data')}
               >
                 <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
+              <Button
+                variant="outline"
+                size="default"
+                onClick={handleExportCsv}
+                disabled={exporting || !hasInstitutionBudget}
+                title={t('annual_budget.buttons.export_csv', 'Export CSV')}
+                className="gap-2"
+              >
+                <Download className={`h-4 w-4 ${exporting ? 'animate-bounce' : ''}`} />
+                <span className="hidden sm:inline">
+                  {exporting
+                    ? t('annual_budget.buttons.exporting', 'Exporting...')
+                    : t('annual_budget.buttons.export_csv', 'Export CSV')}
+                </span>
               </Button>
             </div>
           </div>
