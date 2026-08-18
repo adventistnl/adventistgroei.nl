@@ -3019,6 +3019,12 @@ export type MarkAllReadResult = {
   count: Scalars['Int']['output'];
 };
 
+export type MonthlyCloseResult = {
+  __typename?: 'MonthlyCloseResult';
+  autoAccepted: Scalars['Float']['output'];
+  locked: Scalars['Float']['output'];
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   addAdjustmentTask: AdjustmentTask;
@@ -3112,6 +3118,7 @@ export type Mutation = {
   submitSubsidyRequest: SubsidyRequest;
   toggleAdjustmentTask: AdjustmentTask;
   toggleBudgetLock: ToggleLockBudgetResponse;
+  triggerMonthlyClose: MonthlyCloseResult;
   updateAdjustmentStatus: ProjectAdjustment;
   updateAssignmentInviteTemplate: AssignmentInviteTemplate;
   updateChurch: Church;
@@ -3620,6 +3627,11 @@ export type MutationToggleAdjustmentTaskArgs = {
 
 export type MutationToggleBudgetLockArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type MutationTriggerMonthlyCloseArgs = {
+  month: Scalars['String']['input'];
 };
 
 
@@ -4466,6 +4478,7 @@ export enum PermissionResolverName {
   SubsidyStatuses = 'subsidyStatuses',
   ToggleAdjustmentTask = 'toggleAdjustmentTask',
   ToggleBudgetLock = 'toggleBudgetLock',
+  TriggerMonthlyClose = 'triggerMonthlyClose',
   UpdateAdjustmentStatus = 'updateAdjustmentStatus',
   UpdateAssignmentInviteTemplate = 'updateAssignmentInviteTemplate',
   UpdateChurch = 'updateChurch',
