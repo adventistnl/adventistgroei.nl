@@ -138,6 +138,20 @@ const navSections: NavSection[] = [
         translationKey: "sidebar.myAvailability"
       },
       {
+        title: "Invitations & Requests",
+        url: "/schedule/invitations",
+        icon: Calendar,
+        permissions: [PermissionResolverName.MyAssignmentRequests],
+        translationKey: "sidebar.invitations"
+      },
+      {
+        title: "Invite Templates",
+        url: "/schedule/invite-templates",
+        icon: Calendar,
+        permissions: [PermissionResolverName.AssignmentInviteTemplates],
+        translationKey: "sidebar.inviteTemplates"
+      },
+      {
         title: "Gap Report",
         url: "/schedule/gap-report",
         icon: AlertTriangle,

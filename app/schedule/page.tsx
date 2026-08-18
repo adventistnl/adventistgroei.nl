@@ -18,9 +18,11 @@ import { usePageTitle } from "@/hooks/use-page-title"
 import { useHasPermission } from "@/hooks/use-has-permission"
 import { useChurches } from "@/hooks/use-churches"
 import { useScheduleOverview } from "@/hooks/use-schedule-overview"
+import { useEligiblePreachersForSlot, useInviteToAssignment, useAssignmentInviteTemplates } from "@/hooks/use-assignment-request"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AssignmentStatus } from "@/types/globalTypes"
 import { scheduleAssignmentTranslations } from "@/lib/translations/schedule-assignment"
+import { scheduleRequestTranslations } from "@/lib/translations/schedule-request"
 import "@/lib/i18n"
 
 const STATUS_COLOR: Record<AssignmentStatus, string> = {
@@ -43,6 +45,9 @@ export default function ScheduleOverviewPage() {
     (Object.keys(scheduleAssignmentTranslations) as Array<keyof typeof scheduleAssignmentTranslations>).forEach((lang) => {
       i18n.addResourceBundle(lang, "translation", { schedule: { assignment: scheduleAssignmentTranslations[lang] } }, true, true)
     })
+    ;(Object.keys(scheduleRequestTranslations) as Array<keyof typeof scheduleRequestTranslations>).forEach((lang) => {
+      i18n.addResourceBundle(lang, "translation", { schedule: { request: scheduleRequestTranslations[lang] } }, true, true)
+    })
   }, [i18n])
 
   usePageTitle({ title: t("schedule.assignment.page.title"), showBreadcrumbsInHeader: false })
@@ -59,6 +64,14 @@ export default function ScheduleOverviewPage() {
   const [dialogChurch, setDialogChurch] = useState<{ id: string; name: string; leader_id?: string | null } | null>(null)
   const [dialogDate, setDialogDate] = useState<number | null>(null)
   const [dialogUserId, setDialogUserId] = useState<string>("")
+
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false)
+  const [inviteUserId, setInviteUserId] = useState<string>("")
+  const [inviteTemplateId, setInviteTemplateId] = useState<string>("")
+  const dialogDateStr = dialogDate ? moment(visibleMonth).date(dialogDate).format("YYYY-MM-DD") : ""
+  const { preachers: eligiblePreachers } = useEligiblePreachersForSlot(dialogChurch?.id ?? "", dialogDateStr, !inviteDialogOpen || !dialogChurch)
+  const { invite, inviteAny, inviting } = useInviteToAssignment()
+  const { templates } = useAssignmentInviteTemplates()
 
   const assignmentByKey = useMemo(() => {
     const map = new Map<string, (typeof assignments)[number]>()
@@ -95,6 +108,20 @@ export default function ScheduleOverviewPage() {
     const date = moment(visibleMonth).date(dialogDate).format("YYYY-MM-DD")
     const mutate = hasAnyChurchPermission ? setAssignmentAny : setAssignment
     await mutate(dialogChurch.id, date, dialogUserId || undefined)
+    setDialogChurch(null)
+    setDialogDate(null)
+    setSavedBannerVisible(true)
+  }
+
+  const canInvite = hasAnyChurchPermission || (hasOwnChurchPermission && dialogChurch?.leader_id === user?.id)
+
+  const handleSendInvite = async () => {
+    if (!dialogChurch || !inviteUserId) return
+    const mutate = hasAnyChurchPermission ? inviteAny : invite
+    await mutate(dialogChurch.id, dialogDateStr, inviteUserId, inviteTemplateId || undefined)
+    setInviteDialogOpen(false)
+    setInviteUserId("")
+    setInviteTemplateId("")
     setDialogChurch(null)
     setDialogDate(null)
     setSavedBannerVisible(true)
@@ -213,13 +240,68 @@ export default function ScheduleOverviewPage() {
               </SelectContent>
             </Select>
           </div>
+          <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
+            {canInvite && (
+              <Button variant="secondary" onClick={() => setInviteDialogOpen(true)} disabled={saving}>
+                {t("schedule.request.actions.invite")}
+              </Button>
+            )}
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={() => setDialogChurch(null)} disabled={saving}>
+                {t("schedule.assignment.dialog.cancel")}
+              </Button>
+              <Button onClick={handleSave} disabled={saving}>
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {saving ? t("schedule.assignment.dialog.saving") : t("schedule.assignment.dialog.save")}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* R5 (church/admin invites) + R6 (reach, filtered entirely server-side) */}
+      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {t("schedule.request.inviteDialog.title", {
+                churchName: dialogChurch?.name ?? "",
+                date: dialogDate ? moment(visibleMonth).date(dialogDate).format("LL") : "",
+              })}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>{t("schedule.request.inviteDialog.preacher")}</Label>
+              <Select value={inviteUserId} onValueChange={setInviteUserId}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {eligiblePreachers.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("schedule.request.inviteDialog.template")}</Label>
+              <Select value={inviteTemplateId || "__none__"} onValueChange={(value) => setInviteTemplateId(value === "__none__" ? "" : value)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">{t("schedule.request.inviteDialog.noTemplate")}</SelectItem>
+                  {templates.map((tpl) => (
+                    <SelectItem key={tpl.id} value={tpl.id}>{tpl.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setDialogChurch(null)} disabled={saving}>
-              {t("schedule.assignment.dialog.cancel")}
+            <Button variant="ghost" onClick={() => setInviteDialogOpen(false)} disabled={inviting}>
+              {t("schedule.request.inviteDialog.cancel")}
             </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {saving ? t("schedule.assignment.dialog.saving") : t("schedule.assignment.dialog.save")}
+            <Button onClick={handleSendInvite} disabled={inviting || !inviteUserId}>
+              {inviting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {inviting ? t("schedule.request.inviteDialog.sending") : t("schedule.request.inviteDialog.send")}
             </Button>
           </DialogFooter>
         </DialogContent>

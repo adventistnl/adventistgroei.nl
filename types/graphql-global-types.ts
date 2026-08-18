@@ -575,6 +575,70 @@ export type Assignment = {
   user_id?: Maybe<Scalars['String']['output']>;
 };
 
+/**
+ * R8.2 — reusable invite message templates, rendered through the existing MustacheService
+ * (same mechanism as system emails) at send time. Distinct from the locale email JSON files,
+ * which are fixed platform copy — this is per-institution, admin-authored content.
+ */
+export type AssignmentInviteTemplate = {
+  __typename?: 'AssignmentInviteTemplate';
+  _count: AssignmentInviteTemplateCount;
+  body: Scalars['String']['output'];
+  created_at: Scalars['DateTime']['output'];
+  created_by: Scalars['String']['output'];
+  deleted_at?: Maybe<Scalars['DateTime']['output']>;
+  deleted_by?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  institution: Institution;
+  institution_id: Scalars['String']['output'];
+  is_deleted: Scalars['Boolean']['output'];
+  name: Scalars['String']['output'];
+  requests?: Maybe<Array<AssignmentRequest>>;
+  subject: Scalars['String']['output'];
+  updated_at: Scalars['DateTime']['output'];
+  updated_by: Scalars['String']['output'];
+};
+
+export type AssignmentInviteTemplateCount = {
+  __typename?: 'AssignmentInviteTemplateCount';
+  requests: Scalars['Int']['output'];
+};
+
+export type AssignmentInviteTemplateListRelationFilter = {
+  every?: InputMaybe<AssignmentInviteTemplateWhereInput>;
+  none?: InputMaybe<AssignmentInviteTemplateWhereInput>;
+  some?: InputMaybe<AssignmentInviteTemplateWhereInput>;
+};
+
+export type AssignmentInviteTemplateNullableScalarRelationFilter = {
+  is?: InputMaybe<AssignmentInviteTemplateWhereInput>;
+  isNot?: InputMaybe<AssignmentInviteTemplateWhereInput>;
+};
+
+export type AssignmentInviteTemplateOrderByRelationAggregateInput = {
+  _count?: InputMaybe<SortOrder>;
+};
+
+export type AssignmentInviteTemplateWhereInput = {
+  AND?: InputMaybe<Array<AssignmentInviteTemplateWhereInput>>;
+  NOT?: InputMaybe<Array<AssignmentInviteTemplateWhereInput>>;
+  OR?: InputMaybe<Array<AssignmentInviteTemplateWhereInput>>;
+  body?: InputMaybe<StringFilter>;
+  created_at?: InputMaybe<DateTimeFilter>;
+  created_by?: InputMaybe<StringFilter>;
+  deleted_at?: InputMaybe<DateTimeNullableFilter>;
+  deleted_by?: InputMaybe<StringNullableFilter>;
+  id?: InputMaybe<StringFilter>;
+  institution?: InputMaybe<InstitutionScalarRelationFilter>;
+  institution_id?: InputMaybe<StringFilter>;
+  is_deleted?: InputMaybe<BoolFilter>;
+  name?: InputMaybe<StringFilter>;
+  requests?: InputMaybe<AssignmentRequestListRelationFilter>;
+  subject?: InputMaybe<StringFilter>;
+  updated_at?: InputMaybe<DateTimeFilter>;
+  updated_by?: InputMaybe<StringFilter>;
+};
+
 export type AssignmentListRelationFilter = {
   every?: InputMaybe<AssignmentWhereInput>;
   none?: InputMaybe<AssignmentWhereInput>;
@@ -591,6 +655,69 @@ export enum AssignmentOrigin {
   PreacherRequested = 'PREACHER_REQUESTED',
   SelfFilled = 'SELF_FILLED'
 }
+
+/**
+ * R5 — a pending candidature (preacher applied) or invite (church/admin invited), converging
+ * on the same accept/decline flow (respondToAssignmentRequest). R7 — accepting one supersedes
+ * every other pending request for the same church+date.
+ */
+export type AssignmentRequest = {
+  __typename?: 'AssignmentRequest';
+  church: Church;
+  church_id: Scalars['String']['output'];
+  created_at: Scalars['DateTime']['output'];
+  created_by: Scalars['String']['output'];
+  date: Scalars['DateTime']['output'];
+  decided_at?: Maybe<Scalars['DateTime']['output']>;
+  deleted_at?: Maybe<Scalars['DateTime']['output']>;
+  deleted_by?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  institution: Institution;
+  institution_id: Scalars['String']['output'];
+  is_deleted: Scalars['Boolean']['output'];
+  status: RequestStatus;
+  template?: Maybe<AssignmentInviteTemplate>;
+  template_id?: Maybe<Scalars['String']['output']>;
+  type: RequestType;
+  updated_by: Scalars['String']['output'];
+  user: User;
+  user_id: Scalars['String']['output'];
+};
+
+export type AssignmentRequestListRelationFilter = {
+  every?: InputMaybe<AssignmentRequestWhereInput>;
+  none?: InputMaybe<AssignmentRequestWhereInput>;
+  some?: InputMaybe<AssignmentRequestWhereInput>;
+};
+
+export type AssignmentRequestOrderByRelationAggregateInput = {
+  _count?: InputMaybe<SortOrder>;
+};
+
+export type AssignmentRequestWhereInput = {
+  AND?: InputMaybe<Array<AssignmentRequestWhereInput>>;
+  NOT?: InputMaybe<Array<AssignmentRequestWhereInput>>;
+  OR?: InputMaybe<Array<AssignmentRequestWhereInput>>;
+  church?: InputMaybe<ChurchScalarRelationFilter>;
+  church_id?: InputMaybe<StringFilter>;
+  created_at?: InputMaybe<DateTimeFilter>;
+  created_by?: InputMaybe<StringFilter>;
+  date?: InputMaybe<DateTimeFilter>;
+  decided_at?: InputMaybe<DateTimeNullableFilter>;
+  deleted_at?: InputMaybe<DateTimeNullableFilter>;
+  deleted_by?: InputMaybe<StringNullableFilter>;
+  id?: InputMaybe<StringFilter>;
+  institution?: InputMaybe<InstitutionScalarRelationFilter>;
+  institution_id?: InputMaybe<StringFilter>;
+  is_deleted?: InputMaybe<BoolFilter>;
+  status?: InputMaybe<EnumRequestStatusFilter>;
+  template?: InputMaybe<AssignmentInviteTemplateNullableScalarRelationFilter>;
+  template_id?: InputMaybe<StringNullableFilter>;
+  type?: InputMaybe<EnumRequestTypeFilter>;
+  updated_by?: InputMaybe<StringFilter>;
+  user?: InputMaybe<UserScalarRelationFilter>;
+  user_id?: InputMaybe<StringFilter>;
+};
 
 export enum AssignmentStatus {
   Confirmed = 'CONFIRMED',
@@ -906,6 +1033,7 @@ export type Church = {
   __typename?: 'Church';
   _count: ChurchCount;
   annual_budgets?: Maybe<Array<AnnualBudget>>;
+  assignment_requests?: Maybe<Array<AssignmentRequest>>;
   assignments?: Maybe<Array<Assignment>>;
   contact?: Maybe<Contact>;
   contact_id?: Maybe<Scalars['String']['output']>;
@@ -965,6 +1093,7 @@ export type ChurchChartData = {
 export type ChurchCount = {
   __typename?: 'ChurchCount';
   annual_budgets: Scalars['Int']['output'];
+  assignment_requests: Scalars['Int']['output'];
   assignments: Scalars['Int']['output'];
   departments: Scalars['Int']['output'];
   projects: Scalars['Int']['output'];
@@ -1019,6 +1148,7 @@ export type ChurchOrderByRelationAggregateInput = {
 
 export type ChurchOrderByWithRelationInput = {
   annual_budgets?: InputMaybe<AnnualBudgetOrderByRelationAggregateInput>;
+  assignment_requests?: InputMaybe<AssignmentRequestOrderByRelationAggregateInput>;
   assignments?: InputMaybe<AssignmentOrderByRelationAggregateInput>;
   contact?: InputMaybe<ContactOrderByWithRelationInput>;
   contact_id?: InputMaybe<SortOrderInput>;
@@ -1120,6 +1250,7 @@ export type ChurchWhereInput = {
   NOT?: InputMaybe<Array<ChurchWhereInput>>;
   OR?: InputMaybe<Array<ChurchWhereInput>>;
   annual_budgets?: InputMaybe<AnnualBudgetListRelationFilter>;
+  assignment_requests?: InputMaybe<AssignmentRequestListRelationFilter>;
   assignments?: InputMaybe<AssignmentListRelationFilter>;
   contact?: InputMaybe<ContactNullableScalarRelationFilter>;
   contact_id?: InputMaybe<StringNullableFilter>;
@@ -1451,6 +1582,12 @@ export type CreateAdjustmentDto = {
   comment?: InputMaybe<Scalars['String']['input']>;
   project_id: Scalars['String']['input'];
   tasks?: InputMaybe<Array<AdjustmentTaskInput>>;
+};
+
+export type CreateAssignmentInviteTemplateInput = {
+  body: Scalars['String']['input'];
+  name: Scalars['String']['input'];
+  subject: Scalars['String']['input'];
 };
 
 export type CreateRoleInput = {
@@ -2107,6 +2244,20 @@ export type EnumRefundTypeNullableFilter = {
   notIn?: InputMaybe<Array<RefundType>>;
 };
 
+export type EnumRequestStatusFilter = {
+  equals?: InputMaybe<RequestStatus>;
+  in?: InputMaybe<Array<RequestStatus>>;
+  not?: InputMaybe<NestedEnumRequestStatusFilter>;
+  notIn?: InputMaybe<Array<RequestStatus>>;
+};
+
+export type EnumRequestTypeFilter = {
+  equals?: InputMaybe<RequestType>;
+  in?: InputMaybe<Array<RequestType>>;
+  not?: InputMaybe<NestedEnumRequestTypeFilter>;
+  notIn?: InputMaybe<Array<RequestType>>;
+};
+
 export type EnumServiceCalendarSourceFilter = {
   equals?: InputMaybe<ServiceCalendarSource>;
   in?: InputMaybe<Array<ServiceCalendarSource>>;
@@ -2440,6 +2591,8 @@ export type Institution = {
   _count: InstitutionCount;
   activeChurchesChartData: Array<ChurchChartData>;
   annual_budgets: Array<AnnualBudget>;
+  assignment_invite_templates?: Maybe<Array<AssignmentInviteTemplate>>;
+  assignment_requests?: Maybe<Array<AssignmentRequest>>;
   assignments?: Maybe<Array<Assignment>>;
   availabilities?: Maybe<Array<Availability>>;
   availability_recurrence_rules?: Maybe<Array<AvailabilityRecurrenceRule>>;
@@ -2470,6 +2623,7 @@ export type Institution = {
   name: Scalars['String']['output'];
   notifications?: Maybe<Array<Notification>>;
   positions?: Maybe<Array<InstitutionPosition>>;
+  preacher_region_access?: Maybe<Array<PreacherRegionAccess>>;
   projects?: Maybe<Array<Project>>;
   settings?: Maybe<Array<Setting>>;
   subsidy_requests: Array<SubsidyRequest>;
@@ -2515,6 +2669,8 @@ export type InstitutionChartsData = {
 export type InstitutionCount = {
   __typename?: 'InstitutionCount';
   annual_budgets: Scalars['Int']['output'];
+  assignment_invite_templates: Scalars['Int']['output'];
+  assignment_requests: Scalars['Int']['output'];
   assignments: Scalars['Int']['output'];
   availabilities: Scalars['Int']['output'];
   availability_recurrence_rules: Scalars['Int']['output'];
@@ -2526,6 +2682,7 @@ export type InstitutionCount = {
   gap_report_snapshots: Scalars['Int']['output'];
   notifications: Scalars['Int']['output'];
   positions: Scalars['Int']['output'];
+  preacher_region_access: Scalars['Int']['output'];
   projects: Scalars['Int']['output'];
   settings: Scalars['Int']['output'];
   subsidy_requests: Scalars['Int']['output'];
@@ -2547,6 +2704,8 @@ export type InstitutionNullableScalarRelationFilter = {
 
 export type InstitutionOrderByWithRelationInput = {
   annual_budgets?: InputMaybe<AnnualBudgetOrderByRelationAggregateInput>;
+  assignment_invite_templates?: InputMaybe<AssignmentInviteTemplateOrderByRelationAggregateInput>;
+  assignment_requests?: InputMaybe<AssignmentRequestOrderByRelationAggregateInput>;
   assignments?: InputMaybe<AssignmentOrderByRelationAggregateInput>;
   availabilities?: InputMaybe<AvailabilityOrderByRelationAggregateInput>;
   availability_recurrence_rules?: InputMaybe<AvailabilityRecurrenceRuleOrderByRelationAggregateInput>;
@@ -2570,6 +2729,7 @@ export type InstitutionOrderByWithRelationInput = {
   name?: InputMaybe<SortOrder>;
   notifications?: InputMaybe<NotificationOrderByRelationAggregateInput>;
   positions?: InputMaybe<InstitutionPositionOrderByRelationAggregateInput>;
+  preacher_region_access?: InputMaybe<PreacherRegionAccessOrderByRelationAggregateInput>;
   projects?: InputMaybe<ProjectOrderByRelationAggregateInput>;
   settings?: InputMaybe<SettingOrderByRelationAggregateInput>;
   subsidy_requests?: InputMaybe<SubsidyRequestOrderByRelationAggregateInput>;
@@ -2659,6 +2819,8 @@ export type InstitutionWhereInput = {
   NOT?: InputMaybe<Array<InstitutionWhereInput>>;
   OR?: InputMaybe<Array<InstitutionWhereInput>>;
   annual_budgets?: InputMaybe<AnnualBudgetListRelationFilter>;
+  assignment_invite_templates?: InputMaybe<AssignmentInviteTemplateListRelationFilter>;
+  assignment_requests?: InputMaybe<AssignmentRequestListRelationFilter>;
   assignments?: InputMaybe<AssignmentListRelationFilter>;
   availabilities?: InputMaybe<AvailabilityListRelationFilter>;
   availability_recurrence_rules?: InputMaybe<AvailabilityRecurrenceRuleListRelationFilter>;
@@ -2682,6 +2844,7 @@ export type InstitutionWhereInput = {
   name?: InputMaybe<StringFilter>;
   notifications?: InputMaybe<NotificationListRelationFilter>;
   positions?: InputMaybe<InstitutionPositionListRelationFilter>;
+  preacher_region_access?: InputMaybe<PreacherRegionAccessListRelationFilter>;
   projects?: InputMaybe<ProjectListRelationFilter>;
   settings?: InputMaybe<SettingListRelationFilter>;
   subsidy_requests?: InputMaybe<SubsidyRequestListRelationFilter>;
@@ -2868,6 +3031,7 @@ export type Mutation = {
   confirmRefundDone: SubsidyRequest;
   createAdjustment: ProjectAdjustment;
   createAdvanceRequest: SubsidyRequest;
+  createAssignmentInviteTemplate: AssignmentInviteTemplate;
   createChurch: Church;
   createCommunication: Communication;
   createContact: Contact;
@@ -2890,6 +3054,7 @@ export type Mutation = {
   createUser: UserModel;
   deleteActivityDocument: ActivityDocuments;
   deleteAnnualBudget: DeleteBudgetResponse;
+  deleteAssignmentInviteTemplate: Scalars['Boolean']['output'];
   deleteAvailabilityRecurrenceRule: Scalars['Boolean']['output'];
   deleteChurch: Church;
   deleteCommunication: Communication;
@@ -2910,6 +3075,9 @@ export type Mutation = {
   deleteSubsidyRequestMessage: SubsidyStatusHistory;
   deleteSubsidyStatus: SubsidyStatus;
   deleteUser: UserModel;
+  grantPreacherRegionAccess: PreacherRegionAccess;
+  inviteToAssignment: AssignmentRequest;
+  inviteToAssignmentAny: AssignmentRequest;
   inviteUser: InviteModel;
   linkContact: LinkContactResult;
   login: AuthModel;
@@ -2923,9 +3091,13 @@ export type Mutation = {
   removeAdjustmentTask: AdjustmentTask;
   removeProjectVoluntary: VoluntariesOnProjects;
   removeRoleFromUser: UserModel;
+  requestAssignment: AssignmentRequest;
   requestRevisionAnnualBudget: RequestRevisionBudgetResponse;
   requestSubsidyRefund: SubsidyRequest;
   resetPassword: ForgotPasswordResponse;
+  respondToAssignmentRequest: AssignmentRequest;
+  respondToAssignmentRequestAny: AssignmentRequest;
+  revokePreacherRegionAccess: Scalars['Boolean']['output'];
   sendEmailVerificationCode: EmailVerificationResponse;
   sendForgotPasswordCode: ForgotPasswordResponse;
   /** Send an invitation email */
@@ -2941,6 +3113,7 @@ export type Mutation = {
   toggleAdjustmentTask: AdjustmentTask;
   toggleBudgetLock: ToggleLockBudgetResponse;
   updateAdjustmentStatus: ProjectAdjustment;
+  updateAssignmentInviteTemplate: AssignmentInviteTemplate;
   updateChurch: Church;
   updateCommunication: Communication;
   updateContact: Contact;
@@ -3029,6 +3202,11 @@ export type MutationCreateAdvanceRequestArgs = {
   advanceAmount: Scalars['Float']['input'];
   language?: InputMaybe<LanguagePreference>;
   projectId: Scalars['String']['input'];
+};
+
+
+export type MutationCreateAssignmentInviteTemplateArgs = {
+  input: CreateAssignmentInviteTemplateInput;
 };
 
 
@@ -3145,6 +3323,11 @@ export type MutationDeleteAnnualBudgetArgs = {
 };
 
 
+export type MutationDeleteAssignmentInviteTemplateArgs = {
+  id: Scalars['String']['input'];
+};
+
+
 export type MutationDeleteAvailabilityRecurrenceRuleArgs = {
   id: Scalars['String']['input'];
 };
@@ -3247,6 +3430,28 @@ export type MutationDeleteUserArgs = {
 };
 
 
+export type MutationGrantPreacherRegionAccessArgs = {
+  region_id: Scalars['String']['input'];
+  user_id: Scalars['String']['input'];
+};
+
+
+export type MutationInviteToAssignmentArgs = {
+  church_id: Scalars['String']['input'];
+  date: Scalars['DateTime']['input'];
+  template_id?: InputMaybe<Scalars['String']['input']>;
+  user_id: Scalars['String']['input'];
+};
+
+
+export type MutationInviteToAssignmentAnyArgs = {
+  church_id: Scalars['String']['input'];
+  date: Scalars['DateTime']['input'];
+  template_id?: InputMaybe<Scalars['String']['input']>;
+  user_id: Scalars['String']['input'];
+};
+
+
 export type MutationInviteUserArgs = {
   data: InviteUserDto;
 };
@@ -3309,6 +3514,12 @@ export type MutationRemoveRoleFromUserArgs = {
 };
 
 
+export type MutationRequestAssignmentArgs = {
+  church_id: Scalars['String']['input'];
+  date: Scalars['DateTime']['input'];
+};
+
+
 export type MutationRequestRevisionAnnualBudgetArgs = {
   data: RequestRevisionAnnualBudgetDto;
   id: Scalars['String']['input'];
@@ -3326,6 +3537,23 @@ export type MutationRequestSubsidyRefundArgs = {
 
 export type MutationResetPasswordArgs = {
   input: ResetPasswordInput;
+};
+
+
+export type MutationRespondToAssignmentRequestArgs = {
+  accept: Scalars['Boolean']['input'];
+  id: Scalars['String']['input'];
+};
+
+
+export type MutationRespondToAssignmentRequestAnyArgs = {
+  accept: Scalars['Boolean']['input'];
+  id: Scalars['String']['input'];
+};
+
+
+export type MutationRevokePreacherRegionAccessArgs = {
+  id: Scalars['String']['input'];
 };
 
 
@@ -3397,6 +3625,12 @@ export type MutationToggleBudgetLockArgs = {
 
 export type MutationUpdateAdjustmentStatusArgs = {
   data: UpdateAdjustmentStatusDto;
+};
+
+
+export type MutationUpdateAssignmentInviteTemplateArgs = {
+  id: Scalars['String']['input'];
+  input: UpdateAssignmentInviteTemplateInput;
 };
 
 
@@ -3810,6 +4044,20 @@ export type NestedEnumRefundTypeNullableFilter = {
   notIn?: InputMaybe<Array<RefundType>>;
 };
 
+export type NestedEnumRequestStatusFilter = {
+  equals?: InputMaybe<RequestStatus>;
+  in?: InputMaybe<Array<RequestStatus>>;
+  not?: InputMaybe<NestedEnumRequestStatusFilter>;
+  notIn?: InputMaybe<Array<RequestStatus>>;
+};
+
+export type NestedEnumRequestTypeFilter = {
+  equals?: InputMaybe<RequestType>;
+  in?: InputMaybe<Array<RequestType>>;
+  not?: InputMaybe<NestedEnumRequestTypeFilter>;
+  notIn?: InputMaybe<Array<RequestType>>;
+};
+
 export type NestedEnumServiceCalendarSourceFilter = {
   equals?: InputMaybe<ServiceCalendarSource>;
   in?: InputMaybe<Array<ServiceCalendarSource>>;
@@ -3989,6 +4237,13 @@ export enum NullsOrder {
   Last = 'last'
 }
 
+export type OpenSlotForPreacher = {
+  __typename?: 'OpenSlotForPreacher';
+  churchId: Scalars['String']['output'];
+  churchName: Scalars['String']['output'];
+  date: Scalars['DateTime']['output'];
+};
+
 export type Permission = {
   __typename?: 'Permission';
   _count: PermissionCount;
@@ -4067,6 +4322,7 @@ export enum PermissionResolverName {
   AnnualBudgets = 'annualBudgets',
   ApproveAnnualBudget = 'approveAnnualBudget',
   ApproveSubsidyRequest = 'approveSubsidyRequest',
+  AssignmentInviteTemplates = 'assignmentInviteTemplates',
   Auth = 'auth',
   BatchUpdateProjectActivities = 'batchUpdateProjectActivities',
   BudgetDistribution = 'budgetDistribution',
@@ -4081,6 +4337,7 @@ export enum PermissionResolverName {
   ConfirmRefundDone = 'confirmRefundDone',
   CreateAdjustment = 'createAdjustment',
   CreateAdvanceRequest = 'createAdvanceRequest',
+  CreateAssignmentInviteTemplate = 'createAssignmentInviteTemplate',
   CreateChurch = 'createChurch',
   CreateCommunication = 'createCommunication',
   CreateDepartment = 'createDepartment',
@@ -4102,6 +4359,7 @@ export enum PermissionResolverName {
   CreateUser = 'createUser',
   DeleteActivityDocument = 'deleteActivityDocument',
   DeleteAnnualBudget = 'deleteAnnualBudget',
+  DeleteAssignmentInviteTemplate = 'deleteAssignmentInviteTemplate',
   DeleteAvailabilityRecurrenceRule = 'deleteAvailabilityRecurrenceRule',
   DeleteChurch = 'deleteChurch',
   DeleteCommunication = 'deleteCommunication',
@@ -4130,6 +4388,7 @@ export enum PermissionResolverName {
   DirectMessages = 'directMessages',
   DownloadActivityDocument = 'downloadActivityDocument',
   DownloadSubsidyReceipt = 'downloadSubsidyReceipt',
+  EligiblePreachersForSlot = 'eligiblePreachersForSlot',
   EntityDistribution = 'entityDistribution',
   GapReport = 'gapReport',
   GetActivityDocuments = 'getActivityDocuments',
@@ -4137,18 +4396,24 @@ export enum PermissionResolverName {
   GetSubsidiesWaitingRefund = 'getSubsidiesWaitingRefund',
   GetSubsidyReceipts = 'getSubsidyReceipts',
   GetSubsidyStatusHistory = 'getSubsidyStatusHistory',
+  GrantPreacherRegionAccess = 'grantPreacherRegionAccess',
   Institution = 'institution',
   InstitutionPosition = 'institutionPosition',
   InstitutionPositions = 'institutionPositions',
   InstitutionalDepartmentsKpIs = 'institutionalDepartmentsKPIs',
   Institutions = 'institutions',
+  InviteToAssignment = 'inviteToAssignment',
+  InviteToAssignmentAny = 'inviteToAssignmentAny',
   InviteUser = 'inviteUser',
   LedgerHistory = 'ledgerHistory',
+  MyAssignmentRequests = 'myAssignmentRequests',
   MyAvailability = 'myAvailability',
   MyAvailabilityRecurrenceRules = 'myAvailabilityRecurrenceRules',
+  MyPreacherRegionAccess = 'myPreacherRegionAccess',
   MyProjects = 'myProjects',
   Notification = 'notification',
   Notifications = 'notifications',
+  OpenSlotsForPreacher = 'openSlotsForPreacher',
   Permissions = 'permissions',
   Project = 'project',
   ProjectActivities = 'projectActivities',
@@ -4169,8 +4434,12 @@ export enum PermissionResolverName {
   RemoveAdjustmentTask = 'removeAdjustmentTask',
   RemoveProjectVoluntary = 'removeProjectVoluntary',
   RemoveRoleFromUser = 'removeRoleFromUser',
+  RequestAssignment = 'requestAssignment',
   RequestRevisionAnnualBudget = 'requestRevisionAnnualBudget',
   RequestSubsidyRefund = 'requestSubsidyRefund',
+  RespondToAssignmentRequest = 'respondToAssignmentRequest',
+  RespondToAssignmentRequestAny = 'respondToAssignmentRequestAny',
+  RevokePreacherRegionAccess = 'revokePreacherRegionAccess',
   Role = 'role',
   Roles = 'roles',
   ScheduleOverview = 'scheduleOverview',
@@ -4198,6 +4467,7 @@ export enum PermissionResolverName {
   ToggleAdjustmentTask = 'toggleAdjustmentTask',
   ToggleBudgetLock = 'toggleBudgetLock',
   UpdateAdjustmentStatus = 'updateAdjustmentStatus',
+  UpdateAssignmentInviteTemplate = 'updateAssignmentInviteTemplate',
   UpdateChurch = 'updateChurch',
   UpdateChurchLeader = 'updateChurchLeader',
   UpdateCommunication = 'updateCommunication',
@@ -4259,6 +4529,49 @@ export type PreacherGapEntry = {
   date: Scalars['DateTime']['output'];
   userId: Scalars['String']['output'];
   userName: Scalars['String']['output'];
+};
+
+/**
+ * R6 — reach: LOCAL = home Region only (no row needed here), REGIONAL = every Region with a
+ * row here, NATIONAL = every Region in the Institution (no row needed here either — see
+ * PreacherRegionAccessScope on the resolver layer for how the three levels are told apart).
+ */
+export type PreacherRegionAccess = {
+  __typename?: 'PreacherRegionAccess';
+  created_at: Scalars['DateTime']['output'];
+  created_by: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  institution: Institution;
+  institution_id: Scalars['String']['output'];
+  region: Region;
+  region_id: Scalars['String']['output'];
+  user: User;
+  user_id: Scalars['String']['output'];
+};
+
+export type PreacherRegionAccessListRelationFilter = {
+  every?: InputMaybe<PreacherRegionAccessWhereInput>;
+  none?: InputMaybe<PreacherRegionAccessWhereInput>;
+  some?: InputMaybe<PreacherRegionAccessWhereInput>;
+};
+
+export type PreacherRegionAccessOrderByRelationAggregateInput = {
+  _count?: InputMaybe<SortOrder>;
+};
+
+export type PreacherRegionAccessWhereInput = {
+  AND?: InputMaybe<Array<PreacherRegionAccessWhereInput>>;
+  NOT?: InputMaybe<Array<PreacherRegionAccessWhereInput>>;
+  OR?: InputMaybe<Array<PreacherRegionAccessWhereInput>>;
+  created_at?: InputMaybe<DateTimeFilter>;
+  created_by?: InputMaybe<StringFilter>;
+  id?: InputMaybe<StringFilter>;
+  institution?: InputMaybe<InstitutionScalarRelationFilter>;
+  institution_id?: InputMaybe<StringFilter>;
+  region?: InputMaybe<RegionScalarRelationFilter>;
+  region_id?: InputMaybe<StringFilter>;
+  user?: InputMaybe<UserScalarRelationFilter>;
+  user_id?: InputMaybe<StringFilter>;
 };
 
 export type Project = {
@@ -4888,6 +5201,7 @@ export type Query = {
   __typename?: 'Query';
   annualBudget?: Maybe<AnnualBudget>;
   annualBudgets: Array<AnnualBudget>;
+  assignmentInviteTemplates: Array<AssignmentInviteTemplate>;
   budgetDistribution: BudgetDistribution;
   budgetKPIs: BudgetKpIs;
   checkEmailAvailability: EmailVerificationResponse;
@@ -4909,6 +5223,7 @@ export type Query = {
   directMessages: Array<DirectMessage>;
   downloadActivityDocument: Scalars['String']['output'];
   downloadSubsidyReceipt: Scalars['String']['output'];
+  eligiblePreachersForSlot: Array<User>;
   entityDistribution: Array<EntityDistribution>;
   gapReport: GapReport;
   getActivityDocuments: Array<ActivityDocuments>;
@@ -4925,12 +5240,15 @@ export type Query = {
   institutionalDepartmentsKPIs: InstitutionalDepartmentsKpIs;
   institutions: Array<Institution>;
   ledgerHistory: LedgerHistoryPaginatedResponse;
+  myAssignmentRequests: Array<AssignmentRequest>;
   myAvailability: Array<Availability>;
   myAvailabilityRecurrenceRules: Array<AvailabilityRecurrenceRule>;
   myNotifications: Array<Notification>;
+  myPreacherRegionAccess: Array<PreacherRegionAccess>;
   myProjects: Array<Project>;
   notification?: Maybe<Notification>;
   notifications: Array<Notification>;
+  openSlotsForPreacher: Array<OpenSlotForPreacher>;
   permissions: Array<PermissionGroupPermissionsModel>;
   project?: Maybe<Project>;
   projectActivities: Array<ProjectActivity>;
@@ -5083,6 +5401,12 @@ export type QueryDownloadSubsidyReceiptArgs = {
 };
 
 
+export type QueryEligiblePreachersForSlotArgs = {
+  church_id: Scalars['String']['input'];
+  date: Scalars['DateTime']['input'];
+};
+
+
 export type QueryEntityDistributionArgs = {
   year: Scalars['Int']['input'];
 };
@@ -5162,6 +5486,11 @@ export type QueryMyAvailabilityArgs = {
 
 export type QueryNotificationArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type QueryOpenSlotsForPreacherArgs = {
+  month: Scalars['String']['input'];
 };
 
 
@@ -5350,6 +5679,7 @@ export type Region = {
   is_deleted: Scalars['Boolean']['output'];
   kpiData: RegionKpiData;
   name: Scalars['String']['output'];
+  preacher_region_access?: Maybe<Array<PreacherRegionAccess>>;
   territory?: Maybe<Scalars['JSON']['output']>;
   updated_at: Scalars['DateTime']['output'];
   updated_by: Scalars['String']['output'];
@@ -5358,6 +5688,7 @@ export type Region = {
 export type RegionCount = {
   __typename?: 'RegionCount';
   churches: Scalars['Int']['output'];
+  preacher_region_access: Scalars['Int']['output'];
 };
 
 export type RegionCreateDto = {
@@ -5407,9 +5738,15 @@ export type RegionOrderByWithRelationInput = {
   id?: InputMaybe<SortOrder>;
   is_deleted?: InputMaybe<SortOrder>;
   name?: InputMaybe<SortOrder>;
+  preacher_region_access?: InputMaybe<PreacherRegionAccessOrderByRelationAggregateInput>;
   territory?: InputMaybe<SortOrderInput>;
   updated_at?: InputMaybe<SortOrder>;
   updated_by?: InputMaybe<SortOrder>;
+};
+
+export type RegionScalarRelationFilter = {
+  is?: InputMaybe<RegionWhereInput>;
+  isNot?: InputMaybe<RegionWhereInput>;
 };
 
 export type RegionUpdateDto = {
@@ -5433,6 +5770,7 @@ export type RegionWhereInput = {
   id?: InputMaybe<StringFilter>;
   is_deleted?: InputMaybe<BoolFilter>;
   name?: InputMaybe<StringFilter>;
+  preacher_region_access?: InputMaybe<PreacherRegionAccessListRelationFilter>;
   territory?: InputMaybe<JsonNullableFilter>;
   updated_at?: InputMaybe<DateTimeFilter>;
   updated_by?: InputMaybe<StringFilter>;
@@ -5470,6 +5808,19 @@ export type RequestRevisionBudgetResponse = {
   status: Scalars['String']['output'];
   updated_at: Scalars['DateTime']['output'];
 };
+
+export enum RequestStatus {
+  Accepted = 'ACCEPTED',
+  Declined = 'DECLINED',
+  Pending = 'PENDING',
+  Superseded = 'SUPERSEDED',
+  Withdrawn = 'WITHDRAWN'
+}
+
+export enum RequestType {
+  ChurchInvited = 'CHURCH_INVITED',
+  PreacherRequested = 'PREACHER_REQUESTED'
+}
 
 export type ResetPasswordInput = {
   code: Scalars['String']['input'];
@@ -6346,6 +6697,12 @@ export type UpdateAdjustmentStatusDto = {
   status: AdjustmentStatus;
 };
 
+export type UpdateAssignmentInviteTemplateInput = {
+  body?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  subject?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type UpdateRoleInput = {
   addPermissionIds?: InputMaybe<Array<Scalars['String']['input']>>;
   description?: InputMaybe<Scalars['String']['input']>;
@@ -6388,6 +6745,7 @@ export type User = {
   _count: UserCount;
   activity_assignments?: Maybe<Array<ProjectActivityAssignee>>;
   approved_annual_budgets?: Maybe<Array<AnnualBudget>>;
+  assignment_requests?: Maybe<Array<AssignmentRequest>>;
   assignments?: Maybe<Array<Assignment>>;
   availabilities?: Maybe<Array<Availability>>;
   availability_recurrence_rules?: Maybe<Array<AvailabilityRecurrenceRule>>;
@@ -6420,6 +6778,7 @@ export type User = {
   name: Scalars['String']['output'];
   notifications?: Maybe<Array<Notification>>;
   password: Scalars['String']['output'];
+  preacher_region_access?: Maybe<Array<PreacherRegionAccess>>;
   project_activity_logs?: Maybe<Array<ProjectActivityLog>>;
   project_history?: Maybe<Array<ProjectHistory>>;
   recieve_emails: Scalars['Boolean']['output'];
@@ -6437,6 +6796,7 @@ export type UserCount = {
   SubsidyStatus: Scalars['Int']['output'];
   activity_assignments: Scalars['Int']['output'];
   approved_annual_budgets: Scalars['Int']['output'];
+  assignment_requests: Scalars['Int']['output'];
   assignments: Scalars['Int']['output'];
   availabilities: Scalars['Int']['output'];
   availability_recurrence_rules: Scalars['Int']['output'];
@@ -6449,6 +6809,7 @@ export type UserCount = {
   institution_positions: Scalars['Int']['output'];
   led_departments: Scalars['Int']['output'];
   notifications: Scalars['Int']['output'];
+  preacher_region_access: Scalars['Int']['output'];
   project_activity_logs: Scalars['Int']['output'];
   project_history: Scalars['Int']['output'];
   subsidy_status_history: Scalars['Int']['output'];
@@ -6516,6 +6877,7 @@ export type UserOrderByWithRelationInput = {
   SubsidyStatus?: InputMaybe<SubsidyStatusOrderByRelationAggregateInput>;
   activity_assignments?: InputMaybe<ProjectActivityAssigneeOrderByRelationAggregateInput>;
   approved_annual_budgets?: InputMaybe<AnnualBudgetOrderByRelationAggregateInput>;
+  assignment_requests?: InputMaybe<AssignmentRequestOrderByRelationAggregateInput>;
   assignments?: InputMaybe<AssignmentOrderByRelationAggregateInput>;
   availabilities?: InputMaybe<AvailabilityOrderByRelationAggregateInput>;
   availability_recurrence_rules?: InputMaybe<AvailabilityRecurrenceRuleOrderByRelationAggregateInput>;
@@ -6548,6 +6910,7 @@ export type UserOrderByWithRelationInput = {
   name?: InputMaybe<SortOrder>;
   notifications?: InputMaybe<NotificationOrderByRelationAggregateInput>;
   password?: InputMaybe<SortOrder>;
+  preacher_region_access?: InputMaybe<PreacherRegionAccessOrderByRelationAggregateInput>;
   project_activity_logs?: InputMaybe<ProjectActivityLogOrderByRelationAggregateInput>;
   project_history?: InputMaybe<ProjectHistoryOrderByRelationAggregateInput>;
   recieve_emails?: InputMaybe<SortOrder>;
@@ -6632,6 +6995,7 @@ export type UserWhereInput = {
   SubsidyStatus?: InputMaybe<SubsidyStatusListRelationFilter>;
   activity_assignments?: InputMaybe<ProjectActivityAssigneeListRelationFilter>;
   approved_annual_budgets?: InputMaybe<AnnualBudgetListRelationFilter>;
+  assignment_requests?: InputMaybe<AssignmentRequestListRelationFilter>;
   assignments?: InputMaybe<AssignmentListRelationFilter>;
   availabilities?: InputMaybe<AvailabilityListRelationFilter>;
   availability_recurrence_rules?: InputMaybe<AvailabilityRecurrenceRuleListRelationFilter>;
@@ -6664,6 +7028,7 @@ export type UserWhereInput = {
   name?: InputMaybe<StringFilter>;
   notifications?: InputMaybe<NotificationListRelationFilter>;
   password?: InputMaybe<StringFilter>;
+  preacher_region_access?: InputMaybe<PreacherRegionAccessListRelationFilter>;
   project_activity_logs?: InputMaybe<ProjectActivityLogListRelationFilter>;
   project_history?: InputMaybe<ProjectHistoryListRelationFilter>;
   recieve_emails?: InputMaybe<BoolFilter>;
