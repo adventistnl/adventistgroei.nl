@@ -127,6 +127,8 @@ export const structureTranslations = {
       schedule: "Schedule",
       myAvailability: "My Availability",
       scheduleOverview: "Overview",
+      invitations: "Invitations & Requests",
+      inviteTemplates: "Invite Templates",
       gapReport: "Gap Report",
     },
     
@@ -291,6 +293,8 @@ export const structureTranslations = {
       schedule: "Preekrooster",
       myAvailability: "Mijn Beschikbaarheid",
       scheduleOverview: "Overzicht",
+      invitations: "Uitnodigingen & Aanvragen",
+      inviteTemplates: "Uitnodigingssjablonen",
       gapReport: "Lacunerapport",
     },
     
@@ -536,6 +540,8 @@ export const structureTranslations = {
       schedule: "Agenda",
       myAvailability: "Minha Disponibilidade",
       scheduleOverview: "Grade Geral",
+      invitations: "Convites e Solicitações",
+      inviteTemplates: "Modelos de Convite",
       gapReport: "Lacunas",
     },
     

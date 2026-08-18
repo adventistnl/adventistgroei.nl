@@ -229,6 +229,19 @@ export enum RefundType {
   TOTAL = "TOTAL",
 }
 
+export enum RequestStatus {
+  ACCEPTED = "ACCEPTED",
+  DECLINED = "DECLINED",
+  PENDING = "PENDING",
+  SUPERSEDED = "SUPERSEDED",
+  WITHDRAWN = "WITHDRAWN",
+}
+
+export enum RequestType {
+  CHURCH_INVITED = "CHURCH_INVITED",
+  PREACHER_REQUESTED = "PREACHER_REQUESTED",
+}
+
 export enum SubsidyHistoryType {
   COMMENT = "COMMENT",
   DOCUMENT_ACTION = "DOCUMENT_ACTION",

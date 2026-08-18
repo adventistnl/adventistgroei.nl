@@ -28,6 +28,8 @@ const routePermissions: Record<string, { resolvers: PermissionResolverName[] }> 
   '/reports': { resolvers: [] },
   '/schedule': { resolvers: [] },
   '/schedule/availability': { resolvers: [] },
+  '/schedule/invitations': { resolvers: [] },
+  '/schedule/invite-templates': { resolvers: [] },
   '/schedule/gap-report': { resolvers: [] },
   '/settings': { resolvers: [] },
   '/structure': { resolvers: [] },
