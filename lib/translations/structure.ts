@@ -124,6 +124,8 @@ export const structureTranslations = {
       users: "Users",
       accessManagement: "Access Management",
       projects: "Projects",
+      schedule: "Schedule",
+      myAvailability: "My Availability",
     },
     
     // Navigation Loading Messages
@@ -284,6 +286,8 @@ export const structureTranslations = {
       users: "Gebruikers",
       accessManagement: "Toegangsbeheer",
       projects: "Projecten",
+      schedule: "Preekrooster",
+      myAvailability: "Mijn Beschikbaarheid",
     },
     
     // Institutions
@@ -525,6 +529,8 @@ export const structureTranslations = {
       users: "Usuários",
       accessManagement: "Gestão de Acesso",
       projects: "Projetos",
+      schedule: "Agenda",
+      myAvailability: "Minha Disponibilidade",
     },
     
     // Institutions
