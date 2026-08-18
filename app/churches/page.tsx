@@ -31,7 +31,8 @@ import {
   ChevronRight,
   Building2,
   Filter,
-  CheckCircle2
+  CheckCircle2,
+  CalendarClock
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -42,6 +43,7 @@ import {
 import toast from "react-hot-toast"
 import { structureTranslations } from "@/lib/translations/structure"
 import { churchTranslations } from "@/lib/translations/churches"
+import { scheduleServiceCalendarTranslations } from "@/lib/translations/schedule-service-calendar"
 import { UseTable } from "@/components/ui/use-table"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { ChurchTypeBadge } from "@/components/ui/church-type-badge"
@@ -87,6 +89,7 @@ import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
 import { GridContainer } from "@/components/shared/grid-container"
 import { useHasPermission } from "@/hooks/use-has-permission"
 import { useRouter } from "next/navigation"
+import { ServiceCalendarBulkApplyDialog } from "@/components/schedule/service-calendar-bulk-apply-dialog"
 import { useRegions } from "@/hooks/use-regions"
 // Dados reais de igrejas virão do contexto da instituição
 
@@ -117,6 +120,8 @@ export default function ChurchesPage() {
   const [refreshing, setRefreshing] = useState(false)
 
   // Permission checks for department actions
+  const hasBulkServiceCalendarPermission = useHasPermission([PermissionResolverName.SetChurchServiceCalendarBulk])
+  const [isServiceCalendarBulkDialogOpen, setIsServiceCalendarBulkDialogOpen] = useState(false)
   const hasViewDepartmentPermission = useHasPermission([PermissionResolverName.Departments])
   const hasUpdateDepartmentPermission = useHasPermission([PermissionResolverName.UpdateDepartment])
   const hasDeleteDepartmentPermission = useHasPermission([PermissionResolverName.DeleteDepartment])
@@ -219,6 +224,7 @@ export default function ChurchesPage() {
   const currentLanguage = i18n?.language || 'en'
   const tStructure = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
   const tChurch = churchTranslations[currentLanguage as keyof typeof churchTranslations] || churchTranslations.en
+  const tSchedule = scheduleServiceCalendarTranslations[currentLanguage as keyof typeof scheduleServiceCalendarTranslations] || scheduleServiceCalendarTranslations.en
 
   // Configure PageFilters
   const pageFilters: FilterConfig[] = useMemo(() => {
@@ -1076,6 +1082,10 @@ export default function ChurchesPage() {
                 <Eye className="w-4 h-4 mr-2" />
                 {tChurch.messages.view_details}
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push(`/churches/${row.original.id}/service-calendar`)}>
+                <CalendarClock className="w-4 h-4 mr-2" />
+                {tSchedule.page.title}
+              </DropdownMenuItem>
               {/* <DropdownMenuItem onClick={() => handleViewContact(row.original.id)}>
                 <ContactRound className="w-4 h-4 mr-2" />
                 {tStructure.viewContact}
@@ -1431,7 +1441,14 @@ export default function ChurchesPage() {
                     {tStructure.createChurch}
                   </Button>
                 </WithPermission>
-                
+
+                {hasBulkServiceCalendarPermission && (
+                  <Button variant="outline" onClick={() => setIsServiceCalendarBulkDialogOpen(true)}>
+                    <CalendarClock className="w-4 h-4 mr-2" />
+                    {tSchedule.weeklyDialog.action}
+                  </Button>
+                )}
+
                 <Button 
                   variant="outline" 
                   size="icon"
@@ -1791,6 +1808,15 @@ export default function ChurchesPage() {
             onOpenChangeAction={setIsDeleteChurchModalOpen}
             church={churchToDelete}
             onSuccess={handleChurchDeleted}
+          />
+        )}
+
+        {/* Service Calendar Bulk Apply Dialog — R8.1 */}
+        {hasBulkServiceCalendarPermission && (
+          <ServiceCalendarBulkApplyDialog
+            open={isServiceCalendarBulkDialogOpen}
+            onOpenChange={setIsServiceCalendarBulkDialogOpen}
+            churches={churches.map((c: ChurchType) => ({ id: c.id, name: c.name }))}
           />
         )}
       </div>
