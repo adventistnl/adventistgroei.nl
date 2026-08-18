@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Combobox } from "@/components/ui/combobox"
 import { Switch } from "@/components/ui/switch"
 import { ArrowLeft, CalendarClock, CheckCircle2, Loader2, X } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
@@ -231,14 +231,12 @@ export default function ChurchServiceCalendarPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>{t("schedule.serviceCalendar.weeklyDialog.dayOfWeek")}</Label>
-              <Select value={weeklyDay} onValueChange={setWeeklyDay}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {["0", "1", "2", "3", "4", "5", "6"].map((day) => (
-                    <SelectItem key={day} value={day}>{t(`schedule.serviceCalendar.days.${day}`)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                searchable={false}
+                value={weeklyDay}
+                onValueChange={setWeeklyDay}
+                options={["0", "1", "2", "3", "4", "5", "6"].map((day) => ({ value: day, label: t(`schedule.serviceCalendar.days.${day}`) }))}
+              />
             </div>
             <div className="flex items-center justify-between">
               <Label>{t("schedule.serviceCalendar.weeklyDialog.hasService")}</Label>

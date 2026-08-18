@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Combobox } from "@/components/ui/combobox"
 import { CalendarRange, CheckCircle2, Loader2, X } from "lucide-react"
 import { useHasPermission } from "@/hooks/use-has-permission"
 import { usePageTitle } from "@/hooks/use-page-title"
@@ -202,16 +202,15 @@ export default function AvailabilityPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>{t("schedule.availability.dialog.status")}</Label>
-              <Select value={dialogStatus} onValueChange={(value) => setDialogStatus(value as AvailabilityStatus)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {(Object.values(AvailabilityStatus) as AvailabilityStatus[]).map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {t(`schedule.availability.legend.${status.toLowerCase()}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                searchable={false}
+                value={dialogStatus}
+                onValueChange={(value) => setDialogStatus(value as AvailabilityStatus)}
+                options={(Object.values(AvailabilityStatus) as AvailabilityStatus[]).map((status) => ({
+                  value: status,
+                  label: t(`schedule.availability.legend.${status.toLowerCase()}`),
+                }))}
+              />
             </div>
             <div className="space-y-2">
               <Label>{t("schedule.availability.dialog.note")}</Label>
@@ -260,16 +259,15 @@ export default function AvailabilityPage() {
             </div>
             <div className="space-y-2">
               <Label>{t("schedule.availability.bulk.status")}</Label>
-              <Select value={bulkStatus} onValueChange={(value) => setBulkStatus(value as AvailabilityStatus)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {(Object.values(AvailabilityStatus) as AvailabilityStatus[]).map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {t(`schedule.availability.legend.${status.toLowerCase()}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                searchable={false}
+                value={bulkStatus}
+                onValueChange={(value) => setBulkStatus(value as AvailabilityStatus)}
+                options={(Object.values(AvailabilityStatus) as AvailabilityStatus[]).map((status) => ({
+                  value: status,
+                  label: t(`schedule.availability.legend.${status.toLowerCase()}`),
+                }))}
+              />
             </div>
             <div className="space-y-2">
               <Label>{t("schedule.availability.bulk.note")}</Label>

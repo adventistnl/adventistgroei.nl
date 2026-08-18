@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Combobox } from "@/components/ui/combobox"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -150,25 +150,21 @@ export function AvailabilityPreferencesSection() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>{t("schedule.availability.preferences.dayOfWeek")}</Label>
-              <Select value={weeklyDay} onValueChange={setWeeklyDay}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {DAY_KEYS.map((day) => (
-                    <SelectItem key={day} value={day}>{t(`schedule.availability.preferences.days.${day}`)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                searchable={false}
+                value={weeklyDay}
+                onValueChange={setWeeklyDay}
+                options={DAY_KEYS.map((day) => ({ value: day, label: t(`schedule.availability.preferences.days.${day}`) }))}
+              />
             </div>
             <div className="space-y-2">
               <Label>{t("schedule.availability.preferences.status")}</Label>
-              <Select value={weeklyStatus} onValueChange={(value) => setWeeklyStatus(value as AvailabilityStatus)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {(Object.values(AvailabilityStatus) as AvailabilityStatus[]).map((status) => (
-                    <SelectItem key={status} value={status}>{statusLabel(status)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                searchable={false}
+                value={weeklyStatus}
+                onValueChange={(value) => setWeeklyStatus(value as AvailabilityStatus)}
+                options={(Object.values(AvailabilityStatus) as AvailabilityStatus[]).map((status) => ({ value: status, label: statusLabel(status) }))}
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -216,14 +212,12 @@ export function AvailabilityPreferencesSection() {
             </div>
             <div className="space-y-2">
               <Label>{t("schedule.availability.preferences.status")}</Label>
-              <Select value={periodStatus} onValueChange={(value) => setPeriodStatus(value as AvailabilityStatus)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {(Object.values(AvailabilityStatus) as AvailabilityStatus[]).map((status) => (
-                    <SelectItem key={status} value={status}>{statusLabel(status)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                searchable={false}
+                value={periodStatus}
+                onValueChange={(value) => setPeriodStatus(value as AvailabilityStatus)}
+                options={(Object.values(AvailabilityStatus) as AvailabilityStatus[]).map((status) => ({ value: status, label: statusLabel(status) }))}
+              />
             </div>
             <div className="space-y-2">
               <Label>{t("schedule.availability.preferences.note")}</Label>

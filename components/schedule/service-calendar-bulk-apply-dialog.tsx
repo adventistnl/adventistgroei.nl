@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Combobox } from "@/components/ui/combobox"
 import { Switch } from "@/components/ui/switch"
 import { useSetChurchServiceCalendarBulkMutation } from "@/hooks/graphql/use-church-service-calendar"
 import { scheduleServiceCalendarTranslations } from "@/lib/translations/schedule-service-calendar"
@@ -73,14 +73,12 @@ export function ServiceCalendarBulkApplyDialog({ open, onOpenChange, churches, o
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>{t("schedule.serviceCalendar.weeklyDialog.dayOfWeek")}</Label>
-            <Select value={dayOfWeek} onValueChange={setDayOfWeek}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {["0", "1", "2", "3", "4", "5", "6"].map((day) => (
-                  <SelectItem key={day} value={day}>{t(`schedule.serviceCalendar.days.${day}`)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox
+              searchable={false}
+              value={dayOfWeek}
+              onValueChange={setDayOfWeek}
+              options={["0", "1", "2", "3", "4", "5", "6"].map((day) => ({ value: day, label: t(`schedule.serviceCalendar.days.${day}`) }))}
+            />
           </div>
           <div className="flex items-center justify-between">
             <Label>{t("schedule.serviceCalendar.weeklyDialog.hasService")}</Label>

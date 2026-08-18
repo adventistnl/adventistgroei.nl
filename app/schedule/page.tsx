@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Combobox } from "@/components/ui/combobox"
 import { Badge } from "@/components/ui/badge"
 import { ChevronLeft, ChevronRight, CheckCircle2, Loader2, X } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
@@ -288,15 +288,14 @@ export default function ScheduleOverviewPage() {
           </DialogHeader>
           <div className="space-y-2">
             <Label>{t("schedule.assignment.dialog.preacher")}</Label>
-            <Select value={dialogUserId || "__none__"} onValueChange={(value) => setDialogUserId(value === "__none__" ? "" : value)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">{t("schedule.assignment.dialog.unassigned")}</SelectItem>
-                {institutionUsers.map((u: any) => (
-                  <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox
+              value={dialogUserId || "__none__"}
+              onValueChange={(value) => setDialogUserId(value === "__none__" ? "" : value)}
+              options={[
+                { value: "__none__", label: t("schedule.assignment.dialog.unassigned") },
+                ...institutionUsers.map((u: any) => ({ value: u.id, label: u.name })),
+              ]}
+            />
           </div>
           <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
             {canInvite && (
@@ -331,26 +330,22 @@ export default function ScheduleOverviewPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>{t("schedule.request.inviteDialog.preacher")}</Label>
-              <Select value={inviteUserId} onValueChange={setInviteUserId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {eligiblePreachers.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                value={inviteUserId}
+                onValueChange={setInviteUserId}
+                options={eligiblePreachers.map((p) => ({ value: p.id, label: p.name }))}
+              />
             </div>
             <div className="space-y-2">
               <Label>{t("schedule.request.inviteDialog.template")}</Label>
-              <Select value={inviteTemplateId || "__none__"} onValueChange={(value) => setInviteTemplateId(value === "__none__" ? "" : value)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">{t("schedule.request.inviteDialog.noTemplate")}</SelectItem>
-                  {templates.map((tpl) => (
-                    <SelectItem key={tpl.id} value={tpl.id}>{tpl.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                value={inviteTemplateId || "__none__"}
+                onValueChange={(value) => setInviteTemplateId(value === "__none__" ? "" : value)}
+                options={[
+                  { value: "__none__", label: t("schedule.request.inviteDialog.noTemplate") },
+                  ...templates.map((tpl) => ({ value: tpl.id, label: tpl.name })),
+                ]}
+              />
             </div>
           </div>
           <DialogFooter>
