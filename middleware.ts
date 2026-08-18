@@ -31,6 +31,7 @@ const routePermissions: Record<string, { resolvers: PermissionResolverName[] }> 
   '/schedule/invitations': { resolvers: [] },
   '/schedule/invite-templates': { resolvers: [] },
   '/schedule/gap-report': { resolvers: [] },
+  '/churches/[id]/service-calendar': { resolvers: [] },
   '/settings': { resolvers: [] },
   '/structure': { resolvers: [] },
   '/structure/[id]': { resolvers: [] },
