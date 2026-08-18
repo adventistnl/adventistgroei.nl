@@ -20,6 +20,7 @@ import {
   Activity,
   Receipt,
   Building2,
+  AlertTriangle,
 } from "lucide-react"
 
 // Interface for shadcn sidebar navigation items
@@ -123,11 +124,25 @@ const navSections: NavSection[] = [
     translationKey: "sidebar.schedule",
     items: [
       {
+        title: "Overview",
+        url: "/schedule",
+        icon: Calendar,
+        permissions: [PermissionResolverName.ScheduleOverview],
+        translationKey: "sidebar.scheduleOverview"
+      },
+      {
         title: "My Availability",
         url: "/schedule/availability",
         icon: Calendar,
         permissions: [PermissionResolverName.MyAvailability],
         translationKey: "sidebar.myAvailability"
+      },
+      {
+        title: "Gap Report",
+        url: "/schedule/gap-report",
+        icon: AlertTriangle,
+        permissions: [PermissionResolverName.GapReport],
+        translationKey: "sidebar.gapReport"
       },
     ]
   },

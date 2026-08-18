@@ -73,6 +73,21 @@ export enum AnnualBudgetStatus {
   SUBMITTED = "SUBMITTED",
 }
 
+export enum AssignmentOrigin {
+  ADMIN_ASSIGNED = "ADMIN_ASSIGNED",
+  CHURCH_INVITED = "CHURCH_INVITED",
+  PREACHER_REQUESTED = "PREACHER_REQUESTED",
+  SELF_FILLED = "SELF_FILLED",
+}
+
+export enum AssignmentStatus {
+  CONFIRMED = "CONFIRMED",
+  DECLINED = "DECLINED",
+  DRAFT = "DRAFT",
+  LOCKED = "LOCKED",
+  PENDING_CONFIRMATION = "PENDING_CONFIRMATION",
+}
+
 /**
  * MANUAL = the preacher (or an admin) set this exact date directly, always wins.
  * RECURRENCE_RULE = materialized from an AvailabilityRecurrenceRule; overwritten when the

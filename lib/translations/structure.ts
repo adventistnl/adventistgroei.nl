@@ -126,6 +126,8 @@ export const structureTranslations = {
       projects: "Projects",
       schedule: "Schedule",
       myAvailability: "My Availability",
+      scheduleOverview: "Overview",
+      gapReport: "Gap Report",
     },
     
     // Navigation Loading Messages
@@ -288,6 +290,8 @@ export const structureTranslations = {
       projects: "Projecten",
       schedule: "Preekrooster",
       myAvailability: "Mijn Beschikbaarheid",
+      scheduleOverview: "Overzicht",
+      gapReport: "Lacunerapport",
     },
     
     // Institutions
@@ -531,6 +535,8 @@ export const structureTranslations = {
       projects: "Projetos",
       schedule: "Agenda",
       myAvailability: "Minha Disponibilidade",
+      scheduleOverview: "Grade Geral",
+      gapReport: "Lacunas",
     },
     
     // Institutions

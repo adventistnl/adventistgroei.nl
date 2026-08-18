@@ -548,6 +548,82 @@ export type ApproveBudgetResponse = {
   updated_at: Scalars['DateTime']['output'];
 };
 
+/**
+ * A church + date slot. Created directly (R8 — "self-filled"/admin-assigned, via
+ * setAssignment/setAssignmentAny) in Phase 3; Phase 4 adds the request/invite flow that also
+ * produces confirmed rows here.
+ */
+export type Assignment = {
+  __typename?: 'Assignment';
+  church: Church;
+  church_id: Scalars['String']['output'];
+  created_at: Scalars['DateTime']['output'];
+  created_by: Scalars['String']['output'];
+  date: Scalars['DateTime']['output'];
+  deleted_at?: Maybe<Scalars['DateTime']['output']>;
+  deleted_by?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  institution: Institution;
+  institution_id: Scalars['String']['output'];
+  is_deleted: Scalars['Boolean']['output'];
+  locked_at?: Maybe<Scalars['DateTime']['output']>;
+  origin: AssignmentOrigin;
+  status: AssignmentStatus;
+  updated_at: Scalars['DateTime']['output'];
+  updated_by: Scalars['String']['output'];
+  user?: Maybe<User>;
+  user_id?: Maybe<Scalars['String']['output']>;
+};
+
+export type AssignmentListRelationFilter = {
+  every?: InputMaybe<AssignmentWhereInput>;
+  none?: InputMaybe<AssignmentWhereInput>;
+  some?: InputMaybe<AssignmentWhereInput>;
+};
+
+export type AssignmentOrderByRelationAggregateInput = {
+  _count?: InputMaybe<SortOrder>;
+};
+
+export enum AssignmentOrigin {
+  AdminAssigned = 'ADMIN_ASSIGNED',
+  ChurchInvited = 'CHURCH_INVITED',
+  PreacherRequested = 'PREACHER_REQUESTED',
+  SelfFilled = 'SELF_FILLED'
+}
+
+export enum AssignmentStatus {
+  Confirmed = 'CONFIRMED',
+  Declined = 'DECLINED',
+  Draft = 'DRAFT',
+  Locked = 'LOCKED',
+  PendingConfirmation = 'PENDING_CONFIRMATION'
+}
+
+export type AssignmentWhereInput = {
+  AND?: InputMaybe<Array<AssignmentWhereInput>>;
+  NOT?: InputMaybe<Array<AssignmentWhereInput>>;
+  OR?: InputMaybe<Array<AssignmentWhereInput>>;
+  church?: InputMaybe<ChurchScalarRelationFilter>;
+  church_id?: InputMaybe<StringFilter>;
+  created_at?: InputMaybe<DateTimeFilter>;
+  created_by?: InputMaybe<StringFilter>;
+  date?: InputMaybe<DateTimeFilter>;
+  deleted_at?: InputMaybe<DateTimeNullableFilter>;
+  deleted_by?: InputMaybe<StringNullableFilter>;
+  id?: InputMaybe<StringFilter>;
+  institution?: InputMaybe<InstitutionScalarRelationFilter>;
+  institution_id?: InputMaybe<StringFilter>;
+  is_deleted?: InputMaybe<BoolFilter>;
+  locked_at?: InputMaybe<DateTimeNullableFilter>;
+  origin?: InputMaybe<EnumAssignmentOriginFilter>;
+  status?: InputMaybe<EnumAssignmentStatusFilter>;
+  updated_at?: InputMaybe<DateTimeFilter>;
+  updated_by?: InputMaybe<StringFilter>;
+  user?: InputMaybe<UserNullableScalarRelationFilter>;
+  user_id?: InputMaybe<StringNullableFilter>;
+};
+
 export type AuthModel = {
   __typename?: 'AuthModel';
   accessToken: Scalars['String']['output'];
@@ -830,6 +906,7 @@ export type Church = {
   __typename?: 'Church';
   _count: ChurchCount;
   annual_budgets?: Maybe<Array<AnnualBudget>>;
+  assignments?: Maybe<Array<Assignment>>;
   contact?: Maybe<Contact>;
   contact_id?: Maybe<Scalars['String']['output']>;
   created_at: Scalars['DateTime']['output'];
@@ -848,6 +925,7 @@ export type Church = {
   projects?: Maybe<Array<Project>>;
   region?: Maybe<Region>;
   region_id?: Maybe<Scalars['String']['output']>;
+  service_calendar?: Maybe<Array<ChurchServiceCalendar>>;
   subsidy_requests?: Maybe<Array<SubsidyRequest>>;
   type: ChurchType;
   updated_at: Scalars['DateTime']['output'];
@@ -887,8 +965,10 @@ export type ChurchChartData = {
 export type ChurchCount = {
   __typename?: 'ChurchCount';
   annual_budgets: Scalars['Int']['output'];
+  assignments: Scalars['Int']['output'];
   departments: Scalars['Int']['output'];
   projects: Scalars['Int']['output'];
+  service_calendar: Scalars['Int']['output'];
   subsidy_requests: Scalars['Int']['output'];
   users: Scalars['Int']['output'];
 };
@@ -901,6 +981,13 @@ export type ChurchCreateDto = {
   name: Scalars['String']['input'];
   type?: InputMaybe<ChurchType>;
   zip_code?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ChurchGapEntry = {
+  __typename?: 'ChurchGapEntry';
+  churchId: Scalars['String']['output'];
+  churchName: Scalars['String']['output'];
+  date: Scalars['DateTime']['output'];
 };
 
 export type ChurchKpiData = {
@@ -932,6 +1019,7 @@ export type ChurchOrderByRelationAggregateInput = {
 
 export type ChurchOrderByWithRelationInput = {
   annual_budgets?: InputMaybe<AnnualBudgetOrderByRelationAggregateInput>;
+  assignments?: InputMaybe<AssignmentOrderByRelationAggregateInput>;
   contact?: InputMaybe<ContactOrderByWithRelationInput>;
   contact_id?: InputMaybe<SortOrderInput>;
   created_at?: InputMaybe<SortOrder>;
@@ -950,12 +1038,62 @@ export type ChurchOrderByWithRelationInput = {
   projects?: InputMaybe<ProjectOrderByRelationAggregateInput>;
   region?: InputMaybe<RegionOrderByWithRelationInput>;
   region_id?: InputMaybe<SortOrderInput>;
+  service_calendar?: InputMaybe<ChurchServiceCalendarOrderByRelationAggregateInput>;
   subsidy_requests?: InputMaybe<SubsidyRequestOrderByRelationAggregateInput>;
   type?: InputMaybe<SortOrder>;
   updated_at?: InputMaybe<SortOrder>;
   updated_by?: InputMaybe<SortOrder>;
   users?: InputMaybe<UserOrderByRelationAggregateInput>;
   zip_code?: InputMaybe<SortOrderInput>;
+};
+
+export type ChurchScalarRelationFilter = {
+  is?: InputMaybe<ChurchWhereInput>;
+  isNot?: InputMaybe<ChurchWhereInput>;
+};
+
+export type ChurchServiceCalendar = {
+  __typename?: 'ChurchServiceCalendar';
+  church: Church;
+  church_id: Scalars['String']['output'];
+  created_at: Scalars['DateTime']['output'];
+  created_by: Scalars['String']['output'];
+  date: Scalars['DateTime']['output'];
+  has_service: Scalars['Boolean']['output'];
+  id: Scalars['ID']['output'];
+  institution: Institution;
+  institution_id: Scalars['String']['output'];
+  source: ServiceCalendarSource;
+  updated_at: Scalars['DateTime']['output'];
+  updated_by: Scalars['String']['output'];
+};
+
+export type ChurchServiceCalendarListRelationFilter = {
+  every?: InputMaybe<ChurchServiceCalendarWhereInput>;
+  none?: InputMaybe<ChurchServiceCalendarWhereInput>;
+  some?: InputMaybe<ChurchServiceCalendarWhereInput>;
+};
+
+export type ChurchServiceCalendarOrderByRelationAggregateInput = {
+  _count?: InputMaybe<SortOrder>;
+};
+
+export type ChurchServiceCalendarWhereInput = {
+  AND?: InputMaybe<Array<ChurchServiceCalendarWhereInput>>;
+  NOT?: InputMaybe<Array<ChurchServiceCalendarWhereInput>>;
+  OR?: InputMaybe<Array<ChurchServiceCalendarWhereInput>>;
+  church?: InputMaybe<ChurchScalarRelationFilter>;
+  church_id?: InputMaybe<StringFilter>;
+  created_at?: InputMaybe<DateTimeFilter>;
+  created_by?: InputMaybe<StringFilter>;
+  date?: InputMaybe<DateTimeFilter>;
+  has_service?: InputMaybe<BoolFilter>;
+  id?: InputMaybe<StringFilter>;
+  institution?: InputMaybe<InstitutionScalarRelationFilter>;
+  institution_id?: InputMaybe<StringFilter>;
+  source?: InputMaybe<EnumServiceCalendarSourceFilter>;
+  updated_at?: InputMaybe<DateTimeFilter>;
+  updated_by?: InputMaybe<StringFilter>;
 };
 
 export enum ChurchType {
@@ -982,6 +1120,7 @@ export type ChurchWhereInput = {
   NOT?: InputMaybe<Array<ChurchWhereInput>>;
   OR?: InputMaybe<Array<ChurchWhereInput>>;
   annual_budgets?: InputMaybe<AnnualBudgetListRelationFilter>;
+  assignments?: InputMaybe<AssignmentListRelationFilter>;
   contact?: InputMaybe<ContactNullableScalarRelationFilter>;
   contact_id?: InputMaybe<StringNullableFilter>;
   created_at?: InputMaybe<DateTimeFilter>;
@@ -1000,6 +1139,7 @@ export type ChurchWhereInput = {
   projects?: InputMaybe<ProjectListRelationFilter>;
   region?: InputMaybe<RegionNullableScalarRelationFilter>;
   region_id?: InputMaybe<StringNullableFilter>;
+  service_calendar?: InputMaybe<ChurchServiceCalendarListRelationFilter>;
   subsidy_requests?: InputMaybe<SubsidyRequestListRelationFilter>;
   type?: InputMaybe<EnumChurchTypeFilter>;
   updated_at?: InputMaybe<DateTimeFilter>;
@@ -1820,6 +1960,20 @@ export type EnumAnnualBudgetStatusFilter = {
   notIn?: InputMaybe<Array<AnnualBudgetStatus>>;
 };
 
+export type EnumAssignmentOriginFilter = {
+  equals?: InputMaybe<AssignmentOrigin>;
+  in?: InputMaybe<Array<AssignmentOrigin>>;
+  not?: InputMaybe<NestedEnumAssignmentOriginFilter>;
+  notIn?: InputMaybe<Array<AssignmentOrigin>>;
+};
+
+export type EnumAssignmentStatusFilter = {
+  equals?: InputMaybe<AssignmentStatus>;
+  in?: InputMaybe<Array<AssignmentStatus>>;
+  not?: InputMaybe<NestedEnumAssignmentStatusFilter>;
+  notIn?: InputMaybe<Array<AssignmentStatus>>;
+};
+
 export type EnumAvailabilitySourceFilter = {
   equals?: InputMaybe<AvailabilitySource>;
   in?: InputMaybe<Array<AvailabilitySource>>;
@@ -1951,6 +2105,13 @@ export type EnumRefundTypeNullableFilter = {
   in?: InputMaybe<Array<RefundType>>;
   not?: InputMaybe<NestedEnumRefundTypeNullableFilter>;
   notIn?: InputMaybe<Array<RefundType>>;
+};
+
+export type EnumServiceCalendarSourceFilter = {
+  equals?: InputMaybe<ServiceCalendarSource>;
+  in?: InputMaybe<Array<ServiceCalendarSource>>;
+  not?: InputMaybe<NestedEnumServiceCalendarSourceFilter>;
+  notIn?: InputMaybe<Array<ServiceCalendarSource>>;
 };
 
 export type EnumSubsidyHistoryTypeFilter = {
@@ -2217,6 +2378,52 @@ export type ForgotPasswordResponse = {
   success: Scalars['Boolean']['output'];
 };
 
+export type GapReport = {
+  __typename?: 'GapReport';
+  churchesWithoutPreacher: Array<ChurchGapEntry>;
+  computedAt: Scalars['DateTime']['output'];
+  month: Scalars['String']['output'];
+  preachersWithoutAssignment: Array<PreacherGapEntry>;
+};
+
+/**
+ * R9 — computed by a daily cron job (never at request time), one row per institution+month.
+ * Query.gapReport only ever reads the latest snapshot.
+ */
+export type GapReportSnapshot = {
+  __typename?: 'GapReportSnapshot';
+  churches_without_preacher: Scalars['JSON']['output'];
+  computed_at: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  institution: Institution;
+  institution_id: Scalars['String']['output'];
+  month: Scalars['String']['output'];
+  preachers_without_assignment: Scalars['JSON']['output'];
+};
+
+export type GapReportSnapshotListRelationFilter = {
+  every?: InputMaybe<GapReportSnapshotWhereInput>;
+  none?: InputMaybe<GapReportSnapshotWhereInput>;
+  some?: InputMaybe<GapReportSnapshotWhereInput>;
+};
+
+export type GapReportSnapshotOrderByRelationAggregateInput = {
+  _count?: InputMaybe<SortOrder>;
+};
+
+export type GapReportSnapshotWhereInput = {
+  AND?: InputMaybe<Array<GapReportSnapshotWhereInput>>;
+  NOT?: InputMaybe<Array<GapReportSnapshotWhereInput>>;
+  OR?: InputMaybe<Array<GapReportSnapshotWhereInput>>;
+  churches_without_preacher?: InputMaybe<JsonFilter>;
+  computed_at?: InputMaybe<DateTimeFilter>;
+  id?: InputMaybe<StringFilter>;
+  institution?: InputMaybe<InstitutionScalarRelationFilter>;
+  institution_id?: InputMaybe<StringFilter>;
+  month?: InputMaybe<StringFilter>;
+  preachers_without_assignment?: InputMaybe<JsonFilter>;
+};
+
 export enum GenderType {
   Female = 'FEMALE',
   Male = 'MALE'
@@ -2233,8 +2440,10 @@ export type Institution = {
   _count: InstitutionCount;
   activeChurchesChartData: Array<ChurchChartData>;
   annual_budgets: Array<AnnualBudget>;
+  assignments?: Maybe<Array<Assignment>>;
   availabilities?: Maybe<Array<Availability>>;
   availability_recurrence_rules?: Maybe<Array<AvailabilityRecurrenceRule>>;
+  church_service_calendar_entries?: Maybe<Array<ChurchServiceCalendar>>;
   churches?: Maybe<Array<Church>>;
   churchesActivityData: Array<ChurchActivityData>;
   churchesKpiData: ChurchKpiData;
@@ -2252,6 +2461,7 @@ export type Institution = {
   departments_count: Scalars['Int']['output'];
   description?: Maybe<Scalars['String']['output']>;
   direct_messages: Array<DirectMessage>;
+  gap_report_snapshots?: Maybe<Array<GapReportSnapshot>>;
   has_budget_record: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   institutionChartsData: InstitutionChartsData;
@@ -2305,12 +2515,15 @@ export type InstitutionChartsData = {
 export type InstitutionCount = {
   __typename?: 'InstitutionCount';
   annual_budgets: Scalars['Int']['output'];
+  assignments: Scalars['Int']['output'];
   availabilities: Scalars['Int']['output'];
   availability_recurrence_rules: Scalars['Int']['output'];
+  church_service_calendar_entries: Scalars['Int']['output'];
   churches: Scalars['Int']['output'];
   communications: Scalars['Int']['output'];
   departments: Scalars['Int']['output'];
   direct_messages: Scalars['Int']['output'];
+  gap_report_snapshots: Scalars['Int']['output'];
   notifications: Scalars['Int']['output'];
   positions: Scalars['Int']['output'];
   projects: Scalars['Int']['output'];
@@ -2334,8 +2547,10 @@ export type InstitutionNullableScalarRelationFilter = {
 
 export type InstitutionOrderByWithRelationInput = {
   annual_budgets?: InputMaybe<AnnualBudgetOrderByRelationAggregateInput>;
+  assignments?: InputMaybe<AssignmentOrderByRelationAggregateInput>;
   availabilities?: InputMaybe<AvailabilityOrderByRelationAggregateInput>;
   availability_recurrence_rules?: InputMaybe<AvailabilityRecurrenceRuleOrderByRelationAggregateInput>;
+  church_service_calendar_entries?: InputMaybe<ChurchServiceCalendarOrderByRelationAggregateInput>;
   churches?: InputMaybe<ChurchOrderByRelationAggregateInput>;
   communications?: InputMaybe<CommunicationOrderByRelationAggregateInput>;
   contact?: InputMaybe<ContactOrderByWithRelationInput>;
@@ -2348,6 +2563,7 @@ export type InstitutionOrderByWithRelationInput = {
   departments?: InputMaybe<DepartmentOrderByRelationAggregateInput>;
   description?: InputMaybe<SortOrderInput>;
   direct_messages?: InputMaybe<DirectMessageOrderByRelationAggregateInput>;
+  gap_report_snapshots?: InputMaybe<GapReportSnapshotOrderByRelationAggregateInput>;
   id?: InputMaybe<SortOrder>;
   is_deleted?: InputMaybe<SortOrder>;
   language_preference?: InputMaybe<SortOrder>;
@@ -2443,8 +2659,10 @@ export type InstitutionWhereInput = {
   NOT?: InputMaybe<Array<InstitutionWhereInput>>;
   OR?: InputMaybe<Array<InstitutionWhereInput>>;
   annual_budgets?: InputMaybe<AnnualBudgetListRelationFilter>;
+  assignments?: InputMaybe<AssignmentListRelationFilter>;
   availabilities?: InputMaybe<AvailabilityListRelationFilter>;
   availability_recurrence_rules?: InputMaybe<AvailabilityRecurrenceRuleListRelationFilter>;
+  church_service_calendar_entries?: InputMaybe<ChurchServiceCalendarListRelationFilter>;
   churches?: InputMaybe<ChurchListRelationFilter>;
   communications?: InputMaybe<CommunicationListRelationFilter>;
   contact?: InputMaybe<ContactNullableScalarRelationFilter>;
@@ -2457,6 +2675,7 @@ export type InstitutionWhereInput = {
   departments?: InputMaybe<DepartmentListRelationFilter>;
   description?: InputMaybe<StringNullableFilter>;
   direct_messages?: InputMaybe<DirectMessageListRelationFilter>;
+  gap_report_snapshots?: InputMaybe<GapReportSnapshotListRelationFilter>;
   id?: InputMaybe<StringFilter>;
   is_deleted?: InputMaybe<BoolFilter>;
   language_preference?: InputMaybe<EnumLanguagePreferenceFilter>;
@@ -2526,6 +2745,23 @@ export type InviteUserDto = {
   language_preference?: InputMaybe<Scalars['String']['input']>;
   message?: InputMaybe<Scalars['String']['input']>;
   role_ids: Array<Scalars['String']['input']>;
+};
+
+export type JsonFilter = {
+  array_contains?: InputMaybe<Scalars['JSON']['input']>;
+  array_ends_with?: InputMaybe<Scalars['JSON']['input']>;
+  array_starts_with?: InputMaybe<Scalars['JSON']['input']>;
+  equals?: InputMaybe<Scalars['JSON']['input']>;
+  gt?: InputMaybe<Scalars['JSON']['input']>;
+  gte?: InputMaybe<Scalars['JSON']['input']>;
+  lt?: InputMaybe<Scalars['JSON']['input']>;
+  lte?: InputMaybe<Scalars['JSON']['input']>;
+  mode?: InputMaybe<QueryMode>;
+  not?: InputMaybe<Scalars['JSON']['input']>;
+  path?: InputMaybe<Array<Scalars['String']['input']>>;
+  string_contains?: InputMaybe<Scalars['String']['input']>;
+  string_ends_with?: InputMaybe<Scalars['String']['input']>;
+  string_starts_with?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type JsonNullableFilter = {
@@ -2694,9 +2930,13 @@ export type Mutation = {
   sendForgotPasswordCode: ForgotPasswordResponse;
   /** Send an invitation email */
   sendInviteEmail: Scalars['Boolean']['output'];
+  setAssignment: Assignment;
+  setAssignmentAny: Assignment;
   setAvailability: Availability;
   setAvailabilityBulk: Array<Availability>;
   setAvailabilityRecurrenceRule: AvailabilityRecurrenceRule;
+  setChurchServiceCalendar: Array<ChurchServiceCalendar>;
+  setChurchServiceCalendarBulk: Array<ChurchServiceCalendar>;
   submitSubsidyRequest: SubsidyRequest;
   toggleAdjustmentTask: AdjustmentTask;
   toggleBudgetLock: ToggleLockBudgetResponse;
@@ -3104,6 +3344,16 @@ export type MutationSendInviteEmailArgs = {
 };
 
 
+export type MutationSetAssignmentArgs = {
+  input: SetAssignmentInput;
+};
+
+
+export type MutationSetAssignmentAnyArgs = {
+  input: SetAssignmentInput;
+};
+
+
 export type MutationSetAvailabilityArgs = {
   input: SetAvailabilityInput;
 };
@@ -3116,6 +3366,16 @@ export type MutationSetAvailabilityBulkArgs = {
 
 export type MutationSetAvailabilityRecurrenceRuleArgs = {
   input: SetAvailabilityRecurrenceRuleInput;
+};
+
+
+export type MutationSetChurchServiceCalendarArgs = {
+  input: SetServiceCalendarInput;
+};
+
+
+export type MutationSetChurchServiceCalendarBulkArgs = {
+  input: SetServiceCalendarBulkInput;
 };
 
 
@@ -3403,6 +3663,20 @@ export type NestedEnumAnnualBudgetStatusFilter = {
   notIn?: InputMaybe<Array<AnnualBudgetStatus>>;
 };
 
+export type NestedEnumAssignmentOriginFilter = {
+  equals?: InputMaybe<AssignmentOrigin>;
+  in?: InputMaybe<Array<AssignmentOrigin>>;
+  not?: InputMaybe<NestedEnumAssignmentOriginFilter>;
+  notIn?: InputMaybe<Array<AssignmentOrigin>>;
+};
+
+export type NestedEnumAssignmentStatusFilter = {
+  equals?: InputMaybe<AssignmentStatus>;
+  in?: InputMaybe<Array<AssignmentStatus>>;
+  not?: InputMaybe<NestedEnumAssignmentStatusFilter>;
+  notIn?: InputMaybe<Array<AssignmentStatus>>;
+};
+
 export type NestedEnumAvailabilitySourceFilter = {
   equals?: InputMaybe<AvailabilitySource>;
   in?: InputMaybe<Array<AvailabilitySource>>;
@@ -3534,6 +3808,13 @@ export type NestedEnumRefundTypeNullableFilter = {
   in?: InputMaybe<Array<RefundType>>;
   not?: InputMaybe<NestedEnumRefundTypeNullableFilter>;
   notIn?: InputMaybe<Array<RefundType>>;
+};
+
+export type NestedEnumServiceCalendarSourceFilter = {
+  equals?: InputMaybe<ServiceCalendarSource>;
+  in?: InputMaybe<Array<ServiceCalendarSource>>;
+  not?: InputMaybe<NestedEnumServiceCalendarSourceFilter>;
+  notIn?: InputMaybe<Array<ServiceCalendarSource>>;
 };
 
 export type NestedEnumSubsidyHistoryTypeFilter = {
@@ -3792,6 +4073,7 @@ export enum PermissionResolverName {
   BudgetKpIs = 'budgetKPIs',
   Church = 'church',
   ChurchActivityTimeline = 'churchActivityTimeline',
+  ChurchServiceCalendar = 'churchServiceCalendar',
   Churches = 'churches',
   ChurchesActivityData = 'churchesActivityData',
   Communication = 'communication',
@@ -3849,6 +4131,7 @@ export enum PermissionResolverName {
   DownloadActivityDocument = 'downloadActivityDocument',
   DownloadSubsidyReceipt = 'downloadSubsidyReceipt',
   EntityDistribution = 'entityDistribution',
+  GapReport = 'gapReport',
   GetActivityDocuments = 'getActivityDocuments',
   GetSpecificProjectKpIs = 'getSpecificProjectKPIs',
   GetSubsidiesWaitingRefund = 'getSubsidiesWaitingRefund',
@@ -3890,10 +4173,15 @@ export enum PermissionResolverName {
   RequestSubsidyRefund = 'requestSubsidyRefund',
   Role = 'role',
   Roles = 'roles',
+  ScheduleOverview = 'scheduleOverview',
   SendInviteEmail = 'sendInviteEmail',
+  SetAssignment = 'setAssignment',
+  SetAssignmentAny = 'setAssignmentAny',
   SetAvailability = 'setAvailability',
   SetAvailabilityBulk = 'setAvailabilityBulk',
   SetAvailabilityRecurrenceRule = 'setAvailabilityRecurrenceRule',
+  SetChurchServiceCalendar = 'setChurchServiceCalendar',
+  SetChurchServiceCalendarBulk = 'setChurchServiceCalendarBulk',
   Setting = 'setting',
   Settings = 'settings',
   SpendingOverTime = 'spendingOverTime',
@@ -3964,6 +4252,13 @@ export type PermissionWhereInput = {
   role_permissions?: InputMaybe<RolePermissionListRelationFilter>;
   updated_at?: InputMaybe<DateTimeFilter>;
   updated_by?: InputMaybe<StringFilter>;
+};
+
+export type PreacherGapEntry = {
+  __typename?: 'PreacherGapEntry';
+  date: Scalars['DateTime']['output'];
+  userId: Scalars['String']['output'];
+  userName: Scalars['String']['output'];
 };
 
 export type Project = {
@@ -4598,6 +4893,7 @@ export type Query = {
   checkEmailAvailability: EmailVerificationResponse;
   church?: Maybe<Church>;
   churchActivityTimeline: Array<Scalars['JSON']['output']>;
+  churchServiceCalendar: Array<ChurchServiceCalendar>;
   churches: Array<Church>;
   communication?: Maybe<Communication>;
   communications: Array<Communication>;
@@ -4614,6 +4910,7 @@ export type Query = {
   downloadActivityDocument: Scalars['String']['output'];
   downloadSubsidyReceipt: Scalars['String']['output'];
   entityDistribution: Array<EntityDistribution>;
+  gapReport: GapReport;
   getActivityDocuments: Array<ActivityDocuments>;
   getSubsidiesWaitingRefund: Array<SubsidyRequest>;
   getSubsidyReceipts: Array<SubsidyReceipt>;
@@ -4651,6 +4948,7 @@ export type Query = {
   regions: Array<Region>;
   role?: Maybe<RoleModel>;
   roles: Array<RoleModel>;
+  scheduleOverview: Array<Assignment>;
   setting?: Maybe<Setting>;
   settings: Array<Setting>;
   spendingOverTime: Array<SpendingOverTime>;
@@ -4709,6 +5007,12 @@ export type QueryChurchArgs = {
 export type QueryChurchActivityTimelineArgs = {
   institution_id?: InputMaybe<Scalars['String']['input']>;
   selectedYear?: InputMaybe<Scalars['Float']['input']>;
+};
+
+
+export type QueryChurchServiceCalendarArgs = {
+  church_id: Scalars['String']['input'];
+  month: Scalars['String']['input'];
 };
 
 
@@ -4781,6 +5085,11 @@ export type QueryDownloadSubsidyReceiptArgs = {
 
 export type QueryEntityDistributionArgs = {
   year: Scalars['Int']['input'];
+};
+
+
+export type QueryGapReportArgs = {
+  month: Scalars['String']['input'];
 };
 
 
@@ -4923,6 +5232,11 @@ export type QueryRegionArgs = {
 
 export type QueryRoleArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type QueryScheduleOverviewArgs = {
+  month: Scalars['String']['input'];
 };
 
 
@@ -5289,6 +5603,23 @@ export type SendEmailVerificationCodeInput = {
   userName?: InputMaybe<Scalars['String']['input']>;
 };
 
+/**
+ * BULK_DEFAULT = generated by an admin/department-leader bulk pattern (R8.1), shown to the
+ * church leader as a suggestion pending confirmation. CHURCH_CONFIRMED = the leader explicitly
+ * set or accepted it for their own church — a bulk re-apply must never silently overwrite this.
+ */
+export enum ServiceCalendarSource {
+  BulkDefault = 'BULK_DEFAULT',
+  ChurchConfirmed = 'CHURCH_CONFIRMED'
+}
+
+export type SetAssignmentInput = {
+  church_id: Scalars['String']['input'];
+  date: Scalars['DateTime']['input'];
+  status?: InputMaybe<AssignmentStatus>;
+  user_id?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type SetAvailabilityBulkInput = {
   end_date: Scalars['DateTime']['input'];
   note?: InputMaybe<Scalars['String']['input']>;
@@ -5312,6 +5643,23 @@ export type SetAvailabilityRecurrenceRuleInput = {
   start_date?: InputMaybe<Scalars['DateTime']['input']>;
   status: AvailabilityStatus;
   type: RecurrenceType;
+};
+
+export type SetServiceCalendarBulkInput = {
+  church_ids: Array<Scalars['String']['input']>;
+  day_of_week: Scalars['Int']['input'];
+  effective_from: Scalars['DateTime']['input'];
+  effective_until?: InputMaybe<Scalars['DateTime']['input']>;
+  has_service: Scalars['Boolean']['input'];
+};
+
+export type SetServiceCalendarInput = {
+  church_id: Scalars['String']['input'];
+  date?: InputMaybe<Scalars['DateTime']['input']>;
+  day_of_week?: InputMaybe<Scalars['Int']['input']>;
+  effective_from?: InputMaybe<Scalars['DateTime']['input']>;
+  effective_until?: InputMaybe<Scalars['DateTime']['input']>;
+  has_service: Scalars['Boolean']['input'];
 };
 
 export type Setting = {
@@ -6040,6 +6388,7 @@ export type User = {
   _count: UserCount;
   activity_assignments?: Maybe<Array<ProjectActivityAssignee>>;
   approved_annual_budgets?: Maybe<Array<AnnualBudget>>;
+  assignments?: Maybe<Array<Assignment>>;
   availabilities?: Maybe<Array<Availability>>;
   availability_recurrence_rules?: Maybe<Array<AvailabilityRecurrenceRule>>;
   church?: Maybe<Church>;
@@ -6088,6 +6437,7 @@ export type UserCount = {
   SubsidyStatus: Scalars['Int']['output'];
   activity_assignments: Scalars['Int']['output'];
   approved_annual_budgets: Scalars['Int']['output'];
+  assignments: Scalars['Int']['output'];
   availabilities: Scalars['Int']['output'];
   availability_recurrence_rules: Scalars['Int']['output'];
   co_owned_projects: Scalars['Int']['output'];
@@ -6166,6 +6516,7 @@ export type UserOrderByWithRelationInput = {
   SubsidyStatus?: InputMaybe<SubsidyStatusOrderByRelationAggregateInput>;
   activity_assignments?: InputMaybe<ProjectActivityAssigneeOrderByRelationAggregateInput>;
   approved_annual_budgets?: InputMaybe<AnnualBudgetOrderByRelationAggregateInput>;
+  assignments?: InputMaybe<AssignmentOrderByRelationAggregateInput>;
   availabilities?: InputMaybe<AvailabilityOrderByRelationAggregateInput>;
   availability_recurrence_rules?: InputMaybe<AvailabilityRecurrenceRuleOrderByRelationAggregateInput>;
   church?: InputMaybe<ChurchOrderByWithRelationInput>;
@@ -6281,6 +6632,7 @@ export type UserWhereInput = {
   SubsidyStatus?: InputMaybe<SubsidyStatusListRelationFilter>;
   activity_assignments?: InputMaybe<ProjectActivityAssigneeListRelationFilter>;
   approved_annual_budgets?: InputMaybe<AnnualBudgetListRelationFilter>;
+  assignments?: InputMaybe<AssignmentListRelationFilter>;
   availabilities?: InputMaybe<AvailabilityListRelationFilter>;
   availability_recurrence_rules?: InputMaybe<AvailabilityRecurrenceRuleListRelationFilter>;
   church?: InputMaybe<ChurchNullableScalarRelationFilter>;
