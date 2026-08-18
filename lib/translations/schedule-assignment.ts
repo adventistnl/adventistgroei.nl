@@ -24,6 +24,16 @@ export const scheduleAssignmentTranslations = {
       cancel: "Cancel",
     },
     savedBanner: "Assignment saved.",
+    monthlyClose: {
+      indicator: "Next monthly close: {{date}} (locks {{month}})",
+      triggerButton: "Close month now",
+      triggering: "Closing...",
+      confirmTitle: "Close {{month}} now?",
+      confirmBody: "This auto-confirms every pending request and locks the schedule for {{month}} against direct edits. This cannot be undone from here.",
+      confirm: "Yes, close it",
+      cancel: "Cancel",
+      resultBanner: "{{month}} closed: {{autoAccepted}} request(s) auto-confirmed, {{locked}} slot(s) locked.",
+    },
   },
   nl: {
     page: {
@@ -50,6 +60,16 @@ export const scheduleAssignmentTranslations = {
       cancel: "Annuleren",
     },
     savedBanner: "Toewijzing opgeslagen.",
+    monthlyClose: {
+      indicator: "Volgende maandelijkse afsluiting: {{date}} (vergrendelt {{month}})",
+      triggerButton: "Maand nu afsluiten",
+      triggering: "Bezig met afsluiten...",
+      confirmTitle: "{{month}} nu afsluiten?",
+      confirmBody: "Dit bevestigt automatisch elk openstaand verzoek en vergrendelt het rooster voor {{month}} tegen directe wijzigingen. Dit kan hier niet ongedaan worden gemaakt.",
+      confirm: "Ja, afsluiten",
+      cancel: "Annuleren",
+      resultBanner: "{{month}} afgesloten: {{autoAccepted}} verzoek(en) automatisch bevestigd, {{locked}} plek(ken) vergrendeld.",
+    },
   },
   pt: {
     page: {
@@ -76,5 +96,15 @@ export const scheduleAssignmentTranslations = {
       cancel: "Cancelar",
     },
     savedBanner: "Agendamento salvo.",
+    monthlyClose: {
+      indicator: "Próximo fechamento mensal: {{date}} (trava {{month}})",
+      triggerButton: "Fechar mês agora",
+      triggering: "Fechando...",
+      confirmTitle: "Fechar {{month}} agora?",
+      confirmBody: "Isso confirma automaticamente cada pedido pendente e trava o cronograma de {{month}} contra edições diretas. Isso não pode ser desfeito por aqui.",
+      confirm: "Sim, fechar",
+      cancel: "Cancelar",
+      resultBanner: "{{month}} fechado: {{autoAccepted}} pedido(s) confirmado(s) automaticamente, {{locked}} vaga(s) travada(s).",
+    },
   },
 }

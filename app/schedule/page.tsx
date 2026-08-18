@@ -19,6 +19,7 @@ import { useHasPermission } from "@/hooks/use-has-permission"
 import { useChurches } from "@/hooks/use-churches"
 import { useScheduleOverview } from "@/hooks/use-schedule-overview"
 import { useEligiblePreachersForSlot, useInviteToAssignment, useAssignmentInviteTemplates } from "@/hooks/use-assignment-request"
+import { useNextMonthlyClose, useTriggerMonthlyClose } from "@/hooks/use-monthly-close"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AssignmentStatus } from "@/types/globalTypes"
 import { scheduleAssignmentTranslations } from "@/lib/translations/schedule-assignment"
@@ -40,6 +41,7 @@ export default function ScheduleOverviewPage() {
   const hasOverviewPermission = useHasPermission([PermissionResolverName.ScheduleOverview])
   const hasAnyChurchPermission = useHasPermission([PermissionResolverName.SetAssignmentAny])
   const hasOwnChurchPermission = useHasPermission([PermissionResolverName.SetAssignment])
+  const hasMonthlyClosePermission = useHasPermission([PermissionResolverName.TriggerMonthlyClose])
 
   useEffect(() => {
     (Object.keys(scheduleAssignmentTranslations) as Array<keyof typeof scheduleAssignmentTranslations>).forEach((lang) => {
@@ -72,6 +74,27 @@ export default function ScheduleOverviewPage() {
   const { preachers: eligiblePreachers } = useEligiblePreachersForSlot(dialogChurch?.id ?? "", dialogDateStr, !inviteDialogOpen || !dialogChurch)
   const { invite, inviteAny, inviting } = useInviteToAssignment()
   const { templates } = useAssignmentInviteTemplates()
+
+  const { closeDate, closedMonthLabel } = useNextMonthlyClose()
+  const { trigger: triggerMonthlyClose, loading: closingMonth } = useTriggerMonthlyClose()
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false)
+  const [closeResultBanner, setCloseResultBanner] = useState<string | null>(null)
+  const visibleMonthLabel = moment(visibleMonth).format("MMMM YYYY")
+
+  const handleConfirmMonthlyClose = async () => {
+    const result = await triggerMonthlyClose(month)
+    setCloseConfirmOpen(false)
+    const summary = result.data?.triggerMonthlyClose
+    if (summary) {
+      setCloseResultBanner(
+        t("schedule.assignment.monthlyClose.resultBanner", {
+          month: visibleMonthLabel,
+          autoAccepted: summary.autoAccepted,
+          locked: summary.locked,
+        }),
+      )
+    }
+  }
 
   const assignmentByKey = useMemo(() => {
     const map = new Map<string, (typeof assignments)[number]>()
@@ -153,6 +176,29 @@ export default function ScheduleOverviewPage() {
             </Button>
           </div>
         </div>
+
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">
+            {t("schedule.assignment.monthlyClose.indicator", { date: moment(closeDate).format("LL"), month: closedMonthLabel })}
+          </span>
+          {hasMonthlyClosePermission && (
+            <Button variant="outline" size="sm" onClick={() => setCloseConfirmOpen(true)}>
+              {t("schedule.assignment.monthlyClose.triggerButton")}
+            </Button>
+          )}
+        </div>
+
+        {closeResultBanner && (
+          <div className="flex items-center justify-between rounded-md border border-blue-600/30 bg-blue-600/10 px-4 py-3 text-sm text-blue-700 dark:text-blue-400">
+            <span className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4" />
+              {closeResultBanner}
+            </span>
+            <button onClick={() => setCloseResultBanner(null)} aria-label="dismiss">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
 
         {savedBannerVisible && (
           <div className="flex items-center justify-between rounded-md border border-green-600/30 bg-green-600/10 px-4 py-3 text-sm text-green-700 dark:text-green-400">
@@ -302,6 +348,26 @@ export default function ScheduleOverviewPage() {
             <Button onClick={handleSendInvite} disabled={inviting || !inviteUserId}>
               {inviting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {inviting ? t("schedule.request.inviteDialog.sending") : t("schedule.request.inviteDialog.send")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={closeConfirmOpen} onOpenChange={setCloseConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("schedule.assignment.monthlyClose.confirmTitle", { month: visibleMonthLabel })}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {t("schedule.assignment.monthlyClose.confirmBody", { month: visibleMonthLabel })}
+          </p>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setCloseConfirmOpen(false)} disabled={closingMonth}>
+              {t("schedule.assignment.monthlyClose.cancel")}
+            </Button>
+            <Button onClick={handleConfirmMonthlyClose} disabled={closingMonth}>
+              {closingMonth && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {closingMonth ? t("schedule.assignment.monthlyClose.triggering") : t("schedule.assignment.monthlyClose.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
