@@ -125,7 +125,14 @@ export function AvailabilityPreferencesSection() {
                         status: statusLabel(rule.status),
                       })}
                 </span>
-                <Button variant="ghost" size="icon" onClick={() => setRuleToDelete(rule.id)} className="h-7 w-7 text-muted-foreground hover:text-destructive">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t("schedule.availability.preferences.delete")}
+                  title={t("schedule.availability.preferences.delete")}
+                  onClick={() => setRuleToDelete(rule.id)}
+                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </li>

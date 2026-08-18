@@ -167,11 +167,23 @@ export default function ScheduleOverviewPage() {
             <p className="text-muted-foreground">{t("schedule.assignment.page.subtitle")}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => setVisibleMonth(moment(visibleMonth).subtract(1, "month").toDate())}>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label={t("schedule.assignment.grid.previousMonth")}
+              title={t("schedule.assignment.grid.previousMonth")}
+              onClick={() => setVisibleMonth(moment(visibleMonth).subtract(1, "month").toDate())}
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="min-w-32 text-center font-medium">{moment(visibleMonth).format("MMMM YYYY")}</span>
-            <Button variant="outline" size="icon" onClick={() => setVisibleMonth(moment(visibleMonth).add(1, "month").toDate())}>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label={t("schedule.assignment.grid.nextMonth")}
+              title={t("schedule.assignment.grid.nextMonth")}
+              onClick={() => setVisibleMonth(moment(visibleMonth).add(1, "month").toDate())}
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -194,7 +206,7 @@ export default function ScheduleOverviewPage() {
               <CheckCircle2 className="h-4 w-4" />
               {closeResultBanner}
             </span>
-            <button onClick={() => setCloseResultBanner(null)} aria-label="dismiss">
+            <button onClick={() => setCloseResultBanner(null)} aria-label={t("schedule.assignment.dismiss")}>
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -206,7 +218,7 @@ export default function ScheduleOverviewPage() {
               <CheckCircle2 className="h-4 w-4" />
               {t("schedule.assignment.savedBanner")}
             </span>
-            <button onClick={() => setSavedBannerVisible(false)} aria-label="dismiss">
+            <button onClick={() => setSavedBannerVisible(false)} aria-label={t("schedule.assignment.dismiss")}>
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -217,7 +229,7 @@ export default function ScheduleOverviewPage() {
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="sticky left-0 z-10 bg-card px-4 py-2 text-left font-medium">Church</th>
+                  <th className="sticky left-0 z-10 bg-card px-4 py-2 text-left font-medium">{t("schedule.assignment.grid.churchColumn")}</th>
                   {days.map((day) => (
                     <th key={day} className="min-w-[110px] px-2 py-2 text-center font-medium">{day}</th>
                   ))}

@@ -32,6 +32,7 @@ export const scheduleAvailabilityTranslations = {
       example: "Example: mark yourself unavailable for a whole month in one action.",
     },
     savedBanner: "Your availability was saved.",
+    dismiss: "Dismiss",
     preferences: {
       cardTitle: "Recurring Availability",
       cardSubtitle: "Set a weekly pattern or a vacation period once, instead of marking every date by hand.",
@@ -99,6 +100,7 @@ export const scheduleAvailabilityTranslations = {
       example: "Voorbeeld: jezelf in één keer een hele maand niet beschikbaar markeren.",
     },
     savedBanner: "Je beschikbaarheid is opgeslagen.",
+    dismiss: "Sluiten",
     preferences: {
       cardTitle: "Terugkerende Beschikbaarheid",
       cardSubtitle: "Stel eenmalig een wekelijks patroon of vakantieperiode in, in plaats van elke datum apart te markeren.",
@@ -166,6 +168,7 @@ export const scheduleAvailabilityTranslations = {
       example: "Exemplo: marcar-se indisponível o mês todo em uma única ação.",
     },
     savedBanner: "Sua disponibilidade foi salva.",
+    dismiss: "Fechar",
     preferences: {
       cardTitle: "Disponibilidade Recorrente",
       cardSubtitle: "Defina um padrão semanal ou um período de férias uma única vez, em vez de marcar cada data manualmente.",

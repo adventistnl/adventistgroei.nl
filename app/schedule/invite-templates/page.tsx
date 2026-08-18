@@ -107,7 +107,14 @@ export default function InviteTemplatesPage() {
                     <p className="font-medium">{tpl.name}</p>
                     <p className="text-sm text-muted-foreground">{tpl.subject}</p>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(tpl.id)} className="text-muted-foreground hover:text-destructive">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t("schedule.request.templates.delete")}
+                    title={t("schedule.request.templates.delete")}
+                    onClick={() => setDeleteTarget(tpl.id)}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </CardContent>

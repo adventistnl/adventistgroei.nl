@@ -11,10 +11,16 @@ export const scheduleAssignmentTranslations = {
       DECLINED: "Declined",
       LOCKED: "Locked",
     },
+    grid: {
+      churchColumn: "Church",
+      previousMonth: "Previous month",
+      nextMonth: "Next month",
+    },
     cell: {
       noService: "No service",
       empty: "Open slot",
     },
+    dismiss: "Dismiss",
     dialog: {
       title: "Assign a preacher — {{churchName}}, {{date}}",
       preacher: "Preacher",
@@ -47,10 +53,16 @@ export const scheduleAssignmentTranslations = {
       DECLINED: "Afgewezen",
       LOCKED: "Vergrendeld",
     },
+    grid: {
+      churchColumn: "Kerk",
+      previousMonth: "Vorige maand",
+      nextMonth: "Volgende maand",
+    },
     cell: {
       noService: "Geen dienst",
       empty: "Open plek",
     },
+    dismiss: "Sluiten",
     dialog: {
       title: "Predikant toewijzen — {{churchName}}, {{date}}",
       preacher: "Predikant",
@@ -83,6 +95,12 @@ export const scheduleAssignmentTranslations = {
       DECLINED: "Recusado",
       LOCKED: "Travado",
     },
+    grid: {
+      churchColumn: "Igreja",
+      previousMonth: "Mês anterior",
+      nextMonth: "Próximo mês",
+    },
+    dismiss: "Fechar",
     cell: {
       noService: "Sem culto",
       empty: "Vaga aberta",
