@@ -54,11 +54,23 @@ export default function GapReportPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => setVisibleMonth(moment(visibleMonth).subtract(1, "month").toDate())}>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label={t("schedule.gapReport.page.previousMonth")}
+              title={t("schedule.gapReport.page.previousMonth")}
+              onClick={() => setVisibleMonth(moment(visibleMonth).subtract(1, "month").toDate())}
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="min-w-32 text-center font-medium">{moment(visibleMonth).format("MMMM YYYY")}</span>
-            <Button variant="outline" size="icon" onClick={() => setVisibleMonth(moment(visibleMonth).add(1, "month").toDate())}>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label={t("schedule.gapReport.page.nextMonth")}
+              title={t("schedule.gapReport.page.nextMonth")}
+              onClick={() => setVisibleMonth(moment(visibleMonth).add(1, "month").toDate())}
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>

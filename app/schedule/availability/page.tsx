@@ -134,7 +134,7 @@ export default function AvailabilityPage() {
               <CheckCircle2 className="h-4 w-4" />
               {t("schedule.availability.savedBanner")}
             </span>
-            <button onClick={() => setSavedBannerVisible(false)} aria-label="dismiss">
+            <button onClick={() => setSavedBannerVisible(false)} aria-label={t("schedule.availability.dismiss")}>
               <X className="h-4 w-4" />
             </button>
           </div>
