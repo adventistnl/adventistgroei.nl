@@ -8,6 +8,7 @@ import { ProfileHeader } from "@/components/profile/profile-header"
 import { PersonalInfoSection } from "@/components/profile/personal-info-section"
 import { ChurchInfoSection } from "@/components/profile/church-info-section"
 import { EmailPreferencesSection } from "@/components/profile/email-preferences-section"
+import { AvailabilityPreferencesSection } from "@/components/profile/availability-preferences-section"
 import { ProfileStatusAlert } from "@/components/profile/profile-status-alert"
 import { EmailChangeVerificationDialog } from "@/components/profile/email-change-verification-dialog"
 import { useProfileEditor, ExtendedProfile } from "@/hooks/use-profile-editor"
@@ -255,6 +256,9 @@ export default function ProfilePage() {
               onCancel={handleCancel}
               onChurchChange={(value) => handleFieldChange("church_id", value)}
             />
+
+            {/* Recurring Availability Section — Preacher scheduling module, Phase 1 (R2.1). Renders nothing for non-preachers. */}
+            <AvailabilityPreferencesSection />
 
             {/* Email Preferences Section */}
             <EmailPreferencesSection

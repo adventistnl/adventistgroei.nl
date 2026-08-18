@@ -73,6 +73,22 @@ export enum AnnualBudgetStatus {
   SUBMITTED = "SUBMITTED",
 }
 
+/**
+ * MANUAL = the preacher (or an admin) set this exact date directly, always wins.
+ * RECURRENCE_RULE = materialized from an AvailabilityRecurrenceRule; overwritten when the
+ * rule regenerates, unless a later MANUAL edit on the same date takes precedence.
+ */
+export enum AvailabilitySource {
+  MANUAL = "MANUAL",
+  RECURRENCE_RULE = "RECURRENCE_RULE",
+}
+
+export enum AvailabilityStatus {
+  AVAILABLE = "AVAILABLE",
+  UNAVAILABLE = "UNAVAILABLE",
+  VACATION = "VACATION",
+}
+
 export enum ChurchType {
   COMPANY = "COMPANY",
   PLANT = "PLANT",
@@ -181,6 +197,16 @@ export enum ProjectStatus {
 export enum ProjectType {
   Global = "Global",
   Local = "Local",
+}
+
+/**
+ * WEEKLY covers "every Saturday available" / "never on Mondays".
+ * DATE_RANGE covers everything from a single day off to a full month or year of vacation —
+ * one flexible range instead of separate MONTHLY/YEARLY branches (simpler, same coverage).
+ */
+export enum RecurrenceType {
+  DATE_RANGE = "DATE_RANGE",
+  WEEKLY = "WEEKLY",
 }
 
 export enum RefundType {

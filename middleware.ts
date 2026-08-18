@@ -27,6 +27,7 @@ const routePermissions: Record<string, { resolvers: PermissionResolverName[] }> 
   '/regions-example': { resolvers: [] },
   '/reports': { resolvers: [] },
   '/churches/[id]/service-calendar': { resolvers: [] },
+  '/schedule/availability': { resolvers: [] },
   '/settings': { resolvers: [] },
   '/structure': { resolvers: [] },
   '/structure/[id]': { resolvers: [] },

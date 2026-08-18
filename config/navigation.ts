@@ -119,6 +119,19 @@ const navSections: NavSection[] = [
     ]
   },
   {
+    label: "Schedule",
+    translationKey: "sidebar.schedule",
+    items: [
+      {
+        title: "My Availability",
+        url: "/schedule/availability",
+        icon: Calendar,
+        permissions: [PermissionResolverName.MyAvailability],
+        translationKey: "sidebar.myAvailability"
+      },
+    ]
+  },
+  {
     label: "Management",
     translationKey: "sidebar.management",
     items: [
