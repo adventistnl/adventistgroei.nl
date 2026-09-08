@@ -43,16 +43,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     try {
       const cookies = getCookies();
-      const rawStoredToken = cookies['auth-token'];
-      const tokenIsValid = validateToken(rawStoredToken)
-      if (!tokenIsValid) throw new Error('invalid token');
       
       const storedUser = localStorage.getItem('auth-user');
       const rawPermissions = cookies['auth-permissions'];
       let decodedPermissions = rawPermissions ? JSON.parse(rawPermissions) : [];
-      if (
-        rawStoredToken &&
-        storedUser) {
+      if (storedUser) {
         const parsedUser: AuthModel['user'] = JSON.parse(storedUser);
         
         // Se não tiver permissions no cookie, reconstruir do user.user_roles
@@ -74,15 +69,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         setUser(parsedUser);
-        setToken(rawStoredToken);
+        setToken("httpOnly-cookie-managed-by-browser"); // Dummy token to keep the boolean checks true
         setPermissions(decodedPermissions);
         setRoles(parsedUser.user_roles.map((role) => role.key_code) || []);
       } else {
         throw new Error('fail on getting auth data');
       }
     } catch (error) {
-      // Apenas limpar se o token for inválido ou expirado
-      if (error instanceof Error && error.message === 'invalid token') {
+      if (error instanceof Error && (error.message === 'invalid token' || error.message === 'fail on getting auth data')) {
         localStorage.removeItem('auth-user');
         clearAllCookies();
       }
@@ -108,10 +102,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Armazenar user no localStorage
         localStorage.setItem('auth-user', JSON.stringify(data.login.user));
-        // Armazenar token e permissões como cookies (secure apenas em produção/HTTPS)
-        setCookie('auth-token', accessToken, { path: '/', sameSite: 'Strict', secure: isProduction, maxAge });
+        // Permissões ainda podem ficar no JS/Cookie comum, mas token é HttpOnly via backend
         setCookie('auth-permissions', JSON.stringify(permissions), { path: '/', sameSite: 'Strict', secure: isProduction, maxAge });
-        setToken(accessToken);
+        setToken("httpOnly-cookie-managed-by-browser");
         setUser(data.login.user);
         setPermissions(permissions);
         setRoles(data.login.user.user_roles.map((role) => role.key_code) || []); // Define os roles a partir do login
