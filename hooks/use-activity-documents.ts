@@ -114,6 +114,7 @@ export function useActivityDocuments({ activityId, projectActivityId }: UseActiv
       // Call REST endpoint
       const response = await fetch(`${apiUrl}/activity-documents/upload`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           Authorization: token ? `Bearer ${token}` : '',
         },
@@ -224,6 +225,7 @@ export function useActivityDocuments({ activityId, projectActivityId }: UseActiv
       // Call REST endpoint for download
       const response = await fetch(`${apiUrl}/activity-documents/${documentId}/download`, {
         method: 'GET',
+        credentials: 'include',
         headers: {
           Authorization: token ? `Bearer ${token}` : '',
         },
