@@ -180,8 +180,8 @@ export function CardsCarousel({
         {/* Mostrar controles apenas se houver mais de 3 cards */}
         {data.length > 3 && (
           <>
-            <CarouselPrevious className="left-2 h-8 w-8 bg-background/80 backdrop-blur-sm border hover:bg-background/90" />
-            <CarouselNext className="right-2 h-8 w-8 bg-background/80 backdrop-blur-sm border hover:bg-background/90" />
+            <CarouselPrevious type="button" className="left-2 h-8 w-8 bg-background/80 backdrop-blur-sm border hover:bg-background/90" />
+            <CarouselNext type="button" className="right-2 h-8 w-8 bg-background/80 backdrop-blur-sm border hover:bg-background/90" />
           </>
         )}
       </Carousel>
