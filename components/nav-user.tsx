@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { toast } from "sonner"
 import {
   BadgeCheck,
   Bell,
@@ -63,18 +64,23 @@ export const NavUser = React.memo(function NavUser({ user }: NavUserProps) {
 
   // Memoizar handlers para estabilidade
   const handleLogout = React.useCallback(async () => {
-    // Show loading before logout action
+    // Show toast for immediate feedback
+    toast.loading(t.navigationMessages.signingOut, { duration: 1000 })
+    
+    // Execute logout logic first (clears HTTP cookie)
+    try {
+      await logout()
+    } catch (e) {
+      console.error(e)
+    }
+    
+    // Navigate to login after cookie is cleared
     navigateWithLoading('/login', {
       message: t.navigationMessages.signingOut,
-      showToast: true
+      showToast: false
     })
     
-    // Execute logout logic
-    setTimeout(() => {
-      logout()
-    }, 300)
-    
-  }, [logout, navigateWithLoading])
+  }, [logout, navigateWithLoading, t])
 
   const handleProfileClick = React.useCallback(() => {
     navigateWithLoading("/profile", {

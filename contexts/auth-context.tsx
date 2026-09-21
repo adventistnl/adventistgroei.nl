@@ -5,6 +5,7 @@ import { AuthModel, RoleModel } from '@/types/graphql-global-types';
 import { useCookies } from '@/hooks/use-cookies';
 import { validateToken } from '@/utils/validateToken';
 import { useLoginMutation } from '@/hooks/graphql/use-login-mutation';
+import { useLogoutMutation } from '@/hooks/graphql/use-logout-mutation';
 import { User } from '@/types/User';
 import { th } from 'date-fns/locale';
 
@@ -14,7 +15,7 @@ interface AuthContextType {
   permissions: string[]; // Adicionado para armazenar permissões derivadas
   roles: RoleModel['key_code'][]; // Novo campo para armazenar roles
   login: (email: string, password: string, rememberMe: boolean) => Promise<boolean | undefined>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateAuthUser: (updatedUser: AuthModel['user']) => void; // Nova função para atualizar dados do usuário
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -86,6 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const [loginMutation] = useLoginMutation();
+  const [logoutMutation] = useLogoutMutation();
 
   const login = async (email: string, password: string, rememberMe: boolean): Promise<boolean | undefined> => {
     setIsLoading(true);
@@ -147,8 +149,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     permissions,
     roles, // Inclui roles no valor do contexto
     login,
-    logout: () => {
+    logout: async () => {
+      try {
+        await logoutMutation();
+      } catch (e) {
+        console.error("Logout mutation failed", e);
+      }
+      
       localStorage.removeItem('auth-user');
+      localStorage.removeItem('active_institution_id');
       clearAllCookies();
 
       setToken(null);
