@@ -61,3 +61,9 @@ export const GET_INSTITUTION_BY_ID_FULL_DATA_QUERY = gql`
   }
   ${INSTITUTION_FRAGMENT}
 `;
+
+export const GET_DASHBOARD_AVAILABLE_YEARS = gql`
+  query GetDashboardAvailableYears($institution_id: String) {
+    dashboardAvailableYears(institution_id: $institution_id)
+  }
+`;

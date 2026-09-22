@@ -94,7 +94,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { InstitutionById_institution_users as User } from "@/types/InstitutionById"
 
 // GraphQL Queries
-import { GET_INSTITUTIONS_LIGHT_QUERY } from "@/graphql/queries/INSTITUTIONS_QUERY"
+import { GET_INSTITUTIONS_LIGHT_QUERY, GET_DASHBOARD_AVAILABLE_YEARS } from "@/graphql/queries/INSTITUTIONS_QUERY"
 import { GET_REGIONS_QUERY } from "@/graphql/queries/REGIONS_QUERY"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
@@ -131,10 +131,7 @@ export default function DashboardPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>("all")
   const [selectedRegion, setSelectedRegion] = useState<string>("all")
   const [activeTab, setActiveTab] = useState<string>("structure-chart")
-  const [availableYears, setAvailableYears] = useState<number[]>(() => {
-    const current = new Date().getFullYear()
-    return [current, current - 1, current - 2]
-  })
+  const [availableYears, setAvailableYears] = useState<number[]>([new Date().getFullYear()])
 
   // Filter values state for PageFilters component
   const [filterValues, setFilterValues] = useState<Record<string, any>>({
@@ -179,9 +176,14 @@ export default function DashboardPage() {
     skip: !canReadInstitutions,
     fetchPolicy: 'cache-and-network'
   })
+  
+  const { data: dashboardYearsData, loading: dashboardYearsLoading } = useQuery(GET_DASHBOARD_AVAILABLE_YEARS, {
+    variables: { institution_id: currentInstitutionData?.id },
+    fetchPolicy: 'cache-and-network'
+  })
 
   // Combine all loading states to ensure complete data before rendering
-  const isLoadingData = institutionsLoading || regionsLoading || churchesLoading || departmentsLoading || rolesLoading || subsidyLoading || subsidyStatusLoading || allProjectsLoading || allInstitutionsLoading
+  const isLoadingData = institutionsLoading || regionsLoading || churchesLoading || departmentsLoading || rolesLoading || subsidyLoading || subsidyStatusLoading || allProjectsLoading || allInstitutionsLoading || dashboardYearsLoading
   
   // Track initial page load - only show full loading on first load
   const [isInitialLoad, setIsInitialLoad] = useState(true)
@@ -199,6 +201,13 @@ export default function DashboardPage() {
       return () => clearTimeout(timer)
     }
   }, [isLoadingData, isInitialLoad])
+
+  // Extract available years dynamically from backend data
+  React.useEffect(() => {
+    if (dashboardYearsData?.dashboardAvailableYears) {
+      setAvailableYears(dashboardYearsData.dashboardAvailableYears)
+    }
+  }, [dashboardYearsData])
 
   // Show loading/success toast tracking isLoadingData transition true→false
   React.useEffect(() => {
