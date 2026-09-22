@@ -1,5 +1,9 @@
 "use client"
 
+import { useAvailableYears } from "@/hooks/use-available-years"
+import { AvailableYearsEntity } from "@/types/globalTypes"
+
+
 import React, { useState, useEffect, useMemo, Suspense, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@apollo/client"
@@ -124,10 +128,7 @@ function ProjectsPageContent() {
   
   // Year filter states
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
-  const [availableYears, setAvailableYears] = useState<number[]>(() => {
-    const currentYear = new Date().getFullYear()
-    return [currentYear, currentYear - 1, currentYear - 2].sort((a, b) => b - a)
-  })
+  const { availableYears, setAvailableYears } = useAvailableYears([AvailableYearsEntity.PROJECT])
 
   // Get translations for current language
   const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en

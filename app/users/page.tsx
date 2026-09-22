@@ -1,5 +1,9 @@
 "use client"
 
+import { useAvailableYears } from "@/hooks/use-available-years"
+import { AvailableYearsEntity } from "@/types/globalTypes"
+
+
 import React, { useState, Suspense } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
@@ -91,10 +95,7 @@ export default function UsersPage() {
   const [isDeleteUserOpen, setIsDeleteUserOpen] = useState(false)
   const [isViewContactOpen, setIsViewContactOpen] = useState(false)
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
-  const [availableYears, setAvailableYears] = useState<number[]>(() => {
-    const current = new Date().getFullYear()
-    return [current, current - 1, current - 2]
-  })
+  const { availableYears, setAvailableYears } = useAvailableYears([AvailableYearsEntity.USER])
   
   // Page filters state
   const [pageFilters, setPageFilters] = useState<Record<string, any>>({

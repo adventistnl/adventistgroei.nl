@@ -1,5 +1,7 @@
 "use client"
 
+import { useAvailableYears } from "@/hooks/use-available-years"
+import { AvailableYearsEntity } from "@/types/globalTypes"
 import * as React from "react"
 import { useState, useEffect, useMemo, useRef } from "react"
 import { useTranslation } from "react-i18next"
@@ -22,7 +24,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -34,9 +36,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { 
-  Users, 
-  TrendingUp, 
+import {
+  Users,
+  TrendingUp,
   TrendingDown,
   Building2,
   MapPin,
@@ -94,7 +96,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { InstitutionById_institution_users as User } from "@/types/InstitutionById"
 
 // GraphQL Queries
-import { GET_INSTITUTIONS_LIGHT_QUERY, GET_DASHBOARD_AVAILABLE_YEARS } from "@/graphql/queries/INSTITUTIONS_QUERY"
+import { GET_INSTITUTIONS_LIGHT_QUERY } from "@/graphql/queries/INSTITUTIONS_QUERY"
 import { GET_REGIONS_QUERY } from "@/graphql/queries/REGIONS_QUERY"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
@@ -114,7 +116,7 @@ import { useProtectedQuery } from "@/hooks/graphql/use-protected-query"
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
-  const { currentInstitutionData, institutions, refetchInstitutionById } = useInstitution()  
+  const { currentInstitutionData, institutions, refetchInstitutionById } = useInstitution()
   const { formatCurrency, selectedCurrency } = useCurrency()
   const currentLanguage = i18n?.language || 'en'
   const ts = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
@@ -131,7 +133,7 @@ export default function DashboardPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>("all")
   const [selectedRegion, setSelectedRegion] = useState<string>("all")
   const [activeTab, setActiveTab] = useState<string>("structure-chart")
-  const [availableYears, setAvailableYears] = useState<number[]>([new Date().getFullYear()])
+  const { availableYears, setAvailableYears } = useAvailableYears([AvailableYearsEntity.INSTITUTION, AvailableYearsEntity.PROJECT, AvailableYearsEntity.USER])
 
   // Filter values state for PageFilters component
   const [filterValues, setFilterValues] = useState<Record<string, any>>({
@@ -176,18 +178,14 @@ export default function DashboardPage() {
     skip: !canReadInstitutions,
     fetchPolicy: 'cache-and-network'
   })
-  
-  const { data: dashboardYearsData, loading: dashboardYearsLoading } = useQuery(GET_DASHBOARD_AVAILABLE_YEARS, {
-    variables: { institution_id: currentInstitutionData?.id },
-    fetchPolicy: 'cache-and-network'
-  })
+
 
   // Combine all loading states to ensure complete data before rendering
-  const isLoadingData = institutionsLoading || regionsLoading || churchesLoading || departmentsLoading || rolesLoading || subsidyLoading || subsidyStatusLoading || allProjectsLoading || allInstitutionsLoading || dashboardYearsLoading
-  
+  const isLoadingData = institutionsLoading || regionsLoading || churchesLoading || departmentsLoading || rolesLoading || subsidyLoading || subsidyStatusLoading || allProjectsLoading || allInstitutionsLoading
+
   // Track initial page load - only show full loading on first load
   const [isInitialLoad, setIsInitialLoad] = useState(true)
-  
+
   const loadingToastId = useRef<string | number | undefined>(undefined)
   const wasLoadingRef = useRef(false)
   const successShownRef = useRef(false)
@@ -202,12 +200,7 @@ export default function DashboardPage() {
     }
   }, [isLoadingData, isInitialLoad])
 
-  // Extract available years dynamically from backend data
-  React.useEffect(() => {
-    if (dashboardYearsData?.dashboardAvailableYears) {
-      setAvailableYears(dashboardYearsData.dashboardAvailableYears)
-    }
-  }, [dashboardYearsData])
+
 
   // Show loading/success toast tracking isLoadingData transition true→false
   React.useEffect(() => {
@@ -222,7 +215,7 @@ export default function DashboardPage() {
       loadingToastId.current = undefined
       toast.success(dt.dataLoaded || 'Dashboard loaded successfully', { duration: 3000 })
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoadingData])
 
   const isLoading = institutionsLoading || regionsLoading || churchesLoading || departmentsLoading || rolesLoading
@@ -276,14 +269,14 @@ export default function DashboardPage() {
   // Apply PageFilters to data - following institutions page pattern
   const filteredInstitutionsByYear = React.useMemo(() => {
     let filtered = institutionsByYear
-    
+
     // Filter by status (active/inactive)
     const statusFilter = filterValues.status || "all"
     if (statusFilter !== "all") {
       const isActive = statusFilter === "true"
       filtered = filtered.filter((inst: any) => !inst.is_deleted === isActive)
     }
-    
+
     return filtered
   }, [institutionsByYear, filterValues])
 
@@ -292,20 +285,20 @@ export default function DashboardPage() {
   const allUsersFromInstitutions = React.useMemo(() => {
     // Se temos users direto da query, use-os (mais rápido e confiável)
     if (allUsers && allUsers.length > 0) {
- 
+
       return allUsers.filter((user: any) => {
         if (user.is_deleted) return false
-        
+
         // Filter users by created_at year
         if (user.created_at) {
           const userYear = new Date(user.created_at).getFullYear()
           if (userYear > selectedYear) return false
         }
-        
+
         return true
       })
     }
-    
+
 
     const users: any[] = []
     filteredInstitutionsByYear.forEach((institution: any) => {
@@ -317,7 +310,7 @@ export default function DashboardPage() {
               const userYear = new Date(user.created_at).getFullYear()
               if (userYear > selectedYear) return // Skip users created after selected year
             }
-            
+
             users.push(user)
           }
         })
@@ -333,14 +326,14 @@ export default function DashboardPage() {
       if (!user.created_at) return true
       const createdDate = new Date(user.created_at)
       const yearMatch = createdDate.getFullYear() === selectedYear
-      
+
       if (monthFilter === "all") return yearMatch
-      
+
       const monthMatch = createdDate.getMonth() === parseInt(monthFilter)
       return yearMatch && monthMatch
     })
 
-    
+
     return filtered
   }, [allUsersFromInstitutions, allUsers, selectedYear, selectedMonth, filterValues.month])
 
@@ -364,11 +357,11 @@ export default function DashboardPage() {
   const filteredChurches = useMemo(() => {
     const regionFilter = filterValues.region || selectedRegion
     let filtered = allChurchesFromInstitutions
-    
+
     if (regionFilter !== "all") {
       filtered = filtered.filter((church: any) => church.region_id === regionFilter)
     }
-    
+
     return filtered
   }, [allChurchesFromInstitutions, selectedRegion, filterValues.region])
 
@@ -399,7 +392,7 @@ export default function DashboardPage() {
   // Extract Church Departments DIRECTLY from churches.departments (following church-departments pattern)
   const churchDepartmentsList = React.useMemo(() => {
     const churchDepartments: any[] = []
-    
+
     filteredInstitutionsByYear.forEach((institution: any) => {
       if (institution.churches) {
         institution.churches.forEach((church: any) => {
@@ -419,7 +412,7 @@ export default function DashboardPage() {
         })
       }
     })
-    
+
     return churchDepartments
   }, [filteredInstitutionsByYear])
 
@@ -427,13 +420,13 @@ export default function DashboardPage() {
   const activeRegions = React.useMemo(() => {
     return allRegions.filter((r: any) => {
       if (r.is_deleted) return false
-      
+
       // Filter regions by created_at year (regions created up to selected year)
       if (r.created_at) {
         const regionYear = new Date(r.created_at).getFullYear()
         return regionYear <= selectedYear
       }
-      
+
       return true // Include regions without created_at
     })
   }, [allRegions, selectedYear])
@@ -447,7 +440,7 @@ export default function DashboardPage() {
     const churchDepartment = allChurchesFromInstitutions
       .flatMap(church => church.departments || [])
       .find(dept => dept.users?.some((u: any) => u.id === user.id))
-    
+
     if (churchDepartment) {
       return {
         type: 'Church Departmental',
@@ -457,10 +450,10 @@ export default function DashboardPage() {
     }
 
     // Check if user has department_id in institutional context
-    const institutionalDepartment = allDepartmentsFromInstitutions.find(dept => 
+    const institutionalDepartment = allDepartmentsFromInstitutions.find(dept =>
       dept.users?.some((u: any) => u.id === user.id)
     )
-    
+
     if (institutionalDepartment) {
       return {
         type: 'Institutional Departmental',
@@ -488,24 +481,24 @@ export default function DashboardPage() {
     const institutionUsers = displayedInstitution?.users?.filter((u: any) => !u.is_deleted) || allUsersFromInstitutions
     const institutionDepts = displayedInstitution?.departments?.filter((d: any) => !d.is_deleted) || allDepartmentsFromInstitutions
     const institutionChurches = displayedInstitution?.churches?.filter((c: any) => !c.is_deleted) || allChurchesFromInstitutions
-    
+
     // Projects - use filtered by year
     const totalProjects = allProjectsByYear.length
     const activeProjects = allProjectsByYear.filter((p: any) => p.status === 'active' || p.status === 'in_progress').length
-    
+
     // Projects created this year (new projects)
     const newProjectsThisYear = allProjectsByYear.filter((p: any) => {
       if (!p.created_at) return false
       return new Date(p.created_at).getFullYear() === selectedYear
     }).length
-    
+
     // Projects from previous year for growth calculation
     const previousYearProjects = (allProjectsData?.projects || []).filter((p: any) => {
       if (!p.created_at) return false
       return new Date(p.created_at).getFullYear() === selectedYear - 1
     }).length
-    
-    const projectGrowthRate = previousYearProjects > 0 
+
+    const projectGrowthRate = previousYearProjects > 0
       ? Math.round(((newProjectsThisYear - previousYearProjects) / previousYearProjects) * 100)
       : newProjectsThisYear > 0 ? 100 : 0
 
@@ -515,24 +508,24 @@ export default function DashboardPage() {
       if (!user.created_at) return false
       return new Date(user.created_at).getFullYear() === selectedYear
     }).length
-    
+
     const previousYearUsers = (displayedInstitution?.users || allUsersFromInstitutions).filter((user: any) => {
       if (!user.created_at || user.is_deleted) return false
       return new Date(user.created_at).getFullYear() === selectedYear - 1
     }).length
 
-    const userGrowthRate = previousYearUsers > 0 
+    const userGrowthRate = previousYearUsers > 0
       ? Math.round(((newUsersThisYear - previousYearUsers) / previousYearUsers) * 100)
       : newUsersThisYear > 0 ? 100 : 0
 
     // Departments calculations
     const institutionDepartmentsCount = institutionDepartmentsList.length
     const churchDepartmentsCount = churchDepartmentsList.length
-    
+
     // Churches and regions
     const activeChurchesCount = filteredChurches.length
     const activeRegionsCount = activeRegions.length
-    
+
 
 
     return {
@@ -541,13 +534,13 @@ export default function DashboardPage() {
       activeProjects,
       newProjectsThisYear,
       projectGrowthRate,
-      
+
       // Users KPIs
       totalUsers: activeUsers,
       activeUsers,
       newUsersThisYear,
       userGrowthRate,
-      
+
       // Structure KPIs
       totalInstitutions: filteredInstitutionsByYear.length,
       institutionDepartments: institutionDepartmentsCount,
@@ -555,7 +548,7 @@ export default function DashboardPage() {
       totalDepartments: institutionDepartmentsCount + churchDepartmentsCount,
       activeChurches: activeChurchesCount,
       totalRegions: activeRegionsCount,
-      
+
       // Roles & Permissions
       totalRoles: allRoles.length,
       totalPermissions: allRoles.reduce((sum: number, role: any) => {
@@ -581,7 +574,7 @@ export default function DashboardPage() {
   // User Growth Over Time (Monthly data for selected year)
   const userGrowthData = useMemo(() => {
     const institutionUsers = displayedInstitution?.users?.filter((u: any) => !u.is_deleted) || allUsersFromInstitutions
-    
+
     const monthlyData = MONTHS.map((month, index) => ({
       month: month.substring(0, 3),
       users: 0,
@@ -615,7 +608,7 @@ export default function DashboardPage() {
 
     // Group by institution
     const byInstitution: Record<string, number> = {}
-    
+
     institutionUsers.forEach((user: any) => {
       const institutionName = user.institution?.name || 'Unknown'
       byInstitution[institutionName] = (byInstitution[institutionName] || 0) + 1
@@ -631,7 +624,7 @@ export default function DashboardPage() {
   // Role Distribution Data for Charts
   const roleDistributionData = useMemo(() => {
     const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
-    
+
     return allRoles.map((role: any, index: number) => ({
       name: role.name,
       value: role.users?.filter((u: any) => !u.is_deleted).length || 0,
@@ -661,12 +654,12 @@ export default function DashboardPage() {
   // Department Budget Data
   const departmentBudgetData = useMemo(() => {
     if (!currentInstitutionData?.departments) return []
-    
+
     return currentInstitutionData.departments.map((department: any) => {
       const annualBudget = department.annual_budgets?.find(
         (budget: any) => budget.year === selectedYear
       )
-      
+
       return {
         id: department.id,
         departmentId: department.id,
@@ -690,8 +683,8 @@ export default function DashboardPage() {
       if (subsidyApprovedAt) return subsidyApprovedAt
 
       if (subsidyStatusHistoryData?.getSubsidyStatusHistory) {
-        const approvalHistory = subsidyStatusHistoryData.getSubsidyStatusHistory.find((history: any) => 
-          history.subsidy_request_id === subsidyId && 
+        const approvalHistory = subsidyStatusHistoryData.getSubsidyStatusHistory.find((history: any) =>
+          history.subsidy_request_id === subsidyId &&
           ['APPROVED', 'CLOSED'].includes(history.status?.name?.toUpperCase())
         )
         if (approvalHistory) return approvalHistory.changed_at
@@ -736,7 +729,7 @@ export default function DashboardPage() {
         if (monthlySpending[normalizedMonthKey]) {
           const monthData = monthlySpending[normalizedMonthKey]
           let deptIndex = monthData.departments.findIndex((d: any) => d.departmentId === deptId)
-          
+
           if (deptIndex === -1) {
             monthData.departments.push({
               departmentId: deptId,
@@ -756,7 +749,7 @@ export default function DashboardPage() {
   // Refresh all data
   const handleRefresh = async () => {
     const refreshToast = toast.loading(dt.refreshingData)
-    
+
     try {
       await Promise.all([
         refetchInstitutions(),
@@ -765,10 +758,10 @@ export default function DashboardPage() {
         refetchDepartments(),
         refetchRoles()
       ])
-      
+
       // Refetch institution context data
       await refetchInstitutionById()
-      
+
       toast.dismiss(refreshToast)
       toast.success(dt.dataRefreshed)
     } catch (error) {
@@ -849,7 +842,7 @@ export default function DashboardPage() {
   // Handle filter changes
   const handleFilterChange = (filterId: string, value: any) => {
     setFilterValues(prev => ({ ...prev, [filterId]: value }))
-    
+
     // Update legacy state for backward compatibility
     if (filterId === "month") {
       setSelectedMonth(value)
@@ -945,11 +938,11 @@ export default function DashboardPage() {
       ),
       cell: ({ row }) => {
         const churchName = row.original.church?.name
-        
+
         if (!churchName) {
           return <StatusBadge label={dt.noChurch} variant="neutral" size="sm" />
         }
-        
+
         return <StatusBadge label={churchName} variant="info" size="sm" icon={Building2} />
       },
     },
@@ -959,7 +952,7 @@ export default function DashboardPage() {
       cell: ({ row }) => {
         const user = row.original
         const deptInfo = getDepartmentInfo(user)
-        
+
         if (deptInfo.type === 'No Departmental') {
           return <StatusBadge label={dt.noDepartmental} variant="neutral" size="sm" />
         } else if (deptInfo.type === 'Church Departmental') {
@@ -980,13 +973,13 @@ export default function DashboardPage() {
       cell: ({ row }) => {
         const user = row.original
         const deptInfo = getDepartmentInfo(user)
-        
+
         if (deptInfo.type === 'No Departmental' || deptInfo.departmentName === '-') {
           return <StatusBadge label={dt.noDepartment} variant="neutral" size="sm" />
         }
-        
+
         const icon = deptInfo.type === 'Church Departmental' ? Building2 : Building
-        
+
         return <StatusBadge label={deptInfo.departmentName} variant="default" size="sm" icon={icon} />
       },
     },
@@ -995,11 +988,11 @@ export default function DashboardPage() {
       header: dt.roles,
       cell: ({ row }) => {
         const user = row.original
-        
+
         if (!user.user_roles || user.user_roles.length === 0) {
           return <StatusBadge label={dt.noRole} variant="neutral" size="sm" />
         }
-        
+
         return (
           <div className="flex flex-wrap gap-1">
             {user.user_roles?.map((userRole: any) => {
@@ -1091,27 +1084,27 @@ export default function DashboardPage() {
                   </div>
                 )}
               </div>
-                          {/* Action Buttons - Right Side */}
-            <div className="flex items-center gap-2">
-              <PageFilters
-                filters={filterConfigs}
-                values={filterValues}
-                onChange={handleFilterChange}
-                onClear={handleClearFilters}
-                triggerLabel={dt.filters}
-                align="end"
-                width={320}
-              />
+              {/* Action Buttons - Right Side */}
+              <div className="flex items-center gap-2">
+                <PageFilters
+                  filters={filterConfigs}
+                  values={filterValues}
+                  onChange={handleFilterChange}
+                  onClear={handleClearFilters}
+                  triggerLabel={dt.filters}
+                  align="end"
+                  width={320}
+                />
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-                className="gap-2"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </Button>
-            </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefresh}
+                  className="gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -1136,7 +1129,7 @@ export default function DashboardPage() {
 
         {/* Section 1: System Overview KPIs */}
         <div>
-         <SectionHeader
+          <SectionHeader
             title={dt.systemOverview}
             icon={Building2}
             description={dt.systemOverviewDescription}
@@ -1247,231 +1240,231 @@ export default function DashboardPage() {
           /> */}
         </div>
 
-      {/* Date & Time Display */}
-        <DateTimeDisplay 
+        {/* Date & Time Display */}
+        <DateTimeDisplay
           locale={currentLanguage === 'pt' ? 'pt-BR' : currentLanguage === 'nl' ? 'nl-NL' : 'en-US'}
           showSeconds={false}
         />
 
         <GridContainer
-            items={[
-             {
-                id: "projects-over-time-chart",
-                component: (
-                  <ProjectsOverTimeChart
-                    data={institutionProjects}
-                    institutions={displayedInstitution ? [displayedInstitution] : allInstitutions}
-                    loading={allProjectsLoading}
-                    selectedYear={selectedYear}
-                  />
-                ),
-                colSpan: "col-span-12 lg:col-span-8",
-              },
-              {
-                id: "budget-overview-card",
-                component: (
-                  <>
-                    { currentInstitutionData && (
-                          <BudgetOverviewCard
-                            institutionId={currentInstitutionData.id}
-                            year={selectedYear}
-                            currentLanguage={currentLanguage}
-                            departmentBudgetData={departmentBudgetData}
-                          />
-                      )
-                    }
-                  </>
-                ),
-                colSpan: "col-span-12 lg:col-span-4",
-              },
-            ]}
-            gap="lg"
-          />
-
-          <Separator />
-
-          <GridContainer
-            items={[
-              // {
-              //   id: "activity-heatmap-card",
-              //   component: (
-              //     <ChurchesByRegionChart
-              //       churches={displayedInstitution?.churches || allChurches}
-              //       regions={allRegions}
-              //       loading={allInstitutionsLoading || regionsLoading}
-              //     />
-              //   ),
-              //   colSpan: "col-span-12 lg:col-span-4",
-              // },
-              {
-                id: "institution-leaders-card",
-                component: (
-                  <UsersByRoleChart
-                    showTopNFilter={false}
-                    showSortFilter={false}
-                    showRoleSelector={false}
-                    users={displayedInstitution?.users || allUsers}
-                    loading={allInstitutionsLoading || rolesLoading}
-                    selectedYear={selectedYear}
-                  />
-                ),
-                colSpan: "col-span-12 lg:col-span-4",
-              },
-              {
-                id: "users-registration-over-time-chart",
-                component: (
-                  <UsersRegistrationOverTimeChart
-                    institutions={displayedInstitution ? [displayedInstitution] : allInstitutions}
-                    loading={institutionsLoading}
-                    selectedYear={selectedYear}
-                  />
-                ),
-                colSpan: "col-span-12 lg:col-span-8",
-              },
- 
-            
-            ]}
-            gap="lg"
-          />
-
-          <Separator />
-
-          {/* Users Table */}
-          <WithPermission
-            requiredPermissions={[PermissionResolverName.Users]}
-            fallback={
-              <PermissionDeniedOverlay height="600px" blurIntensity="medium">
-                {/* Skeleton da tabela de usuários */}
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Skeleton className="h-6 w-32 mb-2" />
-                        <Skeleton className="h-4 w-48" />
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="overflow-hidden p-0">
-                    <div className="p-6 space-y-4">
-                      {/* Search bar skeleton */}
-                      <Skeleton className="h-10 w-full" />
-                      {/* Table header skeleton */}
-                      <div className="border rounded-lg">
-                        <div className="p-4 border-b">
-                          <div className="flex gap-4">
-                            <Skeleton className="h-4 w-32" />
-                            <Skeleton className="h-4 w-24" />
-                            <Skeleton className="h-4 w-28" />
-                            <Skeleton className="h-4 w-36" />
-                          </div>
-                        </div>
-                        {/* Table rows skeleton */}
-                        {[...Array(5)].map((_, i) => (
-                          <div key={i} className="p-4 border-b flex gap-4">
-                            <Skeleton className="h-10 w-10 rounded-full" />
-                            <div className="flex-1 space-y-2">
-                              <Skeleton className="h-4 w-48" />
-                              <Skeleton className="h-3 w-32" />
-                            </div>
-                            <Skeleton className="h-6 w-16" />
-                          </div>
-                        ))}
-                      </div>
-                      {/* Pagination skeleton */}
-                      <div className="flex justify-between items-center pt-4">
-                        <Skeleton className="h-8 w-32" />
-                        <Skeleton className="h-4 w-40" />
-                        <div className="flex gap-2">
-                          <Skeleton className="h-8 w-20" />
-                          <Skeleton className="h-8 w-20" />
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </PermissionDeniedOverlay>
-            }
-          >
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="w-5 h-5" />
-                      {dt.allUsers}
-                    </CardTitle>
-                    <CardDescription>
-                      {dt.allUsersDescription} {selectedYear}
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="overflow-hidden p-0">
-                <UseTable
-                  columns={userColumns}
-                  data={filteredUsers}
-                  searchKey="name"
-                  emptyMessage={dt.noUsersFound}
-                  emptyEntityName={dt.emptyUser}
+          items={[
+            {
+              id: "projects-over-time-chart",
+              component: (
+                <ProjectsOverTimeChart
+                  data={institutionProjects}
+                  institutions={displayedInstitution ? [displayedInstitution] : allInstitutions}
+                  loading={allProjectsLoading}
+                  selectedYear={selectedYear}
                 />
-              </CardContent>
-            </Card>
-          </WithPermission>
+              ),
+              colSpan: "col-span-12 lg:col-span-8",
+            },
+            {
+              id: "budget-overview-card",
+              component: (
+                <>
+                  {currentInstitutionData && (
+                    <BudgetOverviewCard
+                      institutionId={currentInstitutionData.id}
+                      year={selectedYear}
+                      currentLanguage={currentLanguage}
+                      departmentBudgetData={departmentBudgetData}
+                    />
+                  )
+                  }
+                </>
+              ),
+              colSpan: "col-span-12 lg:col-span-4",
+            },
+          ]}
+          gap="lg"
+        />
 
-          {/* Contact View Modal */}
-          {selectedUser && (
-            <React.Suspense fallback={<div>Loading...</div>}>
-              {(() => {
-                const ContactViewEditModal = React.lazy(() => 
-                  import("@/components/modals/contact/contact-view-edit-modal").then(module => ({ 
-                    default: module.ContactViewEditModal 
-                  }))
-                )
-                
-                return (
-                  <ContactViewEditModal
-                    isOpen={isViewContactOpen}
-                    onOpenChange={setIsViewContactOpen}
-                    contact={{
-                      __typename: 'Contact',
-                      id: selectedUser.contact_id || '',
-                      name: selectedUser.name,
-                      email: selectedUser.email,
-                      phone: null,
-                      mobile: null,
-                      country: null,
-                      city: null,
-                      address: null,
-                      full_address: null,
-                      postal_code: null,
-                      website: null,
-                      notes: null,
-                      is_primary: true,
-                      is_deleted: selectedUser.is_deleted,
-                      created_at: selectedUser.created_at,
-                      updated_at: selectedUser.updated_at,
-                      created_by: selectedUser.created_by,
-                      updated_by: selectedUser.updated_by,
-                      deleted_at: selectedUser.deleted_at,
-                      deleted_by: selectedUser.deleted_by,
-                      _count: {
-                        __typename: 'ContactCount',
-                        Church: 0,
-                        Department: 0,
-                        Event: 0,
-                        User: 1
-                      }
-                    }}
-                    entityName={selectedUser.name}
-                    entityType="User"
-                    readonly={true}
-                    updateMutation={async () => ({ data: undefined })}
-                    entityId={selectedUser.id}
-                  />
-                )
-              })()}
-            </React.Suspense>
-          )}
+        <Separator />
+
+        <GridContainer
+          items={[
+            // {
+            //   id: "activity-heatmap-card",
+            //   component: (
+            //     <ChurchesByRegionChart
+            //       churches={displayedInstitution?.churches || allChurches}
+            //       regions={allRegions}
+            //       loading={allInstitutionsLoading || regionsLoading}
+            //     />
+            //   ),
+            //   colSpan: "col-span-12 lg:col-span-4",
+            // },
+            {
+              id: "institution-leaders-card",
+              component: (
+                <UsersByRoleChart
+                  showTopNFilter={false}
+                  showSortFilter={false}
+                  showRoleSelector={false}
+                  users={displayedInstitution?.users || allUsers}
+                  loading={allInstitutionsLoading || rolesLoading}
+                  selectedYear={selectedYear}
+                />
+              ),
+              colSpan: "col-span-12 lg:col-span-4",
+            },
+            {
+              id: "users-registration-over-time-chart",
+              component: (
+                <UsersRegistrationOverTimeChart
+                  institutions={displayedInstitution ? [displayedInstitution] : allInstitutions}
+                  loading={institutionsLoading}
+                  selectedYear={selectedYear}
+                />
+              ),
+              colSpan: "col-span-12 lg:col-span-8",
+            },
+
+
+          ]}
+          gap="lg"
+        />
+
+        <Separator />
+
+        {/* Users Table */}
+        <WithPermission
+          requiredPermissions={[PermissionResolverName.Users]}
+          fallback={
+            <PermissionDeniedOverlay height="600px" blurIntensity="medium">
+              {/* Skeleton da tabela de usuários */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Skeleton className="h-6 w-32 mb-2" />
+                      <Skeleton className="h-4 w-48" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="overflow-hidden p-0">
+                  <div className="p-6 space-y-4">
+                    {/* Search bar skeleton */}
+                    <Skeleton className="h-10 w-full" />
+                    {/* Table header skeleton */}
+                    <div className="border rounded-lg">
+                      <div className="p-4 border-b">
+                        <div className="flex gap-4">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-4 w-24" />
+                          <Skeleton className="h-4 w-28" />
+                          <Skeleton className="h-4 w-36" />
+                        </div>
+                      </div>
+                      {/* Table rows skeleton */}
+                      {[...Array(5)].map((_, i) => (
+                        <div key={i} className="p-4 border-b flex gap-4">
+                          <Skeleton className="h-10 w-10 rounded-full" />
+                          <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-48" />
+                            <Skeleton className="h-3 w-32" />
+                          </div>
+                          <Skeleton className="h-6 w-16" />
+                        </div>
+                      ))}
+                    </div>
+                    {/* Pagination skeleton */}
+                    <div className="flex justify-between items-center pt-4">
+                      <Skeleton className="h-8 w-32" />
+                      <Skeleton className="h-4 w-40" />
+                      <div className="flex gap-2">
+                        <Skeleton className="h-8 w-20" />
+                        <Skeleton className="h-8 w-20" />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </PermissionDeniedOverlay>
+          }
+        >
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    {dt.allUsers}
+                  </CardTitle>
+                  <CardDescription>
+                    {dt.allUsersDescription} {selectedYear}
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="overflow-hidden p-0">
+              <UseTable
+                columns={userColumns}
+                data={filteredUsers}
+                searchKey="name"
+                emptyMessage={dt.noUsersFound}
+                emptyEntityName={dt.emptyUser}
+              />
+            </CardContent>
+          </Card>
+        </WithPermission>
+
+        {/* Contact View Modal */}
+        {selectedUser && (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            {(() => {
+              const ContactViewEditModal = React.lazy(() =>
+                import("@/components/modals/contact/contact-view-edit-modal").then(module => ({
+                  default: module.ContactViewEditModal
+                }))
+              )
+
+              return (
+                <ContactViewEditModal
+                  isOpen={isViewContactOpen}
+                  onOpenChange={setIsViewContactOpen}
+                  contact={{
+                    __typename: 'Contact',
+                    id: selectedUser.contact_id || '',
+                    name: selectedUser.name,
+                    email: selectedUser.email,
+                    phone: null,
+                    mobile: null,
+                    country: null,
+                    city: null,
+                    address: null,
+                    full_address: null,
+                    postal_code: null,
+                    website: null,
+                    notes: null,
+                    is_primary: true,
+                    is_deleted: selectedUser.is_deleted,
+                    created_at: selectedUser.created_at,
+                    updated_at: selectedUser.updated_at,
+                    created_by: selectedUser.created_by,
+                    updated_by: selectedUser.updated_by,
+                    deleted_at: selectedUser.deleted_at,
+                    deleted_by: selectedUser.deleted_by,
+                    _count: {
+                      __typename: 'ContactCount',
+                      Church: 0,
+                      Department: 0,
+                      Event: 0,
+                      User: 1
+                    }
+                  }}
+                  entityName={selectedUser.name}
+                  entityType="User"
+                  readonly={true}
+                  updateMutation={async () => ({ data: undefined })}
+                  entityId={selectedUser.id}
+                />
+              )
+            })()}
+          </React.Suspense>
+        )}
       </div>
     </AppLayout>
   )

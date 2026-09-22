@@ -1,5 +1,9 @@
 "use client"
 
+import { useAvailableYears } from "@/hooks/use-available-years"
+import { AvailableYearsEntity } from "@/types/globalTypes"
+
+
 import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
@@ -210,10 +214,7 @@ export default function ChurchesPage() {
 
   // Year selection state
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
-  const [availableYears, setAvailableYears] = useState<number[]>(() => {
-    const current = new Date().getFullYear()
-    return [current - 2, current - 1, current]
-  })
+  const { availableYears, setAvailableYears } = useAvailableYears([AvailableYearsEntity.CHURCH])
 
   // Obter traduções para o idioma atual
   const currentLanguage = i18n?.language || 'en'

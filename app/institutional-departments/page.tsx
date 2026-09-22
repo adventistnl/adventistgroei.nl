@@ -1,5 +1,9 @@
 "use client"
 
+import { useAvailableYears } from "@/hooks/use-available-years"
+import { AvailableYearsEntity } from "@/types/globalTypes"
+
+
 import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
@@ -104,10 +108,7 @@ export default function DepartmentsPage() {
   const { t, i18n } = useTranslation()
   const [refreshing, setRefreshing] = useState(false)
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
-  const [availableYears, setAvailableYears] = useState<number[]>(() => {
-    const currentYear = new Date().getFullYear()
-    return [currentYear, currentYear - 1, currentYear - 2].sort((a, b) => b - a)
-  })
+  const { availableYears, setAvailableYears } = useAvailableYears([AvailableYearsEntity.DEPARTMENT])
   const [pageFilters, setPageFilters] = useState<Record<string, any>>({
     status: "true", // Default: active departments only
     budget_status: "" // Default: all

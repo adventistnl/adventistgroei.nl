@@ -1,5 +1,7 @@
 "use client"
 
+import { useAvailableYears } from "@/hooks/use-available-years"
+import { AvailableYearsEntity } from "@/types/globalTypes"
 import React, { useState, useMemo, Suspense } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@apollo/client"
@@ -135,10 +137,7 @@ export default function InstitutionsPage() {
   
   // Year filter states
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
-  const [availableYears, setAvailableYears] = useState<number[]>(() => {
-    const currentYear = new Date().getFullYear()
-    return [currentYear, currentYear - 1, currentYear - 2].sort((a, b) => b - a)
-  })
+  const { availableYears, setAvailableYears } = useAvailableYears([AvailableYearsEntity.INSTITUTION])
 
   // ============================================================================
   // GRAPHQL QUERIES

@@ -908,6 +908,17 @@ export type AvailabilityWhereInput = {
   user_id?: InputMaybe<StringFilter>;
 };
 
+/** Entities available for minimum year query */
+export enum AvailableYearsEntity {
+  AnnualBudget = 'ANNUAL_BUDGET',
+  Church = 'CHURCH',
+  Department = 'DEPARTMENT',
+  Institution = 'INSTITUTION',
+  Project = 'PROJECT',
+  SubsidyRequest = 'SUBSIDY_REQUEST',
+  User = 'USER'
+}
+
 export type BoolFilter = {
   equals?: InputMaybe<Scalars['Boolean']['input']>;
   not?: InputMaybe<NestedBoolFilter>;
@@ -5237,6 +5248,7 @@ export type Query = {
   annualBudget?: Maybe<AnnualBudget>;
   annualBudgets: Array<AnnualBudget>;
   assignmentInviteTemplates: Array<AssignmentInviteTemplate>;
+  availableYears: Array<Scalars['Int']['output']>;
   budgetDistribution: BudgetDistribution;
   budgetKPIs: BudgetKpIs;
   checkEmailAvailability: EmailVerificationResponse;
@@ -5248,7 +5260,6 @@ export type Query = {
   communications: Array<Communication>;
   contact?: Maybe<Contact>;
   contacts: Array<Contact>;
-  dashboardAvailableYears: Array<Scalars['Int']['output']>;
   department?: Maybe<Department>;
   departmentActivityData: Array<DepartmentActivityData>;
   departmentBudgetTimeline: Array<DepartmentBudgetTimeline>;
@@ -5336,6 +5347,12 @@ export type QueryAnnualBudgetsArgs = {
 };
 
 
+export type QueryAvailableYearsArgs = {
+  entities: Array<AvailableYearsEntity>;
+  institution_id?: InputMaybe<Scalars['String']['input']>;
+};
+
+
 export type QueryBudgetDistributionArgs = {
   institutionId: Scalars['String']['input'];
   year: Scalars['Int']['input'];
@@ -5382,11 +5399,6 @@ export type QueryCommunicationArgs = {
 
 export type QueryContactArgs = {
   id: Scalars['String']['input'];
-};
-
-
-export type QueryDashboardAvailableYearsArgs = {
-  institution_id?: InputMaybe<Scalars['String']['input']>;
 };
 
 
