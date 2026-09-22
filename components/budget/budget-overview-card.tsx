@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { DollarSign, Building2, Users } from "lucide-react"
 import { Label, Pie, PieChart, Sector } from "recharts"
 import { PrivacyWrapper, InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
-import { WithPermission } from "@/hooks/use-has-permission"
+import { WithPermission } from "@/hocs/with-permission"
 import { PermissionDeniedOverlay } from "@/components/shared/permission-denied-overlay"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { type PieSectorDataItem } from "recharts/types/polar/Pie"
@@ -35,7 +35,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useCurrency } from "@/contexts/currency-context"
 import { useAnnualBudgetKPIs } from "@/hooks/graphql/use-annual-budget-queries"
 import { useHasPermission } from "@/hooks/use-has-permission"
-import { PermissionResolverName } from "@/types/graphql-global-types"
 
 // Função para obter cores dinâmicas dos departamentos usando variáveis CSS
 const getDepartmentColor = (index: number, isDarkMode: boolean = false) => {
