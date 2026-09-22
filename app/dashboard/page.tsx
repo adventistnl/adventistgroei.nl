@@ -6,6 +6,8 @@ import { useTranslation } from "react-i18next"
 import { useQuery } from "@apollo/client"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
+import { useHasPermission } from "@/hooks/use-has-permission"
+
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -144,25 +146,36 @@ export default function DashboardPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isViewContactOpen, setIsViewContactOpen] = useState(false)
 
+  // Permissions check
+  const canReadInstitutions = useHasPermission([PermissionResolverName.Institutions], [], true)
+  const canReadRegions = useHasPermission([PermissionResolverName.Regions], [], true)
+  const canReadChurches = useHasPermission([PermissionResolverName.Churches], [], true)
+  const canReadDepartments = useHasPermission([PermissionResolverName.Departments], [], true)
+  const canReadRoles = useHasPermission([PermissionResolverName.Roles], [], true)
+  const canReadSubsidyRequests = useHasPermission([PermissionResolverName.SubsidyRequests], [], true)
+  const canReadProjects = useHasPermission([PermissionResolverName.Projects], [], true)
+
   // GraphQL Queries
-  const { data: institutionsData, loading: institutionsLoading, refetch: refetchInstitutions } = useQuery(GET_INSTITUTIONS_LIGHT_QUERY)
-  const { data: regionsData, loading: regionsLoading, refetch: refetchRegions } = useQuery(GET_REGIONS_QUERY)
-  const { data: churchesData, loading: churchesLoading, refetch: refetchChurches } = useQuery(GET_CHURCHES_QUERY)
+  const { data: institutionsData, loading: institutionsLoading, refetch: refetchInstitutions } = useQuery(GET_INSTITUTIONS_LIGHT_QUERY, { skip: !canReadInstitutions })
+  const { data: regionsData, loading: regionsLoading, refetch: refetchRegions } = useQuery(GET_REGIONS_QUERY, { skip: !canReadRegions })
+  const { data: churchesData, loading: churchesLoading, refetch: refetchChurches } = useQuery(GET_CHURCHES_QUERY, { skip: !canReadChurches })
   const { data: departmentsData, loading: departmentsLoading, refetch: refetchDepartments } = useQuery(GET_DEPARTMENTS_QUERY, {
-    variables: { institution_id: currentInstitutionData?.id }
+    variables: { institution_id: currentInstitutionData?.id },
+    skip: !canReadDepartments || !currentInstitutionData?.id
   })
-  const { data: rolesData, loading: rolesLoading, refetch: refetchRoles } = useQuery(GET_ALL_ROLES_QUERY)
-  const { data: subsidyData, loading: subsidyLoading } = useQuery(GET_ALL_SUBSIDY_REQUESTS)
+  const { data: rolesData, loading: rolesLoading, refetch: refetchRoles } = useQuery(GET_ALL_ROLES_QUERY, { skip: !canReadRoles })
+  const { data: subsidyData, loading: subsidyLoading } = useQuery(GET_ALL_SUBSIDY_REQUESTS, { skip: !canReadSubsidyRequests })
   const { data: subsidyStatusHistoryData, loading: subsidyStatusLoading } = useQuery(GET_SUBSIDY_STATUS_HISTORY, {
     variables: { subsidyRequestId: "ALL" },
-    skip: !subsidyData?.subsidyRequests?.length,
+    skip: !subsidyData?.subsidyRequests?.length || !canReadSubsidyRequests,
   })
   const { data: allProjectsData, loading: allProjectsLoading } = useQuery(GET_PROJECTS_QUERY, {
     variables: { institutionId: currentInstitutionData?.id },
-    skip: !currentInstitutionData?.id,
+    skip: !canReadProjects || !currentInstitutionData?.id,
     fetchPolicy: 'cache-and-network'
   })
   const { data: allInstitutionsData, loading: allInstitutionsLoading } = useQuery(GET_INSTITUTIONS_QUERY, {
+    skip: !canReadInstitutions,
     fetchPolicy: 'cache-and-network'
   })
 

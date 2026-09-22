@@ -12,6 +12,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCurrency } from "@/contexts/currency-context"
 import { useAnnualBudgetKPIs } from "@/hooks/graphql/use-annual-budget-queries"
+import { useHasPermission } from "@/hooks/use-has-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 interface BudgetMetricsCardProps {
   institutionId?: string
@@ -29,13 +31,13 @@ export function BudgetMetricsCard({
   const { formatCurrency } = useCurrency()
 
   // GraphQL Hook para dados reais
-  const { data: kpisData, loading: budgetKpisLoading } = useAnnualBudgetKPIs({
-    skip: !institutionId,
-    variables: {
-      institutionId: institutionId!,
-      year: year
-    }
-  })
+  const canReadAnnualBudgets = useHasPermission([PermissionResolverName.AnnualBudgets], [], true)
+
+  const { data: kpisData, loading: budgetKpisLoading } = useAnnualBudgetKPIs(
+    institutionId && canReadAnnualBudgets
+      ? { variables: { institutionId, year } }
+      : { skip: true }
+  )
 
   // Processar dados do orçamento
   const budgetData = useMemo(() => {

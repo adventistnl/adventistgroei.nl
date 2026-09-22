@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { DollarSign, Building2, Users } from "lucide-react"
 import { Label, Pie, PieChart, Sector } from "recharts"
 import { PrivacyWrapper, InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
-import { WithPermission } from "@/hocs/with-permission"
+import { WithPermission } from "@/hooks/use-has-permission"
 import { PermissionDeniedOverlay } from "@/components/shared/permission-denied-overlay"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { type PieSectorDataItem } from "recharts/types/polar/Pie"
@@ -34,6 +34,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCurrency } from "@/contexts/currency-context"
 import { useAnnualBudgetKPIs } from "@/hooks/graphql/use-annual-budget-queries"
+import { useHasPermission } from "@/hooks/use-has-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 // Função para obter cores dinâmicas dos departamentos usando variáveis CSS
 const getDepartmentColor = (index: number, isDarkMode: boolean = false) => {
@@ -83,14 +85,14 @@ export function BudgetOverviewCard({
   const { formatCurrency } = useCurrency()
   const id = "budget-pie-interactive"
 
+  const canReadAnnualBudgets = useHasPermission([PermissionResolverName.AnnualBudgets], [], true)
+
   // GraphQL Hook para dados reais de KPIs
-  const { data: kpisData, loading: budgetKpisLoading } = useAnnualBudgetKPIs({
-    skip: !institutionId,
-    variables: {
-      institutionId: institutionId!,
-      year: year
-    }
-  })
+  const { data: kpisData, loading: budgetKpisLoading } = useAnnualBudgetKPIs(
+    institutionId && canReadAnnualBudgets
+      ? { variables: { institutionId, year } }
+      : { skip: true }
+  )
 
   // Processar dados do orçamento institucional
   const institutionBudgetData = useMemo(() => {

@@ -5,6 +5,8 @@ import { useQuery } from '@apollo/client'
 import { GET_SUBSIDIES_WAITING_REFUND } from '@/graphql/queries/SUBSIDY_REQUESTS_QUERY'
 import { useAuth } from './auth-context'
 import { RefundAlertModal } from '@/components/modals/refund-alert-modal'
+import { useHasPermission } from "@/hooks/use-has-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 interface RefundSubsidy {
   id: string
@@ -94,8 +96,10 @@ export const RefundAlertProvider: React.FC<RefundAlertProviderProps> = ({ childr
     return isDifferentDay
   }
 
+  const canReadSubsidyRequests = useHasPermission([PermissionResolverName.SubsidyRequests], [], true)
+
   const { data, loading, refetch } = useQuery(GET_SUBSIDIES_WAITING_REFUND, {
-    skip: !user,
+    skip: !user || !canReadSubsidyRequests,
     variables: {
       institutionId: user?.institution_id || undefined
     },

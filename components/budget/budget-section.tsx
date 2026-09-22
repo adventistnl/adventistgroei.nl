@@ -5,6 +5,8 @@ import { DollarSign, Building2 } from "lucide-react"
 import { useCurrency } from "@/contexts/currency-context"
 import { useInstitution } from "@/contexts/institution-context"
 import { useAnnualBudgetKPIs } from "@/hooks/graphql/use-annual-budget-queries"
+import { useHasPermission } from "@/hooks/use-has-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 import { BudgetOverviewCard } from "./budget-overview-card"
 import { BudgetMetricsCard } from "./budget-metrics-card"
 import { DepartmentAllocationList } from "./department-allocation-list"
@@ -56,10 +58,15 @@ export function BudgetSection({
     })
   }, [currentInstitutionData, selectedYear])
 
+  const institutionId = currentInstitutionData?.id
+  const year = selectedYear
+
   // Dados reais consolidados através dos dados transacionais do Ledger fornecidos pelo backend!
+  const canReadAnnualBudgets = useHasPermission([PermissionResolverName.AnnualBudgets], [], true)
+
   const { data: annualKpiData } = useAnnualBudgetKPIs(
-    currentInstitutionData?.id 
-      ? { variables: { year: selectedYear, institutionId: currentInstitutionData.id }, fetchPolicy: "network-only" }
+    institutionId && canReadAnnualBudgets
+      ? { variables: { year, institutionId }, fetchPolicy: "network-only" }
       : { skip: true }
   )
 

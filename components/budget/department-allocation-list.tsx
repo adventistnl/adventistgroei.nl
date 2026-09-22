@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCurrency } from "@/contexts/currency-context"
 import { useAnnualBudgetKPIs } from "@/hooks/graphql/use-annual-budget-queries"
+import { useHasPermission } from "@/hooks/use-has-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 
 interface DepartmentBudgetData {
   id: string
@@ -47,13 +49,13 @@ export function DepartmentAllocationList({
   const { formatCurrency } = useCurrency()
 
   // GraphQL Hook para dados reais de KPIs
-  const { data: kpisData, loading: budgetKpisLoading } = useAnnualBudgetKPIs({
-    skip: !institutionId,
-    variables: {
-      institutionId: institutionId!,
-      year: year
-    }
-  })
+  const canReadAnnualBudgets = useHasPermission([PermissionResolverName.AnnualBudgets], [], true)
+
+  const { data: kpisData, loading: budgetKpisLoading } = useAnnualBudgetKPIs(
+    institutionId && canReadAnnualBudgets
+      ? { variables: { institutionId, year } }
+      : { skip: true }
+  )
 
   // Processar dados dos departamentos
   const processedDepartments = useMemo(() => {
