@@ -1,4 +1,7 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
 
 import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
@@ -74,13 +77,14 @@ import {
 } from "@/data/usersData"
 
 // User Modals
-import { EditUserModal, DeleteUserModal } from "@/components/modals/user"
-
 // Chat Component
 import { ChatDrawer } from "@/components/chat"
 
 // Shared Components
 import { UserProfileHeader } from "@/components/shared"
+
+const EditUserModal = dynamic(() => import('@/components/modals/user').then(mod => mod.EditUserModal), { ssr: false });
+const DeleteUserModal = dynamic(() => import('@/components/modals/user').then(mod => mod.DeleteUserModal), { ssr: false });
 
 export default function UserProfilePage() {
   const { t } = useTranslation()

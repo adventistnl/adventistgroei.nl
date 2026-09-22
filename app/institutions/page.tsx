@@ -1,4 +1,7 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
 
 import { useAvailableYears } from "@/hooks/use-available-years"
 import { AvailableYearsEntity } from "@/types/globalTypes"
@@ -68,7 +71,6 @@ import { InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { GridContainer } from "@/components/shared/grid-container"
 import { EntityInfoCard, EntityInfoCardAction } from "@/components/shared/entity-info-card"
-import { ChartHeader } from "@/components/charts/chart-header"
 import { YearFilter } from "@/components/shared/year-filter"
 
 // Modals - Lazy loaded
@@ -102,6 +104,8 @@ import {
   calculateAutoLinkStats,
   type EnrichedChurch 
 } from "@/lib/church-region-matcher"
+
+const ChartHeader = dynamic(() => import('@/components/charts/chart-header').then(mod => mod.ChartHeader), { ssr: false });
 
 
 export default function InstitutionsPage() {

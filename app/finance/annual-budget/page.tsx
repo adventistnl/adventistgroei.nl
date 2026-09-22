@@ -1,4 +1,7 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
 
 import React, { useState, useMemo, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
@@ -62,12 +65,7 @@ import {
 } from "@/utils/export-annual-budget-csv"
 
 // Chart Components
-import { DepartmentSpendingChart } from "@/components/charts/annual-budget/department-spending-chart"
-import { BudgetDistributionChart } from "@/components/charts/annual-budget/budget-distribution-chart"
-import { SpendingOverTimeChart } from "@/components/charts/annual-budget/spending-over-time-chart"
-
 // Modal Components
-import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget/annual-budget-view-edit-modal"
 import { ConfirmationModal } from "@/components/shared/confirmation-modal"
 
 // GraphQL Hooks
@@ -89,6 +87,12 @@ import {
 } from "@/hooks/graphql/use-annual-budget-queries"
 import { GetBudgetDashboardData_annualBudgets } from "@/types/GetBudgetDashboardData"
 import { StatusBadge } from "@/components/ui/status-badge"
+
+const DepartmentSpendingChart = dynamic(() => import('@/components/charts/annual-budget/department-spending-chart').then(mod => mod.DepartmentSpendingChart), { ssr: false });
+const BudgetDistributionChart = dynamic(() => import('@/components/charts/annual-budget/budget-distribution-chart').then(mod => mod.BudgetDistributionChart), { ssr: false });
+const SpendingOverTimeChart = dynamic(() => import('@/components/charts/annual-budget/spending-over-time-chart').then(mod => mod.SpendingOverTimeChart), { ssr: false });
+const AnnualBudgetViewEditModal = dynamic(() => import('@/components/modals/annual-budget/annual-budget-view-edit-modal').then(mod => mod.AnnualBudgetViewEditModal), { ssr: false });
+const AnnualBudgetData = dynamic(() => import('@/components/modals/annual-budget/annual-budget-view-edit-modal').then(mod => mod.AnnualBudgetData), { ssr: false });
 
 /**
  * PÁGINA DE GESTÃO DE ORÇAMENTO ANUAL

@@ -1,4 +1,7 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
 
 import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
@@ -29,18 +32,14 @@ import {
 } from "@/components/ui/dropdown-menu"
 import toast from "react-hot-toast"
 import { structureTranslations } from "@/lib/translations/structure"
-import { DataTable } from "@/components/ui/data-table"
-import { AddRegionModal, EditRegionModal, DeleteRegionModal } from "@/components/modals/region"
-import { ContactViewEditModal } from "@/components/modals/contact"
 import { UseKPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
-import { EuropeRegionsMap, RegionData as MapRegionData } from "@/components/maps/europe-regions-map-mapbox"
 import MapLibre, { 
-  MarkerConfig, 
-  RegionConfig as MapLibreRegionConfig,
-  NETHERLANDS_CENTER, 
-  NETHERLANDS_CITIES,
   createMarker,
-  createRegion 
+  createRegion,
+  NETHERLANDS_CENTER,
+  NETHERLANDS_CITIES,
+  type MarkerConfig,
+  type RegionConfig
 } from "@/components/maps/map-libre-refactored"
 
 // Charts - usando a lib atual do sistema
@@ -67,6 +66,14 @@ import { useRegions } from "@/hooks/use-regions"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
+
+const DataTable = dynamic(() => import('@/components/ui/data-table').then(mod => mod.DataTable), { ssr: false });
+const AddRegionModal = dynamic(() => import('@/components/modals/region').then(mod => mod.AddRegionModal), { ssr: false });
+const EditRegionModal = dynamic(() => import('@/components/modals/region').then(mod => mod.EditRegionModal), { ssr: false });
+const DeleteRegionModal = dynamic(() => import('@/components/modals/region').then(mod => mod.DeleteRegionModal), { ssr: false });
+const ContactViewEditModal = dynamic(() => import('@/components/modals/contact').then(mod => mod.ContactViewEditModal), { ssr: false });
+const EuropeRegionsMap = dynamic(() => import('@/components/maps/europe-regions-map-mapbox').then(mod => mod.EuropeRegionsMap), { ssr: false });
+import { type RegionData } from "@/components/maps/europe-regions-map-mapbox"
 
 /**
  * PÁGINA DE GESTÃO DE REGIÕES

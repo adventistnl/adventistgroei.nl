@@ -1,4 +1,7 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
 
 import { useAvailableYears } from "@/hooks/use-available-years"
 import { AvailableYearsEntity } from "@/types/globalTypes"
@@ -60,7 +63,6 @@ import { useInstitution } from "@/contexts/institution-context"
 import { InstitutionById_institution_users as User } from "@/types/InstitutionById"
 import { useRoles } from "@/hooks/use-roles"
 import { AccessDenied } from "@/components/access/access-denied"
-import { UserStructureGrowthChart } from "@/components/charts/dashboard"
 import { GET_INSTITUTIONS_LIGHT_QUERY } from "@/graphql/queries/INSTITUTIONS_QUERY"
 import { GET_REGIONS_QUERY } from "@/graphql/queries/REGIONS_QUERY"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
@@ -68,6 +70,8 @@ import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
 import { GET_ALL_ROLES_QUERY } from "@/graphql/queries/GET_ROLES_QUERY"
 import { UsersPageSkeleton } from "@/components/shared/page-skeleton"
 import { YearFilter } from "@/components/shared/year-filter"
+
+const UserStructureGrowthChart = dynamic(() => import('@/components/charts/dashboard').then(mod => mod.UserStructureGrowthChart), { ssr: false });
 
 export default function UsersPage() {
   const { t } = useTranslation()

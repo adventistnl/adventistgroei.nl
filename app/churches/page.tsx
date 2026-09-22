@@ -1,4 +1,7 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
 
 import { useAvailableYears } from "@/hooks/use-available-years"
 import { AvailableYearsEntity } from "@/types/globalTypes"
@@ -48,7 +51,6 @@ import { churchTranslations } from "@/lib/translations/churches"
 import { UseTable } from "@/components/ui/use-table"
 import { StatusBadge } from "@/components/ui/status-badge"
 // import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
-import { AddChurchModal, EditChurchModal, DeleteChurchModal, ChurchData } from "@/components/modals/church"
 import { ChurchesKPICards, KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
 import { PageHeader } from "@/components/shared/page-header"
 import { 
@@ -66,7 +68,6 @@ import { ChurchProjectOverTimeChart } from "@/components/churches/charts/church-
 import { EntityInfoCard } from "@/components/shared/entity-info-card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { ChartHeader } from "@/components/charts/chart-header"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -88,6 +89,12 @@ import { GridContainer } from "@/components/shared/grid-container"
 import { useHasPermission } from "@/hooks/use-has-permission"
 import { useRouter } from "next/navigation"
 import { useRegions } from "@/hooks/use-regions"
+
+const AddChurchModal = dynamic(() => import('@/components/modals/church').then(mod => mod.AddChurchModal), { ssr: false });
+const EditChurchModal = dynamic(() => import('@/components/modals/church').then(mod => mod.EditChurchModal), { ssr: false });
+const DeleteChurchModal = dynamic(() => import('@/components/modals/church').then(mod => mod.DeleteChurchModal), { ssr: false });
+const ChurchData = dynamic(() => import('@/components/modals/church').then(mod => mod.ChurchData), { ssr: false });
+const ChartHeader = dynamic(() => import('@/components/charts/chart-header').then(mod => mod.ChartHeader), { ssr: false });
 // Dados reais de igrejas virão do contexto da instituição
 
 // Timeline de solicitações de subsídio por igreja

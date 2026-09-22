@@ -1,4 +1,7 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
 
 import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
@@ -16,7 +19,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { ReportsTable, ReportTableData } from "@/components/reports/reports-table"
-import { CreateReportModal, ReportFormData } from "@/components/modals/project/create-report-modal"
 import { ProjectTableData } from "@/components/projects/projects-table"
 import { reportsTranslations } from "@/lib/translations/reports"
 import {
@@ -61,6 +63,9 @@ import {
 import { useInstitution } from "@/contexts/institution-context"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
+
+const CreateReportModal = dynamic(() => import('@/components/modals/project/create-report-modal').then(mod => mod.CreateReportModal), { ssr: false });
+const ReportFormData = dynamic(() => import('@/components/modals/project/create-report-modal').then(mod => mod.ReportFormData), { ssr: false });
 
 // Chart configurations with duotone colors
 const reportsChartConfig = {

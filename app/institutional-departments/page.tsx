@@ -1,4 +1,7 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
 
 import { useAvailableYears } from "@/hooks/use-available-years"
 import { AvailableYearsEntity } from "@/types/globalTypes"
@@ -51,15 +54,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import toast from "react-hot-toast"
 import { departmentTranslations } from "@/lib/translations/departments"
-import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal } from "@/components/modals/department"
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
-import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
 import { KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
 import { UseTable } from "@/components/ui/use-table"
 import { EntityInfoCard } from "@/components/shared/entity-info-card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ChartHeader } from "@/components/charts/chart-header"
 import { Crown } from "lucide-react"
 import {
   Breadcrumb,
@@ -81,14 +81,21 @@ import { PermissionResolverName } from "@/types/graphql-global-types"
 import { WithPermission } from "@/hocs/with-permission"
 import { InstitutionalDepartmentProjectOverTimeChart } from "@/components/institutions/charts/institutional-department-project-over-time-chart"
 import { GridContainer } from "@/components/shared/grid-container"
-import { DepartmentLeaderInfoCard } from "@/components/modals/department/department-leader-info-card"
-import { DepartmentProjectsCard } from "@/components/modals/department/department-projects-card"
-import { DepartmentLeadersCard } from "@/components/modals/department/department-leaders-card"
 import { PrivacyWrapper, InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
 import { createPrivacyConfig } from "@/config/privacy-roles.config"
 import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
 import { GlobalPrivacyToggle } from "@/components/shared/global-privacy-toggle"
 import { YearFilter } from "@/components/shared/year-filter"
+
+const AddDepartmentModal = dynamic(() => import('@/components/modals/department').then(mod => mod.AddDepartmentModal), { ssr: false });
+const EditDepartmentModal = dynamic(() => import('@/components/modals/department').then(mod => mod.EditDepartmentModal), { ssr: false });
+const DeleteDepartmentModal = dynamic(() => import('@/components/modals/department').then(mod => mod.DeleteDepartmentModal), { ssr: false });
+const ContactViewEditModal = dynamic(() => import('@/components/modals/contact').then(mod => mod.ContactViewEditModal), { ssr: false });
+const ContactData = dynamic(() => import('@/components/modals/contact').then(mod => mod.ContactData), { ssr: false });
+const ChartHeader = dynamic(() => import('@/components/charts/chart-header').then(mod => mod.ChartHeader), { ssr: false });
+const DepartmentLeaderInfoCard = dynamic(() => import('@/components/modals/department/department-leader-info-card').then(mod => mod.DepartmentLeaderInfoCard), { ssr: false });
+const DepartmentProjectsCard = dynamic(() => import('@/components/modals/department/department-projects-card').then(mod => mod.DepartmentProjectsCard), { ssr: false });
+const DepartmentLeadersCard = dynamic(() => import('@/components/modals/department/department-leaders-card').then(mod => mod.DepartmentLeadersCard), { ssr: false });
 
 
 /**

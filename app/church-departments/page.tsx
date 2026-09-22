@@ -1,4 +1,7 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
 
 import { useAvailableYears } from "@/hooks/use-available-years"
 import { AvailableYearsEntity } from "@/types/globalTypes"
@@ -42,9 +45,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import toast from "react-hot-toast"
 import { departmentTranslations } from "@/lib/translations/departments"
-import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal } from "@/components/modals/department"
 import { useInstitution } from "@/contexts/institution-context"
-import { ContactData } from "@/components/modals/contact"
 import { ProtectedKPICarousel, type ProtectedKPICardData } from "@/components/shared/protected-kpi-carousel"
 import { DepartmentProjectOverTimeChart } from "@/components/institutions/charts/department-project-over-time-chart"
 import { UseTable } from "@/components/ui/use-table"
@@ -74,10 +75,14 @@ import { useDepartmentKPIs } from "@/hooks/use-department-kpis"
 import { GridContainer } from "@/components/shared/grid-container"
 import { useQuery } from "@apollo/client"
 import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
-import { DepartmentLeadersCard } from "@/components/modals/department/department-leaders-card"
-import { DepartmentProjectsCard } from "@/components/modals/department/department-projects-card"
-import { DepartmentLeaderInfoCard } from "@/components/modals/department/department-leader-info-card"
 
+const AddDepartmentModal = dynamic(() => import('@/components/modals/department').then(mod => mod.AddDepartmentModal), { ssr: false });
+const EditDepartmentModal = dynamic(() => import('@/components/modals/department').then(mod => mod.EditDepartmentModal), { ssr: false });
+const DeleteDepartmentModal = dynamic(() => import('@/components/modals/department').then(mod => mod.DeleteDepartmentModal), { ssr: false });
+const ContactData = dynamic(() => import('@/components/modals/contact').then(mod => mod.ContactData), { ssr: false });
+const DepartmentLeadersCard = dynamic(() => import('@/components/modals/department/department-leaders-card').then(mod => mod.DepartmentLeadersCard), { ssr: false });
+const DepartmentProjectsCard = dynamic(() => import('@/components/modals/department/department-projects-card').then(mod => mod.DepartmentProjectsCard), { ssr: false });
+const DepartmentLeaderInfoCard = dynamic(() => import('@/components/modals/department/department-leader-info-card').then(mod => mod.DepartmentLeaderInfoCard), { ssr: false });
 
 /**
  * PÁGINA DE GESTÃO DE DEPARTAMENTOS DE IGREJAS

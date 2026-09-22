@@ -1,4 +1,7 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
 
 import { useAvailableYears } from "@/hooks/use-available-years"
 import { AvailableYearsEntity } from "@/types/globalTypes"
@@ -46,19 +49,20 @@ import { ProjectsOverTimeChart } from "@/components/projects/charts/projects-ove
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { UseTable } from "@/components/ui/use-table"
 import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
-import { EditProjectModal } from "@/components/modals/project/edit-project-modal"
-import { DetailsViewProjectModal } from "@/components/modals/project/details-view-project-modal"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
 import { SpecialProjectBadge, getSpecialProjectColors } from "@/components/projects/special-project-badge"
 import { MyProjectsFilter } from "@/components/shared/my-projects-filter"
 import { YearFilter } from "@/components/shared/year-filter"
-import { ProjectKanbanView } from "@/components/projects/project-kanban-view"
 import { PROJECT_STATUS_CONFIG, PROJECT_STATUS_ORDER } from "@/components/projects/project-header"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
 import { useAuth } from "@/contexts/auth-context"
+
+const EditProjectModal = dynamic(() => import('@/components/modals/project/edit-project-modal').then(mod => mod.EditProjectModal), { ssr: false });
+const DetailsViewProjectModal = dynamic(() => import('@/components/modals/project/details-view-project-modal').then(mod => mod.DetailsViewProjectModal), { ssr: false });
+const ProjectKanbanView = dynamic(() => import('@/components/projects/project-kanban-view').then(mod => mod.ProjectKanbanView), { ssr: false });
 
 // Internal component that uses useSearchParams - wrapped in Suspense
 function ProjectsPageContent() {
