@@ -494,7 +494,7 @@ export function BudgetOverviewCard({
           }
         />
       <CardContent className="flex flex-1 justify-center pb-0">
-        {budgetKpisLoading ? (
+        {loadingKpis ? (
           <div className="flex flex-col items-center gap-4 py-8">
             <Skeleton className="w-32 h-32 rounded-full" />
             <Skeleton className="w-24 h-4" />
@@ -609,7 +609,7 @@ export function BudgetOverviewCard({
       </CardContent>
       
       {/* Summary Info - Footer Minimalista */}
-      {!budgetKpisLoading && institutionBudgetData.totalBudget > 0 && (
+      {!loadingKpis && institutionBudgetData.totalBudget > 0 && (
         <div className="mt-3 pt-3 border-t mx-6 pb-4">
           <div className="max-w-sm mx-auto space-y-3">
             {/* KPIs em colunas compactas */}
