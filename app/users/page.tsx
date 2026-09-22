@@ -46,6 +46,8 @@ const ContactViewEditModal = React.lazy(() => import("@/components/modals/contac
 
 // Components
 import { UseTable } from "@/components/ui/use-table"
+import { ExportUsersDialog } from "@/components/users/export-users-dialog"
+import { useProtectedQuery } from "@/hooks/graphql/use-protected-query"
 import { KPICards, type KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { PageFilters, type FilterConfig } from "@/components/shared/page-filters"
@@ -153,13 +155,14 @@ export default function UsersPage() {
 
 
     // GraphQL Queries
-    const { data: institutionsData, loading: institutionsLoading, refetch: refetchInstitutions } = useQuery(GET_INSTITUTIONS_LIGHT_QUERY)
-    const { data: regionsData, loading: regionsLoading, refetch: refetchRegions } = useQuery(GET_REGIONS_QUERY)
-    const { data: churchesData, loading: churchesLoading, refetch: refetchChurches } = useQuery(GET_CHURCHES_QUERY)
-    const { data: departmentsData, loading: departmentsLoading, refetch: refetchDepartments } = useQuery(GET_DEPARTMENTS_QUERY, {
-      variables: { institution_id: currentInstitutionData?.id }
+    const { data: institutionsData, loading: institutionsLoading, refetch: refetchInstitutions } = useProtectedQuery(GET_INSTITUTIONS_LIGHT_QUERY, [PermissionResolverName.Institutions])
+    const { data: regionsData, loading: regionsLoading, refetch: refetchRegions } = useProtectedQuery(GET_REGIONS_QUERY, [PermissionResolverName.Regions])
+    const { data: churchesData, loading: churchesLoading, refetch: refetchChurches } = useProtectedQuery(GET_CHURCHES_QUERY, [PermissionResolverName.Churches])
+    const { data: departmentsData, loading: departmentsLoading, refetch: refetchDepartments } = useProtectedQuery(GET_DEPARTMENTS_QUERY, [PermissionResolverName.Departments], {
+      variables: { institution_id: currentInstitutionData?.id },
+      skip: !currentInstitutionData?.id
     })
-    const { data: rolesData, loading: rolesLoading, refetch: refetchRoles } = useQuery(GET_ALL_ROLES_QUERY)
+    const { data: rolesData, loading: rolesLoading, refetch: refetchRoles } = useProtectedQuery(GET_ALL_ROLES_QUERY, [PermissionResolverName.Roles])
   
 
   const displayedInstitution = currentInstitutionData

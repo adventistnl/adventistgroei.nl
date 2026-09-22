@@ -7,8 +7,15 @@ import { UpdateRegion, UpdateRegionVariables } from "@/types/UpdateRegion";
 import { UpdateRegionContact, UpdateRegionContactVariables } from "@/types/UpdateRegionContact";
 import { DeleteRegion, DeleteRegionVariables } from "@/types/DeleteRegion";
 
+import { useProtectedQuery } from "@/hooks/graphql/use-protected-query";
+import { PermissionResolverName } from "@/types/graphql-global-types";
+
 export function useGetRegionsQuery(options?: useQuery.Options<Regions>): useQuery.Result<Regions> {
-  return useQuery<Regions>(GET_REGIONS_QUERY, options);
+  return useProtectedQuery<Regions>(
+    GET_REGIONS_QUERY, 
+    [PermissionResolverName.Regions], 
+    options
+  );
 }
 
 export function useCreateRegionMutation(options?: useMutation.Options<CreateRegion, CreateRegionVariables>): useMutation.ResultTuple<CreateRegion, CreateRegionVariables> {

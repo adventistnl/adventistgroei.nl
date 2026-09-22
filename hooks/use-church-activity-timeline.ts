@@ -1,4 +1,5 @@
-import { useQuery } from "@apollo/client";
+import { useProtectedQuery } from "@/hooks/graphql/use-protected-query";
+import { PermissionResolverName } from "@/types/graphql-global-types";
 import { GET_CHURCH_ACTIVITY_TIMELINE_QUERY } from "@/graphql/queries/CHURCH_ACTIVITY_TIMELINE_QUERY";
 
 interface UseChurchActivityTimelineOptions {
@@ -10,8 +11,9 @@ interface UseChurchActivityTimelineOptions {
 export function useChurchActivityTimeline(options: UseChurchActivityTimelineOptions = {}) {
   const { institution_id, selectedYear, skip = false } = options;
 
-  const { data, loading, error, refetch } = useQuery(
+  const { data, loading, error, refetch } = useProtectedQuery(
     GET_CHURCH_ACTIVITY_TIMELINE_QUERY,
+    [PermissionResolverName.ChurchActivityTimeline],
     {
       variables: {
         institution_id,

@@ -110,6 +110,7 @@ import { GridContainer } from "@/components/shared/grid-container"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from "date-fns"
 import { ptBR, nl, enUS } from "date-fns/locale"
+import { useProtectedQuery } from "@/hooks/graphql/use-protected-query"
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
@@ -156,18 +157,18 @@ export default function DashboardPage() {
   const canReadProjects = useHasPermission([PermissionResolverName.Projects], [], true)
 
   // GraphQL Queries
-  const { data: institutionsData, loading: institutionsLoading, refetch: refetchInstitutions } = useQuery(GET_INSTITUTIONS_LIGHT_QUERY, { skip: !canReadInstitutions })
-  const { data: regionsData, loading: regionsLoading, refetch: refetchRegions } = useQuery(GET_REGIONS_QUERY, { skip: !canReadRegions })
-  const { data: churchesData, loading: churchesLoading, refetch: refetchChurches } = useQuery(GET_CHURCHES_QUERY, { skip: !canReadChurches })
-  const { data: departmentsData, loading: departmentsLoading, refetch: refetchDepartments } = useQuery(GET_DEPARTMENTS_QUERY, {
+  const { data: institutionsData, loading: institutionsLoading, refetch: refetchInstitutions } = useProtectedQuery(GET_INSTITUTIONS_LIGHT_QUERY, [PermissionResolverName.Institutions])
+  const { data: regionsData, loading: regionsLoading, refetch: refetchRegions } = useProtectedQuery(GET_REGIONS_QUERY, [PermissionResolverName.Regions])
+  const { data: churchesData, loading: churchesLoading, refetch: refetchChurches } = useProtectedQuery(GET_CHURCHES_QUERY, [PermissionResolverName.Churches])
+  const { data: departmentsData, loading: departmentsLoading, refetch: refetchDepartments } = useProtectedQuery(GET_DEPARTMENTS_QUERY, [PermissionResolverName.Departments], {
     variables: { institution_id: currentInstitutionData?.id },
-    skip: !canReadDepartments || !currentInstitutionData?.id
+    skip: !currentInstitutionData?.id
   })
-  const { data: rolesData, loading: rolesLoading, refetch: refetchRoles } = useQuery(GET_ALL_ROLES_QUERY, { skip: !canReadRoles })
-  const { data: subsidyData, loading: subsidyLoading } = useQuery(GET_ALL_SUBSIDY_REQUESTS, { skip: !canReadSubsidyRequests })
-  const { data: subsidyStatusHistoryData, loading: subsidyStatusLoading } = useQuery(GET_SUBSIDY_STATUS_HISTORY, {
+  const { data: rolesData, loading: rolesLoading, refetch: refetchRoles } = useProtectedQuery(GET_ALL_ROLES_QUERY, [PermissionResolverName.Roles])
+  const { data: subsidyData, loading: subsidyLoading } = useProtectedQuery(GET_ALL_SUBSIDY_REQUESTS, [PermissionResolverName.SubsidyRequests])
+  const { data: subsidyStatusHistoryData, loading: subsidyStatusLoading } = useProtectedQuery(GET_SUBSIDY_STATUS_HISTORY, [], {
     variables: { subsidyRequestId: "ALL" },
-    skip: !subsidyData?.subsidyRequests?.length || !canReadSubsidyRequests,
+    skip: !subsidyData?.subsidyRequests?.length,
   })
   const { data: allProjectsData, loading: allProjectsLoading } = useQuery(GET_PROJECTS_QUERY, {
     variables: { institutionId: currentInstitutionData?.id },
