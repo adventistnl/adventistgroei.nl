@@ -563,13 +563,15 @@ export default function InstitutionsPage() {
     {
       label: t('institutions.actions.edit_institution'),
       icon: Edit,
-      onClick: handleEditInstitution
+      onClick: handleEditInstitution,
+      requiredPermissions: [PermissionResolverName.UpdateInstitution]
     },
     {
       label: t('institutions.actions.delete_institution'),
       icon: Trash2,
       onClick: handleDeleteInstitution,
-      variant: "destructive"
+      variant: "destructive",
+      requiredPermissions: [PermissionResolverName.DeleteInstitution]
     }
   ], [t, handleViewInstitutionContact, handleEditInstitution, handleDeleteInstitution])
 
