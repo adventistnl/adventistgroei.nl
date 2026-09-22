@@ -47,28 +47,28 @@ interface ResetPasswordResponse {
 }
 
 export function useSendForgotPasswordCodeMutation(
-  options?: useMutation.Options<SendCodeResponse, SendCodeInput>
+  options?: useMutation.Options<SendCodeResponse, SendCodeInput>,
 ): useMutation.ResultTuple<SendCodeResponse, SendCodeInput> {
   return useMutation<SendCodeResponse, SendCodeInput>(
     SEND_FORGOT_PASSWORD_CODE,
-    options
+    options,
   );
 }
 
 export function useVerifyForgotPasswordCodeMutation(
-  options?: useMutation.Options<VerifyCodeResponse, VerifyCodeInput>
+  options?: useMutation.Options<VerifyCodeResponse, VerifyCodeInput>,
 ): useMutation.ResultTuple<VerifyCodeResponse, VerifyCodeInput> {
   return useMutation<VerifyCodeResponse, VerifyCodeInput>(
     VERIFY_FORGOT_PASSWORD_CODE,
-    options
+    options,
   );
 }
 
 export function useResetPasswordMutation(
-  options?: useMutation.Options<ResetPasswordResponse, ResetPasswordInput>
+  options?: useMutation.Options<ResetPasswordResponse, ResetPasswordInput>,
 ): useMutation.ResultTuple<ResetPasswordResponse, ResetPasswordInput> {
   return useMutation<ResetPasswordResponse, ResetPasswordInput>(
     RESET_PASSWORD,
-    options
+    options,
   );
 }

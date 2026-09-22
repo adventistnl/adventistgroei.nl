@@ -1,10 +1,18 @@
 import { useQuery } from "@apollo/client/react";
-import { GET_ALL_ROLES_QUERY, GET_ROLE_BY_ID_QUERY } from "@/graphql/queries/GET_ROLES_QUERY";
+import {
+  GET_ALL_ROLES_QUERY,
+  GET_ROLE_BY_ID_QUERY,
+} from "@/graphql/queries/GET_ROLES_QUERY";
 import { Roles } from "@/types/Roles";
 import { Role } from "@/types/Role";
 
-export function useGetAllRolesQuery(options?: useQuery.Options<Roles>): useQuery.Result<Roles> {
-  return useQuery<Roles>(GET_ALL_ROLES_QUERY, { ...options, fetchPolicy: "cache-first" });
+export function useGetAllRolesQuery(
+  options?: useQuery.Options<Roles>,
+): useQuery.Result<Roles> {
+  return useQuery<Roles>(GET_ALL_ROLES_QUERY, {
+    ...options,
+    fetchPolicy: "cache-first",
+  });
 }
 
 export interface Variables {
@@ -12,7 +20,7 @@ export interface Variables {
 }
 export function useGetRoleByIdQuery(
   variables: Variables,
-  options?: useQuery.Options<Role, Variables>
+  options?: useQuery.Options<Role, Variables>,
 ) {
   // Validar se o ID está definido antes de executar a consulta
   if (!variables.id) {

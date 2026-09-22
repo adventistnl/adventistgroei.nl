@@ -4,10 +4,12 @@ import { GET_INSTITUTIONS_LIGHT_QUERY } from "@/graphql/queries/INSTITUTIONS_QUE
 import { useProtectedQuery } from "@/hooks/graphql/use-protected-query";
 import { PermissionResolverName } from "@/types/graphql-global-types";
 
-export function useGetInstitutionsQuery(options?: useQuery.Options<InstitutionsLight>): useQuery.Result<InstitutionsLight> {
+export function useGetInstitutionsQuery(
+  options?: useQuery.Options<InstitutionsLight>,
+): useQuery.Result<InstitutionsLight> {
   return useProtectedQuery<InstitutionsLight>(
-    GET_INSTITUTIONS_LIGHT_QUERY, 
-    [PermissionResolverName.Institutions], 
-    options
+    GET_INSTITUTIONS_LIGHT_QUERY,
+    [PermissionResolverName.Institutions],
+    options,
   );
 }

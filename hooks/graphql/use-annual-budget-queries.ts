@@ -6,62 +6,72 @@ import {
   GET_AVAILABLE_YEARS,
   GET_ANNUAL_BUDGET_KPIS,
   GET_BUDGET_DASHBOARD_DATA,
-  GET_LEDGER_HISTORY
+  GET_LEDGER_HISTORY,
 } from "@/graphql/queries/ANNUAL_BUDGET_QUERIES";
 import {
   GetAnnualBudgetById,
-  GetAnnualBudgetByIdVariables
+  GetAnnualBudgetByIdVariables,
 } from "@/types/GetAnnualBudgetById";
-import {
-  GetAvailableYears
-} from "@/types/GetAvailableYears";
+import { GetAvailableYears } from "@/types/GetAvailableYears";
 import {
   GetAnnualBudgetKPIs,
-  GetAnnualBudgetKPIsVariables
+  GetAnnualBudgetKPIsVariables,
 } from "@/types/GetAnnualBudgetKPIs";
 import {
   GetBudgetDashboardData,
-  GetBudgetDashboardDataVariables
+  GetBudgetDashboardDataVariables,
 } from "@/types/GetBudgetDashboardData";
 
-export function useAnnualBudgetById(id: string, options?: useQuery.Options<GetAnnualBudgetById, GetAnnualBudgetByIdVariables>) {
+export function useAnnualBudgetById(
+  id: string,
+  options?: useQuery.Options<GetAnnualBudgetById, GetAnnualBudgetByIdVariables>,
+) {
   return useProtectedQuery<GetAnnualBudgetById, GetAnnualBudgetByIdVariables>(
     GET_ANNUAL_BUDGET_BY_ID,
     [PermissionResolverName.AnnualBudgets],
     {
       variables: { id },
-      ...options
-    }
+      ...options,
+    },
   );
 }
 
-export function useAvailableYears(options?: useQuery.Options<GetAvailableYears>) {
+export function useAvailableYears(
+  options?: useQuery.Options<GetAvailableYears>,
+) {
   return useProtectedQuery<GetAvailableYears>(
     GET_AVAILABLE_YEARS,
     [PermissionResolverName.AnnualBudgets],
-    options
+    options,
   );
 }
 
-export function useAnnualBudgetKPIs(options: useQuery.Options<GetAnnualBudgetKPIs, GetAnnualBudgetKPIsVariables>) {
+export function useAnnualBudgetKPIs(
+  options: useQuery.Options<GetAnnualBudgetKPIs, GetAnnualBudgetKPIsVariables>,
+) {
   return useProtectedQuery<GetAnnualBudgetKPIs, GetAnnualBudgetKPIsVariables>(
     GET_ANNUAL_BUDGET_KPIS,
     [PermissionResolverName.AnnualBudgets],
     {
-      ...options
-    }
+      ...options,
+    },
   );
 }
 
-export function useBudgetDashboardData(year: number, options?: useQuery.Options<GetBudgetDashboardData, GetBudgetDashboardDataVariables>) {
-  return useProtectedQuery<GetBudgetDashboardData, GetBudgetDashboardDataVariables>(
-    GET_BUDGET_DASHBOARD_DATA,
-    [PermissionResolverName.AnnualBudgets],
-    {
-      variables: { year },
-      ...options
-    }
-  );
+export function useBudgetDashboardData(
+  year: number,
+  options?: useQuery.Options<
+    GetBudgetDashboardData,
+    GetBudgetDashboardDataVariables
+  >,
+) {
+  return useProtectedQuery<
+    GetBudgetDashboardData,
+    GetBudgetDashboardDataVariables
+  >(GET_BUDGET_DASHBOARD_DATA, [PermissionResolverName.AnnualBudgets], {
+    variables: { year },
+    ...options,
+  });
 }
 
 export function useLedgerHistory(filters: any, options?: any) {
@@ -70,7 +80,7 @@ export function useLedgerHistory(filters: any, options?: any) {
     [PermissionResolverName.AnnualBudgets],
     {
       variables: { filters },
-      ...options
-    }
+      ...options,
+    },
   );
 }

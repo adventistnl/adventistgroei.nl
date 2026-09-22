@@ -1,34 +1,32 @@
-"use client"
+"use client";
 
-import { useMutation, useApolloClient } from "@apollo/client"
-import { useCallback } from "react"
-import { useProtectedQuery } from "@/hooks/graphql/use-protected-query"
-import { PermissionResolverName } from "@/types/graphql-global-types"
+import { useMutation, useApolloClient } from "@apollo/client";
+import { useCallback } from "react";
+import { useProtectedQuery } from "@/hooks/graphql/use-protected-query";
+import { PermissionResolverName } from "@/types/graphql-global-types";
 import {
   ProjectAdjustment,
   AdjustmentStatus,
   AdjustmentTask,
-} from "@/types/project-adjustment"
-import {
-  GET_PROJECT_ADJUSTMENTS,
-} from "@/graphql/queries/PROJECT_ADJUSTMENTS_QUERY"
+} from "@/types/project-adjustment";
+import { GET_PROJECT_ADJUSTMENTS } from "@/graphql/queries/PROJECT_ADJUSTMENTS_QUERY";
 import {
   CREATE_ADJUSTMENT,
   UPDATE_ADJUSTMENT_STATUS,
   ADD_ADJUSTMENT_TASK,
   TOGGLE_ADJUSTMENT_TASK,
   REMOVE_ADJUSTMENT_TASK,
-} from "@/graphql/mutations/PROJECT_ADJUSTMENT_MUTATIONS"
+} from "@/graphql/mutations/PROJECT_ADJUSTMENT_MUTATIONS";
 
 // ─── Debug flag ───────────────────────────────────────────────────────────────
-const DEBUG = true
+const DEBUG = true;
 const log = (...args: unknown[]) =>
-  DEBUG && console.log("[ProjectAdjustments]", ...args)
+  DEBUG && console.log("[ProjectAdjustments]", ...args);
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useProjectAdjustments(projectId: string | undefined | null) {
-  const client = useApolloClient()
+  const client = useApolloClient();
 
   const { data, loading, error, refetch } = useProtectedQuery(
     GET_PROJECT_ADJUSTMENTS,
@@ -37,8 +35,8 @@ export function useProjectAdjustments(projectId: string | undefined | null) {
       variables: { projectId },
       skip: !projectId,
       fetchPolicy: "cache-and-network",
-    }
-  )
+    },
+  );
 
   // ── Cache helpers ───────────────────────────────────────────────────────────
 
@@ -48,8 +46,8 @@ export function useProjectAdjustments(projectId: string | undefined | null) {
         query: GET_PROJECT_ADJUSTMENTS,
         variables: { projectId },
       }),
-    [client, projectId]
-  )
+    [client, projectId],
+  );
 
   const writeCache = useCallback(
     (adjustments: ProjectAdjustment[]) => {
@@ -57,10 +55,10 @@ export function useProjectAdjustments(projectId: string | undefined | null) {
         query: GET_PROJECT_ADJUSTMENTS,
         variables: { projectId },
         data: { projectAdjustments: adjustments },
-      })
+      });
     },
-    [client, projectId]
-  )
+    [client, projectId],
+  );
 
   // ── Create adjustment ───────────────────────────────────────────────────────
 
@@ -68,36 +66,43 @@ export function useProjectAdjustments(projectId: string | undefined | null) {
     CREATE_ADJUSTMENT,
     {
       onError: (err) => {
-        console.error("[ProjectAdjustments] createAdjustment error:", err)
+        console.error("[ProjectAdjustments] createAdjustment error:", err);
       },
       update(_, { data: result }) {
-        const newItem: ProjectAdjustment = result?.createAdjustment
-        if (!newItem) return
-        log("createAdjustment → cache updated", newItem.id, "status:", newItem.status)
-        const cached = readCache()
-        writeCache([newItem, ...(cached?.projectAdjustments ?? [])])
+        const newItem: ProjectAdjustment = result?.createAdjustment;
+        if (!newItem) return;
+        log(
+          "createAdjustment → cache updated",
+          newItem.id,
+          "status:",
+          newItem.status,
+        );
+        const cached = readCache();
+        writeCache([newItem, ...(cached?.projectAdjustments ?? [])]);
       },
-    }
-  )
+    },
+  );
 
   const createAdjustment = useCallback(
     (input: {
-      comment?: string
-      tasks?: { title: string; position?: number }[]
+      comment?: string;
+      tasks?: { title: string; position?: number }[];
     }) => {
       if (!projectId) {
-        console.warn("[ProjectAdjustments] createAdjustment called without projectId")
-        return Promise.resolve()
+        console.warn(
+          "[ProjectAdjustments] createAdjustment called without projectId",
+        );
+        return Promise.resolve();
       }
-      log("createAdjustment →", { projectId, ...input })
+      log("createAdjustment →", { projectId, ...input });
       return createAdjustmentMutation({
         variables: {
           data: { project_id: projectId, ...input },
         },
-      })
+      });
     },
-    [projectId, createAdjustmentMutation]
-  )
+    [projectId, createAdjustmentMutation],
+  );
 
   // ── Update status ───────────────────────────────────────────────────────────
 
@@ -105,30 +110,33 @@ export function useProjectAdjustments(projectId: string | undefined | null) {
     UPDATE_ADJUSTMENT_STATUS,
     {
       onError: (err) => {
-        console.error("[ProjectAdjustments] updateStatus error:", err)
+        console.error("[ProjectAdjustments] updateStatus error:", err);
       },
       update(cache, { data: result }) {
-        const updated = result?.updateAdjustmentStatus
-        if (!updated) return
-        log("updateStatus → cache patched", updated.id, "→", updated.status)
+        const updated = result?.updateAdjustmentStatus;
+        if (!updated) return;
+        log("updateStatus → cache patched", updated.id, "→", updated.status);
         cache.modify({
-          id: cache.identify({ __typename: "ProjectAdjustment", id: updated.id }),
+          id: cache.identify({
+            __typename: "ProjectAdjustment",
+            id: updated.id,
+          }),
           fields: {
             status: () => updated.status,
             updated_at: () => updated.updated_at,
           },
-        })
+        });
       },
-    }
-  )
+    },
+  );
 
   const updateStatus = useCallback(
     (id: string, status: AdjustmentStatus) => {
-      log("updateStatus →", id, status)
-      return updateStatusMutation({ variables: { data: { id, status } } })
+      log("updateStatus →", id, status);
+      return updateStatusMutation({ variables: { data: { id, status } } });
     },
-    [updateStatusMutation]
-  )
+    [updateStatusMutation],
+  );
 
   // ── Add task ────────────────────────────────────────────────────────────────
 
@@ -136,84 +144,94 @@ export function useProjectAdjustments(projectId: string | undefined | null) {
     ADD_ADJUSTMENT_TASK,
     {
       onError: (err) => {
-        console.error("[ProjectAdjustments] addTask error:", err)
+        console.error("[ProjectAdjustments] addTask error:", err);
       },
       update(cache, { data: result }, { variables }) {
-        const adjustmentId = variables?.data?.adjustment_id
-        const newTask: AdjustmentTask = result?.addAdjustmentTask
-        if (!newTask || !adjustmentId) return
-        log("addTask → cache patched", adjustmentId, "task:", newTask.id)
+        const adjustmentId = variables?.data?.adjustment_id;
+        const newTask: AdjustmentTask = result?.addAdjustmentTask;
+        if (!newTask || !adjustmentId) return;
+        log("addTask → cache patched", adjustmentId, "task:", newTask.id);
         cache.modify({
-          id: cache.identify({ __typename: "ProjectAdjustment", id: adjustmentId }),
+          id: cache.identify({
+            __typename: "ProjectAdjustment",
+            id: adjustmentId,
+          }),
           fields: {
             tasks(existing = []) {
-              return [...existing, newTask]
+              return [...existing, newTask];
             },
           },
-        })
+        });
       },
-    }
-  )
+    },
+  );
 
   const addTask = useCallback(
     (adjustment_id: string, title: string, position?: number) => {
-      log("addTask →", adjustment_id, title)
+      log("addTask →", adjustment_id, title);
       return addTaskMutation({
         variables: { data: { adjustment_id, title, position } },
-      })
+      });
     },
-    [addTaskMutation]
-  )
+    [addTaskMutation],
+  );
 
   // ── Toggle task ─────────────────────────────────────────────────────────────
 
   const [toggleTaskMutation] = useMutation(TOGGLE_ADJUSTMENT_TASK, {
     onError: (err) => {
-      console.error("[ProjectAdjustments] toggleTask error:", err)
+      console.error("[ProjectAdjustments] toggleTask error:", err);
     },
     update(cache, { data: result }) {
-      const updated = result?.toggleAdjustmentTask
-      if (!updated) return
-      log("toggleTask → cache patched", updated.id, "completed:", updated.completed)
+      const updated = result?.toggleAdjustmentTask;
+      if (!updated) return;
+      log(
+        "toggleTask → cache patched",
+        updated.id,
+        "completed:",
+        updated.completed,
+      );
       cache.modify({
         id: cache.identify({ __typename: "AdjustmentTask", id: updated.id }),
         fields: { completed: () => updated.completed },
-      })
+      });
     },
-  })
+  });
 
   const toggleTask = useCallback(
     (task_id: string, completed: boolean) => {
-      log("toggleTask →", task_id, completed)
-      return toggleTaskMutation({ variables: { data: { task_id, completed } } })
+      log("toggleTask →", task_id, completed);
+      return toggleTaskMutation({
+        variables: { data: { task_id, completed } },
+      });
     },
-    [toggleTaskMutation]
-  )
+    [toggleTaskMutation],
+  );
 
   // ── Remove task ─────────────────────────────────────────────────────────────
 
   const [removeTaskMutation] = useMutation(REMOVE_ADJUSTMENT_TASK, {
     onError: (err) => {
-      console.error("[ProjectAdjustments] removeTask error:", err)
+      console.error("[ProjectAdjustments] removeTask error:", err);
     },
     update(cache, { data: result }) {
-      const removed = result?.removeAdjustmentTask
-      if (!removed) return
-      log("removeTask → evicted", removed.id)
+      const removed = result?.removeAdjustmentTask;
+      if (!removed) return;
+      log("removeTask → evicted", removed.id);
       cache.evict({
         id: cache.identify({ __typename: "AdjustmentTask", id: removed.id }),
-      })
-      cache.gc()
+      });
+      cache.gc();
     },
-  })
+  });
 
   const removeTask = useCallback(
     (taskId: string) => {
-      log("removeTask →", taskId)
-      return removeTaskMutation({ variables: { taskId } })
+      log("removeTask →", taskId);
+      return removeTaskMutation({ variables: { taskId } });
     },
-    [removeTaskMutation]
-  )
+    [removeTaskMutation],
+  );
 
   return {
     adjustments: (data?.projectAdjustments ?? []) as ProjectAdjustment[],
@@ -228,5 +246,5 @@ export function useProjectAdjustments(projectId: string | undefined | null) {
     addTask,
     toggleTask,
     removeTask,
-  }
+  };
 }

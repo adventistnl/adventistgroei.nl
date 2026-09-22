@@ -26,10 +26,10 @@ export interface InstitutionsForInviteResult {
 
 export function useGetInstitutionsForInviteQuery() {
   return useProtectedQuery<InstitutionsForInviteResult>(
-    GET_INSTITUTIONS_FOR_INVITE_QUERY, 
+    GET_INSTITUTIONS_FOR_INVITE_QUERY,
     [PermissionResolverName.Institutions],
     {
       fetchPolicy: "cache-and-network",
-    }
+    },
   );
 }

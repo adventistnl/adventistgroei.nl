@@ -1,4 +1,10 @@
-import { useQuery, DocumentNode, TypedDocumentNode, QueryHookOptions, QueryResult } from "@apollo/client";
+import {
+  useQuery,
+  DocumentNode,
+  TypedDocumentNode,
+  QueryHookOptions,
+  QueryResult,
+} from "@apollo/client";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { PermissionResolverName } from "@/types/graphql-global-types";
 
@@ -11,11 +17,14 @@ import { PermissionResolverName } from "@/types/graphql-global-types";
  * @param options Standard useQuery options
  * @param requireAll If true, requires all permissions in the list. If false, requires at least one. Default is true (matchAll).
  */
-export function useProtectedQuery<TData = any, TVariables extends Record<string, any> = Record<string, any>>(
+export function useProtectedQuery<
+  TData = any,
+  TVariables extends Record<string, any> = Record<string, any>,
+>(
   query: DocumentNode | TypedDocumentNode<TData, TVariables>,
   requiredPermissions: PermissionResolverName[],
   options?: QueryHookOptions<TData, TVariables>,
-  requireAll: boolean = true
+  requireAll: boolean = true,
 ): QueryResult<TData, TVariables> {
   // Verificamos se o usuário tem a permissão necessária
   const hasPermission = useHasPermission(requiredPermissions, [], requireAll);
