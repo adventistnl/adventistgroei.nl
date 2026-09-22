@@ -62,13 +62,11 @@ export function BudgetSection({
   const year = selectedYear
 
   // Dados reais consolidados através dos dados transacionais do Ledger fornecidos pelo backend!
-  const canReadAnnualBudgets = useHasPermission([PermissionResolverName.AnnualBudgets], [], true)
-
-  const { data: annualKpiData } = useAnnualBudgetKPIs(
-    institutionId && canReadAnnualBudgets
-      ? { variables: { year, institutionId }, fetchPolicy: "network-only" }
-      : { skip: true }
-  )
+  const { data: annualKpiData } = useAnnualBudgetKPIs({
+    variables: { year, institutionId: institutionId! },
+    fetchPolicy: "network-only",
+    skip: !institutionId
+  })
 
   const spendingOverTimeData = annualKpiData?.spendingOverTime || []
 

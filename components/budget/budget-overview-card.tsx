@@ -84,14 +84,14 @@ export function BudgetOverviewCard({
   const { formatCurrency } = useCurrency()
   const id = "budget-pie-interactive"
 
-  const canReadAnnualBudgets = useHasPermission([PermissionResolverName.AnnualBudgets], [], true)
-
-  // GraphQL Hook para dados reais de KPIs
-  const { data: kpisData, loading: budgetKpisLoading } = useAnnualBudgetKPIs(
-    institutionId && canReadAnnualBudgets
-      ? { variables: { institutionId, year } }
-      : { skip: true }
-  )
+  // Buscando os dados agregados da query de KPIs do backend
+  const { data: kpisData, loading: loadingKpis } = useAnnualBudgetKPIs({
+    variables: { 
+      year: typeof year === 'number' ? year : parseInt(String(year)),
+      institutionId: institutionId!
+    },
+    skip: !institutionId,
+  })
 
   // Processar dados do orçamento institucional
   const institutionBudgetData = useMemo(() => {

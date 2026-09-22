@@ -1,7 +1,9 @@
 "use client"
 
-import { useMutation, useQuery, useApolloClient } from "@apollo/client"
+import { useMutation, useApolloClient } from "@apollo/client"
 import { useCallback } from "react"
+import { useProtectedQuery } from "@/hooks/graphql/use-protected-query"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 import {
   ProjectAdjustment,
   AdjustmentStatus,
@@ -28,11 +30,15 @@ const log = (...args: unknown[]) =>
 export function useProjectAdjustments(projectId: string | undefined | null) {
   const client = useApolloClient()
 
-  const { data, loading, error, refetch } = useQuery(GET_PROJECT_ADJUSTMENTS, {
-    variables: { projectId },
-    skip: !projectId,
-    fetchPolicy: "cache-and-network",
-  })
+  const { data, loading, error, refetch } = useProtectedQuery(
+    GET_PROJECT_ADJUSTMENTS,
+    [PermissionResolverName.ProjectAdjustments],
+    {
+      variables: { projectId },
+      skip: !projectId,
+      fetchPolicy: "cache-and-network",
+    }
+  )
 
   // ── Cache helpers ───────────────────────────────────────────────────────────
 

@@ -36,21 +36,18 @@ export interface iInstitutions {
   updateContactError: ErrorLike | undefined
 }
 
-import { useHasPermission } from "@/hooks/use-has-permission";
-import { PermissionResolverName } from "@/types/graphql-global-types";
+
 
 export function useInstitutions(id?: string): iInstitutions & {
   refetchInstitutions: () => void;
   refetchInstitutionById: () => void;
 } {
-  const canReadInstitutions = useHasPermission([PermissionResolverName.Institutions], [], true);
-
   const {
     data: institutionsData,
     loading: institutionsLoading,
     error: institutionsError,
     refetch: refetchInstitutionsRaw
-  } = useGetInstitutionsQuery({ skip: !canReadInstitutions });
+  } = useGetInstitutionsQuery();
 
   const {
     data: institutionData,

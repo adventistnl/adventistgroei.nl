@@ -31,14 +31,13 @@ export function BudgetMetricsCard({
   const { formatCurrency } = useCurrency()
 
   // GraphQL Hook para dados reais
-  const canReadAnnualBudgets = useHasPermission([PermissionResolverName.AnnualBudgets], [], true)
-
-  const { data: kpisData, loading: budgetKpisLoading } = useAnnualBudgetKPIs(
-    institutionId && canReadAnnualBudgets
-      ? { variables: { institutionId, year } }
-      : { skip: true }
-  )
-
+  const { data: kpisData, loading: budgetKpisLoading } = useAnnualBudgetKPIs({
+    variables: { 
+      year: typeof year === 'number' ? year : parseInt(String(year)),
+      institutionId: institutionId!
+    },
+    skip: !institutionId,
+  })
   // Processar dados do orçamento
   const budgetData = useMemo(() => {
     if (!kpisData?.budgetKPIs) {

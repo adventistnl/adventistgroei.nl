@@ -1,12 +1,11 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { useQuery } from '@apollo/client'
 import { GET_SUBSIDIES_WAITING_REFUND } from '@/graphql/queries/SUBSIDY_REQUESTS_QUERY'
 import { useAuth } from './auth-context'
 import { RefundAlertModal } from '@/components/modals/refund-alert-modal'
-import { useHasPermission } from "@/hooks/use-has-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
+import { useProtectedQuery } from '@/hooks/graphql/use-protected-query'
 
 interface RefundSubsidy {
   id: string
@@ -96,15 +95,17 @@ export const RefundAlertProvider: React.FC<RefundAlertProviderProps> = ({ childr
     return isDifferentDay
   }
 
-  const canReadSubsidyRequests = useHasPermission([PermissionResolverName.SubsidyRequests], [], true)
-
-  const { data, loading, refetch } = useQuery(GET_SUBSIDIES_WAITING_REFUND, {
-    skip: !user || !canReadSubsidyRequests,
-    variables: {
-      institutionId: user?.institution_id || undefined
-    },
-    fetchPolicy: 'cache-and-network'
-  })
+  const { data, loading, refetch } = useProtectedQuery(
+    GET_SUBSIDIES_WAITING_REFUND,
+    [PermissionResolverName.Subsidies],
+    {
+      skip: !user,
+      variables: {
+        institutionId: user?.institution_id || undefined
+      },
+      fetchPolicy: 'cache-and-network'
+    }
+  )
 
   // Filter refunds to show only where user is project owner OR requester
   const allRefunds: RefundSubsidy[] = data?.getSubsidiesWaitingRefund || []

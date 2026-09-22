@@ -31,7 +31,10 @@ import {
   Upload,
   Lock,
 } from "lucide-react"
-import { useQuery } from "@apollo/client"
+import { useAuth } from "@/contexts/auth-context"
+import { useQuery, useMutation, useApolloClient } from "@apollo/client"
+import { useProtectedQuery } from "@/hooks/graphql/use-protected-query"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 import { GET_PROJECT_ACTIVITY_LOGS_QUERY } from "@/graphql/queries/ACTIVITY_LOGS_QUERY"
 import { ActivityLogs } from "@/components/projects/activity-logs"
 import { ProjectActivityData } from "../../projects/project-activities-table"
@@ -123,8 +126,9 @@ export function ActivityDetailsModal({
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
 
   // Fetch activity logs
-  const { data: logsData, loading: logsLoading, refetch: refetchLogs } = useQuery(
+  const { data: logsData, loading: logsLoading, refetch: refetchLogs } = useProtectedQuery(
     GET_PROJECT_ACTIVITY_LOGS_QUERY,
+    [PermissionResolverName.ProjectActivityLogs],
     {
       variables: { activityId: activity?.id },
       skip: !activity?.id || !isSystemInfoOpen,

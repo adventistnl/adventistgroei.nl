@@ -2,6 +2,8 @@
 
 import { useQuery, useMutation, useSubscription } from "@apollo/client"
 import { useCallback, useEffect } from "react"
+import { useProtectedQuery } from "@/hooks/graphql/use-protected-query"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 import { GET_PROJECT_HISTORY } from "@/graphql/queries/PROJECT_HISTORY_QUERY"
 import {
   CREATE_PROJECT_HISTORY,
@@ -50,11 +52,15 @@ export function useProjectHistory({
   // Use context directly so it gracefully no-ops when provider is absent
   // (notifications are now handled globally by GlobalNotificationsWatcher)
 
-  const { data, loading, refetch } = useQuery(GET_PROJECT_HISTORY, {
-    variables: { projectId },
-    skip,
-    fetchPolicy: "cache-and-network",
-  })
+  const { data, loading, refetch } = useProtectedQuery(
+    GET_PROJECT_HISTORY,
+    [PermissionResolverName.ProjectHistories],
+    {
+      variables: { projectId },
+      skip,
+      fetchPolicy: "cache-and-network",
+    }
+  )
 
   const [createMutation, { loading: creating }] = useMutation(CREATE_PROJECT_HISTORY, {
     onError: () => {
