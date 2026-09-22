@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from "react"
-import { Trash2, Edit, Archive, CheckCircle, AlertCircle } from "lucide-react"
+import { Trash2, Edit, Archive } from "lucide-react"
 import { BatchActionsPanel, BatchAction } from "@/components/shared/batch-actions-panel"
 import { BatchEditField } from "@/components/shared/inline-batch-editor"
 

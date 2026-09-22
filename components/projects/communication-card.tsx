@@ -2,9 +2,6 @@
 
 import React from "react"
 import { 
-  Megaphone, 
-  Calendar, 
-  User, 
   MoreVertical,
   Edit,
   Trash2,

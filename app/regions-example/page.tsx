@@ -31,15 +31,14 @@ import toast from "react-hot-toast"
 import { structureTranslations } from "@/lib/translations/structure"
 import { DataTable } from "@/components/ui/data-table"
 import { AddRegionModal, EditRegionModal, DeleteRegionModal } from "@/components/modals/region"
-import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
+import { ContactViewEditModal } from "@/components/modals/contact"
 import { UseKPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { EuropeRegionsMap, RegionData as MapRegionData } from "@/components/maps/europe-regions-map-mapbox"
 import MapLibre, { 
   MarkerConfig, 
   RegionConfig as MapLibreRegionConfig,
   NETHERLANDS_CENTER, 
-  NETHERLANDS_CITIES, 
-  EXAMPLE_REGIONS,
+  NETHERLANDS_CITIES,
   createMarker,
   createRegion 
 } from "@/components/maps/map-libre-refactored"

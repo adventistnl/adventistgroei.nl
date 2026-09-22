@@ -3,8 +3,7 @@
 import * as React from "react"
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
-import { 
-  DollarSign,
+import {
   Building,
   User,
   Edit

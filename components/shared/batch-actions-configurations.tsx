@@ -7,9 +7,9 @@
 
 import { BatchAction, BatchEditField } from "@/components/shared/batch-actions-panel-responsive"
 import { 
-  Trash2, Edit, Archive, Download, Copy, Move, Settings, 
+  Trash2, Edit, Archive, Download, Copy, 
   Users, Building, MapPin, Calendar, DollarSign, FileText,
-  Mail, Phone, Globe, Lock, Unlock, Star, Heart, Flag
+  Mail, Phone, Globe, Lock, Unlock, Star, Flag
 } from "lucide-react"
 
 // Configuration for different application contexts

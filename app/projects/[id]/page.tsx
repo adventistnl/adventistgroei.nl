@@ -10,7 +10,7 @@ import { AdjustmentNotificationBanner } from "@/components/projects/adjustment-n
 import { ReceiptStatusBanner } from "@/components/projects/receipt-status-banner"
 import { ProjectActivitiesFilters } from "@/components/projects/project-activities-filters"
 import { ProjectActivitiesTable, ProjectActivityData } from "@/components/projects/project-activities-table"
-import { ProjectSubsidiesTable, SubsidyRequestData, ActivityData } from "@/components/projects/project-subsidies-table"
+import { SubsidyRequestData, ActivityData } from "@/components/projects/project-subsidies-table"
 import { SubsidyRequestsContainer } from "@/components/projects/subsidy-requests-container"
 import { SubsidyRequestCardData } from "@/components/projects/subsidy-request-card"
 import { OpenRequestOverlay } from "@/components/projects/open-request-overlay"
@@ -34,51 +34,28 @@ import type { EditActivityFormData } from "@/components/modals/project/edit-acti
 import type { ReceiptFormData } from "@/components/modals/project/upload-receipt-modal"
 import type { ReportFormData } from "@/components/modals/project/create-report-modal"
 import type { RegisterActivityFormData } from "@/components/modals/project/register-activity-modal"
-import type { BatchEditData } from "@/components/modals/project/batch-edit-activities-modal"
 import type { SubsidyRequestData as SubsidyRequestFormData } from "@/components/modals/project/request-subsidy-modal"
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
+
+
+
+
+
+
 
 import { ProjectTableData } from "@/components/projects/projects-table"
-import { Button } from "@/components/ui/button"
 import {
   DollarSign,
   CheckCircle,
   Activity,
   Calendar,
   TrendingUp,
-  Church,
-  Lock,
   Pencil,
-  Building,
-  Home,
   FileText,
   ShieldAlert,
 } from "lucide-react"
-import { Slider } from "@/components/ui/slider"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import {
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog"
+
+
 import toast from "react-hot-toast"
 import "@/lib/i18n"
 import { useQuery, useMutation } from "@apollo/client"
@@ -96,10 +73,7 @@ import { useSubsidyReceipts } from "@/hooks/use-subsidy-receipts"
 import { useCurrency } from "@/contexts/currency-context"
 import { ActivityTags, EntityType, ActivityPriority, ActivityStatus, PermissionResolverName } from "@/types/graphql-global-types"
 import type { Contact } from "@/types/graphql-global-types"
-import { AppLoader } from "@/components/shared/app-loader"
 import { ProjectDetailSkeleton } from "@/components/shared/page-skeleton"
-import { CardDescription, CardTitle } from "@/components/ui/card"
-import { WithPermission } from "@/hocs/with-permission"
 import { ContactViewEditModal } from "@/components/modals/contact/contact-view-edit-modal"
 
 // Helper functions for ActivityTags

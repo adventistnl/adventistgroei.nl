@@ -21,15 +21,13 @@ import {
 import {
   ChartConfig,
   ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { Button } from "@/components/ui/button"
 import { BarChart3 } from "lucide-react"
 import { projectTranslations } from "@/lib/translations/projects"
-import { PROJECT_CHART_COLORS, getProjectColor } from "@/lib/chart-colors"
+import { getProjectColor } from "@/lib/chart-colors"
 
 interface ProjectActivitiesChartProps {
   data: any[]

@@ -13,16 +13,13 @@ import { EmailChangeVerificationDialog } from "@/components/profile/email-change
 import { useProfileEditor, ExtendedProfile } from "@/hooks/use-profile-editor"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo } from "react"
-import { AdventistLogo } from "@/components/ui/adventist-logo"
 import { useUser } from "@/hooks/use-user"
-import { UpdateUserVariables } from "@/types/UpdateUser"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { ProfilePageSkeleton } from "@/components/shared/page-skeleton"
 import { useInstitution } from "@/contexts/institution-context"
 import { useQuery } from "@apollo/client"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
 import "@/lib/i18n"
-import { ChevronRight, Building2 } from "lucide-react"
 
 // Função para formatar telefone brasileiro: (DD) XXXXX-XXXX
 function formatPhoneDisplay(phone: string): string {

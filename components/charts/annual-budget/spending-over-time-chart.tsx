@@ -1,15 +1,12 @@
 "use client"
 
 import * as React from "react"
-import { TrendingUp, BarChart3, Activity, Filter, X } from "lucide-react"
+import { BarChart3, Activity, Filter } from "lucide-react"
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis } from "recharts"
 import { useTranslation } from "react-i18next"
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 import {
   ChartConfig,

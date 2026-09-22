@@ -13,8 +13,6 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCurrency } from "@/contexts/currency-context"
 import { useAnnualBudgetKPIs } from "@/hooks/graphql/use-annual-budget-queries"
-import { useHasPermission } from "@/hooks/use-has-permission"
-import { PermissionResolverName } from "@/types/graphql-global-types"
 
 interface DepartmentBudgetData {
   id: string

@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { User, Mail, Building, Church, Layers, UserCircle, Check, ChevronsUpDown, ChevronDown } from "lucide-react"
-import { Control, UseFormReturn } from "react-hook-form"
+import { UseFormReturn } from "react-hook-form"
 import {
   FormControl,
   FormDescription,

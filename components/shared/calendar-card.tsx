@@ -2,9 +2,7 @@
 
 import * as React from "react"
 import { Calendar } from "@/components/ui/calendar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { CalendarDays, Info } from "lucide-react"
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
 import { ptBR, nl, enUS } from "date-fns/locale"

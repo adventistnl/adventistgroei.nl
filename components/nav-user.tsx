@@ -4,12 +4,8 @@ import * as React from "react"
 import { toast } from "sonner"
 import {
   BadgeCheck,
-  Bell,
   ChevronsUpDown,
-  CreditCard,
   LogOut,
-  Settings,
-  Sparkles,
 } from "lucide-react"
 
 import {

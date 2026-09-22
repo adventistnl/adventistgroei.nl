@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { LucideIcon, AlertTriangle, CheckCircle, Info, XCircle, RefreshCw } from "lucide-react"
+import { LucideIcon, AlertTriangle, CheckCircle, Info, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export type ConfirmationVariant = "default" | "danger" | "success" | "warning" | "info"

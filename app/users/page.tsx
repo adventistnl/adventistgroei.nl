@@ -39,7 +39,6 @@ import toast from "react-hot-toast"
 import "@/lib/i18n"
 
 // Hooks
-import { useUserKPI } from "@/hooks/KPI/use-users-kpi"
 import { useLanguageOptions } from '@/hooks/use-language-preferences'
 
 // Lazy load modals
@@ -50,7 +49,6 @@ const ContactViewEditModal = React.lazy(() => import("@/components/modals/contac
 
 // Components
 import { UseTable } from "@/components/ui/use-table"
-import { ExportUsersDialog } from "@/components/users/export-users-dialog"
 import { useProtectedQuery } from "@/hooks/graphql/use-protected-query"
 import { KPICards, type KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { StatusBadge } from "@/components/ui/status-badge"
@@ -62,8 +60,7 @@ import { useInstitution } from "@/contexts/institution-context"
 import { InstitutionById_institution_users as User } from "@/types/InstitutionById"
 import { useRoles } from "@/hooks/use-roles"
 import { AccessDenied } from "@/components/access/access-denied"
-import { UsersByStructureOverviewChart, UserStructureGrowthChart } from "@/components/charts/dashboard"
-import { useQuery } from "@apollo/client"
+import { UserStructureGrowthChart } from "@/components/charts/dashboard"
 import { GET_INSTITUTIONS_LIGHT_QUERY } from "@/graphql/queries/INSTITUTIONS_QUERY"
 import { GET_REGIONS_QUERY } from "@/graphql/queries/REGIONS_QUERY"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"

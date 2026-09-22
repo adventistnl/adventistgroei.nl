@@ -44,7 +44,6 @@ import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { 
-  Loader2, 
   DollarSign, 
   ChevronLeft, 
   ChevronRight, 
@@ -52,12 +51,9 @@ import {
   Calendar,
   Calculator,
   FileText,
-  CheckCircle,
-  AlertCircle,
   TrendingUp,
   Edit,
   X,
-  User,
   Copy,
   Check,
   ChevronDown,

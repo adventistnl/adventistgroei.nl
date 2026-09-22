@@ -33,7 +33,6 @@ import { SerializedEditorState } from "lexical"
 import { Editor } from "@/components/blocks/editor-x/editor"
 import { format } from "date-fns"
 import { ptBR, enUS, es, fr, de } from "date-fns/locale"
-import { cn } from "@/lib/utils"
 import { LanguageSelectorInput } from "@/components/shared/language-selector-input"
 
 // Valor inicial padrão para o editor

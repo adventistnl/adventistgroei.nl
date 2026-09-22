@@ -6,24 +6,16 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Calendar } from "@/components/ui/calendar"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+
+
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from "@/components/ui/radio-group"
+
+
 import {
   Command,
   CommandEmpty,
@@ -36,7 +28,6 @@ import { CalendarIcon, Users, Globe, Target, Clock, Plus, Check, Building, Langu
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
-import { LanguageSelector } from "@/components/shared/language-selector"
 
 export interface EventFormData {
   title: string

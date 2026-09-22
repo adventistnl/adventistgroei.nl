@@ -25,19 +25,14 @@ import {
   Trash2,
   Users,
   Home,
-  DollarSign,
   Building,
-  Building2,
-  ContactRound,
   TrendingUp,
   Calendar,
   Shield,
-  MapPin,
   User,
   FileText,
   CheckCircle2,
-  Eye,
-  Crown
+  Eye
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -47,23 +42,16 @@ import {
 } from "@/components/ui/dropdown-menu"
 import toast from "react-hot-toast"
 import { departmentTranslations } from "@/lib/translations/departments"
-import { DataTable } from "@/components/ui/data-table"
 import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal } from "@/components/modals/department"
 import { useInstitution } from "@/contexts/institution-context"
-import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
+import { ContactData } from "@/components/modals/contact"
 import { ProtectedKPICarousel, type ProtectedKPICardData } from "@/components/shared/protected-kpi-carousel"
 import { DepartmentProjectOverTimeChart } from "@/components/institutions/charts/department-project-over-time-chart"
-import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { UseTable } from "@/components/ui/use-table"
 import { EntityInfoCard } from "@/components/shared/entity-info-card"
 import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+
+
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -79,7 +67,7 @@ import {
    InstitutionById_institution_departments as DepartmentData,
    InstitutionById_institution_churches as ChurchData
 } from "@/types/InstitutionById"
-import { PermissionResolverName, AnnualBudgetEntityType } from "@/types/graphql-global-types"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
 import { WithPermission } from "@/hocs/with-permission"
 import { useDepartmentKPIs } from "@/hooks/use-department-kpis"

@@ -8,11 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { 
-  AlertTriangle, 
   Layers, 
   ChevronDown, 
   ChevronRight, 
-  Lock, 
   Database, 
   Briefcase,
   Users,

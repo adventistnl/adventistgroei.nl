@@ -4,9 +4,6 @@ import React, { useState, useEffect } from "react"
 import { 
   X, 
   Activity, 
-  DollarSign, 
-  Calendar, 
-  User, 
   Clock, 
   CheckCircle, 
   AlertCircle, 
@@ -17,9 +14,7 @@ import {
   Wrench, 
   Package, 
   GraduationCap, 
-  ChevronDown, 
   Upload, 
-  FileText, 
   Receipt 
 } from "lucide-react"
 import { ProjectActivityData } from "../../projects/project-activities-table"

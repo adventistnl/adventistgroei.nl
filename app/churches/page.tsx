@@ -12,7 +12,7 @@ import { AppLayout } from "@/components/layouts/app-layout"
 import { GenericPageSkeleton } from "@/components/shared/page-skeleton"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
@@ -31,7 +31,6 @@ import {
   Eye,
   Crown,
   Activity,
-  DollarSign,
   ChevronRight,
   Building2,
   Filter,
@@ -48,9 +47,8 @@ import { structureTranslations } from "@/lib/translations/structure"
 import { churchTranslations } from "@/lib/translations/churches"
 import { UseTable } from "@/components/ui/use-table"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { ChurchTypeBadge } from "@/components/ui/church-type-badge"
 // import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
-import { AddChurchModal, EditChurchModal, DeleteChurchModal, ChurchData, RegionData } from "@/components/modals/church"
+import { AddChurchModal, EditChurchModal, DeleteChurchModal, ChurchData } from "@/components/modals/church"
 import { ChurchesKPICards, KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
 import { PageHeader } from "@/components/shared/page-header"
 import { 
@@ -61,7 +59,6 @@ import {
 import { YearFilter } from "@/components/shared/year-filter"
 import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
-import { ChurchActivityChart } from "@/components/churches/charts/church-activity-chart"
 import { ProjectsByChurchChart } from "@/components/churches/charts/projects-by-church-chart"
 import { MembersByChurchChart } from "@/components/churches/charts/members-by-church-chart"
 import { UsersByRoleChart } from "@/components/churches/charts/users-by-role-chart"
@@ -82,9 +79,8 @@ import {
 import { useInstitution } from '@/contexts/institution-context'
 import { CreateChurch } from "@/types/CreateChurch"
 import { WithPermission } from "@/hocs/with-permission"
-import { PermissionResolverName, AnnualBudgetEntityType } from "@/types/graphql-global-types"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
-import { ChurchType as ChurchTypeEnum } from "@/types/graphql-global-types"
 import { useChurchActivityTimeline } from "@/hooks/use-church-activity-timeline"
 import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"

@@ -9,8 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { 
   Settings, 
   RefreshCw,
-  Building,
-  DollarSign
+  Building
 } from "lucide-react"
 import toast from "react-hot-toast"
 import "@/lib/i18n"

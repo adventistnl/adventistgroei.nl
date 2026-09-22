@@ -1,37 +1,24 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, Suspense, useRef } from "react"
+import React, { useState, useEffect, Suspense, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Progress } from "@/components/ui/progress"
 import { Switch } from "@/components/ui/switch"
 import { Slider } from "@/components/ui/slider"
-import { Calendar } from "@/components/ui/calendar"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from "@/components/ui/radio-group"
+
+
+
+
+
+
 import {
   Dialog,
   DialogContent,
@@ -49,7 +36,6 @@ import {
 import {
   Globe,
   Building,
-  Building2,
   DollarSign,
   Settings,
   CheckCircle,
@@ -61,39 +47,29 @@ import {
   ChevronDown,
   ChevronUp,
   Save,
-  X,
   Plus,
-  Minus,
   AlertTriangle,
   Calculator,
   Target,
-  Clock,
   Tag,
   Home,
   FileText,
   Info,
-  MapPin,
-  Check,
   TrendingUp,
   TrendingDown,
   Edit3,
-  BarChart3,
-  Coins,
   Banknote,
   PieChart,
   Sprout,
   Star,
   ShieldAlert
 } from "lucide-react"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
 import { useAuth } from "@/contexts/auth-context"
 import { projectRegisterTranslations } from "@/lib/translations/project-register"
 import { projectTranslations } from "@/lib/translations/projects"
-import { LanguageSelector } from "@/components/shared/language-selector"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   Carousel,
@@ -102,21 +78,21 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
-import ActivityGroup from '@/components/projects/activity-group'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
-import { EventRegistrationForm, EventFormData } from "@/components/shared/event-registration-form"
-import { CommunicationForm, CommunicationFormData } from "@/components/shared/communication-form"
-import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
-import { UserMultiSelector, User } from "@/components/shared/user-multi-selector"
-import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
-import { ProjectDataStep } from "@/components/projects/steps/project-data-step"
+import dynamic from "next/dynamic"
+
+// Type imports
+import type { KPICardData } from "@/components/shared/kpi-cards-carousel"
+import type { User } from "@/components/shared/user-multi-selector"
+import type { UserAvatarData } from "@/components/shared/users-avatar-group"
+
+// Dynamic component imports
+const ActivityGroup = dynamic(() => import('@/components/projects/activity-group'), { ssr: false, loading: () => <div className="h-[400px] w-full animate-pulse bg-muted rounded-md" /> })
+const EventRegistrationForm = dynamic(() => import("@/components/shared/event-registration-form").then(mod => mod.EventRegistrationForm), { ssr: false, loading: () => <div className="h-[400px] w-full animate-pulse bg-muted rounded-md" /> })
+const CommunicationForm = dynamic(() => import("@/components/shared/communication-form").then(mod => mod.CommunicationForm), { ssr: false, loading: () => <div className="h-[400px] w-full animate-pulse bg-muted rounded-md" /> })
+const KPICards = dynamic(() => import("@/components/shared/kpi-cards-carousel").then(mod => mod.KPICards), { ssr: false, loading: () => <div className="h-[120px] w-full animate-pulse bg-muted rounded-md" /> })
+const UserMultiSelector = dynamic(() => import("@/components/shared/user-multi-selector").then(mod => mod.UserMultiSelector), { ssr: false })
+const UsersAvatarGroup = dynamic(() => import("@/components/shared/users-avatar-group").then(mod => mod.UsersAvatarGroup), { ssr: false })
+const ProjectDataStep = dynamic(() => import("@/components/projects/steps/project-data-step").then(mod => mod.ProjectDataStep), { ssr: false, loading: () => <div className="h-[400px] w-full animate-pulse bg-muted rounded-md" /> })
 import type { ProjectFormData, ProjectActivity } from "@/components/projects/types"
 type FormData = ProjectFormData
 type Activity = ProjectActivity

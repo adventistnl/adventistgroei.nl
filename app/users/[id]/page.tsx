@@ -8,43 +8,27 @@ import { usePageTitle } from "@/hooks/use-page-title"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
 import {
   Users,
-  Building,
-  MapPin,
-  Home,
   Shield,
   DollarSign,
   Calendar,
   MessageSquare,
   FileText,
-  Edit,
-  Trash2,
-  ArrowLeft,
-  Crown,
   AlertTriangle,
   CheckCircle,
-  Send,
   Clock,
   TrendingUp,
   Activity,
   Mail,
-  MoreHorizontal,
   Phone,
   Globe,
-  MapPinIcon,
-  Eye,
-  ExternalLink
+  MapPinIcon
 } from "lucide-react"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
@@ -54,8 +38,6 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
   type ChartConfig,
 } from "@/components/ui/chart"
 import {
@@ -64,9 +46,6 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
   LineChart,
   Line,
   AreaChart,
@@ -89,14 +68,9 @@ import {
   users,
   institutions,
   churches,
-  regions,
   departments,
   roles,
-  type User,
-  type Institution,
-  type Church,
-  type Region,
-  type Department
+  type User
 } from "@/data/usersData"
 
 // User Modals

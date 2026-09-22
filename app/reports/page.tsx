@@ -8,7 +8,6 @@ import { usePageTitle } from "@/hooks/use-page-title"
 import { LanguageSelector } from "@/components/shared/language-selector"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import {
   Select,
   SelectContent,
@@ -23,38 +22,28 @@ import { reportsTranslations } from "@/lib/translations/reports"
 import {
   mockReports,
   mockDepartments,
-  mockProjects,
-  reportsKPIs,
   reportsByTypeData,
   reportsByDepartmentData,
-  reportsTimelineData,
-  reportsStatusData
+  reportsTimelineData
 } from "@/data/mockData"
 import {
   FileText,
   DollarSign,
   CheckCircle,
-  Clock,
   Plus,
   RefreshCw,
   TrendingUp,
-  Building,
   Activity,
-  Calendar,
   BarChart3,
   PieChart,
   LineChart,
-  Eye,
-  Download,
-  Filter
+  Eye
 } from "lucide-react"
 import {
   Area,
   AreaChart,
   Bar,
   BarChart,
-  Line,
-  LineChart as RechartsLineChart,
   Pie,
   PieChart as RechartsPieChart,
   Cell,

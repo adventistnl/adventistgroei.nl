@@ -8,8 +8,6 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
   type ChartConfig,
 } from "@/components/ui/chart"
 import {
@@ -28,10 +26,7 @@ import {
 import { 
   PieChart as PieChartIcon, 
   BarChart3, 
-  TrendingUp,
-  Users,
-  Shield,
-  Activity
+  TrendingUp
 } from "lucide-react"
 
 // Chart configurations

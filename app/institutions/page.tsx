@@ -19,11 +19,10 @@ import { useRegions } from "@/hooks/use-regions"
 // UI Components
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { UseTable } from "@/components/ui/use-table"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Breadcrumb,
   BreadcrumbItem,

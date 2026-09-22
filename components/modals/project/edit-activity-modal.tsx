@@ -4,7 +4,6 @@ import * as React from "react"
 import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import {
-  Activity,
   DollarSign,
   Edit,
   FileText,

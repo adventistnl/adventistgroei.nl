@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next"
 import { useCurrency } from "@/contexts/currency-context"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { StatusBadge, StatusBadgeVariant } from "@/components/ui/status-badge"
 import { UseTable } from "@/components/ui/use-table"
 import {
@@ -19,12 +18,7 @@ import {
   Wrench,
   Package,
   GraduationCap,
-  DollarSign,
-  Tag,
-  CircleDollarSign,
-  Wallet,
-  Flag,
-  Users
+  Flag
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -45,14 +39,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-import toast from "react-hot-toast"
 import { ProjectTableData } from "@/components/projects/projects-table"
-import { mockProjectActivities, getActivitiesByProjectId } from "@/data/mockData"
+import { getActivitiesByProjectId } from "@/data/mockData"
 import { ActivityDetailsModal } from "@/components/modals/project/activity-details-modal"
 import { DeleteActivityModal } from "@/components/modals/project/delete-activity-modal"
 import { ActivityTags, PermissionResolverName } from "@/types/graphql-global-types"
 import { projectTranslations } from "@/lib/translations/projects"
-import { WithPermission } from "@/hocs/with-permission"
 import { useHasPermission } from "@/hooks/use-has-permission"
 
 // Schema-based interfaces

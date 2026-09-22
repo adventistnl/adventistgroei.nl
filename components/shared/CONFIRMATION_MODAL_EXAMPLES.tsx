@@ -2,7 +2,7 @@
 // Copie e adapte estes exemplos para seu caso de uso
 
 import { ConfirmationModal } from "@/components/shared/confirmation-modal"
-import { Trash2, Lock, Unlock, CheckCircle, Download, Upload } from "lucide-react"
+import { Trash2, Lock, CheckCircle, Download, Upload } from "lucide-react"
 
 // ===========================================
 // EXEMPLO 1: Delete com múltiplos impactos

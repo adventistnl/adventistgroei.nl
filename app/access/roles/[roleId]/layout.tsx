@@ -1,4 +1,3 @@
-import { AppLayout } from "@/components/layouts/app-layout";
 import RolePermissionsPage from "./page";
 
 const RolePermissionsLayout = async ({ params }: { params: { roleId: string } }) => {

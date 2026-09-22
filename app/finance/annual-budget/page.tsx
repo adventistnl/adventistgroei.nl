@@ -8,15 +8,12 @@ import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { GET_ALL_SUBSIDY_REQUESTS } from "@/graphql/queries/SUBSIDY_REQUESTS_QUERY"
 import { GET_SUBSIDY_STATUS_HISTORY } from "@/graphql/queries/SUBSIDY_STATUS_HISTORY_QUERIES"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { 
   DollarSign, 
-  Plus, 
   RefreshCw, 
   MoreHorizontal,
   CheckCircle,
@@ -29,34 +26,19 @@ import {
   Settings,
   TrendingUp,
   Eye,
-  Coins,
   Download,
 } from "lucide-react"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+
+
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-} from "@/components/ui/dialog"
 
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+
+
 import toast from "react-hot-toast"
 import { UseTable } from "@/components/ui/use-table"
 import { UsageIndicator } from "@/components/ui/usage-indicator"
@@ -86,7 +68,6 @@ import { SpendingOverTimeChart } from "@/components/charts/annual-budget/spendin
 
 // Modal Components
 import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget/annual-budget-view-edit-modal"
-import { DeleteBudgetModal } from "@/components/modals/annual-budget/delete-budget-modal"
 import { ConfirmationModal } from "@/components/shared/confirmation-modal"
 
 // GraphQL Hooks

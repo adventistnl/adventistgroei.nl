@@ -4,7 +4,7 @@ import { useAvailableYears } from "@/hooks/use-available-years"
 import { AvailableYearsEntity } from "@/types/globalTypes"
 
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { useQuery, useMutation } from "@apollo/client"
@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { UsageIndicator } from "@/components/ui/usage-indicator"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { 
   Layers, 
@@ -32,9 +32,7 @@ import {
   Edit,
   Trash2,
   Users,
-  Home,
   DollarSign,
-  Building,
   Building2,
   ContactRound,
   TrendingUp,
@@ -42,7 +40,6 @@ import {
   Shield,
   ShieldAlert,
   BarChart3,
-  MapPin,
   User,
   ChevronRight
 } from "lucide-react"
@@ -54,13 +51,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import toast from "react-hot-toast"
 import { departmentTranslations } from "@/lib/translations/departments"
-import { DataTable } from "@/components/ui/data-table"
 import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal } from "@/components/modals/department"
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
 import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
-import { DepartmentsKPICards, KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
-import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
+import { KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
 import { UseTable } from "@/components/ui/use-table"
 import { EntityInfoCard } from "@/components/shared/entity-info-card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -83,9 +78,7 @@ import {
    InstitutionById_institution_churches as ChurchData
 } from "@/types/InstitutionById"
 import { PermissionResolverName } from "@/types/graphql-global-types"
-import { AccessDenied } from "@/components/access/access-denied"
 import { WithPermission } from "@/hocs/with-permission"
-import { DepartmentActivityChart } from "@/components/institutions/charts/department-activity-chart"
 import { InstitutionalDepartmentProjectOverTimeChart } from "@/components/institutions/charts/institutional-department-project-over-time-chart"
 import { GridContainer } from "@/components/shared/grid-container"
 import { DepartmentLeaderInfoCard } from "@/components/modals/department/department-leader-info-card"

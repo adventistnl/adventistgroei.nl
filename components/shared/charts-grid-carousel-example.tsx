@@ -5,7 +5,7 @@ import { AnalyticsGridCarousel } from "./responsive-grid-carousel"
 import { RoleDistributionChart, PermissionsByGroupChart, UserActivityChart } from "@/components/access/access-charts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { TrendingUp, Users, Shield, Activity } from "lucide-react"
+import { TrendingUp, Activity } from "lucide-react"
 
 /**
  * Exemplo prático de como usar ResponsiveGridCarousel com gráficos individuais

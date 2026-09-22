@@ -4,22 +4,16 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useMutation } from "@apollo/client"
-import { useProjectHistory, buildStatusChangedPayload } from "@/hooks/graphql/use-project-history"
+import { useProjectHistory } from "@/hooks/graphql/use-project-history"
 import {
   ArrowLeft,
   MoreVertical,
   Folder,
   Edit,
   Trash2,
-  MessageSquare,
-  Calendar,
   Sprout,
   Plus,
-  DollarSign,
-  UserPlus,
-  ChevronDown,
   Loader2,
-  Church,
   ArrowBigDownDash,
   History,
 } from "lucide-react"
@@ -59,7 +53,6 @@ import { useCurrency } from "@/contexts/currency-context"
 import { useAuth } from "@/contexts/auth-context"
 import toast from "react-hot-toast"
 import { UPDATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
-import { ProjectStatus } from "@/types/graphql-global-types"
 
 // ─── Status Configuration ────────────────────────────────────────────────────
 // Single source of truth for every status. To add a new status:

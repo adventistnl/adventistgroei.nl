@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { Toaster, toast as hotToast, ToastBar, Toast } from 'react-hot-toast'
+import { Toaster, toast as hotToast, ToastBar } from 'react-hot-toast'
 import { X } from 'lucide-react'
 import { Button } from './button'
 

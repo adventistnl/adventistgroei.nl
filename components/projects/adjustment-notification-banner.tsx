@@ -28,7 +28,6 @@ import { cn } from "@/lib/utils"
 import {
   useProjectHistory,
   buildAdjustmentResolvedPayload,
-  buildStatusChangedPayload,
 } from "@/hooks/graphql/use-project-history"
 import { ProjectHistoryType } from "@/types/project-history"
 import { UPDATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"

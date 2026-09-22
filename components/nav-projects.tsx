@@ -8,7 +8,6 @@ import {
   MoreHorizontal,
   Plus,
   Lock,
-  type LucideIcon,
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
@@ -19,7 +18,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {

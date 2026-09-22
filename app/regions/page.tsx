@@ -51,7 +51,6 @@ import { getCoordinatesFromZipCode } from "@/lib/geocoding"
 import { 
   enrichChurchesWithAutoLink, 
   calculateAutoLinkStats,
-  findMatchingRegion,
   type EnrichedChurch 
 } from "@/lib/church-region-matcher"
 

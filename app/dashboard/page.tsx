@@ -1,118 +1,84 @@
 "use client"
 
-import { useAvailableYears } from "@/hooks/use-available-years"
-import { AvailableYearsEntity } from "@/types/globalTypes"
-import * as React from "react"
-import { useState, useEffect, useMemo, useRef } from "react"
-import { useTranslation } from "react-i18next"
-import { useQuery } from "@apollo/client"
 import { AppLayout } from "@/components/layouts/app-layout"
-import { usePageTitle } from "@/hooks/use-page-title"
+import { useAvailableYears } from "@/hooks/use-available-years"
 import { useHasPermission } from "@/hooks/use-has-permission"
+import { usePageTitle } from "@/hooks/use-page-title"
+import { AvailableYearsEntity } from "@/types/globalTypes"
+import { useQuery } from "@apollo/client"
+import * as React from "react"
+import { useMemo, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 
-import { useInstitution } from "@/contexts/institution-context"
-import { useCurrency } from "@/contexts/currency-context"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Skeleton } from "@/components/ui/skeleton"
+import { DateTimeDisplay } from "@/components/shared/date-time-display"
+import { FilterConfig, PageFilters } from "@/components/shared/page-filters"
+import { DashboardPageSkeleton } from "@/components/shared/page-skeleton"
+import { PermissionDeniedOverlay } from "@/components/shared/permission-denied-overlay"
+import { ProtectedKPICarousel } from "@/components/shared/protected-kpi-carousel"
+import { QuickAction } from "@/components/shared/quick-actions"
+import { SectionHeader } from "@/components/shared/section-header"
+import { YearFilter } from "@/components/shared/year-filter"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { UseTable } from "@/components/ui/use-table"
+import { useCurrency } from "@/contexts/currency-context"
+import { useInstitution } from "@/contexts/institution-context"
+import { WithPermission } from "@/hocs/with-permission"
+import { PermissionResolverName } from "@/types/graphql-global-types"
+import { InstitutionById_institution_users as User } from "@/types/InstitutionById"
+import type { ColumnDef } from "@tanstack/react-table"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import {
-  Users,
-  TrendingUp,
-  TrendingDown,
+  Building,
   Building2,
+  Church,
+  ContactRound,
+  Crown,
+  FolderKanban,
+  Layers,
+  Map,
   MapPin,
-  UserCheck,
+  MoreHorizontal,
   Plus,
   RefreshCw,
   Shield,
-  Lock,
-  Crown,
-  Building,
-  Map,
-  Church,
-  Filter,
-  DollarSign,
-  FolderKanban,
-  Layers,
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  ContactRound,
-  UserX
+  Users
 } from "lucide-react"
+import dynamic from "next/dynamic"
 import { toast } from "sonner"
-import { KPICards } from "@/components/shared/kpi-cards-carousel"
-import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
-import { QuickActions, QuickAction } from "@/components/shared/quick-actions"
-import { YearFilter } from "@/components/shared/year-filter"
-import { SectionHeader } from "@/components/shared/section-header"
-import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
-import { DateTimeDisplay } from "@/components/shared/date-time-display"
-import { CalendarCard } from "@/components/shared/calendar-card"
-import { CalendarHeatmap } from "@/components/shared/calendar-heatmap"
-import { AppLoader } from "@/components/shared/app-loader"
-import { DashboardPageSkeleton } from "@/components/shared/page-skeleton"
-import { RoleDistributionChart, PermissionsByGroupChart, UserActivityChart } from "@/components/access/access-charts"
-import { BudgetOverviewCard } from "@/components/budget"
-import { SpendingOverTimeChart } from "@/components/charts/annual-budget/spending-over-time-chart"
-import { UserStructureGrowthChart, UsersByStructureOverviewChart, UserDistributionBarChart } from "@/components/charts/dashboard"
-import { UsersRegistrationOverTimeChart, UsersByRoleChart, ChurchesByRegionChart } from "@/components/institutions/charts"
-import { InstitutionLeadersCard } from "@/components/institutions/institution-leaders-card"
-import { ActivityHeatmapCard } from "@/components/institutions/activity-heatmap-card"
-import { ProjectsOverTimeChart } from "@/components/projects/charts/projects-over-time-chart"
-import { HierarchicalStructureCard } from "@/components/charts/dashboard/hierarchical-structure-card"
-import { StructureBarChart, GrowthLineChart } from "@/components/charts/generic"
-import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart"
-import { BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts"
-import { UseTable } from "@/components/ui/use-table"
-import { StatusBadge } from "@/components/ui/status-badge"
-import { WithPermission } from "@/hocs/with-permission"
-import { PermissionDeniedOverlay } from "@/components/shared/permission-denied-overlay"
-import { PermissionResolverName } from "@/types/graphql-global-types"
-import { ProtectedKPICard } from "@/components/shared/protected-kpi-card"
-import { ProtectedKPICarousel, type ProtectedKPICardData } from "@/components/shared/protected-kpi-carousel"
-import type { ColumnDef } from "@tanstack/react-table"
-import { InstitutionById_institution_users as User } from "@/types/InstitutionById"
+
+const BudgetOverviewCard = dynamic(() => import("@/components/budget").then(mod => mod.BudgetOverviewCard), { ssr: false, loading: () => <Skeleton className="h-[400px] w-full" /> })
+
+// Only keeping the charts that are actually used in the JSX
+const UsersRegistrationOverTimeChart = dynamic(() => import("@/components/institutions/charts").then(mod => mod.UsersRegistrationOverTimeChart), { ssr: false, loading: () => <Skeleton className="h-[400px] w-full" /> })
+const UsersByRoleChart = dynamic(() => import("@/components/institutions/charts").then(mod => mod.UsersByRoleChart), { ssr: false, loading: () => <Skeleton className="h-[400px] w-full" /> })
+const ProjectsOverTimeChart = dynamic(() => import("@/components/projects/charts/projects-over-time-chart").then(mod => mod.ProjectsOverTimeChart), { ssr: false, loading: () => <Skeleton className="h-[400px] w-full" /> })
 
 // GraphQL Queries
-import { GET_INSTITUTIONS_LIGHT_QUERY } from "@/graphql/queries/INSTITUTIONS_QUERY"
-import { GET_REGIONS_QUERY } from "@/graphql/queries/REGIONS_QUERY"
+import { GridContainer } from "@/components/shared/grid-container"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
-import { GET_ALL_USERS_QUERY } from "@/graphql/queries/GET_USER_QUERY"
 import { GET_ALL_ROLES_QUERY } from "@/graphql/queries/GET_ROLES_QUERY"
+import { GET_INSTITUTIONS_LIGHT_QUERY, GET_INSTITUTIONS_QUERY } from "@/graphql/queries/INSTITUTIONS_QUERY"
+import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
+import { GET_REGIONS_QUERY } from "@/graphql/queries/REGIONS_QUERY"
 import { GET_ALL_SUBSIDY_REQUESTS } from "@/graphql/queries/SUBSIDY_REQUESTS_QUERY"
 import { GET_SUBSIDY_STATUS_HISTORY } from "@/graphql/queries/SUBSIDY_STATUS_HISTORY_QUERIES"
-import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
-import { GET_INSTITUTIONS_QUERY } from "@/graphql/queries/INSTITUTIONS_QUERY"
-import { structureTranslations } from "@/lib/translations/structure"
-import { dashboardTranslations } from "@/lib/translations/dashboard"
-import { GridContainer } from "@/components/shared/grid-container"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { format } from "date-fns"
-import { ptBR, nl, enUS } from "date-fns/locale"
 import { useProtectedQuery } from "@/hooks/graphql/use-protected-query"
+import { dashboardTranslations } from "@/lib/translations/dashboard"
+import { structureTranslations } from "@/lib/translations/structure"
+import { format } from "date-fns"
+import { ptBR } from "date-fns/locale"
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
@@ -180,8 +146,9 @@ export default function DashboardPage() {
   })
 
 
-  // Combine all loading states to ensure complete data before rendering
-  const isLoadingData = institutionsLoading || regionsLoading || churchesLoading || departmentsLoading || rolesLoading || subsidyLoading || subsidyStatusLoading || allProjectsLoading || allInstitutionsLoading
+  // Combine critical loading states to ensure shell renders quickly.
+  // Non-critical heavy queries (projects, subsidies) are now decoupled from the main loader.
+  const isLoadingData = institutionsLoading || departmentsLoading || rolesLoading || allInstitutionsLoading
 
   // Track initial page load - only show full loading on first load
   const [isInitialLoad, setIsInitialLoad] = useState(true)
@@ -190,7 +157,7 @@ export default function DashboardPage() {
   const wasLoadingRef = useRef(false)
   const successShownRef = useRef(false)
 
-  // Mark initial load as complete once all data is loaded
+  // Mark initial load as complete once critical data is loaded
   React.useEffect(() => {
     if (!isLoadingData && isInitialLoad) {
       const timer = setTimeout(() => {

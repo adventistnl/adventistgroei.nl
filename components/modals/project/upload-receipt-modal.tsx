@@ -7,8 +7,6 @@ import {
   Upload,
   FileText,
   CalendarIcon,
-  DollarSign,
-  CheckCircle,
   X,
   Image,
   File
