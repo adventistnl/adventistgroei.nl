@@ -195,6 +195,7 @@ export default function DashboardPage() {
 
   // KPIs — read directly from backend endpoint (no frontend calculations)
   const kpis = dashboardKPIsData?.dashboardKPIs ?? {
+    __typename: "DashboardKPIs" as const,
     totalUsers: 0, newUsersThisYear: 0, previousYearUsers: 0, userGrowthRate: 0,
     totalProjects: 0, newProjectsThisYear: 0, previousYearProjects: 0, projectGrowthRate: 0,
     institutionDepartments: 0, churchDepartments: 0, totalDepartments: 0, activeChurches: 0, totalRegions: 0,
@@ -764,10 +765,10 @@ export default function DashboardPage() {
                 title: dt.totalProjects,
                 value: kpis.totalProjects,
                 icon: FolderKanban,
-                subtitle: `${kpis.newProjectsThisYear} ${dt.totalProjectsSubtitle} ${selectedYear}`,
+                subtitle: `${kpis.newProjectsThisYear ?? 0} ${dt.totalProjectsSubtitle} ${selectedYear}`,
                 trend: {
-                  value: kpis.projectGrowthRate,
-                  isPositive: kpis.projectGrowthRate >= 0
+                  value: kpis.projectGrowthRate ?? 0,
+                  isPositive: (kpis.projectGrowthRate ?? 0) >= 0
                 },
                 requiredPermission: [PermissionResolverName.Projects, PermissionResolverName.Departments]
               },
@@ -776,10 +777,10 @@ export default function DashboardPage() {
                 title: dt.totalUsers,
                 value: kpis.totalUsers,
                 icon: Users,
-                subtitle: `${kpis.newUsersThisYear} ${dt.totalUsersSubtitle} ${selectedYear}`,
+                subtitle: `${kpis.newUsersThisYear ?? 0} ${dt.totalUsersSubtitle} ${selectedYear}`,
                 trend: {
-                  value: kpis.userGrowthRate,
-                  isPositive: kpis.userGrowthRate >= 0
+                  value: kpis.userGrowthRate ?? 0,
+                  isPositive: (kpis.userGrowthRate ?? 0) >= 0
                 },
                 requiredPermission: PermissionResolverName.Users
               },

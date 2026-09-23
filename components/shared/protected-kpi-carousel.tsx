@@ -19,7 +19,7 @@ import { PermissionResolverName } from "@/types/graphql-global-types"
 export interface ProtectedKPICardData {
   id: string
   title: string
-  value: string | number | React.ReactNode
+  value: string | number | React.ReactNode | null
   icon: LucideIcon
   subtitle?: string
   trend?: {

@@ -1649,6 +1649,23 @@ export type CreateWithoutDocumentSubsidyRequestDto = {
   total_budget: Scalars['Float']['input'];
 };
 
+export type DashboardKpIs = {
+  __typename?: 'DashboardKPIs';
+  activeChurches?: Maybe<Scalars['Int']['output']>;
+  churchDepartments?: Maybe<Scalars['Int']['output']>;
+  institutionDepartments?: Maybe<Scalars['Int']['output']>;
+  newProjectsThisYear?: Maybe<Scalars['Int']['output']>;
+  newUsersThisYear?: Maybe<Scalars['Int']['output']>;
+  previousYearProjects?: Maybe<Scalars['Int']['output']>;
+  previousYearUsers?: Maybe<Scalars['Int']['output']>;
+  projectGrowthRate?: Maybe<Scalars['Float']['output']>;
+  totalDepartments?: Maybe<Scalars['Int']['output']>;
+  totalProjects?: Maybe<Scalars['Int']['output']>;
+  totalRegions?: Maybe<Scalars['Int']['output']>;
+  totalUsers?: Maybe<Scalars['Int']['output']>;
+  userGrowthRate?: Maybe<Scalars['Float']['output']>;
+};
+
 export type DateTimeFilter = {
   equals?: InputMaybe<Scalars['DateTime']['input']>;
   gt?: InputMaybe<Scalars['DateTime']['input']>;
@@ -2691,12 +2708,6 @@ export type InstitutionBudgetUpdateDto = {
   total_expenses?: InputMaybe<Scalars['Float']['input']>;
 };
 
-export type MonthlyUserRegistration = {
-  __typename?: 'MonthlyUserRegistration';
-  count: Scalars['Int']['output'];
-  month: Scalars['String']['output'];
-};
-
 export type InstitutionChartsData = {
   __typename?: 'InstitutionChartsData';
   churchesByRegion: Array<ChurchesByRegionData>;
@@ -3062,6 +3073,12 @@ export type MonthlyCloseResult = {
   __typename?: 'MonthlyCloseResult';
   autoAccepted: Scalars['Float']['output'];
   locked: Scalars['Float']['output'];
+};
+
+export type MonthlyUserRegistration = {
+  __typename?: 'MonthlyUserRegistration';
+  count: Scalars['Int']['output'];
+  month: Scalars['String']['output'];
 };
 
 export type Mutation = {
@@ -5267,6 +5284,7 @@ export type Query = {
   communications: Array<Communication>;
   contact?: Maybe<Contact>;
   contacts: Array<Contact>;
+  dashboardKPIs: DashboardKpIs;
   department?: Maybe<Department>;
   departmentActivityData: Array<DepartmentActivityData>;
   departmentBudgetTimeline: Array<DepartmentBudgetTimeline>;
@@ -5406,6 +5424,13 @@ export type QueryCommunicationArgs = {
 
 export type QueryContactArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type QueryDashboardKpIsArgs = {
+  institutionId: Scalars['String']['input'];
+  month?: InputMaybe<Scalars['Int']['input']>;
+  year: Scalars['Int']['input'];
 };
 
 
@@ -5596,6 +5621,7 @@ export type QueryProjectHistoriesArgs = {
 
 export type QueryProjectKpIsArgs = {
   institutionId?: InputMaybe<Scalars['String']['input']>;
+  year?: InputMaybe<Scalars['Int']['input']>;
 };
 
 

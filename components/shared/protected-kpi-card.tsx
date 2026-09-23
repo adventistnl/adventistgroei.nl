@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils"
 interface ProtectedKPICardProps {
   id: string
   title: string
-  value: string | number | React.ReactNode
+  value: string | number | React.ReactNode | null
   icon: LucideIcon
   subtitle?: string
   trend?: {
