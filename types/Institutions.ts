@@ -745,11 +745,18 @@ export interface Institutions_institutions_institutionChartsData_churchesByRegio
   fill: string;
 }
 
+export interface Institutions_institutions_institutionChartsData_monthlyUserRegistrations {
+  __typename: "MonthlyUserRegistration";
+  month: string;
+  count: number;
+}
+
 export interface Institutions_institutions_institutionChartsData {
   __typename: "InstitutionChartsData";
   usersByRole: Institutions_institutions_institutionChartsData_usersByRole[];
   monthlyUserGrowth: number | null;
   churchesByRegion: Institutions_institutions_institutionChartsData_churchesByRegion[];
+  monthlyUserRegistrations: Institutions_institutions_institutionChartsData_monthlyUserRegistrations[];
 }
 
 export interface Institutions_institutions {

@@ -2691,10 +2691,17 @@ export type InstitutionBudgetUpdateDto = {
   total_expenses?: InputMaybe<Scalars['Float']['input']>;
 };
 
+export type MonthlyUserRegistration = {
+  __typename?: 'MonthlyUserRegistration';
+  count: Scalars['Int']['output'];
+  month: Scalars['String']['output'];
+};
+
 export type InstitutionChartsData = {
   __typename?: 'InstitutionChartsData';
   churchesByRegion: Array<ChurchesByRegionData>;
   monthlyUserGrowth?: Maybe<Scalars['Float']['output']>;
+  monthlyUserRegistrations: Array<MonthlyUserRegistration>;
   usersByRole: Array<UsersByRoleData>;
 };
 

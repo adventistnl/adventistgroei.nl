@@ -66,26 +66,20 @@ const ProjectsOverTimeChart = dynamic(() => import("@/components/projects/charts
 
 // GraphQL Queries
 import { GridContainer } from "@/components/shared/grid-container"
-import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
 import { GET_ALL_ROLES_QUERY } from "@/graphql/queries/GET_ROLES_QUERY"
-import { GET_INSTITUTIONS_LIGHT_QUERY, GET_INSTITUTIONS_QUERY } from "@/graphql/queries/INSTITUTIONS_QUERY"
+import { GET_INSTITUTIONS_LIGHT_QUERY } from "@/graphql/queries/INSTITUTIONS_QUERY"
 import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { GET_REGIONS_QUERY } from "@/graphql/queries/REGIONS_QUERY"
-import { GET_ALL_SUBSIDY_REQUESTS } from "@/graphql/queries/SUBSIDY_REQUESTS_QUERY"
-import { GET_SUBSIDY_STATUS_HISTORY } from "@/graphql/queries/SUBSIDY_STATUS_HISTORY_QUERIES"
+import { GET_DASHBOARD_KPIS } from "@/graphql/queries/DASHBOARD_QUERIES"
 import { useProtectedQuery } from "@/hooks/graphql/use-protected-query"
 import { dashboardTranslations } from "@/lib/translations/dashboard"
-import { structureTranslations } from "@/lib/translations/structure"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
-  const { currentInstitutionData, institutions, refetchInstitutionById } = useInstitution()
+  const { currentInstitutionData, refetchInstitutionById } = useInstitution()
   const { formatCurrency, selectedCurrency } = useCurrency()
   const currentLanguage = i18n?.language || 'en'
-  const ts = structureTranslations[currentLanguage as keyof typeof structureTranslations] || structureTranslations.en
   const dt = dashboardTranslations[currentLanguage as keyof typeof dashboardTranslations] || dashboardTranslations.en
 
   // Month names from translations
@@ -124,31 +118,29 @@ export default function DashboardPage() {
   // GraphQL Queries
   const { data: institutionsData, loading: institutionsLoading, refetch: refetchInstitutions } = useProtectedQuery(GET_INSTITUTIONS_LIGHT_QUERY, [PermissionResolverName.Institutions])
   const { data: regionsData, loading: regionsLoading, refetch: refetchRegions } = useProtectedQuery(GET_REGIONS_QUERY, [PermissionResolverName.Regions])
-  const { data: churchesData, loading: churchesLoading, refetch: refetchChurches } = useProtectedQuery(GET_CHURCHES_QUERY, [PermissionResolverName.Churches])
   const { data: departmentsData, loading: departmentsLoading, refetch: refetchDepartments } = useProtectedQuery(GET_DEPARTMENTS_QUERY, [PermissionResolverName.Departments], {
     variables: { institution_id: currentInstitutionData?.id },
     skip: !currentInstitutionData?.id
   })
   const { data: rolesData, loading: rolesLoading, refetch: refetchRoles } = useProtectedQuery(GET_ALL_ROLES_QUERY, [PermissionResolverName.Roles])
-  const { data: subsidyData, loading: subsidyLoading } = useProtectedQuery(GET_ALL_SUBSIDY_REQUESTS, [PermissionResolverName.SubsidyRequests])
-  const { data: subsidyStatusHistoryData, loading: subsidyStatusLoading } = useProtectedQuery(GET_SUBSIDY_STATUS_HISTORY, [], {
-    variables: { subsidyRequestId: "ALL" },
-    skip: !subsidyData?.subsidyRequests?.length,
-  })
   const { data: allProjectsData, loading: allProjectsLoading } = useQuery(GET_PROJECTS_QUERY, {
     variables: { institutionId: currentInstitutionData?.id },
     skip: !canReadProjects || !currentInstitutionData?.id,
     fetchPolicy: 'cache-and-network'
   })
-  const { data: allInstitutionsData, loading: allInstitutionsLoading } = useQuery(GET_INSTITUTIONS_QUERY, {
-    skip: !canReadInstitutions,
-    fetchPolicy: 'cache-and-network'
+  const { data: dashboardKPIsData, loading: dashboardKPIsLoading, refetch: refetchDashboardKPIs } = useQuery(GET_DASHBOARD_KPIS, {
+    variables: {
+      institutionId: currentInstitutionData?.id,
+      year: selectedYear,
+      month: selectedMonth !== "all" ? parseInt(selectedMonth) : undefined,
+    },
+    skip: !currentInstitutionData?.id,
+    fetchPolicy: 'cache-and-network',
   })
 
 
   // Combine critical loading states to ensure shell renders quickly.
-  // Non-critical heavy queries (projects, subsidies) are now decoupled from the main loader.
-  const isLoadingData = institutionsLoading || departmentsLoading || rolesLoading || allInstitutionsLoading
+  const isLoadingData = institutionsLoading || departmentsLoading || rolesLoading || dashboardKPIsLoading
 
   // Track initial page load - only show full loading on first load
   const [isInitialLoad, setIsInitialLoad] = useState(true)
@@ -185,7 +177,7 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoadingData])
 
-  const isLoading = institutionsLoading || regionsLoading || churchesLoading || departmentsLoading || rolesLoading
+  const isLoading = institutionsLoading || regionsLoading || departmentsLoading || rolesLoading
 
   const breadcrumbs = useMemo(() => [
     { name: t('dashboard.title') }
@@ -199,15 +191,17 @@ export default function DashboardPage() {
   // Extract data from queries
   const allInstitutions = institutionsData?.institutions || []
   const allRegions = regionsData?.regions || []
-  const allChurches = churchesData?.churches || []
-  const allDepartments = departmentsData?.departments || []
-  const allUsers = currentInstitutionData?.users || []
   const allRoles = rolesData?.roles || []
 
-  // Process institutions data with complete information (from GET_INSTITUTIONS_QUERY with full data)
-  const institutionsWithUsers = React.useMemo(() => {
-    return allInstitutionsData?.institutions || []
-  }, [allInstitutionsData])
+  // KPIs — read directly from backend endpoint (no frontend calculations)
+  const kpis = dashboardKPIsData?.dashboardKPIs ?? {
+    totalUsers: 0, newUsersThisYear: 0, previousYearUsers: 0, userGrowthRate: 0,
+    totalProjects: 0, newProjectsThisYear: 0, previousYearProjects: 0, projectGrowthRate: 0,
+    institutionDepartments: 0, churchDepartments: 0, totalDepartments: 0, activeChurches: 0, totalRegions: 0,
+  }
+
+  // Get displayedInstitution from context
+  const displayedInstitution = currentInstitutionData
 
   // Filter ALL projects by year (created_at)
   const allProjectsByYear = React.useMemo(() => {
@@ -219,187 +213,41 @@ export default function DashboardPage() {
     })
   }, [allProjectsData, selectedYear])
 
-  // Process projects data for the current institution (filtered by year)
-  const institutionProjects = React.useMemo(() => {
-    return allProjectsByYear
-  }, [allProjectsByYear])
+  const institutionProjects = React.useMemo(() => allProjectsByYear, [allProjectsByYear])
 
-  // Filter institutions by year (based on created_at) - following institutions page pattern
-  const institutionsByYear = React.useMemo(() => {
-    return institutionsWithUsers.filter((institution: any) => {
-      if (!institution.created_at) return true
-      const institutionYear = new Date(institution.created_at).getFullYear()
-      return institutionYear <= selectedYear // Include all institutions created up to selected year
-    })
-  }, [institutionsWithUsers, selectedYear])
-
-  // Apply PageFilters to data - following institutions page pattern
-  const filteredInstitutionsByYear = React.useMemo(() => {
-    let filtered = institutionsByYear
-
-    // Filter by status (active/inactive)
-    const statusFilter = filterValues.status || "all"
-    if (statusFilter !== "all") {
-      const isActive = statusFilter === "true"
-      filtered = filtered.filter((inst: any) => !inst.is_deleted === isActive)
-    }
-
-    return filtered
-  }, [institutionsByYear, filterValues])
-
-  // Extract ALL users from filtered institutions (filtered by created_at year)
-  // CORRIGIDO: Usa allUsers da query diretamente se disponível, senão extrai de institutions
+  // Users from current institution — for the users table (TODO: replace with paginated query)
   const allUsersFromInstitutions = React.useMemo(() => {
-    // Se temos users direto da query, use-os (mais rápido e confiável)
-    if (allUsers && allUsers.length > 0) {
-
-      return allUsers.filter((user: any) => {
-        if (user.is_deleted) return false
-
-        // Filter users by created_at year
-        if (user.created_at) {
-          const userYear = new Date(user.created_at).getFullYear()
-          if (userYear > selectedYear) return false
-        }
-
-        return true
-      })
-    }
-
-
-    const users: any[] = []
-    filteredInstitutionsByYear.forEach((institution: any) => {
-      if (institution.users) {
-        institution.users.forEach((user: any) => {
-          if (!user.is_deleted) {
-            // Filter users by created_at year (users created up to selected year)
-            if (user.created_at) {
-              const userYear = new Date(user.created_at).getFullYear()
-              if (userYear > selectedYear) return // Skip users created after selected year
-            }
-
-            users.push(user)
-          }
-        })
+    const users = currentInstitutionData?.users || []
+    return users.filter((user: any) => {
+      if (user.is_deleted) return false
+      if (user.created_at) {
+        const userYear = new Date(user.created_at).getFullYear()
+        if (userYear > selectedYear) return false
       }
+      return true
     })
-    return users
-  }, [allUsers, filteredInstitutionsByYear, selectedYear])
+  }, [currentInstitutionData, selectedYear])
 
-  // Filter users by selected year and month
   const filteredUsers = useMemo(() => {
     const monthFilter = filterValues.month || selectedMonth
-    const filtered = allUsersFromInstitutions.filter((user: any) => {
+    return allUsersFromInstitutions.filter((user: any) => {
       if (!user.created_at) return true
       const createdDate = new Date(user.created_at)
       const yearMatch = createdDate.getFullYear() === selectedYear
-
       if (monthFilter === "all") return yearMatch
-
-      const monthMatch = createdDate.getMonth() === parseInt(monthFilter)
-      return yearMatch && monthMatch
+      return yearMatch && createdDate.getMonth() === parseInt(monthFilter)
     })
+  }, [allUsersFromInstitutions, selectedYear, selectedMonth, filterValues.month])
 
-
-    return filtered
-  }, [allUsersFromInstitutions, allUsers, selectedYear, selectedMonth, filterValues.month])
-
-
-  // Extract ALL churches from filtered institutions
-  const allChurchesFromInstitutions = React.useMemo(() => {
-    const churches: any[] = []
-    filteredInstitutionsByYear.forEach((institution: any) => {
-      if (institution.churches) {
-        institution.churches.forEach((church: any) => {
-          if (!church.is_deleted) {
-            churches.push(church)
-          }
-        })
-      }
-    })
-    return churches
-  }, [filteredInstitutionsByYear])
-
-  // Filter churches by region
-  const filteredChurches = useMemo(() => {
-    const regionFilter = filterValues.region || selectedRegion
-    let filtered = allChurchesFromInstitutions
-
-    if (regionFilter !== "all") {
-      filtered = filtered.filter((church: any) => church.region_id === regionFilter)
-    }
-
-    return filtered
-  }, [allChurchesFromInstitutions, selectedRegion, filterValues.region])
-
-  // Extract ALL departments from filtered institutions
-  const allDepartmentsFromInstitutions = React.useMemo(() => {
-    const departments: any[] = []
-    filteredInstitutionsByYear.forEach((institution: any) => {
-      if (institution.departments) {
-        institution.departments.forEach((dept: any) => {
-          if (!dept.is_deleted) {
-            departments.push({
-              ...dept,
-              institution_id: institution.id,
-              institution_name: institution.name
-            })
-          }
-        })
-      }
-    })
-    return departments
-  }, [filteredInstitutionsByYear])
-
-  // Separate Institution Departments (departments WITHOUT church_id)
-  const institutionDepartmentsList = React.useMemo(() => {
-    return allDepartmentsFromInstitutions.filter((dept: any) => !dept.church_id)
-  }, [allDepartmentsFromInstitutions])
-
-  // Extract Church Departments DIRECTLY from churches.departments (following church-departments pattern)
-  const churchDepartmentsList = React.useMemo(() => {
-    const churchDepartments: any[] = []
-
-    filteredInstitutionsByYear.forEach((institution: any) => {
-      if (institution.churches) {
-        institution.churches.forEach((church: any) => {
-          if (!church.is_deleted && church.departments) {
-            church.departments.forEach((dept: any) => {
-              if (!dept.is_deleted) {
-                churchDepartments.push({
-                  ...dept,
-                  church_id: church.id,
-                  church_name: church.name,
-                  institution_id: institution.id,
-                  institution_name: institution.name
-                })
-              }
-            })
-          }
-        })
-      }
-    })
-
-    return churchDepartments
-  }, [filteredInstitutionsByYear])
-
-  // Extract active regions (filtered by year)
-  const activeRegions = React.useMemo(() => {
-    return allRegions.filter((r: any) => {
-      if (r.is_deleted) return false
-
-      // Filter regions by created_at year (regions created up to selected year)
-      if (r.created_at) {
-        const regionYear = new Date(r.created_at).getFullYear()
-        return regionYear <= selectedYear
-      }
-
-      return true // Include regions without created_at
-    })
-  }, [allRegions, selectedYear])
-
-  // Get displayedInstitution from context - use this for institution-specific data
-  const displayedInstitution = currentInstitutionData
+  // Departments and churches for getDepartmentInfo (used in users table)
+  const allChurchesFromInstitutions = React.useMemo(() =>
+    currentInstitutionData?.churches?.filter((c: any) => !c.is_deleted) || [],
+    [currentInstitutionData]
+  )
+  const allDepartmentsFromInstitutions = React.useMemo(() =>
+    currentInstitutionData?.departments?.filter((d: any) => !d.is_deleted) || [],
+    [currentInstitutionData]
+  )
 
   // Helper function to get department info for users
   const getDepartmentInfo = React.useCallback((user: User) => {
@@ -442,151 +290,10 @@ export default function DashboardPage() {
     setIsViewContactOpen(true)
   }
 
-  // Calculate KPIs - use filtered data by year and filters
-  const kpis = useMemo(() => {
-    // Use institution-specific data if available, otherwise use filtered data
-    const institutionUsers = displayedInstitution?.users?.filter((u: any) => !u.is_deleted) || allUsersFromInstitutions
-    const institutionDepts = displayedInstitution?.departments?.filter((d: any) => !d.is_deleted) || allDepartmentsFromInstitutions
-    const institutionChurches = displayedInstitution?.churches?.filter((c: any) => !c.is_deleted) || allChurchesFromInstitutions
-
-    // Projects - use filtered by year
-    const totalProjects = allProjectsByYear.length
-    const activeProjects = allProjectsByYear.filter((p: any) => p.status === 'active' || p.status === 'in_progress').length
-
-    // Projects created this year (new projects)
-    const newProjectsThisYear = allProjectsByYear.filter((p: any) => {
-      if (!p.created_at) return false
-      return new Date(p.created_at).getFullYear() === selectedYear
-    }).length
-
-    // Projects from previous year for growth calculation
-    const previousYearProjects = (allProjectsData?.projects || []).filter((p: any) => {
-      if (!p.created_at) return false
-      return new Date(p.created_at).getFullYear() === selectedYear - 1
-    }).length
-
-    const projectGrowthRate = previousYearProjects > 0
-      ? Math.round(((newProjectsThisYear - previousYearProjects) / previousYearProjects) * 100)
-      : newProjectsThisYear > 0 ? 100 : 0
-
-    // Users calculations
-    const activeUsers = institutionUsers.length
-    const newUsersThisYear = institutionUsers.filter((user: any) => {
-      if (!user.created_at) return false
-      return new Date(user.created_at).getFullYear() === selectedYear
-    }).length
-
-    const previousYearUsers = (displayedInstitution?.users || allUsersFromInstitutions).filter((user: any) => {
-      if (!user.created_at || user.is_deleted) return false
-      return new Date(user.created_at).getFullYear() === selectedYear - 1
-    }).length
-
-    const userGrowthRate = previousYearUsers > 0
-      ? Math.round(((newUsersThisYear - previousYearUsers) / previousYearUsers) * 100)
-      : newUsersThisYear > 0 ? 100 : 0
-
-    // Departments calculations
-    const institutionDepartmentsCount = institutionDepartmentsList.length
-    const churchDepartmentsCount = churchDepartmentsList.length
-
-    // Churches and regions
-    const activeChurchesCount = filteredChurches.length
-    const activeRegionsCount = activeRegions.length
+  // Calculate KPIs - now provided entirely by backend dashboardKPIs endpoint
+  // (kpis is already set above from dashboardKPIsData)
 
 
-
-    return {
-      // Projects KPIs
-      totalProjects,
-      activeProjects,
-      newProjectsThisYear,
-      projectGrowthRate,
-
-      // Users KPIs
-      totalUsers: activeUsers,
-      activeUsers,
-      newUsersThisYear,
-      userGrowthRate,
-
-      // Structure KPIs
-      totalInstitutions: filteredInstitutionsByYear.length,
-      institutionDepartments: institutionDepartmentsCount,
-      churchDepartments: churchDepartmentsCount,
-      totalDepartments: institutionDepartmentsCount + churchDepartmentsCount,
-      activeChurches: activeChurchesCount,
-      totalRegions: activeRegionsCount,
-
-      // Roles & Permissions
-      totalRoles: allRoles.length,
-      totalPermissions: allRoles.reduce((sum: number, role: any) => {
-        return sum + (role.permissions?.reduce((pSum: number, group: any) => pSum + (group.data?.length || 0), 0) || 0)
-      }, 0)
-    }
-  }, [
-    displayedInstitution,
-    filteredInstitutionsByYear,
-    allUsersFromInstitutions,
-    allDepartmentsFromInstitutions,
-    allChurchesFromInstitutions,
-    institutionDepartmentsList,
-    churchDepartmentsList,
-    filteredChurches,
-    activeRegions,
-    allProjectsByYear,
-    allProjectsData,
-    allRoles,
-    selectedYear
-  ])
-
-  // User Growth Over Time (Monthly data for selected year)
-  const userGrowthData = useMemo(() => {
-    const institutionUsers = displayedInstitution?.users?.filter((u: any) => !u.is_deleted) || allUsersFromInstitutions
-
-    const monthlyData = MONTHS.map((month, index) => ({
-      month: month.substring(0, 3),
-      users: 0,
-      newUsers: 0
-    }))
-
-    institutionUsers.forEach((user: any) => {
-      if (!user.created_at) return
-      const createdDate = new Date(user.created_at)
-      if (createdDate.getFullYear() === selectedYear) {
-        const monthIndex = createdDate.getMonth()
-        monthlyData[monthIndex].newUsers += 1
-      }
-    })
-
-    // Calculate cumulative users
-    let cumulative = 0
-    monthlyData.forEach(month => {
-      cumulative += month.newUsers
-      month.users = cumulative
-    })
-
-    return monthlyData
-  }, [displayedInstitution, allUsersFromInstitutions, selectedYear])
-
-  // User Distribution by Structure
-  const userDistributionData = useMemo(() => {
-    const distribution: any[] = []
-    const institutionUsers = displayedInstitution?.users?.filter((u: any) => !u.is_deleted) || allUsersFromInstitutions
-    const institutions = displayedInstitution ? [displayedInstitution] : filteredInstitutionsByYear
-
-    // Group by institution
-    const byInstitution: Record<string, number> = {}
-
-    institutionUsers.forEach((user: any) => {
-      const institutionName = user.institution?.name || 'Unknown'
-      byInstitution[institutionName] = (byInstitution[institutionName] || 0) + 1
-    })
-
-    Object.entries(byInstitution).forEach(([name, count]) => {
-      distribution.push({ name, value: count })
-    })
-
-    return distribution
-  }, [displayedInstitution, allUsersFromInstitutions, filteredInstitutionsByYear])
 
   // Role Distribution Data for Charts
   const roleDistributionData = useMemo(() => {
@@ -644,74 +351,6 @@ export default function DashboardPage() {
     })
   }, [currentInstitutionData, selectedYear])
 
-  // Spending Over Time Data
-  const spendingOverTimeData = useMemo(() => {
-    const findRealApprovalDate = (subsidyId: string, subsidyApprovedAt: string | null, subsidyUpdatedAt: string) => {
-      if (subsidyApprovedAt) return subsidyApprovedAt
-
-      if (subsidyStatusHistoryData?.getSubsidyStatusHistory) {
-        const approvalHistory = subsidyStatusHistoryData.getSubsidyStatusHistory.find((history: any) =>
-          history.subsidy_request_id === subsidyId &&
-          ['APPROVED', 'CLOSED'].includes(history.status?.name?.toUpperCase())
-        )
-        if (approvalHistory) return approvalHistory.changed_at
-      }
-      return subsidyUpdatedAt
-    }
-
-    if (!subsidyData?.subsidyRequests) return []
-
-    const allMonths = [
-      'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-      'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
-    ]
-
-    // Use Record instead of Map for better TypeScript compatibility
-    const monthlySpending: Record<string, any> = {}
-    allMonths.forEach((month, index) => {
-      const date = new Date(selectedYear, index, 1)
-      monthlySpending[month] = {
-        month: month,
-        date: format(date, 'yyyy-MM-dd'),
-        departments: []
-      }
-    })
-
-    const approvedSubsidies = subsidyData.subsidyRequests.filter((subsidy: any) => {
-      const statusMatch = ['APPROVED', 'CLOSED'].includes(subsidy.subsidy_status?.name)
-      const hasDepartment = subsidy.department_id
-      return statusMatch && hasDepartment
-    })
-
-    approvedSubsidies.forEach((subsidy: any) => {
-      const deptId = subsidy.department_id
-      const deptName = subsidy.department?.name || `Departamento ${deptId}`
-      const approvalDate = findRealApprovalDate(subsidy.id, subsidy.approved_at, subsidy.updated_at)
-      const approvedAmount = parseFloat(subsidy.approved_amount) || parseFloat(subsidy.total_budget) || 0
-
-      if (approvalDate && new Date(approvalDate).getFullYear() === selectedYear) {
-        const monthKey = format(new Date(approvalDate), 'MMM', { locale: ptBR })
-        const normalizedMonthKey = monthKey.charAt(0).toUpperCase() + monthKey.slice(1)
-
-        if (monthlySpending[normalizedMonthKey]) {
-          const monthData = monthlySpending[normalizedMonthKey]
-          let deptIndex = monthData.departments.findIndex((d: any) => d.departmentId === deptId)
-
-          if (deptIndex === -1) {
-            monthData.departments.push({
-              departmentId: deptId,
-              departmentName: deptName,
-              amount: approvedAmount
-            })
-          } else {
-            monthData.departments[deptIndex].amount += approvedAmount
-          }
-        }
-      }
-    })
-
-    return Object.values(monthlySpending)
-  }, [subsidyData, subsidyStatusHistoryData, selectedYear])
 
   // Refresh all data
   const handleRefresh = async () => {
@@ -721,9 +360,9 @@ export default function DashboardPage() {
       await Promise.all([
         refetchInstitutions(),
         refetchRegions(),
-        refetchChurches(),
         refetchDepartments(),
-        refetchRoles()
+        refetchRoles(),
+        refetchDashboardKPIs(),
       ])
 
       // Refetch institution context data
@@ -1270,8 +909,8 @@ export default function DashboardPage() {
                   showTopNFilter={false}
                   showSortFilter={false}
                   showRoleSelector={false}
-                  users={displayedInstitution?.users || allUsers}
-                  loading={allInstitutionsLoading || rolesLoading}
+                  data={displayedInstitution?.institutionChartsData?.usersByRole}
+                  loading={institutionsLoading || rolesLoading}
                   selectedYear={selectedYear}
                 />
               ),
@@ -1281,7 +920,8 @@ export default function DashboardPage() {
               id: "users-registration-over-time-chart",
               component: (
                 <UsersRegistrationOverTimeChart
-                  institutions={displayedInstitution ? [displayedInstitution] : allInstitutions}
+                  institutions={displayedInstitution ? [displayedInstitution] : []}
+                  monthlyData={displayedInstitution?.institutionChartsData?.monthlyUserRegistrations}
                   loading={institutionsLoading}
                   selectedYear={selectedYear}
                 />

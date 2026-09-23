@@ -363,6 +363,10 @@ export const INSTITUTION_CHARTS_DATA_FRAGMENT = gql`
       color
       fill
     }
+    monthlyUserRegistrations {
+      month
+      count
+    }
   }
 `;
 
