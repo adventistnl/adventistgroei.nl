@@ -21,6 +21,7 @@ export const CREATE_PROJECT_MUTATION = gql`
     $event: EventCreateDto
     $activities: [ProjectActivityCreateWithoutProjectDto!]
     $is_special_case: Boolean
+    $special_case_type: String
     $special_case_reason: String
     $location_church_plant: String
     $special_budget: Float
@@ -52,6 +53,7 @@ export const CREATE_PROJECT_MUTATION = gql`
         event: $event
         activities: $activities
         is_special_case: $is_special_case
+        special_case_type: $special_case_type
         special_case_reason: $special_case_reason
         location_church_plant: $location_church_plant
         special_budget: $special_budget

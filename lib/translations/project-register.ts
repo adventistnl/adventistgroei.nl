@@ -413,7 +413,9 @@ export const projectRegisterTranslations = {
       accommodation: "Accommodation",
       technology: "Technology",
       maintenance: "Maintenance",
-      supplies: "Supplies"
+      supplies: "Supplies",
+      churchPlanting: "Church Planting",
+      specialProject: "Special Project"
     },
     fundingDistribution: {
       financialAnalysis: "Project financial analysis",
@@ -901,7 +903,9 @@ export const projectRegisterTranslations = {
       accommodation: "Hospedagem",
       technology: "Tecnologia",
       maintenance: "Manutenção",
-      supplies: "Suprimentos"
+      supplies: "Suprimentos",
+      churchPlanting: "Plantação de Igreja",
+      specialProject: "Projeto Especial"
     },
     fundingDistribution: {
       financialAnalysis: "Análise financeira do projeto",
@@ -1292,7 +1296,9 @@ export const projectRegisterTranslations = {
       accommodation: "Accommodatie",
       technology: "Technologie",
       maintenance: "Onderhoud",
-      supplies: "Benodigdheden"
+      supplies: "Benodigdheden",
+      churchPlanting: "Gemeentestichting",
+      specialProject: "Speciaal Project"
     },
     fundingDistribution: {
       financialAnalysis: "Financiële projectanalyse",

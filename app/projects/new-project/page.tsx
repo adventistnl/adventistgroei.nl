@@ -207,7 +207,7 @@ function ProjectRegisterContent() {
   // Helper to render tag with icon and translation
   const renderTagWithIcon = (tagKey: string, className?: string) => {
     const IconComponent = TAG_ICONS[tagKey] || Tag
-    const translatedTag = t(`projectRegister.tags.${tagKey}`)
+    const translatedTag = t(`projectRegister.tags.${tagKey}`, { defaultValue: tagKey })
     return (
       <Badge key={tagKey} variant="outline" className={cn("text-xs px-2 py-1 bg-muted/50 flex items-center gap-1", className)}>
         <IconComponent className="w-3 h-3" />
@@ -450,7 +450,23 @@ function ProjectRegisterContent() {
       if (!raw) return
       const draft = JSON.parse(raw)
 
-      if (draft?.formData) setFormData(prev => ({ ...prev, ...draft.formData }))
+      if (draft?.formData) {
+        const scrubbedActivities = draft.formData.activities?.map((act: any) => ({
+          ...act,
+          tags: act.tags?.filter((t: string) => 
+            t !== "Projeto Especial" && 
+            t !== "Church Planting" &&
+            t !== "specialProject" &&
+            t !== "churchPlanting"
+          ) || []
+        })) || []
+        
+        setFormData(prev => ({ 
+          ...prev, 
+          ...draft.formData,
+          activities: scrubbedActivities
+        }))
+      }
       if (typeof draft?.manualAmount === 'number') setManualAmount(draft.manualAmount)
       if (typeof draft?.manualPercentage === 'number') setManualPercentage(draft.manualPercentage)
       if (typeof draft?.isManualEntry === 'boolean') setIsManualEntry(draft.isManualEntry)
@@ -503,35 +519,35 @@ function ProjectRegisterContent() {
     }
   }
 
-  // Auto-add special project tags based on selection
+  // Sync special case flags with activities tags
   useEffect(() => {
-    if (isSpecialProject || isChurchPlanting) {
-      // Add special project tags to all activities
-      setFormData(prev => ({
-        ...prev,
-        activities: prev.activities.map(activity => {
-          const newTags = [...activity.tags]
+    setFormData(prev => ({
+      ...prev,
+      activities: prev.activities.map(activity => {
+        const newTags = [...activity.tags]
 
-          // Remove previous special tags
-          const filteredTags = newTags.filter(tag =>
-            tag !== "Projeto Especial" && tag !== "Church Planting"
-          )
+        // Remove previous special tags (including old legacy strings from drafts)
+        const filteredTags = newTags.filter(tag =>
+          tag !== "specialProject" && 
+          tag !== "churchPlanting" && 
+          tag !== "Projeto Especial" && 
+          tag !== "Church Planting"
+        )
 
-          // Add current special tag
-          if (isSpecialProject && !filteredTags.includes("Projeto Especial")) {
-            filteredTags.push("Projeto Especial")
-          }
-          if (isChurchPlanting && !filteredTags.includes("Church Planting")) {
-            filteredTags.push("Church Planting")
-          }
+        // Add current special tag
+        if (isSpecialProject && !filteredTags.includes("specialProject")) {
+          filteredTags.push("specialProject")
+        }
+        if (isChurchPlanting && !filteredTags.includes("churchPlanting")) {
+          filteredTags.push("churchPlanting")
+        }
 
-          return {
-            ...activity,
-            tags: filteredTags
-          }
-        })
-      }))
-    }
+        return {
+          ...activity,
+          tags: filteredTags
+        }
+      })
+    }))
   }, [isSpecialProject, isChurchPlanting])
 
   // Set co_owner_id to current logged-in user on mount and whenever currentUser changes
@@ -747,7 +763,10 @@ function ProjectRegisterContent() {
 
         if (isChurchPlanting) {
           if (!churchPlantingJustification.trim()) {
-            newErrors.church_planting_justification = t('projectRegister.fundingDistribution.churchPlantingDetailsRequired')
+            newErrors.church_planting_justification = t('projectRegister.fundingDistribution.churchPlantingDetailsRequired', 'Detalhes do projeto são obrigatórios')
+          }
+          if (!formData.location_church_plant?.trim()) {
+            newErrors.location_church_plant = t('projectRegister.fundingDistribution.locationRequired', 'Localização é obrigatória')
           }
         }
         break
@@ -907,7 +926,7 @@ function ProjectRegisterContent() {
     const translatedDescription = t(`projectRegister.quickActivities.${predefinedActivity.key}.description`)
 
     // Convert tagKeys to translated tags for display (store keys in database)
-    const translatedTags = predefinedActivity.tagKeys.map(tagKey => t(`projectRegister.tags.${tagKey}`))
+    const translatedTags = predefinedActivity.tagKeys.map(tagKey => t(`projectRegister.tags.${tagKey}`, { defaultValue: tagKey }))
 
     // Pre-populate assignee_ids with project responsible (owner) if available
     const defaultAssigneeIds = formData.responsible_id ? [formData.responsible_id] : []
@@ -981,17 +1000,17 @@ function ProjectRegisterContent() {
       // Map tag strings to ActivityTags enum
       const mapTagToEnum = (tag: string): string => {
         const tagMap: Record<string, string> = {
-          'Equipamentos': 'EQUIPMENT',
-          'Materiais': 'MATERIALS',
-          'Serviços': 'SERVICES',
-          'Viagens': 'TRAVEL',
-          'Eventos': 'EVENT',
-          'Transporte': 'TRANSPORT',
-          'Marketing': 'MARKETING',
-          'Reforma': 'REFORM',
-          'Treinamento': 'TRAINING',
-          'Alimentação': 'FEEDING',
-          'Hospedagem': 'ACCOMMODATION',
+          'equipment': 'EQUIPMENT',
+          'materials': 'MATERIALS',
+          'services': 'SERVICES',
+          'travel': 'TRAVEL',
+          'events': 'EVENT',
+          'transport': 'TRANSPORT',
+          'marketing': 'MARKETING',
+          'reform': 'REFORM',
+          'training': 'TRAINING',
+          'food': 'FEEDING',
+          'accommodation': 'ACCOMMODATION',
         }
         return tagMap[tag] || 'MATERIALS'
       }
@@ -1039,8 +1058,10 @@ function ProjectRegisterContent() {
           budget_amount: activity.budget_amount,
           deadline: activityDeadline,
           assignee_ids: finalAssigneeIds,
-          tags: activity.tags.map(mapTagToEnum), // Already sending as array - correct!
-          is_subsidized: activity.is_subsidized ?? false, // Include is_subsidized flag
+          tags: activity.tags
+            .filter(t => t !== 'specialProject' && t !== 'churchPlanting' && t !== 'Projeto Especial' && t !== 'Church Planting')
+            .map(mapTagToEnum),
+          is_subsidized: activity.is_subsidized ?? false,
           activity_funding: {
             entity_contribution_amount: activitySubsidy,
             entity_contribution_percent: activity.is_subsidized ? 65 : 0,
@@ -1073,6 +1094,7 @@ function ProjectRegisterContent() {
           : undefined,
         activities: mappedActivities,
         is_special_case: isSpecialProject || isChurchPlanting || false,
+        special_case_type: isChurchPlanting ? 'CHURCH_PLANTING' : (isSpecialProject ? 'SPECIAL' : undefined),
         special_case_reason: isChurchPlanting ? churchPlantingJustification : specialProjectJustification,
         location_church_plant: formData.location_church_plant,
         special_budget: formData.special_budget,
@@ -1581,7 +1603,7 @@ function ProjectRegisterContent() {
                           : "hover:bg-muted hover:border-primary/50"
                       )}
                     >
-                      {t(`projectRegister.tags.${tagKey}`)}
+                      {t(`projectRegister.tags.${tagKey}`, { defaultValue: tagKey })}
                     </Button>
                   ))}
                 </div>
@@ -2003,13 +2025,25 @@ function ProjectRegisterContent() {
 
                           {isChurchPlanting && (
                             <div className="space-y-2">
-                              <Label htmlFor="location">{t('projectRegister.fundingDistribution.plantingLocation')}</Label>
+                              <Label htmlFor="location">
+                                {t('projectRegister.fundingDistribution.plantingLocation')}
+                                <span className="text-red-500 ml-1">*</span>
+                              </Label>
                               <Input
                                 id="location"
                                 placeholder={t('projectRegister.fundingDistribution.locationPlaceholder')}
                                 value={formData.location_church_plant || ''}
-                                onChange={(e) => setFormData({ ...formData, location_church_plant: e.target.value })}
+                                onChange={(e) => {
+                                  setFormData({ ...formData, location_church_plant: e.target.value })
+                                  if (errors.location_church_plant) {
+                                    setErrors(prev => ({ ...prev, location_church_plant: '' }))
+                                  }
+                                }}
+                                className={errors.location_church_plant ? "border-red-500 focus-visible:ring-red-500" : ""}
                               />
+                              {errors.location_church_plant && (
+                                <p className="text-sm text-red-500 mt-1">{errors.location_church_plant}</p>
+                              )}
                             </div>
                           )}
                         </div>
@@ -2731,6 +2765,35 @@ function ProjectRegisterContent() {
                             </div>
                           </div>
                         </div>
+
+                        {formData.project_responsible_type === 'church' && (
+                          <div className="flex flex-wrap gap-x-8 gap-y-4 py-4 border-t border-border">
+                            <div className="flex items-start gap-3 flex-1 min-w-[200px]">
+                              <Building className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-muted-foreground mb-0.5">{t('projectRegister.responsibilityTypes.church', 'Igreja')}</p>
+                                <p className="text-sm font-medium text-foreground break-words">
+                                  {churches.find((c: any) => c.id === formData.church_id)?.name ?? '—'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3 flex-1 min-w-[200px]">
+                              <Target className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-muted-foreground mb-0.5">{t('projectRegister.fields.churchDepartment', 'Departamento da Igreja')}</p>
+                                <p className="text-sm font-medium text-foreground">
+                                  {(() => {
+                                    if (!formData.church_id || !formData.church_department_id) return '—';
+                                    const church = currentInstitutionData?.churches?.find((c: any) => c.id === formData.church_id);
+                                    if (!church) return '—';
+                                    const dept = church.departments?.find((d: any) => d.id === formData.church_department_id);
+                                    return dept ? dept.name : '—';
+                                  })()}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Responsible People — owner + co-owner with avatars and name labels */}
                         <div className="flex items-start gap-3 py-4">
