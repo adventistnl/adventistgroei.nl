@@ -62,6 +62,9 @@ const resources = {
           use_button_above: "Use the button above to add documents",
           save_changes: "Save Changes",
           unsaved_changes: "There are unsaved changes",
+          unsaved_changes_and_files: "Unsaved changes and {{count}} pending files",
+          save_and_upload: "Save and Upload ({{count}})",
+          saving_and_uploading: "Saving...",
           close: "Close",
           tooltips: {
             status: "Current activity status",
@@ -2168,6 +2171,9 @@ const resources = {
           use_button_above: "Gebruik de knop hierboven om documenten toe te voegen",
           save_changes: "Wijzigingen Opslaan",
           unsaved_changes: "Er zijn niet-opgeslagen wijzigingen",
+          unsaved_changes_and_files: "Niet-opgeslagen wijzigingen en {{count}} openstaande bestanden",
+          save_and_upload: "Opslaan en Uploaden ({{count}})",
+          saving_and_uploading: "Bezig met opslaan...",
           close: "Sluiten",
           tooltips: {
             status: "Huidige activiteitstatus",

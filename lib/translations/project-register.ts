@@ -256,6 +256,9 @@ export const projectRegisterTranslations = {
       draftLoaded: "Draft loaded",
       draftCleared: "Draft cleared"
     },
+    errors: {
+      churchHasNoLeader: "Church has no leader assigned. Please assign a leader to the church before creating a project."
+    },
     activityGroups: {
       title: "Activity Groups",
       totalActivities: "activities",
@@ -708,6 +711,9 @@ export const projectRegisterTranslations = {
       draftLoaded: "Rascunho carregado",
       draftCleared: "Rascunho limpo"
     },
+    errors: {
+      churchHasNoLeader: "A igreja não possui um líder atribuído. Por favor, atribua um líder à igreja antes de criar um projeto."
+    },
     highlights: {
       totalBudget: "Orçamento Total",
       selfContribution: "Contribuição da Igreja",
@@ -1140,6 +1146,9 @@ export const projectRegisterTranslations = {
       activityRestored: "{{name}} hersteld",
       draftLoaded: "Concept geladen",
       draftCleared: "Concept gewist"
+    },
+    errors: {
+      churchHasNoLeader: "De gemeente heeft geen toegewezen leider. Wijs een leider toe aan de gemeente voordat u een project aanmaakt."
     },
     activityGroups: {
       title: "Activiteitsgroepen",

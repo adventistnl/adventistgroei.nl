@@ -405,7 +405,7 @@ export function ActivityDetailsModal({
           tags: formData.tags.map(tag => normalizeActivityTag(tag) as ActivityTags),
           assignee_ids: assignedUsers.map(u => u.id),
         }
-        onSave(dataToSave)
+        await onSave(dataToSave)
         toast.success(t('common.success'))
         setHasChanges(false)
 

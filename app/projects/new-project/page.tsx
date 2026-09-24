@@ -257,9 +257,25 @@ function ProjectRegisterContent() {
 
       // Navigation is handled in handleSubmit after role assignment
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      // When the backend returns HTTP 400, Apollo treats the response as a networkError.
+      let graphQLError = error.graphQLErrors?.[0]
+      if (!graphQLError && error?.networkError?.result?.errors) {
+        graphQLError = error.networkError.result.errors[0]
+      }
+
+      const ext = graphQLError?.extensions as any
+      const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
+
+      if (errorCode === 'CHURCH_HAS_NO_LEADER') {
+        // Use custom parsed error message
+        const message = (translations as any).errors?.churchHasNoLeader || graphQLError?.message || 'A igreja não possui um líder atribuído.'
+        toast.error(message)
+        return
+      }
+
       // Extract user-friendly error message
-      const errorMessage = error.graphQLErrors?.[0]?.message || error.message || 'Erro desconhecido'
+      const errorMessage = graphQLError?.message || error.message || 'Erro desconhecido'
       // Only show the first line of the error (not the stack trace)
       const userFriendlyMessage = errorMessage.split('\n')[0]
       toast.error(`${translations.toast.failedToSave}: ${userFriendlyMessage}`)
@@ -443,7 +459,7 @@ function ProjectRegisterContent() {
       if (typeof draft?.currentStep === 'number') setCurrentStep(draft.currentStep)
       if (draft?.currentActivity) setCurrentActivity(prev => ({ ...prev, ...draft.currentActivity }))
       if (draft?.editingActivityId) setEditingActivityId(draft.editingActivityId)
-      toast.success(translations.toast.draftLoaded)
+      toast.success(translations.toast.draftLoaded, { id: 'draftLoaded' })
     } catch (err) {
       // ignore parse errors
     }
@@ -481,7 +497,7 @@ function ProjectRegisterContent() {
   const clearDraft = () => {
     try {
       sessionStorage.removeItem(DRAFT_KEY)
-      toast.success(translations.toast.draftCleared)
+      toast.success(translations.toast.draftCleared, { id: 'draftCleared' })
     } catch {
       // ignore
     }
@@ -600,7 +616,8 @@ function ProjectRegisterContent() {
       // Create a new activity object with updated is_subsidized property
       const updatedActivity: ProjectActivity = {
         ...activity,
-        is_subsidized: newIsSubsidized
+        is_subsidized: newIsSubsidized,
+        request_subsidy: newIsSubsidized
       }
 
       currentActivities.push(updatedActivity)
@@ -1084,6 +1101,7 @@ function ProjectRegisterContent() {
 
       // Guard: if creation failed, onError already showed the toast — do not redirect
       if (!result?.data) {
+        setIsLoading(false)
         return
       }
 
@@ -2480,8 +2498,8 @@ function ProjectRegisterContent() {
     const selfContribution = formData.church_contribution
     const requestContribution = formData.institution_contribution
 
-    const subsidizedActivities = formData.activities.filter(a => a.request_subsidy)
-    const nonSubsidizedActivities = formData.activities.filter(a => !a.request_subsidy)
+    const subsidizedActivities = formData.activities.filter(a => a.is_subsidized)
+    const nonSubsidizedActivities = formData.activities.filter(a => !a.is_subsidized)
 
     const totalActivities = formData.activities.length
     const averageActivityCost = totalActivities > 0 ? totalBudget / totalActivities : 0

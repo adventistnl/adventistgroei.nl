@@ -5171,8 +5171,8 @@ export enum ProjectStatus {
 }
 
 export enum ProjectType {
-  Global = 'Global',
-  Local = 'Local'
+  Global = 'GLOBAL',
+  Local = 'LOCAL'
 }
 
 export type ProjectUpdateCoOwnerDto = {
