@@ -151,7 +151,7 @@ export default function AnnualBudgetPage() {
   const { data: kpisData, loading: loadingKPIs, refetch: refetchKPIs } = useAnnualBudgetKPIs({
     skip: !currentInstitutionData?.id,
     variables:{
-      institutionId: currentInstitutionData?.id!,
+      institutionId: currentInstitutionData?.id || "",
       year: selectedYear
     }
   })
@@ -283,8 +283,10 @@ export default function AnnualBudgetPage() {
           id: annualBudget.id,
           year: annualBudget.year,
           planned_budget: parseFloat(annualBudget.planned_budget) || 0,
-          spentAmount: parseFloat(annualBudget.spentAmount) || 0,
-          remainingAmount: parseFloat(annualBudget.remainingAmount) || 0,
+          spentAmount: parseFloat(annualBudget.total_expenses) || 0,
+          remainingAmount: parseFloat(annualBudget.balance) || 0,
+          total_expenses: parseFloat(annualBudget.total_expenses) || 0,
+          balance: parseFloat(annualBudget.balance) || 0,
           status: annualBudget.status,
           priority: annualBudget.priority,
           category: annualBudget.category,
@@ -1758,9 +1760,9 @@ export default function AnnualBudgetPage() {
               budget={selectedRequest ? {
                 id: selectedRequest.id,
                 year: selectedRequest.year,
-                planned_budget: parseFloat(selectedRequest.allocated_amount as string) || 0,
-                total_expenses: selectedRequest.spentAmount || 0,
-                balance: selectedRequest.remainingAmount || 0,
+                planned_budget: parseFloat(selectedRequest.planned_budget as any) || 0,
+                total_expenses: parseFloat(selectedRequest.total_expenses as any) || 0,
+                balance: parseFloat(selectedRequest.balance as any) || 0,
                 notes: selectedRequest.notes || undefined,
                 approved_by: selectedRequest.approved_by || undefined,
                 created_at: selectedRequest.created_at as string,

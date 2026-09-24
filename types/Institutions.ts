@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { LanguagePreference, AnnualBudgetStatus, AnnualBudgetPriority, AnnualBudgetCategory, AnnualBudgetEntityType, ProjectType, ChurchType } from "./globalTypes";
+import { LanguagePreference, AnnualBudgetEntityType, AnnualBudgetStatus, AnnualBudgetPriority, AnnualBudgetCategory, ProjectType, ChurchType } from "./globalTypes";
 
 // ====================================================
 // GraphQL query operation: Institutions
@@ -41,6 +41,14 @@ export interface Institutions_institutions_annual_budgets {
   planned_budget: any;
   total_expenses: number;
   balance: number;
+  allocated_amount: number;
+  approved_amount: any | null;
+  notes: string | null;
+  description: string | null;
+  justification: string | null;
+  is_locked: boolean;
+  has_budget_record: boolean;
+  entity_type: AnnualBudgetEntityType;
   status: AnnualBudgetStatus;
   priority: AnnualBudgetPriority;
   category: AnnualBudgetCategory;
@@ -56,18 +64,10 @@ export interface Institutions_institutions_annual_budgets {
   institution_id: string | null;
   church_id: string | null;
   department_id: string | null;
-  allocated_amount: number;
-  approved_amount: any | null;
   reviewed_by: string | null;
   review_date: any | null;
   approval_date: any | null;
-  notes: string | null;
-  description: string | null;
-  justification: string | null;
   documents: any | null;
-  is_locked: boolean;
-  has_budget_record: boolean;
-  entity_type: AnnualBudgetEntityType;
   approvedAmount: number;
   spentAmount: number;
   usagePercentage: number;
@@ -262,6 +262,14 @@ export interface Institutions_institutions_churches_departments_annual_budgets {
   planned_budget: any;
   total_expenses: number;
   balance: number;
+  allocated_amount: number;
+  approved_amount: any | null;
+  notes: string | null;
+  description: string | null;
+  justification: string | null;
+  is_locked: boolean;
+  has_budget_record: boolean;
+  entity_type: AnnualBudgetEntityType;
   status: AnnualBudgetStatus;
   priority: AnnualBudgetPriority;
   category: AnnualBudgetCategory;
@@ -277,18 +285,10 @@ export interface Institutions_institutions_churches_departments_annual_budgets {
   institution_id: string | null;
   church_id: string | null;
   department_id: string | null;
-  allocated_amount: number;
-  approved_amount: any | null;
   reviewed_by: string | null;
   review_date: any | null;
   approval_date: any | null;
-  notes: string | null;
-  description: string | null;
-  justification: string | null;
   documents: any | null;
-  is_locked: boolean;
-  has_budget_record: boolean;
-  entity_type: AnnualBudgetEntityType;
   approvedAmount: number;
   spentAmount: number;
   usagePercentage: number;
@@ -466,6 +466,14 @@ export interface Institutions_institutions_churches_annual_budgets {
   planned_budget: any;
   total_expenses: number;
   balance: number;
+  allocated_amount: number;
+  approved_amount: any | null;
+  notes: string | null;
+  description: string | null;
+  justification: string | null;
+  is_locked: boolean;
+  has_budget_record: boolean;
+  entity_type: AnnualBudgetEntityType;
   status: AnnualBudgetStatus;
   priority: AnnualBudgetPriority;
   category: AnnualBudgetCategory;
@@ -481,18 +489,10 @@ export interface Institutions_institutions_churches_annual_budgets {
   institution_id: string | null;
   church_id: string | null;
   department_id: string | null;
-  allocated_amount: number;
-  approved_amount: any | null;
   reviewed_by: string | null;
   review_date: any | null;
   approval_date: any | null;
-  notes: string | null;
-  description: string | null;
-  justification: string | null;
   documents: any | null;
-  is_locked: boolean;
-  has_budget_record: boolean;
-  entity_type: AnnualBudgetEntityType;
   approvedAmount: number;
   spentAmount: number;
   usagePercentage: number;
@@ -587,6 +587,14 @@ export interface Institutions_institutions_departments_annual_budgets {
   planned_budget: any;
   total_expenses: number;
   balance: number;
+  allocated_amount: number;
+  approved_amount: any | null;
+  notes: string | null;
+  description: string | null;
+  justification: string | null;
+  is_locked: boolean;
+  has_budget_record: boolean;
+  entity_type: AnnualBudgetEntityType;
   status: AnnualBudgetStatus;
   priority: AnnualBudgetPriority;
   category: AnnualBudgetCategory;
@@ -602,18 +610,10 @@ export interface Institutions_institutions_departments_annual_budgets {
   institution_id: string | null;
   church_id: string | null;
   department_id: string | null;
-  allocated_amount: number;
-  approved_amount: any | null;
   reviewed_by: string | null;
   review_date: any | null;
   approval_date: any | null;
-  notes: string | null;
-  description: string | null;
-  justification: string | null;
   documents: any | null;
-  is_locked: boolean;
-  has_budget_record: boolean;
-  entity_type: AnnualBudgetEntityType;
   approvedAmount: number;
   spentAmount: number;
   usagePercentage: number;
