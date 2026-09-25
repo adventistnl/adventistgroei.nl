@@ -9,6 +9,7 @@ export const projectDetailsTranslations = {
       errorLoading: "Erro ao carregar projeto",
       documentsPending: "Todos os documentos devem ser validados primeiro",
       projectDeleted: "Projeto deletado:",
+      projectUpdated: "Projeto atualizado com sucesso!",
       eventCreated: "Evento criado com sucesso",
       communicationCreated: "Comunicação criada com sucesso"
     },
@@ -98,6 +99,7 @@ export const projectDetailsTranslations = {
       errorLoading: "Error loading project",
       documentsPending: "All documents must be validated first",
       projectDeleted: "Project deleted:",
+      projectUpdated: "Project updated successfully!",
       eventCreated: "Event created successfully",
       communicationCreated: "Communication created successfully"
     },
@@ -187,6 +189,7 @@ export const projectDetailsTranslations = {
       errorLoading: "Fout bij laden van project",
       documentsPending: "Alle documenten moeten eerst worden gevalideerd",
       projectDeleted: "Project verwijderd:",
+      projectUpdated: "Project succesvol bijgewerkt!",
       eventCreated: "Evenement succesvol aangemaakt",
       communicationCreated: "Communicatie succesvol aangemaakt"
     },
